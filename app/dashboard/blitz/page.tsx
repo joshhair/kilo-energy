@@ -292,15 +292,26 @@ export default function BlitzPage() {
       const q = search.toLowerCase();
       list = list.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
     }
-    // For reps, only show blitzes they're participating in or upcoming ones
-    if (!isAdmin && currentRepId) {
-      list = list.filter((b) =>
-        b.status === 'upcoming' || b.status === 'active' ||
-        b.participants.some((p) => p.user.id === currentRepId)
-      );
-    }
     return list;
   }, [blitzes, statusFilter, search, isAdmin, currentRepId]);
+
+  // For reps: separate "My Blitzes" (participating/leading) from browseable ones
+  const myBlitzes = useMemo(() => {
+    if (isAdmin || !currentRepId) return [];
+    return blitzes.filter((b) =>
+      b.owner.id === currentRepId ||
+      b.participants.some((p) => p.user.id === currentRepId)
+    );
+  }, [blitzes, isAdmin, currentRepId]);
+
+  const browseBlitzes = useMemo(() => {
+    if (isAdmin) return filteredBlitzes;
+    if (!currentRepId) return filteredBlitzes;
+    const myIds = new Set(myBlitzes.map((b) => b.id));
+    return filteredBlitzes.filter((b) =>
+      !myIds.has(b.id) && (b.status === 'upcoming' || b.status === 'active')
+    );
+  }, [filteredBlitzes, isAdmin, currentRepId, myBlitzes]);
 
   const pendingRequests = requests.filter((r) => r.status === 'pending');
 
@@ -446,22 +457,62 @@ export default function BlitzPage() {
               </div>
               <p className="text-sm text-zinc-500 font-medium">Loading blitzes...</p>
             </div>
-          ) : filteredBlitzes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
-              <Tent className="w-16 h-16 text-zinc-600" />
-              <div className="text-center">
-                <p className="text-lg font-semibold text-white">No blitzes found</p>
-                <p className="text-sm text-zinc-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
+          ) : isAdmin ? (
+            /* Admin sees all blitzes in one grid */
+            filteredBlitzes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
+                <Tent className="w-16 h-16 text-zinc-600" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-white">No blitzes found</p>
+                  <p className="text-sm text-zinc-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
+                </div>
+                {!search && statusFilter === 'all' && (
+                  <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
+                    Create a Blitz
+                  </button>
+                )}
               </div>
-              {isAdmin && !search && statusFilter === 'all' && (
-                <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
-                  Create a Blitz
-                </button>
-              )}
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} />)}
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} />)}
+            /* Rep view: My Blitzes section + Browse section */
+            <div className="space-y-8">
+              {/* My Blitzes */}
+              {myBlitzes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <UserCheck className="w-4 h-4" /> My Blitzes
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {myBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} />)}
+                  </div>
+                </div>
+              )}
+
+              {/* Browse available */}
+              {browseBlitzes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Search className="w-4 h-4" /> Browse Available
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {browseBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} />)}
+                  </div>
+                </div>
+              )}
+
+              {myBlitzes.length === 0 && browseBlitzes.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
+                  <Tent className="w-16 h-16 text-zinc-600" />
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-white">No blitzes available</p>
+                    <p className="text-sm text-zinc-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Check back soon for upcoming blitzes'}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
