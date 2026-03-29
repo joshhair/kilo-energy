@@ -258,34 +258,124 @@ export default function BlitzDetailPage() {
       </div>
 
       {/* Overview */}
-      {tab === 'overview' && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-            <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Participants</p>
-            <p className="text-2xl font-bold text-white">{approvedParticipants.length}</p>
-          </div>
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-            <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Deals</p>
-            <p className="text-2xl font-bold text-white">{totalDeals}</p>
-          </div>
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-            <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Total kW</p>
-            <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
-          </div>
-          {isAdmin && (
+      {tab === 'overview' && (() => {
+        const startMs = new Date(blitz.startDate + 'T00:00:00').getTime();
+        const endMs = new Date(blitz.endDate + 'T00:00:00').getTime();
+        const nowMs = new Date().setHours(0, 0, 0, 0);
+        const totalDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+        const elapsed = Math.max(0, Math.min(totalDays, Math.round((nowMs - startMs) / 86400000) + 1));
+        const progressPct = blitz.status === 'completed' ? 100 : blitz.status === 'active' ? Math.round((elapsed / totalDays) * 100) : 0;
+
+        return (
+        <div className="space-y-4">
+          {/* Stat cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-              <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Net Profit</p>
-              <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(netProfit)}</p>
+              <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Participants</p>
+              <p className="text-2xl font-bold text-white">{approvedParticipants.length}</p>
+            </div>
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+              <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Deals</p>
+              <p className="text-2xl font-bold text-white">{totalDeals}</p>
+            </div>
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+              <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Total kW</p>
+              <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
+            </div>
+            {isAdmin && (
+              <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+                <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Net Profit</p>
+                <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(netProfit)}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Timeline progress bar */}
+          {(blitz.status === 'active' || blitz.status === 'completed') && (
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-zinc-500 font-medium">Progress</p>
+                <p className="text-xs text-zinc-400">
+                  {blitz.status === 'completed' ? 'Completed' : `Day ${elapsed} of ${totalDays}`}
+                </p>
+              </div>
+              <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${blitz.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1.5 text-[11px] text-zinc-600">
+                <span>{formatDate(blitz.startDate)}</span>
+                <span>{formatDate(blitz.endDate)}</span>
+              </div>
             </div>
           )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Blitz details */}
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 space-y-3">
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Details</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Leader</span>
+                  <span className="text-white font-medium">{blitz.owner.firstName} {blitz.owner.lastName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Duration</span>
+                  <span className="text-white">{totalDays} days</span>
+                </div>
+                {blitz.location && (
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Location</span>
+                    <span className="text-white">{blitz.location}</span>
+                  </div>
+                )}
+                {blitz.housing && (
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Housing</span>
+                    <span className="text-white">{blitz.housing}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Participant avatars / quick list */}
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Team</p>
+                <button onClick={() => setTab('participants')} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">View all</button>
+              </div>
+              {approvedParticipants.length === 0 ? (
+                <p className="text-sm text-zinc-600">No participants yet</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {approvedParticipants.slice(0, 8).map((p: any) => (
+                    <div key={p.user.id} className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-full px-2.5 py-1">
+                      <div className="w-5 h-5 rounded-full bg-blue-600/30 border border-blue-500/30 flex items-center justify-center text-[10px] font-bold text-blue-300">
+                        {p.user.firstName[0]}{p.user.lastName[0]}
+                      </div>
+                      <span className="text-xs text-zinc-300">{p.user.firstName}</span>
+                    </div>
+                  ))}
+                  {approvedParticipants.length > 8 && (
+                    <div className="flex items-center px-2.5 py-1 text-xs text-zinc-500">+{approvedParticipants.length - 8} more</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Notes */}
           {blitz.notes && (
-            <div className="col-span-full bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-              <p className="text-xs text-zinc-500 mb-1">Notes</p>
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+              <p className="text-xs text-zinc-500 mb-1 font-medium uppercase tracking-wider">Notes</p>
               <p className="text-sm text-zinc-300">{blitz.notes}</p>
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Participants */}
       {tab === 'participants' && (
