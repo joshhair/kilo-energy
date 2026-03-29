@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
-import { getSolarTechBaseline, calculateCommission, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, SOLARTECH_PRODUCTS, getInstallerRatesForDeal, getProductCatalogBaseline, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { getSolarTechBaseline, calculateCommission, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, SOLARTECH_PRODUCTS, getInstallerRatesForDeal, getProductCatalogBaseline, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2 } from 'lucide-react';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -192,7 +192,7 @@ function CommissionBar({
 
 export default function CalculatorPage() {
   const isHydrated = useIsHydrated();
-  const { currentRepId, currentRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts } = useApp();
+  const { currentRepId, currentRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
   const [installer, setInstaller] = useState('');
   const [solarTechFamily, setSolarTechFamily] = useState('');
@@ -417,7 +417,7 @@ export default function CalculatorPage() {
 
   const m1Flat = kW >= 5 ? 1000 : 500;
   const isSelfGen = !hasSetter || setterBaselinePerW === 0;
-  const installPayPct = (INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT);
+  const installPayPct = (installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT);
   const hasM3Split = installPayPct < 100;
   const closerM1 = isSelfGen ? m1Flat : 0;
   const closerM2Raw = closerTotal - closerM1;

@@ -348,6 +348,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (isInstalled && installPayPct < 100) {
             const m3 = Math.round(fullAmount * ((100 - installPayPct) / 100) * 100) / 100;
             updated = updated.map((p) => p.id === id ? { ...p, m3Amount: m3 } : p);
+            // Persist m3Amount to DB
+            fetch(`/api/projects/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ m3Amount: m3 }),
+            }).catch(console.error);
           }
 
           const ts = Date.now();
