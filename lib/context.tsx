@@ -145,6 +145,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
+  // Helper: persist a payroll entry to the DB (fire and forget)
+  const persistPayrollEntry = useCallback((entry: PayrollEntry) => {
+    fetch('/api/payroll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        repId: entry.repId,
+        projectId: entry.projectId,
+        amount: entry.amount,
+        type: entry.type,
+        paymentStage: entry.paymentStage,
+        status: entry.status,
+        date: entry.date,
+        notes: entry.notes,
+      }),
+    }).catch(console.error);
+  }, []);
+
+  // Helper: delete payroll entries from DB by filter
+  const deletePayrollEntriesFromDb = useCallback((ids: string[]) => {
+    for (const id of ids) {
+      fetch(`/api/payroll/${id}`, { method: 'DELETE' }).catch(console.error);
+    }
+  }, []);
+
   // installerBaselines is derived from the currently active pricing version per installer
   // (flat rate only — tiered installers show the first band for backward compat display)
   const installerBaselines = useMemo<Record<string, InstallerBaseline>>(() => {
@@ -191,17 +216,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
         rates: { type: 'flat' as const, closerPerW: 2.90, kiloPerW: 2.35 },
       }];
     });
+    // Persist to DB
+    fetch('/api/installers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    }).catch(console.error);
   };
-  const addFinancer = (name: string) =>
+  const addFinancer = (name: string) => {
     setFinancers((prev) => prev.find((f) => f.name === name) ? prev : [...prev, { name, active: true }]);
-  const addRep = (firstName: string, lastName: string, email: string, phone: string, repType: 'closer' | 'setter' | 'both' = 'both', id?: string) =>
-    setReps((prev) => [...prev, { id: id ?? `rep_${Date.now()}`, firstName: firstName.trim(), lastName: lastName.trim(), name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim(), phone: phone.trim(), role: 'rep' as const, repType }]);
-  const removeRep = (id: string) =>
+    fetch('/api/financers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    }).catch(console.error);
+  };
+  const addRep = (firstName: string, lastName: string, email: string, phone: string, repType: 'closer' | 'setter' | 'both' = 'both', id?: string) => {
+    const tempId = id ?? `rep_${Date.now()}`;
+    setReps((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim(), phone: phone.trim(), role: 'rep' as const, repType }]);
+    // Persist and update with real DB id
+    fetch('/api/reps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, lastName, email, phone, repType }),
+    }).then((res) => res.json()).then((rep) => {
+      if (rep.id && rep.id !== tempId) {
+        setReps((prev) => prev.map((r) => r.id === tempId ? { ...r, id: rep.id } : r));
+      }
+    }).catch(console.error);
+  };
+  const removeRep = (id: string) => {
     setReps((prev) => prev.filter((r) => r.id !== id));
-  const updateRepType = (id: string, repType: 'closer' | 'setter' | 'both') =>
+    fetch(`/api/reps/${id}`, { method: 'DELETE' }).catch(console.error);
+  };
+  const updateRepType = (id: string, repType: 'closer' | 'setter' | 'both') => {
     setReps((prev) => prev.map((r) => r.id === id ? { ...r, repType } : r));
+    fetch(`/api/reps/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repType }),
+    }).catch(console.error);
+  };
 
   const updateProject = (id: string, updates: Partial<Project>) => {
+    // Persist to DB (fire and forget — local state is source of truth for UI)
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.phase !== undefined) dbUpdates.phase = updates.phase;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.flagged !== undefined) dbUpdates.flagged = updates.flagged;
+    if (updates.m1Paid !== undefined) dbUpdates.m1Paid = updates.m1Paid;
+    if (updates.m1Amount !== undefined) dbUpdates.m1Amount = updates.m1Amount;
+    if (updates.m2Paid !== undefined) dbUpdates.m2Paid = updates.m2Paid;
+    if (updates.m2Amount !== undefined) dbUpdates.m2Amount = updates.m2Amount;
+    if (updates.m3Amount !== undefined) dbUpdates.m3Amount = updates.m3Amount;
+    if (Object.keys(dbUpdates).length > 0) {
+      fetch(`/api/projects/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dbUpdates),
+      }).catch(console.error);
+    }
+
     setProjects((prev) => {
       const old = prev.find((p) => p.id === id);
       let updated = prev.map((p) => p.id === id ? { ...p, ...updates } : p);
@@ -212,11 +287,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         // ── ORPHANED CHARGEBACKS: When un-cancelling, remove chargeback (negative) entries ──
         if (old.phase === 'Cancelled' && newPhase !== 'Cancelled') {
-          setPayrollEntries((prevEntries) =>
-            prevEntries.filter(
-              (e) => !(e.projectId === id && e.amount < 0)
-            )
-          );
+          setPayrollEntries((prevEntries) => {
+            const toRemove = prevEntries.filter((e) => e.projectId === id && e.amount < 0);
+            if (toRemove.length > 0) deletePayrollEntriesFromDb(toRemove.map((e) => e.id));
+            return prevEntries.filter((e) => !(e.projectId === id && e.amount < 0));
+          });
         }
 
         // ── CHARGEBACK: When cancelled, create negative entries for any M1 already in payroll ──
@@ -245,6 +320,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               date: getM1PayDate(),
               notes: 'Chargeback — project cancelled',
             }));
+            // Persist chargebacks to DB
+            chargebacks.forEach((cb) => persistPayrollEntry(cb));
             return [...prevEntries, ...chargebacks];
           });
         }
@@ -325,7 +402,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
               });
             }
 
-            return [...prevEntries, ...newEntries.filter((e) => e.amount > 0)];
+            const validEntries = newEntries.filter((e) => e.amount > 0);
+            // Persist M1/M2 entries to DB
+            validEntries.forEach((entry) => persistPayrollEntry(entry));
+            return [...prevEntries, ...validEntries];
           });
         }
 
@@ -360,7 +440,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 notes: '',
               });
 
-              return [...prevEntries, ...newEntries.filter((e) => e.amount > 0)];
+              const validM3 = newEntries.filter((e) => e.amount > 0);
+              // Persist M3 entries to DB
+              validM3.forEach((entry) => persistPayrollEntry(entry));
+              return [...prevEntries, ...validM3];
             });
           }
         }
@@ -524,6 +607,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteInstaller = (name: string) => {
+    // Persist deletion to DB (cascading deletes handle pricing/products)
+    const instId = idMaps.installerNameToId[name];
+    if (instId) {
+      fetch(`/api/installers/${instId}`, { method: 'DELETE' }).catch(console.error);
+    }
+
     setInstallers((prev) => prev.filter((i) => i.name !== name));
     setInstallerPricingVersions((prev) => prev.filter((v) => v.installer !== name));
     setProductCatalogInstallerConfigs((prev) => {
@@ -572,6 +661,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Only add the project. Payroll entries are now auto-drafted when
     // milestone phases are reached (Acceptance → M1, Installed → M2).
     setProjects((prev) => [...prev, project]);
+
+    // Persist to DB
+    const installerId = idMaps.installerNameToId[project.installer];
+    const financerId = idMaps.financerNameToId[project.financer];
+    if (installerId && financerId) {
+      fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: project.customerName,
+          closerId: project.repId,
+          setterId: project.setterId || null,
+          soldDate: project.soldDate,
+          installerId,
+          financerId,
+          productType: project.productType,
+          kWSize: project.kWSize,
+          netPPW: project.netPPW,
+          phase: project.phase || 'New',
+          m1Amount: project.m1Amount || 0,
+          m2Amount: project.m2Amount || 0,
+          notes: project.notes || '',
+          installerPricingVersionId: project.pricingVersionId || null,
+          productId: project.solarTechProductId || project.installerProductId || null,
+          productPricingVersionId: project.pcPricingVersionId || null,
+          prepaidSubType: project.prepaidSubType || null,
+        }),
+      }).then((res) => res.json()).then((created) => {
+        // Update local state with the DB-assigned id
+        if (created.id && created.id !== project.id) {
+          setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, id: created.id } : p));
+        }
+      }).catch(console.error);
+    }
   };
 
   const markForPayroll = (entryIds: string[]) => {
@@ -579,6 +702,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPayrollEntries((prev) =>
       prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e))
     );
+    // Persist bulk status update
+    fetch('/api/payroll', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: entryIds, status: 'Pending' }),
+    }).catch(console.error);
   };
 
   return (
