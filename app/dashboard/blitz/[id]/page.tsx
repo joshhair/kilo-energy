@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
 import { useIsHydrated } from '../../../../lib/hooks';
 import { formatDate, formatCurrency } from '../../../../lib/utils';
-import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2 } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Link from 'next/link';
@@ -31,6 +31,11 @@ export default function BlitzDetailPage() {
 
   // Confirmation dialog
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+
+  // Loading states for async ops
+  const [saving, setSaving] = useState(false);
+  const [addingParticipant, setAddingParticipant] = useState(false);
+  const [addingCost, setAddingCost] = useState(false);
 
   // Cost form
   const [showAddCost, setShowAddCost] = useState(false);
@@ -87,27 +92,33 @@ export default function BlitzDetailPage() {
   }, [reps, blitz?.participants]);
 
   const handleSave = async () => {
-    await fetch(`/api/blitzes/${blitzId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm),
-    });
-    toast('Blitz updated');
-    setEditing(false);
-    loadBlitz();
+    setSaving(true);
+    try {
+      await fetch(`/api/blitzes/${blitzId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      toast('Blitz updated');
+      setEditing(false);
+      loadBlitz();
+    } finally { setSaving(false); }
   };
 
   const handleAddParticipant = async () => {
     if (!selectedRepId) return;
-    await fetch(`/api/blitzes/${blitzId}/participants`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: selectedRepId, joinStatus: 'approved' }),
-    });
-    toast('Participant added');
-    setShowAddParticipant(false);
-    setSelectedRepId('');
-    loadBlitz();
+    setAddingParticipant(true);
+    try {
+      await fetch(`/api/blitzes/${blitzId}/participants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedRepId, joinStatus: 'approved' }),
+      });
+      toast('Participant added');
+      setShowAddParticipant(false);
+      setSelectedRepId('');
+      loadBlitz();
+    } finally { setAddingParticipant(false); }
   };
 
   const handleRemoveParticipant = async (userId: string) => {
@@ -127,16 +138,19 @@ export default function BlitzDetailPage() {
 
   const handleAddCost = async () => {
     if (!costAmount || parseFloat(costAmount) <= 0) return;
-    await fetch(`/api/blitzes/${blitzId}/costs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category: costCategory, amount: parseFloat(costAmount), description: costDesc.trim(), date: costDate }),
-    });
-    toast('Cost added');
-    setCostAmount('');
-    setCostDesc('');
-    setShowAddCost(false);
-    loadBlitz();
+    setAddingCost(true);
+    try {
+      await fetch(`/api/blitzes/${blitzId}/costs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: costCategory, amount: parseFloat(costAmount), description: costDesc.trim(), date: costDate }),
+      });
+      toast('Cost added');
+      setCostAmount('');
+      setCostDesc('');
+      setShowAddCost(false);
+      loadBlitz();
+    } finally { setAddingCost(false); }
   };
 
   const handleDeleteCost = async (costId: string) => {
@@ -190,7 +204,7 @@ export default function BlitzDetailPage() {
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
-                  <button onClick={handleSave} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"><Save className="w-4 h-4" /> Save</button>
+                  <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save'}</button>
                   <button onClick={() => setEditing(false)} className="px-3 py-2 text-sm text-zinc-400 hover:text-white"><X className="w-4 h-4" /></button>
                 </>
               ) : (
@@ -260,8 +274,8 @@ export default function BlitzDetailPage() {
                   {isAdmin && <th className="text-right px-4 py-3">Actions</th>}
                 </tr></thead>
                 <tbody>
-                  {blitz.participants.map((p: any) => (
-                    <tr key={p.id} className="border-b border-zinc-800/50 last:border-0">
+                  {blitz.participants.map((p: any, idx: number) => (
+                    <tr key={p.id} className={`border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 transition-colors ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
                       <td className="px-4 py-3 text-white font-medium">{p.user.firstName} {p.user.lastName}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.joinStatus === 'approved' ? 'bg-emerald-900/30 text-emerald-300' : p.joinStatus === 'pending' ? 'bg-amber-900/30 text-amber-300' : 'bg-red-900/30 text-red-300'}`}>
@@ -303,7 +317,7 @@ export default function BlitzDetailPage() {
                 </select>
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setShowAddParticipant(false)} className="px-3 py-2 text-sm text-zinc-400">Cancel</button>
-                  <button onClick={handleAddParticipant} disabled={!selectedRepId} className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-40 transition-colors">Add</button>
+                  <button onClick={handleAddParticipant} disabled={!selectedRepId || addingParticipant} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-40 transition-colors">{addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingParticipant ? 'Adding...' : 'Add'}</button>
                 </div>
               </div>
             </div>
@@ -328,8 +342,8 @@ export default function BlitzDetailPage() {
                   {isAdmin && <th className="text-right px-4 py-3">Payout</th>}
                 </tr></thead>
                 <tbody>
-                  {blitz.projects.map((p: any) => (
-                    <tr key={p.id} className="border-b border-zinc-800/50 last:border-0">
+                  {blitz.projects.map((p: any, idx: number) => (
+                    <tr key={p.id} className={`border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 transition-colors ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
                       <td className="px-4 py-3 text-white font-medium">{p.customerName}</td>
                       <td className="px-4 py-3 text-zinc-400">{p.closer?.firstName} {p.closer?.lastName}</td>
                       <td className="px-4 py-3"><span className="text-xs font-medium text-zinc-300">{p.phase}</span></td>
@@ -364,7 +378,7 @@ export default function BlitzDetailPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setShowAddCost(false)} className="px-3 py-1.5 text-sm text-zinc-400">Cancel</button>
-                <button onClick={handleAddCost} className="px-4 py-1.5 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors">Add Cost</button>
+                <button onClick={handleAddCost} disabled={addingCost} className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">{addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingCost ? 'Adding...' : 'Add Cost'}</button>
               </div>
             </div>
           )}
@@ -382,8 +396,8 @@ export default function BlitzDetailPage() {
                   <th className="text-right px-4 py-3">Actions</th>
                 </tr></thead>
                 <tbody>
-                  {blitz.costs.map((c: any) => (
-                    <tr key={c.id} className="border-b border-zinc-800/50 last:border-0">
+                  {blitz.costs.map((c: any, idx: number) => (
+                    <tr key={c.id} className={`border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 transition-colors ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
                       <td className="px-4 py-3"><span className="text-xs font-medium bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full">{c.category}</span></td>
                       <td className="px-4 py-3 text-zinc-400">{c.description || '—'}</td>
                       <td className="px-4 py-3 text-zinc-400">{formatDate(c.date)}</td>
@@ -424,7 +438,10 @@ export default function BlitzDetailPage() {
             </div>
             <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
               <p className="text-xs text-zinc-500 mb-1">ROI</p>
-              <p className={`text-2xl font-bold ${roi >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{roi.toFixed(0)}%</p>
+              <p className={`text-2xl font-bold flex items-center gap-1.5 ${roi > 100 ? 'text-emerald-400' : roi >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                {roi.toFixed(0)}%
+                {roi >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+              </p>
             </div>
           </div>
 
@@ -435,11 +452,12 @@ export default function BlitzDetailPage() {
               <div className="space-y-2">
                 {Object.entries(costsByCategory).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
                   const pct = totalCosts > 0 ? (amt / totalCosts) * 100 : 0;
+                  const barColors: Record<string, string> = { housing: 'bg-blue-500', travel: 'bg-purple-500', gas: 'bg-amber-500', meals: 'bg-emerald-500', incentives: 'bg-pink-500', swag: 'bg-orange-500', other: 'bg-zinc-500' };
                   return (
                     <div key={cat} className="flex items-center gap-3">
                       <span className="text-xs text-zinc-400 w-20 capitalize">{cat}</span>
                       <div className="flex-1 bg-zinc-800 rounded-full h-2 overflow-hidden">
-                        <div className="bg-blue-500 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        <div className={`${barColors[cat] ?? 'bg-blue-500'} h-full rounded-full transition-all`} style={{ width: `${pct}%` }} />
                       </div>
                       <span className="text-sm font-medium text-white w-20 text-right">{formatCurrency(amt)}</span>
                       <span className="text-xs text-zinc-500 w-12 text-right">{pct.toFixed(0)}%</span>

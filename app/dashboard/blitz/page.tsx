@@ -62,7 +62,7 @@ function BlitzCard({ blitz }: { blitz: BlitzData }) {
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>
-      <div className="group relative bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-all hover:shadow-lg hover:shadow-black/20 cursor-pointer">
+      <div className="group relative bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 overflow-hidden hover:border-zinc-600 hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer">
         {/* Status badge */}
         <div className="flex items-center justify-between mb-3">
           <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
@@ -106,6 +106,9 @@ function BlitzCard({ blitz }: { blitz: BlitzData }) {
         <div className="mt-3 text-xs text-zinc-500">
           Led by <span className="text-zinc-300">{blitz.owner.firstName} {blitz.owner.lastName}</span>
         </div>
+
+        {/* Hover glow bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
     </Link>
   );
@@ -119,9 +122,11 @@ function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void;
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [touched, setTouched] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async () => {
+    setTouched(true);
     if (!name.trim() || !startDate || !endDate) return;
     setSaving(true);
     try {
@@ -157,7 +162,8 @@ function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void;
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-zinc-400 mb-1">Blitz Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Hunter's April 2026 Blitz" />
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-zinc-700'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
+            {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Blitz name is required</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-zinc-400 mb-1">Location / Market</label>
@@ -170,11 +176,13 @@ function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void;
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
           </div>
           <div>
@@ -341,12 +349,25 @@ export default function BlitzPage() {
 
           {/* Blitz grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-zinc-500">Loading...</div>
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <div className="relative w-10 h-10">
+                <div className="absolute inset-0 rounded-full border-2 border-zinc-700/40" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
+              </div>
+              <p className="text-sm text-zinc-500 font-medium">Loading blitzes...</p>
+            </div>
           ) : filteredBlitzes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
-              <Tent className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-lg font-medium">No blitzes found</p>
-              <p className="text-sm mt-1">Create your first blitz to get started</p>
+            <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
+              <Tent className="w-16 h-16 text-zinc-600" />
+              <div className="text-center">
+                <p className="text-lg font-semibold text-white">No blitzes found</p>
+                <p className="text-sm text-zinc-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
+              </div>
+              {isAdmin && !search && statusFilter === 'all' && (
+                <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
+                  Create a Blitz
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
