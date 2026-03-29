@@ -559,7 +559,7 @@ export default function CalculatorPage() {
         <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">Run numbers before you close — know your earning before you pitch.</p>
       </div>
 
-      <div className="card-surface rounded-2xl p-6 space-y-5 mb-6 overflow-visible">
+      <div className="card-surface rounded-2xl p-6 space-y-5 mb-6 overflow-visible relative z-20">
         {/* ── Quick Fill ──────────────────────────────────────────────────── */}
         {recentDeals.length > 0 && (
           <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-3">
