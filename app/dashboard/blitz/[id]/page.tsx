@@ -357,13 +357,39 @@ export default function BlitzDetailPage() {
               <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Total kW</p>
               <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
             </div>
-            {isAdmin && (
+            {isAdmin ? (
               <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
                 <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Net Profit</p>
                 <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(netProfit)}</p>
               </div>
+            ) : (
+              <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+                <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Earnings</p>
+                <p className="text-2xl font-bold text-emerald-400">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</p>
+              </div>
             )}
           </div>
+
+          {/* Rep personal blitz summary */}
+          {!isAdmin && currentRepId && visibleProjects.length > 0 && (
+            <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-blue-500/60 rounded-xl p-4">
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Your Blitz Summary</p>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-white">{visibleProjects.length}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Deal{visibleProjects.length !== 1 ? 's' : ''} Closed</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">kW Sold</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-400">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Projected Pay</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Timeline progress bar */}
           {(blitz.status === 'active' || blitz.status === 'completed') && (
