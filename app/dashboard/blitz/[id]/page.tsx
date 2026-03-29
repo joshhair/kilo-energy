@@ -5,12 +5,19 @@ import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
 import { useIsHydrated } from '../../../../lib/hooks';
 import { formatDate, formatCurrency } from '../../../../lib/utils';
-import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2, FolderKanban } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Link from 'next/link';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
+
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; border: string }> = {
+  upcoming:  { bg: 'bg-blue-900/30',    text: 'text-blue-300',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
+  active:    { bg: 'bg-emerald-900/30',  text: 'text-emerald-300', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
+  completed: { bg: 'bg-zinc-800/50',     text: 'text-zinc-400',    dot: 'bg-zinc-500',    border: 'border-zinc-600/30' },
+  cancelled: { bg: 'bg-red-900/30',      text: 'text-red-300',     dot: 'bg-red-400',     border: 'border-red-700/30' },
+};
 
 type TabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 
@@ -202,7 +209,15 @@ export default function BlitzDetailPage() {
             {editing ? (
               <input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className="text-2xl font-bold bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
             ) : (
-              <h1 className="text-2xl font-bold text-white">{blitz.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-white">{blitz.name}</h1>
+                {(() => { const s = STATUS_STYLES[blitz.status] ?? STATUS_STYLES.upcoming; return (
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${blitz.status === 'active' ? 'animate-pulse' : ''}`} />
+                    {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
+                  </span>
+                ); })()}
+              </div>
             )}
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-zinc-400">
               {blitz.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{editing ? <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-sm text-white w-40" /> : blitz.location}</span>}
@@ -281,7 +296,18 @@ export default function BlitzDetailPage() {
             </div>
           )}
           {blitz.participants?.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">No participants yet</div>
+            <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
+              <Users className="w-12 h-12 text-zinc-600" />
+              <div className="text-center">
+                <p className="text-base font-semibold text-white">No participants yet</p>
+                <p className="text-sm text-zinc-500 mt-1">Add reps to this blitz to start tracking participation</p>
+              </div>
+              {isAdmin && (
+                <button onClick={() => setShowAddParticipant(true)} className="mt-1 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
+                  <span className="flex items-center gap-1.5"><UserPlus className="w-4 h-4" /> Add Rep</span>
+                </button>
+              )}
+            </div>
           ) : (
             <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
@@ -347,7 +373,13 @@ export default function BlitzDetailPage() {
       {tab === 'deals' && (
         <div className="space-y-3">
           {blitz.projects?.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">No deals attributed to this blitz yet</div>
+            <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
+              <FolderKanban className="w-12 h-12 text-zinc-600" />
+              <div className="text-center">
+                <p className="text-base font-semibold text-white">No deals yet</p>
+                <p className="text-sm text-zinc-500 mt-1">Deals attributed to this blitz will appear here</p>
+              </div>
+            </div>
           ) : (
             <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
@@ -402,7 +434,16 @@ export default function BlitzDetailPage() {
           )}
 
           {blitz.costs?.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">No costs recorded</div>
+            <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
+              <DollarSign className="w-12 h-12 text-zinc-600" />
+              <div className="text-center">
+                <p className="text-base font-semibold text-white">No costs recorded</p>
+                <p className="text-sm text-zinc-500 mt-1">Track housing, travel, meals, and other blitz expenses</p>
+              </div>
+              <button onClick={() => setShowAddCost(true)} className="mt-1 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
+                <span className="flex items-center gap-1.5"><Plus className="w-4 h-4" /> Add Cost</span>
+              </button>
+            </div>
           ) : (
             <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
