@@ -9,6 +9,7 @@ type Role = 'rep' | 'admin' | null;
 export interface ManagedItem { name: string; active: boolean; }
 
 interface AppContextType {
+  dbReady: boolean;
   currentRole: Role;
   currentRepId: string | null;
   currentRepName: string | null;
@@ -721,6 +722,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Persist to DB
     const installerId = idMaps.installerNameToId[project.installer];
     const financerId = idMaps.financerNameToId[project.financer];
+    if (!installerId || !financerId) {
+      console.error('[addDeal] Cannot persist: missing ID mapping', { installer: project.installer, financer: project.financer, installerId, financerId });
+    }
     if (installerId && financerId) {
       fetch('/api/projects', {
         method: 'POST',
@@ -769,6 +773,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider
       value={{
+        dbReady,
         currentRole,
         currentRepId,
         currentRepName,

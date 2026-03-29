@@ -495,7 +495,7 @@ function DealEntryPage({ onStart, projects }: { onStart: () => void; projects: {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function NewDealPage() {
-  const { currentRole, currentRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions } = useApp();
+  const { dbReady, currentRole, currentRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions } = useApp();
   const { toast } = useToast();
   const router = useRouter();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
@@ -755,6 +755,10 @@ export default function NewDealPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    if (!dbReady) {
+      toast('Data is still loading, please wait...', 'error');
+      return;
+    }
 
     const fieldsToValidate: string[] = [
       'customerName', 'soldDate', 'installer', ...(form.productType === 'Cash' ? [] : ['financer']), 'productType', 'kWSize', 'netPPW',
