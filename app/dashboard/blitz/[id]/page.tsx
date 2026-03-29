@@ -214,11 +214,57 @@ export default function BlitzDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Back to Blitzes
         </Link>
 
-        <div className="flex items-start justify-between">
-          <div>
-            {editing ? (
-              <input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className="text-2xl font-bold bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
-            ) : (
+        {editing ? (
+          /* ── Full edit form ── */
+          <div className="bg-zinc-900/80 border border-zinc-700 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Edit Blitz</h2>
+              <div className="flex items-center gap-2">
+                <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs font-medium text-white">
+                  <option value="upcoming">Upcoming</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1">Blitz Name</label>
+              <input autoFocus value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" onKeyDown={(e) => { if (e.key === 'Escape') setEditing(false); }} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Location</label>
+                <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Housing / Address</label>
+                <input value={editForm.housing} onChange={(e) => setEditForm((f) => ({ ...f, housing: e.target.value }))} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Start Date</label>
+                <input type="date" value={editForm.startDate} onChange={(e) => setEditForm((f) => ({ ...f, startDate: e.target.value }))} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">End Date</label>
+                <input type="date" value={editForm.endDate} onChange={(e) => setEditForm((f) => ({ ...f, endDate: e.target.value }))} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1">Notes</label>
+              <textarea value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setEditing(false)} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}</button>
+            </div>
+          </div>
+        ) : (
+          /* ── Read-only header ── */
+          <div className="flex items-start justify-between">
+            <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-white">{blitz.name}</h1>
                 {(() => { const s = STATUS_STYLES[blitz.status] ?? STATUS_STYLES.upcoming; return (
@@ -228,33 +274,17 @@ export default function BlitzDetailPage() {
                   </span>
                 ); })()}
               </div>
+              <div className="flex flex-wrap gap-3 mt-2 text-sm text-zinc-400">
+                {blitz.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>}
+                <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{formatDate(blitz.startDate)} — {formatDate(blitz.endDate)}</span>
+                {blitz.housing && <span className="flex items-center gap-1.5"><Home className="w-3.5 h-3.5" />{blitz.housing}</span>}
+              </div>
+            </div>
+            {isAdmin && (
+              <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-colors shrink-0"><Pencil className="w-3.5 h-3.5" /> Edit</button>
             )}
-            <div className="flex flex-wrap gap-3 mt-2 text-sm text-zinc-400">
-              {blitz.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{editing ? <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-sm text-white w-40" /> : blitz.location}</span>}
-              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{formatDate(blitz.startDate)} — {formatDate(blitz.endDate)}</span>
-              {blitz.housing && <span className="flex items-center gap-1.5"><Home className="w-3.5 h-3.5" />{blitz.housing}</span>}
-            </div>
           </div>
-
-          {isAdmin && (
-            <div className="flex items-center gap-2">
-              {editing ? (
-                <>
-                  <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
-                    <option value="upcoming">Upcoming</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                  <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save'}</button>
-                  <button onClick={() => setEditing(false)} className="px-3 py-2 text-sm text-zinc-400 hover:text-white"><X className="w-4 h-4" /></button>
-                </>
-              ) : (
-                <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Tabs */}
