@@ -753,6 +753,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           productId: project.solarTechProductId || project.installerProductId || null,
           productPricingVersionId: project.pcPricingVersionId || null,
           prepaidSubType: project.prepaidSubType || null,
+          leadSource: project.leadSource || null,
+          blitzId: project.blitzId || null,
         }),
       }).then((res) => res.json()).then((created) => {
         // Update local state with the DB-assigned id

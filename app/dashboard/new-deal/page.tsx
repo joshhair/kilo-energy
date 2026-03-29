@@ -517,6 +517,8 @@ export default function NewDealPage() {
     pcFamily: '',
     installerProductId: '',
     prepaidSubType: '',
+    leadSource: '',
+    blitzId: '',
   });
 
   const [view, setView] = useState<'entry' | 'form'>('entry');
@@ -529,6 +531,14 @@ export default function NewDealPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const isDirty = useRef(false);
+
+  // Blitz list for lead source attribution
+  const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string }>>([]);
+  useEffect(() => {
+    fetch('/api/blitzes').then((r) => r.json()).then((data) => {
+      setAvailableBlitzes((data ?? []).filter((b: any) => b.status === 'upcoming' || b.status === 'active' || b.status === 'completed'));
+    }).catch(() => {});
+  }, []);
 
   // ── Multi-step navigation ──────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(0);
@@ -551,6 +561,7 @@ export default function NewDealPage() {
     form.productType !== '' || form.kWSize !== '' || form.netPPW !== '' ||
     form.notes.trim() !== '' || form.setterId !== '' || form.solarTechFamily !== '' ||
     form.solarTechProductId !== '' || form.pcFamily !== '' || form.installerProductId !== '' || form.prepaidSubType !== '' ||
+    form.leadSource !== '' || form.blitzId !== '' ||
     (currentRole === 'admin' && form.repId !== '');
 
   useEffect(() => {
@@ -812,6 +823,8 @@ export default function NewDealPage() {
       pcPricingVersionId: isPcInstaller && hasPcProducts && activeVersionId ? activeVersionId : undefined,
       pricingVersionId: !isPcInstaller && form.installer !== 'SolarTech' && activeVersionId ? activeVersionId : undefined,
       prepaidSubType: form.prepaidSubType || undefined,
+      leadSource: form.leadSource || undefined,
+      blitzId: form.leadSource === 'blitz' && form.blitzId ? form.blitzId : undefined,
     };
 
     isDirty.current = false;
@@ -1466,7 +1479,7 @@ export default function NewDealPage() {
                 }}
                 className={inputCls('') + ' min-h-[80px] max-h-[200px] overflow-y-auto resize-none'}
               />
-              <div className="flex items-center justify-between mt-1">
+              <div className="flex items-center justify-between mt-1 mb-4">
                 <p className="text-xs italic text-slate-600">Internal notes only — not visible to customer</p>
                 <p className={`text-xs transition-colors duration-200 ${
                   form.notes.length >= 500 ? 'text-red-400' :
@@ -1475,6 +1488,47 @@ export default function NewDealPage() {
                 }`}>
                   {form.notes.length}/500
                 </p>
+              </div>
+            </div>
+
+            {/* Lead Source + Blitz Attribution */}
+            <div className="transition-all duration-200 pt-2 border-t border-slate-800/60">
+              <label htmlFor="field-leadSource" className={labelCls}>
+                Lead Source <span className="text-slate-600 font-normal normal-case">(optional)</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select
+                  id="field-leadSource"
+                  value={form.leadSource}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    update('leadSource', val);
+                    if (val !== 'blitz') update('blitzId', '');
+                  }}
+                  className={inputCls('')}
+                >
+                  <option value="">— Select —</option>
+                  <option value="organic">Organic</option>
+                  <option value="referral">Referral</option>
+                  <option value="blitz">Blitz</option>
+                  <option value="door_knock">Door Knock</option>
+                  <option value="web">Web Lead</option>
+                  <option value="other">Other</option>
+                </select>
+
+                {form.leadSource === 'blitz' && (
+                  <select
+                    id="field-blitzId"
+                    value={form.blitzId}
+                    onChange={(e) => update('blitzId', e.target.value)}
+                    className={inputCls('')}
+                  >
+                    <option value="">— Select Blitz —</option>
+                    {availableBlitzes.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           </div>

@@ -176,6 +176,9 @@ export interface Project {
   prepaidSubType?: string;
   // M3: remaining commission paid at PTO for installers that don't pay 100% at install
   m3Amount?: number;
+  // Lead source + blitz attribution
+  leadSource?: string;
+  blitzId?: string;
 }
 
 export interface PayrollEntry {

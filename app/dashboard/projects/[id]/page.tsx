@@ -728,6 +728,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <p className="text-white">{project.setterName}</p>
             </div>
           )}
+          {project.leadSource && (
+            <div>
+              <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Lead Source</p>
+              <p className="text-white capitalize">{project.leadSource === 'door_knock' ? 'Door Knock' : project.leadSource}</p>
+            </div>
+          )}
         </div>
 
         {currentRole === 'admin' && (
