@@ -48,7 +48,7 @@ type TabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 export default function BlitzDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentRole, reps } = useApp();
+  const { currentRole, currentRepId, reps } = useApp();
   const hydrated = useIsHydrated();
   const isAdmin = currentRole === 'admin';
   const { toast } = useToast();
@@ -92,11 +92,24 @@ export default function BlitzDetailPage() {
 
   // Computed metrics
   const approvedParticipants = blitz?.participants?.filter((p: any) => p.joinStatus === 'approved') ?? [];
-  const totalDeals = blitz?.projects?.length ?? 0;
-  const totalKW = blitz?.projects?.reduce((s: number, p: any) => s + p.kWSize, 0) ?? 0;
+  // Owner check — blitz leaders get participant management powers
+  const isOwner = !isAdmin && currentRepId != null && blitz?.owner?.id === currentRepId;
+  const canManage = isAdmin || isOwner;
+
+  // For reps (non-admin, non-owner), filter deals to only their own
+  const visibleProjects = useMemo(() => {
+    if (!blitz?.projects) return [];
+    if (isAdmin || isOwner) return blitz.projects;
+    return blitz.projects.filter((p: any) => p.closer?.id === currentRepId);
+  }, [blitz?.projects, isAdmin, isOwner, currentRepId]);
+
+  const totalDeals = visibleProjects.length;
+  const totalKW = visibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0);
   const totalCosts = blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0;
 
-  // Profitability (admin only)
+  // Profitability (admin only — uses ALL projects, not filtered)
+  const allProjectsCount = blitz?.projects?.length ?? 0;
+  const allProjectsKW = blitz?.projects?.reduce((s: number, p: any) => s + p.kWSize, 0) ?? 0;
   const projectedMargin = useMemo(() => {
     if (!blitz?.projects) return 0;
     return blitz.projects.reduce((s: number, p: any) => s + (p.m1Amount + p.m2Amount), 0);
@@ -434,7 +447,7 @@ export default function BlitzDetailPage() {
       {/* Participants */}
       {tab === 'participants' && (
         <div className="space-y-4">
-          {isAdmin && (
+          {canManage && (
             <div className="flex justify-end">
               <button onClick={() => setShowAddParticipant(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"><UserPlus className="w-4 h-4" /> Add Rep</button>
             </div>
@@ -446,7 +459,7 @@ export default function BlitzDetailPage() {
                 <p className="text-base font-semibold text-white">No participants yet</p>
                 <p className="text-sm text-zinc-500 mt-1">Add reps to this blitz to start tracking participation</p>
               </div>
-              {isAdmin && (
+              {canManage && (
                 <button onClick={() => setShowAddParticipant(true)} className="mt-1 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
                   <span className="flex items-center gap-1.5"><UserPlus className="w-4 h-4" /> Add Rep</span>
                 </button>
@@ -461,7 +474,7 @@ export default function BlitzDetailPage() {
                   <th className="text-right px-4 py-3">Deals</th>
                   <th className="text-right px-4 py-3">kW</th>
                   <th className="text-left px-4 py-3">Attendance</th>
-                  {isAdmin && <th className="text-right px-4 py-3">Actions</th>}
+                  {canManage && <th className="text-right px-4 py-3">Actions</th>}
                 </tr></thead>
                 <tbody>
                   {blitz.participants.map((p: any, idx: number) => {
@@ -478,7 +491,7 @@ export default function BlitzDetailPage() {
                       <td className="px-4 py-3 text-right text-zinc-300 tabular-nums">{repDeals.length || <span className="text-zinc-600">—</span>}</td>
                       <td className="px-4 py-3 text-right text-zinc-300 tabular-nums">{repKW > 0 ? repKW.toFixed(1) : <span className="text-zinc-600">—</span>}</td>
                       <td className="px-4 py-3">
-                        {isAdmin ? (
+                        {canManage ? (
                           <select value={p.attendanceStatus ?? ''} onChange={(e) => handleUpdateAttendance(p.user.id, e.target.value || null)} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
                             <option value="">—</option>
                             <option value="attended">Attended</option>
@@ -489,9 +502,16 @@ export default function BlitzDetailPage() {
                           <span className="text-xs text-zinc-400">{p.attendanceStatus ?? '—'}</span>
                         )}
                       </td>
-                      {isAdmin && (
+                      {canManage && (
                         <td className="px-4 py-3 text-right">
-                          <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will remove them from the blitz. They can be re-added later.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-zinc-600 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          {p.joinStatus === 'pending' ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'approved' }) }).then(() => { toast('Approved'); loadBlitz(); }); }} className="px-2 py-1 text-[11px] font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-500 transition-colors">Approve</button>
+                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'declined' }) }).then(() => { toast('Declined'); loadBlitz(); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 transition-colors">Decline</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will remove them from the blitz. They can be re-added later.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-zinc-600 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          )}
                         </td>
                       )}
                     </tr>
@@ -524,12 +544,12 @@ export default function BlitzDetailPage() {
       {/* Deals */}
       {tab === 'deals' && (
         <div className="space-y-3">
-          {blitz.projects?.length === 0 ? (
+          {visibleProjects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
               <FolderKanban className="w-12 h-12 text-zinc-600" />
               <div className="text-center">
                 <p className="text-base font-semibold text-white">No deals yet</p>
-                <p className="text-sm text-zinc-500 mt-1">Deals attributed to this blitz will appear here</p>
+                <p className="text-sm text-zinc-500 mt-1">{isAdmin || isOwner ? 'Deals attributed to this blitz will appear here' : 'Your deals attributed to this blitz will appear here'}</p>
               </div>
             </div>
           ) : (
@@ -544,7 +564,7 @@ export default function BlitzDetailPage() {
                   {isAdmin && <th className="text-right px-4 py-3">Payout</th>}
                 </tr></thead>
                 <tbody>
-                  {blitz.projects.map((p: any, idx: number) => (
+                  {visibleProjects.map((p: any, idx: number) => (
                     <tr key={p.id} className={`border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 transition-colors ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
                       <td className="px-4 py-3">
                         <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-blue-300 transition-colors">{p.customerName}</Link>
@@ -561,7 +581,7 @@ export default function BlitzDetailPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-zinc-700 bg-zinc-800/30">
-                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-zinc-400">{blitz.projects.length} deal{blitz.projects.length !== 1 ? 's' : ''}</td>
+                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-zinc-400">{visibleProjects.length} deal{visibleProjects.length !== 1 ? 's' : ''}</td>
                     <td className="px-4 py-3 text-right text-sm font-bold text-white">{totalKW.toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-zinc-500">—</td>
                     {isAdmin && <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatCurrency(projectedMargin)}</td>}
