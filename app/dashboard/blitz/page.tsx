@@ -84,7 +84,8 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData
   const totalDeals = blitz.projects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;
-  const canJoin = !isAdmin && !myParticipation && (blitz.status === 'upcoming' || blitz.status === 'active');
+  const isOwner = currentUserId === blitz.owner.id;
+  const canJoin = !isAdmin && !isOwner && !myParticipation && (blitz.status === 'upcoming' || blitz.status === 'active');
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>
@@ -138,6 +139,11 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData
           <div className="text-xs text-zinc-500">
             Led by <span className="text-zinc-300">{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
+          {isOwner && (
+            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-blue-400 border border-blue-500/20">
+              <Tent className="w-3 h-3" /> Leading
+            </span>
+          )}
           {canJoin && (
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(blitz.id); }}
@@ -146,7 +152,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData
               <UserPlus className="w-3 h-3" /> Join
             </button>
           )}
-          {myParticipation && (
+          {!isOwner && myParticipation && (
             <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
               <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : 'Pending'}
             </span>

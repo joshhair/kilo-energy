@@ -33,6 +33,10 @@ export async function POST(req: NextRequest) {
       status: body.status || 'upcoming',
       createdById: body.createdById,
       ownerId: body.ownerId,
+      // Auto-add the owner as an approved participant
+      participants: {
+        create: { userId: body.ownerId, joinStatus: 'approved' },
+      },
     },
     include: {
       createdBy: true,

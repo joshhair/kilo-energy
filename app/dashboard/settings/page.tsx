@@ -10,7 +10,7 @@ import {
   Layers, Building2, Landmark, BookOpen, Shield, CreditCard, Download, FileSpreadsheet,
   Plus, Pencil, Check, X, EyeOff, Eye, Trash2, Settings, AlertTriangle, Search,
   ChevronRight, History, GitBranch, Copy, ChevronDown, ChevronUp, Sliders, DollarSign,
-  UserPlus, ListChecks, CheckSquare, Square,
+  UserPlus, ListChecks, CheckSquare, Square, Tent,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -19,6 +19,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 type SettingsSection =
   | 'trainers'
   | 'installers' | 'financers' | 'baselines'
+  | 'blitz-permissions'
   | 'export'
   | 'users';
 
@@ -30,6 +31,7 @@ const NAV: NavGroup[] = [
     group: 'Team',
     items: [
       { id: 'trainers', label: 'Trainer Overrides', icon: Layers },
+      { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
     ],
   },
   {
@@ -51,6 +53,98 @@ const NAV: NavGroup[] = [
 
 // Flat ordered list used for ref indexing
 const ALL_NAV_ITEMS = NAV.flatMap(g => g.items);
+
+// ─── Blitz Permissions Component ──────────────────────────────────────────────
+
+function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: string; repType: string }> }) {
+  const { toast } = useToast();
+  const [permissions, setPermissions] = useState<Record<string, { canRequestBlitz: boolean; canCreateBlitz: boolean }>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/data').then((r) => r.json()).then((data) => {
+      // The /api/data response has reps but no permission fields — fetch users directly
+      // For now use a simple endpoint
+      fetch('/api/blitzes').then(() => {});  // warm up
+    });
+    // Fetch permissions from users
+    Promise.all(
+      reps.map((r) =>
+        fetch(`/api/users/${r.id}`).then((res) => res.ok ? res.json() : null).catch(() => null)
+      )
+    ).then((results) => {
+      const perms: Record<string, { canRequestBlitz: boolean; canCreateBlitz: boolean }> = {};
+      results.forEach((u, i) => {
+        if (u) perms[reps[i].id] = { canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false };
+        else perms[reps[i].id] = { canRequestBlitz: false, canCreateBlitz: false };
+      });
+      setPermissions(perms);
+      setLoading(false);
+    });
+  }, [reps]);
+
+  const togglePermission = async (repId: string, field: 'canRequestBlitz' | 'canCreateBlitz', value: boolean) => {
+    setPermissions((prev) => ({ ...prev, [repId]: { ...prev[repId], [field]: value } }));
+    await fetch(`/api/users/${repId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value }),
+    });
+    toast(`Permission updated`);
+  };
+
+  if (loading) return <div className="text-zinc-500 text-sm py-8 text-center">Loading permissions...</div>;
+
+  return (
+    <div key="blitz-permissions" className="animate-tab-enter max-w-xl">
+      <h2 className="text-lg font-bold text-white mb-1">Blitz Permissions</h2>
+      <p className="text-sm text-zinc-500 mb-5">Control which reps can request or create blitzes.</p>
+
+      <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800 text-xs text-zinc-500 uppercase tracking-wider">
+              <th className="text-left px-4 py-3">Rep</th>
+              <th className="text-center px-4 py-3">Can Request</th>
+              <th className="text-center px-4 py-3">Can Create</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reps.map((rep, idx) => {
+              const perms = permissions[rep.id] ?? { canRequestBlitz: false, canCreateBlitz: false };
+              return (
+                <tr key={rep.id} className={`border-b border-zinc-800/50 last:border-0 ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
+                  <td className="px-4 py-3 text-white font-medium">{rep.name}</td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => togglePermission(rep.id, 'canRequestBlitz', !perms.canRequestBlitz)}
+                      className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canRequestBlitz ? 'bg-blue-600' : 'bg-zinc-700'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canRequestBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => togglePermission(rep.id, 'canCreateBlitz', !perms.canCreateBlitz)}
+                      className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canCreateBlitz ? 'bg-emerald-600' : 'bg-zinc-700'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canCreateBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 text-xs text-zinc-600 space-y-1">
+        <p><strong className="text-zinc-400">Can Request:</strong> Rep can submit blitz requests for admin approval</p>
+        <p><strong className="text-zinc-400">Can Create:</strong> Rep can create and manage blitzes directly</p>
+      </div>
+    </div>
+  );
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -83,7 +177,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['trainers', 'installers', 'financers', 'baselines', 'export', 'users'];
+  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'installers', 'financers', 'baselines', 'export', 'users'];
   const paramSection = searchParams.get('section') as SettingsSection | null;
   const initialSection: SettingsSection = paramSection && validSections.includes(paramSection) ? paramSection : 'trainers';
 
@@ -998,6 +1092,11 @@ function SettingsPageInner() {
               );
             })}
           </div>
+        )}
+
+        {/* ── Blitz Permissions ──────────────────────────────────────────────── */}
+        {section === 'blitz-permissions' && (
+          <BlitzPermissionsSection reps={reps} />
         )}
 
         {/* ── Installers ───────────────────────────────────────────────────────── */}

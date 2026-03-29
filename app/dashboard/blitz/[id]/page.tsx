@@ -58,7 +58,7 @@ export default function BlitzDetailPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>('overview');
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '' });
+  const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '', ownerId: '' });
 
   // Confirmation dialog
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
@@ -83,7 +83,7 @@ export default function BlitzDetailPage() {
     fetch(`/api/blitzes/${blitzId}`).then((r) => r.json()).then((data) => {
       if (data.error) { router.push('/dashboard/blitz'); return; }
       setBlitz(data);
-      setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status });
+      setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
       setLoading(false);
     }).catch(() => { setLoading(false); });
   };
@@ -279,9 +279,17 @@ export default function BlitzDetailPage() {
                 <input type="date" value={editForm.endDate} onChange={(e) => setEditForm((f) => ({ ...f, endDate: e.target.value }))} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
               </div>
             </div>
-            <div>
-              <label className="block text-xs text-zinc-500 mb-1">Notes</label>
-              <textarea value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Blitz Leader</label>
+                <select value={editForm.ownerId} onChange={(e) => setEditForm((f) => ({ ...f, ownerId: e.target.value }))} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                  {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Notes</label>
+                <textarea value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
+              </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => setEditing(false)} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
