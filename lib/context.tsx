@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
 import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTIVES, INSTALLERS, FINANCERS, Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, REPS, Rep, NON_SOLARTECH_BASELINES, SOLARTECH_PRODUCTS, InstallerBaseline, SolarTechProduct, INSTALLER_PRICING_VERSIONS, InstallerPricingVersion, InstallerRates, PRODUCT_CATALOG_INSTALLER_CONFIGS, PRODUCT_CATALOG_PRODUCTS, ProductCatalogInstallerConfig, ProductCatalogProduct, PREPAID_OPTIONS, Phase, PRODUCT_CATALOG_PRICING_VERSIONS, ProductCatalogPricingVersion, ProductCatalogTier, INSTALLER_PAY_CONFIGS, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
 import { getM1PayDate, getM2PayDate } from './utils';
 
@@ -107,6 +107,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     'SolarTech': [...PREPAID_OPTIONS],
   });
   const [installerPayConfigs, setInstallerPayConfigs] = useState<Record<string, InstallerPayConfig>>({ ...INSTALLER_PAY_CONFIGS });
+  const [dbReady, setDbReady] = useState(false);
+  const [idMaps, setIdMaps] = useState<{
+    installerNameToId: Record<string, string>;
+    financerNameToId: Record<string, string>;
+  }>({ installerNameToId: {}, financerNameToId: {} });
+
+  // Hydrate all state from the database on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/data')
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setReps(data.reps ?? []);
+        setInstallers((data.installers ?? []).map((name: string) => ({ name, active: true })));
+        setFinancers((data.financers ?? []).map((name: string) => ({ name, active: true })));
+        setProjects(data.projects ?? []);
+        setPayrollEntries(data.payrollEntries ?? []);
+        setReimbursements(data.reimbursements ?? []);
+        setTrainerAssignments(data.trainerAssignments ?? []);
+        setIncentives(data.incentives ?? []);
+        setInstallerPricingVersions(data.installerPricingVersions ?? []);
+        setSolarTechProducts(data.solarTechProducts ?? []);
+        setProductCatalogInstallerConfigs(data.productCatalogInstallerConfigs ?? {});
+        setProductCatalogProducts(data.productCatalogProducts ?? []);
+        setProductCatalogPricingVersions(data.productCatalogPricingVersions ?? []);
+        setInstallerPrepaidOptions(data.installerPrepaidOptions ?? {});
+        setInstallerPayConfigs(data.installerPayConfigs ?? {});
+        if (data._idMaps) setIdMaps(data._idMaps);
+        setDbReady(true);
+      })
+      .catch((err) => {
+        console.warn('Failed to load data from API, using seed data:', err);
+        setDbReady(true);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   // installerBaselines is derived from the currently active pricing version per installer
   // (flat rate only — tiered installers show the first band for backward compat display)
