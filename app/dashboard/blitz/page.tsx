@@ -143,13 +143,14 @@ function BlitzCard({ blitz }: { blitz: BlitzData }) {
   );
 }
 
-function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void; onCreated: () => void; userId: string }) {
+function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () => void; onCreated: () => void; userId: string; reps: Array<{ id: string; name: string }> }) {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [housing, setHousing] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [ownerId, setOwnerId] = useState(userId);
   const [saving, setSaving] = useState(false);
   const [touched, setTouched] = useState(false);
   const { toast } = useToast();
@@ -170,7 +171,7 @@ function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void;
           endDate,
           notes: notes.trim(),
           createdById: userId,
-          ownerId: userId,
+          ownerId,
         }),
       });
       toast('Blitz created');
@@ -215,6 +216,13 @@ function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void;
             </div>
           </div>
           <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Blitz Leader</label>
+            <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+              <option value={userId}>Me</option>
+              {reps.filter((r) => r.id !== userId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
           </div>
@@ -222,7 +230,8 @@ function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void;
 
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
           </button>
         </div>
@@ -232,7 +241,7 @@ function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void;
 }
 
 export default function BlitzPage() {
-  const { currentRole, currentRepId } = useApp();
+  const { currentRole, currentRepId, reps } = useApp();
   const hydrated = useIsHydrated();
   const isAdmin = currentRole === 'admin';
 
@@ -474,6 +483,7 @@ export default function BlitzPage() {
           onClose={() => setShowCreate(false)}
           onCreated={loadData}
           userId={currentRepId ?? 'admin2'}
+          reps={reps}
         />
       )}
     </div>
