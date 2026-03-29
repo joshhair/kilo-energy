@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCurrency } from '../../../lib/utils';
-import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap } from 'lucide-react';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap, UserPlus, UserCheck } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -76,13 +76,15 @@ function getBlitzTimingLabel(blitz: BlitzData): string | null {
   return null;
 }
 
-function BlitzCard({ blitz }: { blitz: BlitzData }) {
+function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData; currentUserId: string | null; isAdmin: boolean; onJoin: (blitzId: string) => void }) {
   const style = STATUS_STYLES[blitz.status] ?? STATUS_STYLES.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
   const totalKW = blitz.projects.reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = blitz.projects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
+  const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;
+  const canJoin = !isAdmin && !myParticipation && (blitz.status === 'upcoming' || blitz.status === 'active');
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>
@@ -131,9 +133,24 @@ function BlitzCard({ blitz }: { blitz: BlitzData }) {
           </div>
         </div>
 
-        {/* Owner tag */}
-        <div className="mt-3 text-xs text-zinc-500">
-          Led by <span className="text-zinc-300">{blitz.owner.firstName} {blitz.owner.lastName}</span>
+        {/* Owner tag + join action */}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="text-xs text-zinc-500">
+            Led by <span className="text-zinc-300">{blitz.owner.firstName} {blitz.owner.lastName}</span>
+          </div>
+          {canJoin && (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(blitz.id); }}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors"
+            >
+              <UserPlus className="w-3 h-3" /> Join
+            </button>
+          )}
+          {myParticipation && (
+            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
+              <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : 'Pending'}
+            </span>
+          )}
         </div>
 
         {/* Hover glow bar */}
@@ -313,6 +330,21 @@ export default function BlitzPage() {
     } finally { setProcessingRequest(null); }
   };
 
+  const handleJoinBlitz = async (blitzId: string) => {
+    if (!currentRepId) return;
+    try {
+      await fetch(`/api/blitzes/${blitzId}/participants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentRepId, joinStatus: 'pending' }),
+      });
+      toast('Join request sent');
+      loadData();
+    } catch {
+      toast('Failed to join blitz', 'error');
+    }
+  };
+
   if (!hydrated) return null;
 
   // Summary stats
@@ -429,7 +461,7 @@ export default function BlitzPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} />)}
+              {filteredBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} />)}
             </div>
           )}
         </>
