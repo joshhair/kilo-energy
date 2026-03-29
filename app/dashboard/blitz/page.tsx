@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCurrency } from '../../../lib/utils';
-import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter } from 'lucide-react';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2 } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -214,6 +214,7 @@ export default function BlitzPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [statusFilter, setStatusFilter] = useState<BlitzStatus | 'all'>('all');
   const [search, setSearch] = useState('');
+  const [processingRequest, setProcessingRequest] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loadData = () => {
@@ -249,23 +250,29 @@ export default function BlitzPage() {
   const pendingRequests = requests.filter((r) => r.status === 'pending');
 
   const handleApproveRequest = async (reqId: string) => {
-    await fetch(`/api/blitz-requests/${reqId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'approved' }),
-    });
-    toast('Request approved');
-    loadData();
+    setProcessingRequest(reqId);
+    try {
+      await fetch(`/api/blitz-requests/${reqId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'approved' }),
+      });
+      toast('Request approved');
+      loadData();
+    } finally { setProcessingRequest(null); }
   };
 
   const handleDenyRequest = async (reqId: string) => {
-    await fetch(`/api/blitz-requests/${reqId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'denied' }),
-    });
-    toast('Request denied');
-    loadData();
+    setProcessingRequest(reqId);
+    try {
+      await fetch(`/api/blitz-requests/${reqId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'denied' }),
+      });
+      toast('Request denied');
+      loadData();
+    } finally { setProcessingRequest(null); }
   };
 
   if (!hydrated) return null;
@@ -380,29 +387,43 @@ export default function BlitzPage() {
       {tab === 'requests' && isAdmin && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="text-center py-16 text-zinc-500">No blitz requests</div>
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
+              <Inbox className="w-14 h-14 text-zinc-600" />
+              <div className="text-center">
+                <p className="text-lg font-semibold text-white">No blitz requests</p>
+                <p className="text-sm text-zinc-500 mt-1">Requests from reps will appear here for approval</p>
+              </div>
+            </div>
           ) : (
             requests.map((req) => (
-              <div key={req.id} className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-white">{req.name}</h3>
-                    <div className="flex flex-wrap gap-3 mt-1 text-sm text-zinc-400">
-                      {req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{req.location}</span>}
-                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>
-                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{req.expectedHeadcount} expected</span>
+              <div key={req.id} className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
+                      {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                     </div>
-                    {req.notes && <p className="text-sm text-zinc-500 mt-2">{req.notes}</p>}
-                    <p className="text-xs text-zinc-600 mt-2">Requested by {req.requestedBy.firstName} {req.requestedBy.lastName}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-zinc-400">
+                      {req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
+                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>
+                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>
+                    </div>
+                    {req.notes && <p className="text-sm text-zinc-500 mt-2 line-clamp-2">{req.notes}</p>}
+                    <p className="text-xs text-zinc-600 mt-2">Requested by <span className="text-zinc-400">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-4">
+                  <div className="flex items-center gap-2 shrink-0">
                     {req.status === 'pending' ? (
                       <>
-                        <button onClick={() => handleApproveRequest(req.id)} className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors">Approve</button>
-                        <button onClick={() => handleDenyRequest(req.id)} className="px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition-colors">Deny</button>
+                        <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+                          {processingRequest === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
+                        </button>
+                        <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
+                          <XCircle className="w-3 h-3" /> Deny
+                        </button>
                       </>
                     ) : (
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300' : 'bg-red-900/30 text-red-300'}`}>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-500/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
+                        {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                         {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </span>
                     )}
