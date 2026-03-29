@@ -12,6 +12,20 @@ import Link from 'next/link';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
 
+const PHASE_COLORS: Record<string, string> = {
+  'New': 'bg-sky-900/40 text-sky-300 border-sky-700/30',
+  'Acceptance': 'bg-indigo-900/40 text-indigo-300 border-indigo-700/30',
+  'Site Survey': 'bg-violet-900/40 text-violet-300 border-violet-700/30',
+  'Design': 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/30',
+  'Permitting': 'bg-amber-900/40 text-amber-300 border-amber-700/30',
+  'Pending Install': 'bg-orange-900/40 text-orange-300 border-orange-700/30',
+  'Installed': 'bg-teal-900/40 text-teal-300 border-teal-700/30',
+  'PTO': 'bg-emerald-900/40 text-emerald-300 border-emerald-700/30',
+  'Completed': 'bg-green-900/40 text-green-300 border-green-600/30',
+  'Cancelled': 'bg-red-900/40 text-red-300 border-red-700/30',
+  'On Hold': 'bg-zinc-800/40 text-zinc-400 border-zinc-600/30',
+};
+
 const COST_CATEGORY_STYLES: Record<string, { badge: string; bar: string }> = {
   housing:    { badge: 'bg-blue-900/40 text-blue-300 border border-blue-700/30',       bar: 'bg-blue-500' },
   travel:     { badge: 'bg-purple-900/40 text-purple-300 border border-purple-700/30',  bar: 'bg-purple-500' },
@@ -530,33 +544,20 @@ export default function BlitzDetailPage() {
                   {isAdmin && <th className="text-right px-4 py-3">Payout</th>}
                 </tr></thead>
                 <tbody>
-                  {blitz.projects.map((p: any, idx: number) => {
-                    const phaseColors: Record<string, string> = {
-                      'New': 'bg-sky-900/40 text-sky-300 border-sky-700/30',
-                      'Acceptance': 'bg-indigo-900/40 text-indigo-300 border-indigo-700/30',
-                      'Site Survey': 'bg-violet-900/40 text-violet-300 border-violet-700/30',
-                      'Design': 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/30',
-                      'Permitting': 'bg-amber-900/40 text-amber-300 border-amber-700/30',
-                      'Pending Install': 'bg-orange-900/40 text-orange-300 border-orange-700/30',
-                      'Installed': 'bg-teal-900/40 text-teal-300 border-teal-700/30',
-                      'PTO': 'bg-emerald-900/40 text-emerald-300 border-emerald-700/30',
-                      'Completed': 'bg-green-900/40 text-green-300 border-green-600/30',
-                      'Cancelled': 'bg-red-900/40 text-red-300 border-red-700/30',
-                      'On Hold': 'bg-zinc-800/40 text-zinc-400 border-zinc-600/30',
-                    };
-                    return (
+                  {blitz.projects.map((p: any, idx: number) => (
                     <tr key={p.id} className={`border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 transition-colors ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
-                      <td className="px-4 py-3 text-white font-medium">{p.customerName}</td>
+                      <td className="px-4 py-3">
+                        <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-blue-300 transition-colors">{p.customerName}</Link>
+                      </td>
                       <td className="px-4 py-3 text-zinc-400">{p.closer?.firstName} {p.closer?.lastName}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${phaseColors[p.phase] ?? 'bg-zinc-800/40 text-zinc-400 border-zinc-600/30'}`}>{p.phase}</span>
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-zinc-800/40 text-zinc-400 border-zinc-600/30'}`}>{p.phase}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-zinc-300">{p.kWSize.toFixed(1)}</td>
                       <td className="px-4 py-3 text-right text-zinc-300">${p.netPPW.toFixed(2)}</td>
                       {isAdmin && <td className="px-4 py-3 text-right text-zinc-300">{formatCurrency(p.m1Amount + p.m2Amount)}</td>}
                     </tr>
-                    );
-                  })}
+                  ))}
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-zinc-700 bg-zinc-800/30">
