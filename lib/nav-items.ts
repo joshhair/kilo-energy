@@ -18,6 +18,7 @@ import {
   Receipt,
   Trophy,
   Vault,
+  Tent,
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ export const REP_NAV: AnyNavItem[] = [
   { href: '/dashboard/new-deal',   label: 'New Deal',   icon: PlusCircle },
   { href: '/dashboard/projects',   label: 'Projects',   icon: FolderKanban },
   { href: '/dashboard/vault',      label: 'My Pay',     icon: Vault },
+  { href: '/dashboard/blitz',     label: 'Blitz',      icon: Tent },
   { href: '/dashboard/calculator', label: 'Calculator',  icon: Calculator },
 ];
 
@@ -56,6 +58,7 @@ export const ADMIN_NAV: AnyNavItem[] = [
   { href: '/dashboard/payroll',      label: 'Payroll',    icon: CreditCard },
   { href: '/dashboard/calculator',   label: 'Calculator', icon: Calculator },
   { href: '/dashboard/reps',         label: 'Reps',       icon: Users },
+  { href: '/dashboard/blitz',          label: 'Blitz',      icon: Tent },
   { href: '/dashboard/incentives',   label: 'Incentives', icon: Trophy },
   { href: '/dashboard/settings',     label: 'Settings',   icon: Settings },
 ];

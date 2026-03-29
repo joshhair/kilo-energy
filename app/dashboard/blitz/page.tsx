@@ -1,0 +1,406 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import { useApp } from '../../../lib/context';
+import { useIsHydrated } from '../../../lib/hooks';
+import { formatDate, formatCurrency } from '../../../lib/utils';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter } from 'lucide-react';
+import { useToast } from '../../../lib/toast';
+
+type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
+type TabKey = 'blitzes' | 'requests';
+
+interface BlitzData {
+  id: string;
+  name: string;
+  location: string;
+  housing: string;
+  startDate: string;
+  endDate: string;
+  notes: string;
+  status: BlitzStatus;
+  createdBy: { id: string; firstName: string; lastName: string };
+  owner: { id: string; firstName: string; lastName: string };
+  participants: Array<{
+    id: string;
+    joinStatus: string;
+    attendanceStatus: string | null;
+    user: { id: string; firstName: string; lastName: string };
+  }>;
+  costs: Array<{ id: string; category: string; amount: number; description: string; date: string }>;
+  projects: Array<{ id: string; customerName: string; kWSize: number; netPPW: number; m1Amount: number; m2Amount: number; phase: string }>;
+}
+
+interface BlitzRequestData {
+  id: string;
+  name: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  housing: string;
+  notes: string;
+  expectedHeadcount: number;
+  status: string;
+  adminNotes: string | null;
+  requestedBy: { id: string; firstName: string; lastName: string };
+}
+
+const STATUS_STYLES: Record<BlitzStatus, { bg: string; text: string; dot: string; border: string }> = {
+  upcoming:  { bg: 'bg-blue-900/30',    text: 'text-blue-300',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
+  active:    { bg: 'bg-emerald-900/30',  text: 'text-emerald-300', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
+  completed: { bg: 'bg-zinc-800/50',     text: 'text-zinc-400',    dot: 'bg-zinc-500',    border: 'border-zinc-600/30' },
+  cancelled: { bg: 'bg-red-900/30',      text: 'text-red-300',     dot: 'bg-red-400',     border: 'border-red-700/30' },
+};
+
+function BlitzCard({ blitz }: { blitz: BlitzData }) {
+  const style = STATUS_STYLES[blitz.status] ?? STATUS_STYLES.upcoming;
+  const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
+  const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
+  const totalKW = blitz.projects.reduce((s, p) => s + p.kWSize, 0);
+  const totalDeals = blitz.projects.length;
+
+  return (
+    <Link href={`/dashboard/blitz/${blitz.id}`}>
+      <div className="group relative bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-all hover:shadow-lg hover:shadow-black/20 cursor-pointer">
+        {/* Status badge */}
+        <div className="flex items-center justify-between mb-3">
+          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+            {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
+          </span>
+          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+        </div>
+
+        {/* Name */}
+        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-300 transition-colors">{blitz.name}</h3>
+
+        {/* Location + dates */}
+        <div className="flex flex-col gap-1 text-sm text-zinc-400 mb-4">
+          {blitz.location && (
+            <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" />
+            {formatDate(blitz.startDate)} — {formatDate(blitz.endDate)}
+          </span>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-zinc-800">
+          <div className="text-center">
+            <p className="text-xs text-zinc-500 mb-0.5">Reps</p>
+            <p className="text-sm font-bold text-white">{approvedParticipants}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-zinc-500 mb-0.5">Deals</p>
+            <p className="text-sm font-bold text-white">{totalDeals}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-zinc-500 mb-0.5">kW</p>
+            <p className="text-sm font-bold text-white">{totalKW.toFixed(1)}</p>
+          </div>
+        </div>
+
+        {/* Owner tag */}
+        <div className="mt-3 text-xs text-zinc-500">
+          Led by <span className="text-zinc-300">{blitz.owner.firstName} {blitz.owner.lastName}</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function CreateBlitzModal({ onClose, onCreated, userId }: { onClose: () => void; onCreated: () => void; userId: string }) {
+  const [name, setName] = useState('');
+  const [location, setLocation] = useState('');
+  const [housing, setHousing] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !startDate || !endDate) return;
+    setSaving(true);
+    try {
+      await fetch('/api/blitzes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          location: location.trim(),
+          housing: housing.trim(),
+          startDate,
+          endDate,
+          notes: notes.trim(),
+          createdById: userId,
+          ownerId: userId,
+        }),
+      });
+      toast('Blitz created');
+      onCreated();
+      onClose();
+    } catch {
+      toast('Failed to create blitz', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-blue-400" /> New Blitz</h2>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Blitz Name *</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Hunter's April 2026 Blitz" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Location / Market</label>
+            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Austin, TX" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Housing / Address</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. 123 Main St, Apt 4" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            {saving ? 'Creating...' : 'Create Blitz'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function BlitzPage() {
+  const { currentRole, currentRepId } = useApp();
+  const hydrated = useIsHydrated();
+  const isAdmin = currentRole === 'admin';
+
+  const [tab, setTab] = useState<TabKey>('blitzes');
+  const [blitzes, setBlitzes] = useState<BlitzData[]>([]);
+  const [requests, setRequests] = useState<BlitzRequestData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<BlitzStatus | 'all'>('all');
+  const [search, setSearch] = useState('');
+  const { toast } = useToast();
+
+  const loadData = () => {
+    Promise.all([
+      fetch('/api/blitzes').then((r) => r.json()),
+      isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
+    ]).then(([b, r]) => {
+      setBlitzes(b);
+      setRequests(r);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  };
+
+  useEffect(() => { loadData(); }, [isAdmin]);
+
+  const filteredBlitzes = useMemo(() => {
+    let list = blitzes;
+    if (statusFilter !== 'all') list = list.filter((b) => b.status === statusFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
+    }
+    // For reps, only show blitzes they're participating in or upcoming ones
+    if (!isAdmin && currentRepId) {
+      list = list.filter((b) =>
+        b.status === 'upcoming' || b.status === 'active' ||
+        b.participants.some((p) => p.user.id === currentRepId)
+      );
+    }
+    return list;
+  }, [blitzes, statusFilter, search, isAdmin, currentRepId]);
+
+  const pendingRequests = requests.filter((r) => r.status === 'pending');
+
+  const handleApproveRequest = async (reqId: string) => {
+    await fetch(`/api/blitz-requests/${reqId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'approved' }),
+    });
+    toast('Request approved');
+    loadData();
+  };
+
+  const handleDenyRequest = async (reqId: string) => {
+    await fetch(`/api/blitz-requests/${reqId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'denied' }),
+    });
+    toast('Request denied');
+    loadData();
+  };
+
+  if (!hydrated) return null;
+
+  // Summary stats
+  const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;
+  const upcomingBlitzes = blitzes.filter((b) => b.status === 'upcoming').length;
+  const totalDeals = blitzes.reduce((s, b) => s + b.projects.length, 0);
+  const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
+            <Tent className="w-7 h-7 text-blue-400" /> Blitz
+          </h1>
+          <p className="text-sm text-zinc-500 mt-1">Manage blitzes, track participation and profitability</p>
+        </div>
+        {(isAdmin) && (
+          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20">
+            <Plus className="w-4 h-4" /> New Blitz
+          </button>
+        )}
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 mb-1">Active</p>
+          <p className="text-2xl font-bold text-emerald-400">{activeBlitzes}</p>
+        </div>
+        <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 mb-1">Upcoming</p>
+          <p className="text-2xl font-bold text-blue-400">{upcomingBlitzes}</p>
+        </div>
+        <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 mb-1">Total Deals</p>
+          <p className="text-2xl font-bold text-white">{totalDeals}</p>
+        </div>
+        {isAdmin && (
+          <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+            <p className="text-xs text-zinc-500 mb-1">Total Costs</p>
+            <p className="text-2xl font-bold text-amber-400">{formatCurrency(totalCosts)}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      {isAdmin && (
+        <div className="flex gap-1 bg-zinc-900/60 rounded-lg p-1 w-fit">
+          <button onClick={() => setTab('blitzes')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${tab === 'blitzes' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+            Blitzes
+          </button>
+          <button onClick={() => setTab('requests')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors relative ${tab === 'requests' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+            Requests
+            {pendingRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{pendingRequests.length}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {tab === 'blitzes' && (
+        <>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search blitzes..." className="w-full bg-zinc-900/80 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            </div>
+            <div className="flex gap-1">
+              {(['all', 'upcoming', 'active', 'completed', 'cancelled'] as const).map((s) => (
+                <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${statusFilter === s ? 'bg-zinc-800 border-zinc-600 text-white' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                  {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Blitz grid */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20 text-zinc-500">Loading...</div>
+          ) : filteredBlitzes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+              <Tent className="w-12 h-12 mb-3 opacity-30" />
+              <p className="text-lg font-medium">No blitzes found</p>
+              <p className="text-sm mt-1">Create your first blitz to get started</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} />)}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'requests' && isAdmin && (
+        <div className="space-y-3">
+          {requests.length === 0 ? (
+            <div className="text-center py-16 text-zinc-500">No blitz requests</div>
+          ) : (
+            requests.map((req) => (
+              <div key={req.id} className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-white">{req.name}</h3>
+                    <div className="flex flex-wrap gap-3 mt-1 text-sm text-zinc-400">
+                      {req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{req.location}</span>}
+                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>
+                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{req.expectedHeadcount} expected</span>
+                    </div>
+                    {req.notes && <p className="text-sm text-zinc-500 mt-2">{req.notes}</p>}
+                    <p className="text-xs text-zinc-600 mt-2">Requested by {req.requestedBy.firstName} {req.requestedBy.lastName}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 ml-4">
+                    {req.status === 'pending' ? (
+                      <>
+                        <button onClick={() => handleApproveRequest(req.id)} className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors">Approve</button>
+                        <button onClick={() => handleDenyRequest(req.id)} className="px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition-colors">Deny</button>
+                      </>
+                    ) : (
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300' : 'bg-red-900/30 text-red-300'}`}>
+                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Create modal */}
+      {showCreate && (
+        <CreateBlitzModal
+          onClose={() => setShowCreate(false)}
+          onCreated={loadData}
+          userId={currentRepId ?? 'admin2'}
+        />
+      )}
+    </div>
+  );
+}
