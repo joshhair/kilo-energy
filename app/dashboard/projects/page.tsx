@@ -835,8 +835,8 @@ function KanbanView({
                         <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-slate-400 font-semibold' : 'text-slate-600'}`}>
                           {proj.repName}
                         </p>
-                        {/* Mini commission preview */}
-                        <div className="flex justify-end mt-1.5">
+                        {/* Mini commission preview + phase nav row */}
+                        <div className={`flex items-center mt-1.5 ${isAdmin && (prevPhase || nextPhase) ? 'justify-between' : 'justify-end'}`}>
                           <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
                             ${commissionTotal.toLocaleString()}
                           </span>
@@ -844,7 +844,7 @@ function KanbanView({
 
                         {/* Phase navigation — admin only, shows on hover */}
                         {isAdmin && (prevPhase || nextPhase) && (
-                          <div className="absolute bottom-2 right-2 flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-1 justify-end mt-1 opacity-40 group-hover:opacity-100 transition-opacity">
                             {prevPhase && (
                               <button
                                 title={`Move back to ${prevPhase}`}
