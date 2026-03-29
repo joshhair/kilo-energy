@@ -7,6 +7,7 @@ import { useIsHydrated } from '../../../../lib/hooks';
 import { formatDate, formatCurrency } from '../../../../lib/utils';
 import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import Link from 'next/link';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
@@ -27,6 +28,9 @@ export default function BlitzDetailPage() {
   const [tab, setTab] = useState<TabKey>('overview');
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '' });
+
+  // Confirmation dialog
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // Cost form
   const [showAddCost, setShowAddCost] = useState(false);
@@ -278,7 +282,7 @@ export default function BlitzDetailPage() {
                       </td>
                       {isAdmin && (
                         <td className="px-4 py-3 text-right">
-                          <button onClick={() => handleRemoveParticipant(p.user.id)} className="text-zinc-600 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will remove them from the blitz. They can be re-added later.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-zinc-600 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </td>
                       )}
                     </tr>
@@ -385,7 +389,7 @@ export default function BlitzDetailPage() {
                       <td className="px-4 py-3 text-zinc-400">{formatDate(c.date)}</td>
                       <td className="px-4 py-3 text-right text-white font-medium">{formatCurrency(c.amount)}</td>
                       <td className="px-4 py-3 text-right">
-                        <button onClick={() => handleDeleteCost(c.id)} className="text-zinc-600 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => setConfirmAction({ title: 'Delete this cost?', message: `Remove the ${c.category} cost of ${formatCurrency(c.amount)}? This cannot be undone.`, onConfirm: () => { handleDeleteCost(c.id); setConfirmAction(null); } })} className="text-zinc-600 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))}
@@ -469,6 +473,17 @@ export default function BlitzDetailPage() {
           )}
         </div>
       )}
+
+      {/* Confirmation dialog for destructive actions */}
+      <ConfirmDialog
+        open={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+        title={confirmAction?.title ?? ''}
+        message={confirmAction?.message ?? ''}
+        confirmLabel="Remove"
+        danger
+      />
     </div>
   );
 }
