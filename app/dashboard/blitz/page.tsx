@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCurrency } from '../../../lib/utils';
-import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -310,6 +310,7 @@ export default function BlitzPage() {
   const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;
   const upcomingBlitzes = blitzes.filter((b) => b.status === 'upcoming').length;
   const totalDeals = blitzes.reduce((s, b) => s + b.projects.length, 0);
+  const totalKW = blitzes.reduce((s, b) => s + b.projects.reduce((ps, p) => ps + p.kWSize, 0), 0);
   const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (
@@ -330,22 +331,26 @@ export default function BlitzPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 mb-1">Active</p>
+      <div className={`grid grid-cols-2 ${isAdmin ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4`}>
+        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-emerald-500/60 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Active</p>
           <p className="text-2xl font-bold text-emerald-400">{activeBlitzes}</p>
         </div>
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 mb-1">Upcoming</p>
+        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-blue-500/60 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Upcoming</p>
           <p className="text-2xl font-bold text-blue-400">{upcomingBlitzes}</p>
         </div>
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 mb-1">Total Deals</p>
+        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-purple-500/60 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Deals</p>
           <p className="text-2xl font-bold text-white">{totalDeals}</p>
         </div>
+        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-cyan-500/60 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Total kW</p>
+          <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
+        </div>
         {isAdmin && (
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-            <p className="text-xs text-zinc-500 mb-1">Total Costs</p>
+          <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-amber-500/60 rounded-xl p-4">
+            <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Costs</p>
             <p className="text-2xl font-bold text-amber-400">{formatCurrency(totalCosts)}</p>
           </div>
         )}
