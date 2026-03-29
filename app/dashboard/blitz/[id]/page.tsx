@@ -159,8 +159,25 @@ export default function BlitzDetailPage() {
     loadBlitz();
   };
 
-  if (!hydrated || loading) return <div className="flex items-center justify-center py-20 text-zinc-500">Loading...</div>;
-  if (!blitz) return <div className="text-center py-20 text-zinc-500">Blitz not found</div>;
+  if (!hydrated || loading) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <div className="relative w-10 h-10">
+        <div className="absolute inset-0 rounded-full border-2 border-zinc-700/40" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
+      </div>
+      <p className="text-sm text-zinc-500 font-medium">Loading blitz details...</p>
+    </div>
+  );
+  if (!blitz) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3">
+      <XCircle className="w-14 h-14 text-zinc-600" />
+      <p className="text-lg font-semibold text-white">Blitz not found</p>
+      <p className="text-sm text-zinc-500">It may have been deleted or the link is invalid</p>
+      <Link href="/dashboard/blitz" className="mt-2 px-4 py-2 text-sm font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition-colors">
+        Back to Blitzes
+      </Link>
+    </div>
+  );
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'overview', label: 'Overview' },
@@ -216,10 +233,11 @@ export default function BlitzDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-zinc-900/60 rounded-lg p-1 overflow-x-auto">
+      <div className="flex gap-0.5 border-b border-zinc-800/50 overflow-x-auto">
         {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${tab === t.key ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+          <button key={t.key} onClick={() => setTab(t.key)} className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === t.key ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             {t.label}
+            {tab === t.key && <div className="absolute bottom-0 left-1 right-1 h-0.5 bg-blue-500 rounded-full" />}
           </button>
         ))}
       </div>
