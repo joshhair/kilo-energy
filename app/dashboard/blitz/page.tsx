@@ -53,22 +53,51 @@ const STATUS_STYLES: Record<BlitzStatus, { bg: string; text: string; dot: string
   cancelled: { bg: 'bg-red-900/30',      text: 'text-red-300',     dot: 'bg-red-400',     border: 'border-red-700/30' },
 };
 
+function getBlitzTimingLabel(blitz: BlitzData): string | null {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const start = new Date(blitz.startDate + 'T00:00:00');
+  const end = new Date(blitz.endDate + 'T00:00:00');
+  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
+
+  if (blitz.status === 'upcoming') {
+    const daysUntil = Math.round((start.getTime() - now.getTime()) / 86400000);
+    if (daysUntil <= 0) return 'Starts today';
+    if (daysUntil === 1) return 'Starts tomorrow';
+    return `Starts in ${daysUntil}d`;
+  }
+  if (blitz.status === 'active') {
+    const dayNum = Math.max(1, Math.round((now.getTime() - start.getTime()) / 86400000) + 1);
+    return `Day ${dayNum} of ${totalDays}`;
+  }
+  if (blitz.status === 'completed') {
+    return `${totalDays} days`;
+  }
+  return null;
+}
+
 function BlitzCard({ blitz }: { blitz: BlitzData }) {
   const style = STATUS_STYLES[blitz.status] ?? STATUS_STYLES.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
   const totalKW = blitz.projects.reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = blitz.projects.length;
+  const timingLabel = getBlitzTimingLabel(blitz);
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>
       <div className="group relative bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 overflow-hidden hover:border-zinc-600 hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer">
-        {/* Status badge */}
+        {/* Status badge + timing */}
         <div className="flex items-center justify-between mb-3">
-          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-            {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${style.dot} ${blitz.status === 'active' ? 'animate-pulse' : ''}`} />
+              {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
+            </span>
+            {timingLabel && (
+              <span className="text-[11px] font-medium text-zinc-500">{timingLabel}</span>
+            )}
+          </div>
           <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
         </div>
 
