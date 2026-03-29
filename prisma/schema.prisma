@@ -1,0 +1,534 @@
+// Kilo Energy — Unified Database Schema
+// SQLite via Prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================================
+// USERS
+// ============================================================================
+
+/// Unified user table. Replaces separate Rep[] and hardcoded admin users.
+model User {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String   @default("")
+
+  /// "admin" | "rep"
+  role      String   @default("rep")
+
+  /// "closer" | "setter" | "both" — only applies when role = "rep"
+  repType   String   @default("both")
+
+  active    Boolean  @default(true)
+
+  /// Whether this user can request blitzes for admin approval
+  canRequestBlitz Boolean @default(false)
+  /// Whether this user can create/manage blitzes directly
+  canCreateBlitz  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Relations ---
+  projectsAsCloser   Project[]          @relation("ProjectCloser")
+  projectsAsSetter   Project[]          @relation("ProjectSetter")
+  payrollEntries     PayrollEntry[]
+  reimbursements     Reimbursement[]
+  trainingAsTrainer  TrainerAssignment[] @relation("Trainer")
+  trainingAsTrainee  TrainerAssignment[] @relation("Trainee")
+  targetedIncentives Incentive[]
+  blitzesCreated     Blitz[]            @relation("BlitzCreator")
+  blitzesOwned       Blitz[]            @relation("BlitzOwner")
+  blitzParticipations BlitzParticipant[]
+  blitzRequests      BlitzRequest[]
+
+  @@index([role])
+  @@index([active])
+}
+
+// ============================================================================
+// INSTALLERS & FINANCERS
+// ============================================================================
+
+model Installer {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  active Boolean @default(true)
+
+  /// 0-100. Percentage of M2 commission paid at Installed phase. Remainder paid at PTO (M3).
+  installPayPct Int @default(80)
+
+  /// Whether this installer uses product catalog pricing (per-product tiered, like SolarTech)
+  usesProductCatalog Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects            Project[]
+  pricingVersions     InstallerPricingVersion[]
+  products            Product[]
+  productCatalogConfig ProductCatalogConfig?
+  prepaidOptions      InstallerPrepaidOption[]
+
+  @@index([active])
+}
+
+model InstallerPrepaidOption {
+  id          String    @id @default(cuid())
+  installerId String
+  installer   Installer @relation(fields: [installerId], references: [id], onDelete: Cascade)
+  name        String
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([installerId, name])
+}
+
+model Financer {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects Project[]
+}
+
+// ============================================================================
+// PRICING — STANDARD INSTALLER TRACK
+// ============================================================================
+
+/// Versioned pricing for standard (non-product-catalog) installers.
+/// Supports flat (single tier) and kW-tiered rates.
+model InstallerPricingVersion {
+  id            String    @id @default(cuid())
+  installerId   String
+  installer     Installer @relation(fields: [installerId], references: [id], onDelete: Cascade)
+  label         String
+  effectiveFrom String    /// ISO date YYYY-MM-DD
+  effectiveTo   String?   /// null = currently active
+
+  /// "flat" | "tiered"
+  rateType      String    @default("flat")
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tiers    InstallerPricingTier[]
+  projects Project[]              @relation("ProjectInstallerPricingVersion")
+
+  @@index([installerId, effectiveFrom])
+}
+
+/// Rate tier within an InstallerPricingVersion.
+/// Flat versions have 1 row (minKW=0, maxKW=null). Tiered have N rows.
+model InstallerPricingTier {
+  id         String                  @id @default(cuid())
+  versionId  String
+  version    InstallerPricingVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  minKW      Float   @default(0)
+  maxKW      Float?  /// null = no upper limit
+  closerPerW Float
+  setterPerW Float?  /// null = auto (closerPerW + 0.10)
+  kiloPerW   Float
+
+  @@index([versionId])
+}
+
+// ============================================================================
+// PRICING — PRODUCT CATALOG TRACK (SolarTech + future catalog installers)
+// ============================================================================
+
+/// Per-installer product catalog configuration.
+model ProductCatalogConfig {
+  id          String    @id @default(cuid())
+  installerId String    @unique
+  installer   Installer @relation(fields: [installerId], references: [id], onDelete: Cascade)
+
+  /// Comma-separated family names, e.g. "Goodleap,Enfin,Lightreach,Cash/HDM/PE"
+  families          String @default("")
+  /// JSON: {"Goodleap":"Goodleap","Enfin":"Enfin",...}
+  familyFinancerMap String @default("{}")
+  /// Which family is prepaid (e.g. "Cash/HDM/PE")
+  prepaidFamily     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// A named product within an installer's catalog.
+model Product {
+  id          String    @id @default(cuid())
+  installerId String
+  installer   Installer @relation(fields: [installerId], references: [id], onDelete: Cascade)
+  family      String
+  name        String
+  active      Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pricingVersions ProductPricingVersion[]
+  projects        Project[]               @relation("ProjectProduct")
+
+  @@index([installerId, family])
+  @@index([installerId, active])
+}
+
+/// Versioned pricing for a specific product. effectiveTo=null = currently active.
+model ProductPricingVersion {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label         String
+  effectiveFrom String   /// ISO date YYYY-MM-DD
+  effectiveTo   String?  /// null = currently active
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tiers    ProductPricingTier[]
+  projects Project[]            @relation("ProjectProductPricingVersion")
+
+  @@index([productId, effectiveFrom])
+}
+
+/// kW-tier rates within a ProductPricingVersion.
+model ProductPricingTier {
+  id         String                @id @default(cuid())
+  versionId  String
+  version    ProductPricingVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  minKW      Float
+  maxKW      Float?  /// null = no upper limit
+  closerPerW Float
+  setterPerW Float   /// explicit (usually closerPerW + 0.10)
+  kiloPerW   Float
+
+  @@index([versionId])
+}
+
+// ============================================================================
+// PROJECTS (DEALS)
+// ============================================================================
+
+model Project {
+  id           String @id @default(cuid())
+  customerName String
+
+  closerId String
+  closer   User   @relation("ProjectCloser", fields: [closerId], references: [id])
+  setterId String?
+  setter   User?  @relation("ProjectSetter", fields: [setterId], references: [id])
+
+  soldDate String /// ISO date YYYY-MM-DD
+
+  installerId String
+  installer   Installer @relation(fields: [installerId], references: [id])
+  financerId  String
+  financer    Financer  @relation(fields: [financerId], references: [id])
+
+  /// "PPA" | "Lease" | "Loan" | "Cash"
+  productType String
+
+  kWSize Float
+  netPPW Float
+
+  /// "New" | "Acceptance" | "Site Survey" | "Design" | "Permitting" |
+  /// "Pending Install" | "Installed" | "PTO" | "Completed" | "Cancelled" | "On Hold"
+  phase String @default("New")
+
+  m1Paid   Boolean @default(false)
+  m1Amount Float   @default(0)
+  m2Paid   Boolean @default(false)
+  m2Amount Float   @default(0)
+  m3Amount Float?
+
+  notes   String  @default("")
+  flagged Boolean @default(false)
+
+  // --- Pricing snapshot references ---
+  installerPricingVersionId String?
+  installerPricingVersion   InstallerPricingVersion? @relation("ProjectInstallerPricingVersion", fields: [installerPricingVersionId], references: [id])
+
+  productId               String?
+  product                 Product?              @relation("ProjectProduct", fields: [productId], references: [id])
+
+  productPricingVersionId String?
+  productPricingVersion   ProductPricingVersion? @relation("ProjectProductPricingVersion", fields: [productPricingVersionId], references: [id])
+
+  /// JSON override: {"closerPerW":X,"kiloPerW":Y,"setterPerW":Z}
+  baselineOverrideJson String?
+
+  prepaidSubType String?
+
+  // --- Blitz attribution ---
+  /// "organic" | "referral" | "blitz" | "door_knock" | "web" | "other"
+  leadSource String?
+  blitzId    String?
+  blitz      Blitz?  @relation(fields: [blitzId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payrollEntries PayrollEntry[]
+
+  @@index([closerId])
+  @@index([setterId])
+  @@index([installerId])
+  @@index([phase])
+  @@index([soldDate])
+  @@index([blitzId])
+}
+
+// ============================================================================
+// PAYROLL
+// ============================================================================
+
+model PayrollEntry {
+  id        String  @id @default(cuid())
+  repId     String
+  rep       User    @relation(fields: [repId], references: [id])
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  amount Float
+
+  /// "Deal" | "Bonus"
+  type String
+
+  /// "M1" | "M2" | "M3" | "Bonus"
+  paymentStage String
+
+  /// "Draft" | "Pending" | "Paid"
+  status String @default("Draft")
+
+  date  String /// ISO date YYYY-MM-DD
+  notes String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([repId])
+  @@index([projectId])
+  @@index([status])
+  @@index([date])
+}
+
+// ============================================================================
+// REIMBURSEMENTS
+// ============================================================================
+
+model Reimbursement {
+  id          String @id @default(cuid())
+  repId       String
+  rep         User   @relation(fields: [repId], references: [id])
+  amount      Float
+  description String
+  date        String /// ISO date YYYY-MM-DD
+
+  /// "Pending" | "Approved" | "Denied" | "Rejected"
+  status String @default("Pending")
+
+  receiptName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([repId])
+  @@index([status])
+}
+
+// ============================================================================
+// TRAINER SYSTEM
+// ============================================================================
+
+model TrainerAssignment {
+  id        String  @id @default(cuid())
+  trainerId String
+  trainer   User    @relation("Trainer", fields: [trainerId], references: [id])
+  traineeId String
+  trainee   User    @relation("Trainee", fields: [traineeId], references: [id])
+  active    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tiers TrainerOverrideTier[]
+
+  @@unique([trainerId, traineeId])
+  @@index([trainerId])
+  @@index([traineeId])
+}
+
+model TrainerOverrideTier {
+  id           String            @id @default(cuid())
+  assignmentId String
+  assignment   TrainerAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  /// Deal count threshold. null = perpetual.
+  upToDeal  Int?
+  /// Override rate in $/W
+  ratePerW  Float
+  /// Sort order (0-indexed)
+  sortOrder Int @default(0)
+
+  @@index([assignmentId])
+}
+
+// ============================================================================
+// INCENTIVES
+// ============================================================================
+
+model Incentive {
+  id          String  @id @default(cuid())
+  title       String
+  description String  @default("")
+
+  /// "company" | "personal"
+  type   String
+  /// "deals" | "kw" | "commission" | "revenue"
+  metric String
+  /// "month" | "quarter" | "year" | "alltime"
+  period String
+
+  startDate String  /// ISO date YYYY-MM-DD
+  endDate   String? /// ISO date YYYY-MM-DD
+
+  /// null = company-wide
+  targetRepId String?
+  targetRep   User?  @relation(fields: [targetRepId], references: [id])
+
+  active Boolean @default(true)
+
+  /// Optional: scope incentive to a specific blitz
+  blitzId String?
+  blitz   Blitz?  @relation(fields: [blitzId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  milestones IncentiveMilestone[]
+
+  @@index([active])
+  @@index([targetRepId])
+  @@index([blitzId])
+}
+
+model IncentiveMilestone {
+  id          String    @id @default(cuid())
+  incentiveId String
+  incentive   Incentive @relation(fields: [incentiveId], references: [id], onDelete: Cascade)
+  threshold   Float
+  reward      String
+  achieved    Boolean   @default(false)
+
+  @@index([incentiveId])
+}
+
+// ============================================================================
+// BLITZ MODULE
+// ============================================================================
+
+model Blitz {
+  id        String @id @default(cuid())
+  name      String
+  location  String @default("")
+  housing   String @default("")
+  startDate String /// ISO date YYYY-MM-DD
+  endDate   String /// ISO date YYYY-MM-DD
+  notes     String @default("")
+
+  /// "upcoming" | "active" | "completed" | "cancelled"
+  status String @default("upcoming")
+
+  createdById String
+  createdBy   User   @relation("BlitzCreator", fields: [createdById], references: [id])
+  ownerId     String
+  owner       User   @relation("BlitzOwner", fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants BlitzParticipant[]
+  costs        BlitzCost[]
+  incentives   Incentive[]
+  projects     Project[]
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([startDate])
+}
+
+model BlitzParticipant {
+  id      String @id @default(cuid())
+  blitzId String
+  blitz   Blitz  @relation(fields: [blitzId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  /// "pending" | "approved" | "declined"
+  joinStatus       String  @default("pending")
+  /// "attended" | "no_show" | "partial" — null until recorded
+  attendanceStatus String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([blitzId, userId])
+  @@index([blitzId])
+  @@index([userId])
+}
+
+model BlitzCost {
+  id      String @id @default(cuid())
+  blitzId String
+  blitz   Blitz  @relation(fields: [blitzId], references: [id], onDelete: Cascade)
+
+  /// "housing" | "travel" | "gas" | "meals" | "incentives" | "swag" | "other"
+  category    String
+  amount      Float
+  description String @default("")
+  date        String /// ISO date YYYY-MM-DD
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([blitzId])
+}
+
+model BlitzRequest {
+  id            String @id @default(cuid())
+  requestedById String
+  requestedBy   User   @relation(fields: [requestedById], references: [id])
+
+  name              String
+  location          String @default("")
+  startDate         String /// ISO date YYYY-MM-DD
+  endDate           String /// ISO date YYYY-MM-DD
+  housing           String @default("")
+  notes             String @default("")
+  expectedHeadcount Int    @default(0)
+
+  /// "pending" | "approved" | "denied"
+  status     String  @default("pending")
+  adminNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestedById])
+  @@index([status])
+}
