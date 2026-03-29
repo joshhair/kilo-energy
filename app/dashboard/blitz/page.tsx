@@ -385,14 +385,23 @@ export default function BlitzPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search blitzes..." className="w-full bg-zinc-900/80 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-            </div>
-            <div className="flex gap-1">
-              {(['all', 'upcoming', 'active', 'completed', 'cancelled'] as const).map((s) => (
-                <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${statusFilter === s ? 'bg-zinc-800 border-zinc-600 text-white' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
-                  {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search blitzes..." className="w-full bg-zinc-900/80 border border-zinc-800 rounded-lg pl-9 pr-8 py-2 text-sm text-white placeholder-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
+                  <XCircle className="w-4 h-4" />
                 </button>
-              ))}
+              )}
+            </div>
+            <div className="flex gap-1 flex-wrap">
+              {(['all', 'upcoming', 'active', 'completed', 'cancelled'] as const).map((s) => {
+                const count = s === 'all' ? blitzes.length : blitzes.filter((b) => b.status === s).length;
+                return (
+                  <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${statusFilter === s ? 'bg-zinc-800 border-zinc-600 text-white' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                    {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+                    {count > 0 && <span className="ml-1 text-zinc-600">{count}</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
