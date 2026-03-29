@@ -652,26 +652,46 @@ export default function BlitzDetailPage() {
           )}
 
           {/* Per-rep performance */}
-          {approvedParticipants.length > 0 && blitz.projects?.length > 0 && (
+          {approvedParticipants.length > 0 && blitz.projects?.length > 0 && (() => {
+            const repStats = approvedParticipants.map((p: any) => {
+              const repDeals = blitz.projects.filter((proj: any) => proj.closer?.id === p.user.id);
+              const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
+              const repPayout = repDeals.reduce((s: number, proj: any) => s + (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0), 0);
+              return { user: p.user, deals: repDeals.length, kw: repKW, payout: repPayout };
+            }).sort((a: { kw: number }, b: { kw: number }) => b.kw - a.kw);
+            const maxKW = Math.max(...repStats.map((r: { kw: number }) => r.kw), 1);
+
+            return (
             <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-zinc-400 mb-4">Rep Performance</h3>
-              <div className="space-y-2">
-                {approvedParticipants.map((p: any) => {
-                  const repDeals = blitz.projects.filter((proj: any) => proj.closer?.id === p.user.id);
-                  const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
-                  return (
-                    <div key={p.user.id} className="flex items-center justify-between py-2 border-b border-zinc-800/50 last:border-0">
-                      <span className="text-sm text-white font-medium">{p.user.firstName} {p.user.lastName}</span>
-                      <div className="flex items-center gap-6 text-sm">
-                        <span className="text-zinc-400">{repDeals.length} deals</span>
-                        <span className="text-zinc-400">{repKW.toFixed(1)} kW</span>
+              <div className="space-y-3">
+                {repStats.map((rep: { user: { id: string; firstName: string; lastName: string }; deals: number; kw: number; payout: number }, idx: number) => (
+                  <div key={rep.user.id} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : idx === 1 ? 'bg-zinc-500/20 text-zinc-300 border border-zinc-500/30' : idx === 2 ? 'bg-orange-800/30 text-orange-300 border border-orange-700/30' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'}`}>
+                          {idx + 1}
+                        </div>
+                        <span className="text-sm text-white font-medium">{rep.user.firstName} {rep.user.lastName}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="text-zinc-400">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
+                        <span className="text-zinc-300 font-semibold">{rep.kw.toFixed(1)} kW</span>
+                        <span className="text-emerald-400 font-semibold">{formatCurrency(rep.payout)}</span>
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-zinc-400' : idx === 2 ? 'bg-orange-600' : 'bg-zinc-600'}`}
+                        style={{ width: `${(rep.kw / maxKW) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
