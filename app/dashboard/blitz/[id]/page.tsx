@@ -12,6 +12,16 @@ import Link from 'next/link';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
 
+const COST_CATEGORY_STYLES: Record<string, { badge: string; bar: string }> = {
+  housing:    { badge: 'bg-blue-900/40 text-blue-300 border border-blue-700/30',       bar: 'bg-blue-500' },
+  travel:     { badge: 'bg-purple-900/40 text-purple-300 border border-purple-700/30',  bar: 'bg-purple-500' },
+  gas:        { badge: 'bg-amber-900/40 text-amber-300 border border-amber-700/30',     bar: 'bg-amber-500' },
+  meals:      { badge: 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/30', bar: 'bg-emerald-500' },
+  incentives: { badge: 'bg-pink-900/40 text-pink-300 border border-pink-700/30',        bar: 'bg-pink-500' },
+  swag:       { badge: 'bg-orange-900/40 text-orange-300 border border-orange-700/30',  bar: 'bg-orange-500' },
+  other:      { badge: 'bg-zinc-800/60 text-zinc-300 border border-zinc-600/30',        bar: 'bg-zinc-500' },
+};
+
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; border: string }> = {
   upcoming:  { bg: 'bg-blue-900/30',    text: 'text-blue-300',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
   active:    { bg: 'bg-emerald-900/30',  text: 'text-emerald-300', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
@@ -572,7 +582,7 @@ export default function BlitzDetailPage() {
                 <tbody>
                   {blitz.costs.map((c: any, idx: number) => (
                     <tr key={c.id} className={`border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 transition-colors ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
-                      <td className="px-4 py-3"><span className="text-xs font-medium bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full">{c.category}</span></td>
+                      <td className="px-4 py-3"><span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${COST_CATEGORY_STYLES[c.category]?.badge ?? COST_CATEGORY_STYLES.other.badge}`}>{c.category}</span></td>
                       <td className="px-4 py-3 text-zinc-400">{c.description || '—'}</td>
                       <td className="px-4 py-3 text-zinc-400">{formatDate(c.date)}</td>
                       <td className="px-4 py-3 text-right text-white font-medium">{formatCurrency(c.amount)}</td>
@@ -626,12 +636,11 @@ export default function BlitzDetailPage() {
               <div className="space-y-2">
                 {Object.entries(costsByCategory).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
                   const pct = totalCosts > 0 ? (amt / totalCosts) * 100 : 0;
-                  const barColors: Record<string, string> = { housing: 'bg-blue-500', travel: 'bg-purple-500', gas: 'bg-amber-500', meals: 'bg-emerald-500', incentives: 'bg-pink-500', swag: 'bg-orange-500', other: 'bg-zinc-500' };
                   return (
                     <div key={cat} className="flex items-center gap-3">
-                      <span className="text-xs text-zinc-400 w-20 capitalize">{cat}</span>
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full w-22 text-center ${COST_CATEGORY_STYLES[cat]?.badge ?? COST_CATEGORY_STYLES.other.badge}`}>{cat}</span>
                       <div className="flex-1 bg-zinc-800 rounded-full h-2 overflow-hidden">
-                        <div className={`${barColors[cat] ?? 'bg-blue-500'} h-full rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                        <div className={`${COST_CATEGORY_STYLES[cat]?.bar ?? 'bg-zinc-500'} h-full rounded-full transition-all`} style={{ width: `${pct}%` }} />
                       </div>
                       <span className="text-sm font-medium text-white w-20 text-right">{formatCurrency(amt)}</span>
                       <span className="text-xs text-zinc-500 w-12 text-right">{pct.toFixed(0)}%</span>
