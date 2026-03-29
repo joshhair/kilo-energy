@@ -1,0 +1,1240 @@
+'use client';
+
+import { use, useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useApp } from '../../../../lib/context';
+import { useToast } from '../../../../lib/toast';
+import { useIsHydrated } from '../../../../lib/hooks';
+import {
+  PHASES, Phase, InstallerBaseline,
+  getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
+} from '../../../../lib/data';
+import { formatDate } from '../../../../lib/utils';
+import { Flag, FlagOff, AlertTriangle, X, Check, Clock, ArrowRight, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SearchableSelect } from '../../components/SearchableSelect';
+import ConfirmDialog from '../../components/ConfirmDialog';
+
+// ─── Pipeline stepper ────────────────────────────────────────────────────────
+
+/** Ordered phases that form the main pipeline (excludes off-track states) */
+const PIPELINE_STEPS: Phase[] = [
+  'New',
+  'Acceptance',
+  'Site Survey',
+  'Design',
+  'Permitting',
+  'Pending Install',
+  'Installed',
+  'PTO',
+  'Completed',
+];
+
+/** Typical timeline hint shown below the stepper for the *next* phase */
+const NEXT_ACTION_HINTS: Partial<Record<Phase, string>> = {
+  'New':             'Acceptance — typically takes 1-2 business days',
+  'Acceptance':      'Site Survey — typically takes 3-5 business days',
+  'Site Survey':     'Design — typically takes 5-7 business days',
+  'Design':          'Permitting — typically takes 2-4 weeks',
+  'Permitting':      'Pending Install — typically takes 1-2 weeks',
+  'Pending Install': 'Installed — typically takes 1-2 business days',
+  'Installed':       'PTO — typically takes 2-4 weeks',
+  'PTO':             'Completed — mark as fully done once PTO is granted',
+};
+
+function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }) {
+  const currentIndex = PIPELINE_STEPS.indexOf(phase);
+  const isOffTrack = currentIndex === -1; // Cancelled or On Hold
+
+  // Days elapsed since sold date (NOTE: this is time since sale, not time in current phase)
+  const today = new Date();
+  const sold  = new Date(soldDate);
+  const daysSinceSold = Math.max(0, Math.floor((today.getTime() - sold.getTime()) / (1000 * 60 * 60 * 24)));
+
+  const nextHint   = NEXT_ACTION_HINTS[phase] ?? null;
+  const isComplete = !isOffTrack && currentIndex === PIPELINE_STEPS.length - 1;
+
+  return (
+    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6">
+
+      {/* ── Horizontal stepper ── */}
+      <div className="flex items-start w-full overflow-x-auto pb-0.5 gap-0">
+        {PIPELINE_STEPS.map((step, index) => {
+          const isCompleted = !isOffTrack && currentIndex > index;
+          const isCurrent   = !isOffTrack && currentIndex === index;
+
+          return (
+            <div key={step} className="flex items-start">
+              {/* Step node */}
+              <div className="flex flex-col items-center shrink-0 w-14">
+                {/* Circle */}
+                <div className="relative flex items-center justify-center w-8 h-8">
+                  {/* Pulsing halo on current step */}
+                  {isCurrent && (
+                    <span className="absolute inset-0 stepper-pulse" />
+                  )}
+                  <div
+                    className={`relative w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold z-10 transition-all duration-500 ${
+                      isCompleted
+                        ? 'bg-emerald-600 text-white'
+                        : isCurrent
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-500 ring-offset-[3px] ring-offset-slate-900'
+                        : 'bg-slate-800 border border-slate-700 text-slate-500'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                </div>
+
+                {/* Label */}
+                <span
+                  className={`mt-1.5 text-[9px] leading-tight text-center font-medium w-full ${
+                    isCurrent   ? 'text-blue-400'
+                    : isCompleted ? 'text-emerald-500'
+                    : 'text-slate-600'
+                  }`}
+                >
+                  {step}
+                </span>
+              </div>
+
+              {/* Connector line (not after last step) */}
+              {index < PIPELINE_STEPS.length - 1 && (
+                <div
+                  className={`flex-1 min-w-[6px] h-0.5 mt-4 shrink ${
+                    isCompleted ? 'stepper-connector-complete' : 'bg-slate-700'
+                  }`}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Days-in-stage badge + next-action prompt ── */}
+      <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center gap-3">
+
+        {/* Badge — days elapsed since sold date */}
+        {!isOffTrack && (
+          <span className="inline-flex items-center gap-1.5 bg-blue-900/40 border border-blue-500/20 text-blue-300 text-xs px-2.5 py-1 rounded-full font-medium shrink-0">
+            <Clock className="w-3 h-3" />
+            {daysSinceSold} day{daysSinceSold !== 1 ? 's' : ''} since sold
+          </span>
+        )}
+
+        {/* Off-track badge */}
+        {isOffTrack && (
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
+              phase === 'Cancelled'
+                ? 'bg-red-900/40 border border-red-500/20 text-red-300'
+                : 'bg-yellow-900/40 border border-yellow-500/20 text-yellow-300'
+            }`}
+          >
+            {phase === 'Cancelled' ? 'Project Cancelled' : 'Project On Hold'}
+          </span>
+        )}
+
+        {/* Next-action prompt */}
+        {nextHint && (
+          <p className="text-xs text-slate-400 flex items-center gap-1 min-w-0">
+            <ArrowRight className="w-3 h-3 text-slate-500 shrink-0" />
+            <span className="text-slate-500 shrink-0">Next:</span>
+            <span className="text-slate-300 truncate">{nextHint}</span>
+          </p>
+        )}
+
+        {/* Completion message */}
+        {isComplete && (
+          <p className="text-xs text-emerald-400 font-medium">
+            🎉 Permission to Operate granted — project complete!
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PhaseBadge({ phase }: { phase: Phase }) {
+  const cancelled = phase === 'Cancelled';
+  const pto = phase === 'PTO';
+  const completed = phase === 'Completed';
+  const onHold = phase === 'On Hold';
+  const cls = cancelled
+    ? 'bg-red-900/50 text-red-400'
+    : completed
+    ? 'bg-green-900/50 text-green-400 ring-1 ring-green-500/30'
+    : pto
+    ? 'bg-emerald-900/50 text-emerald-400'
+    : onHold
+    ? 'bg-yellow-900/50 text-yellow-400'
+    : 'bg-blue-900/50 text-blue-400';
+  return <span className={`px-2.5 py-1 rounded-md text-sm font-medium ${cls}`}>{phase}{completed && ' ✓'}</span>;
+}
+
+// ─── Skeleton loader ─────────────────────────────────────────────────────────
+
+/**
+ * Mirrors the project detail page layout with animated placeholder blocks.
+ * Shown during the server→client hydration window to eliminate the
+ * blank→content flash when navigating to a project from the Kanban board or
+ * dashboard attention items.
+ */
+function ProjectDetailSkeleton() {
+  return (
+    <div className="p-4 md:p-8 max-w-3xl">
+
+      {/* Breadcrumb placeholder */}
+      <div
+        className="h-9 w-56 bg-slate-800 rounded-xl animate-skeleton mb-6"
+        style={{ animationDelay: '0ms' }}
+      />
+
+      {/* ── Pipeline stepper placeholder ── */}
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6">
+
+        {/* 9 circles connected by connector lines */}
+        <div className="flex items-start w-full overflow-x-auto pb-0.5 gap-0">
+          {[...Array(9)].map((_, i) => (
+            <div key={i} className="flex items-start">
+
+              {/* Step node */}
+              <div className="flex flex-col items-center shrink-0 w-14">
+                {/* Circle */}
+                <div
+                  className="w-7 h-7 rounded-full bg-slate-800 animate-skeleton"
+                  style={{ animationDelay: `${i * 75}ms` }}
+                />
+                {/* Label text */}
+                <div
+                  className="mt-1.5 h-2 w-10 bg-slate-800/70 rounded animate-skeleton"
+                  style={{ animationDelay: `${i * 75}ms` }}
+                />
+              </div>
+
+              {/* Connector line — not rendered after the last step */}
+              {i < 8 && (
+                <div className="flex-1 min-w-[6px] h-0.5 mt-4 shrink bg-slate-700/60" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Days badge + next-action hint row */}
+        <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center gap-3">
+          <div
+            className="h-6 w-32 bg-slate-800 rounded-full animate-skeleton"
+            style={{ animationDelay: '675ms' }}
+          />
+          <div
+            className="h-4 w-52 bg-slate-800/60 rounded animate-skeleton"
+            style={{ animationDelay: '750ms' }}
+          />
+        </div>
+      </div>
+
+      {/* ── Header placeholder ── */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="space-y-3">
+          {/* Blue accent bar */}
+          <div
+            className="h-[3px] w-12 bg-slate-800 rounded-full animate-skeleton"
+            style={{ animationDelay: '75ms' }}
+          />
+          {/* Customer name */}
+          <div
+            className="h-9 w-56 bg-slate-800 rounded animate-skeleton"
+            style={{ animationDelay: '150ms' }}
+          />
+          {/* Phase badge + sold date */}
+          <div className="flex items-center gap-3">
+            <div
+              className="h-6 w-20 bg-slate-800 rounded-md animate-skeleton"
+              style={{ animationDelay: '225ms' }}
+            />
+            <div
+              className="h-4 w-28 bg-slate-800/60 rounded animate-skeleton"
+              style={{ animationDelay: '300ms' }}
+            />
+          </div>
+        </div>
+
+        {/* Action button area */}
+        <div
+          className="h-8 w-20 bg-slate-800 rounded-xl animate-skeleton"
+          style={{ animationDelay: '375ms' }}
+        />
+      </div>
+
+      {/* ── Details grid placeholder (two-column, 6 label+value rows) ── */}
+      <div className="card-surface rounded-2xl p-6 mb-5">
+        {/* Section heading */}
+        <div
+          className="h-5 w-32 bg-slate-800 rounded animate-skeleton mb-4"
+          style={{ animationDelay: '75ms' }}
+        />
+
+        <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              {/* Label */}
+              <div
+                className="h-2.5 w-14 bg-slate-800/70 rounded animate-skeleton"
+                style={{ animationDelay: `${(i + 2) * 75}ms` }}
+              />
+              {/* Value */}
+              <div
+                className="h-4 bg-slate-800 rounded animate-skeleton"
+                style={{
+                  width: i % 3 === 0 ? '72%' : i % 3 === 1 ? '58%' : '65%',
+                  animationDelay: `${(i + 2) * 75}ms`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Notes section placeholder ── */}
+      <div className="card-surface rounded-2xl p-6">
+        {/* Section heading */}
+        <div
+          className="h-5 w-16 bg-slate-800 rounded animate-skeleton mb-3"
+          style={{ animationDelay: '600ms' }}
+        />
+
+        {/* Three lines of faux note text */}
+        <div className="space-y-2">
+          <div
+            className="h-4 w-full bg-slate-800/80 rounded animate-skeleton"
+            style={{ animationDelay: '675ms' }}
+          />
+          <div
+            className="h-4 w-4/5 bg-slate-800/70 rounded animate-skeleton"
+            style={{ animationDelay: '750ms' }}
+          />
+          <div
+            className="h-4 w-3/5 bg-slate-800/60 rounded animate-skeleton"
+            style={{ animationDelay: '825ms' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { currentRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts } = useApp();
+  const { toast } = useToast();
+  const router = useRouter();
+  const isHydrated = useIsHydrated();
+
+  const project = projects.find((p) => p.id === id);
+  useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
+  const [adminNotes, setAdminNotes] = useState(project?.notes ?? '');
+  // Track the last project.notes value we synced from so we can detect external
+  // changes (e.g. the Edit modal saving new notes) without clobbering unsaved
+  // local edits the admin is actively typing.
+  const lastSyncedNotes = useRef(project?.notes ?? '');
+  useEffect(() => {
+    const incoming = project?.notes ?? '';
+    if (incoming !== lastSyncedNotes.current) {
+      // project.notes changed externally — only overwrite local textarea if the
+      // admin hasn't started typing something new (i.e. textarea still matches
+      // the previous synced value).
+      if (adminNotes === lastSyncedNotes.current) {
+        setAdminNotes(incoming);
+      }
+      lastSyncedNotes.current = incoming;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.notes]);
+  const [editM1, setEditM1] = useState(false);
+  const [editM2, setEditM2] = useState(false);
+  const [m1Val, setM1Val] = useState('');
+  const [m2Val, setM2Val] = useState('');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [editVals, setEditVals] = useState({
+    installer: '',
+    financer: '',
+    productType: '',
+    kWSize: '',
+    netPPW: '',
+    setterId: '',
+    soldDate: '',
+    notes: '',
+    useBaselineOverride: false,
+    overrideCloserPerW: '',
+    overrideSetterPerW: '',
+    overrideKiloPerW: '',
+  });
+
+  // ── Prev/Next project navigation ─────────────────────────────────────────
+  const [navIds, setNavIds] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('kilo-project-nav');
+      if (raw) setNavIds(JSON.parse(raw));
+    } catch { /* SSR / quota guard */ }
+  }, []);
+  const navIndex = navIds.indexOf(id);
+  const prevProjectId = navIndex > 0 ? navIds[navIndex - 1] : null;
+  const nextProjectId = navIndex >= 0 && navIndex < navIds.length - 1 ? navIds[navIndex + 1] : null;
+
+  // ArrowLeft / ArrowRight keyboard shortcuts (only when no input is focused)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (showEditModal || showCancelConfirm) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement)?.isContentEditable) return;
+      if (e.key === 'ArrowLeft' && prevProjectId) {
+        e.preventDefault();
+        router.push(`/dashboard/projects/${prevProjectId}`);
+      } else if (e.key === 'ArrowRight' && nextProjectId) {
+        e.preventDefault();
+        router.push(`/dashboard/projects/${nextProjectId}`);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prevProjectId, nextProjectId, showEditModal, showCancelConfirm]);
+
+  // Escape to close Edit Project modal
+  useEffect(() => {
+    if (!showEditModal) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setShowEditModal(false); setEditErrors({}); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showEditModal]);
+
+  // (Cancel Confirm Escape handler removed — ConfirmDialog handles it internally)
+
+  // Return the skeleton loader during the server→client hydration window so
+  // the page never flashes raw blank content when navigating to a project.
+  if (!isHydrated) return <ProjectDetailSkeleton />;
+
+  if (!project) {
+    return (
+      <div className="p-4 md:p-8 text-center text-slate-500">
+        Project not found.{' '}
+        <Link href="/dashboard/projects" className="text-blue-400 hover:underline">
+          Back to Projects
+        </Link>
+      </div>
+    );
+  }
+
+  // Reps can only view their own projects
+  if (currentRole === 'rep' && project.repId !== currentRepId && project.setterId !== currentRepId) {
+    return (
+      <div className="p-4 md:p-8 text-center text-slate-500 text-sm">
+        You don&apos;t have permission to view this project.{' '}
+        <Link href="/dashboard/projects" className="text-blue-400 hover:underline">
+          Back to Projects
+        </Link>
+      </div>
+    );
+  }
+
+  const updateProject = (updates: Partial<typeof project>) => {
+    ctxUpdateProject(id, updates);
+  };
+
+  const handleCancel = () => {
+    updateProject({ phase: 'Cancelled' });
+    setShowCancelConfirm(false);
+    toast('Project cancelled', 'info');
+    router.push('/dashboard/projects');
+  };
+
+  const handlePhaseChange = (phase: Phase) => {
+    const previousPhase = project.phase;
+    updateProject({ phase });
+    toast(`Phase updated to ${phase}`, 'success', {
+      label: 'Undo',
+      onClick: () => handlePhaseChange(previousPhase),
+    });
+  };
+
+  const handleFlag = () => {
+    const newFlagged = !project.flagged;
+    updateProject({ flagged: newFlagged });
+    toast(newFlagged ? 'Project flagged' : 'Flag removed', newFlagged ? 'info' : 'success');
+  };
+
+  const handleToggleM1 = () => {
+    const previousM1Paid = project.m1Paid;
+    const next = !previousM1Paid;
+    updateProject({ m1Paid: next });
+    toast(
+      `M1 marked as ${next ? 'Paid' : 'Unpaid'}`,
+      'success',
+      { label: 'Undo', onClick: () => { updateProject({ m1Paid: previousM1Paid }); } },
+    );
+  };
+
+  const handleToggleM2 = () => {
+    const previousM2Paid = project.m2Paid;
+    const next = !previousM2Paid;
+    updateProject({ m2Paid: next });
+    toast(
+      `M2 marked as ${next ? 'Paid' : 'Unpaid'}`,
+      'success',
+      { label: 'Undo', onClick: () => { updateProject({ m2Paid: previousM2Paid }); } },
+    );
+  };
+
+  const saveM1 = () => {
+    const val = parseFloat(m1Val);
+    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); }
+    setEditM1(false);
+  };
+
+  const saveM2 = () => {
+    const val = parseFloat(m2Val);
+    if (!isNaN(val)) { updateProject({ m2Amount: val }); toast('M2 amount updated', 'success'); }
+    setEditM2(false);
+  };
+
+  const openEditModal = () => {
+    setEditVals({
+      installer: project.installer,
+      financer: project.financer,
+      productType: project.productType,
+      kWSize: String(project.kWSize),
+      netPPW: String(project.netPPW),
+      setterId: project.setterId ?? '',
+      soldDate: project.soldDate,
+      notes: project.notes ?? '',
+      useBaselineOverride: !!project.baselineOverride,
+      overrideCloserPerW: project.baselineOverride ? String(project.baselineOverride.closerPerW) : '',
+      overrideSetterPerW: project.baselineOverride?.setterPerW != null ? String(project.baselineOverride.setterPerW) : '',
+      overrideKiloPerW: project.baselineOverride ? String(project.baselineOverride.kiloPerW) : '',
+    });
+    setEditErrors({});
+    setShowEditModal(true);
+  };
+
+  const saveEditModal = () => {
+    const kw = parseFloat(editVals.kWSize);
+    const ppw = parseFloat(editVals.netPPW);
+
+    // Validate required fields before saving
+    const errs: Record<string, string> = {};
+    if (!editVals.installer) errs.installer = 'Installer is required';
+    if (!editVals.soldDate) errs.soldDate = 'Sold date is required';
+    if (!editVals.kWSize || isNaN(kw) || kw <= 0) errs.kWSize = 'Must be a number greater than 0';
+    if (!editVals.netPPW || isNaN(ppw) || ppw <= 0) errs.netPPW = 'Must be a number greater than 0';
+    setEditErrors(errs);
+    if (Object.values(errs).some(Boolean)) return;
+
+    const setterRep = reps.find((r) => r.id === editVals.setterId);
+    const parsedSetterPerW = parseFloat(editVals.overrideSetterPerW);
+    const baselineOverride: InstallerBaseline | undefined = editVals.useBaselineOverride
+      ? {
+          closerPerW: parseFloat(editVals.overrideCloserPerW) || 0,
+          kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0,
+          ...(editVals.overrideSetterPerW !== '' && !isNaN(parsedSetterPerW) ? { setterPerW: parsedSetterPerW } : {}),
+        }
+      : undefined;
+    ctxUpdateProject(project.id, {
+      installer: editVals.installer,
+      financer: editVals.financer,
+      productType: editVals.productType,
+      kWSize: kw,
+      netPPW: ppw,
+      setterId: editVals.setterId || undefined,
+      setterName: setterRep?.name ?? (editVals.setterId ? project.setterName : undefined),
+      soldDate: editVals.soldDate,
+      notes: editVals.notes,
+      baselineOverride,
+    });
+    setShowEditModal(false);
+    setEditErrors({});
+    toast('Project updated', 'success');
+  };
+
+  // Commission entries for this project (rep view)
+  const myEntries = currentRole === 'rep'
+    ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === currentRepId)
+    : [];
+
+  // All payroll entries for this project (admin view)
+  const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
+  const closerEntries = projectEntries.filter((e) => e.repId === project.repId && !e.notes.toLowerCase().includes('setter') && !e.notes.toLowerCase().includes('trainer'));
+  const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId) : [];
+  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e));
+
+  // Resolved baseline rates for this project
+  const projectBaselines = (() => {
+    if (project.baselineOverride) return project.baselineOverride;
+    if (project.installer === 'SolarTech' && project.solarTechProductId) {
+      return getSolarTechBaseline(project.solarTechProductId, project.kWSize);
+    }
+    if (project.installerProductId) {
+      return getProductCatalogBaseline(productCatalogProducts, project.installerProductId, project.kWSize);
+    }
+    return getInstallerRatesForDeal(project.installer, project.soldDate, project.kWSize, installerPricingVersions);
+  })();
+
+  const closerExpectedM2 = Math.max(0, Math.round((project.netPPW - projectBaselines.closerPerW) * project.kWSize * 1000 * 100) / 100);
+  const setterPerW = 'setterPerW' in projectBaselines && projectBaselines.setterPerW != null
+    ? projectBaselines.setterPerW
+    : Math.round((projectBaselines.closerPerW + 0.10) * 100) / 100;
+  const m1Flat = project.kWSize >= 5 ? 1000 : 500;
+
+  const inputCls =
+    'bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+  return (
+    <div className="p-4 md:p-8 max-w-3xl">
+      {/* Breadcrumb + Prev/Next */}
+      <div className="flex items-center justify-between mb-6">
+        <nav className="animate-breadcrumb-enter inline-flex items-center gap-0.5 text-xs text-slate-400 bg-slate-900/60 backdrop-blur-md border border-slate-800/60 rounded-xl px-4 py-2.5">
+          <Link href="/dashboard" className="hover:bg-slate-800/50 hover:text-slate-200 transition-colors px-2 py-1 rounded-lg">Dashboard</Link>
+          <span className="text-slate-700 mx-1">/</span>
+          <Link href="/dashboard/projects" className="hover:bg-slate-800/50 hover:text-slate-200 transition-colors px-2 py-1 rounded-lg">Projects</Link>
+          <span className="text-slate-700 mx-1">/</span>
+          <span className="text-white font-medium bg-blue-500/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
+        </nav>
+
+        {/* Prev / Next project buttons */}
+        {(prevProjectId || nextProjectId) && (
+          <div className="flex items-center gap-1.5">
+            {prevProjectId ? (
+              <Link
+                href={`/dashboard/projects/${prevProjectId}`}
+                title="Previous project (←)"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Link>
+            ) : (
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/30 border border-slate-800/40 text-slate-700 cursor-default">
+                <ChevronLeft className="w-4 h-4" />
+              </span>
+            )}
+            {nextProjectId ? (
+              <Link
+                href={`/dashboard/projects/${nextProjectId}`}
+                title="Next project (→)"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/30 border border-slate-800/40 text-slate-700 cursor-default">
+                <ChevronRight className="w-4 h-4" />
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Pipeline stage tracker */}
+      <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">{project.customerName}</h1>
+            {project.flagged && (
+              <span className="flex items-center gap-1 bg-red-900/40 border border-red-500/30 text-red-400 text-xs px-2 py-0.5 rounded-full">
+                <AlertTriangle className="w-3 h-3" />
+                Flagged
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <PhaseBadge phase={project.phase} />
+            <span className="text-slate-500 text-sm">Sold {formatDate(project.soldDate)}</span>
+          </div>
+        </div>
+
+        {currentRole === 'admin' ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openEditModal}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-900/20 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit
+            </button>
+            <button
+              onClick={handleFlag}
+              className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border transition-colors ${
+                project.flagged
+                  ? 'border-red-500/40 text-red-400 hover:bg-red-900/20'
+                  : 'border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              {project.flagged ? <FlagOff className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}
+              {project.flagged ? 'Unflag' : 'Flag'}
+            </button>
+            {project.phase !== 'Cancelled' && (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        ) : (
+          project.phase !== 'Cancelled' && (
+            <button
+              onClick={() => setShowCancelConfirm(true)}
+              className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 rounded-xl transition-colors"
+            >
+              Cancel Project
+            </button>
+          )
+        )}
+      </div>
+
+      {/* Details grid */}
+      <div className="card-surface rounded-2xl p-6 mb-5">
+        <h2 className="text-white font-semibold mb-4">Project Details</h2>
+        <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+          {[
+            ['Rep', project.repName],
+            ['Installer', project.installer],
+            ['Financer', project.financer],
+            ['Product Type', project.productType],
+            ['System Size', `${project.kWSize} kW`],
+            ['Net PPW', `$${project.netPPW}`],
+            ['Sold Date', formatDate(project.soldDate)],
+            ['Phase', project.phase],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">{label}</p>
+              <p className="text-white">{value}</p>
+            </div>
+          ))}
+          {project.setterId && (
+            <div>
+              <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Setter</p>
+              <p className="text-white">{project.setterName}</p>
+            </div>
+          )}
+        </div>
+
+        {currentRole === 'admin' && (
+          <div className="mt-5 pt-5 border-t border-slate-800">
+            <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Change Phase</p>
+            <select
+              value={project.phase}
+              onChange={(e) => handlePhaseChange(e.target.value as Phase)}
+              className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {PHASES.map((ph) => (
+                <option key={ph} value={ph}>{ph}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Commission — rep view shows their own payroll entries */}
+      {currentRole === 'rep' && (
+        <div className="card-surface rounded-2xl p-6 mb-5">
+          <h2 className="text-white font-semibold mb-4">My Commission</h2>
+          {myEntries.length > 0 ? (
+            <div className="space-y-2">
+              {myEntries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">
+                      {entry.paymentStage}
+                      {entry.notes ? <span className="text-slate-500 font-normal ml-1.5 text-xs">({entry.notes})</span> : null}
+                    </p>
+                    <p className="text-slate-500 text-xs mt-0.5">{formatDate(entry.date)}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                      entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                      entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                      'bg-slate-700 text-slate-400'
+                    }`}>
+                      {entry.status}
+                    </span>
+                    <span className="text-emerald-400 font-bold">${entry.amount.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1 bg-slate-800/50 rounded-xl px-4 py-3">
+                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
+                  <p className="text-emerald-400 font-bold">${project.m1Amount.toLocaleString()}</p>
+                </div>
+                <div className="flex-1 bg-slate-800/50 rounded-xl px-4 py-3">
+                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
+                  <p className="text-emerald-400 font-bold">${project.m2Amount.toLocaleString()}</p>
+                </div>
+                {(project.m3Amount ?? 0) > 0 && (
+                  <div className="flex-1 bg-slate-800/50 rounded-xl px-4 py-3">
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
+                    <p className="text-teal-400 font-bold">${(project.m3Amount ?? 0).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-slate-500 text-sm">
+                No payments yet &mdash; commission will appear here as milestones are reached.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Commission breakdown (admin) */}
+      {currentRole === 'admin' && (
+        <div className="card-surface rounded-2xl p-6 mb-5">
+          <h2 className="text-white font-semibold mb-1">Commission Breakdown</h2>
+
+          {/* Baseline rates summary */}
+          <div className="flex flex-wrap gap-3 mb-4 mt-2">
+            <span className="text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400">
+              Closer baseline: <span className="text-blue-300 font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
+            </span>
+            <span className="text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400">
+              Kilo cost: <span className="text-purple-300 font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
+            </span>
+            <span className="text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400">
+              Sold: <span className="text-white font-semibold">${project.netPPW.toFixed(3)}/W</span>
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {/* ── Closer ── */}
+            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-white text-sm font-semibold">{project.repName}</p>
+                  <p className="text-slate-500 text-xs">Closer</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-slate-400 text-xs">Expected M2</p>
+                  <p className="text-emerald-400 font-bold text-sm">${closerExpectedM2.toLocaleString()}</p>
+                </div>
+              </div>
+              {closerEntries.length > 0 ? (
+                <div className="space-y-1.5">
+                  {closerEntries.map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="text-slate-300 text-xs font-medium">{entry.paymentStage}</span>
+                        {entry.notes ? <span className="text-slate-500 text-xs ml-1.5">({entry.notes})</span> : null}
+                        <p className="text-slate-600 text-xs">{formatDate(entry.date)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                          entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                          'bg-slate-700 text-slate-400'
+                        }`}>{entry.status}</span>
+                        <span className="text-emerald-400 font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-600 text-xs italic">No payroll entries yet.</p>
+              )}
+            </div>
+
+            {/* ── Setter ── */}
+            {project.setterId ? (
+              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-white text-sm font-semibold">{project.setterName}</p>
+                    <p className="text-slate-500 text-xs">Setter</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-slate-400 text-xs">Expected M1</p>
+                    <p className="text-emerald-400 font-bold text-sm">${m1Flat.toLocaleString()}</p>
+                  </div>
+                </div>
+                {setterEntries.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {setterEntries.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-slate-300 text-xs font-medium">{entry.paymentStage}</span>
+                          {entry.notes ? <span className="text-slate-500 text-xs ml-1.5">({entry.notes})</span> : null}
+                          <p className="text-slate-600 text-xs">{formatDate(entry.date)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                            entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                            'bg-slate-700 text-slate-400'
+                          }`}>{entry.status}</span>
+                          <span className="text-emerald-400 font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-600 text-xs italic">No payroll entries yet.</p>
+                )}
+              </div>
+            ) : (
+              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+                <p className="text-white text-sm font-semibold mb-0.5">{project.repName} <span className="text-slate-500 font-normal text-xs">(self-gen)</span></p>
+                <p className="text-slate-500 text-xs">M1 flat goes to closer — no setter on this deal</p>
+              </div>
+            )}
+
+            {/* ── Other entries (trainer overrides, bonuses, etc.) ── */}
+            {otherEntries.length > 0 && (
+              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">Other Payouts</p>
+                <div className="space-y-1.5">
+                  {otherEntries.map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="text-slate-300 text-xs font-medium">{entry.repName}</span>
+                        <span className="text-slate-500 text-xs ml-1.5">{entry.paymentStage}</span>
+                        {entry.notes ? <span className="text-slate-500 text-xs ml-1.5">({entry.notes})</span> : null}
+                        <p className="text-slate-600 text-xs">{formatDate(entry.date)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                          entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                          'bg-slate-700 text-slate-400'
+                        }`}>{entry.status}</span>
+                        <span className="text-emerald-400 font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Milestone toggles ── */}
+            <div className="border-t border-slate-800 pt-4 space-y-3">
+              <p className="text-slate-500 text-xs uppercase tracking-wider">Milestone Status</p>
+
+              {/* M1 */}
+              <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
+                <div>
+                  <p className="text-slate-300 text-sm font-medium">Milestone 1 (M1)</p>
+                  {editM1 ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="number"
+                        value={m1Val}
+                        onChange={(e) => setM1Val(e.target.value)}
+                        placeholder={String(project.m1Amount)}
+                        className={inputCls + ' w-28'}
+                      />
+                      <button onClick={saveM1} className="text-blue-400 hover:text-blue-300 text-xs">Save</button>
+                      <button onClick={() => setEditM1(false)} className="text-slate-500 hover:text-slate-400 text-xs">Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-emerald-400 font-semibold">${project.m1Amount.toLocaleString()}</p>
+                      <button
+                        onClick={() => { setM1Val(String(project.m1Amount)); setEditM1(true); }}
+                        className="text-slate-500 hover:text-slate-300 text-xs"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleToggleM1}
+                    className="text-xs text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    {project.m1Paid ? 'Mark Unpaid' : 'Mark Paid'}
+                  </button>
+                  <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                    project.m1Paid ? 'bg-emerald-900/50 text-emerald-400' : 'bg-yellow-900/50 text-yellow-400'
+                  }`}>
+                    {project.m1Paid ? 'Paid' : 'Pending'}
+                  </span>
+                </div>
+              </div>
+
+              {/* M2 */}
+              <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
+                <div>
+                  <p className="text-slate-300 text-sm font-medium">Milestone 2 (M2)</p>
+                  {editM2 ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="number"
+                        value={m2Val}
+                        onChange={(e) => setM2Val(e.target.value)}
+                        placeholder={String(project.m2Amount)}
+                        className={inputCls + ' w-28'}
+                      />
+                      <button onClick={saveM2} className="text-blue-400 hover:text-blue-300 text-xs">Save</button>
+                      <button onClick={() => setEditM2(false)} className="text-slate-500 hover:text-slate-400 text-xs">Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-emerald-400 font-semibold">${project.m2Amount.toLocaleString()}</p>
+                      <button
+                        onClick={() => { setM2Val(String(project.m2Amount)); setEditM2(true); }}
+                        className="text-slate-500 hover:text-slate-300 text-xs"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleToggleM2}
+                    className="text-xs text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    {project.m2Paid ? 'Mark Unpaid' : 'Mark Paid'}
+                  </button>
+                  <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                    project.m2Paid ? 'bg-emerald-900/50 text-emerald-400' : 'bg-yellow-900/50 text-yellow-400'
+                  }`}>
+                    {project.m2Paid ? 'Paid' : 'Pending'}
+                  </span>
+                </div>
+              </div>
+
+              {/* M3 (read-only, auto-calculated) */}
+              {(project.m3Amount ?? 0) > 0 && (
+                <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Milestone 3 (M3) — PTO</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-teal-400 font-semibold">${(project.m3Amount ?? 0).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-700/50 text-slate-400">
+                    Auto at PTO
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notes */}
+      <div className="card-surface rounded-2xl p-6">
+        <h2 className="text-white font-semibold mb-3">Notes</h2>
+
+        {currentRole === 'admin' ? (
+          <div>
+            <textarea
+              rows={4}
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder="Add notes about this project..."
+              maxLength={1000}
+              className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500 resize-none"
+            />
+            <p className={`text-xs mt-1 text-right transition-colors duration-200 ${
+              adminNotes.length >= 960 ? 'text-red-400' :
+              adminNotes.length >= 800 ? 'text-amber-400' :
+              'text-slate-500'
+            }`}>
+              {adminNotes.length} / 1000
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <button
+                onClick={() => { updateProject({ notes: adminNotes }); toast('Notes saved', 'success'); }}
+                disabled={adminNotes === (project.notes ?? '')}
+                className="bg-slate-700 hover:bg-slate-600 text-white text-sm px-4 py-1.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Save Notes
+              </button>
+              {adminNotes !== (project.notes ?? '') && (
+                <span className="text-xs text-amber-400">Unsaved changes</span>
+              )}
+            </div>
+          </div>
+        ) : project.notes ? (
+          <p className="text-slate-400 text-sm leading-relaxed">{project.notes}</p>
+        ) : (
+          <p className="text-slate-600 text-sm italic">No notes added.</p>
+        )}
+      </div>
+
+      {/* Edit Project Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowEditModal(false); setEditErrors({}); } }}>
+          <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-900/30">
+                  <Pencil className="w-5 h-5 text-blue-400" />
+                </div>
+                <h2 className="text-white font-semibold">Edit Project</h2>
+              </div>
+              <button onClick={() => { setShowEditModal(false); setEditErrors({}); }} className="text-slate-500 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Installer */}
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Installer</label>
+                <SearchableSelect
+                  value={editVals.installer}
+                  onChange={(val) => { setEditVals((v) => ({ ...v, installer: val })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
+                  options={activeInstallers.map((inst) => ({ value: inst, label: inst }))}
+                  placeholder="Select installer…"
+                  error={!!editErrors.installer}
+                />
+                {editErrors.installer && <p className="text-red-400 text-xs mt-1">{editErrors.installer}</p>}
+              </div>
+
+              {/* Financer */}
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Financer</label>
+                <SearchableSelect
+                  value={editVals.financer}
+                  onChange={(val) => setEditVals((v) => ({ ...v, financer: val }))}
+                  options={activeFinancers.map((fin) => ({ value: fin, label: fin }))}
+                  placeholder="Select financer…"
+                />
+              </div>
+
+              {/* Product Type */}
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Product Type</label>
+                <input type="text" value={editVals.productType} onChange={(e) => setEditVals((v) => ({ ...v, productType: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+
+              {/* kW + PPW */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">System Size (kW)</label>
+                  <input type="number" step="0.1" value={editVals.kWSize}
+                    onChange={(e) => { setEditVals((v) => ({ ...v, kWSize: e.target.value })); setEditErrors((prev) => ({ ...prev, kWSize: '' })); }}
+                    className={`w-full bg-slate-800 border ${editErrors.kWSize ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                  {editErrors.kWSize && <p className="text-red-400 text-xs mt-1">{editErrors.kWSize}</p>}
+                </div>
+                <div>
+                  <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Net PPW ($)</label>
+                  <input type="number" step="0.01" value={editVals.netPPW}
+                    onChange={(e) => { setEditVals((v) => ({ ...v, netPPW: e.target.value })); setEditErrors((prev) => ({ ...prev, netPPW: '' })); }}
+                    className={`w-full bg-slate-800 border ${editErrors.netPPW ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                  {editErrors.netPPW && <p className="text-red-400 text-xs mt-1">{editErrors.netPPW}</p>}
+                </div>
+              </div>
+
+              {/* Setter */}
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Setter (optional)</label>
+                <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">— None —</option>
+                  {reps.filter((r) => r.repType === 'setter' || r.repType === 'both').map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sold Date */}
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Sold Date</label>
+                <input type="date" value={editVals.soldDate}
+                  onChange={(e) => { setEditVals((v) => ({ ...v, soldDate: e.target.value })); setEditErrors((prev) => ({ ...prev, soldDate: '' })); }}
+                  className={`w-full bg-slate-800 border ${editErrors.soldDate ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                {editErrors.soldDate && <p className="text-red-400 text-xs mt-1">{editErrors.soldDate}</p>}
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Notes</label>
+                <textarea rows={2} value={editVals.notes} onChange={(e) => setEditVals((v) => ({ ...v, notes: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+              </div>
+
+              {/* Baseline Override */}
+              <div className="bg-slate-800/60 rounded-xl p-4">
+                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                  <input type="checkbox" checked={editVals.useBaselineOverride}
+                    onChange={(e) => setEditVals((v) => ({ ...v, useBaselineOverride: e.target.checked }))}
+                    className="w-4 h-4 rounded accent-blue-500" />
+                  <span className="text-slate-300 text-sm font-medium">Override baseline for this project</span>
+                </label>
+                {editVals.useBaselineOverride && (
+                  <div className="grid grid-cols-3 gap-3 mt-2">
+                    <div>
+                      <label className="text-slate-500 text-xs block mb-1">Closer $/W</label>
+                      <input type="number" step="0.01" value={editVals.overrideCloserPerW}
+                        placeholder={String(installerBaselines[editVals.installer]?.closerPerW ?? 2.90)}
+                        onChange={(e) => setEditVals((v) => ({ ...v, overrideCloserPerW: e.target.value }))}
+                        className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-slate-500 text-xs block mb-1">Setter $/W</label>
+                      <input type="number" step="0.01" value={editVals.overrideSetterPerW}
+                        placeholder={editVals.overrideCloserPerW
+                          ? String(Math.round((parseFloat(editVals.overrideCloserPerW) + 0.10) * 100) / 100)
+                          : String(Math.round(((installerBaselines[editVals.installer]?.closerPerW ?? 2.90) + 0.10) * 100) / 100)}
+                        onChange={(e) => setEditVals((v) => ({ ...v, overrideSetterPerW: e.target.value }))}
+                        className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-slate-500 text-xs block mb-1">Kilo $/W</label>
+                      <input type="number" step="0.01" value={editVals.overrideKiloPerW}
+                        placeholder={String(installerBaselines[editVals.installer]?.kiloPerW ?? 2.35)}
+                        onChange={(e) => setEditVals((v) => ({ ...v, overrideKiloPerW: e.target.value }))}
+                        className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={saveEditModal}
+                className="flex-1 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
+                style={{ backgroundColor: 'var(--brand)' }}>
+                Save Changes
+              </button>
+              <button onClick={() => { setShowEditModal(false); setEditErrors({}); }}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Confirm Modal */}
+      <ConfirmDialog
+        open={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancel}
+        title="Cancel Project"
+        message={`This will mark ${project.customerName} as Cancelled. This can be reversed by an admin.`}
+        confirmLabel="Cancel Project"
+        danger={true}
+      />
+    </div>
+  );
+}

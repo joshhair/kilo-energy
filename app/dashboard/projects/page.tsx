@@ -1,0 +1,1839 @@
+'use client';
+
+import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useApp } from '../../../lib/context';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import { PHASES, ACTIVE_PHASES, Phase, Rep, TrainerAssignment } from '../../../lib/data';
+import { formatDate } from '../../../lib/utils';
+import { Search, Flag, X, ChevronUp, ChevronDown, ChevronsUpDown, FolderKanban, ChevronRight, ChevronLeft, UserPlus, ArrowLeftRight, Check, ArrowRight } from 'lucide-react';
+import { useToast } from '../../../lib/toast';
+import { PaginationBar, buildPageRange } from '../components/PaginationBar';
+
+type StatusFilter = 'active' | 'all' | 'completed' | 'cancelled' | 'on-hold';
+
+/** Returns the number of calendar days between a YYYY-MM-DD date string and today. */
+function daysSince(dateStr: string): number {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const past = new Date(year, month - 1, day);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((now.getTime() - past.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+/** Returns a human-readable relative time string like "3d ago", "2mo ago", "1y ago". */
+function relativeTime(dateStr: string): string {
+  const days = daysSince(dateStr);
+  if (days === 0) return 'today';
+  if (days === 1) return '1d ago';
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.floor(months / 12);
+  return `${years}y ago`;
+}
+
+/**
+ * Badge shown on Kanban cards when a project has been in the pipeline for
+ * more than 30 days since the sold date.
+ *   30–59 days → amber
+ *   60+ days   → red
+ */
+function StaleBadge({ soldDate, phase }: { soldDate: string; phase: Phase }) {
+  if (!ACTIVE_PHASES.includes(phase)) return null;
+  const days = daysSince(soldDate);
+  if (days < 30) return null;
+  const isRed = days >= 60;
+  return (
+    <span
+      title={`${days} days since sold`}
+      className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${
+        isRed
+          ? 'bg-red-900/50 text-red-400 border border-red-500/30'
+          : 'bg-amber-900/50 text-amber-400 border border-amber-500/30'
+      }`}
+    >
+      {days}d
+    </span>
+  );
+}
+
+function applyStatusFilter(projects: ReturnType<typeof useApp>['projects'], status: StatusFilter) {
+  if (status === 'all') return projects;
+  if (status === 'active') return projects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  if (status === 'completed') return projects.filter((p) => p.phase === 'Completed');
+  if (status === 'cancelled') return projects.filter((p) => p.phase === 'Cancelled');
+  if (status === 'on-hold') return projects.filter((p) => p.phase === 'On Hold');
+  return projects;
+}
+
+const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string }> = {
+  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400'     },
+  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-indigo-300',  dot: 'bg-indigo-400'  },
+  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-violet-300',  dot: 'bg-violet-400'  },
+  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400' },
+  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-amber-300',   dot: 'bg-amber-400'   },
+  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-orange-300',  dot: 'bg-orange-400'  },
+  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-teal-300',    dot: 'bg-teal-400'    },
+  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
+  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_rgba(34,197,94,0.25)]',   text: 'text-green-300',   dot: 'bg-green-400'   },
+  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-red-300',     dot: 'bg-red-400'     },
+  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+};
+
+
+function PhaseBadge({ phase }: { phase: Phase }) {
+  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-slate-600/30', shadow: '', text: 'text-slate-300', dot: 'bg-slate-400' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
+      {phase}
+    </span>
+  );
+}
+
+const STATUS_LABELS: Record<StatusFilter, string> = {
+  active: 'Active',
+  all: 'All',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  'on-hold': 'On Hold',
+};
+
+export default function ProjectsPage() {
+  return (
+    <Suspense>
+      <ProjectsPageInner />
+    </Suspense>
+  );
+}
+
+function ProjectsPageInner() {
+  const { currentRole, currentRepId, projects, setProjects, updateProject, activeInstallers } = useApp();
+  const { toast } = useToast();
+  useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const isRep = currentRole !== 'admin';
+
+  // Read initial values from URL searchParams
+  const [tab, setTab] = useState<'phase' | 'all'>(() => {
+    const v = searchParams.get('view');
+    return v === 'all' ? 'all' : 'phase';
+  });
+  const [dealScope, setDealScope] = useState<'mine' | 'all'>(isRep ? 'mine' : 'all');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const v = searchParams.get('status') as StatusFilter | null;
+    return v && ['active', 'all', 'completed', 'cancelled', 'on-hold'].includes(v) ? v : 'active';
+  });
+  const [installerFilter, setInstallerFilter] = useState(() => searchParams.get('installer') ?? '');
+  const isHydrated = useIsHydrated();
+
+  // Sync filters to URL searchParams
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (tab !== 'phase') params.set('view', tab); else params.delete('view');
+    if (statusFilter !== 'active') params.set('status', statusFilter); else params.delete('status');
+    if (installerFilter) params.set('installer', installerFilter); else params.delete('installer');
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, statusFilter, installerFilter]);
+
+  // Sliding tab indicators
+  const viewTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [viewIndicator, setViewIndicator] = useState<{ left: number; width: number } | null>(null);
+  const statusFilterRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [statusFilterIndicator, setStatusFilterIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const VIEW_TABS = ['phase', 'all'] as const;
+    const idx = VIEW_TABS.indexOf(tab);
+    const el = viewTabRefs.current[idx];
+    if (el) setViewIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [tab]);
+
+  useEffect(() => {
+    const STATUS_FILTER_TABS: StatusFilter[] = ['active', 'all', 'completed', 'cancelled', 'on-hold'];
+    const idx = STATUS_FILTER_TABS.indexOf(statusFilter);
+    const el = statusFilterRefs.current[idx];
+    if (el) setStatusFilterIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [statusFilter]);
+
+  // Debounce searchInput → debouncedSearch (300ms; 0ms when cleared for instant feedback).
+  useEffect(() => {
+    const delay = searchInput === '' ? 0 : 300;
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // All projects the current user is allowed to see.
+  // Admins see everything; reps ONLY see their own deals — never all company deals.
+  const visibleProjects =
+    currentRole === 'admin'
+      ? (dealScope === 'mine' ? projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId) : projects)
+      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+
+  // Keep a stable alias for the header count — always rep's own deals for reps, all for admin.
+  const myProjects =
+    currentRole === 'admin'
+      ? projects
+      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+
+  const statusFiltered = applyStatusFilter(visibleProjects, statusFilter);
+
+  const filtered = statusFiltered.filter((p) => {
+    const matchSearch =
+      p.customerName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      p.repName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      p.phase.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      p.installer.toLowerCase().includes(debouncedSearch.toLowerCase());
+    const matchInstaller = !installerFilter || p.installer === installerFilter;
+    return matchSearch && matchInstaller;
+  });
+
+  const handlePhaseChange = (projectId: string, phase: Phase) => {
+    const project = projects.find((p) => p.id === projectId);
+    const previousPhase = project?.phase;
+    updateProject(projectId, { phase });
+    if (project) toast(
+      `${project.customerName} moved to ${phase}`,
+      'success',
+      previousPhase && previousPhase !== phase
+        ? { label: 'Undo', onClick: () => handlePhaseChange(projectId, previousPhase) }
+        : undefined,
+    );
+  };
+
+  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '';
+
+  const clearAllFilters = () => {
+    setStatusFilter('active');
+    setInstallerFilter('');
+    setSearchInput('');
+    setDebouncedSearch('');
+    toast('Filters cleared', 'info');
+  };
+
+  if (!isHydrated) {
+    return <ProjectsSkeleton />;
+  }
+
+  return (
+    <div className="p-4 md:p-8 animate-fade-in-up">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+          <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Projects</h1>
+          <p className="text-slate-400 text-sm font-medium mt-1 tracking-wide">{myProjects.length} total projects</p>
+        </div>
+        <Link
+          href="/dashboard/new-deal"
+          className="btn-primary text-white font-medium px-4 py-2 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          style={{ backgroundColor: 'var(--brand)' }}
+        >
+          + New Deal
+        </Link>
+      </div>
+
+      {/* View + Status tabs */}
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
+        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
+          {viewIndicator && <div className="tab-indicator" style={viewIndicator} />}
+          {(['phase', 'all'] as const).map((t, i) => (
+            <button
+              key={t}
+              ref={(el) => { viewTabRefs.current[i] = el; }}
+              onClick={() => setTab(t)}
+              className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                tab === t ? 'text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {t === 'phase' ? 'By Phase' : 'All Projects'}
+            </button>
+          ))}
+        </div>
+
+        {/* My Deals / All Deals segmented control — admin only */}
+        {!isRep && (
+          <div className="flex gap-0.5 bg-slate-900 border border-slate-800 rounded-xl p-1">
+            {(['all', 'mine'] as const).map((scope) => (
+              <button
+                key={scope}
+                onClick={() => setDealScope(scope)}
+                className={`relative px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                  dealScope === scope
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {scope === 'all' ? 'All Deals' : 'My Deals'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Status filter */}
+        <div className="flex gap-1 bg-slate-800 rounded-xl p-1 tab-bar-container overflow-x-auto scrollbar-hide">
+          {statusFilterIndicator && <div className="tab-indicator" style={statusFilterIndicator} />}
+          {([
+            { value: 'active', label: 'Active' },
+            { value: 'all', label: 'All' },
+            { value: 'completed', label: '✓ Completed' },
+            { value: 'cancelled', label: 'Cancelled' },
+            { value: 'on-hold', label: 'On Hold' },
+          ] as { value: StatusFilter; label: string }[]).map((s, i) => (
+            <button
+              key={s.value}
+              ref={(el) => { statusFilterRefs.current[i] = el; }}
+              onClick={() => setStatusFilter(s.value)}
+              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap ${
+                statusFilter === s.value ? 'text-white' : 'text-slate-500 hover:text-white'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Installer filter */}
+        <select
+          value={installerFilter}
+          onChange={(e) => setInstallerFilter(e.target.value)}
+          className="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Installers</option>
+          {activeInstallers.map((i) => <option key={i} value={i}>{i}</option>)}
+        </select>
+      </div>
+
+      {/* Active filter chips */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 mb-6 flex-wrap">
+          {statusFilter !== 'active' && (
+            <span className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+              Status: {STATUS_LABELS[statusFilter]}
+              <button
+                onClick={() => setStatusFilter('active')}
+                className="text-slate-400 hover:text-white transition-colors"
+                aria-label="Clear status filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {installerFilter && (
+            <span className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+              Installer: {installerFilter}
+              <button
+                onClick={() => setInstallerFilter('')}
+                className="text-slate-400 hover:text-white transition-colors"
+                aria-label="Clear installer filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {searchInput && (
+            <span className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+              Search: &ldquo;{searchInput}&rdquo;
+              <button
+                onClick={() => { setSearchInput(''); setDebouncedSearch(''); }}
+                className="text-slate-400 hover:text-white transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          <button
+            onClick={clearAllFilters}
+            className="text-slate-400 hover:text-white text-xs transition-colors"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
+      {tab === 'phase' ? (
+        <KanbanView
+          projects={statusFiltered.filter((p) => !installerFilter || p.installer === installerFilter)}
+          isAdmin={currentRole === 'admin'}
+          currentRepId={currentRepId}
+          dealScope={dealScope}
+          onPhaseChange={handlePhaseChange}
+        />
+      ) : (
+        <TableView
+          projects={filtered}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          isAdmin={currentRole === 'admin'}
+          currentRepId={currentRepId}
+          dealScope={dealScope}
+          onPhaseChange={handlePhaseChange}
+          setProjects={setProjects}
+          hasActiveFilters={hasActiveFilters}
+          clearAllFilters={clearAllFilters}
+        />
+      )}
+    </div>
+  );
+}
+
+function KanbanView({
+  projects,
+  isAdmin,
+  currentRepId,
+  dealScope,
+  onPhaseChange,
+}: {
+  projects: ReturnType<typeof useApp>['projects'];
+  isAdmin: boolean;
+  currentRepId: string | null;
+  dealScope: 'mine' | 'all';
+  onPhaseChange: (id: string, phase: Phase) => void;
+}) {
+  const { toast } = useToast();
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const activePhasesForKanban = PHASES.filter((p) => p !== 'Cancelled' && p !== 'On Hold');
+  const cancelledAndHold = ['Cancelled', 'On Hold'] as Phase[];
+
+  // ── Kanban search — filters cards by customer name ────────────────────────
+  const [kanbanSearchInput, setKanbanSearchInput] = useState('');
+  const [kanbanDebouncedSearch, setKanbanDebouncedSearch] = useState('');
+  const kanbanSearchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const delay = kanbanSearchInput === '' ? 0 : 300;
+    const timer = setTimeout(() => setKanbanDebouncedSearch(kanbanSearchInput), delay);
+    return () => clearTimeout(timer);
+  }, [kanbanSearchInput]);
+
+  const kanbanFiltered = kanbanDebouncedSearch
+    ? projects.filter((p) => {
+        const q = kanbanDebouncedSearch.toLowerCase();
+        return p.customerName.toLowerCase().includes(q)
+          || p.repName.toLowerCase().includes(q)
+          || p.installer.toLowerCase().includes(q);
+      })
+    : projects;
+
+  // Summary stats for search results
+  const kanbanResultCount = kanbanFiltered.length;
+  const kanbanPhaseCount = kanbanDebouncedSearch
+    ? new Set(kanbanFiltered.map((p) => p.phase)).size
+    : 0;
+
+  // Determine the "current" phase: first active phase that has at least one project,
+  // falling back to the first phase in the pipeline.
+  const currentPhase =
+    activePhasesForKanban.find((phase) => projects.some((p) => p.phase === phase)) ??
+    activePhasesForKanban[0];
+
+  // Accordion open/close state — only used on mobile.
+  const [openPhases, setOpenPhases] = useState<Set<string>>(() => new Set([currentPhase]));
+  const [offTrackOpen, setOffTrackOpen] = useState(false);
+
+  // Kanban column card limit — columns show up to KANBAN_CARD_LIMIT cards by
+  // default; expanded columns show all.  State is a set of phase names that
+  // the user has explicitly expanded.
+  const KANBAN_CARD_LIMIT = 20;
+  const [expandedColumns, setExpandedColumns] = useState<Set<string>>(new Set());
+  const toggleExpand = (phase: string) => {
+    setExpandedColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(phase)) next.delete(phase);
+      else next.add(phase);
+      return next;
+    });
+  };
+
+  const togglePhase = (phase: string) => {
+    setOpenPhases((prev) => {
+      const next = new Set(prev);
+      if (next.has(phase)) next.delete(phase);
+      else next.add(phase);
+      return next;
+    });
+  };
+
+  // ── Save project nav list to sessionStorage on click ─────────────────────
+  const saveProjectNav = () => {
+    try {
+      const ids = kanbanFiltered.map((p) => p.id);
+      sessionStorage.setItem('kilo-project-nav', JSON.stringify(ids));
+    } catch { /* quota / SSR guard */ }
+  };
+
+  // ── Shared kanban search bar ─────────────────────────────────────────────
+  const kanbanSearchBar = (
+    <div className="mb-4">
+      <div className="relative max-w-xs">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+        <input
+          ref={kanbanSearchRef}
+          type="text"
+          placeholder="Search projects..."
+          value={kanbanSearchInput}
+          onChange={(e) => setKanbanSearchInput(e.target.value)}
+          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+        />
+        {kanbanSearchInput && (
+          <button
+            onClick={() => { setKanbanSearchInput(''); setKanbanDebouncedSearch(''); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+            aria-label="Clear kanban search"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      {kanbanDebouncedSearch && (
+        <p className="text-slate-400 text-xs mt-2">
+          {kanbanResultCount} result{kanbanResultCount !== 1 ? 's' : ''} across {kanbanPhaseCount} phase{kanbanPhaseCount !== 1 ? 's' : ''}
+        </p>
+      )}
+    </div>
+  );
+
+  // ── Mobile: expand/collapse-all helper ───────────────────────────────────
+  const allPhasesOpen = activePhasesForKanban.every((p) => openPhases.has(p));
+  const toggleAllPhases = () => {
+    if (allPhasesOpen) {
+      setOpenPhases(new Set());
+      setOffTrackOpen(false);
+    } else {
+      setOpenPhases(new Set(activePhasesForKanban));
+      setOffTrackOpen(true);
+    }
+  };
+
+  // ── Mobile: vertically stacked accordion ──────────────────────────────────
+  if (isMobile) {
+    return (
+      <div className="space-y-2">
+        {kanbanSearchBar}
+        {/* Expand All / Collapse All toggle */}
+        <div className="flex justify-end mb-1">
+          <button
+            onClick={toggleAllPhases}
+            className="text-xs font-medium text-slate-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-slate-800"
+          >
+            {allPhasesOpen ? 'Collapse All' : 'Expand All'}
+          </button>
+        </div>
+        {/* Active phases */}
+        {activePhasesForKanban.map((phase) => {
+          const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
+          const isOpen = openPhases.has(phase);
+          const s = PHASE_PILL[phase];
+          const mobilePhaseIdx = activePhasesForKanban.indexOf(phase);
+          const nextPhase = activePhasesForKanban[mobilePhaseIdx + 1] as Phase | undefined;
+          const prevPhase = activePhasesForKanban[mobilePhaseIdx - 1] as Phase | undefined;
+
+          return (
+            <div key={phase} className="card-surface rounded-xl overflow-hidden">
+              {/* Accordion header — 52px min-height for comfortable tap target */}
+              <button
+                onClick={() => togglePhase(phase)}
+                className="w-full flex items-center justify-between px-4 min-h-[52px] gap-3 text-left"
+                aria-expanded={isOpen}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s?.dot ?? 'bg-slate-400'}`} />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-semibold ${s?.text ?? 'text-slate-300'}`}>{phase}</span>
+                      <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                        {phaseProjects.length}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform duration-200 ${
+                    isOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Accordion body */}
+              {isOpen && (
+                <div className="px-3 pb-3 space-y-2 border-t border-slate-800">
+                  {phaseProjects.length === 0 && (
+                    <div className="py-6 flex flex-col items-center text-center">
+                      <FolderKanban className="w-6 h-6 text-slate-600 mb-1.5 opacity-60" />
+                      <p className="text-slate-600 text-xs">No projects in this phase</p>
+                    </div>
+                  )}
+                  {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
+                    const myRole = !isAdmin
+                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
+                      : null;
+                    const isMyCard = myRole !== null;
+                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0);
+                    return (
+                      <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
+                      <div
+                        className={`relative overflow-hidden bg-slate-800/60 border rounded-xl flex items-center justify-between gap-2 transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity ${
+                          proj.flagged
+                            ? 'border-l-2 border-l-red-500 border-slate-700/60'
+                            : isMyCard && dealScope === 'all'
+                              ? 'border-slate-700/60 border-l-[3px] border-l-blue-500'
+                              : 'border-slate-700/60'
+                        }`}
+                      >
+                        <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />
+                        {/* Card content — py-3 ensures at least 44px total height with text */}
+                        <div className="flex-1 px-4 py-3 min-h-[44px]">
+                          <p className="text-white text-sm font-medium leading-snug group-hover:text-blue-400 transition-colors flex items-center gap-1.5 flex-wrap">
+                            {proj.customerName}
+                            {proj.flagged && (
+                              <Flag className="w-3 h-3 text-red-400 flex-shrink-0" />
+                            )}
+                            <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
+                            {/* Prominent "You" role pill next to customer name — shown in All Deals mode */}
+                            {isMyCard && dealScope === 'all' && (
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
+                                myRole === 'Closer'
+                                  ? 'bg-blue-900/60 text-blue-300 border border-blue-500/40'
+                                  : 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40'
+                              }`}>
+                                You · {myRole}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-slate-500 text-xs mt-0.5">
+                            {proj.kWSize} kW · {proj.installer}
+                          </p>
+                          <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-slate-400 font-semibold' : 'text-slate-600'}`}>
+                            {proj.repName}
+                          </p>
+                          {/* Commission row */}
+                          <div className="flex items-center justify-end mt-1">
+                            <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
+                              ${commissionTotal.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Phase navigation — admin only; 44px touch targets */}
+                        {isAdmin && (prevPhase || nextPhase) && (
+                          <div className="mr-3 flex gap-1.5 flex-shrink-0">
+                            {prevPhase && (
+                              <button
+                                title={`Move back to ${prevPhase}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const originalPhase = proj.phase;
+                                  onPhaseChange(proj.id, prevPhase);
+                                  toast(`${proj.customerName} → ${prevPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
+                                }}
+                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-slate-700 hover:bg-amber-600 text-slate-400 hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                            )}
+                            {nextPhase && (
+                              <button
+                                title={`Move to ${nextPhase}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const originalPhase = proj.phase;
+                                  onPhaseChange(proj.id, nextPhase);
+                                  toast(`${proj.customerName} → ${nextPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
+                                }}
+                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-slate-700 hover:bg-blue-600 text-slate-400 hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                aria-label={`Move ${proj.customerName} to ${nextPhase}`}
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    );
+                  })}
+                  {/* "Show all / Show less" toggle when column exceeds card limit */}
+                  {phaseProjects.length > KANBAN_CARD_LIMIT && (
+                    <button
+                      onClick={() => toggleExpand(phase)}
+                      className="w-full text-center py-2 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      {expandedColumns.has(phase)
+                        ? 'Show less'
+                        : `Show all ${phaseProjects.length} projects`}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Off-Track group (Cancelled + On Hold) — collapsed by default */}
+        <div className="bg-slate-900/60 border border-slate-800/60 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setOffTrackOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 min-h-[52px] gap-3 text-left"
+            aria-expanded={offTrackOpen}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-slate-600 flex-shrink-0" />
+              <span className="text-sm font-semibold text-slate-500">Off-Track</span>
+              <span className="bg-slate-800 text-slate-500 text-xs px-2 py-0.5 rounded-full font-medium">
+                {cancelledAndHold.reduce(
+                  (acc, ph) => acc + kanbanFiltered.filter((p) => p.phase === ph).length,
+                  0
+                )}
+              </span>
+            </div>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-600 flex-shrink-0 transition-transform duration-200 ${
+                offTrackOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {offTrackOpen && (
+            <div className="px-3 pb-3 border-t border-slate-800/60 space-y-3">
+              {cancelledAndHold.map((phase) => {
+                const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
+                if (phaseProjects.length === 0) return null;
+                return (
+                  <div key={phase}>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1 pt-3 pb-1">
+                      {phase}
+                    </p>
+                    <div className="space-y-2">
+                      {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
+                        <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
+                          <div className="bg-slate-800/40 border border-slate-700/40 hover:border-slate-600 rounded-xl px-4 min-h-[44px] flex items-center opacity-70 hover:opacity-100 transition-all">
+                            <div className="py-3">
+                              <p className="text-slate-400 text-sm font-medium">{proj.customerName}</p>
+                              <p className="text-slate-600 text-xs">
+                                {proj.kWSize} kW · {proj.installer}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                      {phaseProjects.length > KANBAN_CARD_LIMIT && (
+                        <button
+                          onClick={() => toggleExpand(phase)}
+                          className="w-full text-center py-2 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          {expandedColumns.has(phase)
+                            ? 'Show less'
+                            : `Show all ${phaseProjects.length} projects`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Desktop (md+): existing horizontal Kanban ─────────────────────────────
+  return (
+    <div className="space-y-6">
+      {kanbanSearchBar}
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4">
+        {activePhasesForKanban.map((phase) => {
+          const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
+          // Next phase in the pipeline (undefined for PTO — the last active phase).
+          const phaseIdx = activePhasesForKanban.indexOf(phase);
+          const nextPhase = activePhasesForKanban[phaseIdx + 1] as Phase | undefined;
+          const prevPhase = activePhasesForKanban[phaseIdx - 1] as Phase | undefined;
+          return (
+            <div key={phase} className={`flex-shrink-0 w-52 snap-start kanban-col-enter kanban-col-${phaseIdx}`}>
+              {/* Sticky column header — stays visible while cards scroll */}
+              <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-sm pb-2 mb-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{phase}</span>
+                  <span className="bg-slate-800 text-slate-400 text-xs px-1.5 py-0.5 rounded-full">
+                    {phaseProjects.length}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                </p>
+              </div>
+              {/* Scrollable card container with bottom-fade overflow hint */}
+              <div className="relative">
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                  {phaseProjects.length === 0 && (
+                    <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-xl p-4 flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mb-2">
+                        <FolderKanban className="w-5 h-5 text-slate-600 opacity-60 animate-pulse" />
+                      </div>
+                      <p className="text-slate-400 text-xs font-semibold">{phase}</p>
+                      <p className="text-slate-600 text-xs mt-0.5">No projects here</p>
+                    </div>
+                  )}
+                  {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
+                    const myRole = !isAdmin
+                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
+                      : null;
+                    const isMyCard = myRole !== null;
+                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0);
+                    return (
+                      <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
+                      <div className={`relative overflow-hidden bg-slate-900 border rounded-xl p-3 cursor-pointer transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity ${
+                        proj.flagged
+                          ? 'border-l-2 border-l-red-500 border-slate-800'
+                          : isMyCard && dealScope === 'all'
+                            ? 'border-slate-800 border-l-[3px] border-l-blue-500'
+                            : 'border-slate-800'
+                      }`}>
+                        <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />
+                        <div className="flex items-start justify-between gap-1 mb-1">
+                          <p className="text-white text-xs font-medium leading-tight group-hover:text-blue-400 transition-colors">
+                            {proj.customerName}
+                          </p>
+                          <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                            <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
+                            {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
+                          </div>
+                        </div>
+                        {/* "You" role pill — prominent, shown in All Deals mode */}
+                        {isMyCard && dealScope === 'all' && (
+                          <span className={`inline-flex items-center mb-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
+                            myRole === 'Closer'
+                              ? 'bg-blue-900/60 text-blue-300 border border-blue-500/40'
+                              : 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40'
+                          }`}>
+                            You · {myRole}
+                          </span>
+                        )}
+                        <p className="text-slate-500 text-xs">{proj.kWSize} kW</p>
+                        <p className="text-slate-500 text-xs">{proj.installer}</p>
+                        <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-slate-400 font-semibold' : 'text-slate-600'}`}>
+                          {proj.repName}
+                        </p>
+                        {/* Mini commission preview */}
+                        <div className="flex justify-end mt-1.5">
+                          <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
+                            ${commissionTotal.toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* Phase navigation — admin only, shows on hover */}
+                        {isAdmin && (prevPhase || nextPhase) && (
+                          <div className="absolute bottom-2 right-2 flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                            {prevPhase && (
+                              <button
+                                title={`Move back to ${prevPhase}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const originalPhase = proj.phase;
+                                  onPhaseChange(proj.id, prevPhase);
+                                  toast(`${proj.customerName} → ${prevPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
+                                }}
+                                className="p-1 rounded-md bg-slate-700 hover:bg-amber-600 text-slate-400 hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
+                              >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {nextPhase && (
+                              <button
+                                title={`Move to ${nextPhase}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const originalPhase = proj.phase;
+                                  onPhaseChange(proj.id, nextPhase);
+                                  toast(`${proj.customerName} → ${nextPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
+                                }}
+                                className="p-1 rounded-md bg-slate-700 hover:bg-blue-600 text-slate-400 hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                aria-label={`Move ${proj.customerName} to ${nextPhase}`}
+                              >
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    );
+                  })}
+                  {/* "Show all / Show less" toggle when column exceeds card limit */}
+                  {phaseProjects.length > KANBAN_CARD_LIMIT && (
+                    <button
+                      onClick={() => toggleExpand(phase)}
+                      className="w-full text-center py-1.5 text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      {expandedColumns.has(phase)
+                        ? 'Show less'
+                        : `Show all ${phaseProjects.length}`}
+                    </button>
+                  )}
+                </div>
+                {/* Bottom scroll-shadow gradient — only visible when content overflows */}
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent rounded-b-xl" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Cancelled / On Hold row */}
+      <div className="flex gap-4">
+        {cancelledAndHold.map((phase) => {
+          const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
+          return (
+            <div key={phase} className="flex-shrink-0 w-52">
+              {/* Sticky column header — stays visible while cards scroll */}
+              <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-sm pb-2 mb-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{phase}</span>
+                  <span className="bg-slate-800 text-slate-500 text-xs px-1.5 py-0.5 rounded-full">
+                    {phaseProjects.length}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                </p>
+              </div>
+              {/* Scrollable card container with bottom-fade overflow hint */}
+              <div className="relative">
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                  {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
+                    <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
+                      <div className="relative bg-slate-900/60 border border-slate-800/60 rounded-xl p-3 cursor-pointer opacity-70 hover:opacity-100 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity">
+                        <p className="text-slate-400 text-xs font-medium">{proj.customerName}</p>
+                        <p className="text-slate-600 text-xs">{proj.kWSize} kW · {proj.installer}</p>
+                      </div>
+                    </Link>
+                  ))}
+                  {/* "Show all / Show less" toggle when column exceeds card limit */}
+                  {phaseProjects.length > KANBAN_CARD_LIMIT && (
+                    <button
+                      onClick={() => toggleExpand(phase)}
+                      className="w-full text-center py-1.5 text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      {expandedColumns.has(phase)
+                        ? 'Show less'
+                        : `Show all ${phaseProjects.length}`}
+                    </button>
+                  )}
+                </div>
+                {/* Bottom scroll-shadow gradient — only visible when content overflows */}
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent rounded-b-xl" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Skeleton components ──────────────────────────────────────────────────────
+
+/** 8 cols for the All Projects table (customer, rep, phase, installer, financer, kW, netPPW, date). */
+const TABLE_COL_WIDTHS = ['w-36', 'w-24', 'w-20', 'w-24', 'w-24', 'w-10', 'w-12', 'w-20'] as const;
+
+function ProjectsSkeleton() {
+  return (
+    <div className="p-4 md:p-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="space-y-2">
+          <div className="h-8 w-32 bg-slate-800 rounded animate-skeleton" />
+          <div className="h-3 w-28 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+        </div>
+        <div className="h-9 w-24 bg-slate-800 rounded-xl animate-skeleton" />
+      </div>
+
+      {/* Tab + filter bar */}
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
+        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
+          <div className="h-8 w-20 bg-slate-800 rounded-lg animate-skeleton" />
+          <div className="h-8 w-24 bg-slate-700/50 rounded-lg animate-skeleton" style={{ animationDelay: '75ms' }} />
+        </div>
+        <div className="flex gap-1 bg-slate-800 rounded-xl p-1">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-7 w-16 bg-slate-700/60 rounded-lg animate-skeleton" style={{ animationDelay: `${i * 50}ms` }} />
+          ))}
+        </div>
+        <div className="h-8 w-32 bg-slate-800 rounded-xl animate-skeleton" style={{ animationDelay: '150ms' }} />
+      </div>
+
+      {/* Kanban skeleton — 9 columns × 3 placeholder cards */}
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {[...Array(9)].map((_, colIdx) => (
+          <div key={colIdx} className="flex-shrink-0 w-52 space-y-2">
+            {/* Column header */}
+            <div className="flex items-center justify-between pb-2 mb-1">
+              <div
+                className="h-3 w-20 bg-slate-800 rounded animate-skeleton"
+                style={{ animationDelay: `${colIdx * 60}ms` }}
+              />
+              <div
+                className="h-5 w-6 bg-slate-800 rounded-full animate-skeleton"
+                style={{ animationDelay: `${colIdx * 60}ms` }}
+              />
+            </div>
+            {/* 3 placeholder cards per column */}
+            {[...Array(3)].map((_, cardIdx) => {
+              const delay = colIdx * 60 + cardIdx * 75;
+              return (
+                <div key={cardIdx} className="card-surface rounded-xl p-3 space-y-2">
+                  <div
+                    className="h-4 bg-slate-800 rounded animate-skeleton"
+                    style={{ width: cardIdx === 0 ? '80%' : cardIdx === 1 ? '65%' : '75%', animationDelay: `${delay}ms` }}
+                  />
+                  <div
+                    className="h-3 w-12 bg-slate-800/70 rounded animate-skeleton"
+                    style={{ animationDelay: `${delay}ms` }}
+                  />
+                  <div
+                    className="h-3 w-20 bg-slate-800/70 rounded animate-skeleton"
+                    style={{ animationDelay: `${delay}ms` }}
+                  />
+                  <div
+                    className="h-3 w-16 bg-slate-800/50 rounded animate-skeleton"
+                    style={{ animationDelay: `${delay}ms` }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Setter Popover ───────────────────────────────────────────────────────────
+
+function SetterPopover({
+  projectId,
+  customerName,
+  currentSetterId,
+  currentSetterName,
+  reps,
+  trainerAssignments,
+  setProjects,
+}: {
+  projectId: string;
+  customerName: string;
+  currentSetterId?: string;
+  currentSetterName?: string;
+  reps: Rep[];
+  trainerAssignments: TrainerAssignment[];
+  setProjects: React.Dispatch<React.SetStateAction<ReturnType<typeof useApp>['projects']>>;
+}) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [searchRaw, setSearchRaw] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // 150 ms debounce for the rep search input
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchQuery(searchRaw), 150);
+    return () => clearTimeout(timer);
+  }, [searchRaw]);
+
+  // Focus search input whenever the popover opens
+  useEffect(() => {
+    if (open) {
+      // Defer so the element is in the DOM
+      requestAnimationFrame(() => searchRef.current?.focus());
+    }
+  }, [open]);
+
+  /** Close the popover and reset search state (called from event handlers, not effects). */
+  const closePopover = () => {
+    setOpen(false);
+    setSearchRaw('');
+    setSearchQuery('');
+  };
+
+  // Dismiss on outside click or Escape
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        closePopover();
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePopover();
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKey);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const handleAssign = (rep: Rep) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId ? { ...p, setterId: rep.id, setterName: rep.name } : p,
+      ),
+    );
+    toast(`Setter assigned: ${rep.name}`, 'success');
+    closePopover();
+  };
+
+  /** Build 1-2 letter initials from a full name. */
+  const getInitials = (name: string): string => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  /** True if a rep appears as a trainee in any trainer assignment. */
+  const isTrainee = (repId: string): boolean =>
+    trainerAssignments.some((a) => a.traineeId === repId);
+
+  // Currently-assigned rep object (may be undefined if rep was removed)
+  const currentSetter = currentSetterId ? reps.find((r) => r.id === currentSetterId) ?? null : null;
+
+  // Apply search filter; exclude the current setter (shown pinned at top)
+  const otherReps = reps
+    .filter((r) => r.id !== currentSetterId)
+    .filter((r) => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  return (
+    <div className="relative inline-block" ref={containerRef}>
+      {/* ── Trigger button ── */}
+      <button
+        onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
+        title={currentSetterId ? `Reassign setter for ${customerName}` : `Assign a setter to ${customerName}`}
+        className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-medium transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+        aria-label={currentSetterId ? 'Reassign setter' : 'Assign setter'}
+        aria-expanded={open}
+      >
+        {/* Pulsing indigo attention dot — only when no setter is assigned */}
+        {!currentSetterId && (
+          <span
+            className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse"
+            aria-hidden="true"
+          />
+        )}
+        {currentSetterId ? (
+          <>
+            <ArrowLeftRight className="w-3 h-3 flex-shrink-0" />
+            <span className="max-w-[96px] truncate">{currentSetterName ?? 'Setter'}</span>
+          </>
+        ) : (
+          <>
+            <UserPlus className="w-3 h-3 flex-shrink-0" />
+            Assign Setter
+          </>
+        )}
+      </button>
+
+      {/* ── Dropdown popover ── */}
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel">
+          {/* Search input */}
+          <div className="p-2 border-b border-slate-700/60">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder="Search reps..."
+                value={searchRaw}
+                onChange={(e) => setSearchRaw(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-64 overflow-y-auto">
+            {/* ── Currently-assigned setter pinned at top ── */}
+            {currentSetter && (
+              <>
+                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Currently assigned
+                </p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAssign(currentSetter); }}
+                  className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-600/20 transition-colors min-h-[44px]"
+                >
+                  {/* Initials avatar */}
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
+                    {getInitials(currentSetter.name)}
+                  </span>
+                  <span className="flex-1 text-sm text-white font-medium truncate">{currentSetter.name}</span>
+                  {/* Role badge */}
+                  {isTrainee(currentSetter.id)
+                    ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
+                    : <span className="text-blue-400 text-[10px] font-medium flex-shrink-0">Setter</span>
+                  }
+                  {/* Green checkmark */}
+                  <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                </button>
+                {/* Divider + "Reassign" label */}
+                <div className="mx-3 border-t border-slate-700/60" />
+                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Reassign
+                </p>
+              </>
+            )}
+
+            {/* Section header when no setter yet */}
+            {!currentSetter && (
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Select setter
+              </p>
+            )}
+
+            {/* ── Rep list ── */}
+            {otherReps.length === 0 ? (
+              <div className="px-3 py-4 text-center text-slate-500 text-xs">
+                No reps found
+              </div>
+            ) : (
+              otherReps.map((rep) => (
+                <button
+                  key={rep.id}
+                  onClick={(e) => { e.stopPropagation(); handleAssign(rep); }}
+                  className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-600/20 transition-colors min-h-[44px]"
+                >
+                  {/* Initials avatar */}
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
+                    {getInitials(rep.name)}
+                  </span>
+                  <span className="flex-1 text-sm text-slate-300 hover:text-white truncate">{rep.name}</span>
+                  {/* Role badge */}
+                  {isTrainee(rep.id)
+                    ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
+                    : <span className="text-blue-400 text-[10px] font-medium flex-shrink-0">Setter</span>
+                  }
+                </button>
+              ))
+            )}
+
+            {/* Spacer at bottom for breathing room */}
+            <div className="h-1" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Pipeline phases used for the phase-advance quick action ──────────────────
+const PIPELINE_PHASES: Phase[] = [
+  'New', 'Acceptance', 'Site Survey', 'Design',
+  'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed',
+];
+
+type SortKey = 'customerName' | 'repName' | 'phase' | 'installer' | 'financer' | 'kWSize' | 'netPPW' | 'soldDate';
+type SortDirection = 'asc' | 'desc';
+
+function SortIcon({ colKey, sortKey, sortDirection }: { colKey: SortKey; sortKey: SortKey; sortDirection: SortDirection }) {
+  if (sortKey !== colKey) return <ChevronsUpDown className="w-3.5 h-3.5 ml-1 inline-block text-slate-600" />;
+  if (sortDirection === 'asc') return <ChevronUp className="w-3.5 h-3.5 ml-1 inline-block" />;
+  return <ChevronDown className="w-3.5 h-3.5 ml-1 inline-block" />;
+}
+
+function TableView({
+  projects,
+  searchInput,
+  setSearchInput,
+  isAdmin,
+  currentRepId,
+  dealScope,
+  onPhaseChange,
+  setProjects,
+  hasActiveFilters,
+  clearAllFilters,
+}: {
+  projects: ReturnType<typeof useApp>['projects'];
+  searchInput: string;
+  setSearchInput: (s: string) => void;
+  isAdmin: boolean;
+  currentRepId: string | null;
+  dealScope: 'mine' | 'all';
+  onPhaseChange: (id: string, phase: Phase) => void;
+  setProjects: React.Dispatch<React.SetStateAction<ReturnType<typeof useApp>['projects']>>;
+  hasActiveFilters: boolean;
+  clearAllFilters: () => void;
+}) {
+  const { reps, trainerAssignments, updateProject } = useApp();
+  const { toast } = useToast();
+  const tableRouter = useRouter();
+  const tableSearchParams = useSearchParams();
+  const [sortKey, setSortKey] = useState<SortKey>(() => {
+    const VALID_SORT_KEYS: SortKey[] = ['customerName', 'repName', 'phase', 'installer', 'financer', 'kWSize', 'netPPW', 'soldDate'];
+    const v = tableSearchParams.get('sort') as SortKey | null;
+    return v && VALID_SORT_KEYS.includes(v) ? v : 'soldDate';
+  });
+  const [sortDirection, setSortDirection] = useState<SortDirection>(() => {
+    const v = tableSearchParams.get('dir');
+    return v === 'asc' ? 'asc' : 'desc';
+  });
+
+  // Sync sort to URL (read current params to preserve other filters)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (sortKey !== 'soldDate') params.set('sort', sortKey); else params.delete('sort');
+    if (sortDirection !== 'desc') params.set('dir', sortDirection); else params.delete('dir');
+    const qs = params.toString();
+    tableRouter.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortKey, sortDirection]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+
+  // ── Keyboard shortcut: '/' focuses the search input ──────────────────────
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement) &&
+        !(e.target instanceof HTMLSelectElement)
+      ) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // ── Keyboard shortcut: ArrowLeft / ArrowRight for pagination ──────────────
+  useEffect(() => {
+    const handlePageNav = (e: KeyboardEvent) => {
+      // Skip when an input, select, or textarea is focused
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) return;
+      if (e.key === 'ArrowLeft') {
+        setCurrentPage((p) => Math.max(1, p - 1));
+      } else if (e.key === 'ArrowRight') {
+        setCurrentPage((p) => Math.min(Math.max(1, Math.ceil(projects.length / rowsPerPage)), p + 1));
+      }
+    };
+    document.addEventListener('keydown', handlePageNav);
+    return () => document.removeEventListener('keydown', handlePageNav);
+  }, [projects.length, rowsPerPage]);
+
+  // ── Bulk selection state (admin only) ──────────────────────────────────────
+  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
+  const showActionBar = isAdmin && selectedProjectIds.size > 0;
+
+  // Escape key → deselect all selected projects
+  useEffect(() => {
+    if (!isAdmin) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedProjectIds(new Set());
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isAdmin]);
+
+  // Reset to page 1 when the upstream projects list changes identity (i.e. the
+  // parent's search / status / installer filter changed).  Calling setState
+  // during render (when a prop changes) is the React-recommended alternative to
+  // a useEffect that would trigger a second render anyway.
+  const [prevProjects, setPrevProjects] = useState(projects);
+  if (projects !== prevProjects) {
+    setPrevProjects(projects);
+    setCurrentPage(1);
+    setSelectedProjectIds(new Set());
+  }
+
+  const handleSort = (key: SortKey) => {
+    // Reset to page 1 so the user sees results from the top after re-sorting.
+    setCurrentPage(1);
+    if (sortKey === key) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedProjects = useMemo(() => {
+    return [...projects].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'customerName':
+        case 'repName':
+        case 'installer':
+        case 'financer':
+          cmp = a[sortKey].localeCompare(b[sortKey]);
+          break;
+        case 'phase':
+          cmp = PHASES.indexOf(a.phase) - PHASES.indexOf(b.phase);
+          break;
+        case 'kWSize':
+        case 'netPPW':
+          cmp = a[sortKey] - b[sortKey];
+          break;
+        case 'soldDate':
+          cmp = a.soldDate.localeCompare(b.soldDate);
+          break;
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+  }, [projects, sortKey, sortDirection]);
+
+  const totalResults = sortedProjects.length;
+  const totalPages = Math.max(1, Math.ceil(totalResults / rowsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIdx = (safeCurrentPage - 1) * rowsPerPage;
+  const endIdx = Math.min(startIdx + rowsPerPage, totalResults);
+  const pagedProjects = sortedProjects.slice(startIdx, endIdx);
+
+  // ── Bulk selection helpers (depend on pagedProjects) ─────────────────────
+  const allPageSelected = isAdmin && pagedProjects.length > 0 && pagedProjects.every((p) => selectedProjectIds.has(p.id));
+
+  const toggleProject = (id: string) => {
+    setSelectedProjectIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllProjects = () => {
+    const pageIds = pagedProjects.map((p) => p.id);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedProjectIds.has(id));
+    setSelectedProjectIds(allSelected ? new Set() : new Set(pageIds));
+  };
+
+  const handleBulkAdvance = () => {
+    let advanced = 0;
+    selectedProjectIds.forEach((id) => {
+      const proj = projects.find((p) => p.id === id);
+      if (!proj) return;
+      const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
+      const nextPhase = phaseIdx >= 0 ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
+      if (nextPhase) {
+        onPhaseChange(id, nextPhase);
+        advanced++;
+      }
+    });
+    setSelectedProjectIds(new Set());
+    if (advanced > 0) {
+      toast(`${advanced} project${advanced > 1 ? 's' : ''} advanced to next phase`, 'success');
+    }
+  };
+
+  // Determine if selected projects are mostly flagged (for toggle label)
+  const selectedFlaggedCount = [...selectedProjectIds].filter((id) => projects.find((p) => p.id === id)?.flagged).length;
+  const bulkFlagLabel = selectedFlaggedCount > selectedProjectIds.size / 2 ? 'Unflag' : 'Flag';
+
+  const handleBulkFlag = () => {
+    const shouldFlag = bulkFlagLabel === 'Flag';
+    selectedProjectIds.forEach((id) => {
+      updateProject(id, { flagged: shouldFlag });
+    });
+    const count = selectedProjectIds.size;
+    toast(`${count} project${count > 1 ? 's' : ''} ${shouldFlag ? 'flagged' : 'unflagged'}`, 'success');
+    setSelectedProjectIds(new Set());
+  };
+
+  function thClass(colKey: SortKey) {
+    const active = sortKey === colKey;
+    return `text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white ${
+      active ? 'text-white' : 'text-slate-400'
+    }`;
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <input
+            ref={searchRef}
+            type="text"
+            placeholder="Search customers, reps, phases..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+          />
+          {/* Clear button — shown when there is a search query */}
+          {searchInput ? (
+            <button
+              onClick={() => setSearchInput('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+              aria-label="Clear search input"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            /* '/' shortcut hint — shown when input is empty and not focused */
+            !searchFocused && (
+              <kbd
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-slate-600 bg-slate-700/60 text-slate-400 font-mono text-[11px] leading-none select-none"
+                aria-hidden="true"
+              >
+                /
+              </kbd>
+            )
+          )}
+        </div>
+        {/* Inline row-count summary — gives instant feedback on the current page slice */}
+        <span className="text-slate-500 text-sm">
+          {totalResults === 0
+            ? 'No results'
+            : `Showing ${startIdx + 1}–${endIdx} of ${totalResults}`}
+        </span>
+      </div>
+
+      <div className="card-surface rounded-2xl overflow-auto">
+        <div className="overflow-x-auto scroll-smooth">
+          <table className="w-full text-sm">
+            <thead className="table-header-frost sticky top-0 z-10 after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-gradient-to-r after:from-blue-500/20 after:via-blue-500/40 after:to-blue-500/20">
+              <tr>
+                {isAdmin && (
+                  <th className="px-3 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allPageSelected}
+                      onChange={toggleAllProjects}
+                      className="accent-blue-500 w-4 h-4 rounded cursor-pointer"
+                      aria-label="Select all projects on this page"
+                    />
+                  </th>
+                )}
+                <th className={thClass('customerName')} onClick={() => handleSort('customerName')}>
+                  Customer<SortIcon colKey="customerName" sortKey={sortKey} sortDirection={sortDirection} />
+                </th>
+                {(isAdmin || (!isAdmin && dealScope === 'all')) && (
+                  <th className={thClass('repName')} onClick={() => handleSort('repName')}>
+                    Rep<SortIcon colKey="repName" sortKey={sortKey} sortDirection={sortDirection} />
+                  </th>
+                )}
+                <th className={thClass('phase')} onClick={() => handleSort('phase')}>
+                  Phase<SortIcon colKey="phase" sortKey={sortKey} sortDirection={sortDirection} />
+                </th>
+                <th className={thClass('installer')} onClick={() => handleSort('installer')}>
+                  Installer<SortIcon colKey="installer" sortKey={sortKey} sortDirection={sortDirection} />
+                </th>
+                <th className={thClass('financer')} onClick={() => handleSort('financer')}>
+                  Financer<SortIcon colKey="financer" sortKey={sortKey} sortDirection={sortDirection} />
+                </th>
+                <th className={thClass('kWSize')} onClick={() => handleSort('kWSize')}>
+                  kW<SortIcon colKey="kWSize" sortKey={sortKey} sortDirection={sortDirection} />
+                </th>
+                <th className={thClass('netPPW')} onClick={() => handleSort('netPPW')}>
+                  Net PPW<SortIcon colKey="netPPW" sortKey={sortKey} sortDirection={sortDirection} />
+                </th>
+                <th className={thClass('soldDate')} onClick={() => handleSort('soldDate')}>
+                  Sold Date<SortIcon colKey="soldDate" sortKey={sortKey} sortDirection={sortDirection} />
+                </th>
+                {isAdmin && (
+                  <th className="text-left px-5 py-3 font-medium text-slate-400 select-none whitespace-nowrap">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {pagedProjects.map((proj, i) => {
+                const myRole = !isAdmin
+                  ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
+                  : null;
+                const isMyRow = myRole !== null && dealScope === 'all';
+                return (
+                  <tr
+                    key={proj.id}
+                    onClick={() => { try { sessionStorage.setItem('kilo-project-nav', JSON.stringify(sortedProjects.map((p) => p.id))); } catch {} tableRouter.push(`/dashboard/projects/${proj.id}`); }}
+                  className={`group table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 hover:bg-blue-500/[0.06] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.6)] transition-colors duration-150 cursor-pointer ${
+                    selectedProjectIds.has(proj.id)
+                      ? '!bg-blue-900/15'
+                      : proj.flagged
+                        ? 'border-l-2 border-l-red-500'
+                        : isMyRow
+                          ? 'bg-blue-500/[0.04] border-l-[3px] border-l-blue-500'
+                          : 'odd:bg-[rgba(13,27,46,0.5)] even:bg-[rgba(30,58,95,0.08)]'
+                  }`}
+                >
+                  {isAdmin && (
+                    <td className="px-3 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedProjectIds.has(proj.id)}
+                        onChange={() => toggleProject(proj.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="accent-blue-500 w-4 h-4 rounded cursor-pointer"
+                        aria-label={`Select ${proj.customerName}`}
+                      />
+                    </td>
+                  )}
+                  <td className="px-5 py-3">
+                    <Link
+                      href={`/dashboard/projects/${proj.id}`}
+                      className="text-white hover:text-blue-400 transition-colors flex items-center gap-1.5"
+                    >
+                      {proj.customerName}
+                      {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
+                      <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
+                    </Link>
+                  </td>
+                  {isAdmin && <td className="px-5 py-3 text-slate-400">{proj.repName}</td>}
+                  {/* Rep name cell for reps in All Deals mode — shows "You" pill + bold name on own rows */}
+                  {!isAdmin && dealScope === 'all' && (
+                    <td className="px-5 py-3">
+                      <span className={`flex items-center gap-1.5 ${isMyRow ? 'text-slate-200 font-semibold' : 'text-slate-400'}`}>
+                        {proj.repName}
+                        {isMyRow && (
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
+                            myRole === 'Closer'
+                              ? 'bg-blue-900/60 text-blue-300 border border-blue-500/40'
+                              : 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40'
+                          }`}>
+                            You · {myRole}
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                  )}
+                  <td className="px-5 py-3">
+                    {isAdmin ? (
+                      <select
+                        value={proj.phase}
+                        onChange={(e) => onPhaseChange(proj.id, e.target.value as Phase)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        {PHASES.map((ph) => (
+                          <option key={ph} value={ph}>{ph}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <PhaseBadge phase={proj.phase} />
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-slate-400">{proj.installer}</td>
+                  <td className="px-5 py-3 text-slate-400">{proj.financer}</td>
+                  <td className="px-5 py-3 text-slate-300">{proj.kWSize}</td>
+                  <td className="px-5 py-3 text-slate-300">${proj.netPPW}</td>
+                  <td className="px-5 py-3 text-slate-500">
+                    <div>{formatDate(proj.soldDate)}</div>
+                    <div className="text-[10px] text-slate-600">{relativeTime(proj.soldDate)}</div>
+                  </td>
+                  {isAdmin && (() => {
+                    const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
+                    const nextPhase = phaseIdx >= 0 ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
+                    return (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {/* Phase-advance quick-action — fades in on row hover (identical to Kanban card behaviour) */}
+                          {nextPhase && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onPhaseChange(proj.id, nextPhase); }}
+                              title={`Advance to ${nextPhase}`}
+                              className="opacity-40 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-700 hover:bg-blue-600 text-slate-400 hover:text-white active:scale-[0.97] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                              aria-label={`Advance ${proj.customerName} to ${nextPhase}`}
+                            >
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {/* Assign / Reassign Setter */}
+                          <SetterPopover
+                            projectId={proj.id}
+                            customerName={proj.customerName}
+                            currentSetterId={proj.setterId}
+                            currentSetterName={proj.setterName}
+                            reps={reps}
+                            trainerAssignments={trainerAssignments}
+                            setProjects={setProjects}
+                          />
+                        </div>
+                      </td>
+                    );
+                  })()}
+                </tr>
+                );
+              })}
+              {projects.length === 0 && (
+                <tr>
+                  <td colSpan={isAdmin ? 10 : dealScope === 'all' ? 8 : 7} className="px-5 py-12 text-center">
+                    <div className="flex justify-center">
+                      {hasActiveFilters ? (
+                        /* ── Filtered: no results ─────────────────────────────────── */
+                        <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                          {/* Illustration — magnifying glass over empty grid */}
+                          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                            <rect x="8" y="18" width="46" height="44" rx="5" stroke="#475569" strokeWidth="2" fill="none"/>
+                            <rect x="14" y="26" width="12" height="8" rx="2" fill="#334155"/>
+                            <rect x="32" y="26" width="16" height="3" rx="1.5" fill="#334155"/>
+                            <rect x="32" y="32" width="10" height="3" rx="1.5" fill="#1e293b"/>
+                            <rect x="14" y="40" width="34" height="3" rx="1.5" fill="#1e293b"/>
+                            <rect x="14" y="47" width="22" height="3" rx="1.5" fill="#1e293b"/>
+                            {/* Magnifying glass */}
+                            <circle cx="56" cy="52" r="12" stroke="#3b82f6" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
+                            <circle cx="56" cy="52" r="7" stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
+                            <line x1="64.5" y1="61" x2="72" y2="69" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
+                            {/* X inside lens */}
+                            <line x1="53" y1="49" x2="59" y2="55" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
+                            <line x1="59" y1="49" x2="53" y2="55" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
+                          </svg>
+                          <p className="text-slate-200 text-sm font-semibold leading-snug">No projects match your filters</p>
+                          <p className="text-slate-500 text-xs leading-relaxed">Try adjusting your search query or active filters to find what you&apos;re looking for.</p>
+                          <button
+                            onClick={clearAllFilters}
+                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            style={{ backgroundColor: 'var(--brand)' }}
+                          >
+                            Clear Filters
+                          </button>
+                        </div>
+                      ) : (
+                        /* ── No deals at all ──────────────────────────────────────── */
+                        <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                          {/* Illustration — folder with solar panel motif */}
+                          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                            {/* Folder body */}
+                            <path d="M10 28 C10 24.7 12.7 22 16 22 L30 22 L34 27 L64 27 C67.3 27 70 29.7 70 33 L70 58 C70 61.3 67.3 64 64 64 L16 64 C12.7 64 10 61.3 10 58 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            {/* Folder tab */}
+                            <path d="M10 22 L30 22 L34 27 L10 27 Z" fill="#334155"/>
+                            {/* Solar panel grid inside folder */}
+                            <rect x="22" y="36" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.5" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="32" y="36" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.5" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="42" y="36" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.5" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="22" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="32" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="42" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            {/* Sparkle / plus icon */}
+                            <circle cx="58" cy="22" r="8" fill="#1e3a5f"/>
+                            <line x1="58" y1="17" x2="58" y2="27" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
+                            <line x1="53" y1="22" x2="63" y2="22" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                          <p className="text-slate-200 text-sm font-semibold leading-snug">Submit your first deal</p>
+                          <p className="text-slate-500 text-xs leading-relaxed">Your pipeline is empty. Create a new deal to start tracking projects and commissions.</p>
+                          <a
+                            href="/dashboard/new-deal"
+                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            style={{ backgroundColor: 'var(--brand)' }}
+                          >
+                            + Submit Deal
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {/* ── Pagination bar ─────────────────────────────────────────── */}
+        <PaginationBar
+          totalResults={totalResults} startIdx={startIdx} endIdx={endIdx}
+          currentPage={safeCurrentPage} totalPages={totalPages} rowsPerPage={rowsPerPage}
+          onPageChange={setCurrentPage} onRowsPerPageChange={setRowsPerPage}
+        />
+      </div>
+
+      {/* Spacer so content is never hidden behind the fixed action bar */}
+      {showActionBar && <div className="h-20" />}
+
+      {/* ── Floating bulk-action toolbar ──────────────────────────────────
+           Glass-morphism pill centred at the viewport bottom. Mounts with a
+           spring-eased slide-up entrance whenever one or more projects are
+           selected (admin only). Escape key and the × button both clear the
+           selection.                                                          */}
+      {showActionBar && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-slate-900/80 border border-slate-700/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
+          role="toolbar"
+          aria-label="Batch actions for selected projects"
+        >
+          <div className="flex items-center gap-3">
+
+            {/* Selection count badge — blue accent pill */}
+            <span className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+              <span className="text-white font-bold tabular-nums">{selectedProjectIds.size}</span>
+              <span className="text-blue-400 font-medium">selected</span>
+            </span>
+
+            {/* Visual divider */}
+            <div className="h-5 w-px bg-slate-700/80 flex-shrink-0" />
+
+            {/* Advance Phase — primary action */}
+            <button
+              onClick={handleBulkAdvance}
+              className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap inline-flex items-center gap-1.5"
+              style={{ backgroundColor: 'var(--brand)' }}
+            >
+              Advance Phase
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Flag / Unflag toggle */}
+            <button
+              onClick={handleBulkFlag}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-slate-700/60 hover:bg-red-600/80 border border-slate-600/40 text-slate-300 hover:text-white transition-colors active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+            >
+              <Flag className="w-3.5 h-3.5" />
+              {bulkFlagLabel}
+            </button>
+
+            {/* Dismiss / deselect-all × button */}
+            <button
+              onClick={() => setSelectedProjectIds(new Set())}
+              aria-label="Deselect all and dismiss toolbar"
+              className="btn-secondary p-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/40 text-slate-400 hover:text-white transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

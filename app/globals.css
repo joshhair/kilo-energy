@@ -1,0 +1,1308 @@
+@import "tailwindcss";
+
+:root {
+  --brand: #2563EB;
+  --brand-light: #3B82F6;
+  --brand-dark: #1D4ED8;
+  --navy-base: #060E1E;
+  --navy-card: #0D1B2E;
+  --navy-hover: #112238;
+}
+
+/* ── Accessibility: reduced-motion safety net ───────────────────────────────
+   Collapses every animation and transition to an imperceptible duration so
+   that users who have enabled "Reduce Motion" in their OS preferences are
+   not exposed to vestibular-triggering movement anywhere in the app.
+   Using !important is intentional — this must override inline styles and
+   component-level animation utilities alike.                                */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Scrollbar-gutter: prevents layout shift ────────────────────────────────
+   Reserving space for the scrollbar before it appears stops the content
+   area from reflowing when the page grows tall enough to need one.          */
+main {
+  scrollbar-gutter: stable;
+}
+
+/* ── Universal focus-visible ring ───────────────────────────────────────────
+   Provides a consistent, high-contrast keyboard-navigation affordance for
+   every interactive element that does not already carry its own focus style.
+   Using :focus-visible (not :focus) keeps mouse users unaffected.           */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="link"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--navy-base),
+    0 0 0 4px rgba(59, 130, 246, 0.5); /* blue-500 / 50 % — matches ring-blue-500/50 */
+}
+
+body {
+  background-color: var(--navy-base);
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2563EB; }
+
+/* Hidden scrollbar utility */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Gradient text utilities */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #3B82F6, #60A5FA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-emerald {
+  background: linear-gradient(135deg, #10B981, #34D399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #EAB308, #F59E0B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Page entrance animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out both;
+}
+
+/* Simple opacity fade — used for empty-state panels */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+/* Premium page materialisation — blur-to-sharp + micro-scale with spring easing */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-page-enter {
+  animation: pageEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Result card entrance animation — premium scale + lift combo */
+@keyframes slideInScale {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-in-scale {
+  animation: slideInScale 0.35s ease-out both;
+}
+
+/* Stagger delay utilities — used with animate-slide-in-scale for cascade entrances */
+.stagger-0 { animation-delay:   0ms; }
+.stagger-1 { animation-delay:  75ms; }
+.stagger-2 { animation-delay: 150ms; }
+.stagger-3 { animation-delay: 225ms; }
+.stagger-4 { animation-delay: 300ms; }
+.stagger-5 { animation-delay: 375ms; }
+.stagger-6 { animation-delay: 450ms; }
+
+/* CSS @property counter roll-up — animates the displayed stat number with a
+   premium blur-lift effect that evokes counting up from zero on mount.        */
+@property --num {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
+@keyframes countUp {
+  from {
+    --num: 0;
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(8px);
+  }
+  to {
+    --num: 9999;
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px);
+  }
+}
+
+.animate-count-up {
+  animation: countUp 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Modal entrance animations */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-backdrop {
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.animate-modal-panel {
+  animation: modalScaleIn 0.25s ease-out;
+}
+
+/* Grid-rows accordion transition — ensures the utility is always emitted */
+.nav-accordion-grid {
+  display: grid;
+  transition-property: grid-template-rows;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* ── NavGroup spring & micro-animation utilities ────────────────────────────── */
+
+/* (1) Chevron spring — overrides Tailwind's linear/ease timing with a back-overshoot
+      curve so the arrow feels snappy and physical rather than mechanical.         */
+.nav-chevron-spring {
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* (2) Group-icon pop — one-shot scale bounce fired when the group header is clicked.
+      Applied programmatically for 200 ms then removed so the class is reusable.   */
+@keyframes navGroupPop {
+  0%   { transform: scale(1);    }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1);    }
+}
+
+.nav-group-icon-pop {
+  animation: navGroupPop 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* (3) Sub-item border-left color transition — smoothly shifts from slate to blue
+      as the parent group expands / an active child is detected.                   */
+.nav-sublist-border {
+  transition: border-color 400ms ease;
+}
+
+/* Skeleton loader shimmer — slightly slower & deeper contrast than Tailwind's default pulse */
+@keyframes skeletonShimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.38; }
+}
+
+.animate-skeleton {
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+/* Glass-morphism card surface with gradient wash + glow borders */
+.card-surface {
+  position: relative;
+  background:
+    linear-gradient(135deg, rgba(30,58,138,0.10) 0%, transparent 50%, rgba(6,78,59,0.08) 100%),
+    linear-gradient(180deg, rgba(30,58,95,0.15) 0%, rgba(13,27,46,0.4) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(148,163,184,0.08);
+  border-top-color: rgba(59,130,246,0.15);
+  border-bottom-color: rgba(16,185,129,0.10);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03);
+  transition: transform 200ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.card-surface:hover {
+  transform: translateY(-1px);
+  border-color: rgba(148,163,184,0.15);
+  border-top-color: rgba(59,130,246,0.25);
+  border-bottom-color: rgba(16,185,129,0.18);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Stat card variant — radial accent glow + bounce-scale on the number */
+.card-surface-stat {
+  background: radial-gradient(ellipse at 90% 10%, var(--card-accent, transparent) 0%, transparent 60%),
+              linear-gradient(180deg, rgba(30,58,95,0.15) 0%, rgba(13,27,46,0.4) 100%);
+}
+
+.card-surface-stat .stat-value {
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-surface-stat:hover .stat-value {
+  transform: scale(1.05);
+}
+
+/* ── Stat value number glow — colored text-shadow utility ───────────────────── */
+
+/* Base utility: applies a soft luminous text-shadow driven by a CSS custom
+   property so each card can set its own tint independently.                  */
+.stat-value-glow {
+  text-shadow: 0 0 20px var(--stat-glow-color, transparent);
+}
+
+/* ── Unified select/dropdown styling ─────────────────────────────────────── */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 36px;
+}
+
+/* Color variants — set --stat-glow-color to the matching brand tint */
+.stat-glow-blue    { --stat-glow-color: rgba(59,130,246,0.4); }
+.stat-glow-emerald { --stat-glow-color: rgba(16,185,129,0.4); }
+.stat-glow-yellow  { --stat-glow-color: rgba(234,179,8,0.4); }
+.stat-glow-red     { --stat-glow-color: rgba(239,68,68,0.3); }
+
+/* ── Button interaction system ──────────────────────────────────────────────── */
+
+/* Traveling shimmer keyframe — sweeps a highlight band left-to-right on hover */
+@keyframes buttonShine {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
+/* Primary CTA — blue brand buttons */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Radial light-burst overlay — centred on the last click co-ordinates via
+   CSS custom properties set by JS (or defaults to 50 % / 50 % centre).      */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--ripple-x, 50%) var(--ripple-y, 50%),
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 150ms;
+  pointer-events: none;
+}
+
+.btn-primary:active::after {
+  opacity: 1;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
+  /* Shimmer: a semi-transparent highlight band travels across the surface */
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: buttonShine 1.5s ease-in-out;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: none;
+  filter: brightness(0.95);
+}
+
+/* Secondary — slate ghost buttons */
+.btn-secondary {
+  position: relative;
+  overflow: hidden;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Same radial ripple treatment for secondary buttons */
+.btn-secondary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--ripple-x, 50%) var(--ripple-y, 50%),
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 150ms;
+  pointer-events: none;
+}
+
+.btn-secondary:active::after {
+  opacity: 1;
+}
+
+.btn-secondary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+  box-shadow: none;
+  filter: brightness(0.95);
+}
+
+/* ── Toast entrance / exit / progress-bar animations ────────────────────────── */
+
+/* Slide in from the right on mount */
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide back out to the right on dismiss */
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Progress bar shrinks from full width to nothing over the visible duration */
+@keyframes shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+.animate-toast-in {
+  animation: toastIn 300ms ease-out both;
+}
+
+.animate-toast-out {
+  animation: toastOut 250ms ease-out both;
+}
+
+/* Progress bar runs the shrink animation; hover pauses it */
+.toast-progress {
+  animation: shrink 3.5s linear forwards;
+}
+
+.toast-item:hover .toast-progress {
+  animation-play-state: paused;
+}
+
+/* ── Incentive progress bar grow-on-mount animation ────────────────────────── */
+
+/* Sweeps the bar from 0% to its natural (inline) width on initial render.
+   No explicit `to` needed — the element's own width acts as the end state.  */
+@keyframes progressGrow {
+  from { width: 0%; }
+}
+
+.animate-progress-grow {
+  animation: progressGrow 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Traveling shimmer highlight that sweeps left-to-right continuously over the
+   progress bar fill — mirrors the buttonShine approach but runs slower (2.5s)
+   and loops infinitely so the bar always feels "live".                        */
+@keyframes progressShimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
+/* Apply to the progress fill element. Creates a ::after pseudo-element that
+   overlays a semi-transparent white band travelling across the fill width.   */
+.animate-progress-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-progress-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent     0%,
+    rgba(255,255,255,0.10) 50%,
+    transparent     100%
+  );
+  background-size: 200% 100%;
+  animation: progressShimmer 2.5s linear infinite;
+  pointer-events: none;
+}
+
+/* ── Animated focus glow — app-wide premium input focus effect ─────────────── */
+
+/* Single soft pulse (scale 1 → 1.02 → 1) on the shadow ring when focus first fires */
+@keyframes focusRingPulse {
+  0%   { box-shadow: none; }
+  50%  { box-shadow: 0 0 0 5px rgba(59,130,246,0.2), 0 0 25px rgba(59,130,246,0.15); }
+  100% { box-shadow: 0 0 0 3px rgba(59,130,246,0.15), 0 0 20px rgba(59,130,246,0.1); }
+}
+
+/* Base class applied to every input, select, and number input across the app.
+   Transitions both box-shadow and border-color so the glow fades in/out smoothly. */
+.input-focus-glow {
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.input-focus-glow:focus {
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15), 0 0 20px rgba(59,130,246,0.1);
+  border-color: rgba(59,130,246,0.5);
+  animation: focusRingPulse 0.4s ease-out;
+}
+
+/* ── Animated tab indicator — sliding pill ──────────────────────────────────── */
+
+/* Wrapper that the absolutely-positioned indicator is measured against */
+.tab-bar-container {
+  position: relative;
+}
+
+/* The sliding pill that animates behind the active tab button */
+.tab-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-light));
+  border-radius: 8px;
+  transition: left 250ms cubic-bezier(0.4, 0, 0.2, 1),
+              width 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Table row staggered entrance animation ─────────────────────────────────── */
+
+/* Rows materialise from left with a subtle blur-to-sharp transition.
+   translateX(-6px) gives a leftward origin that feels like rows streaming in. */
+@keyframes tableRowEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+    filter: blur(1px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* Base class — apply alongside a .row-stagger-N class for the cascade effect. */
+.table-row-enter {
+  animation: tableRowEnter 100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--row-index, 0) * 20ms);
+}
+
+/* Stagger delay helpers — each class sets --row-index so .table-row-enter can
+   compute the right delay without repeating the formula 25 times.             */
+.row-stagger-0  { --row-index: 0;  }
+.row-stagger-1  { --row-index: 1;  }
+.row-stagger-2  { --row-index: 2;  }
+.row-stagger-3  { --row-index: 3;  }
+.row-stagger-4  { --row-index: 4;  }
+.row-stagger-5  { --row-index: 5;  }
+.row-stagger-6  { --row-index: 6;  }
+.row-stagger-7  { --row-index: 7;  }
+.row-stagger-8  { --row-index: 8;  }
+.row-stagger-9  { --row-index: 9;  }
+.row-stagger-10 { --row-index: 10; }
+.row-stagger-11 { --row-index: 11; }
+.row-stagger-12 { --row-index: 12; }
+.row-stagger-13 { --row-index: 13; }
+.row-stagger-14 { --row-index: 14; }
+.row-stagger-15 { --row-index: 15; }
+.row-stagger-16 { --row-index: 16; }
+.row-stagger-17 { --row-index: 17; }
+.row-stagger-18 { --row-index: 18; }
+.row-stagger-19 { --row-index: 19; }
+.row-stagger-20 { --row-index: 20; }
+.row-stagger-21 { --row-index: 21; }
+.row-stagger-22 { --row-index: 22; }
+.row-stagger-23 { --row-index: 23; }
+.row-stagger-24 { --row-index: 24; }
+
+/* ── Frosted-glass sticky table header ─────────────────────────────────────── */
+/* Apply to <thead> elements for a consistent premium sticky header appearance.
+   Pairs with Tailwind after: utilities for the optional gradient bottom edge.  */
+.table-header-frost {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(13, 27, 46, 0.85);
+  backdrop-filter: blur(12px);
+  /* bottom edge is handled by the after: gradient-divider utility classes */
+}
+
+/* ── Table scroll shadow — gradient depth effect below sticky header ─────────
+   Apply .table-scroll-shadow to a sticky <thead> (alongside the sticky/z-10/
+   backdrop-blur-md/bg-slate-900\/80 Tailwind utilities).  The ::after
+   pseudo-element is absolutely positioned at top:100% of the sticky header so
+   it travels with it during scroll, casting an 8 px navy-to-transparent ramp
+   over the first rows of tbody to create the illusion of content scrolling
+   beneath a raised, frosted header pane — matching the Linear/Notion premium
+   table treatment.                                                             */
+.table-scroll-shadow {
+  position: relative;
+}
+
+.table-scroll-shadow::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 8px;
+  background: linear-gradient(to bottom, rgba(6, 14, 30, 0.8), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Animated ring fill for MTD donut/ring charts ───────────────────────────── */
+
+/* Animates stroke-dashoffset from the full circumference (empty ring) to the
+   inline-styled target value (partially filled ring) on mount.
+   Circumference = 2π × r20 ≈ 125.66                                           */
+@keyframes ringFill {
+  from { stroke-dashoffset: 125.66; }
+}
+
+.animate-ring-fill {
+  animation: ringFill 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Milestone achievement celebration animations ───────────────────────────── */
+
+/* Row glow burst — scales the row up slightly and adds a green box-shadow,
+   then settles to a faint persistent glow. One-shot (no infinite repeat).     */
+@keyframes milestoneAchieve {
+  0%   { transform: scale(0.8);    opacity: 0;   box-shadow: none; }
+  50%  { transform: scale(1.15);   opacity: 1;   box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+  100% { transform: scale(1);      opacity: 1;   box-shadow: 0 0 8px  rgba(16, 185, 129, 0.2); }
+}
+
+/* Checkmark pop — bounces the icon in from nothing with a slight overshoot
+   and counter-rotation, landing perfectly upright. One-shot.                  */
+@keyframes milestoneCheckPop {
+  0%   { transform: scale(0)    rotate(-30deg); }
+  60%  { transform: scale(1.3)  rotate(5deg);  }
+  100% { transform: scale(1)    rotate(0deg);  }
+}
+
+.animate-milestone-achieve {
+  animation: milestoneAchieve 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-milestone-check-pop {
+  animation: milestoneCheckPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Rep-card avatar progress ring — deal completion rate ────────────────────── */
+
+/* Animates stroke-dashoffset from the full circumference (empty ring) to the
+   inline-styled target offset on mount.
+   Circumference = 2π × r22 ≈ 138.23                                           */
+@keyframes repRingFill {
+  from { stroke-dashoffset: 138.23; }
+}
+
+.animate-rep-ring-fill {
+  animation: repRingFill 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Rank badge shimmer — sweeps a translucent highlight across the top-3 badges
+   (similar pattern to buttonShine but runs continuously every 3 s).           */
+@keyframes rankBadgeShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.animate-rank-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: rankBadgeShimmer 3s ease-in-out infinite;
+}
+
+/* ── Frosted-glass breadcrumb bar entrance animation ────────────────────────── */
+
+/* Materialises the breadcrumb bar on page load by fading in from transparent
+   while sliding in from a slight leftward offset (translateX -4px → 0).
+   Applied via .animate-breadcrumb-enter on the <nav> wrapper.                */
+@keyframes breadcrumbEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-breadcrumb-enter {
+  animation: breadcrumbEnter 200ms ease-out both;
+}
+
+/* ── Sidebar nav icon active bounce ─────────────────────────────────────────── */
+
+/* Single pop on the icon whenever its parent route becomes active.
+   Applied via .nav-icon-active which is added when isActive is true.         */
+@keyframes iconBounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.nav-icon-active {
+  animation: iconBounce 300ms ease-out;
+}
+
+/* ── Sidebar collapsed-state tooltip ────────────────────────────────────────── */
+
+/* Spring entrance replaces the plain opacity+translate transition */
+@keyframes tooltipEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Hidden by default; animates in when the collapsed nav item is hovered */
+.nav-tooltip-popover {
+  opacity: 0;
+}
+
+.group\/tip:hover .nav-tooltip-popover {
+  animation: tooltipEnter 200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Tooltip bubble — frosted glass treatment + left-pointing caret arrow */
+.nav-tooltip-bubble {
+  position: relative;
+}
+
+/* Left-pointing border-triangle that acts as the caret connecting the bubble
+   back to the collapsed icon in the sidebar.                                  */
+.nav-tooltip-bubble::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-style: solid;
+  border-width: 5px 6px 5px 0;
+  /* right border colour matches bg-slate-800/90 */
+  border-color: transparent rgba(30, 41, 59, 0.9) transparent transparent;
+}
+
+/* ── Tab content crossfade entrance animation ───────────────────────────────── */
+
+/* Fades in + lifts up from a subtle offset whenever a new tab panel mounts.
+   Pair with key={tab} on the content wrapper so React remounts on tab change. */
+@keyframes tabContentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tab-enter {
+  animation: tabContentEnter 0.25s ease-out both;
+}
+
+/* ── Pipeline stepper animations ────────────────────────────────────────────── */
+
+/* Traveling shimmer that sweeps left-to-right along completed connector lines.
+   The gradient sits on top of the solid emerald-600 base colour so the bar
+   always looks filled even when the shimmer is off-screen.                    */
+@keyframes glowTrail {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.stepper-connector-complete {
+  background-color: #059669; /* emerald-600 base so the bar is always visible */
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(16, 185, 129, 0.4),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: glowTrail 2.4s linear infinite;
+}
+
+/* Refined pulse for the current-step halo — expands a box-shadow ring outward
+   instead of scaling the element, which avoids layout reflow and looks cleaner. */
+@keyframes stepperPulse {
+  0%   { box-shadow: 0 0 0 0   rgba(59, 130, 246, 0.5); }
+  100% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0);   }
+}
+
+.stepper-pulse {
+  border-radius: 9999px;
+  animation: stepperPulse 1.6s ease-out infinite;
+}
+
+/* ── Animated conic-gradient glow border for stat cards ─────────────────────── */
+
+/* Registers --glow-angle as an animatable <angle> property so the browser can
+   interpolate it smoothly inside conic-gradient() — without @property the
+   browser would treat the value as a discrete (non-interpolable) custom prop. */
+@property --glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Rotates --glow-angle a full turn; the browser interpolates every frame. */
+@keyframes glowSpin {
+  to { --glow-angle: 360deg; }
+}
+
+/* Ensure the ::before stacking context is relative to each stat card. */
+.card-surface-stat {
+  position: relative;
+}
+
+/* Pseudo-element that sits 1 px outside the card boundary at z-index -1.
+   The card's own opaque background eclipses it everywhere except the 1 px
+   perimeter, creating the illusion of an animated gradient border ring.
+
+   Opacity starts at 0 and cross-fades to 1 on hover so the effect eases in
+   gracefully rather than snapping on. The animation only runs while hovered,
+   so the GPU layer is promoted only when needed.                              */
+.card-surface-stat::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent            0deg,
+    var(--card-accent, rgba(59, 130, 246, 0.7)) 60deg,
+    transparent           120deg
+  );
+  opacity: 0;
+  transition: opacity 400ms ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* On hover: reveal the border ring and start the perpetual rotation. */
+.card-surface-stat:hover::before {
+  opacity: 1;
+  animation: glowSpin 3s linear infinite;
+}
+
+/* ── Interactive card surface — glass-morphism + animated conic-gradient glow border ── */
+
+/* Reusable variant that combines the .card-surface glass-morphism base with the
+   hover-lift micro-interaction and the rotating conic-gradient border glow.
+   Apply to any dashboard surface that should have a premium interactive feel
+   (Needs Attention, Pipeline Overview, incentive cards, Kanban columns, etc.).  */
+.card-surface-interactive {
+  background: linear-gradient(180deg, rgba(30,58,95,0.15) 0%, rgba(13,27,46,0.4) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(148,163,184,0.08);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03);
+  position: relative;
+  transition: transform 200ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.card-surface-interactive:hover {
+  transform: translateY(-1px);
+  border-color: rgba(148,163,184,0.15);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Pseudo-element that renders the animated conic-gradient border ring.
+   Sits 1 px outside the card boundary at z-index -1 so the card background
+   eclipses it everywhere except the 1 px perimeter.
+   Fades in on hover (opacity 0 → 1) and starts the glowSpin rotation.         */
+.card-surface-interactive::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent                        0deg,
+    var(--card-accent, rgba(59, 130, 246, 0.7)) 60deg,
+    transparent                       120deg
+  );
+  opacity: 0;
+  transition: opacity 400ms ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* On hover: reveal the border ring and start the perpetual rotation. */
+.card-surface-interactive:hover::before {
+  opacity: 1;
+  animation: glowSpin 3s linear infinite;
+}
+
+/* ── Kanban board column staggered entrance animation ───────────────────────── */
+
+/* Columns materialise left-to-right with a blur-to-sharp + lift effect.
+   Each column gets a --col-index CSS custom property (set by .kanban-col-N)
+   so the cascade delay is computed in a single formula without repetition.     */
+@keyframes kanbanColumnEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Base class — apply alongside a .kanban-col-N class for the cascade effect. */
+.kanban-col-enter {
+  animation: kanbanColumnEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--col-index, 0) * 50ms);
+}
+
+/* Stagger index helpers — each class sets --col-index so .kanban-col-enter
+   can compute the right delay without repeating the formula 11 times.         */
+.kanban-col-0  { --col-index: 0;  }
+.kanban-col-1  { --col-index: 1;  }
+.kanban-col-2  { --col-index: 2;  }
+.kanban-col-3  { --col-index: 3;  }
+.kanban-col-4  { --col-index: 4;  }
+.kanban-col-5  { --col-index: 5;  }
+.kanban-col-6  { --col-index: 6;  }
+.kanban-col-7  { --col-index: 7;  }
+.kanban-col-8  { --col-index: 8;  }
+.kanban-col-9  { --col-index: 9;  }
+.kanban-col-10 { --col-index: 10; }
+
+/* Sparkline fade-in — ends at 0.6 opacity so the SVG sits as a subtle accent */
+@keyframes sparklineFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 0.6; }
+}
+
+.animate-sparkline-fade {
+  animation: sparklineFadeIn 0.6s ease-out both;
+}
+
+/* ── Kanban card accent bar grow-on-mount animation ─────────────────────────── */
+
+/* Sweeps the phase-coloured top accent bar from 0 → 100% width on mount,
+   creating a 'loading bar' micro-effect that gives each card a sense of
+   intentional reveal. The delay inherits --col-index from the parent column
+   so cards in later columns start their fill slightly after earlier ones,
+   reinforcing the left-to-right cascade already used by .kanban-col-enter.    */
+@keyframes accentBarGrow {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+.kanban-accent-bar {
+  animation: accentBarGrow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Stagger relative to the column index so the fill cascades left-to-right.
+     --col-index is already set on the column wrapper by .kanban-col-N.        */
+  animation-delay: calc(var(--col-index, 0) * 50ms);
+}
+
+/* On hover: brighten + emit a soft ambient glow through currentColor so the
+   effect automatically matches the gradient colour without extra variables.   */
+.kanban-accent-bar:hover {
+  filter: brightness(1.4);
+  box-shadow: 0 0 8px currentColor;
+  transition: filter 200ms ease, box-shadow 200ms ease;
+}
+
+/* ── New Deal multi-step form — directional slide+fade transitions ───────────── */
+
+/* Forward (Next): content enters from the right (slides in leftward).
+   Start at +20px offset so it feels like advancing to the next step.           */
+@keyframes stepSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Backward (Previous): content enters from the left (slides in rightward).
+   Start at -20px offset so it feels like retreating to a previous step.         */
+@keyframes stepSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Apply to the step content wrapper when the user clicks Next */
+.animate-step-forward {
+  animation: stepSlideLeft 250ms ease-out both;
+}
+
+/* Apply to the step content wrapper when the user clicks Previous */
+.animate-step-backward {
+  animation: stepSlideRight 250ms ease-out both;
+}
+
+/* ── Podium #1 card gradient border glow — fires once on mount ──────────────── */
+
+/* A single soft glow pulse that expands and fades on the gold gradient top-border
+   of the first-place podium card. Delayed so it fires only after the podium
+   section has fully slid into view (300 ms podium delay + ~350 ms slide = ~700 ms). */
+@keyframes podiumGlowPulse {
+  0%   { box-shadow: none; }
+  40%  { box-shadow: 0 0 10px 3px rgba(234,179,8,0.55), 0 0 24px 6px rgba(234,179,8,0.25); }
+  100% { box-shadow: none; }
+}
+
+.animate-podium-glow {
+  animation: podiumGlowPulse 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 700ms;
+}
+
+/* ── Quick-fill cascade field highlight ─────────────────────────────────────── */
+
+/* Brief blue ring that flashes on a form field when Quick Fill populates it.
+   Applied via classList in handleQuickFill, staggered across each field.      */
+@keyframes fieldFlash {
+  0%   {
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.5), 0 0 12px rgba(59,130,246,0.15);
+    border-color: rgba(59,130,246,0.5);
+  }
+  100% {
+    box-shadow: none;
+    border-color: rgba(51,65,85,1);
+  }
+}
+
+.field-flash {
+  animation: fieldFlash 300ms ease-out forwards;
+}
+
+/* ── Payroll floating batch-action bar ──────────────────────────────────────── */
+
+/* Frosted-glass surface for the fixed bottom selection bar.
+   Uses -webkit-backdrop-filter for Safari compatibility alongside the standard
+   property. The bar slides in via Tailwind translate-y-full → translate-y-0
+   driven by the transition-transform duration-300 ease-out classes on the
+   containing element.                                                          */
+.payroll-action-bar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Payroll floating batch-action toolbar — spring entrance animation ──────
+   Spring-eased slide-up that travels from 20 px below the final resting
+   position while simultaneously fading in from opacity 0.
+
+   Both the `from` and `to` keyframes include the full translate(-50%, …)
+   so that the animation owns the transform property throughout its lifetime —
+   this prevents a flash where Tailwind's -translate-x-1/2 custom-property
+   transform briefly conflicts with the animation's inline transform.
+
+   cubic-bezier(0.16, 1, 0.3, 1) is the spring/overshoot curve used
+   consistently across this codebase (pageEnter, kanbanColumnEnter, etc.)     */
+@keyframes floatToolbarIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-float-toolbar-in {
+  animation: floatToolbarIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Scroll-triggered reveal — useScrollReveal() hook companion classes ──────── */
+
+/* Initial hidden state: nudged down + blurred + invisible.
+   Applied immediately so below-fold sections don't flash in before the observer
+   fires. Above-fold sections skip straight to .scroll-reveal-visible via the
+   hook's IntersectionObserver callback. */
+.scroll-reveal-hidden {
+  opacity: 0;
+  transform: translateY(12px);
+  filter: blur(2px);
+}
+
+/* Revealed state: fully opaque + in-place + sharp, with a spring-eased
+   transition that mirrors the page-enter animation style used elsewhere. */
+.scroll-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+  transition:
+    opacity   0.5s ease-out,
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    filter    0.5s ease-out;
+}
+
+/* ── Animated gradient divider — slow shimmer sweep ────────────────────────── */
+
+/* Sweeps a soft highlight band left-to-right across the 1 px divider line,
+   creating living visual rhythm between dashboard sections. Background-size is
+   set to 200 % wide so the bright midpoint glides smoothly from far-left to
+   far-right over the full 4 s cycle without any abrupt jump on loop restart.  */
+@keyframes dividerShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.divider-gradient-animated {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent              0%,
+    rgba(148, 163, 184, 0.08)  20%,
+    rgba(148, 163, 184, 0.25)  50%,
+    rgba(148, 163, 184, 0.08)  80%,
+    transparent             100%
+  );
+  background-size: 200% 100%;
+  animation: dividerShimmer 4s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Reps page — glassmorphic card hover enhancements
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Rep card SVG avatar ring glow ────────────────────────────────────────── */
+
+/* Applied directly to the <svg> progress ring element. Starts with a
+   transparent drop-shadow and transitions to a soft blue halo when the
+   parent card element (which carries the `group` Tailwind class) is hovered. */
+.rep-ring-glow {
+  transition: filter 300ms ease;
+  filter: drop-shadow(0 0 0 transparent);
+}
+
+.group:hover .rep-ring-glow {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+}
+
+/* ── 2. Rep card spinning conic-gradient border ───────────────────────────────── */
+
+/* Registers --rep-border-angle as an animatable <angle> so the browser
+   can interpolate it smoothly inside conic-gradient() every frame.
+   Without @property the value would be treated as a discrete property
+   and the spin animation would snap rather than rotate continuously.           */
+@property --rep-border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Rotates the angle a full turn; referenced by .rep-card:hover::before.        */
+@keyframes repBorderSpin {
+  to { --rep-border-angle: 360deg; }
+}
+
+/* Establishes the stacking context needed for the ::before border pseudo.
+   `position: relative` is already present as a Tailwind class on the card
+   element, so this is a no-op in most browsers — included for correctness
+   in case the Tailwind class is ever removed.                                  */
+.rep-card {
+  position: relative;
+}
+
+/* Spinning conic-gradient border ring — sits 1 px outside the card boundary
+   at z-index -1 so the card's own opaque background eclipses the interior,
+   leaving only the thin perimeter visible as a gradient border.
+   Opacity stays at 0 at rest; cross-fades to 1 on hover so the effect
+   eases in gracefully. The animation is only started on hover to avoid
+   promoting an unnecessary GPU layer while the card is off-hover.             */
+.rep-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--rep-border-angle, 0deg),
+    transparent,
+    rgba(59, 130, 246, 0.3),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 400ms ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* On hover: reveal the border ring and start the perpetual rotation.           */
+.rep-card:hover::before {
+  opacity: 1;
+  animation: repBorderSpin 3s linear infinite;
+}
+
+/* ── 3. Podium card breathing box-shadow — infinite pulse per rank ───────────── */
+
+/* Each keyframe set preserves the card-surface base shadow (0 1px 2px … and
+   0 8px 24px …) so the breathing glow layer-adds on top rather than replacing
+   the existing depth shadow, keeping the cards looking grounded at all times.  */
+
+/* Gold (#1) — warm amber pulse matching from-yellow-400 to-amber-600 */
+@keyframes podiumBreathGold {
+  0%, 100% {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+  50% {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 0 12px 4px rgba(234, 179, 8, 0.35);
+  }
+}
+
+/* Silver (#2) — cool slate pulse matching from-slate-300 to-slate-500 */
+@keyframes podiumBreathSilver {
+  0%, 100% {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+  50% {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 0 12px 4px rgba(148, 163, 184, 0.28);
+  }
+}
+
+/* Bronze (#3) — warm amber-brown pulse matching from-amber-600 to-amber-800 */
+@keyframes podiumBreathBronze {
+  0%, 100% {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+  50% {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 0 12px 4px rgba(180, 83, 9, 0.35);
+  }
+}
+
+/* Animation helper classes — delayed 1 050 ms so they fire after both the
+   podium section entrance (300 ms) and the card slide-in (≈350 ms) fully
+   settle. The loop then breathes every 2.4 s indefinitely.                    */
+.animate-podium-breath-gold {
+  animation:
+    podiumBreathGold 2.4s ease-in-out 1050ms infinite;
+}
+
+.animate-podium-breath-silver {
+  animation:
+    podiumBreathSilver 2.4s ease-in-out 1050ms infinite;
+}
+
+.animate-podium-breath-bronze {
+  animation:
+    podiumBreathBronze 2.4s ease-in-out 1050ms infinite;
+}

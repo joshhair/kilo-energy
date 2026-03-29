@@ -1,0 +1,1280 @@
+'use client';
+
+import { useState, useRef, useEffect, type CSSProperties } from 'react';
+import { useApp } from '../../../lib/context';
+import { useIsHydrated } from '../../../lib/hooks';
+import { useToast } from '../../../lib/toast';
+import { PayrollEntry } from '../../../lib/data';
+import { formatDate } from '../../../lib/utils';
+import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight } from 'lucide-react';
+import { RepSelector } from '../components/RepSelector';
+import { SearchableSelect } from '../components/SearchableSelect';
+import Link from 'next/link';
+
+type StatusTab = 'Draft' | 'Pending' | 'Paid';
+type TypeTab = 'Deal' | 'Bonus';
+type PageView = 'payroll' | 'reimbursements';
+
+/** Maps accent-gradient strings to an RGBA radial glow colour for --card-accent */
+const ACCENT_COLOR_MAP: Record<string, string> = {
+  'from-blue-500 to-blue-400':       'rgba(59,130,246,0.08)',
+  'from-emerald-500 to-emerald-400': 'rgba(16,185,129,0.08)',
+  'from-yellow-500 to-yellow-400':   'rgba(234,179,8,0.08)',
+};
+
+/** Returns the Tailwind gradient string that matches the active status tab */
+const STATUS_ACCENT: Record<StatusTab, string> = {
+  Draft:   'from-blue-500 to-blue-400',
+  Pending: 'from-yellow-500 to-yellow-400',
+  Paid:    'from-emerald-500 to-emerald-400',
+};
+
+export default function PayrollPage() {
+  const { currentRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, reps, projects, reimbursements, setReimbursements } = useApp();
+  const { toast } = useToast();
+  const isHydrated = useIsHydrated();
+  useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
+  const [pageView, setPageView] = useState<PageView>('payroll');
+  const [statusTab, setStatusTab] = useState<StatusTab>('Draft');
+  const [typeTab, setTypeTab] = useState<TypeTab>('Deal');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBonusModal, setShowBonusModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [bonusForm, setBonusForm] = useState({ repId: '', amount: '', notes: '', date: '' });
+  const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', stage: 'M1' as 'M1' | 'M2' | 'M3', date: '', notes: '' });
+
+  // Reimbursements date filter
+  const [reimFilterFrom, setReimFilterFrom] = useState('');
+  const [reimFilterTo, setReimFilterTo] = useState('');
+
+  // Payroll entries date filter
+  const [payFilterFrom, setPayFilterFrom] = useState('');
+  const [payFilterTo, setPayFilterTo] = useState('');
+
+  // Rep filter (admin)
+  const [filterRepId, setFilterRepId] = useState('');
+
+  // Page view tab indicators
+  const pageViewRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pageViewIndicator, setPageViewIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const idx = pageView === 'payroll' ? 0 : 1;
+    const el = pageViewRefs.current[idx];
+    if (el) setPageViewIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [pageView]);
+
+  // Sliding tab indicators
+  const statusTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [statusIndicator, setStatusIndicator] = useState<{ left: number; width: number } | null>(null);
+  const typeTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [typeIndicator, setTypeIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const STATUS_TABS: StatusTab[] = ['Draft', 'Pending', 'Paid'];
+    const idx = STATUS_TABS.indexOf(statusTab);
+    const el = statusTabRefs.current[idx];
+    if (el) setStatusIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [statusTab]);
+
+  useEffect(() => {
+    const TYPE_TABS: TypeTab[] = ['Deal', 'Bonus'];
+    const idx = TYPE_TABS.indexOf(typeTab);
+    const el = typeTabRefs.current[idx];
+    if (el) setTypeIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [typeTab]);
+
+  // Keyboard shortcuts: Escape → deselect, Enter → mark for payroll, Shift+A → select/deselect all
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Skip if an input element is focused
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      ) {
+        if (e.key === 'Escape') setSelectedIds(new Set());
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        setSelectedIds(new Set());
+        return;
+      }
+
+      // Enter → trigger "Mark for Payroll" when Draft entries are selected
+      if (e.key === 'Enter' && statusTab === 'Draft' && selectedIds.size > 0) {
+        e.preventDefault();
+        handleMarkForPayroll();
+        return;
+      }
+
+      // Shift+A → select/deselect all in current filtered view
+      if (e.shiftKey && e.key.toUpperCase() === 'A') {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo]);
+
+  const filtered = payrollEntries.filter((p) => {
+    if (p.status !== statusTab || p.type !== typeTab) return false;
+    if (payFilterFrom && p.date < payFilterFrom) return false;
+    if (payFilterTo && p.date > payFilterTo) return false;
+    if (filterRepId && p.repId !== filterRepId) return false;
+    return true;
+  });
+
+  const totalDraft = payrollEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+  const totalPending = payrollEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+  const totalPaid = payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+
+  const repGroups = Array.from(
+    filtered.reduce((map, entry) => {
+      const key = entry.repId;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(entry);
+      return map;
+    }, new Map<string, PayrollEntry[]>())
+  );
+
+  // Derived selection state — used by the floating action bar
+  const selectedTotal = filtered
+    .filter((e) => selectedIds.has(e.id))
+    .reduce((s, e) => s + e.amount, 0);
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id));
+  // Floating toolbar is visible whenever one or more Draft entries are selected
+  const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
+
+  const handlePublish = () => {
+    setPayrollEntries((prev) =>
+      prev.map((p) => (p.status === 'Pending' ? { ...p, status: 'Paid' } : p))
+    );
+    setShowPublishConfirm(false);
+    toast(`Payroll published — $${totalPending.toLocaleString()} marked as Paid`, 'success');
+  };
+
+  const handleMarkForPayroll = () => {
+    const amount = filtered
+      .filter((e) => selectedIds.has(e.id))
+      .reduce((s, e) => s + e.amount, 0);
+    markForPayroll(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setStatusTab('Pending');
+    toast(`${selectedIds.size} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
+  };
+
+  const toggleEntry = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleRepGroup = (entries: PayrollEntry[]) => {
+    const ids = entries.map((e) => e.id);
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    const allIds = filtered.map((e) => e.id);
+    const allSelected = allIds.every((id) => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
+  };
+
+  const handleAddBonus = (e: React.FormEvent) => {
+    e.preventDefault();
+    const rep = reps.find((r) => r.id === bonusForm.repId);
+    const newEntry: PayrollEntry = {
+      id: `pay_${Date.now()}`,
+      repId: bonusForm.repId,
+      repName: rep?.name ?? '',
+      projectId: null,
+      customerName: '',
+      amount: parseFloat(bonusForm.amount),
+      type: 'Bonus',
+      paymentStage: 'Bonus',
+      status: 'Draft',
+      date: bonusForm.date || new Date().toISOString().split('T')[0],
+      notes: bonusForm.notes,
+    };
+    setPayrollEntries((prev) => [...prev, newEntry]);
+    setShowBonusModal(false);
+    setBonusForm({ repId: '', amount: '', notes: '', date: '' });
+    setStatusTab('Draft');
+    setTypeTab('Bonus');
+    toast(`Bonus added for ${rep?.name ?? 'rep'} — $${parseFloat(bonusForm.amount).toLocaleString()}`, 'success');
+  };
+
+  const handleAddPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    const rep = reps.find((r) => r.id === paymentForm.repId);
+    const project = projects.find((p) => p.id === paymentForm.projectId);
+    const newEntry: PayrollEntry = {
+      id: `pay_${Date.now()}_manual`,
+      repId: paymentForm.repId,
+      repName: rep?.name ?? '',
+      projectId: paymentForm.projectId || null,
+      customerName: project?.customerName ?? '',
+      amount: parseFloat(paymentForm.amount),
+      type: 'Deal',
+      paymentStage: paymentForm.stage,
+      status: 'Draft',
+      date: paymentForm.date || new Date().toISOString().split('T')[0],
+      notes: paymentForm.notes,
+    };
+    setPayrollEntries((prev) => [...prev, newEntry]);
+    setShowPaymentModal(false);
+    setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
+    setStatusTab('Draft');
+    setTypeTab('Deal');
+    toast(`Payment draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
+  };
+
+  const inputCls = 'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
+
+  const labelCls = 'block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider';
+
+  if (!isHydrated) {
+    return <PayrollSkeleton />;
+  }
+
+  // ── Non-admin guard ──────────────────────────────────────────────────────────
+  // Reps can view only their own entries in a read-only mode; no admin actions.
+  const isAdmin = currentRole === 'admin';
+  if (!isAdmin) {
+    const myEntries = payrollEntries.filter((p) => p.repId === currentRepId);
+    const myDraft = myEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+    const myPending = myEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+    const myPaid = myEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+    return (
+      <div className="p-4 md:p-8">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+            <CreditCard className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">My Payroll</h1>
+            <p className="text-slate-400 text-sm font-medium tracking-wide">Your commission and bonus payment history</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <StatCard label="Draft" value={myDraft} color="text-slate-300" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
+          <StatCard label="Pending" value={myPending} color="text-yellow-400" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
+          <StatCard label="Paid" value={myPaid} color="text-emerald-400" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
+        </div>
+        {myEntries.length === 0 ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+              {/* Illustration — wallet with coins (no earnings yet) */}
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                {/* Wallet body */}
+                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                <rect x="10" y="30" width="52" height="4" fill="#334155"/>
+                {/* Coin pocket */}
+                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                <circle cx="53" cy="42" r="4" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.5"/>
+                {/* Dashed lines — empty content indicator */}
+                <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="17" y1="46" x2="30" y2="46" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                {/* Dollar sign badge */}
+                <circle cx="60" cy="22" r="9" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
+              </svg>
+              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">No payroll entries yet</p>
+              <p className="text-slate-500 text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="card-surface rounded-2xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                <tr className="border-b border-slate-800">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Customer / Note</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Stage</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Amount</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myEntries.map((entry, i) => (
+                  <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 even:bg-slate-800/[0.15] hover:bg-blue-500/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
+                    <td className="px-5 py-3 text-slate-300">
+                      {entry.type === 'Deal' ? entry.customerName : (entry.notes || '—')}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">
+                        {entry.paymentStage}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-emerald-400 font-semibold">${entry.amount.toLocaleString()}</td>
+                    <td className="px-5 py-3">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                        entry.status === 'Paid'
+                          ? 'bg-emerald-900/30 text-emerald-400'
+                          : entry.status === 'Pending'
+                          ? 'bg-yellow-900/30 text-yellow-400'
+                          : 'bg-slate-700 text-slate-300'
+                      }`}>
+                        {entry.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-slate-500 text-xs">{formatDate(entry.date)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const pendingReimCount = reimbursements.filter((r) => r.status === 'Pending').length;
+
+  const filteredReimbursements = reimbursements.filter((r) => {
+    if (reimFilterFrom && r.date < reimFilterFrom) return false;
+    if (reimFilterTo && r.date > reimFilterTo) return false;
+    return true;
+  });
+
+  return (
+    <div className="p-4 md:p-8">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+            <CreditCard className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+            <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Financials</h1>
+            <p className="text-slate-400 text-sm font-medium tracking-wide">Payroll and reimbursement management</p>
+          </div>
+        </div>
+        {pageView === 'payroll' && (
+          <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
+            <button
+              onClick={() => setShowPaymentModal(true)}
+              className="btn-secondary bg-slate-700 hover:bg-slate-600 text-white font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+            >
+              + Add Payment
+            </button>
+            <button
+              onClick={() => setShowBonusModal(true)}
+              className="btn-secondary bg-slate-700 hover:bg-slate-600 text-white font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+            >
+              + Add Bonus
+            </button>
+            <button
+              onClick={() => setShowPublishConfirm(true)}
+              disabled={totalPending === 0}
+              className="btn-primary text-white font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+              style={{ backgroundColor: 'var(--brand)' }}
+            >
+              Publish Payroll
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Top-level page view switcher */}
+      <div className="flex gap-1 mb-8 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+        {pageViewIndicator && <div className="tab-indicator" style={pageViewIndicator} />}
+        {(['payroll', 'reimbursements'] as PageView[]).map((v, i) => (
+          <button
+            key={v}
+            ref={(el) => { pageViewRefs.current[i] = el; }}
+            onClick={() => setPageView(v)}
+            className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              pageView === v ? 'text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            {v === 'payroll' ? (
+              <><CreditCard className="w-3.5 h-3.5" /> Payroll</>
+            ) : (
+              <><Receipt className="w-3.5 h-3.5" /> Reimbursements
+                {pendingReimCount > 0 && (
+                  <span className="ml-1 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full font-semibold">{pendingReimCount}</span>
+                )}
+              </>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Reimbursements view ──────────────────────────────────────────────── */}
+      {pageView === 'reimbursements' && (
+        <div key={pageView} className="animate-tab-enter">
+          {/* Date filter */}
+          <div className="flex items-center gap-3 mb-5">
+            <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-slate-500 whitespace-nowrap">From</label>
+              <input
+                type="date"
+                value={reimFilterFrom}
+                onChange={(e) => setReimFilterFrom(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-slate-500 whitespace-nowrap">To</label>
+              <input
+                type="date"
+                value={reimFilterTo}
+                onChange={(e) => setReimFilterTo(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            {(reimFilterFrom || reimFilterTo) && (
+              <button
+                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); }}
+                className="text-xs text-slate-500 hover:text-white underline transition-colors"
+              >
+                Clear
+              </button>
+            )}
+            <span className="text-slate-600 text-xs ml-auto">{filteredReimbursements.length} request{filteredReimbursements.length !== 1 ? 's' : ''}</span>
+          </div>
+
+          <div className="card-surface rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                <tr className="border-b border-slate-800">
+                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Rep</th>
+                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Description</th>
+                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Amount</th>
+                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Date</th>
+                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Receipt</th>
+                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReimbursements.map((r, i) => (
+                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 even:bg-slate-800/[0.15] hover:bg-blue-500/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
+                    <td className="px-5 py-3 text-white font-medium">{r.repName}</td>
+                    <td className="px-5 py-3 text-slate-400">{r.description}</td>
+                    <td className="px-5 py-3 text-emerald-400 font-semibold">${r.amount.toFixed(2)}</td>
+                    <td className="px-5 py-3 text-slate-500 text-xs">{formatDate(r.date)}</td>
+                    <td className="px-5 py-3 text-slate-400 text-xs">{r.receiptName || '—'}</td>
+                    <td className="px-5 py-3">
+                      <ReimBadge status={r.status} />
+                    </td>
+                    <td className="px-5 py-3">
+                      {r.status === 'Pending' ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Approved' } : x));
+                              toast(`Reimbursement approved for ${r.repName}`, 'success');
+                            }}
+                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 px-2 py-1 rounded transition-colors"
+                          >
+                            <Check className="w-3 h-3" /> Approve
+                          </button>
+                          <button
+                            onClick={() => {
+                              setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Denied' } : x));
+                              toast(`Reimbursement denied for ${r.repName}`, 'error');
+                            }}
+                            className="flex items-center gap-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-400 px-2 py-1 rounded transition-colors"
+                          >
+                            <X className="w-3 h-3" /> Deny
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-slate-600 text-xs">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {filteredReimbursements.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-10 text-center text-slate-600">
+                      {reimbursements.length === 0 ? 'No reimbursement requests.' : 'No requests match the selected date range.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {pageView === 'payroll' && <div key={pageView} className="animate-tab-enter">
+
+      {/* Big Numbers */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <StatCard label="Total Draft" value={totalDraft} color="text-slate-300" border="border-slate-700" accentGradient="from-blue-500 to-blue-400" entryCount={payrollEntries.filter((p) => p.status === 'Draft').length} className="animate-slide-in-scale stagger-1" />
+        <StatCard label="Total Pending" value={totalPending} color="text-yellow-400" border="border-yellow-800/40" accentGradient="from-yellow-500 to-yellow-400" entryCount={payrollEntries.filter((p) => p.status === 'Pending').length} className="animate-slide-in-scale stagger-2" />
+        <StatCard label="Total Paid" value={totalPaid} color="text-emerald-400" border="border-emerald-800/40" accentGradient="from-emerald-500 to-emerald-400" entryCount={payrollEntries.filter((p) => p.status === 'Paid').length} className="animate-slide-in-scale stagger-3" />
+      </div>
+
+      {/* Status tabs */}
+      <div className="flex gap-1 mb-4 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+        {statusIndicator && <div className="tab-indicator" style={statusIndicator} />}
+        {(['Draft', 'Pending', 'Paid'] as StatusTab[]).map((s, i) => (
+          <button
+            key={s}
+            ref={(el) => { statusTabRefs.current[i] = el; }}
+            onClick={() => { setStatusTab(s); setSelectedIds(new Set()); }}
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              statusTab === s ? 'text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            {s}
+            <span className="ml-1.5 text-xs opacity-70">
+              ({payrollEntries.filter((p) => p.status === s).length})
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Keyboard shortcut hints */}
+      <p className="text-slate-600 text-[11px] mb-4 flex items-center gap-3">
+        <span><kbd className="px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-400 font-mono text-[10px]">Enter</kbd> Mark for Payroll</span>
+        <span><kbd className="px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-400 font-mono text-[10px]">Shift+A</kbd> Select / Deselect All</span>
+        <span><kbd className="px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-400 font-mono text-[10px]">Esc</kbd> Clear Selection</span>
+      </p>
+
+      {/* Type tabs */}
+      <div className="flex gap-1 mb-6 bg-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+        {typeIndicator && <div className="tab-indicator" style={typeIndicator} />}
+        {(['Deal', 'Bonus'] as TypeTab[]).map((t, i) => (
+          <button
+            key={t}
+            ref={(el) => { typeTabRefs.current[i] = el; }}
+            onClick={() => { setTypeTab(t); setSelectedIds(new Set()); }}
+            className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              typeTab === t ? 'text-white' : 'text-slate-500 hover:text-white'
+            }`}
+          >
+            {t} Payments
+          </button>
+        ))}
+      </div>
+
+      {/* Rep filter + Payroll date filter */}
+      <div className="flex items-center gap-3 mb-5 overflow-visible">
+        <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
+        <div className="w-44 flex-shrink-0">
+          <RepSelector
+            value={filterRepId}
+            onChange={(id) => { setFilterRepId(id); setSelectedIds(new Set()); }}
+            reps={reps}
+            placeholder="All Reps"
+            clearLabel="All Reps"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-500 whitespace-nowrap">From</label>
+          <input
+            type="date"
+            value={payFilterFrom}
+            onChange={(e) => setPayFilterFrom(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-500 whitespace-nowrap">To</label>
+          <input
+            type="date"
+            value={payFilterTo}
+            onChange={(e) => setPayFilterTo(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        {(payFilterFrom || payFilterTo) && (
+          <button
+            onClick={() => { setPayFilterFrom(''); setPayFilterTo(''); }}
+            className="text-xs text-slate-500 hover:text-white underline transition-colors"
+          >
+            Clear
+          </button>
+        )}
+        <span className="text-slate-600 text-xs ml-auto">{filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}</span>
+      </div>
+
+      {/* Selection controls bar (Draft only) — batch actions moved to floating toolbar */}
+      {statusTab === 'Draft' && filtered.length > 0 && (
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={selectAll}
+            className="text-xs text-slate-400 hover:text-white underline transition-colors"
+          >
+            {filtered.every((e) => selectedIds.has(e.id)) ? 'Deselect All' : 'Select All'}
+          </button>
+          <span className="text-slate-600 text-sm ml-auto">
+            {filtered.length} entries · ${filtered.reduce((s, e) => s + e.amount, 0).toLocaleString()} total
+          </span>
+        </div>
+      )}
+
+      <div key={statusTab} className="animate-tab-enter">
+      {filtered.length === 0 ? (
+        <div className="flex justify-center py-10">
+
+          {/* ── Draft × Deal ─────────────────────────────────────────────────── */}
+          {statusTab === 'Draft' && typeTab === 'Deal' && (
+            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+              {/* Illustration — wallet with coins */}
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                {/* Wallet body */}
+                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                <rect x="10" y="30" width="52" height="4" fill="#334155"/>
+                {/* Coin pocket */}
+                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                <circle cx="53" cy="42" r="4" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.5"/>
+                {/* Dashed lines — empty content indicator */}
+                <line x1="16" y1="40" x2="36" y2="40" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="16" y1="46" x2="28" y2="46" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                {/* Dollar sign badge */}
+                <circle cx="60" cy="22" r="9" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
+                {/* Plus indicator — top-left sparkle */}
+                <line x1="18" y1="14" x2="18" y2="20" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
+                <line x1="15" y1="17" x2="21" y2="17" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
+              </svg>
+              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">No draft deal payments yet</p>
+              <p className="text-slate-500 text-xs leading-relaxed text-center">Draft entries are auto-created when projects hit Acceptance (M1) or Installed (M2) — or add one manually above</p>
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+                Add Payment
+              </button>
+            </div>
+          )}
+
+          {/* ── Draft × Bonus ────────────────────────────────────────────────── */}
+          {statusTab === 'Draft' && typeTab === 'Bonus' && (
+            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+              {/* Illustration — wallet with coins (bonus variant: emerald accent) */}
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                {/* Wallet body */}
+                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                <rect x="10" y="30" width="52" height="4" fill="#334155"/>
+                {/* Coin pocket */}
+                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                <circle cx="53" cy="42" r="4" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.5"/>
+                {/* Dashed lines — empty content indicator */}
+                <line x1="16" y1="40" x2="36" y2="40" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="16" y1="46" x2="28" y2="46" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                {/* Star / sparkle — bonus feel */}
+                <path d="M22 14 L23.2 17.4 L26.8 17.4 L24 19.4 L25.2 22.8 L22 20.8 L18.8 22.8 L20 19.4 L17.2 17.4 L20.8 17.4 Z" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5"/>
+                {/* Dollar sign badge (emerald) */}
+                <circle cx="60" cy="22" r="9" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <text x="60" y="26.5" textAnchor="middle" fill="#34d399" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
+              </svg>
+              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">No draft bonus payments yet</p>
+              <p className="text-slate-500 text-xs leading-relaxed text-center">Create a bonus entry for any rep — add one above</p>
+              <button
+                onClick={() => setShowBonusModal(true)}
+                className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                Add Bonus
+              </button>
+            </div>
+          )}
+
+          {/* ── Pending (Deal or Bonus) ───────────────────────────────────────── */}
+          {statusTab === 'Pending' && (
+            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+              {/* Illustration — wallet with hourglass overlay */}
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                {/* Wallet body */}
+                <rect x="8" y="26" width="46" height="32" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                <rect x="8" y="32" width="46" height="4" fill="#334155"/>
+                {/* Coin pocket */}
+                <rect x="36" y="36" width="18" height="14" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                <circle cx="45" cy="43" r="4" fill="#7c6010" stroke="#eab308" strokeWidth="1.5" strokeOpacity="0.5"/>
+                {/* Dashed lines */}
+                <line x1="12" y1="41" x2="30" y2="41" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="12" y1="47" x2="24" y2="47" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                {/* Hourglass — top right */}
+                <rect x="54" y="10" width="20" height="5" rx="2" fill="#334155"/>
+                <rect x="54" y="43" width="20" height="5" rx="2" fill="#334155"/>
+                <path d="M56 15 L72 15 L67 27 L67 31 L72 43 L56 43 L61 31 L61 27 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.2"/>
+                <path d="M58 15 L70 15 L66 25 L62 25 Z" fill="#1e3a5f" fillOpacity="0.6"/>
+                <path d="M63 35 L65 35 L67 43 L61 43 Z" fill="#1e3a5f" fillOpacity="0.6"/>
+                <circle cx="64" cy="28" r="2" fill="#7c6010" stroke="#eab308" strokeWidth="1" strokeOpacity="0.6"/>
+              </svg>
+              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">
+                No {typeTab === 'Deal' ? 'deal' : 'bonus'} payments pending
+              </p>
+              <p className="text-slate-500 text-xs leading-relaxed text-center">Select Draft entries and mark them for payroll to move them here</p>
+            </div>
+          )}
+
+          {/* ── Paid (Deal or Bonus) ─────────────────────────────────────────── */}
+          {statusTab === 'Paid' && (
+            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+              {/* Illustration — wallet with checkmark badge */}
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                {/* Confetti dots */}
+                <circle cx="12" cy="16" r="2.5" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.6"/>
+                <circle cx="68" cy="14" r="2"   fill="#14532d" stroke="#10b981" strokeWidth="1" strokeOpacity="0.6"/>
+                <rect x="64" y="26" width="4" height="4" rx="1" fill="#334155" transform="rotate(20 64 26)"/>
+                <rect x="10" y="34" width="4" height="4" rx="1" fill="#334155" transform="rotate(-15 10 34)"/>
+                {/* Wallet body */}
+                <rect x="10" y="28" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                <rect x="10" y="34" width="52" height="4" fill="#334155"/>
+                {/* Coin pocket */}
+                <rect x="44" y="38" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                <circle cx="53" cy="46" r="4" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.5"/>
+                {/* Content lines */}
+                <line x1="16" y1="44" x2="36" y2="44" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="16" y1="50" x2="28" y2="50" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
+                {/* Check badge — top-right corner */}
+                <circle cx="62" cy="24" r="10" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.6"/>
+                <path d="M57 24 L61 28 L67 20" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">
+                No paid {typeTab === 'Deal' ? 'deal' : 'bonus'} payments yet
+              </p>
+              <p className="text-slate-500 text-xs leading-relaxed text-center">Publish pending payroll to move entries here once they&apos;re finalised</p>
+            </div>
+          )}
+
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {repGroups.map(([repId, entries], groupIndex) => {
+            const repTotal = entries.reduce((s, e) => s + e.amount, 0);
+            const allRepSelected = entries.every((e) => selectedIds.has(e.id));
+            const accentBar = STATUS_ACCENT[statusTab];
+            const staggerCls = `stagger-${Math.min(groupIndex + 1, 6)}`;
+            const initials = entries[0].repName
+              .split(' ')
+              .map((n: string) => n[0] ?? '')
+              .join('')
+              .slice(0, 2)
+              .toUpperCase();
+            return (
+              <div key={repId} className={`card-surface rounded-2xl overflow-hidden shadow-inner shadow-slate-950/30 animate-slide-in-scale ${staggerCls}`}>
+                {/* Gradient accent bar — colour keyed to active status tab */}
+                <div className={`h-[3px] bg-gradient-to-r ${accentBar}`} />
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/60">
+                  <div className="flex items-center gap-3">
+                    {statusTab === 'Draft' && (
+                      <input
+                        type="checkbox"
+                        checked={allRepSelected}
+                        onChange={() => toggleRepGroup(entries)}
+                        className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 cursor-pointer"
+                      />
+                    )}
+                    {/* Avatar circle showing rep initials */}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/40 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-slate-300">{initials}</span>
+                    </div>
+                    <span className="text-white font-black text-lg leading-tight">{entries[0].repName}</span>
+                    <span className="text-slate-500 text-xs">{entries.length} payment{entries.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <span className="text-emerald-400 font-black text-xl tabular-nums tracking-tight animate-count-up">${repTotal.toLocaleString()}</span>
+                </div>
+                <div className="rounded-xl border border-slate-800 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="table-header-frost">
+                    <tr className="border-b border-slate-800">
+                      {statusTab === 'Draft' && <th className="pl-5 pr-2 py-3 w-8" />}
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Customer / Note</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Stage</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Amount</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((entry, ei) => (
+                      <tr
+                        key={entry.id}
+                        className={`table-row-enter row-stagger-${Math.min(ei, 24)} relative border-b border-slate-800/50 even:bg-slate-800/15 hover:bg-slate-800/40 transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center ${
+                          selectedIds.has(entry.id) ? '!bg-yellow-900/10' : ''
+                        }`}
+                      >
+                        {statusTab === 'Draft' && (
+                          <td className="pl-5 pr-2 py-3 w-8">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(entry.id)}
+                              onChange={() => toggleEntry(entry.id)}
+                              className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
+                        <td className="px-5 py-3 text-slate-300">
+                          {typeTab === 'Deal' ? entry.customerName : (entry.notes || '—')}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">
+                            {entry.paymentStage}
+                          </span>
+                          {entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes === 'Trainer override') && (
+                            <span className="ml-2 text-xs text-slate-500">{entry.notes}</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-emerald-400 font-semibold">
+                          ${entry.amount.toLocaleString()}
+                        </td>
+                        <td className="px-5 py-3 text-slate-500 text-xs">{formatDate(entry.date)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      </div> {/* end key={statusTab} */}
+
+      </div> /* end pageView === 'payroll' */}
+
+      {/* Publish Confirm Modal */}
+      {showPublishConfirm && (() => {
+        const pendingEntries = payrollEntries.filter((p) => p.status === 'Pending');
+        // Build a per-rep summary sorted descending by total payout
+        const repSummary = Array.from(
+          pendingEntries.reduce((map, e) => {
+            if (!map.has(e.repId)) map.set(e.repId, { name: e.repName, total: 0, count: 0 });
+            const rec = map.get(e.repId)!;
+            rec.total += e.amount;
+            rec.count += 1;
+            return map;
+          }, new Map<string, { name: string; total: number; count: number }>())
+        )
+          .map(([, v]) => v)
+          .sort((a, b) => b.total - a.total);
+
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
+            <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-yellow-900/30">
+                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                </div>
+                <h2 className="text-white font-semibold text-lg">Publish Payroll?</h2>
+              </div>
+              <p className="text-slate-400 text-sm mb-3">
+                This will mark all <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-emerald-400 font-semibold">Paid</span>. This action cannot be undone.
+              </p>
+
+              {/* Per-rep breakdown */}
+              {repSummary.length > 0 && (
+                <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl mb-5 overflow-hidden">
+                  <div className="px-4 py-2 border-b border-slate-700/60 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Payout Breakdown</span>
+                    <span className="text-xs text-slate-500">{repSummary.length} rep{repSummary.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="divide-y divide-slate-800/60 max-h-48 overflow-y-auto">
+                    {repSummary.map((rep) => (
+                      <div key={rep.name} className="flex items-center justify-between px-4 py-2.5">
+                        <div>
+                          <p className="text-white text-sm font-medium">{rep.name}</p>
+                          <p className="text-slate-500 text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
+                        </div>
+                        <span className="text-emerald-400 font-bold tabular-nums">${rep.total.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-4 py-2.5 border-t border-slate-700/60 flex items-center justify-between bg-slate-800/40">
+                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total</span>
+                    <span className="text-white font-black tabular-nums">${totalPending.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handlePublish}
+                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  style={{ backgroundColor: 'var(--brand)' }}
+                >
+                  Publish Payroll
+                </button>
+                <button
+                  onClick={() => setShowPublishConfirm(false)}
+                  className="btn-secondary flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Bonus Modal */}
+      {showBonusModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-white font-semibold text-lg">Add Bonus Payment</h2>
+              <button
+                onClick={() => setShowBonusModal(false)}
+                className="text-slate-500 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddBonus} className="space-y-4">
+              <div>
+                <label className={labelCls}>Rep</label>
+                <RepSelector
+                  value={bonusForm.repId}
+                  onChange={(repId) => setBonusForm((p) => ({ ...p, repId }))}
+                  reps={reps}
+                  placeholder="— Select rep —"
+                  clearLabel="— Select rep —"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Amount ($)</label>
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={bonusForm.amount}
+                  onChange={(e) => setBonusForm((p) => ({ ...p, amount: e.target.value }))}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Date</label>
+                <input
+                  type="date"
+                  value={bonusForm.date}
+                  onChange={(e) => setBonusForm((p) => ({ ...p, date: e.target.value }))}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Monthly performance bonus"
+                  value={bonusForm.notes}
+                  onChange={(e) => setBonusForm((p) => ({ ...p, notes: e.target.value }))}
+                  className={inputCls + ' placeholder-slate-500'}
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="submit"
+                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  style={{ backgroundColor: 'var(--brand)' }}
+                >
+                  Add Bonus
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBonusModal(false)}
+                  className="btn-secondary flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Spacer so content is never hidden behind the fixed action bar */}
+      {showActionBar && <div className="h-20" />}
+
+      {/* Manual Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-white font-semibold text-lg">Add Deal Payment</h2>
+              <button onClick={() => setShowPaymentModal(false)} className="text-slate-500 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddPayment} className="space-y-4">
+              <div>
+                <label className={labelCls}>Rep</label>
+                <RepSelector
+                  value={paymentForm.repId}
+                  onChange={(repId) => setPaymentForm((p) => ({ ...p, repId }))}
+                  reps={reps}
+                  placeholder="— Select rep —"
+                  clearLabel="— Select rep —"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Project</label>
+                <SearchableSelect
+                  value={paymentForm.projectId}
+                  onChange={(val) => setPaymentForm((p) => ({ ...p, projectId: val }))}
+                  options={projects
+                    .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
+                    .map((p) => ({ value: p.id, label: `${p.customerName} — ${p.installer} (${p.kWSize} kW)` }))}
+                  placeholder="— Select project (optional) —"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Amount ($)</label>
+                  <input required type="number" min="0" step="0.01"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Stage</label>
+                  <SearchableSelect
+                    value={paymentForm.stage}
+                    onChange={(val) => setPaymentForm((p) => ({ ...p, stage: val as 'M1' | 'M2' | 'M3' }))}
+                    options={[
+                      { value: 'M1', label: 'M1' },
+                      { value: 'M2', label: 'M2' },
+                      { value: 'M3', label: 'M3' },
+                    ]}
+                    placeholder="Select stage"
+                    searchable={false}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Pay Date</label>
+                <input type="date" value={paymentForm.date}
+                  onChange={(e) => setPaymentForm((p) => ({ ...p, date: e.target.value }))}
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <input type="text" placeholder="e.g. Additional payment — special circumstance"
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm((p) => ({ ...p, notes: e.target.value }))}
+                  className={inputCls + ' placeholder-slate-500'} />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="submit"
+                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97]"
+                  style={{ backgroundColor: 'var(--brand)' }}>
+                  Add Payment
+                </button>
+                <button type="button" onClick={() => setShowPaymentModal(false)}
+                  className="btn-secondary flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Floating batch-action toolbar ────────────────────────────────────
+           Glass-morphism pill centred at the viewport bottom. Mounts with a
+           spring-eased slide-up entrance whenever one or more Draft entries are
+           selected. React unmounts it on deselection so the entrance animation
+           fires fresh each time. Escape key and the × button both clear the
+           selection.                                                            */}
+      {showActionBar && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-slate-900/80 border border-slate-700/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
+          role="toolbar"
+          aria-label="Batch actions for selected entries"
+        >
+          <div className="flex items-center gap-3">
+
+            {/* Selection count badge — blue accent pill */}
+            <span className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+              <span className="text-white font-bold tabular-nums">{selectedIds.size}</span>
+              <span className="text-blue-400 font-medium">selected</span>
+              {selectedTotal > 0 && (
+                <>
+                  <span className="text-slate-600 mx-0.5">·</span>
+                  <span className="text-emerald-400 font-semibold tabular-nums">${selectedTotal.toLocaleString()}</span>
+                </>
+              )}
+            </span>
+
+            {/* Visual divider */}
+            <div className="h-5 w-px bg-slate-700/80 flex-shrink-0" />
+
+            {/* Mark for Payroll — primary action (always Draft context when bar is visible) */}
+            {statusTab === 'Draft' && (
+              <button
+                onClick={handleMarkForPayroll}
+                className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                Mark for Payroll →
+              </button>
+            )}
+
+            {/* Dismiss / deselect-all × button */}
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              aria-label="Deselect all and dismiss toolbar"
+              className="btn-secondary p-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/40 text-slate-400 hover:text-white transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReimBadge({ status }: { status: string }) {
+  const cls =
+    status === 'Approved' ? 'bg-emerald-900/50 text-emerald-400'
+    : status === 'Pending'  ? 'bg-yellow-900/50 text-yellow-400'
+    : 'bg-red-900/50 text-red-400';
+  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{status}</span>;
+}
+
+function StatCard({ label, value, color, accentGradient, className, entryCount }: { label: string; value: number; color: string; border?: string; accentGradient?: string; className?: string; entryCount?: number }) {
+  const accent = accentGradient ?? 'from-blue-500 to-blue-400';
+  return (
+    <div
+      className={`card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] ${className ?? ''}`}
+      style={{ '--card-accent': ACCENT_COLOR_MAP[accent] ?? 'transparent' } as CSSProperties}
+    >
+      <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${accent}`} />
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">{label}</p>
+        {entryCount !== undefined && (
+          <span className="text-slate-500 text-xs font-medium tabular-nums">{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</span>
+        )}
+      </div>
+      <p className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${color}`}>${value.toLocaleString()}</p>
+    </div>
+  );
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function PayrollSkeleton() {
+  return (
+    <div className="p-4 md:p-8">
+      {/* Header block — mirrors the icon + title/subtitle + action-button layout */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {/* Icon placeholder */}
+          <div className="h-9 w-9 bg-slate-800 rounded-lg animate-skeleton" />
+          <div className="space-y-2">
+            {/* Accent bar + title */}
+            <div className="h-[3px] w-12 bg-slate-700 rounded-full animate-skeleton" />
+            <div
+              className="h-8 w-36 bg-slate-800 rounded animate-skeleton"
+              style={{ animationDelay: '75ms' }}
+            />
+            {/* Subtitle */}
+            <div
+              className="h-3 w-56 bg-slate-800/70 rounded animate-skeleton"
+              style={{ animationDelay: '100ms' }}
+            />
+          </div>
+        </div>
+        {/* Action buttons — Add Bonus + Publish Payroll */}
+        <div className="flex gap-3">
+          <div
+            className="h-9 w-24 bg-slate-800 rounded-xl animate-skeleton"
+            style={{ animationDelay: '50ms' }}
+          />
+          <div
+            className="h-9 w-32 bg-slate-800 rounded-xl animate-skeleton"
+            style={{ animationDelay: '100ms' }}
+          />
+        </div>
+      </div>
+
+      {/* Three stat-card skeletons — Draft / Pending / Paid summary row */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="card-surface rounded-2xl p-5 space-y-3">
+            <div
+              className="h-[2px] w-12 bg-slate-700 rounded-full animate-skeleton"
+              style={{ animationDelay: `${i * 75}ms` }}
+            />
+            <div
+              className="h-3 w-16 bg-slate-800 rounded animate-skeleton"
+              style={{ animationDelay: `${i * 75}ms` }}
+            />
+            <div
+              className="h-8 w-28 bg-slate-800 rounded animate-skeleton"
+              style={{ animationDelay: `${i * 75 + 40}ms` }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Tab-bar skeleton — two pill placeholders matching the Payroll / Reimbursements switcher */}
+      <div className="flex gap-1 mb-8 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
+        {[...Array(2)].map((_, i) => (
+          <div
+            key={i}
+            className="h-9 w-32 bg-slate-800 rounded-lg animate-skeleton"
+            style={{ animationDelay: `${i * 60}ms` }}
+          />
+        ))}
+      </div>
+
+      {/* Six skeleton table rows with alternating opacity */}
+      <div className="card-surface rounded-2xl overflow-hidden">
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-4 px-5 py-4 border-b border-slate-800/50 ${i % 2 === 1 ? 'opacity-60' : ''}`}
+          >
+            {/* Customer / rep name placeholder */}
+            <div
+              className="h-4 w-40 bg-slate-800 rounded animate-skeleton"
+              style={{ animationDelay: `${i * 60}ms` }}
+            />
+            {/* Stage badge placeholder */}
+            <div
+              className="h-5 w-20 bg-slate-800/80 rounded animate-skeleton"
+              style={{ animationDelay: `${i * 60 + 30}ms` }}
+            />
+            {/* Amount placeholder */}
+            <div
+              className="ml-auto h-4 w-16 bg-slate-800 rounded animate-skeleton"
+              style={{ animationDelay: `${i * 60 + 50}ms` }}
+            />
+            {/* Status badge placeholder */}
+            <div
+              className="h-5 w-14 bg-slate-800/70 rounded animate-skeleton"
+              style={{ animationDelay: `${i * 60 + 70}ms` }}
+            />
+            {/* Date placeholder */}
+            <div
+              className="h-3 w-20 bg-slate-800/50 rounded animate-skeleton"
+              style={{ animationDelay: `${i * 60 + 90}ms` }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

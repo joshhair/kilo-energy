@@ -1,0 +1,539 @@
+'use client';
+
+import { useEffect, useRef, useState, Fragment } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useApp } from '../../lib/context';
+import {
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Menu,
+  X,
+  HelpCircle,
+} from 'lucide-react';
+import { CommandPalette, ShortcutsOverlay } from '../../lib/command-palette';
+
+// ─── Nav definitions (shared with CommandPalette) ──────────────────────────
+// Types and arrays live in lib/nav-items to avoid a circular dependency.
+// They are re-exported from here for any consumers that import from layout.
+
+// Re-export nav definitions so external modules can import them from layout.
+export { REP_NAV, ADMIN_NAV } from '../../lib/nav-items';
+export type { NavItem, NavGroupDef, AnyNavItem } from '../../lib/nav-items';
+
+// Local imports — only what is directly referenced in this file.
+import { REP_NAV, ADMIN_NAV } from '../../lib/nav-items';
+import type { NavItem } from '../../lib/nav-items';
+
+// ─── NavGroup component ────────────────────────────────────────────────────
+
+function NavGroup({
+  label,
+  icon: Icon,
+  items,
+  pathname,
+  sidebarCollapsed,
+}: {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+  pathname: string;
+  sidebarCollapsed: boolean;
+}) {
+  const isAnyChildActive = items.some((child) =>
+    pathname.startsWith(child.href)
+  );
+  const [open, setOpen] = useState(isAnyChildActive);
+
+  // Auto-expand when navigating to a child route (during-render derived state —
+  // avoids calling setState inside an effect).
+  const [prevIsAnyChildActive, setPrevIsAnyChildActive] = useState(isAnyChildActive);
+  if (isAnyChildActive !== prevIsAnyChildActive) {
+    setPrevIsAnyChildActive(isAnyChildActive);
+    if (isAnyChildActive) setOpen(true);
+  }
+
+  // ── Micro-animation state ────────────────────────────────────────────────
+
+  // (2) Icon pop — fires on every open/close toggle but NOT on initial mount.
+  const mountedRef = useRef(false);
+  const [iconPop, setIconPop] = useState(false);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    const tStart = setTimeout(() => setIconPop(true), 0);
+    const tEnd = setTimeout(() => setIconPop(false), 200);
+    return () => {
+      clearTimeout(tStart);
+      clearTimeout(tEnd);
+    };
+  }, [open]);
+
+  // (4) Staggered child entrance — active while the group is opening so each
+  //     <li> gets its animate-slide-in-scale + stagger-N classes briefly.
+  const [staggerOpen, setStaggerOpen] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      const t = setTimeout(() => setStaggerOpen(false), 0);
+      return () => clearTimeout(t);
+    }
+    const tStart = setTimeout(() => setStaggerOpen(true), 0);
+    // Keep classes long enough for the last stagger delay + animation duration
+    // (stagger-6 = 450 ms delay + ~350 ms animation = ~800 ms total).
+    const tEnd = setTimeout(() => setStaggerOpen(false), 850);
+    return () => {
+      clearTimeout(tStart);
+      clearTimeout(tEnd);
+    };
+  }, [open]);
+
+  return (
+    <li>
+      {/* Group header button */}
+      <button
+        onClick={() => !sidebarCollapsed && setOpen((v) => !v)}
+        title={sidebarCollapsed ? label : undefined}
+        className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-[background] w-full ${
+          isAnyChildActive
+            ? 'text-white bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:rounded-full before:bg-blue-500/60'
+            : 'text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-slate-800/80 hover:to-transparent'
+        } ${sidebarCollapsed ? 'justify-center' : ''} ${
+          open && !sidebarCollapsed ? 'bg-slate-800/30' : ''
+        }`}
+      >
+        <Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${iconPop ? ' nav-group-icon-pop' : ''}`} />
+        {!sidebarCollapsed && (
+          <>
+            <span className="truncate flex-1 text-left">{label}</span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-300 nav-chevron-spring ${
+                open ? 'rotate-180 group-hover:rotate-180' : ''
+              }`}
+            />
+          </>
+        )}
+      </button>
+
+      {/* Collapsible sub-items — hidden when sidebar is collapsed */}
+      {!sidebarCollapsed && (
+        <div
+          className="grid transition-[grid-template-rows] duration-300"
+          style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden">
+            <ul className={`ml-5 mt-0.5 space-y-0.5 border-l nav-sublist-border ${isAnyChildActive ? 'border-blue-500/50' : 'border-slate-700/50'}`}>
+              {items.map(({ href, label: childLabel, icon: ChildIcon }, idx) => {
+                const isActive = pathname.startsWith(href);
+                // Clamp stagger index to the 6 utility classes we have defined.
+                const staggerClass = staggerOpen ? ` animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}` : '';
+                return (
+                  <li key={href} className={staggerClass}>
+                    <Link
+                      href={href}
+                      className={`group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? 'relative bg-gradient-to-r from-blue-500/15 via-blue-500/10 to-transparent text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-5 before:rounded-full before:bg-blue-500 before:shadow-[0_0_12px_rgba(59,130,246,0.5)]'
+                          : 'text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-slate-800/80 hover:to-transparent'
+                      }`}
+                    >
+                      <ChildIcon className={`w-4 h-4 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${isActive ? ' nav-icon-active' : ''}`} />
+                      <span className="truncate">{childLabel}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
+// ─── Layout ────────────────────────────────────────────────────────────────
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { currentRole, currentRepName, logout } = useApp();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
+  // Close mobile sidebar whenever the route changes (link tap auto-dismisses).
+  // Uses during-render derived state to avoid calling setState inside an effect.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileOpen(false);
+  }
+
+  useEffect(() => {
+    if (!currentRole) router.push('/');
+  }, [currentRole, router]);
+
+  // Show / hide scroll-to-top button based on main scroll position
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const handleScroll = () => setShowScrollTop(el.scrollTop > 400);
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // ── Global navigation hotkeys (N / P / E / D) ──────────────────────────
+  // Only fires when no modal is open and focus is not inside an input element.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Stand down when any modal is open.
+      if (paletteOpen || shortcutsOpen) return;
+      // Stand down when an interactive element is focused.
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) return;
+      // Ignore modifier combos (⌘N, Ctrl+N, etc.) — those belong to the OS/browser.
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      switch (e.key) {
+        case 'n':
+        case 'N':
+          e.preventDefault();
+          router.push('/dashboard/new-deal');
+          break;
+        case 'p':
+        case 'P':
+          e.preventDefault();
+          router.push('/dashboard/projects');
+          break;
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          router.push('/dashboard/earnings');
+          break;
+        case 'd':
+        case 'D':
+          e.preventDefault();
+          router.push('/dashboard');
+          break;
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [paletteOpen, shortcutsOpen, router]);
+
+  if (!currentRole) return null;
+
+  const navItems = currentRole === 'admin' ? ADMIN_NAV : REP_NAV;
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
+
+  const initials = currentRepName
+    ? currentRepName.split(' ').map((n) => n[0]).join('').toUpperCase()
+    : 'A';
+
+  // On mobile the overlay always shows full labels; on desktop respect collapsed.
+  const showCollapsed = collapsed && !mobileOpen;
+
+  return (
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--navy-base)' }}>
+
+      {/* ── Mobile top bar (hidden on md+) ─────────────────────────────── */}
+      <div
+        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center gap-3 px-4 h-[60px] border-b border-slate-800/60"
+        style={{ backgroundColor: 'var(--navy-card)' }}
+      >
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation menu"
+          className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="flex items-baseline gap-1">
+          <span className="text-white font-black tracking-tighter text-xl leading-none">kilo</span>
+          <span className="text-white/70 font-light tracking-[0.2em] text-[10px] uppercase">ENERGY</span>
+        </div>
+      </div>
+
+      {/* ── Backdrop (mobile only, shown when sidebar is open) ──────────── */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        />
+      )}
+
+      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
+      {/*
+       * Mobile (<md):  position fixed, off-screen by default, slides in as
+       *                an overlay when mobileOpen is true. Always 220px wide.
+       * Desktop (md+): position relative (in flex flow), always translate-x-0,
+       *                width follows the collapsed toggle as before.
+       */}
+      <aside
+        className={[
+          'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-800/60',
+          'transition-all duration-300 ease-in-out',
+          // Reset to in-flow on desktop
+          'md:relative md:inset-auto md:z-auto md:translate-x-0',
+          // Force full width on mobile regardless of collapsed state
+          'max-md:!w-[220px]',
+          // Slide in / out on mobile
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        ].join(' ')}
+        style={{
+          width: collapsed ? '64px' : '220px',
+          backgroundColor: 'var(--navy-card)',
+        }}
+      >
+        {/* Logo + collapse/close toggle */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-800/60 h-[60px]">
+          {!showCollapsed && (
+            <div className="flex items-center gap-2 overflow-hidden min-w-0">
+              <div className="flex items-baseline gap-1 overflow-hidden min-w-0">
+                <span className="text-white font-black tracking-tighter text-xl leading-none">kilo</span>
+                <span className="text-white/70 font-light tracking-[0.2em] text-[10px] uppercase">ENERGY</span>
+              </div>
+              {/* ⌘K hint badge — opens command palette on click */}
+              <button
+                onClick={() => setPaletteOpen(true)}
+                title="Open command palette (⌘K)"
+                className="flex-shrink-0 text-slate-600 hover:text-slate-400 transition-colors"
+                aria-label="Open command palette"
+              >
+                <kbd className="font-mono text-[9px] bg-slate-800/80 border border-slate-700/60 rounded px-1.5 py-0.5 leading-none">
+                  ⌘K
+                </kbd>
+              </button>
+              {/* ? hint badge — opens keyboard shortcuts overlay on click */}
+              <button
+                onClick={() => setShortcutsOpen(true)}
+                title="Keyboard shortcuts (?)"
+                className="flex-shrink-0 text-slate-600 hover:text-slate-400 transition-colors"
+                aria-label="Open keyboard shortcuts"
+              >
+                <kbd className="font-mono text-[9px] bg-slate-800/80 border border-slate-700/60 rounded px-1.5 py-0.5 leading-none">
+                  ?
+                </kbd>
+              </button>
+            </div>
+          )}
+          {/* Desktop: collapse chevron */}
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="hidden md:flex text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+          {/* Mobile: close (X) button */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation menu"
+            className="md:hidden text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden relative">
+          {/* Depth gradient — fades content as it scrolls under this edge */}
+          <div className="pointer-events-none sticky top-0 left-0 right-0 h-6 bg-gradient-to-b from-slate-800/20 to-transparent z-10 -mb-6" />
+          <ul className="space-y-0.5 px-2">
+            {navItems.map((item, index) => {
+              // ── NavGroup (collapsible section) ───────────────────────────
+              if ('type' in item && item.type === 'group') {
+                const isFirstGroup =
+                  navItems.findIndex((i) => 'type' in i && i.type === 'group') === index;
+                return (
+                  <Fragment key={item.label}>
+                    {/* 'TOOLS' section divider — only in expanded sidebar */}
+                    {!showCollapsed && isFirstGroup && (
+                      <li className="text-[10px] text-slate-600 uppercase tracking-[0.2em] px-3 pt-4 pb-1">
+                        TOOLS
+                      </li>
+                    )}
+                    <NavGroup
+                      label={item.label}
+                      icon={item.icon}
+                      items={item.children}
+                      pathname={pathname}
+                      sidebarCollapsed={showCollapsed}
+                    />
+                  </Fragment>
+                );
+              }
+
+              // ── Flat nav link ────────────────────────────────────────────
+              const { href, label, icon: Icon } = item as NavItem;
+              const isActive =
+                href === '/dashboard'
+                  ? pathname === '/dashboard'
+                  : pathname.startsWith(href);
+
+              return (
+                <Fragment key={href}>
+                  {/* 'MAIN' section divider before the very first item — expanded only */}
+                  {!showCollapsed && index === 0 && (
+                    <li className="text-[10px] text-slate-600 uppercase tracking-[0.2em] px-3 pt-4 pb-1">
+                      MAIN
+                    </li>
+                  )}
+                  <li className={showCollapsed ? 'relative group/tip' : ''}>
+                    <Link
+                      href={href}
+                      title={showCollapsed ? label : undefined}
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? 'relative bg-gradient-to-r from-blue-500/15 via-blue-500/10 to-transparent text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-5 before:rounded-full before:bg-blue-500 before:shadow-[0_0_12px_rgba(59,130,246,0.5)]'
+                          : 'text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-slate-800/80 hover:to-transparent'
+                      } ${showCollapsed ? 'justify-center' : ''}`}
+                    >
+                      {/* Icon bounces once whenever this route becomes active */}
+                      <Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${isActive ? ' nav-icon-active' : ''}`} />
+                      {!showCollapsed && <span className="truncate">{label}</span>}
+                    </Link>
+                    {/* Tooltip popover — only shown when sidebar is collapsed */}
+                    {showCollapsed && (
+                      <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 nav-tooltip-popover">
+                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-slate-800/90 border border-slate-700/40 px-2.5 py-1.5 text-xs font-medium text-white shadow-xl">
+                          {label}
+                        </span>
+                      </div>
+                    )}
+                  </li>
+                </Fragment>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Keyboard shortcuts help */}
+        <div className={`px-3 pb-1 ${showCollapsed ? 'flex justify-center' : ''}`}>
+          <button
+            onClick={() => setShortcutsOpen(true)}
+            title="Keyboard shortcuts"
+            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+            aria-label="Keyboard shortcuts"
+          >
+            <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            {!showCollapsed && <span>Shortcuts</span>}
+          </button>
+        </div>
+
+        {/* User + Logout */}
+        <div>
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
+        <div className="px-3 py-4">
+          {!showCollapsed ? (
+            <div className="flex items-center gap-3 mb-3">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-[2px] rounded-full flex-shrink-0">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: 'var(--brand-dark)' }}
+                >
+                  {initials}
+                </div>
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-white text-sm font-semibold truncate leading-tight">
+                  {currentRepName}
+                </p>
+                <p className="text-slate-500 text-xs capitalize">{currentRole}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center mb-3">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-[2px] rounded-full" title={currentRepName ?? ''}>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: 'var(--brand-dark)' }}
+                >
+                  {initials}
+                </div>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            title={showCollapsed ? 'Logout' : undefined}
+            className={`flex items-center gap-2 text-xs text-slate-500 hover:text-red-400 transition-colors w-full ${
+              showCollapsed ? 'justify-center' : ''
+            }`}
+          >
+            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+            {!showCollapsed && 'Logout'}
+          </button>
+        </div>
+        </div>
+      </aside>
+
+      {/* ── Main content ────────────────────────────────────────────────── */}
+      {/* pt-[60px] reserves space for the fixed mobile top bar; reset on md+ */}
+      <main
+        ref={mainRef}
+        className="flex-1 overflow-y-auto pt-[60px] md:pt-0 relative"
+        style={{ backgroundColor: 'var(--navy-base)' }}
+      >
+        <div key={pathname} className="animate-page-enter">
+          {children}
+        </div>
+
+        {/* Scroll-to-top button */}
+        <button
+          onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-600 shadow-lg shadow-black/30 transition-all duration-300 ${
+            showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
+          }`}
+        >
+          <ChevronUp className="w-4 h-4" />
+          <span className="text-xs font-medium hidden sm:inline">Top</span>
+        </button>
+      </main>
+
+      {/* ── Command palette (⌘K) ────────────────────────────────────────── */}
+      <CommandPalette
+        open={paletteOpen}
+        onOpen={() => setPaletteOpen(true)}
+        onClose={() => setPaletteOpen(false)}
+        role={currentRole}
+      />
+
+      {/* ── Keyboard shortcuts overlay (?) ──────────────────────────────── */}
+      <ShortcutsOverlay
+        open={shortcutsOpen}
+        onOpen={() => setShortcutsOpen(true)}
+        onClose={() => setShortcutsOpen(false)}
+        paletteOpen={paletteOpen}
+      />
+    </div>
+  );
+}

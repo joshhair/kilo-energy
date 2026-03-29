@@ -1,0 +1,1365 @@
+'use client';
+
+import { useState, useRef, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useApp } from '../../../lib/context';
+import { useIsHydrated } from '../../../lib/hooks';
+import { useToast } from '../../../lib/toast';
+import { Reimbursement } from '../../../lib/data';
+import { formatDate } from '../../../lib/utils';
+import { computeSparklineData, Sparkline } from '../../../lib/sparkline';
+import {
+  DollarSign, TrendingUp, Upload, Receipt, ChevronUp, ChevronDown,
+  ChevronsUpDown, X, Building2, CheckCircle2, XCircle,
+  Clock, ArrowRight,
+} from 'lucide-react';
+import { PaginationBar } from '../components/PaginationBar';
+
+// ── Shared constants ───────────────────────────────────────────────────────────
+
+const labelCls = 'block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider';
+
+/** Maps Tailwind accent-gradient class strings to an RGBA radial glow for --card-accent */
+const ACCENT_COLOR_MAP: Record<string, string> = {
+  'from-emerald-500 to-emerald-400': 'rgba(16,185,129,0.08)',
+  'from-yellow-500 to-yellow-400':   'rgba(234,179,8,0.08)',
+  'from-blue-500 to-blue-400':       'rgba(59,130,246,0.08)',
+  'from-violet-500 to-violet-400':   'rgba(139,92,246,0.08)',
+};
+
+// ── Reimbursement form validation ──────────────────────────────────────────────
+
+function validateReimbField(field: string, value: string): string {
+  switch (field) {
+    case 'amount':
+      if (!value) return 'Amount is required';
+      if (parseFloat(value) <= 0) return 'Must be greater than 0';
+      return '';
+    case 'date':
+      return value ? '' : 'Date is required';
+    case 'description':
+      return value.trim() ? '' : 'Description is required';
+    default:
+      return '';
+  }
+}
+
+function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
+  return errors[field] ? (
+    <p id={`${field}-error`} className="text-red-400 text-xs mt-1" role="alert">
+      {errors[field]}
+    </p>
+  ) : null;
+}
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+type SortDir = 'asc' | 'desc';
+type DealSortKey  = 'customerName' | 'paymentStage' | 'notes' | 'amount' | 'status' | 'date';
+type BonusSortKey = 'notes' | 'amount' | 'status' | 'date';
+
+// ── Shared sort icon ───────────────────────────────────────────────────────────
+
+function SortIcon<K extends string>({ colKey, sortKey, sortDir }: { colKey: K; sortKey: K; sortDir: SortDir }) {
+  if (sortKey !== colKey) return <ChevronsUpDown className="w-3.5 h-3.5 ml-1 inline-block text-slate-600" />;
+  if (sortDir === 'asc') return <ChevronUp className="w-3.5 h-3.5 ml-1 inline-block" />;
+  return <ChevronDown className="w-3.5 h-3.5 ml-1 inline-block" />;
+}
+
+
+// ── Status badges ──────────────────────────────────────────────────────────────
+
+type PillStyle = { gradient: string; border: string; shadow: string; text: string; dot: string };
+
+const PAYROLL_PILL: Record<string, PillStyle> = {
+  'Paid':    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
+  'Pending': { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',   border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+  'Draft':   { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20',     border: 'border-slate-600/30',   shadow: '',                                        text: 'text-slate-300',   dot: 'bg-slate-400'   },
+};
+
+const REIMB_PILL: Record<string, PillStyle> = {
+  'Approved': { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]', text: 'text-emerald-300', dot: 'bg-emerald-400' },
+  'Pending':  { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',   border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',  text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+  'Denied':   { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',         border: 'border-red-700/30',     shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',  text: 'text-red-300',     dot: 'bg-red-400'     },
+};
+
+const DEFAULT_PILL: PillStyle = { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-slate-600/30', shadow: '', text: 'text-slate-300', dot: 'bg-slate-400' };
+
+function StatusPill({ label, pillMap }: { label: string; pillMap: Record<string, PillStyle> }) {
+  const s = pillMap[label] ?? DEFAULT_PILL;
+  return (
+    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
+      {label}
+    </span>
+  );
+}
+
+function PayrollStatusBadge({ status }: { status: string }) { return <StatusPill label={status} pillMap={PAYROLL_PILL} />; }
+function ReimbStatusBadge({ status }: { status: string }) { return <StatusPill label={status} pillMap={REIMB_PILL} />; }
+
+// ── Phase-aware row accent ──────────────────────────────────────────────────────
+
+/** Maps a payroll status to the matching PAYROLL_PILL accent colour hex value. */
+function getPayrollRowAccent(status: string): string {
+  if (status === 'Paid')    return '#10b981'; // emerald-500
+  if (status === 'Pending') return '#eab308'; // yellow-500
+  return '#64748b';                            // slate-500  (Draft / fallback)
+}
+
+// ── Sparkline with hover tooltip ───────────────────────────────────────────────
+
+function SparklineWithTooltip({ data, stroke }: { data: number[]; stroke: string }) {
+  const [hovered, setHovered] = useState(false);
+  const lastVal = data.length > 0 ? data[data.length - 1] : null;
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <Sparkline data={data} stroke={stroke} />
+      {hovered && lastVal !== null && (
+        <div className="absolute -top-7 right-0 bg-slate-800 border border-slate-700 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10">
+          ${lastVal.toLocaleString()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Reimbursement Modal ────────────────────────────────────────────────────────
+
+function ReimbursementModal({ onClose }: { onClose: () => void }) {
+  const { currentRepId, currentRepName, setReimbursements } = useApp();
+  const { toast } = useToast();
+  const [form, setForm] = useState({ amount: '', description: '', date: new Date().toISOString().split('T')[0], fileName: '' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const updateForm = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleBlur = (field: string) => {
+    setErrors((prev) => ({ ...prev, [field]: validateReimbField(field, form[field as keyof typeof form]) }));
+  };
+
+  const inputCls = (field: string) =>
+    `w-full bg-slate-800 border ${errors[field] ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500 text-sm`;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const fieldsToValidate = ['amount', 'date', 'description'] as const;
+    const newErrors: Record<string, string> = {};
+    let hasErrors = false;
+    for (const field of fieldsToValidate) {
+      const error = validateReimbField(field, form[field]);
+      newErrors[field] = error;
+      if (error) hasErrors = true;
+    }
+    setErrors(newErrors);
+    if (hasErrors) return;
+
+    const newReimb: Reimbursement = {
+      id: `reimb_${Date.now()}`,
+      repId: currentRepId ?? '',
+      repName: currentRepName ?? '',
+      amount: parseFloat(form.amount),
+      description: form.description,
+      date: form.date,
+      status: 'Pending',
+      receiptName: form.fileName || undefined,
+    };
+    setReimbursements((prev) => [...prev, newReimb]);
+    toast('Reimbursement request submitted', 'success');
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-violet-400" />
+            <h2 className="text-white font-bold text-base">Request Reimbursement</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors rounded-lg p-1 hover:bg-slate-800">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="reimb-amount" className={labelCls}>Amount ($)</label>
+              <input id="reimb-amount" type="number" step="0.01" min="0.01" placeholder="0.00"
+                value={form.amount} onChange={(e) => updateForm('amount', e.target.value)}
+                onBlur={() => handleBlur('amount')} aria-invalid={!!errors.amount}
+                className={inputCls('amount')} />
+              <FieldError field="amount" errors={errors} />
+            </div>
+            <div>
+              <label htmlFor="reimb-date" className={labelCls}>Date</label>
+              <input id="reimb-date" type="date" value={form.date}
+                onChange={(e) => updateForm('date', e.target.value)} onBlur={() => handleBlur('date')}
+                aria-invalid={!!errors.date} className={inputCls('date')} />
+              <FieldError field="date" errors={errors} />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="reimb-description" className={labelCls}>Description</label>
+            <input id="reimb-description" type="text" placeholder="e.g. Gas mileage, office supplies…"
+              value={form.description} onChange={(e) => updateForm('description', e.target.value)}
+              onBlur={() => handleBlur('description')} aria-invalid={!!errors.description}
+              className={inputCls('description')} />
+            <FieldError field="description" errors={errors} />
+          </div>
+          <div>
+            <label className={labelCls}>Receipt <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
+            <label className="flex items-center gap-2 bg-slate-800 border border-slate-700 border-dashed rounded-xl px-4 py-2.5 cursor-pointer hover:border-slate-600 transition-colors overflow-hidden">
+              <Upload className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+              <span className="text-slate-500 text-sm truncate">{form.fileName || 'Attach file…'}</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                onChange={(e) => updateForm('fileName', e.target.files?.[0]?.name ?? '')} />
+            </label>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
+              Cancel
+            </button>
+            <button type="submit"
+              className="flex-1 btn-primary text-white font-semibold px-5 py-2.5 rounded-xl text-sm active:scale-[0.97]"
+              style={{ backgroundColor: 'var(--brand)' }}>
+              Submit Request
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Next-payout date helpers ───────────────────────────────────────────────────
+
+/** Returns the next Friday on or after `from` (day=5 → today counts). */
+function getNextFriday(from: Date): Date {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const day = d.getDay(); // 0=Sun … 6=Sat
+  const daysToFriday = day <= 5 ? 5 - day : 6; // Sat → 6 days forward
+  d.setDate(d.getDate() + daysToFriday);
+  return d;
+}
+
+function formatPayoutDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function daysUntilDate(target: Date, from: Date): number {
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime();
+  const b = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+  return Math.round((b - a) / msPerDay);
+}
+
+// ── Monthly sparkline helper ───────────────────────────────────────────────────
+
+/**
+ * Groups entries by calendar month (YYYY-MM), sorts ascending, and returns the
+ * summed amounts for the last 6 unique months found. Returns an empty array
+ * when there are no entries.
+ */
+function computeMonthlySparklineData(entries: { date: string; amount: number }[]): number[] {
+  const byMonth = new Map<string, number>();
+  for (const e of entries) {
+    const month = e.date.slice(0, 7); // "YYYY-MM"
+    byMonth.set(month, (byMonth.get(month) ?? 0) + e.amount);
+  }
+  const sortedMonths = [...byMonth.keys()].sort();
+  const last6 = sortedMonths.slice(-6);
+  return last6.map((m) => byMonth.get(m)!);
+}
+
+// ── Rep Earnings View ──────────────────────────────────────────────────────────
+
+function RepEarningsView() {
+  const searchParams = useSearchParams();
+  const { currentRepId, payrollEntries, reimbursements } = useApp();
+  const isHydrated = useIsHydrated();
+
+  type Tab = 'deal' | 'bonus' | 'reimbursements';
+  const rawTab = searchParams.get('tab');
+  const [tab, setTab] = useState<Tab>(() => {
+    if (rawTab === 'reimbursements' || rawTab === 'bonus' || rawTab === 'deal') return rawTab;
+    return 'deal';
+  });
+
+  const [showReimbModal, setShowReimbModal] = useState(false);
+
+  const myPayroll     = payrollEntries.filter((p) => p.repId === currentRepId);
+  const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus');
+  const pendingItems  = myPayroll.filter((p) => p.status === 'Pending');
+  const totalPaid     = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const totalPending  = pendingItems.reduce((s, p) => s + p.amount, 0);
+  const pendingCount  = pendingItems.length;
+  const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === currentRepId), [reimbursements, currentRepId]);
+
+  // Next-payout countdown (next Friday on or after today)
+  const today          = new Date();
+  const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
+  const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+  const nextFriday     = getNextFriday(today);
+  const nextFridayStr  = formatPayoutDate(nextFriday);
+  const daysLeft       = daysUntilDate(nextFriday, today);
+
+  // Monthly sparkline data: last 6 calendar months per summary-card category
+  const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Paid')),    [payrollEntries, currentRepId]);
+  const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Pending')), [payrollEntries, currentRepId]);
+  const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === currentRepId && r.status === 'Approved')), [reimbursements, currentRepId]);
+
+  // Deal table sort + pagination
+  const [dealSortKey, setDealSortKey]   = useState<DealSortKey>('date');
+  const [dealSortDir, setDealSortDir]   = useState<SortDir>('desc');
+  const [dealPage, setDealPage]         = useState(1);
+  const [dealPageSize, setDealPageSize] = useState(10);
+
+  const handleDealSort = (key: DealSortKey) => {
+    setDealPage(1);
+    if (dealSortKey === key) { setDealSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); }
+    else { setDealSortKey(key); setDealSortDir('asc'); }
+  };
+
+  type DealRow = | { kind: 'payroll'; entry: (typeof payrollEntries)[0] } | { kind: 'reimb'; entry: (typeof myReimbs)[0] };
+
+  const sortedDeals = useMemo((): DealRow[] => {
+    const payrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === currentRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
+    const reimbRows: DealRow[] = myReimbs.map((r) => ({ kind: 'reimb' as const, entry: r }));
+    return [...payrollRows, ...reimbRows].sort((a, b) => {
+      const aDate = a.entry.date; const bDate = b.entry.date;
+      const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
+      const aName = a.kind === 'payroll' ? (a.entry.customerName ?? '') : a.entry.description;
+      const bName = b.kind === 'payroll' ? (b.entry.customerName ?? '') : b.entry.description;
+      const aStatus = a.entry.status; const bStatus = b.entry.status;
+      const aStage  = a.kind === 'payroll' ? (a.entry.paymentStage ?? '') : 'Reimb';
+      const bStage  = b.kind === 'payroll' ? (b.entry.paymentStage ?? '') : 'Reimb';
+      const aNotes  = a.kind === 'payroll' ? (a.entry.notes ?? '') : 'Reimbursement';
+      const bNotes  = b.kind === 'payroll' ? (b.entry.notes ?? '') : 'Reimbursement';
+      let cmp = 0;
+      switch (dealSortKey) {
+        case 'customerName': cmp = aName.localeCompare(bName); break;
+        case 'paymentStage': cmp = aStage.localeCompare(bStage); break;
+        case 'notes':        cmp = aNotes.localeCompare(bNotes); break;
+        case 'amount':       cmp = aAmt - bAmt; break;
+        case 'status':       cmp = aStatus.localeCompare(bStatus); break;
+        case 'date':         cmp = aDate.localeCompare(bDate); break;
+      }
+      return dealSortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [payrollEntries, myReimbs, currentRepId, dealSortKey, dealSortDir]);
+
+  const dealTotal      = sortedDeals.length;
+  const dealTotalPages = Math.max(1, Math.ceil(dealTotal / dealPageSize));
+  const dealSafePage   = Math.min(dealPage, dealTotalPages);
+  const dealStart      = (dealSafePage - 1) * dealPageSize;
+  const dealEnd        = Math.min(dealStart + dealPageSize, dealTotal);
+  const pagedDeals     = sortedDeals.slice(dealStart, dealEnd);
+
+  // Bonus table sort + pagination
+  const [bonusSortKey, setBonusSortKey]   = useState<BonusSortKey>('date');
+  const [bonusSortDir, setBonusSortDir]   = useState<SortDir>('desc');
+  const [bonusPage, setBonusPage]         = useState(1);
+  const [bonusPageSize, setBonusPageSize] = useState(10);
+
+  const handleBonusSort = (key: BonusSortKey) => {
+    setBonusPage(1);
+    if (bonusSortKey === key) { setBonusSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); }
+    else { setBonusSortKey(key); setBonusSortDir('asc'); }
+  };
+
+  const sortedBonuses = useMemo(() => {
+    return payrollEntries.filter((p) => p.repId === currentRepId && p.type === 'Bonus').sort((a, b) => {
+      let cmp = 0;
+      switch (bonusSortKey) {
+        case 'notes':  cmp = (a.notes ?? '').localeCompare(b.notes ?? ''); break;
+        case 'amount': cmp = a.amount - b.amount; break;
+        case 'status': cmp = a.status.localeCompare(b.status); break;
+        case 'date':   cmp = a.date.localeCompare(b.date); break;
+      }
+      return bonusSortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [payrollEntries, currentRepId, bonusSortKey, bonusSortDir]);
+
+  const bonusTotal      = sortedBonuses.length;
+  const bonusTotalPages = Math.max(1, Math.ceil(bonusTotal / bonusPageSize));
+  const bonusSafePage   = Math.min(bonusPage, bonusTotalPages);
+  const bonusStart      = (bonusSafePage - 1) * bonusPageSize;
+  const bonusEnd        = Math.min(bonusStart + bonusPageSize, bonusTotal);
+  const pagedBonuses    = sortedBonuses.slice(bonusStart, bonusEnd);
+
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const TABS = ['deal', 'bonus', 'reimbursements'] as const;
+    const idx = TABS.indexOf(tab);
+    const el = tabRefs.current[idx];
+    if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [tab, isHydrated]);
+
+  if (!isHydrated) return <EarningsSkeleton />;
+
+  return (
+    <div className="p-4 md:p-8">
+      {showReimbModal && <ReimbursementModal onClose={() => setShowReimbModal(false)} />}
+
+      {/* Header */}
+      <div className="mb-8">
+        <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+              <DollarSign className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Earnings</h1>
+              <p className="text-slate-400 text-sm font-medium mt-0.5 tracking-wide">Your commission, bonus, and reimbursement history</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowReimbModal(true)}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
+          >
+            <Receipt className="w-4 h-4 text-violet-400" />
+            Request Reimbursement
+          </button>
+        </div>
+      </div>
+
+      {/* ── Next Payout Hero Card ─────────────────────────────────────────── */}
+      {totalPending > 0 ? (
+        <div
+          className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
+          style={{ '--card-accent': 'rgba(16,185,129,0.18)' } as React.CSSProperties}
+        >
+          {/* emerald top accent bar */}
+          <div className="h-[3px] w-16 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-5" />
+
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+            {/* Left — amount + labels */}
+            <div>
+              <p className="text-slate-400 text-xs font-medium uppercase tracking-widest mb-2">Next Payout</p>
+              <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight text-gradient-emerald animate-count-up">
+                ${totalPending.toLocaleString()}
+              </p>
+              <p className="text-slate-400 text-sm mt-2.5">
+                Expected Friday,{' '}
+                <span className="text-slate-200 font-medium">{nextFridayStr}</span>
+              </p>
+              <p className="text-slate-500 text-xs mt-1">
+                {pendingCount} pending {pendingCount === 1 ? 'entry' : 'entries'}
+              </p>
+            </div>
+
+            {/* Right — countdown badge */}
+            <div className="sm:pb-1">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days away`}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
+          style={{ '--card-accent': 'rgba(16,185,129,0.07)' } as React.CSSProperties}
+        >
+          <div className="h-[3px] w-16 rounded-full bg-gradient-to-r from-emerald-500/30 to-emerald-400/30 mb-5" />
+          <div className="flex flex-col items-center py-3 text-center gap-3">
+            <p className="text-slate-400 text-sm font-medium leading-relaxed">
+              No pending payouts — close a deal to start earning
+            </p>
+            <Link
+              href="/dashboard/new-deal"
+              className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 text-sm font-semibold transition-colors"
+            >
+              Close a deal <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* ── Summary stat cards with sparklines ───────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+
+        {/* 1 — Total Earned (emerald) */}
+        <div
+          className="card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1"
+          style={{ '--card-accent': ACCENT_COLOR_MAP['from-emerald-500 to-emerald-400'] } as React.CSSProperties}
+        >
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Total Earned</span>
+            <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-emerald-400 animate-count-up">
+            ${totalPaid.toLocaleString()}
+          </p>
+          <SparklineWithTooltip data={earnedMonthlyData} stroke="#10b981" />
+        </div>
+
+        {/* 2 — Pending (yellow) */}
+        <div
+          className="card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2"
+          style={{ '--card-accent': ACCENT_COLOR_MAP['from-yellow-500 to-yellow-400'] } as React.CSSProperties}
+        >
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Pending</span>
+            <TrendingUp className="w-4 h-4 text-yellow-400 shrink-0" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-yellow-400 animate-count-up">
+            ${totalPending.toLocaleString()}
+          </p>
+          <SparklineWithTooltip data={pendingMonthlyData} stroke="#eab308" />
+        </div>
+
+        {/* 3 — This Month (blue) */}
+        <div
+          className="card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3"
+          style={{ '--card-accent': ACCENT_COLOR_MAP['from-blue-500 to-blue-400'] } as React.CSSProperties}
+        >
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">This Month</span>
+            <DollarSign className="w-4 h-4 text-blue-400 shrink-0" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-blue-400 animate-count-up">
+            ${thisMonthEarned.toLocaleString()}
+          </p>
+          <SparklineWithTooltip data={earnedMonthlyData} stroke="#3b82f6" />
+        </div>
+
+        {/* 4 — Reimbursements approved (violet) */}
+        <div
+          className="card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4"
+          style={{ '--card-accent': ACCENT_COLOR_MAP['from-violet-500 to-violet-400'] } as React.CSSProperties}
+        >
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Reimbursements</span>
+            <Receipt className="w-4 h-4 text-violet-400 shrink-0" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-violet-400 animate-count-up">
+            ${approvedReimbs.toLocaleString()}
+          </p>
+          <SparklineWithTooltip data={reimbMonthlyData} stroke="#8b5cf6" />
+        </div>
+
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex flex-wrap gap-1 mb-5 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+        {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
+        {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
+          <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+            {t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${bonusPayments.length})` : `Reimb. History (${myReimbs.length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="overflow-hidden">
+
+        {/* Payroll Report tab */}
+        {tab === 'deal' && (
+          <div key="deal" className="animate-tab-enter relative card-surface rounded-2xl overflow-hidden">
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
+            <div className="overflow-x-auto scroll-smooth">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50 table-scroll-shadow">
+                  <tr className="border-b border-slate-800">
+                    {([
+                      { key: 'customerName' as DealSortKey, label: 'Customer' },
+                      { key: 'paymentStage' as DealSortKey, label: 'Stage' },
+                      { key: 'notes'        as DealSortKey, label: 'Role' },
+                      { key: 'amount'       as DealSortKey, label: 'Amount' },
+                      { key: 'status'       as DealSortKey, label: 'Status' },
+                      { key: 'date'         as DealSortKey, label: 'Date' },
+                    ] as { key: DealSortKey; label: string }[]).map(({ key, label }) => (
+                      <th key={key} onClick={() => handleDealSort(key)}
+                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${dealSortKey === key ? 'text-white' : 'text-slate-400'}`}>
+                        {label}<SortIcon colKey={key} sortKey={dealSortKey} sortDir={dealSortDir} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedDeals.map((row, i) => {
+                    const isReim = row.kind === 'reimb';
+                    const name   = isReim ? row.entry.description : (row.entry.customerName || '—');
+                    const stage  = isReim ? '—' : (row.entry.paymentStage ?? '—');
+                    const role   = isReim ? 'Reimbursement' : (row.entry.notes ?? '');
+                    const amt    = row.entry.amount;
+                    const status = row.entry.status;
+                    const date   = row.entry.date;
+                    return (
+                      <tr
+                        key={row.entry.id}
+                        style={!isReim ? ({ '--row-accent': getPayrollRowAccent(status) } as React.CSSProperties) : undefined}
+                        className={`table-row-enter row-stagger-${i % 25} relative border-b border-slate-800/50 ${isReim ? 'bg-violet-900/5' : 'odd:bg-slate-900/30 even:bg-slate-800/30'} hover:bg-slate-800/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}
+                      >
+                        <td className="px-5 py-3 text-white">{name}</td>
+                        <td className="px-5 py-3"><span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap">{stage}</span></td>
+                        <td className="px-5 py-3 text-xs">
+                          {isReim ? <span className="text-violet-400">Reimb.</span>
+                            : role === 'Setter' ? <span className="text-blue-400">Setter</span>
+                            : role === 'Trainer override' ? <span className="text-amber-400">Trainer</span>
+                            : <span className="text-emerald-400">Closer</span>}
+                        </td>
+                        <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
+                        <td className="px-5 py-3">{isReim ? <ReimbStatusBadge status={status} /> : <PayrollStatusBadge status={status} />}</td>
+                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(date)}</td>
+                      </tr>
+                    );
+                  })}
+                  {sortedDeals.length === 0 && (
+                    <tr><td colSpan={6} className="px-5 py-10 text-center">
+                      <div className="flex justify-center">
+                        <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                          {/* Illustration — empty wallet / coin stack */}
+                          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                            {/* Wallet body */}
+                            <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            <rect x="10" y="30" width="52" height="4" fill="#334155"/>
+                            {/* Coin pocket */}
+                            <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                            <circle cx="53" cy="42" r="4" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.5"/>
+                            {/* Dashed lines — empty content indicator */}
+                            <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                            <line x1="17" y1="46" x2="30" y2="46" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                            {/* Dollar sign badge */}
+                            <circle cx="60" cy="22" r="9" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" strokeOpacity="0.5"/>
+                            <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
+                          </svg>
+                          <p className="text-slate-200 text-sm font-semibold leading-snug">Your earnings will appear here</p>
+                          <p className="text-slate-500 text-xs leading-relaxed">Earnings will appear here once deals are processed and commissions are recorded.</p>
+                          <Link
+                            href="/dashboard/projects"
+                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            style={{ backgroundColor: 'var(--brand)' }}
+                          >
+                            <ArrowRight className="w-3.5 h-3.5" />
+                            View Projects
+                          </Link>
+                        </div>
+                      </div>
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {sortedDeals.length > 0 && (
+              <PaginationBar totalResults={dealTotal} startIdx={dealStart} endIdx={dealEnd}
+                currentPage={dealSafePage} totalPages={dealTotalPages} rowsPerPage={dealPageSize}
+                onPageChange={setDealPage} onRowsPerPageChange={(n) => { setDealPageSize(n); setDealPage(1); }} />
+            )}
+          </div>
+        )}
+
+        {/* Bonuses tab */}
+        {tab === 'bonus' && (
+          <div key="bonus" className="animate-tab-enter relative card-surface rounded-2xl overflow-hidden">
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
+            <div className="overflow-x-auto scroll-smooth">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50 table-scroll-shadow">
+                  <tr className="border-b border-slate-800">
+                    {([
+                      { key: 'notes'  as BonusSortKey, label: 'Description' },
+                      { key: 'amount' as BonusSortKey, label: 'Amount' },
+                      { key: 'status' as BonusSortKey, label: 'Status' },
+                      { key: 'date'   as BonusSortKey, label: 'Date' },
+                    ] as { key: BonusSortKey; label: string }[]).map(({ key, label }) => (
+                      <th key={key} onClick={() => handleBonusSort(key)}
+                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${bonusSortKey === key ? 'text-white' : 'text-slate-400'}`}>
+                        {label}<SortIcon colKey={key} sortKey={bonusSortKey} sortDir={bonusSortDir} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedBonuses.map((b, i) => (
+                    <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-slate-800/50 odd:bg-slate-900/30 even:bg-slate-800/30 hover:bg-slate-800/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}>
+                      <td className="px-5 py-3 text-white">{b.notes || '—'}</td>
+                      <td className="px-5 py-3 text-blue-400 font-semibold whitespace-nowrap">${b.amount.toLocaleString()}</td>
+                      <td className="px-5 py-3"><PayrollStatusBadge status={b.status} /></td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(b.date)}</td>
+                    </tr>
+                  ))}
+                  {sortedBonuses.length === 0 && (
+                    <tr><td colSpan={4} className="px-5 py-10 text-center">
+                      <div className="flex justify-center">
+                        <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                          {/* Illustration — trophy / award */}
+                          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                            {/* Trophy cup */}
+                            <path d="M28 16 L52 16 L52 42 C52 50.8 46.6 56 40 56 C33.4 56 28 50.8 28 42 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            {/* Trophy handles */}
+                            <path d="M28 22 C20 22 16 28 16 34 C16 40 20 42 26 42" stroke="#334155" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                            <path d="M52 22 C60 22 64 28 64 34 C64 40 60 42 54 42" stroke="#334155" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                            {/* Stem */}
+                            <rect x="36" y="56" width="8" height="8" fill="#334155"/>
+                            {/* Base */}
+                            <rect x="28" y="64" width="24" height="4" rx="2" fill="#334155"/>
+                            {/* Star inside */}
+                            <path d="M40 26 L41.8 31.6 L47.7 31.6 L43 35 L44.8 40.6 L40 37.2 L35.2 40.6 L37 35 L32.3 31.6 L38.2 31.6 Z" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5"/>
+                          </svg>
+                          <p className="text-slate-200 text-sm font-semibold leading-snug">Your earnings will appear here</p>
+                          <p className="text-slate-500 text-xs leading-relaxed">Bonus payments will appear here once deals are processed and your admin awards them.</p>
+                          <Link
+                            href="/dashboard/projects"
+                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            style={{ backgroundColor: 'var(--brand)' }}
+                          >
+                            <ArrowRight className="w-3.5 h-3.5" />
+                            View Projects
+                          </Link>
+                        </div>
+                      </div>
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {sortedBonuses.length > 0 && (
+              <PaginationBar totalResults={bonusTotal} startIdx={bonusStart} endIdx={bonusEnd}
+                currentPage={bonusSafePage} totalPages={bonusTotalPages} rowsPerPage={bonusPageSize}
+                onPageChange={setBonusPage} onRowsPerPageChange={(n) => { setBonusPageSize(n); setBonusPage(1); }} />
+            )}
+          </div>
+        )}
+
+        {/* Reimbursements History tab */}
+        {tab === 'reimbursements' && (
+          <div key="reimbursements" className="animate-tab-enter card-surface rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+              <h2 className="text-white font-bold tracking-tight text-base">Submission History</h2>
+              <button onClick={() => setShowReimbModal(true)}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors">
+                <Receipt className="w-3.5 h-3.5 text-violet-400" />
+                New Request
+              </button>
+            </div>
+            <div className="overflow-x-auto scroll-smooth">
+              <table className="w-full text-sm">
+                <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                  <tr className="border-b border-slate-800">
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Description</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Amount</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Date</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Receipt</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myReimbs.map((r, i) => (
+                    <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-slate-800/50 odd:bg-slate-900/30 even:bg-slate-800/30 hover:bg-slate-800/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
+                      <td className="px-5 py-3 text-white">{r.description}</td>
+                      <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(r.date)}</td>
+                      <td className="px-5 py-3 text-slate-400 text-xs">{r.receiptName || '—'}</td>
+                      <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
+                    </tr>
+                  ))}
+                  {myReimbs.length === 0 && (
+                    <tr><td colSpan={5} className="px-5 py-10 text-center">
+                      <div className="flex justify-center">
+                        <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                          {/* Illustration — receipt / document */}
+                          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                            {/* Receipt body */}
+                            <path d="M18 14 L62 14 L62 66 L54 62 L46 66 L38 62 L30 66 L22 62 L18 66 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            {/* Lines on receipt */}
+                            <line x1="26" y1="26" x2="54" y2="26" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
+                            <line x1="26" y1="34" x2="54" y2="34" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
+                            <line x1="26" y1="42" x2="42" y2="42" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
+                            {/* Amount line */}
+                            <line x1="26" y1="50" x2="54" y2="50" stroke="#1e3a5f" strokeWidth="2.5" strokeLinecap="round"/>
+                            {/* Dollar badge */}
+                            <circle cx="58" cy="22" r="9" fill="#1e3a5f" stroke="#7c3aed" strokeWidth="1.5" strokeOpacity="0.5"/>
+                            <text x="58" y="26.5" textAnchor="middle" fill="#a78bfa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
+                          </svg>
+                          <p className="text-slate-200 text-sm font-semibold leading-snug">Your earnings will appear here</p>
+                          <p className="text-slate-500 text-xs leading-relaxed">Submit a reimbursement request and it will appear here for tracking once processed.</p>
+                          <button
+                            onClick={() => setShowReimbModal(true)}
+                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            style={{ backgroundColor: 'var(--brand)' }}
+                          >
+                            Submit Request
+                          </button>
+                        </div>
+                      </div>
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+// ── Earnings Skeleton ─────────────────────────────────────────────────────────
+
+function EarningsSkeleton() {
+  return (
+    <div className="p-4 md:p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="h-[3px] w-12 rounded-full bg-slate-800 animate-skeleton mb-3" style={{ animationDelay: '0ms' }} />
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-slate-800 animate-skeleton flex-shrink-0" style={{ animationDelay: '50ms' }} />
+            <div>
+              <div className="h-8 w-48 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: '100ms' }} />
+              <div className="h-4 w-64 bg-slate-800/60 rounded animate-skeleton mt-1.5" style={{ animationDelay: '150ms' }} />
+            </div>
+          </div>
+          {/* Request Reimbursement button placeholder */}
+          <div className="h-10 w-48 bg-slate-800 rounded-xl animate-skeleton flex-shrink-0" style={{ animationDelay: '200ms' }} />
+        </div>
+      </div>
+
+      {/* Summary stat cards — 3-column grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {[0, 1, 2].map((cardIdx) => {
+          const base = 250 + cardIdx * 50;
+          return (
+            <div key={cardIdx} className="card-surface rounded-2xl p-5">
+              {/* Accent bar */}
+              <div
+                className="h-[2px] w-12 rounded-full bg-slate-700 animate-skeleton mb-3"
+                style={{ animationDelay: `${base}ms` }}
+              />
+              {/* Label row */}
+              <div
+                className="h-3 w-24 bg-slate-800/80 rounded animate-skeleton mb-3"
+                style={{ animationDelay: `${base + 50}ms` }}
+              />
+              {/* Value bar */}
+              <div
+                className="h-10 w-32 bg-slate-800 rounded animate-skeleton"
+                style={{ animationDelay: `${base + 100}ms` }}
+              />
+              {/* Sparkline bar */}
+              <div
+                className="h-4 w-full bg-slate-800/50 rounded animate-skeleton mt-2"
+                style={{ animationDelay: `${base + 150}ms` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tab bar — 3 pill shapes */}
+      <div className="flex gap-1 mb-5 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-9 w-36 bg-slate-800 rounded-lg animate-skeleton"
+            style={{ animationDelay: `${500 + i * 50}ms` }}
+          />
+        ))}
+      </div>
+
+      {/* Table skeleton */}
+      <div className="card-surface rounded-2xl overflow-hidden">
+        {/* Frosted header row */}
+        <div className="table-header-frost border-b border-slate-800 px-5 py-3 flex gap-4">
+          {[96, 72, 64, 56, 80, 64].map((w, i) => (
+            <div
+              key={i}
+              className={`h-4 bg-slate-700/70 rounded animate-skeleton`}
+              style={{ width: `${w}px`, animationDelay: `${650 + i * 50}ms` }}
+            />
+          ))}
+        </div>
+
+        {/* 8 placeholder rows with alternating opacity and varying column widths */}
+        {([
+          [148, 68, 60, 76, 84, 64],
+          [112, 56, 52, 64, 72, 56],
+          [160, 72, 64, 80, 88, 60],
+          [128, 60, 56, 68, 76, 52],
+          [144, 64, 60, 72, 80, 68],
+          [120, 52, 52, 60, 68, 56],
+          [136, 68, 64, 76, 84, 60],
+          [124, 56, 56, 64, 72, 52],
+        ] as number[][]).map((colWidths, rowIdx) => {
+          const delay = 700 + rowIdx * 50;
+          const isEven = rowIdx % 2 === 0;
+          return (
+            <div
+              key={rowIdx}
+              className={`border-b border-slate-800/50 px-5 py-3.5 flex gap-4 items-center ${isEven ? '' : 'bg-slate-800/20'}`}
+            >
+              {colWidths.map((w, colIdx) => (
+                <div
+                  key={colIdx}
+                  className={`h-4 bg-slate-800 rounded animate-skeleton ${isEven ? 'opacity-100' : 'opacity-70'}`}
+                  style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 30}ms` }}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Admin Financials View ─────────────────────────────────────────────────────
+
+function AdminFinancialsView() {
+  const { payrollEntries, setPayrollEntries, reimbursements, setReimbursements, reps } = useApp();
+  const { toast } = useToast();
+
+  // Stats
+  const totalPaid     = payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const totalPending  = payrollEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+  const totalDraft    = payrollEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+  const pendingReimbs = reimbursements.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
+
+  type AdminTab = 'payroll' | 'reimbursements' | 'by-rep';
+  const [tab, setTab] = useState<AdminTab>('payroll');
+
+  // Payroll tab filters + pagination
+  const [repFilter,    setRepFilter]    = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [payrollPage,  setPayrollPage]  = useState(1);
+  const [payrollPageSize, setPayrollPageSize] = useState(25);
+  const [payrollSortKey, setPayrollSortKey] = useState<'repName' | 'customerName' | 'paymentStage' | 'amount' | 'status' | 'date'>('date');
+  const [payrollSortDir, setPayrollSortDir] = useState<SortDir>('desc');
+
+  const handlePayrollSort = (key: typeof payrollSortKey) => {
+    setPayrollPage(1);
+    if (payrollSortKey === key) { setPayrollSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); }
+    else { setPayrollSortKey(key); setPayrollSortDir('asc'); }
+  };
+
+  const filteredPayroll = useMemo(() => {
+    return payrollEntries
+      .filter((e) => (!repFilter || e.repId === repFilter) && (!statusFilter || e.status === statusFilter))
+      .sort((a, b) => {
+        let cmp = 0;
+        switch (payrollSortKey) {
+          case 'repName':      cmp = a.repName.localeCompare(b.repName); break;
+          case 'customerName': cmp = (a.customerName ?? '').localeCompare(b.customerName ?? ''); break;
+          case 'paymentStage': cmp = (a.paymentStage ?? '').localeCompare(b.paymentStage ?? ''); break;
+          case 'amount':       cmp = a.amount - b.amount; break;
+          case 'status':       cmp = a.status.localeCompare(b.status); break;
+          case 'date':         cmp = a.date.localeCompare(b.date); break;
+        }
+        return payrollSortDir === 'asc' ? cmp : -cmp;
+      });
+  }, [payrollEntries, repFilter, statusFilter, payrollSortKey, payrollSortDir]);
+
+  const payrollTotal      = filteredPayroll.length;
+  const payrollTotalPages = Math.max(1, Math.ceil(payrollTotal / payrollPageSize));
+  const payrollSafePage   = Math.min(payrollPage, payrollTotalPages);
+  const payrollStart      = (payrollSafePage - 1) * payrollPageSize;
+  const payrollEnd        = Math.min(payrollStart + payrollPageSize, payrollTotal);
+  const pagedPayroll      = filteredPayroll.slice(payrollStart, payrollEnd);
+
+  // Reimbursements tab filters + pagination
+  const [reimbRepFilter,    setReimbRepFilter]    = useState('');
+  const [reimbStatusFilter, setReimbStatusFilter] = useState('');
+  const [reimbPage,         setReimbPage]         = useState(1);
+  const [reimbPageSize,     setReimbPageSize]     = useState(25);
+
+  const filteredReimbs = useMemo(() => {
+    return reimbursements.filter((r) =>
+      (!reimbRepFilter || r.repId === reimbRepFilter) &&
+      (!reimbStatusFilter || r.status === reimbStatusFilter)
+    ).sort((a, b) => b.date.localeCompare(a.date));
+  }, [reimbursements, reimbRepFilter, reimbStatusFilter]);
+
+  const reimbTotal      = filteredReimbs.length;
+  const reimbTotalPages = Math.max(1, Math.ceil(reimbTotal / reimbPageSize));
+  const reimbSafePage   = Math.min(reimbPage, reimbTotalPages);
+  const reimbStart      = (reimbSafePage - 1) * reimbPageSize;
+  const reimbEnd        = Math.min(reimbStart + reimbPageSize, reimbTotal);
+  const pagedReimbs     = filteredReimbs.slice(reimbStart, reimbEnd);
+
+  const markPaid = (id: string) => {
+    setPayrollEntries((prev) => prev.map((e) => e.id === id && e.status === 'Pending' ? { ...e, status: 'Paid' } : e));
+    toast('Marked as paid', 'success');
+  };
+
+  const markAllPendingPaid = () => {
+    const pending = filteredPayroll.filter((e) => e.status === 'Pending').map((e) => e.id);
+    if (!pending.length) return;
+    const idSet = new Set(pending);
+    setPayrollEntries((prev) => prev.map((e) => idSet.has(e.id) ? { ...e, status: 'Paid' } : e));
+    toast(`Marked ${pending.length} entries as paid`, 'success');
+  };
+
+  const approveReim = (id: string) => {
+    setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Approved' } : r));
+    toast('Reimbursement approved', 'success');
+  };
+
+  const rejectReim = (id: string) => {
+    setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Denied' } : r));
+    toast('Reimbursement rejected', 'info');
+  };
+
+  // By Rep summary
+  const repSummary = useMemo(() => {
+    return reps.map((rep) => {
+      const entries = payrollEntries.filter((e) => e.repId === rep.id);
+      const paid    = entries.filter((e) => e.status === 'Paid').reduce((s, e) => s + e.amount, 0);
+      const pending = entries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0);
+      const draft   = entries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0);
+      const reimbs  = reimbursements.filter((r) => r.repId === rep.id);
+      const reimbPending = reimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
+      return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft };
+    }).sort((a, b) => b.total - a.total);
+  }, [reps, payrollEntries, reimbursements]);
+
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
+  useEffect(() => {
+    const TABS = ['payroll', 'reimbursements', 'by-rep'] as const;
+    const idx = TABS.indexOf(tab);
+    const el = tabRefs.current[idx];
+    if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [tab]);
+
+  const pendingPayrollCount = payrollEntries.filter((e) => e.status === 'Pending').length;
+  const pendingReimbCount   = reimbursements.filter((r) => r.status === 'Pending').length;
+
+  const selectCls = 'bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-all input-focus-glow';
+
+  return (
+    <div className="p-4 md:p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+            <Building2 className="w-5 h-5 text-blue-400" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Financials</h1>
+        </div>
+        <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">Company payroll, reimbursements, and rep summaries</p>
+      </div>
+
+      {/* Stat cards — 4 across */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-1" style={{ '--card-accent': 'rgba(16,185,129,0.12)' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-xs uppercase tracking-wider">Total Paid</span>
+            <DollarSign className="w-4 h-4 text-emerald-400" />
+          </div>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-emerald-400">${totalPaid.toLocaleString()}</p>
+        </div>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-2" style={{ '--card-accent': 'rgba(234,179,8,0.12)' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-xs uppercase tracking-wider">Pending Payroll</span>
+            <TrendingUp className="w-4 h-4 text-yellow-400" />
+          </div>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-yellow-400">${totalPending.toLocaleString()}</p>
+          {pendingPayrollCount > 0 && <p className="text-xs text-slate-500 mt-1">{pendingPayrollCount} entries</p>}
+        </div>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-3" style={{ '--card-accent': 'rgba(100,116,139,0.12)' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-slate-500 to-slate-400 mb-3" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-xs uppercase tracking-wider">Draft</span>
+            <DollarSign className="w-4 h-4 text-slate-400" />
+          </div>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-slate-300">${totalDraft.toLocaleString()}</p>
+        </div>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-4" style={{ '--card-accent': 'rgba(139,92,246,0.12)' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-xs uppercase tracking-wider">Reimbs Pending</span>
+            <Receipt className="w-4 h-4 text-violet-400" />
+          </div>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
+          {pendingReimbCount > 0 && <p className="text-xs text-slate-500 mt-1">{pendingReimbCount} requests</p>}
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex flex-wrap gap-1 mb-5 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+        {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
+        {(['payroll', 'reimbursements', 'by-rep'] as const).map((t, i) => (
+          <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+            {t === 'payroll' ? `Payroll (${payrollEntries.length})` : t === 'reimbursements' ? `Reimbursements (${reimbursements.length})` : 'By Rep'}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="overflow-hidden">
+
+        {/* Payroll tab */}
+        {tab === 'payroll' && (
+          <div key="payroll" className="animate-tab-enter space-y-3">
+            {/* Filters + actions */}
+            <div className="flex flex-wrap items-center gap-3">
+              <select value={repFilter} onChange={(e) => { setRepFilter(e.target.value); setPayrollPage(1); }} className={selectCls}>
+                <option value="">All reps</option>
+                {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPayrollPage(1); }} className={selectCls}>
+                <option value="">All statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+                <option value="Draft">Draft</option>
+              </select>
+              {filteredPayroll.some((e) => e.status === 'Pending') && (
+                <button onClick={markAllPendingPaid}
+                  className="ml-auto flex items-center gap-1.5 bg-emerald-900/30 hover:bg-emerald-800/40 border border-emerald-700/40 text-emerald-300 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Mark All Pending Paid
+                </button>
+              )}
+            </div>
+            <div className="relative card-surface rounded-2xl overflow-hidden">
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
+              <div className="overflow-x-auto scroll-smooth">
+                <table className="w-full text-sm">
+                  <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                    <tr className="border-b border-slate-800">
+                      {([
+                        { key: 'repName' as const,      label: 'Rep' },
+                        { key: 'customerName' as const, label: 'Customer' },
+                        { key: 'paymentStage' as const, label: 'Stage' },
+                        { key: 'amount' as const,       label: 'Amount' },
+                        { key: 'status' as const,       label: 'Status' },
+                        { key: 'date' as const,         label: 'Date' },
+                      ]).map(({ key, label }) => (
+                        <th key={key} onClick={() => handlePayrollSort(key)}
+                          className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${payrollSortKey === key ? 'text-white' : 'text-slate-400'}`}>
+                          {label}<SortIcon colKey={key} sortKey={payrollSortKey} sortDir={payrollSortDir} />
+                        </th>
+                      ))}
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedPayroll.map((e, i) => (
+                      <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 odd:bg-slate-900/30 even:bg-slate-800/30 hover:bg-blue-500/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
+                        <td className="px-5 py-3 text-white font-medium">{e.repName}</td>
+                        <td className="px-5 py-3 text-slate-300">{e.customerName || '—'}</td>
+                        <td className="px-5 py-3"><span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage || e.type}</span></td>
+                        <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${e.amount.toLocaleString()}</td>
+                        <td className="px-5 py-3"><PayrollStatusBadge status={e.status} /></td>
+                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(e.date)}</td>
+                        <td className="px-5 py-3">
+                          {e.status === 'Pending' && (
+                            <button onClick={() => markPaid(e.id)}
+                              className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Mark Paid
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredPayroll.length === 0 && (
+                      <tr><td colSpan={7} className="px-5 py-10 text-center">
+                        <div className="flex justify-center">
+                          <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                            {/* Illustration — filter funnel with empty list */}
+                            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                              {/* Funnel */}
+                              <path d="M14 18 L66 18 L46 42 L46 62 L34 56 L34 42 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5" strokeLinejoin="round"/>
+                              {/* Empty lines below funnel */}
+                              <line x1="20" y1="70" x2="36" y2="70" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                              <line x1="20" y1="76" x2="28" y2="76" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                              {/* X on funnel */}
+                              <line x1="35" y1="28" x2="45" y2="38" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
+                              <line x1="45" y1="28" x2="35" y2="38" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
+                            </svg>
+                            <p className="text-slate-200 text-sm font-semibold leading-snug">No entries match your filters</p>
+                            <p className="text-slate-500 text-xs leading-relaxed">Try adjusting the rep or status filters to find the payroll entries you need.</p>
+                          </div>
+                        </div>
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {filteredPayroll.length > 0 && (
+                <PaginationBar totalResults={payrollTotal} startIdx={payrollStart} endIdx={payrollEnd}
+                  currentPage={payrollSafePage} totalPages={payrollTotalPages} rowsPerPage={payrollPageSize}
+                  onPageChange={setPayrollPage} onRowsPerPageChange={(n) => { setPayrollPageSize(n); setPayrollPage(1); }} />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Reimbursements tab */}
+        {tab === 'reimbursements' && (
+          <div key="reimbursements" className="animate-tab-enter space-y-3">
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <select value={reimbRepFilter} onChange={(e) => { setReimbRepFilter(e.target.value); setReimbPage(1); }} className={selectCls}>
+                <option value="">All reps</option>
+                {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+              <select value={reimbStatusFilter} onChange={(e) => { setReimbStatusFilter(e.target.value); setReimbPage(1); }} className={selectCls}>
+                <option value="">All statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Denied">Denied</option>
+              </select>
+            </div>
+            <div className="relative card-surface rounded-2xl overflow-hidden">
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
+              <div className="overflow-x-auto scroll-smooth">
+                <table className="w-full text-sm">
+                  <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                    <tr className="border-b border-slate-800">
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Rep</th>
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Description</th>
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Amount</th>
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Date</th>
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Receipt</th>
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Status</th>
+                      <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedReimbs.map((r, i) => (
+                      <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 odd:bg-slate-900/30 even:bg-slate-800/30 hover:bg-blue-500/[0.03] hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150`}>
+                        <td className="px-5 py-3 text-white font-medium">{r.repName}</td>
+                        <td className="px-5 py-3 text-slate-300">{r.description}</td>
+                        <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(r.date)}</td>
+                        <td className="px-5 py-3 text-slate-400 text-xs">{r.receiptName || '—'}</td>
+                        <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
+                        <td className="px-5 py-3">
+                          {r.status === 'Pending' && (
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => approveReim(r.id)}
+                                className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Approve
+                              </button>
+                              <button onClick={() => rejectReim(r.id)}
+                                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 border border-red-700/30 px-2 py-1 rounded-lg transition-colors">
+                                <XCircle className="w-3.5 h-3.5" />
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredReimbs.length === 0 && (
+                      <tr><td colSpan={7} className="px-5 py-10 text-center">
+                        <div className="flex justify-center">
+                          <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                            {/* Illustration — filter funnel with empty receipt */}
+                            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+                              {/* Funnel */}
+                              <path d="M12 16 L58 16 L40 38 L40 56 L30 50 L30 38 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5" strokeLinejoin="round"/>
+                              {/* Receipt stub to the right */}
+                              <rect x="52" y="34" width="18" height="24" rx="3" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                              <line x1="56" y1="41" x2="66" y2="41" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
+                              <line x1="56" y1="46" x2="62" y2="46" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
+                              {/* X on funnel */}
+                              <line x1="28" y1="23" x2="36" y2="31" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
+                              <line x1="36" y1="23" x2="28" y2="31" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
+                            </svg>
+                            <p className="text-slate-200 text-sm font-semibold leading-snug">No reimbursements match your filters</p>
+                            <p className="text-slate-500 text-xs leading-relaxed">Try adjusting the rep or status filters to find the reimbursement requests you need.</p>
+                          </div>
+                        </div>
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {filteredReimbs.length > 0 && (
+                <PaginationBar totalResults={reimbTotal} startIdx={reimbStart} endIdx={reimbEnd}
+                  currentPage={reimbSafePage} totalPages={reimbTotalPages} rowsPerPage={reimbPageSize}
+                  onPageChange={setReimbPage} onRowsPerPageChange={(n) => { setReimbPageSize(n); setReimbPage(1); }} />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* By Rep tab */}
+        {tab === 'by-rep' && (
+          <div key="by-rep" className="animate-tab-enter card-surface rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto scroll-smooth">
+              <table className="w-full text-sm">
+                <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                  <tr className="border-b border-slate-800">
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Rep</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Paid</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Pending</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Draft</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Reimbs Pending</th>
+                    <th className="text-left px-5 py-3 text-slate-400 font-medium whitespace-nowrap">Total Pipeline</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {repSummary.map((s, i) => (
+                    <tr key={s.rep.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} border-b border-slate-800/50 odd:bg-slate-900/30 even:bg-slate-800/30 hover:bg-blue-500/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
+                      <td className="px-5 py-3">
+                        <div>
+                          <p className="text-white font-medium">{s.rep.name}</p>
+                          <p className="text-slate-500 text-xs capitalize">{s.rep.repType}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${s.paid.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-yellow-400 font-medium whitespace-nowrap">${s.pending.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-slate-400 whitespace-nowrap">${s.draft.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-violet-400 whitespace-nowrap">{s.reimbPending > 0 ? `$${s.reimbPending.toLocaleString()}` : '—'}</td>
+                      <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">${s.total.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {repSummary.length === 0 && (
+                    <tr><td colSpan={6} className="px-5 py-12 text-center text-slate-400 text-sm">No reps found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+// ── Main export ────────────────────────────────────────────────────────────────
+
+export default function EarningsPage() {
+  const { currentRole } = useApp();
+  const isHydrated = useIsHydrated();
+  useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
+
+  if (!isHydrated) return <EarningsSkeleton />;
+  if (currentRole === 'admin') return <AdminFinancialsView />;
+  return <RepEarningsView />;
+}
+
