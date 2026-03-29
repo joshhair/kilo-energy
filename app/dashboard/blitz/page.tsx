@@ -263,6 +263,103 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () =>
   );
 }
 
+function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => void; onSubmitted: () => void; userId: string }) {
+  const [name, setName] = useState('');
+  const [location, setLocation] = useState('');
+  const [housing, setHousing] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const [headcount, setHeadcount] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async () => {
+    setTouched(true);
+    if (!name.trim() || !startDate || !endDate) return;
+    setSaving(true);
+    try {
+      await fetch('/api/blitz-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestedById: userId,
+          name: name.trim(),
+          location: location.trim(),
+          startDate,
+          endDate,
+          housing: housing.trim(),
+          notes: notes.trim(),
+          expectedHeadcount: parseInt(headcount) || 0,
+        }),
+      });
+      toast('Blitz request submitted for approval');
+      onSubmitted();
+      onClose();
+    } catch {
+      toast('Failed to submit request', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-amber-400" /> Request a Blitz</h2>
+        <p className="text-sm text-zinc-500 mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Blitz Name *</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-zinc-700'}`} placeholder="e.g. Austin Spring Blitz" />
+            {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Name is required</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Location</label>
+              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Austin, TX" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Expected Headcount</label>
+              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. 8" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Housing Preferences</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Airbnb near downtown" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" placeholder="Why this blitz, what's the opportunity..." />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Tent className="w-4 h-4" />}
+            {saving ? 'Submitting...' : 'Submit Request'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BlitzPage() {
   const { currentRole, currentRepId, reps } = useApp();
   const hydrated = useIsHydrated();
@@ -276,6 +373,8 @@ export default function BlitzPage() {
   const [statusFilter, setStatusFilter] = useState<BlitzStatus | 'all'>('all');
   const [search, setSearch] = useState('');
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
+  const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({ canRequestBlitz: false, canCreateBlitz: false });
+  const [showRequestBlitz, setShowRequestBlitz] = useState(false);
   const { toast } = useToast();
 
   const loadData = () => {
@@ -290,6 +389,14 @@ export default function BlitzPage() {
   };
 
   useEffect(() => { loadData(); }, [isAdmin]);
+
+  // Fetch rep blitz permissions
+  useEffect(() => {
+    if (isAdmin || !currentRepId) return;
+    fetch(`/api/users/${currentRepId}`).then((r) => r.json()).then((u) => {
+      if (u) setUserPerms({ canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false });
+    }).catch(() => {});
+  }, [isAdmin, currentRepId]);
 
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
@@ -381,11 +488,18 @@ export default function BlitzPage() {
           </h1>
           <p className="text-sm text-zinc-500 mt-1">Manage blitzes, track participation and profitability</p>
         </div>
-        {(isAdmin) && (
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20">
-            <Plus className="w-4 h-4" /> New Blitz
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {(isAdmin || userPerms.canCreateBlitz) && (
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20">
+              <Plus className="w-4 h-4" /> New Blitz
+            </button>
+          )}
+          {!isAdmin && !userPerms.canCreateBlitz && userPerms.canRequestBlitz && (
+            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800 text-zinc-300 text-sm font-semibold rounded-xl border border-zinc-700 hover:bg-zinc-700 hover:text-white transition-colors">
+              <Plus className="w-4 h-4" /> Request Blitz
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -582,6 +696,15 @@ export default function BlitzPage() {
           onCreated={loadData}
           userId={currentRepId ?? 'admin2'}
           reps={reps}
+        />
+      )}
+
+      {/* Request Blitz modal */}
+      {showRequestBlitz && (
+        <RequestBlitzModal
+          onClose={() => setShowRequestBlitz(false)}
+          onSubmitted={loadData}
+          userId={currentRepId ?? ''}
         />
       )}
     </div>
