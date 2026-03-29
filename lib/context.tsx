@@ -464,7 +464,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return best;
       }, -1);
       if (activeIdx === -1) {
-        // No existing version — create one
+        // No existing version — create one and persist
         const newVersion: InstallerPricingVersion = {
           id: `ipv_${installer.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
           installer,
@@ -473,10 +473,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
           effectiveTo: null,
           rates: { type: 'flat', closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}) },
         };
+        const instId = idMaps.installerNameToId[installer];
+        if (instId) {
+          fetch('/api/installer-pricing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ installerId: instId, label: 'v1', effectiveFrom: '2020-01-01', rateType: 'flat', tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW, kiloPerW: baseline.kiloPerW }] }),
+          }).catch(console.error);
+        }
         return [...prev, newVersion];
       }
       const existing = prev[activeIdx];
       if (!existing) return prev;
+      // Persist tier update to DB
+      fetch(`/api/installer-pricing/${existing.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW ?? null, kiloPerW: baseline.kiloPerW }] }),
+      }).catch(console.error);
       return prev.map((v, i) =>
         i === activeIdx
           ? { ...v, rates: { type: 'flat' as const, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}) } }
@@ -505,11 +519,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setInstallerPricingVersions((prev) => prev.map((v) => v.id === id ? { ...v, ...updates } : v));
 
   const createNewInstallerVersion = (installer: string, label: string, effectiveFrom: string, rates: InstallerRates) => {
+    const prevDate = new Date(effectiveFrom);
+    prevDate.setDate(prevDate.getDate() - 1);
+    const effectiveTo = prevDate.toISOString().split('T')[0];
+
+    // Persist to DB
+    const instId = idMaps.installerNameToId[installer];
+    if (instId) {
+      const tiers = rates.type === 'tiered'
+        ? rates.bands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW, closerPerW: b.closerPerW, setterPerW: b.setterPerW, kiloPerW: b.kiloPerW }))
+        : [{ minKW: 0, closerPerW: rates.closerPerW, setterPerW: rates.setterPerW, kiloPerW: rates.kiloPerW }];
+      fetch('/api/installer-pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ installerId: instId, label, effectiveFrom, rateType: rates.type, tiers, closePreviousForInstaller: true, closePreviousEffectiveTo: effectiveTo }),
+      }).catch(console.error);
+    }
+
     setInstallerPricingVersions((prev) => {
-      // Close any currently active version by setting effectiveTo to the day before effectiveFrom
-      const prevDate = new Date(effectiveFrom);
-      prevDate.setDate(prevDate.getDate() - 1);
-      const effectiveTo = prevDate.toISOString().split('T')[0];
       const newId = `ipv_${installer.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
       return [
         ...prev.map((v) =>
@@ -580,30 +607,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const getInstallerPrepaidOptions = (installer: string) => installerPrepaidOptions[installer] ?? [];
-  const addInstallerPrepaidOption = (installer: string, option: string) =>
+  const addInstallerPrepaidOption = (installer: string, option: string) => {
     setInstallerPrepaidOptions((prev) => {
       const current = prev[installer] ?? [];
       if (current.includes(option.trim())) return prev;
       return { ...prev, [installer]: [...current, option.trim()] };
     });
-  const updateInstallerPrepaidOption = (installer: string, oldName: string, newName: string) =>
+    const instId = idMaps.installerNameToId[installer];
+    if (instId) {
+      fetch('/api/prepaid-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ installerId: instId, name: option.trim() }),
+      }).catch(console.error);
+    }
+  };
+  const updateInstallerPrepaidOption = (installer: string, oldName: string, newName: string) => {
     setInstallerPrepaidOptions((prev) => {
       const current = prev[installer] ?? [];
       return { ...prev, [installer]: current.map((o) => o === oldName ? newName.trim() : o) };
     });
-  const removeInstallerPrepaidOption = (installer: string, option: string) =>
+    // Find and update by installer+oldName (need to query DB for the ID)
+    const instId = idMaps.installerNameToId[installer];
+    if (instId) {
+      fetch(`/api/prepaid-options/by-name?installerId=${instId}&name=${encodeURIComponent(oldName)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName.trim() }) }).catch(console.error);
+    }
+  };
+  const removeInstallerPrepaidOption = (installer: string, option: string) => {
     setInstallerPrepaidOptions((prev) => {
       const current = prev[installer] ?? [];
       const filtered = current.filter((o) => o !== option);
       if (filtered.length === 0) { const next = { ...prev }; delete next[installer]; return next; }
       return { ...prev, [installer]: filtered };
     });
+    const instId = idMaps.installerNameToId[installer];
+    if (instId) {
+      fetch(`/api/prepaid-options/by-name?installerId=${instId}&name=${encodeURIComponent(option)}`, { method: 'DELETE' }).catch(console.error);
+    }
+  };
 
   const updateInstallerPayConfig = (installer: string, pct: number) => {
     setInstallerPayConfigs((prev) => ({
       ...prev,
       [installer]: { installPayPct: Math.max(0, Math.min(100, pct)) },
     }));
+    // Persist to DB
+    const instId = idMaps.installerNameToId[installer];
+    if (instId) {
+      fetch(`/api/installers/${instId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ installPayPct: Math.max(0, Math.min(100, pct)) }),
+      }).catch(console.error);
+    }
   };
 
   const deleteInstaller = (name: string) => {
