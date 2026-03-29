@@ -444,11 +444,16 @@ export default function BlitzDetailPage() {
                 <thead><tr className="border-b border-zinc-800 text-xs text-zinc-500 uppercase tracking-wider">
                   <th className="text-left px-4 py-3">Rep</th>
                   <th className="text-left px-4 py-3">Status</th>
+                  <th className="text-right px-4 py-3">Deals</th>
+                  <th className="text-right px-4 py-3">kW</th>
                   <th className="text-left px-4 py-3">Attendance</th>
                   {isAdmin && <th className="text-right px-4 py-3">Actions</th>}
                 </tr></thead>
                 <tbody>
-                  {blitz.participants.map((p: any, idx: number) => (
+                  {blitz.participants.map((p: any, idx: number) => {
+                    const repDeals = blitz.projects?.filter((proj: any) => proj.closer?.id === p.user.id) ?? [];
+                    const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
+                    return (
                     <tr key={p.id} className={`border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 transition-colors ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
                       <td className="px-4 py-3 text-white font-medium">{p.user.firstName} {p.user.lastName}</td>
                       <td className="px-4 py-3">
@@ -456,6 +461,8 @@ export default function BlitzDetailPage() {
                           {p.joinStatus}
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-right text-zinc-300 tabular-nums">{repDeals.length || <span className="text-zinc-600">—</span>}</td>
+                      <td className="px-4 py-3 text-right text-zinc-300 tabular-nums">{repKW > 0 ? repKW.toFixed(1) : <span className="text-zinc-600">—</span>}</td>
                       <td className="px-4 py-3">
                         {isAdmin ? (
                           <select value={p.attendanceStatus ?? ''} onChange={(e) => handleUpdateAttendance(p.user.id, e.target.value || null)} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
@@ -474,7 +481,8 @@ export default function BlitzDetailPage() {
                         </td>
                       )}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
