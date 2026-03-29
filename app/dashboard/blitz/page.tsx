@@ -358,15 +358,14 @@ export default function BlitzPage() {
 
       {/* Tabs */}
       {isAdmin && (
-        <div className="flex gap-1 bg-zinc-900/60 rounded-lg p-1 w-fit">
-          <button onClick={() => setTab('blitzes')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${tab === 'blitzes' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            Blitzes
+        <div className="flex gap-0.5 border-b border-zinc-800/50">
+          <button onClick={() => setTab('blitzes')} className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === 'blitzes' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+            Blitzes ({filteredBlitzes.length})
+            {tab === 'blitzes' && <div className="absolute bottom-0 left-1 right-1 h-0.5 bg-blue-500 rounded-full" />}
           </button>
-          <button onClick={() => setTab('requests')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors relative ${tab === 'requests' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            Requests
-            {pendingRequests.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{pendingRequests.length}</span>
-            )}
+          <button onClick={() => setTab('requests')} className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === 'requests' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+            Requests {pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center w-4.5 h-4.5 text-[10px] font-bold bg-red-500 text-white rounded-full px-1">{pendingRequests.length}</span>}
+            {tab === 'requests' && <div className="absolute bottom-0 left-1 right-1 h-0.5 bg-blue-500 rounded-full" />}
           </button>
         </div>
       )}
