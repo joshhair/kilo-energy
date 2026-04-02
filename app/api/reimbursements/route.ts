@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
+import { requireAuth } from '../../../lib/api-auth';
 
 // POST /api/reimbursements — Create a reimbursement request
 export async function POST(req: NextRequest) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   const reimbursement = await prisma.reimbursement.create({
     data: {

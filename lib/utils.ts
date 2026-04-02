@@ -1,3 +1,30 @@
+/** Read a JSON value from localStorage with a fallback default. */
+export function getCustomConfig<T>(key: string, defaultValue: T): T {
+  if (typeof window === 'undefined') return defaultValue;
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch { return defaultValue; }
+}
+
+/** Generate and trigger a CSV download from an array of objects. */
+export function downloadCSV(filename: string, headers: string[], rows: string[][]) {
+  const escape = (v: string) => {
+    if (v.includes(',') || v.includes('"') || v.includes('\n')) {
+      return `"${v.replace(/"/g, '""')}"`;
+    }
+    return v;
+  };
+  const csv = [headers.map(escape).join(','), ...rows.map((r) => r.map(escape).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function formatDate(dateStr: string): string {
   if (!dateStr) return '—';
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -7,6 +34,10 @@ export function formatDate(dateStr: string): string {
 
 export function formatCurrency(amount: number): string {
   return `$${Math.round(amount).toLocaleString('en-US')}`;
+}
+
+export function fmt$(amount: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount || 0);
 }
 
 export function formatKW(kw: number): string {

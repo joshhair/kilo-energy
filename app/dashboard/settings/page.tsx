@@ -1,18 +1,22 @@
 'use client';
 
 import React, { useState, useRef, useEffect, Fragment, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { SOLARTECH_FAMILIES, SolarTechFamily, getTrainerOverrideRate, TrainerAssignment, TrainerOverrideTier, InstallerRates, FINANCERS, ProductCatalogInstallerConfig, makeProductCatalogTiers, ProductCatalogTier, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { getCustomConfig } from '../../../lib/utils';
 import {
   Layers, Building2, Landmark, BookOpen, Shield, CreditCard, Download, FileSpreadsheet,
   Plus, Pencil, Check, X, EyeOff, Eye, Trash2, Settings, AlertTriangle, Search,
   ChevronRight, History, GitBranch, Copy, ChevronDown, ChevronUp, Sliders, DollarSign,
-  UserPlus, ListChecks, CheckSquare, Square, Tent,
+  UserPlus, ListChecks, CheckSquare, Square, Tent, Users, Handshake,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { PaginationBar } from '../components/PaginationBar';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
 
@@ -20,8 +24,10 @@ type SettingsSection =
   | 'trainers'
   | 'installers' | 'financers' | 'baselines'
   | 'blitz-permissions'
+  | 'sub-dealers'
   | 'export'
-  | 'users';
+  | 'users'
+  | 'customization';
 
 type NavItem = { id: SettingsSection; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { group: string; items: NavItem[] };
@@ -32,6 +38,7 @@ const NAV: NavGroup[] = [
     items: [
       { id: 'trainers', label: 'Trainer Overrides', icon: Layers },
       { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
+      { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
     ],
   },
   {
@@ -45,6 +52,7 @@ const NAV: NavGroup[] = [
   {
     group: 'System',
     items: [
+      { id: 'customization', label: 'Customization', icon: Sliders },
       { id: 'export', label: 'Export', icon: Download },
       { id: 'users', label: 'Admin Users', icon: Shield },
     ],
@@ -56,31 +64,34 @@ const ALL_NAV_ITEMS = NAV.flatMap(g => g.items);
 
 // ─── Blitz Permissions Component ──────────────────────────────────────────────
 
-function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: string; repType: string }> }) {
+function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: string; repType: string; canRequestBlitz?: boolean; canCreateBlitz?: boolean }> }) {
   const { toast } = useToast();
   const [permissions, setPermissions] = useState<Record<string, { canRequestBlitz: boolean; canCreateBlitz: boolean }>>({});
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'All' | 'Closer' | 'Setter' | 'Both'>('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; action: 'grant' | 'revoke' }>({ open: false, action: 'grant' });
 
+  // Debounce search input (200ms)
   useEffect(() => {
-    fetch('/api/data').then((r) => r.json()).then((data) => {
-      // The /api/data response has reps but no permission fields — fetch users directly
-      // For now use a simple endpoint
-      fetch('/api/blitzes').then(() => {});  // warm up
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 200);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, roleFilter]);
+
+  // Initialize permissions from context data (no N+1 fetches)
+  useEffect(() => {
+    const perms: Record<string, { canRequestBlitz: boolean; canCreateBlitz: boolean }> = {};
+    reps.forEach((r) => {
+      perms[r.id] = { canRequestBlitz: r.canRequestBlitz ?? false, canCreateBlitz: r.canCreateBlitz ?? false };
     });
-    // Fetch permissions from users
-    Promise.all(
-      reps.map((r) =>
-        fetch(`/api/users/${r.id}`).then((res) => res.ok ? res.json() : null).catch(() => null)
-      )
-    ).then((results) => {
-      const perms: Record<string, { canRequestBlitz: boolean; canCreateBlitz: boolean }> = {};
-      results.forEach((u, i) => {
-        if (u) perms[reps[i].id] = { canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false };
-        else perms[reps[i].id] = { canRequestBlitz: false, canCreateBlitz: false };
-      });
-      setPermissions(perms);
-      setLoading(false);
-    });
+    setPermissions(perms);
+    setLoading(false);
   }, [reps]);
 
   const togglePermission = async (repId: string, field: 'canRequestBlitz' | 'canCreateBlitz', value: boolean) => {
@@ -90,58 +101,353 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [field]: value }),
     });
-    toast(`Permission updated`);
+    toast('Permission updated');
   };
 
-  if (loading) return <div className="text-zinc-500 text-sm py-8 text-center">Loading permissions...</div>;
+  // Role counts
+  const roleCounts = { All: reps.length, Closer: 0, Setter: 0, Both: 0 };
+  reps.forEach((r) => {
+    const rt = r.repType?.toLowerCase() ?? '';
+    if (rt === 'closer') roleCounts.Closer++;
+    else if (rt === 'setter') roleCounts.Setter++;
+    else if (rt === 'both') roleCounts.Both++;
+  });
+
+  // Filter reps
+  const filteredReps = reps.filter((r) => {
+    const matchesSearch = !debouncedSearch || r.name.toLowerCase().includes(debouncedSearch.toLowerCase());
+    const rt = r.repType?.toLowerCase() ?? '';
+    const matchesRole = roleFilter === 'All' || rt === roleFilter.toLowerCase();
+    return matchesSearch && matchesRole;
+  });
+
+  // Summary stats
+  const canRequestCount = filteredReps.filter((r) => permissions[r.id]?.canRequestBlitz).length;
+  const canCreateCount = filteredReps.filter((r) => permissions[r.id]?.canCreateBlitz).length;
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredReps.length / rowsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIdx = (safePage - 1) * rowsPerPage;
+  const endIdx = Math.min(startIdx + rowsPerPage, filteredReps.length);
+  const pageReps = filteredReps.slice(startIdx, endIdx);
+
+  // Bulk actions
+  const executeBulk = async (action: 'grant' | 'revoke') => {
+    const value = action === 'grant';
+    const updates: Promise<void>[] = [];
+    const newPerms = { ...permissions };
+    filteredReps.forEach((r) => {
+      newPerms[r.id] = { canRequestBlitz: value, canCreateBlitz: value };
+      updates.push(
+        fetch(`/api/users/${r.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ canRequestBlitz: value, canCreateBlitz: value }),
+        }).then(() => {})
+      );
+    });
+    setPermissions(newPerms);
+    await Promise.all(updates);
+    toast(`${action === 'grant' ? 'Granted' : 'Revoked'} permissions for ${filteredReps.length} reps`);
+  };
+
+  // Initials + avatar color
+  const getInitials = (name: string) => name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+  const avatarColor = (repType: string) => {
+    const rt = repType?.toLowerCase() ?? '';
+    if (rt === 'closer') return 'bg-purple-600';
+    if (rt === 'setter') return 'bg-blue-600';
+    if (rt === 'both') return 'bg-teal-600';
+    return 'bg-slate-600';
+  };
+  const roleBadge = (repType: string) => {
+    const rt = repType?.toLowerCase() ?? '';
+    if (rt === 'closer') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Closer</span>;
+    if (rt === 'setter') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">Setter</span>;
+    if (rt === 'both') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300">Both</span>;
+    return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-400">{repType || 'N/A'}</span>;
+  };
+
+  if (loading) return <div className="text-slate-500 text-sm py-8 text-center">Loading permissions...</div>;
 
   return (
-    <div key="blitz-permissions" className="animate-tab-enter max-w-xl">
+    <div key="blitz-permissions" className="animate-tab-enter max-w-3xl">
       <h2 className="text-lg font-bold text-white mb-1">Blitz Permissions</h2>
-      <p className="text-sm text-zinc-500 mb-5">Control which reps can request or create blitzes.</p>
+      <p className="text-sm text-slate-500 mb-5">Control which reps can request or create blitzes.</p>
 
-      <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden">
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <input
+          type="text"
+          placeholder="Search reps..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none input-focus-glow transition-colors"
+        />
+      </div>
+      {searchTerm && (
+        <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full mb-3 inline-block">{filteredReps.length} result{filteredReps.length !== 1 ? 's' : ''}</span>
+      )}
+
+      {/* Role filter tabs */}
+      <div className="flex items-center gap-1 mb-4">
+        {(['All', 'Closer', 'Setter', 'Both'] as const).map((role) => (
+          <button
+            key={role}
+            onClick={() => setRoleFilter(role)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              roleFilter === role
+                ? 'bg-slate-700 text-white'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            {role} <span className="ml-1 text-slate-500">{roleCounts[role]}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Summary stats + bulk actions */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-4 text-xs text-slate-400">
+          <span><strong className="text-blue-400">{canRequestCount}</strong> can request</span>
+          <span><strong className="text-emerald-400">{canCreateCount}</strong> can create</span>
+          <span><strong className="text-slate-300">{filteredReps.length}</strong> total reps</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setConfirmDialog({ open: true, action: 'grant' })}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 transition-colors"
+          >
+            Grant All
+          </button>
+          <button
+            onClick={() => setConfirmDialog({ open: true, action: 'revoke' })}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+          >
+            Revoke All
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="card-surface rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-800 text-xs text-zinc-500 uppercase tracking-wider">
+          <thead className="table-header-frost">
+            <tr className="border-b border-slate-800 text-xs text-slate-500 uppercase tracking-wider">
               <th className="text-left px-4 py-3">Rep</th>
               <th className="text-center px-4 py-3">Can Request</th>
               <th className="text-center px-4 py-3">Can Create</th>
             </tr>
           </thead>
           <tbody>
-            {reps.map((rep, idx) => {
+            {pageReps.length === 0 ? (
+              <tr><td colSpan={3} className="text-center py-8 text-slate-500 text-sm">No reps match your filters.</td></tr>
+            ) : pageReps.map((rep) => {
               const perms = permissions[rep.id] ?? { canRequestBlitz: false, canCreateBlitz: false };
               return (
-                <tr key={rep.id} className={`border-b border-zinc-800/50 last:border-0 ${idx % 2 === 0 ? 'bg-zinc-900/20' : ''}`}>
-                  <td className="px-4 py-3 text-white font-medium">{rep.name}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => togglePermission(rep.id, 'canRequestBlitz', !perms.canRequestBlitz)}
-                      className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canRequestBlitz ? 'bg-blue-600' : 'bg-zinc-700'}`}
-                    >
-                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canRequestBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                    </button>
+                <tr key={rep.id} className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/40 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${avatarColor(rep.repType)}`}>
+                        {getInitials(rep.name)}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium text-sm">{rep.name}</span>
+                        <span className="mt-0.5">{roleBadge(rep.repType)}</span>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => togglePermission(rep.id, 'canCreateBlitz', !perms.canCreateBlitz)}
-                      className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canCreateBlitz ? 'bg-emerald-600' : 'bg-zinc-700'}`}
-                    >
-                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canCreateBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => togglePermission(rep.id, 'canRequestBlitz', !perms.canRequestBlitz)}
+                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canRequestBlitz ? 'bg-blue-600' : 'bg-slate-700'}`}
+                      >
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canRequestBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      </button>
+                      <span className={`text-[10px] font-medium ${perms.canRequestBlitz ? 'text-blue-400' : 'text-slate-500'}`}>
+                        {perms.canRequestBlitz ? 'On' : 'Off'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => togglePermission(rep.id, 'canCreateBlitz', !perms.canCreateBlitz)}
+                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canCreateBlitz ? 'bg-emerald-600' : 'bg-slate-700'}`}
+                      >
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canCreateBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      </button>
+                      <span className={`text-[10px] font-medium ${perms.canCreateBlitz ? 'text-emerald-400' : 'text-slate-500'}`}>
+                        {perms.canCreateBlitz ? 'On' : 'Off'}
+                      </span>
+                    </div>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        {filteredReps.length > rowsPerPage && (
+          <PaginationBar
+            totalResults={filteredReps.length}
+            startIdx={startIdx + 1}
+            endIdx={endIdx}
+            currentPage={safePage}
+            totalPages={totalPages}
+            rowsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={setRowsPerPage}
+          />
+        )}
       </div>
 
-      <div className="mt-4 text-xs text-zinc-600 space-y-1">
-        <p><strong className="text-zinc-400">Can Request:</strong> Rep can submit blitz requests for admin approval</p>
-        <p><strong className="text-zinc-400">Can Create:</strong> Rep can create and manage blitzes directly</p>
+      <div className="mt-4 text-xs text-slate-600 space-y-1">
+        <p><strong className="text-slate-400">Can Request:</strong> Rep can submit blitz requests for admin approval</p>
+        <p><strong className="text-slate-400">Can Create:</strong> Rep can create and manage blitzes directly</p>
       </div>
+
+      {/* Bulk action confirm dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        onConfirm={() => { executeBulk(confirmDialog.action); setConfirmDialog({ ...confirmDialog, open: false }); }}
+        title={confirmDialog.action === 'grant' ? 'Grant All Permissions' : 'Revoke All Permissions'}
+        message={`This will ${confirmDialog.action === 'grant' ? 'grant' : 'revoke'} both Request and Create permissions for ${filteredReps.length} visible rep${filteredReps.length !== 1 ? 's' : ''}. Continue?`}
+        confirmLabel={confirmDialog.action === 'grant' ? 'Grant All' : 'Revoke All'}
+        danger={confirmDialog.action === 'revoke'}
+      />
+    </div>
+  );
+}
+
+// ─── Sub-Dealers Section ─────────────────────────────────────────────────────
+
+function SubDealersSection() {
+  const { subDealers, addSubDealer, removeSubDealer, projects } = useApp();
+  const { toast } = useToast();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+
+  const handleAdd = () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      toast('First and last name are required', 'error');
+      return;
+    }
+    if (email.trim() && subDealers.some((sd) => sd.email.toLowerCase() === email.trim().toLowerCase())) {
+      toast('A sub-dealer with this email already exists', 'error');
+      return;
+    }
+    addSubDealer(firstName, lastName, email, phone);
+    toast(`Added sub-dealer ${firstName.trim()} ${lastName.trim()}`, 'success');
+    setFirstName('');
+    setLastName('');
+    setEmail('');
+    setPhone('');
+  };
+
+  return (
+    <div key="sub-dealers" className="animate-tab-enter max-w-xl">
+      <SectionHeader title="Sub-Dealers" subtitle="Manage sub-dealer accounts and track their deals" />
+
+      {/* Add sub-dealer form */}
+      <div className="card-surface rounded-2xl p-5 mb-4">
+        <h2 className="text-white font-semibold mb-3">Add Sub-Dealer</h2>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <input
+            type="text" placeholder="First name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+          />
+          <input
+            type="text" placeholder="Last name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <input
+            type="email" placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+          />
+          <input
+            type="tel" placeholder="Phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+          />
+        </div>
+        <button
+          onClick={handleAdd}
+          disabled={!firstName.trim() || !lastName.trim()}
+          className="btn-primary text-white text-sm px-4 py-2 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add Sub-Dealer
+        </button>
+      </div>
+
+      {/* Sub-dealer list */}
+      <div className="card-surface rounded-2xl">
+        <div className="px-5 py-3.5 border-b border-slate-800">
+          <p className="text-white font-semibold text-sm">{subDealers.length} Sub-Dealer{subDealers.length !== 1 ? 's' : ''}</p>
+        </div>
+        {subDealers.length === 0 ? (
+          <div className="px-5 py-8 text-center">
+            <Handshake className="w-6 h-6 text-slate-600 mx-auto mb-2" />
+            <p className="text-slate-500 text-xs">No sub-dealers added yet</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-800/60">
+            {subDealers.map((sd) => {
+              const dealCount = projects.filter((p) => p.subDealerId === sd.id).length;
+              return (
+                <div key={sd.id} className="px-5 py-3 flex items-center justify-between gap-4 hover:bg-slate-800/30 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-medium truncate">{sd.name}</p>
+                    <p className="text-slate-500 text-xs truncate">{sd.email}{sd.phone ? ` \u00b7 ${sd.phone}` : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-slate-500 text-xs tabular-nums">{dealCount} deal{dealCount !== 1 ? 's' : ''}</span>
+                    <button
+                      onClick={() => setConfirmRemove(sd.id)}
+                      className="text-slate-600 hover:text-red-400 transition-colors p-1"
+                      title="Remove sub-dealer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={!!confirmRemove}
+        onClose={() => setConfirmRemove(null)}
+        onConfirm={() => {
+          if (confirmRemove) {
+            const sd = subDealers.find((s) => s.id === confirmRemove);
+            removeSubDealer(confirmRemove);
+            toast(`Removed sub-dealer ${sd?.name ?? ''}`, 'success');
+          }
+          setConfirmRemove(null);
+        }}
+        title="Remove Sub-Dealer"
+        message="Are you sure you want to remove this sub-dealer? Their deals will remain in the system."
+        confirmLabel="Remove"
+        danger
+      />
     </div>
   );
 }
@@ -168,7 +474,7 @@ function SettingsPageInner() {
     updateProductCatalogTier, removeProductCatalogProduct,
     installerPrepaidOptions, getInstallerPrepaidOptions, addInstallerPrepaidOption, updateInstallerPrepaidOption, removeInstallerPrepaidOption,
     payrollEntries,
-    productCatalogPricingVersions, createNewProductCatalogVersion,
+    productCatalogPricingVersions, createNewProductCatalogVersion, deleteProductCatalogPricingVersions,
     installerPayConfigs, updateInstallerPayConfig,
   } = useApp();
 
@@ -177,7 +483,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'installers', 'financers', 'baselines', 'export', 'users'];
+  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'installers', 'financers', 'baselines', 'customization', 'export', 'users'];
   const paramSection = searchParams.get('section') as SettingsSection | null;
   const initialSection: SettingsSection = paramSection && validSections.includes(paramSection) ? paramSection : 'trainers';
 
@@ -231,8 +537,9 @@ function SettingsPageInner() {
 
   // ── Baseline editing state ───────────────────────────────────────────────────
   const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
-  const [editInstallerVals, setEditInstallerVals] = useState({ closerPerW: '', setterPerW: '', kiloPerW: '' });
+  const [editInstallerVals, setEditInstallerVals] = useState({ closerPerW: '', setterPerW: '', kiloPerW: '', subDealerPerW: '' });
   const [newInstallerBaseline, setNewInstallerBaseline] = useState('');
+  const [showSubDealerRates, setShowSubDealerRates] = useState(false);
 
   // ── Admin users state ───────────────────────────────────────────────────────
   const [adminUsers, setAdminUsers] = useState([
@@ -290,9 +597,12 @@ function SettingsPageInner() {
 
   // ── Trainer search + sort state ─────────────────────────────────────────
   const [trainerSearch, setTrainerSearch] = useState('');
-  type TrainerSortKey = 'trainee' | 'trainer' | 'deals';
+  type TrainerSortKey = 'trainee' | 'trainer' | 'deals' | 'rate';
   const [trainerSortKey, setTrainerSortKey] = useState<TrainerSortKey>('trainee');
   const [trainerSortDir, setTrainerSortDir] = useState<'asc' | 'desc'>('asc');
+  const [trainerPage, setTrainerPage] = useState(1);
+  const [trainerRowsPerPage, setTrainerRowsPerPage] = useState(25);
+  const trainerSearchRef = useRef<HTMLInputElement>(null);
   const toggleTrainerSort = (key: TrainerSortKey) => {
     if (trainerSortKey === key) {
       setTrainerSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -301,6 +611,18 @@ function SettingsPageInner() {
       setTrainerSortDir('asc');
     }
   };
+
+  // ── "/" shortcut to focus trainer search ────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault();
+        trainerSearchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   // ── Collapsible archived sections state ─────────────────────────────────
   const [archivedInstallersOpen, setArchivedInstallersOpen] = useState(false);
@@ -399,6 +721,16 @@ function SettingsPageInner() {
 
   // ── Baselines sub-tab ────────────────────────────────────────────────────────
   const [baselineTab, setBaselineTab] = useState<string>('standard');
+
+  // ── Customization state (hoisted from IIFE to avoid hooks violation) ──
+  const CUSTOMIZATION_DEFAULT_THRESHOLDS: Record<string, number> = {
+    'New': 5, 'Acceptance': 10, 'Site Survey': 20, 'Design': 30,
+    'Permitting': 50, 'Pending Install': 65, 'Installed': 75,
+  };
+  const [customThresholds, setCustomThresholds] = useState<Record<string, number>>(() =>
+    getCustomConfig('kilo-pipeline-thresholds', CUSTOMIZATION_DEFAULT_THRESHOLDS)
+  );
+  const [thresholdsSaved, setThresholdsSaved] = useState(false);
   const baselineTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [baselineIndicator, setBaselineIndicator] = useState<{ left: number; width: number } | null>(null);
 
@@ -412,7 +744,7 @@ function SettingsPageInner() {
   const [pcFamilyIndicator, setPcFamilyIndicator] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
-    const pcInstallerNames = Object.keys(productCatalogInstallerConfigs);
+    const pcInstallerNames = Object.keys(productCatalogInstallerConfigs).filter((n) => n !== 'SolarTech');
     const allTabs = ['standard', 'solartech', ...pcInstallerNames];
     const idx = allTabs.indexOf(baselineTab);
     const el = baselineTabRefs.current[idx >= 0 ? idx : 0];
@@ -558,9 +890,11 @@ function SettingsPageInner() {
           const k = parseFloat(editInstallerVals.kiloPerW);
           const s = parseFloat(editInstallerVals.setterPerW);
           if (!isNaN(c) && !isNaN(k)) {
+            const sd = parseFloat(editInstallerVals.subDealerPerW);
             updateInstallerBaseline(editingInstaller, {
               closerPerW: c, kiloPerW: k,
               ...(editInstallerVals.setterPerW !== '' && !isNaN(s) ? { setterPerW: s } : {}),
+              ...(editInstallerVals.subDealerPerW !== '' && !isNaN(sd) ? { subDealerPerW: sd } : {}),
             });
           }
           setEditingInstaller(null);
@@ -624,6 +958,12 @@ function SettingsPageInner() {
       if (assignment) {
         deletedEntityRef.current = { type: 'trainer', assignment };
         setTrainerAssignments((prev) => prev.filter((a) => a.id !== id));
+        // Persist delete to DB
+        fetch('/api/trainer-assignments', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        }).catch(console.error);
         toast(`Trainer assignment removed`, 'info', {
           label: 'Undo',
           onClick: () => {
@@ -713,21 +1053,27 @@ function SettingsPageInner() {
         </nav>
       </aside>
 
-      {/* Mobile section picker */}
-      <div className="md:hidden px-4 pt-6 pb-2 border-b border-slate-800 w-full">
-        <select
-          value={section}
-          onChange={(e) => handleSetSection(e.target.value as SettingsSection)}
-          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {NAV.map(({ group, items }) => (
-            <optgroup key={group} label={group}>
-              {items.map(({ id, label }) => (
-                <option key={id} value={id}>{label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+      {/* Mobile horizontal tab bar */}
+      <div className="md:hidden border-b border-slate-800 w-full">
+        <div className="flex items-center gap-1 px-3 pt-4 pb-2 overflow-x-auto scrollbar-hide">
+          {ALL_NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+            const isActive = section === id;
+            return (
+              <button
+                key={id}
+                onClick={() => handleSetSection(id)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${
+                  isActive
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Content panel */}
@@ -773,8 +1119,52 @@ function SettingsPageInner() {
         })()}
 
         {/* ── Trainer Overrides ────────────────────────────────────────────────── */}
-        {section === 'trainers' && (
-          <div key={section} className="animate-tab-enter max-w-2xl space-y-4">
+        {section === 'trainers' && (() => {
+          // Build enriched rows once for stats + filtering + sorting + pagination
+          const enrichedRows = trainerAssignments.map((a) => {
+            const trainee = reps.find((r) => r.id === a.traineeId);
+            const trainer = reps.find((r) => r.id === a.trainerId);
+            const completedDeals = projects.filter((p) => p.repId === a.traineeId || p.setterId === a.traineeId).length;
+            const currentRate = getTrainerOverrideRate(a, completedDeals);
+            const activeTierIndex = a.tiers.findIndex((t) => t.upToDeal === null || completedDeals < t.upToDeal);
+            const tierLabel = activeTierIndex >= 0 ? `Tier ${activeTierIndex + 1} of ${a.tiers.length}` : `Tier ${a.tiers.length}`;
+            return { a, trainee, trainer, completedDeals, currentRate, activeTierIndex, tierLabel };
+          });
+
+          // Stats
+          const uniqueTrainers = new Set(trainerAssignments.map((a) => a.trainerId)).size;
+          const avgRate = enrichedRows.length > 0
+            ? enrichedRows.reduce((sum, r) => sum + r.currentRate, 0) / enrichedRows.length
+            : 0;
+
+          // Filter
+          const filtered = enrichedRows.filter(({ trainee, trainer }) => {
+            if (!trainerSearch) return true;
+            const q = trainerSearch.toLowerCase();
+            return (trainee?.name ?? '').toLowerCase().includes(q) || (trainer?.name ?? '').toLowerCase().includes(q);
+          });
+
+          // Sort
+          const sorted = [...filtered].sort((a, b) => {
+            const dir = trainerSortDir === 'asc' ? 1 : -1;
+            if (trainerSortKey === 'trainee') return dir * (a.trainee?.name ?? '').localeCompare(b.trainee?.name ?? '');
+            if (trainerSortKey === 'trainer') return dir * (a.trainer?.name ?? '').localeCompare(b.trainer?.name ?? '');
+            if (trainerSortKey === 'rate') return dir * (a.currentRate - b.currentRate);
+            return dir * (a.completedDeals - b.completedDeals);
+          });
+
+          // Pagination
+          const totalPages = Math.max(1, Math.ceil(sorted.length / trainerRowsPerPage));
+          const safePage = Math.min(trainerPage, totalPages);
+          const startIdx = (safePage - 1) * trainerRowsPerPage;
+          const endIdx = Math.min(startIdx + trainerRowsPerPage, sorted.length);
+          const pageRows = sorted.slice(startIdx, endIdx);
+
+          // Initials helper
+          const getInitials = (name: string) => name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+
+          return (
+          <div key={section} className="animate-tab-enter max-w-4xl space-y-4">
             <SectionHeader title="Trainer Overrides" subtitle="Assign trainers and configure tiered override rates" />
 
             {/* Create new assignment */}
@@ -783,49 +1173,47 @@ function SettingsPageInner() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
                   <label className="block text-xs text-slate-400 mb-1">Trainee (Rep)</label>
-                  <select
+                  <SearchableSelect
                     value={newTraineeId}
-                    onChange={(e) => setNewTraineeId(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">— Select rep —</option>
-                    {reps.filter((r) => !trainerAssignments.some((a) => a.traineeId === r.id)).map((r) => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => setNewTraineeId(v)}
+                    placeholder="Select rep..."
+                    options={reps.filter((r) => !trainerAssignments.some((a) => a.traineeId === r.id)).map((r) => ({ value: r.id, label: r.name, sub: r.repType }))}
+                  />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs text-slate-400 mb-1">Trainer</label>
-                  <select
+                  <SearchableSelect
                     value={newTrainerId}
-                    onChange={(e) => setNewTrainerId(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">— Select trainer —</option>
-                    {reps.filter((r) => r.id !== newTraineeId).map((r) => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => setNewTrainerId(v)}
+                    placeholder="Select trainer..."
+                    options={reps.filter((r) => r.id !== newTraineeId).map((r) => ({ value: r.id, label: r.name, sub: r.repType }))}
+                  />
                 </div>
                 <div className="flex items-end">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (!newTraineeId || !newTrainerId) return;
-                      setTrainerAssignments((prev) => [
-                        ...prev,
-                        {
-                          id: `ta_${Date.now()}`,
-                          trainerId: newTrainerId,
-                          traineeId: newTraineeId,
-                          tiers: [
-                            { upToDeal: 10,   ratePerW: 0.20 },
-                            { upToDeal: 25,   ratePerW: 0.10 },
-                            { upToDeal: null, ratePerW: 0.05 },
-                          ],
-                        },
-                      ]);
+                      const tiers = [
+                        { upToDeal: 10,   ratePerW: 0.20 },
+                        { upToDeal: 25,   ratePerW: 0.10 },
+                        { upToDeal: null, ratePerW: 0.05 },
+                      ];
+                      const tempId = `ta_${Date.now()}`;
+                      setTrainerAssignments((prev) => [...prev, { id: tempId, trainerId: newTrainerId, traineeId: newTraineeId, tiers }]);
                       setNewTraineeId('');
                       setNewTrainerId('');
+                      // Persist to DB
+                      try {
+                        const res = await fetch('/api/trainer-assignments', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ trainerId: newTrainerId, traineeId: newTraineeId, tiers }),
+                        });
+                        if (res.ok) {
+                          const saved = await res.json();
+                          setTrainerAssignments((prev) => prev.map((a) => a.id === tempId ? { ...a, id: saved.id } : a));
+                        }
+                      } catch (e) { console.error('Failed to persist trainer assignment:', e); }
                     }}
                     className="btn-primary text-white px-3 py-2 rounded-xl active:scale-[0.97]"
                     style={{ backgroundColor: 'var(--brand)' }}
@@ -834,7 +1222,7 @@ function SettingsPageInner() {
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mt-2">Default tiers: $0.20/W (deals 1–10) → $0.10/W (11–25) → $0.05/W (26+)</p>
+              <p className="text-xs text-slate-500 mt-2">Default tiers: $0.20/W (deals 1-10) &rarr; $0.10/W (11-25) &rarr; $0.05/W (26+)</p>
             </div>
 
             {trainerAssignments.length === 0 ? (
@@ -852,251 +1240,278 @@ function SettingsPageInner() {
                 </div>
               </div>
             ) : (
-              <div className="card-surface rounded-2xl p-4 flex items-center gap-6 mb-1">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-amber-500/10">
-                    <Layers className="w-3.5 h-3.5 text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Active Assignments</p>
-                    <p className="text-white font-bold text-lg leading-tight">{trainerAssignments.length}</p>
-                  </div>
-                </div>
-                <div className="w-px h-8 bg-slate-800" />
-                <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Avg Override Rate</p>
-                  <p className="text-amber-400 font-bold text-lg leading-tight">
-                    ${(trainerAssignments.reduce((sum, a) => {
-                      const deals = projects.filter((p) => p.repId === a.traineeId || p.setterId === a.traineeId).length;
-                      return sum + getTrainerOverrideRate(a, deals);
-                    }, 0) / trainerAssignments.length).toFixed(2)}/W
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Trainer search + sort */}
-            {trainerAssignments.length > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                  <input
-                    type="text" placeholder="Search by trainee or trainer..."
-                    value={trainerSearch}
-                    onChange={(e) => setTrainerSearch(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
-                  />
-                </div>
-                <div className="flex items-center gap-1">
-                  {(['trainee', 'trainer', 'deals'] as TrainerSortKey[]).map((key) => (
-                    <button
-                      key={key}
-                      onClick={() => toggleTrainerSort(key)}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        trainerSortKey === key
-                          ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
-                          : 'bg-slate-800 border border-slate-700 text-slate-500 hover:text-white'
-                      }`}
-                    >
-                      {key === 'trainee' ? 'Trainee' : key === 'trainer' ? 'Trainer' : 'Deals'}
-                      {trainerSortKey === key && (trainerSortDir === 'asc' ? ' ↑' : ' ↓')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {trainerAssignments
-              .map((a) => ({
-                a,
-                trainee: reps.find((r) => r.id === a.traineeId),
-                trainer: reps.find((r) => r.id === a.trainerId),
-                completedDeals: projects.filter((p) => p.repId === a.traineeId || p.setterId === a.traineeId).length,
-              }))
-              .filter(({ trainee, trainer }) => {
-                if (!trainerSearch) return true;
-                const q = trainerSearch.toLowerCase();
-                return (trainee?.name ?? '').toLowerCase().includes(q) || (trainer?.name ?? '').toLowerCase().includes(q);
-              })
-              .sort((a, b) => {
-                const dir = trainerSortDir === 'asc' ? 1 : -1;
-                if (trainerSortKey === 'trainee') return dir * (a.trainee?.name ?? '').localeCompare(b.trainee?.name ?? '');
-                if (trainerSortKey === 'trainer') return dir * (a.trainer?.name ?? '').localeCompare(b.trainer?.name ?? '');
-                return dir * (a.completedDeals - b.completedDeals);
-              })
-              .map(({ a, trainee, trainer, completedDeals }) => {
-              const currentRate = getTrainerOverrideRate(a, completedDeals);
-              const isEditing = editingAssignmentId === a.id;
-
-              return (
-                <div key={a.id} className="card-surface rounded-2xl p-5">
-                  <div className="flex items-start justify-between mb-3">
+              <>
+                {/* Summary stats */}
+                <div className="card-surface rounded-2xl p-4 flex items-center gap-6 mb-1 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-500/10">
+                      <Layers className="w-3.5 h-3.5 text-amber-400" />
+                    </div>
                     <div>
-                      <p className="text-white font-medium">
-                        {trainee?.name ?? 'Unknown'}
-                        <span className="text-slate-500 mx-2">trained by</span>
-                        <span className="text-amber-400">{trainer?.name ?? 'Unknown'}</span>
-                      </p>
-                      <p className="text-slate-500 text-xs mt-0.5">
-                        {completedDeals} deals · current rate{' '}
-                        <span className="text-amber-400 font-medium">${currentRate.toFixed(2)}/W</span>
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      {!isEditing ? (
-                        <>
-                          <button
-                            onClick={() => { setEditingAssignmentId(a.id); setEditingTiers([...a.tiers]); }}
-                            className="text-slate-400 hover:text-white transition-colors"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              const trainee = reps.find((r) => r.id === a.traineeId);
-                              setDeleteConfirm({
-                                type: 'trainer',
-                                id: a.id,
-                                name: trainee?.name ?? 'this assignment',
-                                message: 'This will remove the trainer-trainee relationship. Both accounts remain active.',
-                              });
-                            }}
-                            className="text-slate-600 hover:text-red-400 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => {
-                              setTrainerAssignments((prev) =>
-                                prev.map((x) => (x.id === a.id ? { ...x, tiers: editingTiers } : x))
-                              );
-                              setEditingAssignmentId(null);
-                            }}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setEditingAssignmentId(null)}
-                            className="text-slate-500 hover:text-slate-300 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Active Assignments</p>
+                      <p className="text-white font-bold text-lg leading-tight">{trainerAssignments.length}</p>
                     </div>
                   </div>
+                  <div className="w-px h-8 bg-slate-800" />
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-blue-500/10">
+                      <Users className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Unique Trainers</p>
+                      <p className="text-white font-bold text-lg leading-tight">{uniqueTrainers}</p>
+                    </div>
+                  </div>
+                  <div className="w-px h-8 bg-slate-800" />
+                  <div>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Avg Override Rate</p>
+                    <p className="text-amber-400 font-bold text-lg leading-tight">${avgRate.toFixed(2)}/W</p>
+                  </div>
+                </div>
 
-                  <div className="space-y-1.5">
-                    {(isEditing ? editingTiers : a.tiers).map((tier, i) => {
-                      const prevUpTo = i === 0 ? 0 : a.tiers[i - 1].upToDeal ?? 0;
-                      const activeTierIndex = a.tiers.findIndex(
-                        (t) => t.upToDeal === null || completedDeals < t.upToDeal
-                      );
-                      const isActive = !isEditing && i === activeTierIndex;
-                      return (
-                        <div
-                          key={i}
-                          className={`flex items-center gap-3 rounded px-3 py-2 text-sm ${
-                            isActive ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-slate-800/50'
-                          }`}
-                        >
-                          {!isEditing ? (
-                            <>
-                              <span className={`flex-1 ${isActive ? 'text-amber-300' : 'text-slate-400'}`}>
-                                {tier.upToDeal === null
-                                  ? `Deal ${prevUpTo + 1}+`
-                                  : `Deals ${prevUpTo + 1}–${tier.upToDeal}`}
-                              </span>
-                              <span className={`font-semibold ${isActive ? 'text-amber-400' : 'text-slate-300'}`}>
-                                ${tier.ratePerW.toFixed(2)}/W
-                              </span>
-                              {isActive && (
-                                <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Active</span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-slate-500 text-xs w-12">Tier {i + 1}</span>
-                              <span className="text-slate-500 text-xs">Up to deal</span>
-                              <input
-                                type="number" min="1" placeholder="∞"
-                                value={tier.upToDeal ?? ''}
-                                onChange={(e) =>
-                                  setEditingTiers((prev) =>
-                                    prev.map((t, idx) =>
-                                      idx === i ? { ...t, upToDeal: e.target.value === '' ? null : parseInt(e.target.value) || null } : t
-                                    )
-                                  )
-                                }
-                                disabled={i === editingTiers.length - 1}
-                                className="w-16 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
-                              />
-                              <span className="text-slate-500 text-xs">$</span>
-                              <input
-                                type="number" step="0.01" min="0"
-                                value={tier.ratePerW}
-                                onChange={(e) =>
-                                  setEditingTiers((prev) =>
-                                    prev.map((t, idx) =>
-                                      idx === i ? { ...t, ratePerW: parseFloat(e.target.value) || 0 } : t
-                                    )
-                                  )
-                                }
-                                className="w-16 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
-                              />
-                              <span className="text-slate-500 text-xs">/W</span>
-                              <button
-                                onClick={() => {
-                                  if (editingTiers.length <= 1) return;
-                                  setEditingTiers((prev) => {
-                                    const next = prev.filter((_, idx) => idx !== i);
-                                    if (next[next.length - 1].upToDeal !== null) {
-                                      next[next.length - 1] = { ...next[next.length - 1], upToDeal: null };
-                                    }
-                                    return next;
-                                  });
-                                }}
-                                disabled={editingTiers.length <= 1}
-                                className="text-slate-600 hover:text-red-400 transition-colors disabled:opacity-30"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {isEditing && (
-                      <button
-                        onClick={() => {
-                          setEditingTiers((prev) => {
-                            const updated = prev.map((t, i) =>
-                              i === prev.length - 1 && t.upToDeal === null
-                                ? { ...t, upToDeal: completedDeals + 10 }
-                                : t
-                            );
-                            return [...updated, { upToDeal: null, ratePerW: 0.05 }];
-                          });
-                        }}
-                        className="flex items-center gap-1 text-slate-400 hover:text-white text-xs mt-1 transition-colors"
-                      >
-                        <Plus className="w-3 h-3" /> Add tier
+                {/* Search + sort */}
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                    <input
+                      ref={trainerSearchRef}
+                      type="text" placeholder='Search trainee or trainer...  press "/" to focus'
+                      value={trainerSearch}
+                      onChange={(e) => { setTrainerSearch(e.target.value); setTrainerPage(1); }}
+                      onKeyDown={(e) => { if (e.key === 'Escape') { setTrainerSearch(''); (e.target as HTMLInputElement).blur(); } }}
+                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                    />
+                    {trainerSearch && (
+                      <button onClick={() => { setTrainerSearch(''); setTrainerPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
+                  {trainerSearch && (
+                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
+                  )}
+                  <select
+                    value={`${trainerSortKey}-${trainerSortDir}`}
+                    onChange={(e) => {
+                      const [key, dir] = e.target.value.split('-') as [TrainerSortKey, 'asc' | 'desc'];
+                      setTrainerSortKey(key);
+                      setTrainerSortDir(dir);
+                    }}
+                    className="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="trainee-asc">Trainee A-Z</option>
+                    <option value="trainee-desc">Trainee Z-A</option>
+                    <option value="trainer-asc">Trainer A-Z</option>
+                    <option value="trainer-desc">Trainer Z-A</option>
+                    <option value="deals-desc">Most Deals</option>
+                    <option value="deals-asc">Fewest Deals</option>
+                    <option value="rate-desc">Highest Rate</option>
+                    <option value="rate-asc">Lowest Rate</option>
+                  </select>
                 </div>
-              );
-            })}
+
+                {/* Compact table */}
+                <div className="card-surface rounded-2xl overflow-hidden">
+                  {/* Header row */}
+                  <div className="grid grid-cols-[1fr_1fr_70px_90px_100px_72px] gap-2 px-4 py-2.5 border-b border-slate-800 text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                    <span>Trainee</span>
+                    <span>Trainer</span>
+                    <span className="text-center">Deals</span>
+                    <span className="text-center">Rate</span>
+                    <span className="text-center">Tier</span>
+                    <span></span>
+                  </div>
+                  {pageRows.length === 0 && (
+                    <div className="px-4 py-8 text-center text-slate-500 text-sm">
+                      No assignments match your search.
+                    </div>
+                  )}
+                  {pageRows.map(({ a, trainee, trainer, completedDeals, currentRate, tierLabel }) => {
+                    const isEditing = editingAssignmentId === a.id;
+                    return (
+                      <div key={a.id}>
+                        {/* Compact row */}
+                        <div className={`grid grid-cols-[1fr_1fr_70px_90px_100px_72px] gap-2 px-4 py-2.5 items-center text-sm border-b border-slate-800/50 transition-colors ${isEditing ? 'bg-slate-800/40' : 'hover:bg-slate-800/30'}`}>
+                          {/* Trainee */}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                              {getInitials(trainee?.name ?? '??')}
+                            </div>
+                            <Link href={`/dashboard/reps/${a.traineeId}`} className="text-white truncate hover:text-blue-300 transition-colors">{trainee?.name ?? 'Unknown'}</Link>
+                          </div>
+                          {/* Trainer */}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                              {getInitials(trainer?.name ?? '??')}
+                            </div>
+                            <Link href={`/dashboard/reps/${a.trainerId}`} className="text-slate-300 truncate hover:text-blue-300 transition-colors">{trainer?.name ?? 'Unknown'}</Link>
+                          </div>
+                          {/* Deals */}
+                          <span className="text-center text-slate-400">{completedDeals}</span>
+                          {/* Rate */}
+                          <span className="text-center text-amber-400 font-medium">${currentRate.toFixed(2)}/W</span>
+                          {/* Tier */}
+                          <span className="text-center text-slate-400 text-xs">{tierLabel}</span>
+                          {/* Actions */}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!isEditing ? (
+                              <>
+                                <button
+                                  onClick={() => { setEditingAssignmentId(a.id); setEditingTiers([...a.tiers]); }}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700/60 transition-colors"
+                                  title="Edit tiers"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const traineeName = reps.find((r) => r.id === a.traineeId)?.name ?? 'this assignment';
+                                    setDeleteConfirm({
+                                      type: 'trainer',
+                                      id: a.id,
+                                      name: traineeName,
+                                      message: 'This will remove the trainer-trainee relationship. Both accounts remain active.',
+                                    });
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                  title="Delete assignment"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setTrainerAssignments((prev) =>
+                                      prev.map((x) => (x.id === a.id ? { ...x, tiers: editingTiers } : x))
+                                    );
+                                    setEditingAssignmentId(null);
+                                    // Persist tier edits to DB
+                                    fetch('/api/trainer-assignments', {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ id: a.id, tiers: editingTiers }),
+                                    }).catch(console.error);
+                                  }}
+                                  className="p-1.5 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors"
+                                  title="Save"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => setEditingAssignmentId(null)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-700/60 transition-colors"
+                                  title="Cancel"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Inline tier editor (expands below row when editing) */}
+                        {isEditing && (
+                          <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-800/50 space-y-1.5">
+                            {editingTiers.map((tier, i) => (
+                              <div key={i} className="flex items-center gap-3 rounded px-3 py-2 text-sm bg-slate-800/50">
+                                <span className="text-slate-500 text-xs w-12">Tier {i + 1}</span>
+                                <span className="text-slate-500 text-xs">Up to deal</span>
+                                <input
+                                  type="number" min="1" placeholder="Infinity"
+                                  value={tier.upToDeal ?? ''}
+                                  onChange={(e) =>
+                                    setEditingTiers((prev) =>
+                                      prev.map((t, idx) =>
+                                        idx === i ? { ...t, upToDeal: e.target.value === '' ? null : parseInt(e.target.value) || null } : t
+                                      )
+                                    )
+                                  }
+                                  disabled={i === editingTiers.length - 1}
+                                  className="w-16 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
+                                />
+                                <span className="text-slate-500 text-xs">$</span>
+                                <input
+                                  type="number" step="0.01" min="0"
+                                  value={tier.ratePerW}
+                                  onChange={(e) =>
+                                    setEditingTiers((prev) =>
+                                      prev.map((t, idx) =>
+                                        idx === i ? { ...t, ratePerW: parseFloat(e.target.value) || 0 } : t
+                                      )
+                                    )
+                                  }
+                                  className="w-16 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                />
+                                <span className="text-slate-500 text-xs">/W</span>
+                                <button
+                                  onClick={() => {
+                                    if (editingTiers.length <= 1) return;
+                                    setEditingTiers((prev) => {
+                                      const next = prev.filter((_, idx) => idx !== i);
+                                      if (next[next.length - 1].upToDeal !== null) {
+                                        next[next.length - 1] = { ...next[next.length - 1], upToDeal: null };
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                  disabled={editingTiers.length <= 1}
+                                  className="text-slate-600 hover:text-red-400 transition-colors disabled:opacity-30"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => {
+                                setEditingTiers((prev) => {
+                                  const updated = prev.map((t, i) =>
+                                    i === prev.length - 1 && t.upToDeal === null
+                                      ? { ...t, upToDeal: completedDeals + 10 }
+                                      : t
+                                  );
+                                  return [...updated, { upToDeal: null, ratePerW: 0.05 }];
+                                });
+                              }}
+                              className="flex items-center gap-1 text-slate-400 hover:text-white text-xs mt-1 transition-colors"
+                            >
+                              <Plus className="w-3 h-3" /> Add tier
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Pagination */}
+                  {sorted.length > trainerRowsPerPage && (
+                    <PaginationBar
+                      totalResults={sorted.length}
+                      startIdx={startIdx + 1}
+                      endIdx={endIdx}
+                      currentPage={safePage}
+                      totalPages={totalPages}
+                      rowsPerPage={trainerRowsPerPage}
+                      onPageChange={setTrainerPage}
+                      onRowsPerPageChange={setTrainerRowsPerPage}
+                    />
+                  )}
+                </div>
+              </>
+            )}
           </div>
-        )}
+          );
+        })()}
 
         {/* ── Blitz Permissions ──────────────────────────────────────────────── */}
         {section === 'blitz-permissions' && (
           <BlitzPermissionsSection reps={reps} />
+        )}
+
+        {/* ── Sub-Dealers ────────────────────────────────────────────────────────── */}
+        {section === 'sub-dealers' && (
+          <SubDealersSection />
         )}
 
         {/* ── Installers ───────────────────────────────────────────────────────── */}
@@ -1824,6 +2239,58 @@ function SettingsPageInner() {
           </div>
         )}
 
+        {/* ── Customization ─────────────────────────────────────────────────── */}
+        {section === 'customization' && (
+          <div key={section} className="animate-tab-enter max-w-xl">
+            <SectionHeader title="Customization" subtitle="Adjust pipeline alert thresholds" />
+
+            {/* Pipeline Alert Thresholds */}
+            <div className="card-surface rounded-2xl p-5 mb-6">
+              <h2 className="text-white font-semibold mb-1">Pipeline Alert Thresholds</h2>
+              <p className="text-slate-500 text-xs mb-4">Days from sold date before a project is flagged as &ldquo;stuck&rdquo; in each phase.</p>
+              <div className="space-y-3">
+                {['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'].map((phase) => (
+                  <div key={phase} className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-slate-300 min-w-[120px]">{phase}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={customThresholds[phase] ?? CUSTOMIZATION_DEFAULT_THRESHOLDS[phase]}
+                      onChange={(e) => setCustomThresholds((prev) => ({ ...prev, [phase]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                      className="w-20 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-sm text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-3 mt-5">
+                <button
+                  onClick={() => {
+                    localStorage.setItem('kilo-pipeline-thresholds', JSON.stringify(customThresholds));
+                    setThresholdsSaved(true);
+                    setTimeout(() => setThresholdsSaved(false), 2000);
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
+                  style={{ backgroundColor: 'var(--brand)' }}
+                >
+                  {thresholdsSaved ? 'Saved!' : 'Save Thresholds'}
+                </button>
+                <button
+                  onClick={() => {
+                    setCustomThresholds({ ...CUSTOMIZATION_DEFAULT_THRESHOLDS });
+                    localStorage.removeItem('kilo-pipeline-thresholds');
+                    setThresholdsSaved(true);
+                    setTimeout(() => setThresholdsSaved(false), 2000);
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white bg-slate-800 border border-slate-700 transition-colors"
+                >
+                  Reset to Defaults
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Export ────────────────────────────────────────────────────────────── */}
         {section === 'export' && (() => {
           const filteredPayroll = payrollEntries.filter((p) => {
@@ -2066,7 +2533,7 @@ function SettingsPageInner() {
 
             {/* Sub-tabs */}
             {(() => {
-              const pcInstallerNames = Object.keys(productCatalogInstallerConfigs);
+              const pcInstallerNames = Object.keys(productCatalogInstallerConfigs).filter((n) => n !== 'SolarTech');
               const allTabs = ['standard', 'solartech', ...pcInstallerNames];
               return (
                 <div className="flex gap-1 mb-5 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container flex-wrap">
@@ -2089,14 +2556,25 @@ function SettingsPageInner() {
 
             {/* Standard — flat installer baselines (inline-editable) */}
             {baselineTab === 'standard' && (
-              <div className="card-surface rounded-xl overflow-hidden max-w-2xl">
-                <div className="px-5 py-4 border-b border-slate-800">
-                  <h2 className="text-white font-semibold">Standard Installer Baselines</h2>
-                  <p className="text-slate-500 text-xs mt-0.5">Click the pencil to edit · Setter defaults to Closer + $0.10/W (leave blank) · Kilo = company margin floor</p>
+              <div className={`card-surface rounded-xl overflow-hidden transition-all duration-300 ${showSubDealerRates ? 'max-w-4xl' : 'max-w-2xl'}`}>
+                <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-white font-semibold">Standard Installer Baselines</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">Click the pencil to edit · Setter defaults to Closer + $0.10/W (leave blank) · Kilo = company margin floor</p>
+                  </div>
+                  <button
+                    onClick={() => setShowSubDealerRates((v) => !v)}
+                    className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors shrink-0"
+                  >
+                    <span>Sub-Dealer Rates</span>
+                    <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                      <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                    </span>
+                  </button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 z-10 bg-slate-900">
+                    <thead className="table-header-frost">
                       <tr className="border-b border-slate-800">
                         <th
                           className="text-left px-5 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-white transition-colors"
@@ -2133,6 +2611,9 @@ function SettingsPageInner() {
                             )}
                           </span>
                         </th>
+                        {showSubDealerRates && (
+                          <th className="text-right px-4 py-3 text-amber-400/80 font-medium text-xs">SD Rate</th>
+                        )}
                         <th className="px-4 py-3 w-28" />
                       </tr>
                     </thead>
@@ -2213,16 +2694,28 @@ function SettingsPageInner() {
                                       className="w-20 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
                                     />
                                   </td>
+                                  {showSubDealerRates && (
+                                    <td className="px-4 py-2 text-right">
+                                      <input type="number" step="0.01" min="0"
+                                        value={editInstallerVals.subDealerPerW}
+                                        placeholder="—"
+                                        onChange={(e) => setEditInstallerVals((v) => ({ ...v, subDealerPerW: e.target.value }))}
+                                        className="w-20 bg-slate-700 border border-slate-600 text-amber-400 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                      />
+                                    </td>
+                                  )}
                                   <td className="px-4 py-2">
                                     <div className="flex items-center gap-2 justify-end">
                                       <button onClick={() => {
                                         const c = parseFloat(editInstallerVals.closerPerW);
                                         const k = parseFloat(editInstallerVals.kiloPerW);
                                         const s = parseFloat(editInstallerVals.setterPerW);
+                                        const sd = parseFloat(editInstallerVals.subDealerPerW);
                                         if (!isNaN(c) && !isNaN(k)) {
                                           updateInstallerBaseline(installer, {
                                             closerPerW: c, kiloPerW: k,
                                             ...(editInstallerVals.setterPerW !== '' && !isNaN(s) ? { setterPerW: s } : {}),
+                                            ...(editInstallerVals.subDealerPerW !== '' && !isNaN(sd) ? { subDealerPerW: sd } : {}),
                                           });
                                         }
                                         setEditingInstaller(null);
@@ -2245,6 +2738,13 @@ function SettingsPageInner() {
                                     </span>
                                   </td>
                                   <td className="px-4 py-3 text-blue-400 font-medium text-right">${rates.kiloPerW.toFixed(2)}</td>
+                                  {showSubDealerRates && (
+                                    <td className="px-4 py-3 text-right">
+                                      {rates.subDealerPerW != null
+                                        ? <span className="text-amber-400 font-medium">${rates.subDealerPerW.toFixed(2)}</span>
+                                        : <span className="text-slate-600">&mdash;</span>}
+                                    </td>
+                                  )}
                                   <td className="px-4 py-3 text-right">
                                     <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                                       <button
@@ -2254,6 +2754,7 @@ function SettingsPageInner() {
                                             closerPerW: String(rates.closerPerW),
                                             setterPerW: rates.setterPerW != null ? String(rates.setterPerW) : '',
                                             kiloPerW: String(rates.kiloPerW),
+                                            subDealerPerW: rates.subDealerPerW != null ? String(rates.subDealerPerW) : '',
                                           });
                                         }}
                                         title="Edit current rates"
@@ -2296,6 +2797,11 @@ function SettingsPageInner() {
                                 <td className="px-4 py-2 text-slate-600 text-right text-xs">
                                   {v.rates.type === 'flat' ? `$${v.rates.closerPerW.toFixed(2)} / $${v.rates.kiloPerW.toFixed(2)}` : 'Tiered'}
                                 </td>
+                                {showSubDealerRates && (
+                                  <td className="px-4 py-2 text-slate-600 text-right text-xs">
+                                    {v.rates.type === 'flat' && v.rates.subDealerPerW != null ? `$${v.rates.subDealerPerW.toFixed(2)}` : '—'}
+                                  </td>
+                                )}
                                 <td />
                               </tr>
                             ))}
@@ -2311,7 +2817,7 @@ function SettingsPageInner() {
             {/* ── New Version Modal ─────────────────────────────────────────────── */}
             {newVersionFor && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-white font-bold">New Pricing Version</h3>
@@ -2456,11 +2962,34 @@ function SettingsPageInner() {
                           ))}
                         </select>
                         {isViewingArchive && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
-                            <History className="w-3 h-3" />
-                            Viewing archived version
-                            {(() => { const g = versionGroups.get(currentView); return g ? ` · ${g.effectiveFrom} → ${g.effectiveTo}` : ''; })()}
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
+                              <History className="w-3 h-3" />
+                              Viewing archived version
+                              {(() => { const g = versionGroups.get(currentView); return g ? ` · ${g.effectiveFrom} → ${g.effectiveTo}` : ''; })()}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const [label, effectiveFrom] = currentView.split('|');
+                                setConfirmAction({
+                                  title: 'Delete Pricing Version',
+                                  message: 'Delete this pricing version? This cannot be undone.',
+                                  onConfirm: () => {
+                                    const idsToDelete = productCatalogPricingVersions
+                                      .filter((v) => familyProductIds.has(v.productId) && v.label === label && v.effectiveFrom === effectiveFrom)
+                                      .map((v) => v.id);
+                                    deleteProductCatalogPricingVersions(idsToDelete);
+                                    setPcVersionView((prev) => ({ ...prev, [versionKey]: 'current' }));
+                                    toast('Pricing version deleted', 'success');
+                                    setConfirmAction(null);
+                                  },
+                                });
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete Version
+                            </button>
+                          </>
                         )}
                         {!isViewingArchive && (
                           <>
@@ -2619,21 +3148,32 @@ function SettingsPageInner() {
                                 {pcIsArchive ? 'Viewing archived version (read-only)' : 'Click any value to edit · Setter = Closer + $0.10/W auto-calculated'}
                               </p>
                             </div>
-                            <div className="relative">
-                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                              <input
-                                type="text"
-                                placeholder="Search products..."
-                                value={pcProductSearch}
-                                onChange={(e) => setPcProductSearch(e.target.value)}
-                                className="w-48 bg-slate-800 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
-                              />
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => setShowSubDealerRates((v) => !v)}
+                                className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors shrink-0"
+                              >
+                                <span>SD Rate</span>
+                                <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                                  <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                                </span>
+                              </button>
+                              <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                                <input
+                                  type="text"
+                                  placeholder="Search products..."
+                                  value={pcProductSearch}
+                                  onChange={(e) => setPcProductSearch(e.target.value)}
+                                  className="w-48 bg-slate-800 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
-                            <thead className="sticky top-0 z-10 bg-slate-900">
+                            <thead className="table-header-frost">
                               <tr className="border-b border-slate-800">
                                 <th className="text-left px-5 py-3 text-slate-400 font-medium">Product</th>
                                 {['1–5 kW', '5–10 kW', '10–13 kW', '13+ kW'].map((label) => (
@@ -2641,6 +3181,9 @@ function SettingsPageInner() {
                                 ))}
                                 <th className="px-4 py-3 w-10" />
                               </tr>
+                              {showSubDealerRates && (
+                                <tr><td colSpan={6} className="px-4 py-1 text-amber-400/60 text-[10px] text-right">Amber values = Sub-Dealer Rate</td></tr>
+                              )}
                             </thead>
                             <tbody>
                               {/* Family summary stats row */}
@@ -2658,6 +3201,7 @@ function SettingsPageInner() {
                                       </td>
                                     );
                                   })}
+                                  {showSubDealerRates && <td />}
                                   <td className="px-4 py-2 text-center">
                                     <span className="text-slate-500 text-[10px]">${pcSpreadMin.toFixed(2)}–${pcSpreadMax.toFixed(2)}</span>
                                   </td>
@@ -2748,6 +3292,19 @@ function SettingsPageInner() {
                                               className="w-16 bg-slate-800 border border-slate-700 text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             />
                                             {renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}
+                                            {showSubDealerRates && (
+                                              <input
+                                                type="number" step="0.01" min="0"
+                                                value={tier.subDealerPerW ?? ''}
+                                                placeholder="—"
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => {
+                                                  const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0;
+                                                  updateProductCatalogTier(product.id, ti, { subDealerPerW: val });
+                                                }}
+                                                className="w-16 bg-slate-800 border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                              />
+                                            )}
                                           </div>
                                         </td>
                                       ))
@@ -2932,7 +3489,7 @@ function SettingsPageInner() {
               const pcProduct = productCatalogProducts.find((p) => p.id === pcNewVersionFor) || solarTechProducts.find((p) => p.id === pcNewVersionFor);
               return pcProduct ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                  <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+                  <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-white font-bold">New Pricing Version</h3>
@@ -3044,7 +3601,7 @@ function SettingsPageInner() {
 
               return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                  <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                  <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-white font-bold">Duplicate All as New Version</h3>
@@ -3157,11 +3714,34 @@ function SettingsPageInner() {
                         ))}
                       </select>
                       {stIsArchive && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
-                          <History className="w-3 h-3" />
-                          Viewing archived version
-                          {(() => { const g = stVersionGroups.get(stCurrentView); return g ? ` · ${g.effectiveFrom} → ${g.effectiveTo}` : ''; })()}
-                        </span>
+                        <>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
+                            <History className="w-3 h-3" />
+                            Viewing archived version
+                            {(() => { const g = stVersionGroups.get(stCurrentView); return g ? ` · ${g.effectiveFrom} → ${g.effectiveTo}` : ''; })()}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const [label, effectiveFrom] = stCurrentView.split('|');
+                              setConfirmAction({
+                                title: 'Delete Pricing Version',
+                                message: 'Delete this pricing version? This cannot be undone.',
+                                onConfirm: () => {
+                                  const idsToDelete = productCatalogPricingVersions
+                                    .filter((v) => stFamilyProductIds.has(v.productId) && v.label === label && v.effectiveFrom === effectiveFrom)
+                                    .map((v) => v.id);
+                                  deleteProductCatalogPricingVersions(idsToDelete);
+                                  setStVersionView((prev) => ({ ...prev, [stFamily]: 'current' }));
+                                  toast('Pricing version deleted', 'success');
+                                  setConfirmAction(null);
+                                },
+                              });
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete Version
+                          </button>
+                        </>
                       )}
                       {!stIsArchive && (
                         <>
@@ -3318,21 +3898,32 @@ function SettingsPageInner() {
                               {stIsArchive ? 'Viewing archived version (read-only)' : 'Click any value to edit · Setter = Closer + $0.10/W auto-calculated'}
                             </p>
                           </div>
-                          <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                            <input
-                              type="text"
-                              placeholder="Search products..."
-                              value={stProductSearch}
-                              onChange={(e) => setStProductSearch(e.target.value)}
-                              className="w-48 bg-slate-800 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
-                            />
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setShowSubDealerRates((v) => !v)}
+                              className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors shrink-0"
+                            >
+                              <span>SD Rate</span>
+                              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                                <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                              </span>
+                            </button>
+                            <div className="relative">
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                              <input
+                                type="text"
+                                placeholder="Search products..."
+                                value={stProductSearch}
+                                onChange={(e) => setStProductSearch(e.target.value)}
+                                className="w-48 bg-slate-800 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead className="sticky top-0 z-10 bg-slate-900">
+                          <thead className="table-header-frost">
                             <tr className="border-b border-slate-800">
                               <th className="text-left px-5 py-3 text-slate-400 font-medium">Product</th>
                               {['1–5 kW', '5–10 kW', '10–13 kW', '13+ kW'].map((label) => (
@@ -3340,6 +3931,9 @@ function SettingsPageInner() {
                               ))}
                               <th className="px-4 py-3 w-10" />
                             </tr>
+                            {showSubDealerRates && (
+                              <tr><td colSpan={6} className="px-4 py-1 text-amber-400/60 text-[10px] text-right">Amber values = Sub-Dealer Rate</td></tr>
+                            )}
                           </thead>
                           <tbody>
                             {/* Family summary stats row */}
@@ -3357,6 +3951,7 @@ function SettingsPageInner() {
                                     </td>
                                   );
                                 })}
+                                {showSubDealerRates && <td />}
                                 <td className="px-4 py-2 text-center">
                                   <span className="text-slate-500 text-[10px]">${stSpreadMin.toFixed(2)}–${stSpreadMax.toFixed(2)}</span>
                                 </td>
@@ -3417,6 +4012,9 @@ function SettingsPageInner() {
                                         <div className="flex flex-col gap-1 items-center">
                                           <span className="text-emerald-400/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span>
                                           <span className="text-blue-400/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>
+                                          {showSubDealerRates && (
+                                            <span className="text-amber-400/50 text-xs">{(tier as any).subDealerPerW != null ? `$${(tier as any).subDealerPerW.toFixed(2)}` : '—'}</span>
+                                          )}
                                         </div>
                                       </td>
                                     )) : (
@@ -3446,6 +4044,19 @@ function SettingsPageInner() {
                                             className="w-16 bg-slate-800 border border-slate-700 text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
                                           />
                                           {renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}
+                                          {showSubDealerRates && (
+                                            <input
+                                              type="number" step="0.01" min="0"
+                                              value={tier.subDealerPerW ?? ''}
+                                              placeholder="—"
+                                              onFocus={(e) => e.target.select()}
+                                              onChange={(e) => {
+                                                const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0;
+                                                updateSolarTechTier(product.id, ti, { subDealerPerW: val });
+                                              }}
+                                              className="w-16 bg-slate-800 border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                            />
+                                          )}
                                         </div>
                                       </td>
                                     ))

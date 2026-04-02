@@ -63,6 +63,7 @@ async function main() {
     { id: 'fin_goodleap',     name: 'Goodleap' },
     { id: 'fin_participate',  name: 'Participate' },
     { id: 'fin_credit_human', name: 'Credit Human' },
+    { id: 'fin_cash',         name: 'Cash' },
   ];
 
   for (const fin of financerData) {
@@ -88,10 +89,16 @@ async function main() {
     { id: 'admin4', firstName: 'Jessica', lastName: 'Sousa',         email: 'jessica@kiloenergy.com', phone: '', role: 'admin', repType: 'both' },
   ];
 
-  for (const user of [...repData, ...adminData]) {
+  const subDealerData = [
+    { id: 'sd1', firstName: 'Chris', lastName: 'Nguyen',  email: 'chris@solardealers.com',  phone: '(555) 200-0001', role: 'sub-dealer', repType: 'both' },
+    { id: 'sd2', firstName: 'Dana',  lastName: 'Morales', email: 'dana@greendealers.com',   phone: '(555) 200-0002', role: 'sub-dealer', repType: 'both' },
+    { id: 'sd3', firstName: 'Pat',   lastName: 'Kim',     email: 'pat@sunstardealers.com',  phone: '(555) 200-0003', role: 'sub-dealer', repType: 'both' },
+  ];
+
+  for (const user of [...repData, ...adminData, ...subDealerData]) {
     await prisma.user.create({ data: user });
   }
-  console.log(`  Created ${repData.length} reps + ${adminData.length} admins`);
+  console.log(`  Created ${repData.length} reps + ${adminData.length} admins + ${subDealerData.length} sub-dealers`);
 
   // =========================================================================
   // 4. INSTALLER PRICING VERSIONS (Standard track)
@@ -130,6 +137,10 @@ async function main() {
             closerPerW: pv.closerPerW,
             setterPerW: null, // auto = closerPerW + 0.10
             kiloPerW: pv.kiloPerW,
+            // Sub-dealer rates for select installers (what Kilo pays the sub-dealer per watt)
+            ...(pv.installerId === 'inst_esp' ? { subDealerPerW: 2.50 } : {}),
+            ...(pv.installerId === 'inst_exo' ? { subDealerPerW: 2.50 } : {}),
+            ...(pv.installerId === 'inst_geg' ? { subDealerPerW: 2.30 } : {}),
           }],
         },
       },
@@ -256,19 +267,19 @@ async function main() {
   };
 
   const projects = [
-    { id: 'proj1',  customerName: 'Robert & Linda Hawkins', closerId: 'rep1', soldDate: '2025-11-05', installer: 'ESP',           financer: 'Goodleap',    productType: 'Loan',  kWSize: 8.4,  netPPW: 3.55, phase: 'PTO',             m1Paid: true,  m1Amount: 1890, m2Paid: true,  m2Amount: 1890, notes: 'Smooth install, customer very happy.',         flagged: false },
-    { id: 'proj2',  customerName: 'Sandra Nguyen',          closerId: 'rep1', soldDate: '2025-12-01', installer: 'EXO',           financer: 'Mosaic',      productType: 'Loan',  kWSize: 6.6,  netPPW: 2.72, phase: 'Installed',        m1Paid: true,  m1Amount: 950,  m2Paid: false, m2Amount: 700,  notes: 'PTO application submitted.',                 flagged: false },
+    { id: 'proj1',  customerName: 'Robert & Linda Hawkins', closerId: 'rep1', soldDate: '2025-11-05', installer: 'ESP',           financer: 'Goodleap',    productType: 'Loan',  kWSize: 8.4,  netPPW: 3.55, phase: 'PTO',             m1Paid: true,  m1Amount: 1890, m2Paid: true,  m2Amount: 1890, m3Amount: 473,  notes: 'Smooth install, customer very happy.',         flagged: false },
+    { id: 'proj2',  customerName: 'Sandra Nguyen',          closerId: 'rep1', soldDate: '2025-12-01', installer: 'EXO',           financer: 'Mosaic',      productType: 'Loan',  kWSize: 6.6,  netPPW: 2.72, phase: 'Installed',        m1Paid: true,  m1Amount: 950,  m2Paid: false, m2Amount: 700,  m3Amount: 175,  notes: 'PTO application submitted.',                 flagged: false },
     { id: 'proj3',  customerName: 'Derek & Amy Collins',    closerId: 'rep1', soldDate: '2026-01-14', installer: 'GEG',           financer: 'Sunrun',      productType: 'PPA',   kWSize: 10.2, netPPW: 3.1,  phase: 'Permitting',      m1Paid: false, m1Amount: 1450, m2Paid: false, m2Amount: 1100, notes: '',                                           flagged: false },
     { id: 'proj4',  customerName: 'Michelle Tran',          closerId: 'rep2', soldDate: '2025-10-22', installer: 'SolarTech',     financer: 'Everbright',  productType: 'Lease', kWSize: 7.8,  netPPW: 2.95, phase: 'PTO',             m1Paid: true,  m1Amount: 1100, m2Paid: true,  m2Amount: 850,  notes: 'Great customer, referral sent.',              flagged: false },
     { id: 'proj5',  customerName: 'Carlos Mendoza',         closerId: 'rep2', soldDate: '2026-01-08', installer: 'Bryton',        financer: 'Dividend',    productType: 'Loan',  kWSize: 9.0,  netPPW: 2.88, phase: 'Design',           m1Paid: false, m1Amount: 1300, m2Paid: false, m2Amount: 975,  notes: 'Waiting on HOA approval.',                   flagged: true },
     { id: 'proj6',  customerName: 'Patricia Kim',           closerId: 'rep2', soldDate: '2026-02-03', installer: 'ESP',           financer: 'Enfin',       productType: 'PPA',   kWSize: 5.4,  netPPW: 3.05, phase: 'Acceptance',       m1Paid: false, m1Amount: 750,  m2Paid: false, m2Amount: 600,  notes: '',                                           flagged: false },
-    { id: 'proj7',  customerName: 'William Foster',         closerId: 'rep3', soldDate: '2025-11-30', installer: 'Complete Solar',financer: 'Sungage',     productType: 'Loan',  kWSize: 12.0, netPPW: 2.65, phase: 'Installed',        m1Paid: true,  m1Amount: 1680, m2Paid: false, m2Amount: 1260, notes: 'Large system, commercial adjacent.',          flagged: false },
+    { id: 'proj7',  customerName: 'William Foster',         closerId: 'rep3', soldDate: '2025-11-30', installer: 'Complete Solar',financer: 'Sungage',     productType: 'Loan',  kWSize: 12.0, netPPW: 2.65, phase: 'Installed',        m1Paid: true,  m1Amount: 1680, m2Paid: false, m2Amount: 1260, m3Amount: 315,  notes: 'Large system, commercial adjacent.',          flagged: false },
     { id: 'proj8',  customerName: 'Helen & Mark Russo',     closerId: 'rep3', soldDate: '2026-01-20', installer: 'Solnova',       financer: 'LightReach',  productType: 'Lease', kWSize: 7.2,  netPPW: 3.0,  phase: 'Site Survey',     m1Paid: false, m1Amount: 1020, m2Paid: false, m2Amount: 765,  notes: '',                                           flagged: false },
     { id: 'proj9',  customerName: 'Gary Thompson',          closerId: 'rep3', soldDate: '2026-02-11', installer: 'EXO',           financer: 'Cash',        productType: 'Cash',  kWSize: 4.8,  netPPW: 3.5,  phase: 'New',             m1Paid: false, m1Amount: 840,  m2Paid: false, m2Amount: 630,  notes: 'Cash deal, fast close expected.',             flagged: false },
     { id: 'proj10', customerName: 'Denise Walker',          closerId: 'rep4', soldDate: '2025-09-14', installer: 'SunPower',      financer: 'Sunnova',     productType: 'Lease', kWSize: 8.0,  netPPW: 3.2,  phase: 'Cancelled',       m1Paid: false, m1Amount: 0,    m2Paid: false, m2Amount: 0,    notes: 'Customer backed out, financing fell through.',flagged: false },
     { id: 'proj11', customerName: 'Bruce & Nancy Patel',    closerId: 'rep4', soldDate: '2026-01-05', installer: 'Pacific Coast', financer: 'Wheelhouse',  productType: 'Loan',  kWSize: 9.6,  netPPW: 2.78, phase: 'Pending Install',  m1Paid: true,  m1Amount: 1344, m2Paid: false, m2Amount: 1008, notes: 'Install scheduled for March.',                flagged: false },
     { id: 'proj12', customerName: 'Laura Jensen',           closerId: 'rep4', soldDate: '2026-02-20', installer: 'Solrite',       financer: 'Solrite',     productType: 'Loan',  kWSize: 6.0,  netPPW: 2.9,  phase: 'Acceptance',      m1Paid: false, m1Amount: 870,  m2Paid: false, m2Amount: 650,  notes: '',                                           flagged: false },
-    { id: 'proj13', customerName: 'Kevin & Sara Okonkwo',   closerId: 'rep5', soldDate: '2025-12-15', installer: 'One Source',    financer: 'Credit Human',productType: 'Loan',  kWSize: 11.4, netPPW: 2.7,  phase: 'PTO',             m1Paid: true,  m1Amount: 1596, m2Paid: true,  m2Amount: 1197, notes: '',                                           flagged: false },
+    { id: 'proj13', customerName: 'Kevin & Sara Okonkwo',   closerId: 'rep5', soldDate: '2025-12-15', installer: 'One Source',    financer: 'Credit Human',productType: 'Loan',  kWSize: 11.4, netPPW: 2.7,  phase: 'PTO',             m1Paid: true,  m1Amount: 1596, m2Paid: true,  m2Amount: 1197, m3Amount: 299,  notes: '',                                           flagged: false },
     { id: 'proj14', customerName: 'Fiona Castillo',         closerId: 'rep5', soldDate: '2026-01-28', installer: 'GEG',           financer: 'Participate', productType: 'PPA',   kWSize: 7.5,  netPPW: 3.15, phase: 'Permitting',      m1Paid: false, m1Amount: 1050, m2Paid: false, m2Amount: 790,  notes: 'Permitting taking longer than expected.',    flagged: false },
     { id: 'proj15', customerName: 'Thomas & Gwen Burke',    closerId: 'rep5', soldDate: '2026-02-14', installer: 'ESP',           financer: 'Mosaic',      productType: 'Loan',  kWSize: 8.8,  netPPW: 2.82, phase: 'On Hold',          m1Paid: false, m1Amount: 1232, m2Paid: false, m2Amount: 924,  notes: 'HOA dispute, on hold until resolved.',       flagged: true },
   ];
@@ -291,6 +302,7 @@ async function main() {
         m1Amount: p.m1Amount,
         m2Paid: p.m2Paid,
         m2Amount: p.m2Amount,
+        m3Amount: (p as any).m3Amount ?? null,
         notes: p.notes,
         flagged: p.flagged,
         installerPricingVersionId: isSolarTech ? null : pvMap[p.installer] ?? null,

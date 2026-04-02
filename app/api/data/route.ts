@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
 
 // GET /api/data — Returns all data needed to hydrate the app context.
 // This replaces the hardcoded constants from lib/data.ts.
 export async function GET() {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const [
     users,
     installers,
@@ -19,13 +22,14 @@ export async function GET() {
     productCatalogConfigs,
     prepaidOptions,
   ] = await Promise.all([
-    prisma.user.findMany({ orderBy: { lastName: 'asc' } }),
+    prisma.user.findMany({ where: { active: true }, orderBy: { lastName: 'asc' } }),
     prisma.installer.findMany({ orderBy: { name: 'asc' } }),
     prisma.financer.findMany({ orderBy: { name: 'asc' } }),
     prisma.project.findMany({
       include: {
         closer: true,
         setter: true,
+        subDealer: true,
         installer: true,
         financer: true,
       },
@@ -85,6 +89,21 @@ export async function GET() {
       phone: u.phone,
       role: 'rep' as const,
       repType: u.repType as 'closer' | 'setter' | 'both',
+      canRequestBlitz: u.canRequestBlitz ?? false,
+      canCreateBlitz: u.canCreateBlitz ?? false,
+    }));
+
+  // Sub-dealers: filter to role='sub-dealer'
+  const subDealers = users
+    .filter((u) => u.role === 'sub-dealer')
+    .map((u) => ({
+      id: u.id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      name: `${u.firstName} ${u.lastName}`,
+      email: u.email,
+      phone: u.phone,
+      role: 'sub-dealer' as const,
     }));
 
   // Installers: just the name list (for backward compat)
@@ -134,6 +153,8 @@ export async function GET() {
     prepaidSubType: p.prepaidSubType ?? undefined,
     leadSource: p.leadSource ?? undefined,
     blitzId: p.blitzId ?? undefined,
+    subDealerId: p.subDealerId ?? undefined,
+    subDealerName: p.subDealer ? `${p.subDealer.firstName} ${p.subDealer.lastName}` : undefined,
   }));
 
   // Payroll entries: transform FKs to name strings
@@ -214,6 +235,7 @@ export async function GET() {
               closerPerW: t.closerPerW,
               setterPerW: t.setterPerW ?? undefined,
               kiloPerW: t.kiloPerW,
+              subDealerPerW: t.subDealerPerW ?? undefined,
             })),
           }
         : {
@@ -221,6 +243,7 @@ export async function GET() {
             closerPerW: v.tiers[0]?.closerPerW ?? 2.90,
             setterPerW: v.tiers[0]?.setterPerW ?? undefined,
             kiloPerW: v.tiers[0]?.kiloPerW ?? 2.35,
+            subDealerPerW: v.tiers[0]?.subDealerPerW ?? undefined,
           },
     };
   });
@@ -252,6 +275,7 @@ export async function GET() {
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
           kiloPerW: t.kiloPerW,
+          subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
     });
@@ -273,6 +297,7 @@ export async function GET() {
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
           kiloPerW: t.kiloPerW,
+          subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
     });
@@ -305,6 +330,7 @@ export async function GET() {
       closerPerW: t.closerPerW,
       setterPerW: t.setterPerW,
       kiloPerW: t.kiloPerW,
+      subDealerPerW: t.subDealerPerW ?? undefined,
     })),
   }));
 
@@ -320,6 +346,7 @@ export async function GET() {
 
   return NextResponse.json({
     reps,
+    subDealers,
     installers: installerNames,
     financers: financerNames,
     installerPayConfigs,

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
+import { requireAdmin } from '../../../lib/api-auth';
 
-// POST /api/reps — Create a new rep
+// POST /api/reps — Create a new rep (admin only)
 export async function POST(req: NextRequest) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   const user = await prisma.user.create({
     data: {

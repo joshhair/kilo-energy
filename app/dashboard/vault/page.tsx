@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
-import { formatDate, getM1PayDate, getM2PayDate } from '../../../lib/utils';
+import { formatDate, getM1PayDate, getM2PayDate, fmt$ } from '../../../lib/utils';
+import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
+import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
   Vault as VaultIcon, DollarSign, Clock, TrendingUp, ChevronDown, ChevronRight,
   Search, Filter, ArrowRight, Receipt, Banknote, Calendar, ChevronLeft,
-  Upload, X,
 } from 'lucide-react';
 import { buildPageRange } from '../components/PaginationBar';
 
@@ -90,17 +92,45 @@ function StageBadge({ stage }: { stage: string }) {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function VaultPage() {
+  return (
+    <Suspense>
+      <VaultPageInner />
+    </Suspense>
+  );
+}
+
+function VaultPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { currentRole, currentRepId, currentRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
 
+  // URL-persisted filters
+  const initialType = (searchParams.get('type') ?? 'all') as 'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer';
+  const initialStatus = (searchParams.get('status') ?? 'all') as 'all' | 'Draft' | 'Pending' | 'Paid';
+
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
   const [showReimbModal, setShowReimbModal] = useState(false);
-  const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: new Date().toISOString().split('T')[0], fileName: '' });
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>('all');
+  const [filterType, setFilterTypeState] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer'>(['all', 'M1', 'M2', 'M3', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'all');
+  const [filterStatus, setFilterStatusState] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>(['all', 'Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'all');
+
+  const setFilterType = (v: typeof filterType) => {
+    setFilterTypeState(v);
+    setPeriodPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (v !== 'all') params.set('type', v); else params.delete('type');
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+  const setFilterStatus = (v: typeof filterStatus) => {
+    setFilterStatusState(v);
+    setPeriodPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (v !== 'all') params.set('status', v); else params.delete('status');
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
   const [payFilterFrom, setPayFilterFrom] = useState('');
   const [payFilterTo, setPayFilterTo] = useState('');
   const [periodPage, setPeriodPage] = useState(1);
@@ -108,7 +138,6 @@ export default function VaultPage() {
 
   // ── Refs ──
   const searchRef = useRef<HTMLInputElement>(null);
-  const amountRef = useRef<HTMLInputElement>(null);
   const [searchFocused, setSearchFocused] = useState(false);
 
   // ── Keyboard shortcut: '/' focuses the search input ──
@@ -129,18 +158,6 @@ export default function VaultPage() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  // ── Reimbursement modal: auto-focus amount + Escape to close ──
-  useEffect(() => {
-    if (showReimbModal) {
-      requestAnimationFrame(() => amountRef.current?.focus());
-      const handleKey = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') setShowReimbModal(false);
-      };
-      document.addEventListener('keydown', handleKey);
-      return () => document.removeEventListener('keydown', handleKey);
-    }
-  }, [showReimbModal]);
 
   const todayStr = new Date().toISOString().split('T')[0];
   // Wrap in useMemo so the React Compiler can treat nextFriday/nextFridayStr as
@@ -298,13 +315,13 @@ export default function VaultPage() {
       monthlyAvg = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
       annual = Math.round(monthlyAvg * 12);
       basis = 'blended';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × $${Math.round(avgCommissionPerDeal).toLocaleString()} avg`;
+      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
     } else {
       // Pure pace-based (new rep or no paid history yet)
       monthlyAvg = Math.round(paceBasedAnnual / 12);
       annual = Math.round(paceBasedAnnual);
       basis = 'pace';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × $${Math.round(avgCommissionPerDeal).toLocaleString()} avg`;
+      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
     }
 
     // Add pipeline boost: active deals not yet at milestones add to the projection
@@ -320,18 +337,6 @@ export default function VaultPage() {
     return Math.ceil(ms / (1000 * 60 * 60 * 24));
   })();
 
-  // ── Monthly earnings for mini chart ──
-  const monthlyEarnings = useMemo(() => {
-    const months = new Map<string, number>();
-    for (const e of payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Paid' && p.date <= todayStr)) {
-      const m = e.date.slice(0, 7);
-      months.set(m, (months.get(m) ?? 0) + e.amount);
-    }
-    return [...months.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
-  }, [payrollEntries, currentRepId, todayStr]);
-
-  const maxMonthly = Math.max(...monthlyEarnings.map(([, v]) => v), 1);
-
   // ── Reimbursements ──
   const myReimbs = useMemo(() =>
     reimbursements.filter((r) => r.repId === currentRepId),
@@ -340,28 +345,9 @@ export default function VaultPage() {
   const pendingReimbs = myReimbs.filter((r) => r.status === 'Pending');
   const approvedReimbTotal = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
 
-  const handleSubmitReimb = () => {
-    const amount = parseFloat(reimbForm.amount);
-    if (!amount || amount <= 0 || !reimbForm.description.trim()) return;
-    const newReimb: Reimbursement = {
-      id: `reimb_${Date.now()}`,
-      repId: currentRepId ?? '',
-      repName: currentRepName ?? '',
-      amount,
-      description: reimbForm.description.trim(),
-      date: reimbForm.date || new Date().toISOString().split('T')[0],
-      status: 'Pending',
-      receiptName: reimbForm.fileName || undefined,
-    };
-    setReimbursements((prev) => [...prev, newReimb]);
-    toast('Reimbursement submitted', 'success');
-    setShowReimbModal(false);
-    setReimbForm({ amount: '', description: '', date: new Date().toISOString().split('T')[0], fileName: '' });
-  };
-
   if (!isHydrated) return <VaultSkeleton />;
 
-  if (currentRole !== 'rep') {
+  if (currentRole !== 'rep' && currentRole !== 'sub-dealer') {
     return (
       <div className="p-8 text-center">
         <p className="text-slate-500 text-sm">My Pay is only available in the rep view.</p>
@@ -372,65 +358,23 @@ export default function VaultPage() {
   return (
     <div className="p-4 md:p-8 max-w-4xl animate-fade-in-up">
       {/* ── Reimbursement Modal ── */}
-      {showReimbModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowReimbModal(false); }}>
-          <div className="card-surface rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-violet-400" />
-                <h2 className="text-white font-bold text-base">Request Reimbursement</h2>
-              </div>
-              <button onClick={() => setShowReimbModal(false)} aria-label="Close reimbursement modal" className="text-slate-400 hover:text-white transition-colors rounded-lg p-1 hover:bg-slate-800">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Amount ($)</label>
-                  <input ref={amountRef} type="number" step="0.01" min="0.01" placeholder="0.00" value={reimbForm.amount}
-                    onChange={(e) => setReimbForm((p) => ({ ...p, amount: e.target.value }))}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 placeholder-slate-500 input-focus-glow" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
-                  <input type="date" value={reimbForm.date}
-                    onChange={(e) => setReimbForm((p) => ({ ...p, date: e.target.value }))}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 input-focus-glow" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Description</label>
-                <input type="text" placeholder="e.g. Gas mileage, office supplies..." value={reimbForm.description}
-                  onChange={(e) => setReimbForm((p) => ({ ...p, description: e.target.value }))}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 placeholder-slate-500 input-focus-glow" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Receipt <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
-                <label className="flex items-center gap-2 bg-slate-800 border border-slate-700 border-dashed rounded-xl px-4 py-2.5 cursor-pointer hover:border-slate-600 transition-colors">
-                  <Upload className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                  <span className="text-slate-500 text-sm truncate">{reimbForm.fileName || 'Attach file...'}</span>
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
-                    onChange={(e) => setReimbForm((p) => ({ ...p, fileName: e.target.files?.[0]?.name ?? '' }))} />
-                </label>
-              </div>
-              <div className="flex gap-3 pt-1">
-                <div className="relative inline-flex flex-1">
-                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-violet-500 to-blue-500 opacity-25 blur-md animate-pulse" />
-                  <button onClick={handleSubmitReimb}
-                    className="relative w-full btn-primary text-white font-semibold px-5 py-2.5 rounded-xl text-sm active:scale-[0.97]">
-                    Submit Request
-                  </button>
-                </div>
-                <button onClick={() => setShowReimbModal(false)}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReimbursementModal
+        open={showReimbModal}
+        onClose={() => setShowReimbModal(false)}
+        repId={currentRepId ?? ''}
+        repName={currentRepName ?? ''}
+        onSubmit={(data) => {
+          const newReimb: Reimbursement = { id: `reimb_${Date.now()}`, ...data, status: 'Pending' };
+          setReimbursements((prev) => [...prev, newReimb]);
+          fetch('/api/reimbursements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repId: data.repId, amount: data.amount, description: data.description, date: data.date, receiptName: data.receiptName }),
+          }).catch(console.error);
+          toast('Reimbursement submitted', 'success');
+          setShowReimbModal(false);
+        }}
+      />
 
       {/* ── Hero Banner — Next Payout + Page Title ── */}
       <div className="card-surface rounded-2xl mb-4 animate-slide-in-scale border-b-2 border-blue-500/15">
@@ -486,11 +430,11 @@ export default function VaultPage() {
           </div>
           <p className="text-3xl font-black tabular-nums text-amber-400 stat-value"
              style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)' }}>
-            {annualProjection.annual > 0 ? `$${annualProjection.annual.toLocaleString()}` : '—'}
+            {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
           <p className="text-slate-600 text-[10px] mt-1.5">
             {annualProjection.basis === 'blended'
-              ? `${new Date().getFullYear()} · $${annualProjection.monthlyAvg.toLocaleString()}/mo avg`
+              ? `${new Date().getFullYear()} · ${fmt$(annualProjection.monthlyAvg)}/mo avg`
               : annualProjection.basis === 'pace'
               ? `${new Date().getFullYear()} · ${annualProjection.details}`
               : 'Close deals to see projection'}
@@ -509,43 +453,8 @@ export default function VaultPage() {
         </div>
       </div>
 
-      {/* ── Earnings Timeline + Pipeline (side by side on lg) ── */}
+      {/* ── Projected Pipeline ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
-        {/* Monthly chart */}
-        {monthlyEarnings.length > 1 && (
-          <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Monthly Earnings</p>
-              </div>
-              <p className="text-emerald-400 text-xs font-bold tabular-nums">
-                ${monthlyEarnings[monthlyEarnings.length - 1]?.[1]?.toLocaleString() ?? '0'}
-                <span className="text-slate-600 font-normal ml-1">latest</span>
-              </p>
-            </div>
-            <div className="flex items-end gap-3 h-24">
-              {monthlyEarnings.map(([month, amount], i) => {
-                const pct = (amount / maxMonthly) * 100;
-                const label = new Date(month + '-15').toLocaleDateString('en-US', { month: 'short' });
-                const isLatest = i === monthlyEarnings.length - 1;
-                return (
-                  <div key={month} className="flex-1 flex flex-col items-center gap-1.5">
-                    <div className={`w-full rounded-lg relative group transition-all duration-300 ${isLatest ? 'bg-emerald-500/30' : 'bg-emerald-500/15 hover:bg-emerald-500/25'}`}
-                         style={{ height: `${Math.max(pct, 6)}%` }}>
-                      <div className="absolute -top-7 left-1/2 -translate-x-1/2 card-surface text-white text-[10px] font-semibold px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                        ${amount.toLocaleString()}
-                      </div>
-                      {isLatest && <div className="absolute inset-0 rounded-lg bg-emerald-500/20 animate-pulse" />}
-                    </div>
-                    <span className={`text-[10px] font-medium ${isLatest ? 'text-emerald-400' : 'text-slate-600'}`}>{label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Projected pipeline */}
         {(projectedM1 > 0 || projectedM2 > 0) && (
           <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-6">
@@ -592,21 +501,23 @@ export default function VaultPage() {
         )}
       </div>
 
-      {/* ── Reimbursements quick status ── */}
-      {(pendingReimbs.length > 0 || approvedReimbTotal > 0) && (
-        <div className="card-surface rounded-2xl p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Receipt className="w-4 h-4 text-violet-400" />
-            <div>
-              <p className="text-white text-sm font-medium">Reimbursements</p>
-              <p className="text-slate-500 text-xs">{pendingReimbs.length} pending{approvedReimbTotal > 0 ? ` · $${approvedReimbTotal.toLocaleString()} approved` : ''}</p>
-            </div>
+      {/* ── Reimbursements ── */}
+      <div className="card-surface rounded-2xl p-4 mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Receipt className="w-4 h-4 text-violet-400" />
+          <div>
+            <p className="text-white text-sm font-medium">Reimbursements</p>
+            <p className="text-slate-500 text-xs">
+              {pendingReimbs.length > 0 || approvedReimbTotal > 0
+                ? `${pendingReimbs.length} pending${approvedReimbTotal > 0 ? ` · ${fmt$(approvedReimbTotal)} approved` : ''}`
+                : 'Submit expenses for reimbursement'}
+            </p>
           </div>
-          <button onClick={() => setShowReimbModal(true)} className="text-violet-400 hover:text-violet-300 text-xs font-semibold transition-colors">
-            + New Request
-          </button>
         </div>
-      )}
+        <button onClick={() => setShowReimbModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors">
+          <Receipt className="w-3.5 h-3.5" /> New Request
+        </button>
+      </div>
 
       {/* ── Filters ── */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -631,6 +542,9 @@ export default function VaultPage() {
             </kbd>
           )}
         </div>
+        {searchQuery && (
+          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{myEntries.length} result{myEntries.length !== 1 ? 's' : ''}</span>
+        )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="flex items-center gap-2">
             <label className="text-xs text-slate-500 font-medium uppercase tracking-wider whitespace-nowrap">Pay Period From</label>
@@ -661,18 +575,19 @@ export default function VaultPage() {
         )}
         <select
           value={filterType}
-          onChange={(e) => { setFilterType(e.target.value as typeof filterType); setPeriodPage(1); }}
+          onChange={(e) => setFilterType(e.target.value as typeof filterType)}
           className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Types</option>
-          <option value="M1">M1 Only</option>
+          {currentRole !== 'sub-dealer' && <option value="M1">M1 Only</option>}
           <option value="M2">M2 Only</option>
           <option value="M3">M3 Only</option>
-          <option value="Bonus">Bonus Only</option>
+          {currentRole !== 'sub-dealer' && <option value="Bonus">Bonus Only</option>}
+          {currentRole !== 'sub-dealer' && <option value="Trainer">Trainer Only</option>}
         </select>
         <select
           value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value as typeof filterStatus); setPeriodPage(1); }}
+          onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
           className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Statuses</option>
@@ -791,7 +706,7 @@ export default function VaultPage() {
                   <div className="border-t border-slate-800/50">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead>
+                        <thead className="table-header-frost">
                           <tr className="border-b border-slate-800/50">
                             <th className="text-left px-5 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Customer</th>
                             <th className="text-left px-3 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Stage</th>
@@ -817,10 +732,10 @@ export default function VaultPage() {
                               <td className="px-3 py-3"><StatusBadge status={entry.status} /></td>
                               <td className="px-5 py-3 text-right">
                                 <span className={`font-semibold tabular-nums ${entry.status === 'Paid' && entry.date <= todayStr ? 'text-emerald-400' : 'text-white'}`}>
-                                  ${entry.amount.toLocaleString()}
+                                  {fmt$(entry.amount)}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-slate-500 text-xs whitespace-nowrap">{formatDate(entry.date)}</td>
+                              <td className="px-3 py-3 text-slate-500 text-xs whitespace-nowrap"><RelativeDate date={entry.date} /></td>
                               <td className="px-3 py-3 text-slate-600 text-xs truncate max-w-[150px]">{entry.notes || '—'}</td>
                             </tr>
                           ))}

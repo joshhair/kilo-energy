@@ -22,7 +22,7 @@ model User {
   email     String   @unique
   phone     String   @default("")
 
-  /// "admin" | "rep"
+  /// "admin" | "rep" | "sub-dealer"
   role      String   @default("rep")
 
   /// "closer" | "setter" | "both" — only applies when role = "rep"
@@ -41,6 +41,7 @@ model User {
   // --- Relations ---
   projectsAsCloser   Project[]          @relation("ProjectCloser")
   projectsAsSetter   Project[]          @relation("ProjectSetter")
+  projectsAsSubDealer Project[]         @relation("ProjectSubDealer")
   payrollEntries     PayrollEntry[]
   reimbursements     Reimbursement[]
   trainingAsTrainer  TrainerAssignment[] @relation("Trainer")
@@ -144,6 +145,9 @@ model InstallerPricingTier {
   setterPerW Float?  /// null = auto (closerPerW + 0.10)
   kiloPerW   Float
 
+  /// Sub-dealer rate: what Kilo pays the sub-dealer per watt (null = sub-dealers cannot sell this installer/tier)
+  subDealerPerW Float?
+
   @@index([versionId])
 }
 
@@ -217,6 +221,9 @@ model ProductPricingTier {
   setterPerW Float   /// explicit (usually closerPerW + 0.10)
   kiloPerW   Float
 
+  /// Sub-dealer rate: what Kilo pays the sub-dealer per watt (null = sub-dealers cannot sell this product/tier)
+  subDealerPerW Float?
+
   @@index([versionId])
 }
 
@@ -232,6 +239,10 @@ model Project {
   closer   User   @relation("ProjectCloser", fields: [closerId], references: [id])
   setterId String?
   setter   User?  @relation("ProjectSetter", fields: [setterId], references: [id])
+
+  /// Sub-dealer who submitted this deal (null for direct Kilo deals)
+  subDealerId String?
+  subDealer   User?  @relation("ProjectSubDealer", fields: [subDealerId], references: [id])
 
   soldDate String /// ISO date YYYY-MM-DD
 
@@ -284,13 +295,37 @@ model Project {
   updatedAt DateTime @updatedAt
 
   payrollEntries PayrollEntry[]
+  activities     ProjectActivity[]
+  messages       ProjectMessage[]
 
   @@index([closerId])
   @@index([setterId])
+  @@index([subDealerId])
   @@index([installerId])
   @@index([phase])
   @@index([soldDate])
   @@index([blitzId])
+}
+
+// ============================================================================
+// PROJECT ACTIVITY (audit trail)
+// ============================================================================
+
+model ProjectActivity {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// 'phase_change' | 'flagged' | 'unflagged' | 'm1_paid' | 'm2_paid' | 'note_edit' | 'field_edit' | 'created' | 'setter_assigned'
+  type      String
+  /// Human-readable description: "Phase changed from Design to Permitting"
+  detail    String
+  /// Optional JSON metadata (old/new values)
+  meta      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
 }
 
 // ============================================================================
@@ -507,6 +542,50 @@ model BlitzCost {
   updatedAt DateTime @updatedAt
 
   @@index([blitzId])
+}
+
+// ============================================================================
+// PROJECT CHATTER
+// ============================================================================
+
+model ProjectMessage {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId   String   // rep or admin user ID
+  authorName String
+  authorRole String   // 'admin', 'rep', 'sub-dealer'
+  text       String
+  createdAt  DateTime @default(now())
+
+  checkItems ProjectCheckItem[]
+  mentions   ProjectMention[]
+
+  @@index([projectId])
+}
+
+model ProjectCheckItem {
+  id          String          @id @default(cuid())
+  messageId   String
+  message     ProjectMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  text        String
+  completed   Boolean         @default(false)
+  completedBy String?
+  completedAt DateTime?
+  dueDate     DateTime?
+
+  @@index([messageId])
+}
+
+model ProjectMention {
+  id        String          @id @default(cuid())
+  messageId String
+  message   ProjectMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  readAt    DateTime?
+
+  @@index([messageId])
+  @@index([userId])
 }
 
 model BlitzRequest {

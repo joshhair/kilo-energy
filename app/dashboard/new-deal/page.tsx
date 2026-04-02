@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
@@ -15,6 +15,7 @@ import {
 import { Check, Loader2, PlusCircle, CheckCircle2, ArrowRight, RotateCcw } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { Breadcrumb } from '../components/Breadcrumb';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -93,9 +94,10 @@ interface FormStepperProps {
   stepsComplete: boolean[];
   progressPct: number;
   onStepClick?: (step: number) => void;
+  pulseStep?: number | null;
 }
 
-function FormStepper({ currentStep, stepsComplete, progressPct, onStepClick }: FormStepperProps) {
+function FormStepper({ currentStep, stepsComplete, progressPct, onStepClick, pulseStep }: FormStepperProps) {
   return (
     <div
       className="sticky top-[60px] md:top-0 z-20 border-b border-slate-800/60"
@@ -123,7 +125,7 @@ function FormStepper({ currentStep, stepsComplete, progressPct, onStepClick }: F
                       : isCurrent
                       ? 'bg-blue-600 text-white ring-2 ring-blue-500 ring-offset-[3px] ring-offset-[var(--navy-base)]'
                       : 'bg-slate-800 border border-slate-700 text-slate-500'
-                  }`}
+                  } ${pulseStep === idx ? 'animate-pulse shadow-lg shadow-emerald-500/40 scale-110' : ''}`}
                 >
                   {isComplete ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : idx + 1}
                 </div>
@@ -261,15 +263,15 @@ function NewDealSkeleton() {
 
         {/* Form card — 2-column grid with 6 field placeholders */}
         <div className="card-surface rounded-2xl p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <SkeletonField delay={0} />
             <SkeletonField delay={75} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <SkeletonField delay={150} />
             <SkeletonField delay={225} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <SkeletonField delay={300} />
             <SkeletonField delay={375} />
           </div>
@@ -333,7 +335,7 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
           {/* Deal summary */}
           <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 mb-4 space-y-2.5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
               <div>
                 <p className="text-slate-500 text-xs mb-0.5">Installer</p>
                 <p className="text-white font-medium">{deal.installer}</p>
@@ -380,11 +382,11 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
           {/* Actions */}
           <div className="flex gap-3">
             <button
-              onClick={() => router.push(`/dashboard/projects/${deal.projectId}`)}
+              onClick={() => router.push('/dashboard/projects')}
               className="flex-1 inline-flex items-center justify-center gap-2 btn-primary text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
               style={{ backgroundColor: 'var(--brand)' }}
             >
-              View Deal <ArrowRight className="w-4 h-4" />
+              View Projects <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={onReset}
@@ -442,7 +444,7 @@ function DealEntryPage({ onStart, projects }: { onStart: () => void; projects: {
   return (
     <div className="p-4 md:p-8 max-w-2xl animate-slide-in-scale">
       <div className="card-surface rounded-2xl">
-        <div className="px-8 py-10 md:px-12 md:py-14">
+        <div className="px-6 py-8 sm:px-8 sm:py-10 md:px-12 md:py-14">
           {/* Icon + heading */}
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
@@ -494,12 +496,21 @@ function DealEntryPage({ onStart, projects }: { onStart: () => void; projects: {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function NewDealPage() {
-  const { dbReady, currentRole, currentRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions } = useApp();
+export default function NewDealPageWrapper() {
+  return (
+    <Suspense>
+      <NewDealPage />
+    </Suspense>
+  );
+}
+
+function NewDealPage() {
+  const { dbReady, currentRole, currentRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines } = useApp();
   const { toast } = useToast();
   const router = useRouter();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
   const isHydrated = useIsHydrated();
+  const isSubDealer = currentRole === 'sub-dealer';
 
   const blankForm = () => ({
     customerName: '',
@@ -533,16 +544,65 @@ export default function NewDealPage() {
   const isDirty = useRef(false);
 
   // Blitz list for lead source attribution
-  const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string }>>([]);
+  const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.json()).then((data) => {
       setAvailableBlitzes((data ?? []).filter((b: any) => b.status === 'upcoming' || b.status === 'active' || b.status === 'completed'));
     }).catch(() => {});
   }, []);
 
+  // ── Duplicate deal pre-fill from query params ─────────────────────────────
+  const searchParams = useSearchParams();
+  const duplicateApplied = useRef(false);
+  const duplicateCustomerName = searchParams.get('duplicate') === 'true' ? (searchParams.get('customerName') ?? '') : '';
+  const customerNameInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (duplicateApplied.current) return;
+    if (searchParams.get('duplicate') !== 'true') return;
+    duplicateApplied.current = true;
+    const installer = searchParams.get('installer') ?? '';
+    const financer = searchParams.get('financer') ?? '';
+    const productType = searchParams.get('productType') ?? '';
+    const repId = searchParams.get('repId') ?? (currentRole === 'admin' ? '' : (currentRepId ?? ''));
+    const setterId = searchParams.get('setterId') ?? '';
+    setForm((prev) => ({
+      ...prev,
+      installer,
+      financer,
+      productType,
+      repId,
+      setterId,
+      // Leave customer name, kW, netPPW, notes blank for the new deal
+    }));
+    setView('form');
+    toast('Deal duplicated — fill in the new customer details', 'info');
+    // Auto-focus customer name field after a brief delay for form to render
+    setTimeout(() => customerNameInputRef.current?.focus(), 150);
+  }, [searchParams, currentRole, currentRepId, toast]);
+
+  // ── Pre-fill last-used installer from localStorage ────────────────────────
+  const lastInstallerApplied = useRef(false);
+  useEffect(() => {
+    if (lastInstallerApplied.current) return;
+    if (searchParams.get('duplicate') === 'true') return; // duplicate overrides
+    lastInstallerApplied.current = true;
+    try {
+      const lastInstaller = localStorage.getItem('lastInstaller');
+      if (lastInstaller && activeInstallers.includes(lastInstaller)) {
+        setForm((prev) => prev.installer ? prev : { ...prev, installer: lastInstaller });
+      }
+    } catch {}
+  }, [searchParams, activeInstallers]);
+
   // ── Multi-step navigation ──────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
+  // Track whether the user manually navigated backward (suppress auto-advance)
+  const userNavigatedBack = useRef(false);
+  // Track which steps have already been auto-advanced (so we only auto-advance once per step)
+  const autoAdvancedSteps = useRef<Set<number>>(new Set());
+  // Track the step circle pulse animation
+  const [pulseStep, setPulseStep] = useState<number | null>(null);
 
   // Derived: SolarTech — family comes from form, not from financer
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
@@ -565,10 +625,11 @@ export default function NewDealPage() {
     (currentRole === 'admin' && form.repId !== '');
 
   useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => { if (isDirty.current) { e.preventDefault(); } };
+    if (!isFormDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, []);
+  }, [isFormDirty]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -691,6 +752,18 @@ export default function NewDealPage() {
 
   const showPreview = closerPerW > 0 && kW > 0 && soldPPW > 0;
 
+  // ── Sub-dealer commission calculation ────────────────────────────────────
+  // Uses subDealerPerW from installer baselines — this is what Kilo pays the sub-dealer per watt.
+  // Commission = (subDealerPerW - kiloPerW) * kW * 1000
+  const subDealerRate = (() => {
+    if (!isSubDealer || !form.installer) return 0;
+    const baseline = installerBaselines[form.installer];
+    return baseline?.subDealerPerW ?? closerPerW;
+  })();
+  const subDealerCommission = isSubDealer && kW > 0 && soldPPW > 0 && subDealerRate > 0
+    ? calculateCommission(soldPPW, subDealerRate, kW)
+    : 0;
+
   // ── Stepper: section completion & progress ────────────────────────────────
 
   const isFieldValid = (field: string) => {
@@ -710,8 +783,8 @@ export default function NewDealPage() {
     'productType',
     ...(form.installer === 'SolarTech' ? ['solarTechFamily'] : []),
     ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
-    ...(isPcInstaller ? ['pcFamily'] : []),
-    ...(isPcInstaller && hasPcProducts ? ['installerProductId'] : []),
+    ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
+    ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
     'kWSize',
     'netPPW',
   ];
@@ -727,6 +800,29 @@ export default function NewDealPage() {
   const progressPct = allRequired.length
     ? Math.round((allRequired.filter(isFieldValid).length / allRequired.length) * 100)
     : 0;
+
+  // ── Auto-advance when a step is fully filled (#5) ──────────────────────────
+  useEffect(() => {
+    // Only auto-advance if: step is complete, user hasn't navigated backward,
+    // we haven't already auto-advanced this step, and there's a next step
+    if (
+      !userNavigatedBack.current &&
+      stepsComplete[currentStep] &&
+      !autoAdvancedSteps.current.has(currentStep) &&
+      currentStep < DEAL_STEPS.length - 1
+    ) {
+      autoAdvancedSteps.current.add(currentStep);
+      // Brief green pulse on the step circle
+      setPulseStep(currentStep);
+      const pulseClear = setTimeout(() => setPulseStep(null), 600);
+      // Auto-advance after 500ms delay
+      const advanceTimer = setTimeout(() => {
+        setSlideDirection('forward');
+        setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
+      }, 500);
+      return () => { clearTimeout(advanceTimer); clearTimeout(pulseClear); };
+    }
+  }, [stepsComplete, currentStep]);
 
   // ── Step navigation handlers ───────────────────────────────────────────────
 
@@ -752,11 +848,13 @@ export default function NewDealPage() {
     setErrors((prev) => ({ ...prev, ...stepErrors }));
     if (hasStepErrors) return;
 
+    userNavigatedBack.current = false;
     setSlideDirection('forward');
     setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
   };
 
   const handlePrev = () => {
+    userNavigatedBack.current = true;
     setSlideDirection('backward');
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
@@ -776,8 +874,8 @@ export default function NewDealPage() {
       ...(currentRole === 'admin' ? ['repId'] : []),
       ...(form.installer === 'SolarTech' ? ['solarTechFamily'] : []),
       ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
-      ...(isPcInstaller ? ['pcFamily'] : []),
-      ...(isPcInstaller && hasPcProducts ? ['installerProductId'] : []),
+      ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
+      ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
     ];
 
     const newErrors: Record<string, string> = {};
@@ -801,10 +899,10 @@ export default function NewDealPage() {
       id: projectId,
       customerId: genId('cust'),
       customerName: form.customerName,
-      repId: closerId,
-      repName: rep?.name ?? currentRepName ?? '',
-      setterId: setter?.id,
-      setterName: setter?.name,
+      repId: isSubDealer ? (currentRepId ?? '') : closerId,
+      repName: isSubDealer ? (currentRepName ?? '') : (rep?.name ?? currentRepName ?? ''),
+      setterId: isSubDealer ? undefined : setter?.id,
+      setterName: isSubDealer ? undefined : setter?.name,
       soldDate: form.soldDate,
       installer: form.installer,
       financer: form.financer,
@@ -813,9 +911,9 @@ export default function NewDealPage() {
       netPPW: soldPPW,
       phase: 'New',
       m1Paid: false,
-      m1Amount: m1Flat,
+      m1Amount: isSubDealer ? 0 : m1Flat,
       m2Paid: false,
-      m2Amount: closerM2Full,
+      m2Amount: isSubDealer ? subDealerCommission : closerM2Full,
       notes: form.notes,
       flagged: false,
       solarTechProductId: form.installer === 'SolarTech' && hasSolarTechProducts ? form.solarTechProductId : undefined,
@@ -825,11 +923,23 @@ export default function NewDealPage() {
       prepaidSubType: form.prepaidSubType || undefined,
       leadSource: form.leadSource || undefined,
       blitzId: form.leadSource === 'blitz' && form.blitzId ? form.blitzId : undefined,
+      subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
+      subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
     };
 
     isDirty.current = false;
-    addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
-      trainerTotal > 0 ? setterAssignment?.trainerId : undefined);
+    if (isSubDealer) {
+      // Sub-dealer deals: no M1, M2 = sub-dealer commission, no setter/trainer entries
+      addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
+    } else {
+      addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
+        trainerTotal > 0 ? setterAssignment?.trainerId : undefined);
+    }
+
+    // Remember installer for next deal
+    if (form.installer) {
+      try { localStorage.setItem('lastInstaller', form.installer); } catch {}
+    }
 
     toast(`Deal submitted for ${form.customerName}`, 'success');
 
@@ -841,10 +951,10 @@ export default function NewDealPage() {
       productType: form.productType,
       kW,
       soldPPW,
-      closerTotal,
-      closerM1,
-      closerM2,
-      closerM3,
+      closerTotal: isSubDealer ? subDealerCommission : closerTotal,
+      closerM1: isSubDealer ? 0 : closerM1,
+      closerM2: isSubDealer ? subDealerCommission : closerM2,
+      closerM3: isSubDealer ? 0 : closerM3,
       setterTotal,
       setterName: setter?.name ?? '',
       repName: rep?.name ?? currentRepName ?? 'You',
@@ -892,9 +1002,11 @@ export default function NewDealPage() {
         stepsComplete={stepsComplete}
         progressPct={progressPct}
         onStepClick={(step) => setCurrentStep(step)}
+        pulseStep={pulseStep}
       />
 
       <div className="p-4 md:p-8 max-w-2xl">
+      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'New Deal' }]} />
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
@@ -913,6 +1025,14 @@ export default function NewDealPage() {
         </div>
       </div>
 
+      {/* Duplicate info badge */}
+      {duplicateCustomerName && (
+        <div className="mb-4 flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5">
+          <RotateCcw className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          <p className="text-blue-300 text-sm">Duplicating from <span className="font-semibold text-white">{duplicateCustomerName}</span></p>
+        </div>
+      )}
+
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
 
         {/* ── Animated step content wrapper ── */}
@@ -921,10 +1041,11 @@ export default function NewDealPage() {
         {/* ── Section 1: People ── */}
         {currentStep === 0 && (
         <div id="section-people" className="card-surface rounded-2xl p-6 overflow-visible relative z-10">
-          <SectionHeader step={1} label="People" />
+          <SectionHeader step={1} label={isSubDealer ? 'Deal Info' : 'People'} />
 
           <div className="space-y-4">
-            {/* Closer / Setter card */}
+            {/* Closer / Setter card — hidden for sub-dealers */}
+            {!isSubDealer && (
             <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-1 space-y-4">
               {currentRole === 'admin' && (
                 <div className="transition-all duration-200">
@@ -962,13 +1083,14 @@ export default function NewDealPage() {
                 )}
               </div>
             </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="transition-all duration-200">
                 <label htmlFor="field-customerName" className={labelCls}>
                   <span className="inline-flex items-center gap-1">Customer Name {fieldCheck('customerName')}</span>
                 </label>
-                <input id="field-customerName" type="text" placeholder="e.g. John & Jane Smith"
+                <input id="field-customerName" ref={customerNameInputRef} type="text" placeholder="e.g. John & Jane Smith"
                   value={form.customerName} onChange={(e) => update('customerName', e.target.value)}
                   onBlur={() => handleBlur('customerName')} aria-invalid={!!errors.customerName}
                   className={inputCls('customerName')} />
@@ -1348,53 +1470,76 @@ export default function NewDealPage() {
               </div>
 
               {/* Commission preview */}
-              <div style={{ maxHeight: showPreview ? '400px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s ease-in-out' }}>
+              <div style={{ maxHeight: showPreview || (isSubDealer && subDealerCommission > 0) ? '400px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s ease-in-out' }}>
                 <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 text-sm space-y-2">
                   <p className="text-slate-400 font-medium text-xs uppercase tracking-wider mb-2">Commission Preview</p>
-                  <div className="flex justify-between text-xs text-slate-500 mb-1">
-                    <span>Your redline</span>
-                    <span>${closerPerW.toFixed(2)}/W</span>
-                  </div>
-                  {currentRole === 'admin' && (
-                    <div className="flex justify-between text-xs text-slate-500 mb-1">
-                      <span>Kilo baseline</span>
-                      <span>${kiloPerW.toFixed(2)}/W</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Closer commission</span>
-                    <span className="text-emerald-400 font-semibold">
-                      <TickerAmount amount={closerTotal} />
-                      <span className="text-slate-500 font-normal">
-                        {' '}(M1: <TickerAmount amount={closerM1} className="tabular-nums" /> · M2: <TickerAmount amount={closerM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={closerM3} className="tabular-nums" /></>})
-                      </span>
-                    </span>
-                  </div>
-                  {form.setterId && setterTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Setter commission</span>
-                      <span className="text-blue-400 font-semibold">
-                        <TickerAmount amount={setterTotal} />
-                        <span className="text-slate-500 font-normal">
-                          {' '}(M1: <TickerAmount amount={setterM1} className="tabular-nums" /> · M2: <TickerAmount amount={setterM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={setterM3} className="tabular-nums" /></>})
+                  {isSubDealer ? (
+                    <>
+                      {subDealerRate > 0 && (
+                        <div className="flex justify-between text-xs text-slate-500 mb-1">
+                          <span>Sub-dealer rate</span>
+                          <span>${subDealerRate.toFixed(2)}/W</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>M1</span>
+                        <span className="text-slate-600">N/A &mdash; paid at install</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">M2 commission</span>
+                        <span className="text-emerald-400 font-semibold">
+                          <TickerAmount amount={subDealerCommission} />
                         </span>
-                      </span>
-                    </div>
-                  )}
-                  {trainerRep && trainerTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Trainer override ({trainerRep.name})</span>
-                      <span className="text-amber-400 font-semibold">
-                        <TickerAmount amount={trainerTotal} />
-                        <span className="text-slate-500 font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
-                      </span>
-                    </div>
-                  )}
-                  {currentRole === 'admin' && (
-                    <div className="flex justify-between border-t border-slate-700 pt-2">
-                      <span className="text-slate-400">Kilo revenue</span>
-                      <TickerAmount amount={kiloTotal} className="text-slate-300 font-semibold" />
-                    </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Your redline</span>
+                        <span>${closerPerW.toFixed(2)}/W</span>
+                      </div>
+                      {currentRole === 'admin' && (
+                        <div className="flex justify-between text-xs text-slate-500 mb-1">
+                          <span>Kilo baseline</span>
+                          <span>${kiloPerW.toFixed(2)}/W</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Closer commission</span>
+                        <span className="text-emerald-400 font-semibold">
+                          <TickerAmount amount={closerTotal} />
+                          <span className="text-slate-500 font-normal">
+                            {' '}(M1: <TickerAmount amount={closerM1} className="tabular-nums" /> · M2: <TickerAmount amount={closerM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={closerM3} className="tabular-nums" /></>})
+                          </span>
+                        </span>
+                      </div>
+                      {form.setterId && setterTotal > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Setter commission</span>
+                          <span className="text-blue-400 font-semibold">
+                            <TickerAmount amount={setterTotal} />
+                            <span className="text-slate-500 font-normal">
+                              {' '}(M1: <TickerAmount amount={setterM1} className="tabular-nums" /> · M2: <TickerAmount amount={setterM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={setterM3} className="tabular-nums" /></>})
+                            </span>
+                          </span>
+                        </div>
+                      )}
+                      {trainerRep && trainerTotal > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Trainer override ({trainerRep.name})</span>
+                          <span className="text-amber-400 font-semibold">
+                            <TickerAmount amount={trainerTotal} />
+                            <span className="text-slate-500 font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
+                          </span>
+                        </div>
+                      )}
+                      {currentRole === 'admin' && (
+                        <div className="flex justify-between border-t border-slate-700 pt-2">
+                          <span className="text-slate-400">Kilo revenue</span>
+                          <TickerAmount amount={kiloTotal} className="text-slate-300 font-semibold" />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1414,7 +1559,7 @@ export default function NewDealPage() {
             {/* ── Deal summary card — card-surface with top gradient accent ── */}
             <div className="relative card-surface rounded-2xl p-5 mb-4 overflow-hidden animate-slide-in-scale stagger-1 after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
                 <div>
                   <p className="text-slate-500 text-xs mb-0.5">Customer</p>
                   <p className="text-white font-medium truncate">{form.customerName || <span className="text-slate-600 italic">—</span>}</p>
@@ -1520,7 +1665,27 @@ export default function NewDealPage() {
                   <select
                     id="field-blitzId"
                     value={form.blitzId}
-                    onChange={(e) => update('blitzId', e.target.value)}
+                    onChange={(e) => {
+                      const blitzId = e.target.value;
+                      update('blitzId', blitzId);
+                      // Smart default sold date based on blitz date range (#15)
+                      if (blitzId) {
+                        const blitz = availableBlitzes.find((b) => b.id === blitzId);
+                        if (blitz?.startDate && blitz?.endDate) {
+                          const today = new Date().toISOString().split('T')[0];
+                          if (today >= blitz.startDate && today <= blitz.endDate) {
+                            // Today is within the blitz range — keep today
+                            update('soldDate', today);
+                          } else if (today < blitz.startDate) {
+                            // Before blitz — set to blitz start
+                            update('soldDate', blitz.startDate);
+                          } else {
+                            // After blitz — set to blitz end
+                            update('soldDate', blitz.endDate);
+                          }
+                        }
+                      }
+                    }}
                     className={inputCls('')}
                   >
                     <option value="">— Select Blitz —</option>
@@ -1608,6 +1773,22 @@ export default function NewDealPage() {
 
       </form>
       </div>
+
+      {/* ── Sticky mobile commission preview bar (step 2 only) ── */}
+      {currentStep === 1 && showPreview && (
+        <div className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-4 py-3">
+          <div className="flex items-center justify-between max-w-2xl mx-auto">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider leading-none mb-0.5">
+                {form.installer}{kW > 0 ? ` \u00B7 ${kW.toFixed(1)} kW` : ''}
+              </span>
+              <span className="text-lg font-black text-blue-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                Est. Commission: ${closerTotal.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

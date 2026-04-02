@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
+import { requireAuth } from '../../../../lib/api-auth';
 
-// GET /api/blitzes/[id] — Get a single blitz with all relations
+// GET /api/blitzes/[id] — Get a single blitz
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const blitz = await prisma.blitz.findUnique({
     where: { id },
@@ -23,6 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 // PATCH /api/blitzes/[id] — Update blitz
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const body = await req.json();
 
@@ -52,6 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 // DELETE /api/blitzes/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   await prisma.blitz.delete({ where: { id } });
   return NextResponse.json({ success: true });

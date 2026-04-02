@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
+import { requireAdmin } from '../../../../lib/api-auth';
 
-// PATCH /api/installers/[id] — Update installer (active, installPayPct, etc.)
+// PATCH /api/installers/[id] — Update installer (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const body = await req.json();
 
@@ -15,8 +17,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(installer);
 }
 
-// DELETE /api/installers/[id] — Delete installer and cascade pricing/products
+// DELETE /api/installers/[id] — Delete installer (admin only)
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   // Cascading deletes are handled by the schema (onDelete: Cascade)
   await prisma.installer.delete({ where: { id } });

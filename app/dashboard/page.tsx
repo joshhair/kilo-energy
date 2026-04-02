@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, type CSSProperties } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../lib/context';
@@ -9,10 +9,11 @@ import { computeSparklineData, Sparkline } from '../../lib/sparkline';
 import {
   computeIncentiveProgress, formatIncentiveMetric,
   getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
+  getTrainerOverrideRate,
   Project, InstallerPricingVersion, ProductCatalogProduct, ACTIVE_PHASES,
 } from '../../lib/data';
-import { formatDate } from '../../lib/utils';
-import { TrendingUp, TrendingDown, AlertCircle, DollarSign, CheckCircle, Zap, Users, BarChart2, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, PauseCircle } from 'lucide-react';
+import { formatDate, fmt$, getCustomConfig } from '../../lib/utils';
+import { TrendingUp, TrendingDown, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Users, BarChart2, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, PauseCircle, HelpCircle, MessageSquare } from 'lucide-react';
 import { PaginationBar } from './components/PaginationBar';
 
 type Period = 'all' | 'this-month' | 'last-month' | 'this-year';
@@ -90,19 +91,52 @@ const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: st
 
 // ─── Needs Attention ──────────────────────────────────────────────────────────
 
+/** Cumulative days-from-sold thresholds — a project still in this phase after this many total days is "stuck". */
+const DEFAULT_PHASE_STUCK_THRESHOLDS: Record<string, number> = {
+  'New':             5,
+  'Acceptance':      10,
+  'Site Survey':     20,
+  'Design':          30,
+  'Permitting':      50,
+  'Pending Install': 65,
+  'Installed':       75,
+};
+
+function getPhaseStuckThresholds(): Record<string, number> {
+  return getCustomConfig('kilo-pipeline-thresholds', DEFAULT_PHASE_STUCK_THRESHOLDS);
+}
+
+type MentionItem = {
+  id: string;
+  projectId: string;
+  projectCustomerName: string;
+  messageId: string;
+  messageSnippet: string;
+  authorName: string;
+  checkItems: Array<{ id: string; text: string; completed: boolean; dueDate?: string | null }>;
+  createdAt: string;
+  read: boolean;
+};
+
 type AttentionItem = {
   uid: string;
   projectId: string;
   customerName: string;
-  kind: 'no-setter' | 'flagged' | 'stale' | 'on-hold';
+  kind: 'flagged' | 'stuck' | 'on-hold';
   staleDays?: number;
+  stuckPhase?: string;
   holdDays?: number;
   repName?: string;
+  mentionSnippet?: string;
+  mentionAuthor?: string;
+  mentionPendingTasks?: number;
 };
 
 function NeedsAttentionSection({
   activeProjects,
   isAdmin = false,
+  onUnflag,
+  mentions = [],
 }: {
   activeProjects: Array<{
     id: string;
@@ -114,25 +148,18 @@ function NeedsAttentionSection({
     repName?: string;
   }>;
   isAdmin?: boolean;
+  onUnflag?: (projectId: string) => void;
+  mentions?: MentionItem[];
 }) {
   const [sectionRef, sectionVisible] = useScrollReveal<HTMLDivElement>();
+  const PHASE_STUCK_THRESHOLDS = getPhaseStuckThresholds();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const items: AttentionItem[] = [];
 
-  for (const proj of activeProjects) {
-    if (!proj.setterId) {
-      items.push({
-        uid: `no-setter-${proj.id}`,
-        projectId: proj.id,
-        customerName: proj.customerName,
-        kind: 'no-setter',
-        repName: proj.repName,
-      });
-    }
-  }
+  // Self-gen deals (no setter) are normal — not an attention item
 
   for (const proj of activeProjects) {
     if (proj.flagged) {
@@ -147,16 +174,19 @@ function NeedsAttentionSection({
   }
 
   for (const proj of activeProjects) {
+    const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
+    if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
     const [y, m, d] = proj.soldDate.split('-').map(Number);
     const sold = new Date(y, m - 1, d);
     const diffDays = Math.floor((today.getTime() - sold.getTime()) / 86_400_000);
-    if (diffDays > 30) {
+    if (diffDays > threshold) {
       items.push({
-        uid: `stale-${proj.id}`,
+        uid: `stuck-${proj.id}`,
         projectId: proj.id,
         customerName: proj.customerName,
-        kind: 'stale',
+        kind: 'stuck',
         staleDays: diffDays,
+        stuckPhase: proj.phase,
         repName: proj.repName,
       });
     }
@@ -178,8 +208,14 @@ function NeedsAttentionSection({
     }
   }
 
-  // Auto-collapse when more than 10 items need attention
-  const [open, setOpen] = useState(items.length <= 10);
+  // Note: @mentions are handled by the separate MyTasksSection, not Needs Attention
+
+  // Sort: by staleDays descending (most urgent first)
+  items.sort((a, b) => {
+    return (b.staleDays ?? 0) - (a.staleDays ?? 0);
+  });
+
+  const [open, setOpen] = useState(true);
 
   const capped = items.slice(0, 5);
   const hasMore = items.length > 5;
@@ -196,24 +232,30 @@ function NeedsAttentionSection({
         className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors rounded-2xl"
       >
         <div className="flex items-center gap-3">
-          <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-amber-500 to-amber-400" />
-          <div className="p-1.5 rounded-lg bg-amber-500/15">
-            <AlertCircle className="w-4 h-4 text-amber-400" />
+          <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${items.length > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
+          <div className={`p-1.5 rounded-lg ${items.length > 0 ? 'bg-amber-500/15' : 'bg-emerald-500/15'}`}>
+            {items.length > 0
+              ? <AlertCircle className="w-4 h-4 text-amber-400" />
+              : <CheckCircle className="w-4 h-4 text-emerald-400" />
+            }
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base">Needs Attention</h2>
+          <h2 className="text-white font-bold tracking-tight text-base">
+            {items.length > 0 ? 'Needs Attention' : 'All Clear'}
+          </h2>
           {items.length > 0 && (
             <span className="bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full">
               {items.length}
             </span>
           )}
         </div>
-        <ChevronRight
-          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
-        />
+        {open
+          ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+          : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+        }
       </button>
 
-      {open && (
-        <>
+      <div className={`collapsible-panel ${open ? 'open' : ''}`}>
+        <div className="collapsible-inner">
           <div className="divider-gradient-animated" />
 
           {items.length === 0 ? (
@@ -227,43 +269,104 @@ function NeedsAttentionSection({
           ) : (
             <div className="divide-y divide-slate-800/60">
               {capped.map((item) => (
-                <Link
+                <div
                   key={item.uid}
-                  href={`/dashboard/projects/${item.projectId}`}
                   className="flex items-center gap-4 px-6 py-3.5 hover:bg-slate-800/40 transition-colors group"
                 >
-                  {/* Kind icon */}
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      item.kind === 'no-setter'
-                        ? 'bg-slate-700/60'
-                        : item.kind === 'flagged'
-                        ? 'bg-red-500/15'
-                        : item.kind === 'on-hold'
-                        ? 'bg-yellow-500/15'
-                        : 'bg-amber-500/15'
-                    }`}
+                  <Link
+                    href={`/dashboard/projects/${item.projectId}`}
+                    className="flex items-center gap-4 flex-1 min-w-0"
                   >
-                    {item.kind === 'no-setter' && <Users className="w-4 h-4 text-slate-400" />}
-                    {item.kind === 'flagged' && <Flag className="w-4 h-4 text-red-400" />}
-                    {item.kind === 'stale' && <Clock className="w-4 h-4 text-amber-400" />}
-                    {item.kind === 'on-hold' && <PauseCircle className="w-4 h-4 text-yellow-400" />}
-                  </div>
+                    {/* Kind icon — stuck uses tiered colors based on how far past threshold */}
+                    {(() => {
+                      const threshold = item.stuckPhase ? (PHASE_STUCK_THRESHOLDS[item.stuckPhase] ?? 14) : 14;
+                      const ratio = (item.staleDays ?? 0) / threshold;
+                      const isCritical = ratio >= 2;
+                      const isBehind = ratio >= 1.5;
+                      // isSlow implied otherwise (ratio >= 1)
+                      return (
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            item.kind === 'flagged'
+                              ? 'bg-red-500/15'
+                              : item.kind === 'on-hold'
+                              ? 'bg-yellow-500/15'
+                              : item.kind === 'stuck' && isCritical
+                              ? 'bg-red-500/15'
+                              : item.kind === 'stuck' && isBehind
+                              ? 'bg-orange-500/15'
+                              : 'bg-amber-500/15'
+                          }`}
+                        >
+                          {item.kind === 'flagged' && <Flag className="w-4 h-4 text-red-400" />}
+                          {item.kind === 'stuck' && isCritical && (
+                            <span className="relative flex items-center justify-center">
+                              <Clock className="w-4 h-4 text-red-400" />
+                              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                            </span>
+                          )}
+                          {item.kind === 'stuck' && isBehind && !isCritical && (
+                            <Clock className="w-4 h-4 text-orange-400" />
+                          )}
+                          {item.kind === 'stuck' && !isBehind && (
+                            <Clock className="w-4 h-4 text-amber-400" />
+                          )}
+                          {item.kind === 'on-hold' && <PauseCircle className="w-4 h-4 text-yellow-400" />}
+                        </div>
+                      );
+                    })()}
 
-                  {/* Text */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{item.customerName}</p>
-                    <p className="text-slate-500 text-xs">
-                      {item.kind === 'no-setter' && 'Self gen'}
-                      {item.kind === 'flagged' && 'Flagged for review'}
-                      {item.kind === 'stale' && `${item.staleDays} days in pipeline`}
-                      {item.kind === 'on-hold' && `On hold ${item.holdDays} day${item.holdDays !== 1 ? 's' : ''}`}
-                      {isAdmin && item.repName ? ` · ${item.repName}` : ''}
-                    </p>
-                  </div>
+                    {/* Text */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate">{item.customerName}</p>
+                      <p className={`text-xs ${
+                        (() => {
+                          if (item.kind !== 'stuck') return 'text-slate-500';
+                          const threshold = item.stuckPhase ? (PHASE_STUCK_THRESHOLDS[item.stuckPhase] ?? 14) : 14;
+                          const ratio = (item.staleDays ?? 0) / threshold;
+                          if (ratio >= 2) return 'text-red-400';
+                          if (ratio >= 1.5) return 'text-orange-400';
+                          return 'text-amber-400';
+                        })()
+                      }`}>
+                        {item.kind === 'flagged' && 'Flagged for review'}
+                        {item.kind === 'stuck' && `${item.staleDays ?? 0} days in ${item.stuckPhase}`}
+                        {item.kind === 'on-hold' && `On hold ${item.holdDays} day${item.holdDays !== 1 ? 's' : ''}`}
+                        {isAdmin && item.repName ? ` \u00b7 ${item.repName}` : ''}
+                      </p>
+                    </div>
+                  </Link>
 
-                  <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
-                </Link>
+                  {/* Inline quick actions (admin only) */}
+                  {isAdmin && (
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      {item.kind === 'flagged' && onUnflag && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnflag(item.projectId);
+                          }}
+                          className="px-2 py-0.5 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                        >
+                          Unflag
+                        </button>
+                      )}
+                      {item.kind === 'on-hold' && (
+                        <Link
+                          href={`/dashboard/projects/${item.projectId}?action=resume`}
+                          className="px-2 py-0.5 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                        >
+                          Resume
+                        </Link>
+                      )}
+                    </div>
+                  )}
+
+                  <Link href={`/dashboard/projects/${item.projectId}`} className="flex-shrink-0">
+                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                  </Link>
+                </div>
               ))}
 
               {/* View all link when capped */}
@@ -280,8 +383,152 @@ function NeedsAttentionSection({
               )}
             </div>
           )}
-        </>
-      )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── My Tasks (aggregated uncompleted check items from chatter mentions) ──────
+
+function relativeTimeShort(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatDueDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function isOverdue(dueDate: string): boolean {
+  const due = new Date(dueDate);
+  due.setHours(23, 59, 59, 999);
+  return due.getTime() < Date.now();
+}
+
+type TaskItem = {
+  checkItemId: string;
+  text: string;
+  projectId: string;
+  projectName: string;
+  messageId: string;
+  authorName: string;
+  createdAt: string;
+  dueDate?: string | null;
+};
+
+function MyTasksSection({
+  mentions,
+  onToggleTask,
+}: {
+  mentions: MentionItem[];
+  onToggleTask: (projectId: string, messageId: string, checkItemId: string, completed: boolean) => void;
+}) {
+  // Extract all uncompleted check items across all mentions
+  const tasks: TaskItem[] = [];
+  for (const mention of mentions) {
+    for (const ci of mention.checkItems) {
+      if (!ci.completed) {
+        tasks.push({
+          checkItemId: ci.id,
+          text: ci.text,
+          projectId: mention.projectId,
+          projectName: mention.projectCustomerName,
+          messageId: mention.messageId,
+          authorName: mention.authorName,
+          createdAt: mention.createdAt,
+          dueDate: ci.dueDate,
+        });
+      }
+    }
+  }
+
+  // Sort: overdue first, then by due date (soonest), then by createdAt (newest). No due date at bottom.
+  tasks.sort((a, b) => {
+    const aHasDue = !!a.dueDate;
+    const bHasDue = !!b.dueDate;
+    if (aHasDue && !bHasDue) return -1;
+    if (!aHasDue && bHasDue) return 1;
+    if (aHasDue && bHasDue) {
+      const aOverdue = isOverdue(a.dueDate!);
+      const bOverdue = isOverdue(b.dueDate!);
+      if (aOverdue && !bOverdue) return -1;
+      if (!aOverdue && bOverdue) return 1;
+      return new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime();
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  if (tasks.length === 0) return null;
+
+  return (
+    <div className="card-surface rounded-2xl mb-6">
+      <div className="px-6 py-4 flex items-center gap-3">
+        <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
+        <div className="p-1.5 rounded-lg bg-blue-500/15">
+          <CheckSquare className="w-4 h-4 text-blue-400" />
+        </div>
+        <h2 className="text-white font-bold tracking-tight text-base">My Tasks</h2>
+        <span className="bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">
+          {tasks.length}
+        </span>
+      </div>
+      <div className="divider-gradient-animated" />
+      <div className="divide-y divide-slate-800/60">
+        {tasks.map((task) => {
+          const overdue = task.dueDate ? isOverdue(task.dueDate) : false;
+          return (
+            <div
+              key={task.checkItemId}
+              className="flex items-center gap-3 px-6 py-3 hover:bg-slate-800/40 transition-colors group"
+            >
+              <input
+                type="checkbox"
+                checked={false}
+                onChange={() => onToggleTask(task.projectId, task.messageId, task.checkItemId, true)}
+                className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-emerald-500 flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-slate-200'}`}>
+                  {task.text}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <Link
+                    href={`/dashboard/projects/${task.projectId}#chatter`}
+                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors truncate max-w-[140px]"
+                  >
+                    {task.projectName}
+                  </Link>
+                  <span className="text-slate-600 text-[10px]">from {task.authorName}</span>
+                  <span className="text-slate-600 text-[10px]">{relativeTimeShort(task.createdAt)}</span>
+                  {task.dueDate && (
+                    <span
+                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                        overdue
+                          ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                          : 'bg-slate-700/50 text-slate-400 border border-slate-600/30'
+                      }`}
+                    >
+                      {overdue ? 'Overdue' : `Due ${formatDueDate(task.dueDate)}`}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Link href={`/dashboard/projects/${task.projectId}#chatter`} className="flex-shrink-0">
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+              </Link>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -420,6 +667,11 @@ function TrendBadge({ pctChange }: { pctChange: number | null | undefined }) {
   );
 }
 
+// ─── Animated Stat Value (wraps useCountUp for individual stat cards) ────────
+function AnimatedStatValue({ raw, format, className }: { raw: number; format: (n: number) => string; className?: string }) {
+  const animated = useCountUp(raw, 900);
+  return <p className={className}>{format(animated)}</p>;
+}
 // ─── Count-Up Hook ──────────────────────────────────────────────────────────
 function useCountUp(target: number, duration = 800): number {
   const [display, setDisplay] = useState(0);
@@ -454,7 +706,7 @@ function useCountUp(target: number, duration = 800): number {
 }
 
 export default function DashboardPage() {
-  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, installerPricingVersions, productCatalogProducts } = useApp();
+  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -548,6 +800,39 @@ export default function DashboardPage() {
   // Animated count-up for the MTD commission hero — always called (hook rules)
   const animatedMtdCommission = useCountUp(mtdCommission, 1200);
 
+  // Fetch @mentions for Needs Attention section (reps + sub-dealers)
+  const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
+  const fetchMentions = useCallback(() => {
+    if (!currentRepId || currentRole === 'admin') return;
+    fetch(`/api/mentions?userId=${currentRepId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch');
+        return res.json();
+      })
+      .then((rawMentions: any[]) => {
+        // Transform Prisma shape → MentionItem shape
+        const items: MentionItem[] = (rawMentions ?? []).map((m: any) => ({
+          id: m.id,
+          projectId: m.message?.projectId ?? '',
+          projectCustomerName: m.message?.project?.customerName ?? 'Unknown',
+          messageId: m.messageId ?? m.message?.id ?? '',
+          messageSnippet: (m.message?.text ?? '').slice(0, 120),
+          authorName: m.message?.authorName ?? 'Unknown',
+          checkItems: (m.message?.checkItems ?? []).map((ci: any) => ({
+            id: ci.id,
+            text: ci.text,
+            completed: ci.completed,
+            dueDate: ci.dueDate ?? null,
+          })),
+          createdAt: m.message?.createdAt ?? new Date().toISOString(),
+          read: m.readAt != null,
+        }));
+        setDashMentions(items);
+      })
+      .catch(() => setDashMentions([]));
+  }, [currentRepId, currentRole]);
+  useEffect(() => { fetchMentions(); }, [fetchMentions]);
+
   if (!isHydrated) {
     return <DashboardSkeleton />;
   }
@@ -563,6 +848,21 @@ export default function DashboardPage() {
       totalReps={reps.length}
       installerPricingVersions={installerPricingVersions}
       productCatalogProducts={productCatalogProducts}
+    />;
+  }
+
+  if (currentRole === 'sub-dealer') {
+    return <SubDealerDashboard
+      projects={periodProjects}
+      allProjects={projects}
+      payroll={periodPayroll}
+      mentions={dashMentions}
+      setMentions={setDashMentions}
+      period={period}
+      setPeriod={setPeriod}
+      PERIODS={PERIODS}
+      currentRepId={currentRepId}
+      currentRepName={currentRepName}
     />;
   }
 
@@ -685,29 +985,32 @@ export default function DashboardPage() {
 
   const stats = [
     {
+      label: 'Total Paid',
+      value: fmt$(totalPaid),
+      sub: 'Deposited to you',
+      icon: CheckCircle,
+      color: 'text-emerald-400',
+      accentGradient: 'from-emerald-500 to-emerald-400',
+      glowClass: 'stat-glow-emerald',
+      sparkData: paidSparkData,
+      sparkStroke: '#10b981',
+      pctChange: computePctChange(totalPaid, prevTotalPaid),
+      href: '/dashboard/vault',
+      tooltip: 'Total commission disbursed to you across all payment stages',
+    },
+    {
       label: 'In Pipeline',
-      value: `$${inPipeline.toLocaleString()}`,
+      value: fmt$(inPipeline),
       sub: `${activeProjects.length} active projects`,
       icon: TrendingUp,
       color: 'text-blue-400',
-      gradient: 'text-gradient-brand',
       accentGradient: 'from-blue-500 to-blue-400',
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
       sparkStroke: '#3b82f6',
       pctChange: computePctChange(inPipeline, prevInPipeline),
-    },
-    {
-      label: 'Chargebacks',
-      value: `$${totalChargebacks.toLocaleString()}`,
-      sub: chargebackCount > 0 ? `${chargebackCount} chargeback${chargebackCount === 1 ? '' : 's'}` : 'No chargebacks',
-      icon: AlertCircle,
-      color: 'text-red-400',
-      accentGradient: 'from-red-500 to-red-400',
-      glowClass: 'stat-glow-red',
-      sparkData: chargebackSparkData,
-      sparkStroke: '#ef4444',
-      pctChange: undefined as number | null | undefined,
+      href: '/dashboard/projects',
+      tooltip: 'Expected commission from active projects minus amounts already paid',
     },
     {
       label: 'kW Sold',
@@ -720,6 +1023,8 @@ export default function DashboardPage() {
       sparkData: systemSizeSparkData,
       sparkStroke: '#eab308',
       pctChange: computePctChange(totalKW, prevTotalKW),
+      href: '/dashboard/projects',
+      tooltip: 'Total system size in kilowatts from all active deals',
     },
     {
       label: 'kW Installed',
@@ -732,18 +1037,22 @@ export default function DashboardPage() {
       sparkData: installedSparkData,
       sparkStroke: '#10b981',
       pctChange: computePctChange(totalKWInstalled, prevTotalKWInstalled),
+      href: '/dashboard/projects',
+      tooltip: 'Total kilowatts from projects that have been physically installed',
     },
     {
-      label: 'Paid',
-      value: `$${totalPaid.toLocaleString()}`,
-      sub: 'Deposited',
-      icon: CheckCircle,
-      color: 'text-emerald-400',
-      accentGradient: 'from-emerald-500 to-emerald-400',
-      glowClass: 'stat-glow-emerald',
-      sparkData: paidSparkData,
-      sparkStroke: '#10b981',
-      pctChange: computePctChange(totalPaid, prevTotalPaid),
+      label: 'Chargebacks',
+      value: fmt$(totalChargebacks),
+      sub: chargebackCount > 0 ? `${chargebackCount} chargeback${chargebackCount === 1 ? '' : 's'}` : 'No chargebacks',
+      icon: AlertCircle,
+      color: 'text-red-400',
+      accentGradient: 'from-red-500 to-red-400',
+      glowClass: 'stat-glow-red',
+      sparkData: chargebackSparkData,
+      sparkStroke: '#ef4444',
+      pctChange: undefined as number | null | undefined,
+      href: '/dashboard/earnings',
+      tooltip: 'Total negative adjustments from cancelled or clawed-back deals',
     },
   ];
 
@@ -879,11 +1188,24 @@ export default function DashboardPage() {
             {stats.map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <div key={stat.label} className={`card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
+                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
                   <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">{stat.label}</span>
-                    <Icon className={`w-4 h-4 ${stat.color}`} />
+                    <span className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
+                      {stat.label}
+                      {'tooltip' in stat && stat.tooltip && (
+                        <span className="relative group/tip">
+                          <HelpCircle className="w-3 h-3 text-slate-600 hover:text-slate-400 transition-colors cursor-help" />
+                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-slate-800 border border-slate-700/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-300 shadow-xl leading-snug">
+                            {stat.tooltip}
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Icon className={`w-4 h-4 ${stat.color}`} />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
                   </div>
                   <p className={`stat-value stat-value-glow ${stat.glowClass} text-3xl font-black tabular-nums tracking-tight animate-count-up ${'gradient' in stat && stat.gradient ? stat.gradient : stat.color}`}>{stat.value}</p>
                   <div className="flex items-center gap-1.5 mt-1">
@@ -891,18 +1213,46 @@ export default function DashboardPage() {
                     <TrendBadge pctChange={stat.pctChange} />
                   </div>
                   <Sparkline data={stat.sparkData} stroke={stat.sparkStroke} />
-                </div>
+                </Link>
               );
             })}
           </div>
 
-          {/* Needs Attention */}
+          {/* Needs Attention — intentionally uses unfiltered `projects` (not period-filtered)
+             so that flagged/stuck items always remain visible regardless of the selected period */}
           <NeedsAttentionSection
             activeProjects={projects.filter(
               (p) =>
                 (p.repId === currentRepId || p.setterId === currentRepId) &&
                 ACTIVE_PHASES.includes(p.phase)
             )}
+            mentions={dashMentions}
+          />
+
+          {/* My Tasks — aggregated uncompleted check items from chatter mentions */}
+          <MyTasksSection
+            mentions={dashMentions}
+            onToggleTask={(projectId, messageId, checkItemId, completed) => {
+              fetch(`/api/projects/${projectId}/messages/${messageId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ checkItemId, completed, completedBy: currentRepId }),
+              }).then(() => {
+                // Update local state to remove the completed task
+                setDashMentions((prev) =>
+                  prev.map((m) =>
+                    m.messageId === messageId
+                      ? {
+                          ...m,
+                          checkItems: m.checkItems.map((ci) =>
+                            ci.id === checkItemId ? { ...ci, completed: true } : ci
+                          ),
+                        }
+                      : m
+                  )
+                );
+              });
+            }}
           />
 
           {/* Pipeline Overview */}
@@ -1106,62 +1456,47 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                <tr className="border-b border-slate-800">
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">Customer</th>
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">Sold</th>
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">Phase</th>
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">kW</th>
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">Est. Pay</th>
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">M1</th>
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">M2</th>
-                  {[...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8).some((p) => (p.m3Amount ?? 0) > 0) && (
-                    <th className="text-left px-6 py-3 text-slate-400 font-medium">M3</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  const sorted = [...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8);
-                  const showM3 = sorted.some((p) => (p.m3Amount ?? 0) > 0);
-                  return sorted.map((proj) => (
-                  <tr key={proj.id} className="relative border-b border-slate-800/50 even:bg-slate-800/20 hover:bg-blue-500/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                    <td className="px-6 py-3">
-                      <Link
-                        href={`/dashboard/projects/${proj.id}`}
-                        className="text-white hover:text-blue-400 transition-colors"
-                      >
-                        {proj.customerName}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{(() => {
-                      const [y, m, d] = proj.soldDate.split('-').map(Number);
-                      const sold = new Date(y, m - 1, d);
-                      const now = new Date();
-                      const diff = Math.floor((now.getTime() - sold.getTime()) / 86_400_000);
-                      if (diff < 1) return 'Today';
-                      if (diff === 1) return '1d ago';
-                      if (diff < 7) return `${diff}d ago`;
-                      if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
-                      return sold.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                    })()}</td>
-                    <td className="px-6 py-3"><PhaseBadge phase={proj.phase} /></td>
-                    <td className="px-6 py-3 text-slate-300">{proj.kWSize}</td>
-                    <td className="px-6 py-3 text-blue-400 font-medium">
-                      ${(proj.m1Amount + proj.m2Amount).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount} /></td>
-                    <td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount} /></td>
-                    {showM3 && (
-                      <td className="px-6 py-3"><StatusDot paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} /></td>
-                    )}
-                  </tr>
-                  ));
-                })()}
-              </tbody>
-            </table>
+          <div className="divide-y divide-slate-800/60">
+            {[...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8).map((proj) => {
+              const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+              const soldLabel = (() => {
+                const [y, m, d] = proj.soldDate.split('-').map(Number);
+                const sold = new Date(y, m - 1, d);
+                const diff = Math.floor((Date.now() - sold.getTime()) / 86_400_000);
+                if (diff < 1) return 'Today';
+                if (diff === 1) return '1d ago';
+                if (diff < 7) return `${diff}d ago`;
+                if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
+                return sold.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              })();
+              return (
+                <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
+                  <div className="px-5 py-3.5 hover:bg-blue-500/[0.03] transition-colors">
+                    {/* Row 1: Customer + Phase + Date */}
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span className="text-white font-medium text-sm truncate group-hover:text-blue-300 transition-colors">{proj.customerName}</span>
+                        <PhaseBadge phase={proj.phase} />
+                      </div>
+                      <span className="text-slate-500 text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
+                    </div>
+                    {/* Row 2: kW | Est Pay | Milestones */}
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-slate-500">{proj.kWSize} kW</span>
+                      <span className="text-slate-600">·</span>
+                      <span className="text-blue-400 font-semibold">${estPay.toLocaleString()}</span>
+                      <div className="flex items-center gap-2.5 ml-auto">
+                        <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
+                        <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
+                        {(proj.m3Amount ?? 0) > 0 && (
+                          <MilestoneDot label="M3" paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1201,11 +1536,16 @@ function AdminDashboard({
   installerPricingVersions: InstallerPricingVersion[];
   productCatalogProducts: ProductCatalogProduct[];
 }) {
+  const { updateProject } = useApp();
+
   // Search filter for Recent Projects table
   const [recentSearch, setRecentSearch] = useState('');
+  const [insightsExpanded, setInsightsExpanded] = useState(false);
+  const [cancellationExpanded, setCancellationExpanded] = useState(false);
+  const [recentExpanded, setRecentExpanded] = useState(true);
 
   // Sort & pagination for Recent Projects table
-  type SortKey = 'customerName' | 'kWSize' | 'netPPW' | 'phase' | 'soldDate';
+  type SortKey = 'customerName' | 'installer' | 'kWSize' | 'netPPW' | 'phase' | 'soldDate';
   const [sortKey, setSortKey] = useState<SortKey>('soldDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [recentPage, setRecentPage] = useState(1);
@@ -1251,13 +1591,14 @@ function AdminDashboard({
     return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
   }
 
-  // Revenue = closer baseline × kW × 1000 (what Kilo takes in per deal from the installer)
-  // Profit  = (closerPerW − kiloPerW) × kW × 1000 (Kilo's margin per deal)
+  // Revenue = netPPW × kW × 1000 (actual contract value)
+  // Profit  = (closerPerW − kiloPerW) × kW × 1000 (Kilo's baseline spread / margin)
   const { totalRevenue, totalProfit } = projects.reduce(
     (acc, p) => {
+      if (p.phase === 'Cancelled' || p.phase === 'On Hold') return acc;
       const { closerPerW, kiloPerW } = getProjectBaselines(p);
       const watts = p.kWSize * 1000;
-      acc.totalRevenue += closerPerW * watts;
+      acc.totalRevenue += (p.netPPW ?? 0) * watts;
       acc.totalProfit  += (closerPerW - kiloPerW) * watts;
       return acc;
     },
@@ -1266,7 +1607,7 @@ function AdminDashboard({
 
   const totalPaid = payroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
   const totalKWSold = projects.reduce((s, p) => s + p.kWSize, 0);
-  const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed').reduce((s, p) => s + p.kWSize, 0);
+  const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
   const totalUsers = totalReps;
 
   const activeCount = projects.filter((p) => ['New','Acceptance','Site Survey','Design','Permitting','Pending Install','Installed','PTO'].includes(p.phase)).length;
@@ -1274,18 +1615,18 @@ function AdminDashboard({
   const completedCount = projects.filter((p) => p.phase === 'Completed').length;
 
   const topStats = [
-    { label: 'Kilo Revenue', value: `$${Math.round(totalRevenue).toLocaleString()}`, icon: DollarSign, color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400' },
-    { label: 'Gross Profit', value: `$${Math.round(totalProfit).toLocaleString()}`, icon: BarChart2, color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400' },
-    { label: 'Total Paid Out', value: `$${Math.round(totalPaid).toLocaleString()}`, icon: CheckCircle, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
-    { label: 'Total Users', value: totalUsers.toString(), icon: Users, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400' },
-    { label: 'Total kW Sold', value: `${totalKWSold.toFixed(1)} kW`, icon: Zap, color: 'text-sky-400', accentGradient: 'from-blue-500 to-blue-400' },
-    { label: 'Total kW Installed', value: `${totalKWInstalled.toFixed(1)} kW`, icon: Zap, color: 'text-amber-400', accentGradient: 'from-amber-500 to-amber-400' },
+    { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
+    { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
+    { label: 'Total Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Total commission disbursed to all reps via payroll' },
+    { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/reps', tooltip: 'Number of active sales reps in the system' },
+    { label: 'Total kW Sold', value: `${totalKWSold.toFixed(1)} kW`, raw: Math.round(totalKWSold * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, color: 'text-sky-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
+    { label: 'Total kW Installed', value: `${totalKWInstalled.toFixed(1)} kW`, raw: Math.round(totalKWInstalled * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, color: 'text-amber-400', accentGradient: 'from-amber-500 to-amber-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status' },
   ];
 
   const pipelineStats = [
-    { label: 'Active Projects', value: activeCount, color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400' },
-    { label: 'Inactive Projects', value: inactiveCount, color: 'text-slate-400', accentGradient: 'from-blue-500 to-blue-400' },
-    { label: 'Completed Projects', value: completedCount, color: 'text-emerald-400', accentGradient: 'from-emerald-500 to-emerald-400' },
+    { label: 'Active Projects', value: activeCount, raw: activeCount, format: (n: number) => n.toString(), color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
+    { label: 'Inactive Projects', value: inactiveCount, raw: inactiveCount, format: (n: number) => n.toString(), color: 'text-slate-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?phase=On+Hold', tooltip: 'Projects that are cancelled or on hold' },
+    { label: 'Completed Projects', value: completedCount, raw: completedCount, format: (n: number) => n.toString(), color: 'text-emerald-400', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
   return (
@@ -1345,14 +1686,27 @@ function AdminDashboard({
         {topStats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className={`card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
+            <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
               <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
               <div className="flex items-center justify-between mb-3">
-                <span className="text-slate-400 text-xs font-medium uppercase tracking-wider leading-tight">{stat.label}</span>
-                <Icon className={`w-4 h-4 ${stat.color} shrink-0`} />
+                <span className="text-slate-400 text-xs font-medium uppercase tracking-wider leading-tight flex items-center gap-1">
+                  {stat.label}
+                  {'tooltip' in stat && stat.tooltip && (
+                    <span className="relative group/tip">
+                      <HelpCircle className="w-3 h-3 text-slate-600 hover:text-slate-400 transition-colors cursor-help" />
+                      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-slate-800 border border-slate-700/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-300 shadow-xl leading-snug">
+                        {stat.tooltip}
+                      </span>
+                    </span>
+                  )}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Icon className={`w-4 h-4 ${stat.color} shrink-0`} />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
               </div>
-              <p className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${'gradient' in stat && stat.gradient ? stat.gradient : stat.color}`}>{stat.value}</p>
-            </div>
+              <AnimatedStatValue raw={stat.raw} format={stat.format} className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${'gradient' in stat && stat.gradient ? stat.gradient : stat.color}`} />
+            </Link>
           );
         })}
       </div>
@@ -1360,11 +1714,24 @@ function AdminDashboard({
       {/* Pipeline stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {pipelineStats.map((s, i) => (
-          <div key={s.label} className={`card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[s.accentGradient] ?? 'transparent' } as CSSProperties}>
+          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[s.accentGradient] ?? 'transparent' } as CSSProperties}>
             <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${s.accentGradient}`} />
-            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">{s.label}</p>
-            <p className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${s.color}`}>{s.value}</p>
-          </div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
+                {s.label}
+                {'tooltip' in s && s.tooltip && (
+                  <span className="relative group/tip">
+                    <HelpCircle className="w-3 h-3 text-slate-600 hover:text-slate-400 transition-colors cursor-help" />
+                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-slate-800 border border-slate-700/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-300 shadow-xl leading-snug">
+                      {s.tooltip}
+                    </span>
+                  </span>
+                )}
+              </p>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <AnimatedStatValue raw={s.raw} format={s.format} className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${s.color}`} />
+          </Link>
         ))}
       </div>
 
@@ -1383,7 +1750,125 @@ function AdminDashboard({
       <NeedsAttentionSection
         activeProjects={allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase))}
         isAdmin
+        onUnflag={(projectId) => updateProject(projectId, { flagged: false })}
       />
+
+      {/* ── Installer Insights ────────────────────────────────────────────── */}
+      {(() => {
+        const installerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
+        for (const p of allProjects) {
+          const prev = installerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
+          prev.deals++;
+          prev.kW += p.kWSize;
+          if (p.phase === 'Cancelled') prev.cancelled++;
+          installerMap.set(p.installer, prev);
+        }
+        const installerRanking = [...installerMap.entries()]
+          .map(([name, data]) => ({ name, ...data }))
+          .sort((a, b) => b.deals - a.deals);
+        const maxDeals = Math.max(1, ...installerRanking.map((i) => i.deals));
+
+        return installerRanking.length > 0 ? (
+          <div className="card-surface rounded-2xl p-5 mb-8">
+            <button
+              onClick={() => setInsightsExpanded(e => !e)}
+              className="flex items-center gap-2 w-full text-left group"
+            >
+              <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.15)' }}>
+                <BarChart2 className="w-4 h-4 text-amber-400" />
+              </div>
+              <h2 className="text-white font-bold text-base tracking-tight flex-1">Installer Insights</h2>
+              {insightsExpanded
+                ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+              }
+            </button>
+            <div className={`collapsible-panel ${insightsExpanded ? 'open' : ''}`}>
+              <div className="collapsible-inner">
+                <div className="overflow-x-auto mt-4">
+                  <table className="w-full text-sm">
+                    <thead className="table-header-frost">
+                      <tr className="border-b border-slate-800">
+                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Installer</th>
+                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Deals</th>
+                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Total kW</th>
+                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Cancelled</th>
+                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs w-40">Volume</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {installerRanking.map((inst, i) => (
+                        <tr key={inst.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                          <td className="px-4 py-2.5 text-white font-medium flex items-center gap-2">
+                            {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-white`}>#{i + 1}</span>}
+                            {inst.name}
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-300 tabular-nums">{inst.deals}</td>
+                          <td className="px-4 py-2.5 text-slate-300 tabular-nums">{inst.kW.toFixed(1)}</td>
+                          <td className="px-4 py-2.5">
+                            {inst.cancelled > 0 ? (
+                              <span className="text-red-400 text-xs font-medium">{inst.cancelled}</span>
+                            ) : (
+                              <span className="text-slate-600 text-xs">0</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden">
+                              <div className="h-full rounded-full bg-amber-500/70 transition-all duration-500" style={{ width: `${(inst.deals / maxDeals) * 100}%` }} />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* ── Cancellation Reasons Summary ──────────────────────────────────── */}
+      {(() => {
+        const cancelledProjects = allProjects.filter((p) => p.phase === 'Cancelled');
+        if (cancelledProjects.length === 0) return null;
+        const reasonCounts = new Map<string, number>();
+        for (const p of cancelledProjects) {
+          const reason = (p as Project & { cancellationReason?: string }).cancellationReason || 'Not specified';
+          reasonCounts.set(reason, (reasonCounts.get(reason) ?? 0) + 1);
+        }
+        const reasonList = [...reasonCounts.entries()].sort((a, b) => b[1] - a[1]);
+        return (
+          <div className="card-surface rounded-2xl p-5 mb-8">
+            <button
+              onClick={() => setCancellationExpanded(e => !e)}
+              className="flex items-center gap-2 w-full text-left group"
+            >
+              <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
+                <AlertCircle className="w-4 h-4 text-red-400" />
+              </div>
+              <h2 className="text-white font-bold text-base tracking-tight flex-1">Cancellation Reasons</h2>
+              <span className="text-slate-500 text-xs mr-2">{cancelledProjects.length} cancelled</span>
+              {cancellationExpanded
+                ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+              }
+            </button>
+            <div className={`collapsible-panel ${cancellationExpanded ? 'open' : ''}`}>
+              <div className="collapsible-inner">
+                <div className="space-y-2 mt-4">
+                  {reasonList.map(([reason, count]) => (
+                    <div key={reason} className="flex items-center justify-between bg-slate-800/40 rounded-lg px-4 py-2">
+                      <span className="text-slate-300 text-sm">{reason}</span>
+                      <span className="text-red-400 text-sm font-semibold tabular-nums">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Recent projects */}
       {(() => {
@@ -1396,6 +1881,7 @@ function AdminDashboard({
           let cmp = 0;
           switch (sortKey) {
             case 'customerName': cmp = a.customerName.localeCompare(b.customerName); break;
+            case 'installer': cmp = a.installer.localeCompare(b.installer); break;
             case 'kWSize': cmp = a.kWSize - b.kWSize; break;
             case 'netPPW': cmp = a.netPPW - b.netPPW; break;
             case 'phase': cmp = a.phase.localeCompare(b.phase); break;
@@ -1408,107 +1894,110 @@ function AdminDashboard({
         const startIdx = (safePage - 1) * recentRowsPerPage;
         const endIdx = Math.min(startIdx + recentRowsPerPage, sorted.length);
         const paginated = sorted.slice(startIdx, endIdx);
-        const showM3 = projects.some((p) => (p.m3Amount ?? 0) > 0);
+        const showM3 = allProjects.some((p) => (p.m3Amount ?? 0) > 0);
         const thCls = 'text-left px-6 py-3 text-slate-400 font-medium select-none cursor-pointer hover:text-white transition-colors';
 
         return (
       <div className="card-surface rounded-2xl">
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between gap-4">
-          <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
-          <input
-            type="text"
-            placeholder="Search customer or rep..."
-            value={recentSearch}
-            onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-            className="bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-          />
+        <div className="px-6 py-4 flex items-center justify-between gap-4">
+          <button
+            onClick={() => setRecentExpanded(e => !e)}
+            className="flex items-center gap-2 text-left group"
+          >
+            <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
+            {recentExpanded
+              ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+              : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+            }
+          </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search customer or rep..."
+              value={recentSearch}
+              onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
+              className="bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            />
+            {recentSearch.trim() && (
+              <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
+            )}
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-              <tr className="border-b border-slate-800">
-                <th className={thCls} onClick={() => toggleSort('customerName')}>Customer<SortIcon col="customerName" /></th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium">Rep</th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium">Setter</th>
-                <th className={thCls} onClick={() => toggleSort('soldDate')}>Sold<SortIcon col="soldDate" /></th>
-                <th className={thCls} onClick={() => toggleSort('phase')}>Phase<SortIcon col="phase" /></th>
-                <th className={thCls} onClick={() => toggleSort('kWSize')}>kW<SortIcon col="kWSize" /></th>
-                <th className={thCls} onClick={() => toggleSort('netPPW')}>Sold $/W<SortIcon col="netPPW" /></th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium">Kilo Rev</th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium">Profit</th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium">M1</th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium">M2</th>
-                {showM3 && (
-                  <th className="text-left px-6 py-3 text-slate-400 font-medium">M3</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-                  {paginated.map((proj) => (
-                <tr key={proj.id} className="relative border-b border-slate-800/50 even:bg-slate-800/20 hover:bg-blue-500/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                  <td className="px-6 py-3">
-                    <Link
-                      href={`/dashboard/projects/${proj.id}`}
-                      className="text-white hover:text-blue-400 transition-colors"
-                    >
-                      {proj.customerName}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-3 text-slate-400">{proj.repName}</td>
-                  <td className="px-6 py-3 text-slate-500 text-xs">{proj.setterName ?? <span className="italic text-slate-600">self-gen</span>}</td>
-                  <td className="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{formatDate(proj.soldDate)}</td>
-                  <td className="px-6 py-3"><PhaseBadge phase={proj.phase} /></td>
-                  <td className="px-6 py-3 text-slate-300">{proj.kWSize}</td>
-                  <td className="px-6 py-3 text-slate-400">${proj.netPPW.toFixed(2)}</td>
-                  {(() => {
-                    const { closerPerW, kiloPerW } = getProjectBaselines(proj);
-                    const watts = proj.kWSize * 1000;
-                    return (
-                      <>
-                        <td className="px-6 py-3 text-blue-400 font-medium">
-                          ${Math.round(closerPerW * watts).toLocaleString()}
+        <div className={`collapsible-panel ${recentExpanded ? 'open' : ''}`}>
+          <div className="collapsible-inner">
+            <div className="border-t border-slate-800">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                    <tr className="border-b border-slate-800">
+                      {/* 1 */}<th className={thCls} onClick={() => toggleSort('customerName')}>Customer<SortIcon col="customerName" /></th>
+                      {/* 2 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">Rep</th>
+                      {/* 3 */}<th className={thCls} onClick={() => toggleSort('installer')}>Installer<SortIcon col="installer" /></th>
+                      {/* 4 */}<th className={thCls} onClick={() => toggleSort('soldDate')}>Sold<SortIcon col="soldDate" /></th>
+                      {/* 5 */}<th className={thCls} onClick={() => toggleSort('phase')}>Phase<SortIcon col="phase" /></th>
+                      {/* 6 */}<th className={thCls} onClick={() => toggleSort('kWSize')}>kW<SortIcon col="kWSize" /></th>
+                      {/* 7 */}<th className={thCls} onClick={() => toggleSort('netPPW')}>$/W<SortIcon col="netPPW" /></th>
+                      {/* 8 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">Est. Pay</th>
+                      {/* 9 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">M1</th>
+                      {/* 10 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">M2</th>
+                      {/* 11 */}{showM3 && <th className="text-left px-6 py-3 text-slate-400 font-medium">M3</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginated.map((proj) => {
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                      return (
+                      <tr key={proj.id} className="border-b border-slate-800/50 even:bg-slate-800/20 hover:bg-blue-500/[0.03] transition-colors duration-150">
+                        {/* 1 */}<td className="px-6 py-3">
+                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-blue-400 transition-colors">{proj.customerName}</Link>
+                          {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Sub-Dealer</span>}
                         </td>
-                        <td className="px-6 py-3 text-emerald-400 font-medium">
-                          ${Math.round((closerPerW - kiloPerW) * watts).toLocaleString()}
+                        {/* 2 */}<td className="px-6 py-3 text-slate-400 text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-slate-600"> / {proj.setterName}</span> : ''}</td>
+                        {/* 3 */}<td className="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{proj.installer}</td>
+                        {/* 4 */}<td className="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{formatDate(proj.soldDate)}</td>
+                        {/* 5 */}<td className="px-6 py-3"><PhaseBadge phase={proj.phase} /></td>
+                        {/* 6 */}<td className="px-6 py-3 text-slate-300">{proj.kWSize}</td>
+                        {/* 7 */}<td className="px-6 py-3 text-slate-400">${(proj.netPPW ?? 0).toFixed(2)}</td>
+                        {/* 8 */}<td className="px-6 py-3 text-blue-400 font-medium">${estPay.toLocaleString()}</td>
+                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount ?? 0} /></td>
+                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount ?? 0} /></td>
+                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} /></td>}
+                      </tr>
+                      );
+                    })}
+                    {sorted.length === 0 && (
+                      <tr>
+                        <td colSpan={showM3 ? 11 : 10} className="px-6 py-10 text-center text-slate-500">
+                          No projects found for this period.
                         </td>
-                      </>
-                    );
-                  })()}
-                  <td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount} /></td>
-                  <td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount} /></td>
-                  {showM3 && (
-                    <td className="px-6 py-3"><StatusDot paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} /></td>
-                  )}
-                </tr>
-              ))}
-              {sorted.length === 0 && (
-                <tr>
-                  <td colSpan={showM3 ? 12 : 11} className="px-6 py-10 text-center text-slate-500">
-                    No projects found for this period.
-                  </td>
-                </tr>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {sorted.length > 0 && (
+                <PaginationBar
+                  totalResults={sorted.length}
+                  startIdx={startIdx}
+                  endIdx={endIdx}
+                  currentPage={safePage}
+                  totalPages={totalPages}
+                  rowsPerPage={recentRowsPerPage}
+                  onPageChange={setRecentPage}
+                  onRowsPerPageChange={setRecentRowsPerPage}
+                />
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
-        {sorted.length > 0 && (
-          <PaginationBar
-            totalResults={sorted.length}
-            startIdx={startIdx}
-            endIdx={endIdx}
-            currentPage={safePage}
-            totalPages={totalPages}
-            rowsPerPage={recentRowsPerPage}
-            onPageChange={setRecentPage}
-            onRowsPerPageChange={setRecentRowsPerPage}
-          />
-        )}
       </div>
         );
       })()}
     </div>
   );
 }
+
+// ─── Phase Color Constants ───────────────────────────────────────────────────
 
 const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string }> = {
   'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400'     },
@@ -1539,8 +2028,261 @@ function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
       paid ? 'bg-emerald-900/50 text-emerald-400' : 'bg-yellow-900/50 text-yellow-400'
     }`}>
-      {paid ? `$${amount.toLocaleString()}` : 'Unpaid'}
+      {paid ? fmt$(amount) : 'Unpaid'}
     </span>
+  );
+}
+
+function MilestoneDot({ label, paid, amount }: { label: string; paid: boolean; amount: number }) {
+  if (amount === 0) return <span className="text-slate-600">{label}</span>;
+  const color = paid ? 'text-emerald-400' : 'text-yellow-400';
+  const dotColor = paid ? 'bg-emerald-400' : 'bg-yellow-400';
+  return (
+    <span className="flex items-center gap-1">
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
+      <span className={color}>{label} ${amount.toLocaleString()}</span>
+    </span>
+  );
+}
+
+// ─── Sub-Dealer Dashboard ────────────────────────────────────────────────────
+
+function SubDealerDashboard({
+  projects,
+  allProjects,
+  payroll,
+  mentions,
+  setMentions,
+  period,
+  setPeriod,
+  PERIODS,
+  currentRepId,
+  currentRepName,
+}: {
+  projects: Project[];
+  allProjects: Project[];
+  payroll: ReturnType<typeof useApp>['payrollEntries'];
+  mentions: MentionItem[];
+  setMentions: React.Dispatch<React.SetStateAction<MentionItem[]>>;
+  period: Period;
+  setPeriod: (p: Period) => void;
+  PERIODS: { value: Period; label: string }[];
+  currentRepId: string | null;
+  currentRepName: string | null;
+}) {
+  const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [periodIndicator, setPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const PERIOD_VALUES: Period[] = ['all', 'this-month', 'last-month', 'this-year'];
+    const idx = PERIOD_VALUES.indexOf(period);
+    const el = periodTabRefs.current[idx];
+    if (el) setPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [period]);
+
+  // Filter to sub-dealer's own deals
+  const myProjects = projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId);
+  const myPayroll = payroll.filter((p) => p.repId === currentRepId);
+  const activeProjects = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+
+  // Stats
+  const totalDeals = myProjects.length;
+  const activePipeline = activeProjects.length;
+  const totalKW = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  // Total Earned = M2 + M3 payroll only (sub-dealers don't get M1)
+  const totalEarned = myPayroll
+    .filter((e) => (e.paymentStage === 'M2' || e.paymentStage === 'M3') && e.status === 'Paid')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const stats = [
+    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400' },
+    { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400' },
+    { label: 'Total kW', value: `${totalKW.toFixed(1)} kW`, icon: Zap, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
+    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-emerald-400', accentGradient: 'from-emerald-500 to-emerald-400' },
+  ];
+
+  return (
+    <div className="p-4 md:p-8 animate-fade-in-up">
+      {/* Welcome Banner */}
+      <div className="card-surface rounded-2xl mb-6">
+        <div className="px-6 py-6 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {currentRepName}</p>
+            <p className="text-2xl md:text-3xl font-black tracking-tight">
+              <span className="text-gradient-brand">Sub-Dealer Dashboard</span>
+            </p>
+            <p className="text-slate-500 text-xs mt-1">Submit deals, track your pipeline and earnings</p>
+          </div>
+          <div className="relative inline-flex shrink-0">
+            <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 opacity-[0.06] blur-[2px] animate-pulse" />
+            <Link
+              href="/dashboard/new-deal"
+              className="relative inline-flex items-center gap-2.5 btn-primary text-white font-bold px-6 py-3 rounded-2xl text-sm"
+            >
+              <PlusCircle className="w-5 h-5" />
+              Submit a Deal
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Period tabs */}
+      <div className="flex justify-end mb-6">
+        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
+          {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
+          {PERIODS.map((p, i) => (
+            <button
+              key={p.value}
+              ref={(el) => { periodTabRefs.current[i] = el; }}
+              onClick={() => setPeriod(p.value)}
+              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
+                period === p.value ? 'text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        {stats.map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.label}
+              className={`card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-${i + 1}`}
+              style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}
+            >
+              <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">{stat.label}</span>
+                <Icon className={`w-4 h-4 ${stat.color}`} />
+              </div>
+              <p className={`stat-value text-3xl font-black tabular-nums tracking-tight ${stat.color}`}>{stat.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* My Tasks — chatter check items assigned to this sub-dealer */}
+      <MyTasksSection
+        mentions={mentions}
+        onToggleTask={(projectId, messageId, checkItemId, completed) => {
+          fetch(`/api/projects/${projectId}/messages/${messageId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ checkItemId, completed, completedBy: currentRepId }),
+          }).then(() => {
+            setMentions((prev) =>
+              prev.map((m) =>
+                m.messageId === messageId
+                  ? { ...m, checkItems: m.checkItems.map((ci) => ci.id === checkItemId ? { ...ci, completed: true } : ci) }
+                  : m
+              )
+            );
+          });
+        }}
+      />
+
+      {/* Pipeline Overview */}
+      {activeProjects.length > 0 && (
+        <div className="card-surface rounded-2xl mb-6">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
+              <div className="p-1.5 rounded-lg bg-blue-500/15">
+                <FolderKanban className="w-4 h-4 text-blue-400" />
+              </div>
+              <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
+            </div>
+            <Link href="/dashboard/projects" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+              View All &rarr;
+            </Link>
+          </div>
+          <div className="divider-gradient-animated" />
+          <div className="p-5">
+            <PipelineOverview activeProjects={activeProjects} />
+          </div>
+        </div>
+      )}
+
+      {/* Recent Projects */}
+      <div className="card-surface rounded-2xl">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
+            <div className="p-1.5 rounded-lg bg-blue-500/15">
+              <FolderKanban className="w-4 h-4 text-blue-400" />
+            </div>
+            <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
+          </div>
+          <Link href="/dashboard/projects" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+            View All &rarr;
+          </Link>
+        </div>
+        <div className="divider-gradient-animated" />
+        {myProjects.length === 0 ? (
+          <div className="mx-6 my-6 border border-dashed border-slate-800 rounded-2xl px-5 py-12 text-center">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3">
+                <FolderKanban className="w-6 h-6 text-slate-600 animate-pulse" />
+              </div>
+              <p className="text-white font-bold text-sm mb-1">No projects yet</p>
+              <p className="text-slate-500 text-xs mb-4">Submit your first deal to see it here</p>
+              <Link
+                href="/dashboard/new-deal"
+                className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                + New Deal
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-800/60">
+            {[...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8).map((proj) => {
+              const estPay = (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+              const soldLabel = (() => {
+                const [y, m, d] = proj.soldDate.split('-').map(Number);
+                const sold = new Date(y, m - 1, d);
+                const diff = Math.floor((Date.now() - sold.getTime()) / 86_400_000);
+                if (diff < 1) return 'Today';
+                if (diff === 1) return '1d ago';
+                if (diff < 7) return `${diff}d ago`;
+                if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
+                return sold.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              })();
+              return (
+                <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
+                  <div className="px-5 py-3.5 hover:bg-blue-500/[0.03] transition-colors">
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span className="text-white font-medium text-sm truncate group-hover:text-blue-300 transition-colors">{proj.customerName}</span>
+                        <PhaseBadge phase={proj.phase} />
+                      </div>
+                      <span className="text-slate-500 text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-slate-500">{proj.kWSize} kW</span>
+                      <span className="text-slate-600">&middot;</span>
+                      <span className="text-blue-400 font-semibold">${estPay.toLocaleString()}</span>
+                      <div className="flex items-center gap-2.5 ml-auto">
+                        <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
+                        {(proj.m3Amount ?? 0) > 0 && (
+                          <MilestoneDot label="M3" paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1636,7 +2378,7 @@ function DashboardSkeleton() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="table-header-frost">
               <tr className="border-b border-slate-800">
                 {DASH_TABLE_WIDTHS.map((_, i) => (
                   <th key={i} className="text-left px-6 py-3">

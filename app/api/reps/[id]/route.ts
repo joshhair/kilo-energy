@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
+import { requireAdmin } from '../../../../lib/api-auth';
 
-// PATCH /api/reps/[id] — Update rep (repType, etc.)
+// PATCH /api/reps/[id] — Update rep (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const body = await req.json();
 
@@ -27,8 +29,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
 }
 
-// DELETE /api/reps/[id]
+// DELETE /api/reps/[id] (admin only)
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   // Soft-delete: set active=false instead of deleting (preserves referential integrity)
   await prisma.user.update({ where: { id }, data: { active: false } });

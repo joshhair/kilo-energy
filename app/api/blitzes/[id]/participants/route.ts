@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
+import { requireAuth } from '../../../../../lib/api-auth';
 
 // POST /api/blitzes/[id]/participants — Add a participant
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
   const body = await req.json();
 
@@ -17,8 +19,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json(participant, { status: 201 });
 }
 
-// PATCH /api/blitzes/[id]/participants — Update participant (joinStatus, attendanceStatus)
+// PATCH /api/blitzes/[id]/participants — Update participant
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
   const body = await req.json();
   // body: { userId, joinStatus?, attendanceStatus? }
@@ -42,6 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 // DELETE /api/blitzes/[id]/participants — Remove a participant
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
   const { searchParams } = req.nextUrl;
   const userId = searchParams.get('userId');

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
+import { requireAdmin } from '../../../../lib/api-auth';
 
-// PATCH /api/incentives/[id] — Update an incentive
+// PATCH /api/incentives/[id] — Update an incentive (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const body = await req.json();
 
@@ -20,8 +22,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(incentive);
 }
 
-// DELETE /api/incentives/[id]
+// DELETE /api/incentives/[id] (admin only)
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   await prisma.incentive.delete({ where: { id } });
   return NextResponse.json({ success: true });

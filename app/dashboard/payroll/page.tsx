@@ -1,14 +1,18 @@
 'use client';
 
-import { useState, useRef, useEffect, type CSSProperties } from 'react';
+import { useState, useRef, useEffect, Suspense, type CSSProperties } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useFocusTrap } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
-import { formatDate } from '../../../lib/utils';
-import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight } from 'lucide-react';
+import { formatDate, downloadCSV, fmt$ } from '../../../lib/utils';
+import { RelativeDate } from '../components/RelativeDate';
+import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer } from 'lucide-react';
+import { PaginationBar } from '../components/PaginationBar';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { DateRangeFilter } from '../components/DateRangeFilter';
 import Link from 'next/link';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
@@ -29,20 +33,58 @@ const STATUS_ACCENT: Record<StatusTab, string> = {
   Paid:    'from-emerald-500 to-emerald-400',
 };
 
+const PRINT_STYLES = `
+@media print {
+  aside, nav, .tab-bar-container, button, [role="dialog"], .toast-item,
+  [aria-label="Back to top"], [aria-label="Open navigation menu"] { display: none !important; }
+  body, main, div { background: white !important; color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .card-surface, .card-surface-stat { background: white !important; border: 1px solid #ddd !important; box-shadow: none !important; backdrop-filter: none !important; }
+  table { width: 100% !important; border-collapse: collapse !important; }
+  th, td { border: 1px solid #ccc !important; padding: 6px 10px !important; color: black !important; background: white !important; font-size: 11px !important; }
+  th { background: #f0f0f0 !important; font-weight: 600 !important; }
+  .text-gradient-brand, .text-gradient-emerald, .text-gradient-gold { background: none !important; -webkit-background-clip: unset !important; -webkit-text-fill-color: black !important; background-clip: unset !important; }
+  .stat-value, .stat-value-glow { text-shadow: none !important; color: black !important; }
+  main { padding: 0 !important; overflow: visible !important; width: 100% !important; }
+  main::before { content: 'Kilo Energy — Payroll Summary'; display: block; text-align: center; font-size: 16px; font-weight: 700; padding: 12px 0; border-bottom: 2px solid #333; margin-bottom: 16px; }
+  * { animation: none !important; transition: none !important; }
+  @page { margin: 1cm; size: landscape; }
+}`;
+
 export default function PayrollPage() {
+  return (
+    <Suspense>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_STYLES }} />
+      <PayrollPageInner />
+    </Suspense>
+  );
+}
+
+function PayrollPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { currentRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, reps, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
+
+  // URL-persisted state
+  const initialStatus = (searchParams.get('status') ?? 'Draft') as StatusTab;
+  const initialType = (searchParams.get('type') ?? 'Deal') as TypeTab;
+  const initialRep = searchParams.get('rep') ?? '';
+
   const [pageView, setPageView] = useState<PageView>('payroll');
-  const [statusTab, setStatusTab] = useState<StatusTab>('Draft');
-  const [typeTab, setTypeTab] = useState<TypeTab>('Deal');
+  const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
+  const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus'].includes(initialType) ? initialType : 'Deal');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [bonusForm, setBonusForm] = useState({ repId: '', amount: '', notes: '', date: '' });
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', stage: 'M1' as 'M1' | 'M2' | 'M3', date: '', notes: '' });
+  const bonusPanelRef = useRef<HTMLDivElement>(null);
+  const paymentPanelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(bonusPanelRef, showBonusModal);
+  useFocusTrap(paymentPanelRef, showPaymentModal);
 
   // Reimbursements date filter
   const [reimFilterFrom, setReimFilterFrom] = useState('');
@@ -52,8 +94,38 @@ export default function PayrollPage() {
   const [payFilterFrom, setPayFilterFrom] = useState('');
   const [payFilterTo, setPayFilterTo] = useState('');
 
+  // Pagination for admin payroll table
+  const [adminPage, setAdminPage] = useState(1);
+  const [adminRowsPerPage, setAdminRowsPerPage] = useState(25);
+
   // Rep filter (admin)
-  const [filterRepId, setFilterRepId] = useState('');
+  const [filterRepId, setFilterRepId] = useState(initialRep);
+
+  // Wrappers that sync tab/filter state to URL params
+  const changeStatusTab = (v: StatusTab) => {
+    setStatusTab(v);
+    setSelectedIds(new Set());
+    setAdminPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('status', v);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+  const changeTypeTab = (v: TypeTab) => {
+    setTypeTab(v);
+    setSelectedIds(new Set());
+    setAdminPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('type', v);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+  const changeFilterRepId = (v: string) => {
+    setFilterRepId(v);
+    setSelectedIds(new Set());
+    setAdminPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (v) params.set('rep', v); else params.delete('rep');
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   // Page view tab indicators
   const pageViewRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -136,8 +208,14 @@ export default function PayrollPage() {
   const totalPending = payrollEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const totalPaid = payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
 
+  // Paginate the flat filtered list, then re-group by rep for display
+  const adminTotalPages = Math.max(1, Math.ceil(filtered.length / adminRowsPerPage));
+  const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
+  const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
+  const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
+
   const repGroups = Array.from(
-    filtered.reduce((map, entry) => {
+    paginatedFiltered.reduce((map, entry) => {
       const key = entry.repId;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(entry);
@@ -154,12 +232,32 @@ export default function PayrollPage() {
   // Floating toolbar is visible whenever one or more Draft entries are selected
   const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    // Only publish entries that match current filters (what the admin sees on screen)
+    const pendingVisible = filtered.filter((e) => e.status === 'Pending');
+    const ids = pendingVisible.map((e) => e.id);
+    const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
+    // Save snapshot for rollback
+    const snapshot = [...payrollEntries];
     setPayrollEntries((prev) =>
-      prev.map((p) => (p.status === 'Pending' ? { ...p, status: 'Paid' } : p))
+      prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Paid' } : p))
     );
     setShowPublishConfirm(false);
-    toast(`Payroll published — $${totalPending.toLocaleString()} marked as Paid`, 'success');
+    toast(`Payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
+    // Persist to DB
+    const results = await Promise.allSettled(ids.map((id) =>
+      fetch(`/api/payroll/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Paid' }),
+      }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res; })
+    ));
+    const failures = results.filter((r) => r.status === 'rejected');
+    if (failures.length > 0) {
+      console.error('[handlePublish] Some entries failed to persist:', failures);
+      setPayrollEntries(snapshot);
+      toast(`${failures.length} payroll entries failed to save — rolled back`, 'error');
+    }
   };
 
   const handleMarkForPayroll = () => {
@@ -168,7 +266,7 @@ export default function PayrollPage() {
       .reduce((s, e) => s + e.amount, 0);
     markForPayroll(Array.from(selectedIds));
     setSelectedIds(new Set());
-    setStatusTab('Pending');
+    changeStatusTab('Pending');
     toast(`${selectedIds.size} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
   };
 
@@ -197,8 +295,9 @@ export default function PayrollPage() {
     setSelectedIds(allSelected ? new Set() : new Set(allIds));
   };
 
-  const handleAddBonus = (e: React.FormEvent) => {
+  const handleAddBonus = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!bonusForm.repId) { toast('Please select a rep', 'error'); return; }
     const rep = reps.find((r) => r.id === bonusForm.repId);
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}`,
@@ -216,13 +315,25 @@ export default function PayrollPage() {
     setPayrollEntries((prev) => [...prev, newEntry]);
     setShowBonusModal(false);
     setBonusForm({ repId: '', amount: '', notes: '', date: '' });
-    setStatusTab('Draft');
-    setTypeTab('Bonus');
+    changeStatusTab('Draft');
+    changeTypeTab('Bonus');
     toast(`Bonus added for ${rep?.name ?? 'rep'} — $${parseFloat(bonusForm.amount).toLocaleString()}`, 'success');
+    // Persist to DB — rollback optimistic add on failure
+    fetch('/api/payroll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repId: newEntry.repId, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
+    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => {
+        console.error(err);
+        setPayrollEntries((prev) => prev.filter((e) => e.id !== newEntry.id));
+        toast('Failed to save bonus — entry removed', 'error');
+      });
   };
 
-  const handleAddPayment = (e: React.FormEvent) => {
+  const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!paymentForm.repId) { toast('Please select a rep', 'error'); return; }
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const project = projects.find((p) => p.id === paymentForm.projectId);
     const newEntry: PayrollEntry = {
@@ -241,9 +352,20 @@ export default function PayrollPage() {
     setPayrollEntries((prev) => [...prev, newEntry]);
     setShowPaymentModal(false);
     setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
-    setStatusTab('Draft');
-    setTypeTab('Deal');
+    changeStatusTab('Draft');
+    changeTypeTab('Deal');
     toast(`Payment draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
+    // Persist to DB — rollback optimistic add on failure
+    fetch('/api/payroll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repId: newEntry.repId, projectId: newEntry.projectId, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
+    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => {
+        console.error(err);
+        setPayrollEntries((prev) => prev.filter((e) => e.id !== newEntry.id));
+        toast('Failed to save payment — entry removed', 'error');
+      });
   };
 
   const inputCls = 'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
@@ -324,7 +446,7 @@ export default function PayrollPage() {
                         {entry.paymentStage}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-emerald-400 font-semibold">${entry.amount.toLocaleString()}</td>
+                    <td className="px-5 py-3 text-emerald-400 font-semibold">{fmt$(entry.amount)}</td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded ${
                         entry.status === 'Paid'
@@ -336,7 +458,7 @@ export default function PayrollPage() {
                         {entry.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-slate-500 text-xs">{formatDate(entry.date)}</td>
+                    <td className="px-5 py-3 text-slate-500 text-xs"><RelativeDate date={entry.date} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -389,6 +511,35 @@ export default function PayrollPage() {
               style={{ backgroundColor: 'var(--brand)' }}
             >
               Publish Payroll
+            </button>
+            <button
+              onClick={() => {
+                const headers = ['Rep', 'Customer', 'Type', 'Stage', 'Amount', 'Status', 'Date', 'Notes'];
+                const rows = filtered.map((e) => [
+                  e.repName,
+                  e.customerName || '',
+                  e.type,
+                  e.paymentStage,
+                  `$${e.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+                  e.status,
+                  formatDate(e.date),
+                  e.notes ?? '',
+                ]);
+                downloadCSV(`payroll-${statusTab.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+              }}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              title="Download filtered payroll as CSV"
+            >
+              <Download className="w-3.5 h-3.5" /> CSV
+            </button>
+            <button
+              onClick={() => window.print()}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap print:hidden"
+              title="Print payroll summary"
+            >
+              <Printer className="w-3.5 h-3.5" /> Print
             </button>
           </div>
         )}
@@ -484,6 +635,9 @@ export default function PayrollPage() {
                           <button
                             onClick={() => {
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Approved' } : x));
+                              fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
+                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+                                .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); });
                               toast(`Reimbursement approved for ${r.repName}`, 'success');
                             }}
                             className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 px-2 py-1 rounded transition-colors"
@@ -493,6 +647,9 @@ export default function PayrollPage() {
                           <button
                             onClick={() => {
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Denied' } : x));
+                              fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
+                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+                                .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); });
                               toast(`Reimbursement denied for ${r.repName}`, 'error');
                             }}
                             className="flex items-center gap-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-400 px-2 py-1 rounded transition-colors"
@@ -508,8 +665,12 @@ export default function PayrollPage() {
                 ))}
                 {filteredReimbursements.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-10 text-center text-slate-600">
-                      {reimbursements.length === 0 ? 'No reimbursement requests.' : 'No requests match the selected date range.'}
+                    <td colSpan={7} className="px-5 py-12 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Receipt className="w-10 h-10 text-slate-600" />
+                        <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected date range'}</p>
+                        <p className="text-xs text-slate-500">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their Vault page' : 'Try adjusting the date filters to find what you need'}</p>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -535,7 +696,7 @@ export default function PayrollPage() {
           <button
             key={s}
             ref={(el) => { statusTabRefs.current[i] = el; }}
-            onClick={() => { setStatusTab(s); setSelectedIds(new Set()); }}
+            onClick={() => changeStatusTab(s)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               statusTab === s ? 'text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -562,7 +723,7 @@ export default function PayrollPage() {
           <button
             key={t}
             ref={(el) => { typeTabRefs.current[i] = el; }}
-            onClick={() => { setTypeTab(t); setSelectedIds(new Set()); }}
+            onClick={() => changeTypeTab(t)}
             className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               typeTab === t ? 'text-white' : 'text-slate-500 hover:text-white'
             }`}
@@ -573,43 +734,24 @@ export default function PayrollPage() {
       </div>
 
       {/* Rep filter + Payroll date filter */}
-      <div className="flex items-center gap-3 mb-5 overflow-visible">
+      <div className="flex flex-wrap items-center gap-3 mb-5 overflow-visible">
         <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
         <div className="w-44 flex-shrink-0">
           <RepSelector
             value={filterRepId}
-            onChange={(id) => { setFilterRepId(id); setSelectedIds(new Set()); }}
+            onChange={(id) => changeFilterRepId(id)}
             reps={reps}
             placeholder="All Reps"
             clearLabel="All Reps"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 whitespace-nowrap">From</label>
-          <input
-            type="date"
-            value={payFilterFrom}
-            onChange={(e) => setPayFilterFrom(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 whitespace-nowrap">To</label>
-          <input
-            type="date"
-            value={payFilterTo}
-            onChange={(e) => setPayFilterTo(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-        {(payFilterFrom || payFilterTo) && (
-          <button
-            onClick={() => { setPayFilterFrom(''); setPayFilterTo(''); }}
-            className="text-xs text-slate-500 hover:text-white underline transition-colors"
-          >
-            Clear
-          </button>
-        )}
+        <DateRangeFilter
+          from={payFilterFrom}
+          to={payFilterTo}
+          onFromChange={setPayFilterFrom}
+          onToChange={setPayFilterTo}
+          onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); }}
+        />
         <span className="text-slate-600 text-xs ml-auto">{filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}</span>
       </div>
 
@@ -835,9 +977,9 @@ export default function PayrollPage() {
                           )}
                         </td>
                         <td className="px-5 py-3 text-emerald-400 font-semibold">
-                          ${entry.amount.toLocaleString()}
+                          {fmt$(entry.amount)}
                         </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs">{formatDate(entry.date)}</td>
+                        <td className="px-5 py-3 text-slate-500 text-xs"><RelativeDate date={entry.date} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -846,6 +988,20 @@ export default function PayrollPage() {
               </div>
             );
           })}
+          {filtered.length > adminRowsPerPage && (
+            <div className="card-surface rounded-2xl overflow-hidden mt-4">
+              <PaginationBar
+                totalResults={filtered.length}
+                startIdx={adminStartIdx}
+                endIdx={adminEndIdx}
+                currentPage={adminPage}
+                totalPages={adminTotalPages}
+                rowsPerPage={adminRowsPerPage}
+                onPageChange={setAdminPage}
+                onRowsPerPageChange={(n) => { setAdminRowsPerPage(n); setAdminPage(1); }}
+              />
+            </div>
+          )}
         </div>
       )}
       </div> {/* end key={statusTab} */}
@@ -854,7 +1010,7 @@ export default function PayrollPage() {
 
       {/* Publish Confirm Modal */}
       {showPublishConfirm && (() => {
-        const pendingEntries = payrollEntries.filter((p) => p.status === 'Pending');
+        const pendingEntries = filtered.filter((p) => p.status === 'Pending');
         // Build a per-rep summary sorted descending by total payout
         const repSummary = Array.from(
           pendingEntries.reduce((map, e) => {
@@ -929,7 +1085,7 @@ export default function PayrollPage() {
       {/* Bonus Modal */}
       {showBonusModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+          <div ref={bonusPanelRef} className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Bonus Payment</h2>
               <button
@@ -1008,7 +1164,7 @@ export default function PayrollPage() {
       {/* Manual Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+          <div ref={paymentPanelRef} className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Deal Payment</h2>
               <button onClick={() => setShowPaymentModal(false)} className="text-slate-500 hover:text-white transition-colors">

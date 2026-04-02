@@ -731,6 +731,20 @@ select {
   animation: iconBounce 300ms ease-out;
 }
 
+/* ── Collapsible panel animation ────────────────────────────────────────────── */
+.collapsible-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease-out;
+}
+.collapsible-panel.open {
+  grid-template-rows: 1fr;
+}
+.collapsible-panel > .collapsible-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
 /* ── Sidebar collapsed-state tooltip ────────────────────────────────────────── */
 
 /* Spring entrance replaces the plain opacity+translate transition */
@@ -1305,4 +1319,36 @@ select {
 .animate-podium-breath-bronze {
   animation:
     podiumBreathBronze 2.4s ease-in-out 1050ms infinite;
+}
+
+/* ── PWA Install Prompt — slide-up entrance ──────────────────────────────── */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Bottom nav "More" sheet slide-up ────────────────────────────────── */
+@keyframes slideUpSheet {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-sheet {
+  animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

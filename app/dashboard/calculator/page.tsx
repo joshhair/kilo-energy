@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, type CSSProperties } from 'react';
+import { useState, useEffect, useRef, Suspense, type CSSProperties } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { getSolarTechBaseline, calculateCommission, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, SOLARTECH_PRODUCTS, getInstallerRatesForDeal, getProductCatalogBaseline, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
-import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2 } from 'lucide-react';
+import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2, Link2 } from 'lucide-react';
+import { Breadcrumb } from '../components/Breadcrumb';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { useToast } from '../../../lib/toast';
@@ -190,7 +192,12 @@ function CommissionBar({
   );
 }
 
-export default function CalculatorPage() {
+export default function CalculatorPageWrapper() {
+  return <Suspense><CalculatorPage /></Suspense>;
+}
+
+function CalculatorPage() {
+  const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
   const { currentRepId, currentRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
@@ -215,6 +222,20 @@ export default function CalculatorPage() {
 
   // Load history once on mount
   useEffect(() => { setCalcHistory(loadCalcHistory()); }, []);
+
+  // Pre-fill from URL search params (for shared URLs)
+  useEffect(() => {
+    const p = searchParams;
+    if (p.get('installer')) setInstaller(p.get('installer')!);
+    if (p.get('kW')) setKWSize(p.get('kW')!);
+    if (p.get('ppw')) setNetPPW(p.get('ppw')!);
+    if (p.get('stFamily')) setSolarTechFamily(p.get('stFamily')!);
+    if (p.get('stProduct')) setSolarTechProductId(p.get('stProduct')!);
+    if (p.get('pcFamily')) setPcSelectedFamily(p.get('pcFamily')!);
+    if (p.get('pcProduct')) setPcProductId(p.get('pcProduct')!);
+    if (p.get('setter') === '1') setHasSetter(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Refs for quick-fill cascade highlight ─────────────────────────────────
   const installerRef  = useRef<HTMLDivElement>(null);
@@ -460,6 +481,24 @@ export default function CalculatorPage() {
     );
   };
 
+  /** Copies a shareable URL with calculator inputs encoded as search params. */
+  const handleShareURL = () => {
+    const params = new URLSearchParams();
+    if (installer) params.set('installer', installer);
+    if (kWSize) params.set('kW', kWSize);
+    if (netPPW) params.set('ppw', netPPW);
+    if (solarTechFamily) params.set('stFamily', solarTechFamily);
+    if (solarTechProductId) params.set('stProduct', solarTechProductId);
+    if (pcSelectedFamily) params.set('pcFamily', pcSelectedFamily);
+    if (pcProductId) params.set('pcProduct', pcProductId);
+    if (hasSetter) params.set('setter', '1');
+    const url = `${window.location.origin}/dashboard/calculator?${params.toString()}`;
+    navigator.clipboard.writeText(url).then(
+      () => toast('Link copied!', 'success'),
+      () => toast('Could not access clipboard', 'error'),
+    );
+  };
+
   /** Loads a history entry back into the form. */
   const handleLoadHistory = (entry: CalcHistoryEntry) => {
     setInstaller(entry.installer);
@@ -548,6 +587,7 @@ export default function CalculatorPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-2xl animate-fade-in-up">
+      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Calculator' }]} />
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
@@ -805,6 +845,14 @@ export default function CalculatorPage() {
                       className="text-slate-500 hover:text-blue-400 transition-colors"
                     >
                       <Share2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleShareURL}
+                      title="Copy shareable URL to clipboard"
+                      className="text-slate-500 hover:text-blue-400 transition-colors"
+                    >
+                      <Link2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

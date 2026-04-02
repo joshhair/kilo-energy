@@ -2,17 +2,30 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AppProvider } from '../lib/context';
 import { ToastProvider } from '../lib/toast';
+import { ClerkProvider } from '@clerk/nextjs';
+import { dark } from '@clerk/themes';
 
 export const metadata: Metadata = {
   title: 'Kilo Energy',
   description: 'Solar sales commission tracking',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icons/icon-192.png',
+    apple: '/icons/icon-192.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Kilo Energy',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
   themeColor: '#060E1E',
 };
 
@@ -22,14 +35,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body className="min-h-full text-white antialiased" style={{ backgroundColor: 'var(--navy-base)' }}>
-        <AppProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </AppProvider>
-      </body>
-    </html>
+    <ClerkProvider appearance={{ baseTheme: dark }}>
+      <html lang="en" className="h-full">
+        <body className="min-h-full text-white antialiased" style={{ backgroundColor: 'var(--navy-base)' }}>
+          <AppProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </AppProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

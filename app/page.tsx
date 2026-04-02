@@ -1,29 +1,77 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { useApp } from '../lib/context';
-import { Zap, Shield, ChevronRight } from 'lucide-react';
 
 export default function LoginPage() {
-  const { setRole, reps } = useApp();
+  const { isSignedIn, isLoaded: clerkLoaded } = useUser();
+  const { signOut } = useClerk();
+  const { setRole, currentRole } = useApp();
   const router = useRouter();
-  const [mode, setMode] = useState<'pick' | 'rep' | 'admin'>('pick');
-  const [selectedRepId, setSelectedRepId] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleRepLogin = () => {
-    if (!selectedRepId) return;
-    const rep = reps.find((r) => r.id === selectedRepId);
-    if (!rep) return;
-    setRole('rep', rep.id, rep.name);
-    router.push('/dashboard');
-  };
+  // If not signed in via Clerk, redirect to /sign-in
+  useEffect(() => {
+    if (clerkLoaded && !isSignedIn) {
+      router.push('/sign-in');
+    }
+  }, [clerkLoaded, isSignedIn, router]);
 
-  const handleAdminLogin = () => {
-    setRole('admin', undefined, 'Admin');
-    router.push('/dashboard');
-  };
+  // If already has a role (from localStorage restore), go straight to dashboard
+  useEffect(() => {
+    if (clerkLoaded && isSignedIn && currentRole) {
+      router.push('/dashboard');
+    }
+  }, [clerkLoaded, isSignedIn, currentRole, router]);
 
+  // Auto-resolve role from internal User table via /api/auth/me
+  useEffect(() => {
+    if (!clerkLoaded || !isSignedIn || currentRole) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetch('/api/auth/me')
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          const user = await res.json();
+          // user.role is 'admin' | 'rep' | 'sub-dealer'
+          setRole(user.role, user.id, user.name);
+          router.push('/dashboard');
+        } else if (res.status === 404) {
+          setError('Access denied — your account is not registered. Contact your administrator.');
+          setLoading(false);
+        } else {
+          setError('Failed to verify your account. Please try again.');
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError('Network error — could not verify your account.');
+          setLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [clerkLoaded, isSignedIn, currentRole, setRole, router]);
+
+  // Show loading state while Clerk loads or while we resolve the role
+  if (!clerkLoaded || !isSignedIn || (loading && !error)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center"
+           style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}>
+        <div className="text-slate-500 text-sm">Verifying your account...</div>
+      </div>
+    );
+  }
+
+  // Access denied or error state
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
          style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}>
@@ -31,12 +79,6 @@ export default function LoginPage() {
       {/* Background grid */}
       <div className="absolute inset-0 opacity-[0.03]"
            style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-
-      {/* Ambient glow orbs */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-[0.08] blur-3xl pointer-events-none"
-           style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)' }} />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full opacity-[0.06] blur-3xl pointer-events-none"
-           style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }} />
 
       <div className="relative w-full max-w-sm animate-slide-in-scale">
         {/* Logo */}
@@ -57,108 +99,20 @@ export default function LoginPage() {
         {/* Card */}
         <div className="card-surface relative rounded-2xl overflow-hidden">
           <div className="p-8">
-            {mode === 'pick' && (
-              <div className="space-y-4">
-                <p className="text-slate-400 text-xs text-center uppercase tracking-widest mb-6">
-                  Sign in to continue
-                </p>
-
-                {/* Rep Login Card */}
-                <button
-                  onClick={() => setMode('rep')}
-                  className="w-full card-surface rounded-xl p-4 flex items-center gap-4 text-left transition-all hover:translate-y-[-2px] active:scale-[0.98] group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
-                    <Zap className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm">Rep Login</p>
-                    <p className="text-slate-500 text-xs mt-0.5">Access your deals and commissions</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
-                </button>
-
-                {/* Admin Login Card */}
-                <button
-                  onClick={() => setMode('admin')}
-                  className="w-full card-surface rounded-xl p-4 flex items-center gap-4 text-left transition-all hover:translate-y-[-2px] active:scale-[0.98] group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-                    <Shield className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm">Admin Login</p>
-                    <p className="text-slate-500 text-xs mt-0.5">Full access to all data and payroll</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 transition-colors shrink-0" />
-                </button>
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mx-auto">
+                <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-            )}
-
-            {mode === 'rep' && (
-              <div className="space-y-5">
-                <button onClick={() => { setMode('pick'); setSelectedRepId(''); }}
-                  className="text-slate-400 hover:text-white text-xs flex items-center gap-1.5 transition-colors">
-                  ← Back
-                </button>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                      <Zap className="w-3.5 h-3.5 text-blue-400" />
-                    </div>
-                    <h2 className="text-white text-lg font-bold">Select your account</h2>
-                  </div>
-                  <p className="text-slate-500 text-xs ml-9">Choose your rep profile to continue</p>
-                </div>
-                <select
-                  value={selectedRepId}
-                  onChange={(e) => setSelectedRepId(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all input-focus-glow"
-                >
-                  <option value="">— Choose a rep —</option>
-                  {reps.map((rep) => (
-                    <option key={rep.id} value={rep.id}>{rep.name}</option>
-                  ))}
-                </select>
-                <div className="relative inline-flex w-full">
-                  {selectedRepId && <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-blue-500 to-emerald-500 opacity-25 blur-md animate-pulse" />}
-                  <button
-                    onClick={handleRepLogin}
-                    disabled={!selectedRepId}
-                    className="relative w-full btn-primary text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    Enter Dashboard
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {mode === 'admin' && (
-              <div className="space-y-5">
-                <button onClick={() => setMode('pick')}
-                  className="text-slate-400 hover:text-white text-xs flex items-center gap-1.5 transition-colors">
-                  ← Back
-                </button>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                      <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                    </div>
-                    <h2 className="text-white text-lg font-bold">Admin Access</h2>
-                  </div>
-                  <p className="text-slate-500 text-xs ml-9">Full access to all reps, deals, and payroll</p>
-                </div>
-                <div className="relative inline-flex w-full">
-                  <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-emerald-500 to-blue-500 opacity-25 blur-md animate-pulse" />
-                  <button
-                    onClick={handleAdminLogin}
-                    className="relative w-full btn-primary text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-[0.98]"
-                  >
-                    Enter as Admin
-                  </button>
-                </div>
-              </div>
-            )}
+              <p className="text-white text-sm font-medium">{error}</p>
+              <button
+                onClick={() => signOut({ redirectUrl: '/sign-in' })}
+                className="text-slate-400 hover:text-white text-xs transition-colors underline underline-offset-2"
+              >
+                Sign out and try a different account
+              </button>
+            </div>
           </div>
         </div>
 

@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, PlusCircle, X, Keyboard } from 'lucide-react';
-import { REP_NAV, ADMIN_NAV } from './nav-items';
+import { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV } from './nav-items';
 import type { AnyNavItem, NavItem } from './nav-items';
 
 // ─── Internal types ───────────────────────────────────────────────────────────
@@ -151,26 +151,36 @@ const SHORTCUT_GROUPS: Array<{
   shortcuts: Array<{ key: string; description: string }>;
 }> = [
   {
-    label: 'Navigation',
+    label: 'Global',
     shortcuts: [
-      { key: 'D', description: 'Dashboard' },
       { key: 'N', description: 'New Deal' },
       { key: 'P', description: 'Projects' },
       { key: 'E', description: 'Earnings' },
-    ],
-  },
-  {
-    label: 'Search & Commands',
-    shortcuts: [
-      { key: '/', description: 'Search (Reps page)' },
-      { key: '⌘K', description: 'Command palette' },
+      { key: 'D', description: 'Dashboard' },
+      { key: '\u2318K', description: 'Command palette' },
       { key: '?', description: 'Keyboard shortcuts' },
     ],
   },
   {
-    label: 'General',
+    label: 'Tables',
     shortcuts: [
-      { key: 'Esc', description: 'Deselect / close' },
+      { key: '\u2191\u2193', description: 'Navigate rows' },
+      { key: '\u21B5', description: 'Open selected' },
+      { key: 'Esc', description: 'Deselect' },
+    ],
+  },
+  {
+    label: 'Deal Form',
+    shortcuts: [
+      { key: '\u2318\u21B5', description: 'Submit form' },
+    ],
+  },
+  {
+    label: 'Payroll',
+    shortcuts: [
+      { key: 'Esc', description: 'Clear selection' },
+      { key: '\u21B5', description: 'Mark for payroll' },
+      { key: 'Shift+A', description: 'Select / deselect all' },
     ],
   },
 ];
@@ -185,7 +195,7 @@ export interface CommandPaletteProps {
   /** Called when the palette should close (Esc, backdrop click, item selection). */
   onClose: () => void;
   /** Current user role — determines which nav pages are shown. */
-  role: 'rep' | 'admin' | null;
+  role: 'rep' | 'admin' | 'sub-dealer' | null;
 }
 
 export function CommandPalette({ open, onOpen, onClose, role }: CommandPaletteProps) {
@@ -210,7 +220,7 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
   // ── Build full item list ──────────────────────────────────────────────────
 
   const allItems = useMemo((): PaletteItem[] => {
-    const navSource = role === 'admin' ? ADMIN_NAV : REP_NAV;
+    const navSource = role === 'admin' ? ADMIN_NAV : role === 'sub-dealer' ? SUB_DEALER_NAV : REP_NAV;
     const pages: PaletteItem[] = flattenNav(navSource)
       .filter((item) => !QA_EXACT_HREFS.has(item.href)) // deduplicate
       .map((item) => ({

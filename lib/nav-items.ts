@@ -19,6 +19,7 @@ import {
   Trophy,
   Vault,
   Tent,
+  GraduationCap,
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -46,7 +47,17 @@ export const REP_NAV: AnyNavItem[] = [
   { href: '/dashboard/projects',   label: 'Projects',   icon: FolderKanban },
   { href: '/dashboard/vault',      label: 'My Pay',     icon: Vault },
   { href: '/dashboard/blitz',     label: 'Blitz',      icon: Tent },
+  { href: '/dashboard/training',   label: 'Training',    icon: GraduationCap },
   { href: '/dashboard/calculator', label: 'Calculator',  icon: Calculator },
+];
+
+// ─── Sub-dealer navigation ───────────────────────────────────────────────────
+
+export const SUB_DEALER_NAV: AnyNavItem[] = [
+  { href: '/dashboard',            label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/dashboard/new-deal',   label: 'New Deal',   icon: PlusCircle },
+  { href: '/dashboard/projects',   label: 'Projects',   icon: FolderKanban },
+  { href: '/dashboard/vault',      label: 'My Pay',     icon: Vault },
 ];
 
 // ─── Admin navigation ────────────────────────────────────────────────────────

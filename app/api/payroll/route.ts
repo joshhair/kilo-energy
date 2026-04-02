@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
+import { requireAdmin } from '../../../lib/api-auth';
 
-// POST /api/payroll — Create a payroll entry
+// POST /api/payroll — Create a payroll entry (admin only)
 export async function POST(req: NextRequest) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   const entry = await prisma.payrollEntry.create({
     data: {
@@ -20,8 +22,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(entry, { status: 201 });
 }
 
-// PATCH /api/payroll — Bulk update payroll entries (e.g., mark multiple as Pending/Paid)
+// PATCH /api/payroll — Bulk update payroll entries (admin only)
 export async function PATCH(req: NextRequest) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   // body.ids: string[], body.status: string
   if (body.ids && body.status) {

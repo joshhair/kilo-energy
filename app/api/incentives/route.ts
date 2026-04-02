@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
+import { requireAdmin } from '../../../lib/api-auth';
 
-// POST /api/incentives — Create an incentive
+// POST /api/incentives — Create an incentive (admin only)
 export async function POST(req: NextRequest) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   const incentive = await prisma.incentive.create({
     data: {

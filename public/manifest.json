@@ -1,20 +1,24 @@
 {
   "name": "Kilo Energy",
   "short_name": "Kilo",
+  "description": "Solar sales commission tracking",
   "start_url": "/dashboard",
   "display": "standalone",
-  "theme_color": "#060E1E",
   "background_color": "#060E1E",
+  "theme_color": "#060E1E",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon",
-      "sizes": "32x32",
-      "type": "image/png"
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/apple-icon",
-      "sizes": "180x180",
-      "type": "image/png"
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

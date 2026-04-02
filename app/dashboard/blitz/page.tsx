@@ -1,15 +1,18 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useFocusTrap } from '../../../lib/hooks';
 import { formatDate, formatCurrency } from '../../../lib/utils';
-import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap, UserPlus, UserCheck } from 'lucide-react';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap, UserPlus, UserCheck, ChevronDown, X } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
+import { PaginationBar } from '../components/PaginationBar';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
 type TabKey = 'blitzes' | 'requests';
+type SortKey = 'newest' | 'oldest' | 'deals' | 'kw' | 'name';
 
 interface BlitzData {
   id: string;
@@ -49,9 +52,17 @@ interface BlitzRequestData {
 const STATUS_STYLES: Record<BlitzStatus, { bg: string; text: string; dot: string; border: string }> = {
   upcoming:  { bg: 'bg-blue-900/30',    text: 'text-blue-300',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
   active:    { bg: 'bg-emerald-900/30',  text: 'text-emerald-300', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
-  completed: { bg: 'bg-zinc-800/50',     text: 'text-zinc-400',    dot: 'bg-zinc-500',    border: 'border-zinc-600/30' },
+  completed: { bg: 'bg-slate-800/50',     text: 'text-slate-400',    dot: 'bg-slate-500',    border: 'border-slate-600/30' },
   cancelled: { bg: 'bg-red-900/30',      text: 'text-red-300',     dot: 'bg-red-400',     border: 'border-red-700/30' },
 };
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'newest', label: 'Newest First' },
+  { key: 'oldest', label: 'Oldest First' },
+  { key: 'deals', label: 'Most Deals' },
+  { key: 'kw', label: 'Most kW' },
+  { key: 'name', label: 'Name A\u2013Z' },
+];
 
 function getBlitzTimingLabel(blitz: BlitzData): string | null {
   const now = new Date();
@@ -76,20 +87,34 @@ function getBlitzTimingLabel(blitz: BlitzData): string | null {
   return null;
 }
 
-function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData; currentUserId: string | null; isAdmin: boolean; onJoin: (blitzId: string) => void }) {
+function getBlitzProgress(blitz: BlitzData): { dayNum: number; totalDays: number; pct: number } | null {
+  if (blitz.status !== 'active') return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const start = new Date(blitz.startDate + 'T00:00:00');
+  const end = new Date(blitz.endDate + 'T00:00:00');
+  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
+  const dayNum = Math.max(1, Math.round((now.getTime() - start.getTime()) / 86400000) + 1);
+  const pct = Math.min(100, Math.round((dayNum / totalDays) * 100));
+  return { dayNum, totalDays, pct };
+}
+
+function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz: BlitzData; currentUserId: string | null; isAdmin: boolean; onJoin: (blitzId: string) => Promise<void>; index?: number }) {
+  const [joining, setJoining] = useState(false);
   const style = STATUS_STYLES[blitz.status] ?? STATUS_STYLES.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
   const totalKW = blitz.projects.reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = blitz.projects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
+  const progress = getBlitzProgress(blitz);
   const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;
   const isOwner = currentUserId === blitz.owner.id;
   const canJoin = !isAdmin && !isOwner && !myParticipation && (blitz.status === 'upcoming' || blitz.status === 'active');
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>
-      <div className="group relative bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 overflow-hidden hover:border-zinc-600 hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer">
+      <div className={`group relative card-surface rounded-2xl p-5 overflow-hidden hover:border-slate-600 hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer animate-slide-in-scale stagger-${Math.min(index, 6)}`}>
         {/* Status badge + timing */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -98,17 +123,17 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData
               {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
             </span>
             {timingLabel && (
-              <span className="text-[11px] font-medium text-zinc-500">{timingLabel}</span>
+              <span className="text-[11px] font-medium text-slate-500">{timingLabel}</span>
             )}
           </div>
-          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+          <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
         </div>
 
         {/* Name */}
         <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-300 transition-colors">{blitz.name}</h3>
 
         {/* Location + dates */}
-        <div className="flex flex-col gap-1 text-sm text-zinc-400 mb-4">
+        <div className="flex flex-col gap-1 text-sm text-slate-400 mb-4">
           {blitz.location && (
             <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>
           )}
@@ -118,26 +143,51 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData
           </span>
         </div>
 
+        {/* Progress bar for active blitzes */}
+        {progress && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+              <span>Day {progress.dayNum} of {progress.totalDays}</span>
+              <span>{progress.pct}%</span>
+            </div>
+            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
+                style={{ width: `${progress.pct}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-zinc-800">
+        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-800">
           <div className="text-center">
-            <p className="text-xs text-zinc-500 mb-0.5">Reps</p>
+            <p className="text-xs text-slate-500 mb-0.5">Reps</p>
             <p className="text-sm font-bold text-white">{approvedParticipants}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-zinc-500 mb-0.5">Deals</p>
+            <p className="text-xs text-slate-500 mb-0.5">Deals</p>
             <p className="text-sm font-bold text-white">{totalDeals}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-zinc-500 mb-0.5">kW</p>
+            <p className="text-xs text-slate-500 mb-0.5">kW</p>
             <p className="text-sm font-bold text-white">{totalKW.toFixed(1)}</p>
           </div>
         </div>
 
+        {/* Cost efficiency metrics — admin only, when costs exist */}
+        {isAdmin && totalCosts > 0 && (
+          <div className="mt-2 text-[11px] text-slate-500">
+            Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
+            {' | '}
+            Cost/kW: ${totalKW > 0 ? (totalCosts / totalKW).toFixed(2) : '--'}
+          </div>
+        )}
+
         {/* Owner tag + join action */}
         <div className="mt-3 flex items-center justify-between">
-          <div className="text-xs text-zinc-500">
-            Led by <span className="text-zinc-300">{blitz.owner.firstName} {blitz.owner.lastName}</span>
+          <div className="text-xs text-slate-500">
+            Led by <Link href={`/dashboard/reps/${blitz.owner.id}`} onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-blue-300 transition-colors">{blitz.owner.firstName} {blitz.owner.lastName}</Link>
           </div>
           {isOwner && (
             <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-blue-400 border border-blue-500/20">
@@ -146,10 +196,11 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin }: { blitz: BlitzData
           )}
           {canJoin && (
             <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(blitz.id); }}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors"
+              disabled={joining}
+              onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setJoining(true); try { await onJoin(blitz.id); } catch {} finally { setJoining(false); } }}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <UserPlus className="w-3 h-3" /> Join
+              {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />} {joining ? 'Joining...' : 'Join'}
             </button>
           )}
           {!isOwner && myParticipation && (
@@ -177,6 +228,8 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () =>
   const [saving, setSaving] = useState(false);
   const [touched, setTouched] = useState(false);
   const { toast } = useToast();
+  const modalPanelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalPanelRef, true);
 
   const handleSubmit = async () => {
     setTouched(true);
@@ -208,52 +261,52 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
+      <div ref={modalPanelRef} className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-blue-400" /> New Blitz</h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-zinc-700'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
+            <label className="block text-xs font-medium text-slate-400 mb-1">Blitz Name *</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-slate-700'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
             {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Blitz name is required</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Location / Market</label>
-            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Austin, TX" />
+            <label className="block text-xs font-medium text-slate-400 mb-1">Location / Market</label>
+            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Housing / Address</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. 123 Main St, Apt 4" />
+            <label className="block text-xs font-medium text-slate-400 mb-1">Housing / Address</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 123 Main St, Apt 4" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              <label className="block text-xs font-medium text-slate-400 mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-slate-700'}`} />
               {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              <label className="block text-xs font-medium text-slate-400 mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-slate-700'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Blitz Leader</label>
-            <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+            <label className="block text-xs font-medium text-slate-400 mb-1">Blitz Leader</label>
+            <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
               <option value={userId}>Me</option>
               {reps.filter((r) => r.id !== userId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
+            <label className="block text-xs font-medium text-slate-400 mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
           </button>
@@ -274,6 +327,8 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
   const [saving, setSaving] = useState(false);
   const [touched, setTouched] = useState(false);
   const { toast } = useToast();
+  const requestPanelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(requestPanelRef, true);
 
   const handleSubmit = async () => {
     setTouched(true);
@@ -305,52 +360,52 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
+      <div ref={requestPanelRef} className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-amber-400" /> Request a Blitz</h2>
-        <p className="text-sm text-zinc-500 mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
+        <p className="text-sm text-slate-500 mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-zinc-700'}`} placeholder="e.g. Austin Spring Blitz" />
+            <label className="block text-xs font-medium text-slate-400 mb-1">Blitz Name *</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-slate-700'}`} placeholder="e.g. Austin Spring Blitz" />
             {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Name is required</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Location</label>
-              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Austin, TX" />
+              <label className="block text-xs font-medium text-slate-400 mb-1">Location</label>
+              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Expected Headcount</label>
-              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. 8" />
+              <label className="block text-xs font-medium text-slate-400 mb-1">Expected Headcount</label>
+              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 8" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              <label className="block text-xs font-medium text-slate-400 mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-slate-700'}`} />
               {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-zinc-800 border rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-zinc-700'}`} />
+              <label className="block text-xs font-medium text-slate-400 mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-slate-700'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Housing Preferences</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. Airbnb near downtown" />
+            <label className="block text-xs font-medium text-slate-400 mb-1">Housing Preferences</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Airbnb near downtown" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" placeholder="Why this blitz, what's the opportunity..." />
+            <label className="block text-xs font-medium text-slate-400 mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" placeholder="Why this blitz, what's the opportunity..." />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-amber-600 text-white rounded-xl hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Tent className="w-4 h-4" />}
             {saving ? 'Submitting...' : 'Submit Request'}
           </button>
@@ -361,21 +416,97 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
 }
 
 export default function BlitzPage() {
+  return (
+    <Suspense>
+      <BlitzPageInner />
+    </Suspense>
+  );
+}
+
+function BlitzPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { currentRole, currentRepId, reps } = useApp();
   const hydrated = useIsHydrated();
   const isAdmin = currentRole === 'admin';
 
-  const [tab, setTab] = useState<TabKey>('blitzes');
+  // URL-persisted state
+  const initialTab = (searchParams.get('tab') ?? 'blitzes') as TabKey;
+  const initialStatus = (searchParams.get('status') ?? 'all') as BlitzStatus | 'all';
+
+  const [tab, setTabState] = useState<TabKey>(['blitzes', 'requests'].includes(initialTab) ? initialTab : 'blitzes');
   const [blitzes, setBlitzes] = useState<BlitzData[]>([]);
   const [requests, setRequests] = useState<BlitzRequestData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<BlitzStatus | 'all'>('all');
+  const [statusFilter, setStatusFilterState] = useState<BlitzStatus | 'all'>(['all', 'upcoming', 'active', 'completed', 'cancelled'].includes(initialStatus) ? initialStatus : 'all');
+
+  const setTab = (v: TabKey) => {
+    setTabState(v);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', v);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+  const setStatusFilter = (v: BlitzStatus | 'all') => {
+    setStatusFilterState(v);
+    const params = new URLSearchParams(searchParams.toString());
+    if (v !== 'all') params.set('status', v); else params.delete('status');
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
   const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({ canRequestBlitz: false, canCreateBlitz: false });
   const [showRequestBlitz, setShowRequestBlitz] = useState(false);
   const { toast } = useToast();
+
+  // Pagination state
+  const [blitzPage, setBlitzPage] = useState(1);
+  const [blitzPerPage, setBlitzPerPage] = useState(12);
+  const [requestPage, setRequestPage] = useState(1);
+  const [requestPerPage, setRequestPerPage] = useState(10);
+
+  // Search ref + keyboard shortcut
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement) &&
+        !(e.target instanceof HTMLSelectElement)
+      ) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Admin tab sliding indicator
+  const adminTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [adminTabIndicator, setAdminTabIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const idx = tab === 'blitzes' ? 0 : 1;
+    const el = adminTabRefs.current[idx];
+    if (el) setAdminTabIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [tab]);
+
+  // Status filter sliding indicator
+  const STATUS_FILTER_OPTIONS = ['all', 'active', 'upcoming', 'completed', 'cancelled'] as const;
+  const statusTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [statusIndicator, setStatusIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const idx = STATUS_FILTER_OPTIONS.indexOf(statusFilter);
+    const el = statusTabRefs.current[idx];
+    if (el) setStatusIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [statusFilter]);
 
   const loadData = () => {
     Promise.all([
@@ -388,6 +519,7 @@ export default function BlitzPage() {
     }).catch(() => setLoading(false));
   };
 
+  useEffect(() => { document.title = 'Blitz | Kilo Energy'; }, []);
   useEffect(() => { loadData(); }, [isAdmin]);
 
   // Fetch rep blitz permissions
@@ -408,6 +540,19 @@ export default function BlitzPage() {
     return list;
   }, [blitzes, statusFilter, search, isAdmin, currentRepId]);
 
+  // Sorted blitzes
+  const sortedBlitzes = useMemo(() => {
+    const sorted = [...filteredBlitzes];
+    switch (sortBy) {
+      case 'newest': sorted.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); break;
+      case 'oldest': sorted.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()); break;
+      case 'deals': sorted.sort((a, b) => b.projects.length - a.projects.length); break;
+      case 'kw': sorted.sort((a, b) => b.projects.reduce((s, p) => s + p.kWSize, 0) - a.projects.reduce((s, p) => s + p.kWSize, 0)); break;
+      case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+    }
+    return sorted;
+  }, [filteredBlitzes, sortBy]);
+
   // For reps: separate "My Blitzes" (participating/leading) from browseable ones
   const myBlitzes = useMemo(() => {
     if (isAdmin || !currentRepId) return [];
@@ -418,13 +563,31 @@ export default function BlitzPage() {
   }, [blitzes, isAdmin, currentRepId]);
 
   const browseBlitzes = useMemo(() => {
-    if (isAdmin) return filteredBlitzes;
-    if (!currentRepId) return filteredBlitzes;
+    if (isAdmin) return sortedBlitzes;
+    if (!currentRepId) return sortedBlitzes;
     const myIds = new Set(myBlitzes.map((b) => b.id));
-    return filteredBlitzes.filter((b) =>
+    return sortedBlitzes.filter((b) =>
       !myIds.has(b.id) && (b.status === 'upcoming' || b.status === 'active')
     );
-  }, [filteredBlitzes, isAdmin, currentRepId, myBlitzes]);
+  }, [sortedBlitzes, isAdmin, currentRepId, myBlitzes]);
+
+  // Reset pages when filters change
+  useEffect(() => { setBlitzPage(1); }, [statusFilter, search, sortBy]);
+  useEffect(() => { setRequestPage(1); }, []);
+
+  // Paginated admin blitzes
+  const adminBlitzTotal = sortedBlitzes.length;
+  const adminBlitzPages = Math.max(1, Math.ceil(adminBlitzTotal / blitzPerPage));
+  const adminBlitzStart = (blitzPage - 1) * blitzPerPage;
+  const adminBlitzEnd = Math.min(adminBlitzStart + blitzPerPage, adminBlitzTotal);
+  const paginatedAdminBlitzes = sortedBlitzes.slice(adminBlitzStart, adminBlitzEnd);
+
+  // Paginated requests
+  const requestTotal = requests.length;
+  const requestPages = Math.max(1, Math.ceil(requestTotal / requestPerPage));
+  const requestStart = (requestPage - 1) * requestPerPage;
+  const requestEnd = Math.min(requestStart + requestPerPage, requestTotal);
+  const paginatedRequests = requests.slice(requestStart, requestEnd);
 
   const pendingRequests = requests.filter((r) => r.status === 'pending');
 
@@ -456,20 +619,22 @@ export default function BlitzPage() {
 
   const handleJoinBlitz = async (blitzId: string) => {
     if (!currentRepId) return;
+    // Optimistic: show toast immediately, then refresh in background
+    toast('Join request sent!', 'success');
     try {
       await fetch(`/api/blitzes/${blitzId}/participants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentRepId, joinStatus: 'pending' }),
       });
-      toast('Join request sent');
       loadData();
     } catch {
-      toast('Failed to join blitz', 'error');
+      toast('Failed to join blitz — please try again', 'error');
+      loadData();
     }
   };
 
-  if (!hydrated) return null;
+  if (!hydrated) return <BlitzSkeleton />;
 
   // Summary stats
   const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;
@@ -479,14 +644,14 @@ export default function BlitzPage() {
   const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
             <Tent className="w-7 h-7 text-blue-400" /> Blitz
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">Manage blitzes, track participation and profitability</p>
+          <p className="text-sm text-slate-500 mt-1">Manage blitzes, track participation and profitability</p>
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
@@ -495,7 +660,7 @@ export default function BlitzPage() {
             </button>
           )}
           {!isAdmin && !userPerms.canCreateBlitz && userPerms.canRequestBlitz && (
-            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800 text-zinc-300 text-sm font-semibold rounded-xl border border-zinc-700 hover:bg-zinc-700 hover:text-white transition-colors">
+            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-slate-300 text-sm font-semibold rounded-xl border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors">
               <Plus className="w-4 h-4" /> Request Blitz
             </button>
           )}
@@ -504,41 +669,64 @@ export default function BlitzPage() {
 
       {/* Summary cards */}
       <div className={`grid grid-cols-2 ${isAdmin ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4`}>
-        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-emerald-500/60 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Active</p>
-          <p className="text-2xl font-bold text-emerald-400">{activeBlitzes}</p>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': '#10b981' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Active</span>
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-emerald-400">{activeBlitzes}</p>
         </div>
-        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-blue-500/60 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Upcoming</p>
-          <p className="text-2xl font-bold text-blue-400">{upcomingBlitzes}</p>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': '#3b82f6' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Upcoming</span>
+            <Clock className="w-4 h-4 text-blue-400" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-blue-400">{upcomingBlitzes}</p>
         </div>
-        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-purple-500/60 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Deals</p>
-          <p className="text-2xl font-bold text-white">{totalDeals}</p>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': '#a855f7' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Deals</span>
+            <TrendingUp className="w-4 h-4 text-purple-400" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-white">{totalDeals}</p>
         </div>
-        <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-cyan-500/60 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Total kW</p>
-          <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': '#06b6d4' } as React.CSSProperties}>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Total kW</span>
+            <Zap className="w-4 h-4 text-cyan-400" />
+          </div>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-white">{totalKW.toFixed(1)}</p>
         </div>
         {isAdmin && (
-          <div className="bg-zinc-900/80 border border-zinc-800 border-l-2 border-l-amber-500/60 rounded-xl p-4">
-            <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Costs</p>
-            <p className="text-2xl font-bold text-amber-400">{formatCurrency(totalCosts)}</p>
+          <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
+            <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 mb-3" />
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Costs</span>
+              <DollarSign className="w-4 h-4 text-amber-400" />
+            </div>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-amber-400">{formatCurrency(totalCosts)}</p>
           </div>
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Admin Tabs — Blitzes / Requests with sliding pill */}
       {isAdmin && (
-        <div className="flex gap-0.5 border-b border-zinc-800/50">
-          <button onClick={() => setTab('blitzes')} className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === 'blitzes' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            Blitzes ({filteredBlitzes.length})
-            {tab === 'blitzes' && <div className="absolute bottom-0 left-1 right-1 h-0.5 bg-blue-500 rounded-full" />}
-          </button>
-          <button onClick={() => setTab('requests')} className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === 'requests' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            Requests {pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center w-4.5 h-4.5 text-[10px] font-bold bg-red-500 text-white rounded-full px-1">{pendingRequests.length}</span>}
-            {tab === 'requests' && <div className="absolute bottom-0 left-1 right-1 h-0.5 bg-blue-500 rounded-full" />}
-          </button>
+        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+          {adminTabIndicator && <div className="tab-indicator" style={adminTabIndicator} />}
+          {(['blitzes', 'requests'] as TabKey[]).map((t, i) => (
+            <button
+              key={t}
+              ref={(el) => { adminTabRefs.current[i] = el; }}
+              onClick={() => setTab(t)}
+              className={`relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${tab === t ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-red-500 text-white rounded-full px-1">{pendingRequests.length}</span>}</>}
+            </button>
+          ))}
         </div>
       )}
 
@@ -546,22 +734,60 @@ export default function BlitzPage() {
         <>
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-3">
+            {/* Search with keyboard shortcut */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search blitzes..." className="w-full bg-zinc-900/80 border border-zinc-800 rounded-lg pl-9 pr-8 py-2 text-sm text-white placeholder-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearch('');
+                    searchRef.current?.blur();
+                  }
+                }}
+                placeholder="Search blitzes...  /"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder-slate-500 focus:outline-none input-focus-glow"
+              />
               {search && (
-                <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
-                  <XCircle className="w-4 h-4" />
+                <button onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-            <div className="flex gap-1 flex-wrap">
-              {(['all', 'upcoming', 'active', 'completed', 'cancelled'] as const).map((s) => {
+            {search && (
+              <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{sortedBlitzes.length} result{sortedBlitzes.length !== 1 ? 's' : ''}</span>
+            )}
+
+            {/* Sort dropdown */}
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortKey)}
+                className="appearance-none bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-slate-300 focus:outline-none input-focus-glow cursor-pointer hover:border-slate-600 transition-colors"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.key} value={opt.key}>{opt.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+            </div>
+
+            {/* Status filter tabs with sliding pill */}
+            <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+              {statusIndicator && <div className="tab-indicator" style={statusIndicator} />}
+              {STATUS_FILTER_OPTIONS.map((s, i) => {
                 const count = s === 'all' ? blitzes.length : blitzes.filter((b) => b.status === s).length;
                 return (
-                  <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${statusFilter === s ? 'bg-zinc-800 border-zinc-600 text-white' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                  <button
+                    key={s}
+                    ref={(el) => { statusTabRefs.current[i] = el; }}
+                    onClick={() => setStatusFilter(s)}
+                    className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${statusFilter === s ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
                     {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-                    {count > 0 && <span className="ml-1 text-zinc-600">{count}</span>}
+                    {count > 0 && <span className={`ml-1 ${statusFilter === s ? 'text-slate-300' : 'text-slate-600'}`}>{count}</span>}
                   </button>
                 );
               })}
@@ -572,19 +798,19 @@ export default function BlitzPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="relative w-10 h-10">
-                <div className="absolute inset-0 rounded-full border-2 border-zinc-700/40" />
+                <div className="absolute inset-0 rounded-full border-2 border-slate-700/40" />
                 <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
               </div>
-              <p className="text-sm text-zinc-500 font-medium">Loading blitzes...</p>
+              <p className="text-sm text-slate-500 font-medium">Loading blitzes...</p>
             </div>
           ) : isAdmin ? (
             /* Admin sees all blitzes in one grid */
-            filteredBlitzes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
-                <Tent className="w-16 h-16 text-zinc-600" />
+            paginatedAdminBlitzes.length === 0 && sortedBlitzes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
+                <Tent className="w-16 h-16 text-slate-600" />
                 <div className="text-center">
                   <p className="text-lg font-semibold text-white">No blitzes found</p>
-                  <p className="text-sm text-zinc-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
+                  <p className="text-sm text-slate-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
                 </div>
                 {!search && statusFilter === 'all' && (
                   <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
@@ -593,9 +819,23 @@ export default function BlitzPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} />)}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedAdminBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} index={i} />)}
+                </div>
+                {adminBlitzTotal > blitzPerPage && (
+                  <PaginationBar
+                    totalResults={adminBlitzTotal}
+                    startIdx={adminBlitzStart}
+                    endIdx={adminBlitzEnd}
+                    currentPage={blitzPage}
+                    totalPages={adminBlitzPages}
+                    rowsPerPage={blitzPerPage}
+                    onPageChange={setBlitzPage}
+                    onRowsPerPageChange={setBlitzPerPage}
+                  />
+                )}
+              </>
             )
           ) : (
             /* Rep view: My Blitzes section + Browse section */
@@ -603,11 +843,11 @@ export default function BlitzPage() {
               {/* My Blitzes */}
               {myBlitzes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <UserCheck className="w-4 h-4" /> My Blitzes
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {myBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} />)}
+                    {myBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
                   </div>
                 </div>
               )}
@@ -615,21 +855,21 @@ export default function BlitzPage() {
               {/* Browse available */}
               {browseBlitzes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Search className="w-4 h-4" /> Browse Available
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {browseBlitzes.map((b) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} />)}
+                    {browseBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
                   </div>
                 </div>
               )}
 
               {myBlitzes.length === 0 && browseBlitzes.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
-                  <Tent className="w-16 h-16 text-zinc-600" />
+                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
+                  <Tent className="w-16 h-16 text-slate-600" />
                   <div className="text-center">
                     <p className="text-lg font-semibold text-white">No blitzes available</p>
-                    <p className="text-sm text-zinc-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Check back soon for upcoming blitzes'}</p>
+                    <p className="text-sm text-slate-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Check back soon for upcoming blitzes'}</p>
                   </div>
                 </div>
               )}
@@ -641,50 +881,64 @@ export default function BlitzPage() {
       {tab === 'requests' && isAdmin && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl bg-zinc-900/30 border border-dashed border-zinc-800">
-              <Inbox className="w-14 h-14 text-zinc-600" />
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
+              <Inbox className="w-14 h-14 text-slate-600" />
               <div className="text-center">
                 <p className="text-lg font-semibold text-white">No blitz requests</p>
-                <p className="text-sm text-zinc-500 mt-1">Requests from reps will appear here for approval</p>
+                <p className="text-sm text-slate-500 mt-1">Requests from reps will appear here for approval</p>
               </div>
             </div>
           ) : (
-            requests.map((req) => (
-              <div key={req.id} className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
-                      {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+            <>
+              {paginatedRequests.map((req) => (
+                <div key={req.id} className="card-surface rounded-2xl p-5 hover:border-slate-700 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
+                        {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-slate-400">
+                        {req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
+                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>
+                        <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>
+                      </div>
+                      {req.notes && <p className="text-sm text-slate-500 mt-2 line-clamp-2">{req.notes}</p>}
+                      <p className="text-xs text-slate-600 mt-2">Requested by <span className="text-slate-400">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
                     </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-zinc-400">
-                      {req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
-                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>
-                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {req.status === 'pending' ? (
+                        <>
+                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+                            {processingRequest === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
+                          </button>
+                          <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
+                            <XCircle className="w-3 h-3" /> Deny
+                          </button>
+                        </>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-500/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
+                          {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                          {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                        </span>
+                      )}
                     </div>
-                    {req.notes && <p className="text-sm text-zinc-500 mt-2 line-clamp-2">{req.notes}</p>}
-                    <p className="text-xs text-zinc-600 mt-2">Requested by <span className="text-zinc-400">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {req.status === 'pending' ? (
-                      <>
-                        <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">
-                          {processingRequest === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
-                        </button>
-                        <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
-                          <XCircle className="w-3 h-3" /> Deny
-                        </button>
-                      </>
-                    ) : (
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-500/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
-                        {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-                      </span>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+              {requestTotal > requestPerPage && (
+                <PaginationBar
+                  totalResults={requestTotal}
+                  startIdx={requestStart}
+                  endIdx={requestEnd}
+                  currentPage={requestPage}
+                  totalPages={requestPages}
+                  rowsPerPage={requestPerPage}
+                  onPageChange={setRequestPage}
+                  onRowsPerPageChange={setRequestPerPage}
+                />
+              )}
+            </>
           )}
         </div>
       )}
@@ -707,6 +961,74 @@ export default function BlitzPage() {
           userId={currentRepId ?? ''}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function BlitzSkeleton() {
+  return (
+    <div className="space-y-6 p-4 md:p-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 bg-slate-800 rounded animate-skeleton" />
+            <div className="h-8 w-24 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+          </div>
+          <div className="h-3 w-64 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: '150ms' }} />
+        </div>
+        <div className="h-10 w-28 bg-slate-800 rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
+      </div>
+
+      {/* Stat cards row — 4 cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="card-surface rounded-2xl p-5 space-y-3">
+            <div className="h-[2px] w-12 bg-slate-700 rounded-full animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+            <div className="h-3 w-16 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+            <div className="h-8 w-20 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 40}ms` }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="h-9 w-24 bg-slate-800 rounded-lg animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+        ))}
+      </div>
+
+      {/* Blitz card grid — 4 placeholders */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => {
+          const delay = i * 75;
+          return (
+            <div key={i} className="card-surface rounded-2xl p-5 space-y-4">
+              {/* Title + badge row */}
+              <div className="flex items-center justify-between">
+                <div className="h-5 w-36 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+                <div className="h-5 w-16 bg-slate-800 rounded-full animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+              </div>
+              {/* Location + dates */}
+              <div className="space-y-2">
+                <div className="h-3 w-44 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 40}ms` }} />
+                <div className="h-3 w-32 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 80}ms` }} />
+              </div>
+              {/* Stats row */}
+              <div className="flex gap-6">
+                {[...Array(3)].map((_, si) => (
+                  <div key={si} className="space-y-1">
+                    <div className="h-4 w-8 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
+                    <div className="h-3 w-12 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

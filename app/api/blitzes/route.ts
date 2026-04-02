@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
+import { requireAuth } from '../../../lib/api-auth';
 
-// GET /api/blitzes — List all blitzes with participants, costs, and attributed projects
+// GET /api/blitzes — List all blitzes
 export async function GET() {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const blitzes = await prisma.blitz.findMany({
     include: {
       createdBy: true,
@@ -21,6 +23,7 @@ export async function GET() {
 
 // POST /api/blitzes — Create a new blitz
 export async function POST(req: NextRequest) {
+  try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   const blitz = await prisma.blitz.create({
     data: {

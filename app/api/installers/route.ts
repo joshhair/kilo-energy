@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
+import { requireAdmin } from '../../../lib/api-auth';
 
-// POST /api/installers — Create a new installer
+// POST /api/installers — Create a new installer (admin only)
 export async function POST(req: NextRequest) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   const installer = await prisma.installer.create({
     data: {

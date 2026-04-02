@@ -17,6 +17,7 @@ import { Trophy, Plus, Trash2, X, ChevronDown, ChevronUp, CheckCircle, Clock, Al
 import { useToast } from '../../../lib/toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { Breadcrumb } from '../components/Breadcrumb';
 
 // ─── Incentive Templates ──────────────────────────────────────────────────────
 
@@ -227,6 +228,9 @@ export default function IncentivesPage() {
       message: 'This cannot be undone.',
       onConfirm: () => {
         setIncentives((prev) => prev.filter((i) => i.id !== id));
+        fetch(`/api/incentives/${id}`, { method: 'DELETE' })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+          .catch((err) => { console.error(err); toast('Failed to delete incentive', 'error'); });
         toast('Incentive deleted');
         setConfirmAction(null);
       },
@@ -234,9 +238,16 @@ export default function IncentivesPage() {
   };
 
   const handleToggleActive = (id: string) => {
+    const target = incentives.find((i) => i.id === id);
     setIncentives((prev) =>
       prev.map((i) => (i.id === id ? { ...i, active: !i.active } : i))
     );
+    fetch(`/api/incentives/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: !target?.active }),
+    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => { console.error(err); toast('Failed to update incentive', 'error'); });
   };
 
   const handleMilestoneAchieved = (incId: string, milestoneId: string, achieved: boolean) => {
@@ -253,6 +264,20 @@ export default function IncentivesPage() {
       )
     );
     if (achieved) toast('Milestone marked as achieved!', 'success');
+    // Persist milestone change to the database
+    const inc = incentives.find((i) => i.id === incId);
+    if (inc) {
+      const updatedMilestones = inc.milestones.map((m) =>
+        m.id === milestoneId ? { ...m, achieved } : m
+      );
+      fetch(`/api/incentives/${incId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ milestones: updatedMilestones }),
+      })
+        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+        .catch((err) => { console.error(err); toast('Failed to persist milestone update', 'error'); });
+    }
   };
 
   // ── Edit handler ──
@@ -264,6 +289,12 @@ export default function IncentivesPage() {
     );
     setEditingIncentiveId(null);
     toast('Incentive updated', 'success');
+    fetch(`/api/incentives/${updated.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate }),
+    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => { console.error(err); toast('Failed to save incentive changes', 'error'); });
   };
 
   // ── Duplicate handler ──
@@ -277,6 +308,12 @@ export default function IncentivesPage() {
     setIncentives((prev) => [...prev, inc]);
     setDuplicatingIncentive(null);
     toast('Incentive duplicated', 'success');
+    fetch('/api/incentives', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
+    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => { console.error(err); toast('Failed to save duplicated incentive', 'error'); });
   };
 
   // ── Bulk select helpers ──
@@ -302,9 +339,13 @@ export default function IncentivesPage() {
       title: 'Archive all expired?',
       message: `Deactivate ${count} expired incentive${count !== 1 ? 's' : ''}?`,
       onConfirm: () => {
+        const expired = incentives.filter((i) => isExpired(i.endDate) && i.active);
         setIncentives((prev) =>
           prev.map((i) => (isExpired(i.endDate) && i.active ? { ...i, active: false } : i))
         );
+        expired.forEach((i) => fetch(`/api/incentives/${i.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+          .catch((err) => { console.error(err); toast('Failed to archive some incentives', 'error'); }));
         toast(`${count} expired incentive${count !== 1 ? 's' : ''} archived`, 'info');
         setConfirmAction(null);
       },
@@ -314,9 +355,13 @@ export default function IncentivesPage() {
   // ── Bulk deactivate / delete selected ──
   const handleBulkDeactivate = () => {
     const count = selectedIds.size;
+    const ids = Array.from(selectedIds);
     setIncentives((prev) =>
       prev.map((i) => (selectedIds.has(i.id) ? { ...i, active: false } : i))
     );
+    ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); }));
     toast(`${count} incentive${count !== 1 ? 's' : ''} deactivated`, 'info');
     clearSelection();
   };
@@ -327,7 +372,11 @@ export default function IncentivesPage() {
       title: 'Delete selected?',
       message: `Permanently delete ${count} incentive${count !== 1 ? 's' : ''}? This cannot be undone.`,
       onConfirm: () => {
+        const ids = Array.from(selectedIds);
         setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
+        ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+          .catch((err) => { console.error(err); toast('Failed to delete some incentives', 'error'); }));
         toast(`${count} incentive${count !== 1 ? 's' : ''} deleted`);
         clearSelection();
         setConfirmAction(null);
@@ -436,7 +485,8 @@ export default function IncentivesPage() {
   );
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 animate-fade-in-up">
+      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Incentives' }]} />
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -562,7 +612,7 @@ export default function IncentivesPage() {
             </h2>
             {filterSortToolbar}
             {company.length === 0 ? (
-              <EmptyState message="No company-wide incentives yet." />
+              <EmptyState message="No company-wide incentives yet" subtitle="Company incentives apply to all reps — create one to boost team performance" />
             ) : (
               <div className="grid gap-4">
                 {company.map((inc, index) => (
@@ -599,7 +649,7 @@ export default function IncentivesPage() {
             </h2>
             {filterSortToolbar}
             {personal.length === 0 ? (
-              <EmptyState message={isAdmin ? 'No personal incentives created yet.' : 'No personal goals assigned to you yet.'} />
+              <EmptyState message={isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} subtitle={isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
             ) : (
               <div className="grid gap-4">
                 {personal.map((inc, index) => (
@@ -746,6 +796,12 @@ export default function IncentivesPage() {
             setIncentives((prev) => [...prev, inc]);
             setShowCreate(false);
             toast('Incentive created successfully', 'success');
+            fetch('/api/incentives', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
+            }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+              .catch((err) => { console.error(err); toast('Failed to save new incentive', 'error'); });
           }}
         />
       )}
@@ -1490,11 +1546,14 @@ function CreateIncentiveModal({
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ message, subtitle }: { message: string; subtitle?: string }) {
   return (
-    <div className="border border-dashed border-slate-700 rounded-2xl p-8 text-center">
-      <Trophy className="w-7 h-7 mx-auto mb-2 text-slate-600" />
-      <p className="text-slate-500 text-sm">{message}</p>
+    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
+      <Trophy className="w-12 h-12 text-slate-600" />
+      <div className="text-center">
+        <p className="text-lg font-semibold text-white">{message}</p>
+        <p className="text-sm text-slate-500 mt-1">{subtitle || 'Create an incentive to motivate your team and track progress'}</p>
+      </div>
     </div>
   );
 }

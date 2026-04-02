@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useFocusTrap } from '../../../lib/hooks';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -23,6 +24,8 @@ export default function ConfirmDialog({
   danger = false,
 }: ConfirmDialogProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, open);
 
   // Auto-focus confirm button on open
   useEffect(() => {
@@ -52,7 +55,7 @@ export default function ConfirmDialog({
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
+      <div ref={panelRef} className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
         <div className="flex items-center gap-3 mb-3">
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
             danger

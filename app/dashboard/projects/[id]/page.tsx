@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useRef } from 'react';
+import { use, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../../../lib/context';
@@ -9,11 +9,13 @@ import { useIsHydrated } from '../../../../lib/hooks';
 import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
+  calculateCommission,
 } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
-import { Flag, FlagOff, AlertTriangle, X, Check, Clock, ArrowRight, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Flag, FlagOff, AlertTriangle, X, Check, Clock, ArrowRight, Pencil, ChevronLeft, ChevronRight, Copy, Plus, RefreshCw, MessageSquare, Zap, User } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ProjectChatter from '../../components/ProjectChatter';
 
 // ─── Pipeline stepper ────────────────────────────────────────────────────────
 
@@ -120,7 +122,13 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
 
         {/* Badge — days elapsed since sold date */}
         {!isOffTrack && (
-          <span className="inline-flex items-center gap-1.5 bg-blue-900/40 border border-blue-500/20 text-blue-300 text-xs px-2.5 py-1 rounded-full font-medium shrink-0">
+          <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
+            daysSinceSold > 30
+              ? daysSinceSold > 60
+                ? 'bg-red-900/40 border border-red-500/20 text-red-300'
+                : 'bg-amber-900/40 border border-amber-500/20 text-amber-300'
+              : 'bg-blue-900/40 border border-blue-500/20 text-blue-300'
+          }`}>
             <Clock className="w-3 h-3" />
             {daysSinceSold} day{daysSinceSold !== 1 ? 's' : ''} since sold
           </span>
@@ -151,10 +159,38 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
         {/* Completion message */}
         {isComplete && (
           <p className="text-xs text-emerald-400 font-medium">
-            🎉 Permission to Operate granted — project complete!
+            Project complete!
           </p>
         )}
       </div>
+
+      {/* ── Current phase info line ── */}
+      {!isOffTrack && !isComplete && (
+        <div className={`mt-3 px-3 py-2.5 rounded-xl border flex items-center gap-2 ${
+          daysSinceSold > 30
+            ? daysSinceSold > 60
+              ? 'bg-red-900/20 border-red-500/20'
+              : 'bg-amber-900/20 border-amber-500/20'
+            : 'bg-slate-800/40 border-slate-700/40'
+        }`}>
+          <span className={`text-sm font-semibold ${
+            daysSinceSold > 30
+              ? daysSinceSold > 60
+                ? 'text-red-300'
+                : 'text-amber-300'
+              : 'text-white'
+          }`}>
+            Currently in: {phase}
+          </span>
+          {nextHint && (
+            <span className={`text-xs ${
+              daysSinceSold > 30 ? 'text-slate-400' : 'text-slate-500'
+            }`}>
+              — {nextHint}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -327,6 +363,201 @@ function ProjectDetailSkeleton() {
   );
 }
 
+// ─── Inline Notes Editor (rep view) ──────────────────────────────────────────
+
+function InlineNotesEditor({ notes, onSave }: { notes: string; onSave: (text: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(notes);
+  const [saved, setSaved] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Sync external changes
+  useEffect(() => { setText(notes); }, [notes]);
+
+  const doSave = useCallback((value: string) => {
+    if (value !== notes) {
+      onSave(value);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  }, [notes, onSave]);
+
+  const handleChange = (value: string) => {
+    setText(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => doSave(value), 1000);
+  };
+
+  const handleBlur = () => {
+    if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
+    doSave(text);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div>
+        <textarea
+          ref={textareaRef}
+          autoFocus
+          rows={3}
+          value={text}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
+          maxLength={1000}
+          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500 resize-none"
+          placeholder="Add notes about this project..."
+        />
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-xs text-slate-500">{text.length} / 1000</p>
+          {saved && <span className="text-xs text-emerald-400 animate-fade-in-up">Saved</span>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="group/notes cursor-pointer rounded-lg px-3 py-2 -mx-3 -my-2 hover:bg-slate-800/40 transition-colors"
+      onClick={() => setEditing(true)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(true); } }}
+    >
+      <div className="flex items-start gap-2">
+        {notes ? (
+          <p className="text-slate-400 text-sm leading-relaxed flex-1">{notes}</p>
+        ) : (
+          <p className="text-slate-600 text-sm italic flex-1">Click to add notes...</p>
+        )}
+        <Pencil className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover/notes:opacity-100 transition-opacity shrink-0 mt-0.5" />
+      </div>
+      {saved && <span className="text-xs text-emerald-400 mt-1 block">Saved</span>}
+    </div>
+  );
+}
+
+// ─── Relative time helper ────────────────────────────────────────────────────
+
+function relativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths}mo ago`;
+  return `${Math.floor(diffMonths / 12)}y ago`;
+}
+
+// ─── Activity type styling ───────────────────────────────────────────────────
+
+const ACTIVITY_STYLES: Record<string, { color: string; icon: typeof Clock }> = {
+  phase_change:    { color: 'bg-blue-500',    icon: ArrowRight },
+  flagged:         { color: 'bg-red-500',     icon: Flag },
+  unflagged:       { color: 'bg-red-400',     icon: FlagOff },
+  m1_paid:         { color: 'bg-emerald-500', icon: Check },
+  m2_paid:         { color: 'bg-emerald-500', icon: Check },
+  note_edit:       { color: 'bg-amber-500',   icon: MessageSquare },
+  field_edit:      { color: 'bg-slate-500',   icon: Pencil },
+  created:         { color: 'bg-purple-500',  icon: Plus },
+  setter_assigned: { color: 'bg-cyan-500',    icon: User },
+};
+
+// ─── Activity Timeline component ─────────────────────────────────────────────
+
+interface ActivityEntry {
+  id: string;
+  type: string;
+  detail: string;
+  meta: string | null;
+  createdAt: string;
+}
+
+function ActivityTimeline({ projectId }: { projectId: string }) {
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 20;
+
+  const fetchActivities = useCallback((skip: number, append: boolean) => {
+    setLoading(true);
+    fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setActivities((prev) => append ? [...prev, ...data.activities] : data.activities);
+        setTotal(data.total);
+        setOffset(skip + data.activities.length);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [projectId]);
+
+  useEffect(() => {
+    fetchActivities(0, false);
+  }, [fetchActivities]);
+
+  const hasMore = offset < total;
+
+  return (
+    <div className="card-surface rounded-2xl p-6 mt-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Clock className="w-4 h-4 text-slate-400" />
+        <h2 className="text-white font-semibold">Activity</h2>
+        <span className="text-slate-500 text-xs">({total})</span>
+      </div>
+
+      {loading && activities.length === 0 ? (
+        <div className="flex items-center gap-2 text-slate-500 text-sm py-4">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          Loading activity...
+        </div>
+      ) : activities.length === 0 ? (
+        <p className="text-slate-500 text-sm">No activity recorded yet</p>
+      ) : (
+        <div className="relative pl-8">
+          {/* Vertical line */}
+          <div className="absolute left-3 top-0 bottom-0 w-px bg-slate-800" />
+
+          {activities.map((entry) => {
+            const style = ACTIVITY_STYLES[entry.type] ?? { color: 'bg-slate-600', icon: Zap };
+            const Icon = style.icon;
+            return (
+              <div key={entry.id} className="relative mb-4 last:mb-0">
+                {/* Dot on the line */}
+                <div className={`absolute -left-5 top-1 w-2.5 h-2.5 rounded-full ${style.color} ring-4 ring-slate-900`} />
+                {/* Content */}
+                <div>
+                  <p className="text-sm text-slate-300">{entry.detail}</p>
+                  <p className="text-xs text-slate-500">{relativeTime(entry.createdAt)}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {hasMore && (
+        <button
+          onClick={() => fetchActivities(offset, true)}
+          disabled={loading}
+          className="mt-3 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+        >
+          {loading ? 'Loading...' : 'Load More'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { currentRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts } = useApp();
@@ -337,6 +568,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const project = projects.find((p) => p.id === id);
   useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
   const [adminNotes, setAdminNotes] = useState(project?.notes ?? '');
+  const [adminNotesSaved, setAdminNotesSaved] = useState(false);
+  const adminNotesDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track the last project.notes value we synced from so we can detect external
   // changes (e.g. the Edit modal saving new notes) without clobbering unsaved
   // local edits the admin is actively typing.
@@ -354,11 +587,48 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.notes]);
+
+  // Auto-save admin notes with 1s debounce
+  const doSaveAdminNotes = useCallback((value: string) => {
+    if (project && value !== (project.notes ?? '')) {
+      ctxUpdateProject(id, { notes: value });
+      lastSyncedNotes.current = value;
+      setAdminNotesSaved(true);
+      setTimeout(() => setAdminNotesSaved(false), 2000);
+    }
+  }, [project, id, ctxUpdateProject]);
+
+  const handleAdminNotesChange = (value: string) => {
+    setAdminNotes(value);
+    if (adminNotesDebounce.current) clearTimeout(adminNotesDebounce.current);
+    adminNotesDebounce.current = setTimeout(() => doSaveAdminNotes(value), 1000);
+  };
+
+  // Save on blur immediately (cancel pending debounce)
+  const handleAdminNotesBlur = () => {
+    if (adminNotesDebounce.current) { clearTimeout(adminNotesDebounce.current); adminNotesDebounce.current = null; }
+    doSaveAdminNotes(adminNotes);
+  };
+
+  // Warn on navigation if notes are dirty
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (project && adminNotes !== (project.notes ?? '')) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [adminNotes, project]);
   const [editM1, setEditM1] = useState(false);
   const [editM2, setEditM2] = useState(false);
   const [m1Val, setM1Val] = useState('');
   const [m2Val, setM2Val] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelNotes, setCancelNotes] = useState('');
+  const [phaseConfirm, setPhaseConfirm] = useState<Phase | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [editVals, setEditVals] = useState({
@@ -446,24 +716,67 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     );
   }
 
+  // Sub-dealers can only view projects assigned to them
+  if (currentRole === 'sub-dealer' && project.subDealerId !== currentRepId && project.repId !== currentRepId) {
+    return (
+      <div className="p-4 md:p-8 text-center text-slate-500 text-sm">
+        You don&apos;t have permission to view this project.{' '}
+        <Link href="/dashboard/projects" className="text-blue-400 hover:underline">
+          Back to Projects
+        </Link>
+      </div>
+    );
+  }
+
   const updateProject = (updates: Partial<typeof project>) => {
     ctxUpdateProject(id, updates);
   };
 
   const handleCancel = () => {
-    updateProject({ phase: 'Cancelled' });
     setShowCancelConfirm(false);
+    setCancelReason('');
+    setCancelNotes('');
+    setShowCancelReasonModal(true);
+  };
+
+  const confirmCancelWithReason = () => {
+    updateProject({
+      phase: 'Cancelled',
+      cancellationReason: cancelReason || undefined,
+      cancellationNotes: cancelNotes || undefined,
+    } as Partial<typeof project>);
+    setShowCancelReasonModal(false);
     toast('Project cancelled', 'info');
     router.push('/dashboard/projects');
   };
 
-  const handlePhaseChange = (phase: Phase) => {
+  const doPhaseChange = (phase: Phase) => {
+    if (phase === 'Cancelled') {
+      setCancelReason('');
+      setCancelNotes('');
+      setShowCancelReasonModal(true);
+      return;
+    }
     const previousPhase = project.phase;
     updateProject({ phase });
     toast(`Phase updated to ${phase}`, 'success', {
       label: 'Undo',
-      onClick: () => handlePhaseChange(previousPhase),
+      onClick: () => { updateProject({ phase: previousPhase }); },
     });
+  };
+
+  const handlePhaseChange = (phase: Phase) => {
+    if (phase === 'On Hold') {
+      setPhaseConfirm(phase);
+      return;
+    }
+    if (phase === 'Cancelled') {
+      setCancelReason('');
+      setCancelNotes('');
+      setShowCancelReasonModal(true);
+      return;
+    }
+    doPhaseChange(phase);
   };
 
   const handleFlag = () => {
@@ -664,7 +977,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {currentRole === 'admin' ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={openEditModal}
               className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-900/20 transition-colors"
@@ -682,6 +995,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {project.flagged ? <FlagOff className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}
               {project.flagged ? 'Unflag' : 'Flag'}
             </button>
+            <Link
+              href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" /> Duplicate
+            </Link>
             {project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
@@ -692,14 +1011,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             )}
           </div>
         ) : (
-          project.phase !== 'Cancelled' && (
-            <button
-              onClick={() => setShowCancelConfirm(true)}
-              className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 rounded-xl transition-colors"
-            >
-              Cancel Project
-            </button>
-          )
+          <div className="flex items-center gap-2">
+            {(currentRepId === project.repId) && (
+              <Link
+                href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
+                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" /> Duplicate
+              </Link>
+            )}
+            {project.phase !== 'Cancelled' && (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 rounded-xl transition-colors"
+              >
+                Cancel Project
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -1051,37 +1380,39 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <textarea
               rows={4}
               value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
+              onChange={(e) => handleAdminNotesChange(e.target.value)}
+              onBlur={handleAdminNotesBlur}
               placeholder="Add notes about this project..."
               maxLength={1000}
               className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500 resize-none"
             />
-            <p className={`text-xs mt-1 text-right transition-colors duration-200 ${
-              adminNotes.length >= 960 ? 'text-red-400' :
-              adminNotes.length >= 800 ? 'text-amber-400' :
-              'text-slate-500'
-            }`}>
-              {adminNotes.length} / 1000
-            </p>
-            <div className="mt-2 flex items-center gap-3">
-              <button
-                onClick={() => { updateProject({ notes: adminNotes }); toast('Notes saved', 'success'); }}
-                disabled={adminNotes === (project.notes ?? '')}
-                className="bg-slate-700 hover:bg-slate-600 text-white text-sm px-4 py-1.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Save Notes
-              </button>
-              {adminNotes !== (project.notes ?? '') && (
-                <span className="text-xs text-amber-400">Unsaved changes</span>
+            <div className="flex items-center justify-between mt-1">
+              <p className={`text-xs transition-colors duration-200 ${
+                adminNotes.length >= 960 ? 'text-red-400' :
+                adminNotes.length >= 800 ? 'text-amber-400' :
+                'text-slate-500'
+              }`}>
+                {adminNotes.length} / 1000
+              </p>
+              {adminNotesSaved && <span className="text-xs text-emerald-400 animate-fade-in-up">Saved</span>}
+              {!adminNotesSaved && adminNotes !== (project.notes ?? '') && (
+                <span className="text-xs text-slate-500">Auto-saving...</span>
               )}
             </div>
           </div>
-        ) : project.notes ? (
-          <p className="text-slate-400 text-sm leading-relaxed">{project.notes}</p>
         ) : (
-          <p className="text-slate-600 text-sm italic">No notes added.</p>
+          <InlineNotesEditor
+            notes={project.notes ?? ''}
+            onSave={(text) => { updateProject({ notes: text }); }}
+          />
         )}
       </div>
+
+      {/* Activity Timeline */}
+      <ActivityTimeline projectId={id} />
+
+      {/* Chatter */}
+      <ProjectChatter projectId={id} />
 
       {/* Edit Project Modal */}
       {showEditModal && (
@@ -1128,8 +1459,22 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {/* Product Type */}
               <div>
                 <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Product Type</label>
-                <input type="text" value={editVals.productType} onChange={(e) => setEditVals((v) => ({ ...v, productType: e.target.value }))}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <div className="grid grid-cols-4 gap-2">
+                  {(['PPA', 'Lease', 'Loan', 'Cash'] as const).map((pt) => (
+                    <button
+                      key={pt}
+                      type="button"
+                      onClick={() => setEditVals((v) => ({ ...v, productType: pt }))}
+                      className={`py-2 rounded-xl text-sm font-medium border transition-all ${
+                        editVals.productType === pt
+                          ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-white'
+                      }`}
+                    >
+                      {pt}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* kW + PPW */}
@@ -1216,6 +1561,53 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
+            {/* ── Live Commission Preview ────────────────────────────────── */}
+            {(() => {
+              const previewKW = parseFloat(editVals.kWSize);
+              const previewPPW = parseFloat(editVals.netPPW);
+              if (isNaN(previewKW) || isNaN(previewPPW) || previewKW <= 0 || previewPPW <= 0) return null;
+
+              let previewBaseline: InstallerBaseline;
+              if (editVals.useBaselineOverride) {
+                previewBaseline = {
+                  closerPerW: parseFloat(editVals.overrideCloserPerW) || 0,
+                  kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0,
+                };
+              } else {
+                previewBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, previewKW, installerPricingVersions);
+              }
+
+              const closerM1 = previewKW >= 5 ? 1000 : 500;
+              const closerM2 = calculateCommission(previewPPW, previewBaseline.closerPerW, previewKW);
+              const kiloMargin = Math.round((previewBaseline.closerPerW - previewBaseline.kiloPerW) * previewKW * 1000 * 100) / 100;
+              const belowBaseline = previewPPW < previewBaseline.closerPerW;
+
+              return (
+                <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-amber-900/20 border border-amber-500/30' : 'bg-slate-800/60 border border-slate-700/40'}`}>
+                  <p className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-2">Commission Preview</p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="text-slate-500 text-[10px] uppercase">Closer M1</p>
+                      <p className="text-white font-bold text-sm">${closerM1.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[10px] uppercase">Closer M2</p>
+                      <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-emerald-400'}`}>${closerM2.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[10px] uppercase">Kilo Margin</p>
+                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-blue-400'}`}>${kiloMargin.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  {belowBaseline && (
+                    <p className="text-amber-400 text-xs mt-2 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> PPW is below the installer baseline (${previewBaseline.closerPerW}/W)
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="flex gap-3 mt-6">
               <button onClick={saveEditModal}
                 className="flex-1 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
@@ -1241,6 +1633,88 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         confirmLabel="Cancel Project"
         danger={true}
       />
+
+      {/* Phase change confirmation for destructive transitions */}
+      <ConfirmDialog
+        open={!!phaseConfirm}
+        onClose={() => setPhaseConfirm(null)}
+        onConfirm={() => {
+          if (phaseConfirm) {
+            const previousPhase = project.phase;
+            updateProject({ phase: phaseConfirm });
+            toast(`Phase updated to ${phaseConfirm}`, 'success', {
+              label: 'Undo',
+              onClick: () => { updateProject({ phase: previousPhase }); },
+            });
+          }
+          setPhaseConfirm(null);
+        }}
+        title={`Move to ${phaseConfirm ?? ''}?`}
+        message={`Are you sure you want to move "${project.customerName}" to ${phaseConfirm ?? ''}? This will remove it from the active pipeline.`}
+        confirmLabel="Put On Hold"
+        danger={false}
+      />
+
+      {/* Cancellation Reason Modal */}
+      {showCancelReasonModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}>
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <h2 className="text-white font-bold text-base">Cancel Project</h2>
+              </div>
+              <button onClick={() => setShowCancelReasonModal(false)} className="text-slate-400 hover:text-white transition-colors rounded-lg p-1 hover:bg-slate-800">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-slate-400 text-sm">Please provide a reason for cancelling <span className="text-white font-medium">{project.customerName}</span>.</p>
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Reason</label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Customer changed mind">Customer changed mind</option>
+                  <option value="Credit denied">Credit denied</option>
+                  <option value="Roof not suitable">Roof not suitable</option>
+                  <option value="Competitor won">Competitor won</option>
+                  <option value="Pricing issue">Pricing issue</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
+                <textarea
+                  rows={3}
+                  value={cancelNotes}
+                  onChange={(e) => setCancelNotes(e.target.value)}
+                  placeholder="Additional details..."
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-slate-500"
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setShowCancelReasonModal(false)}
+                  className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={confirmCancelWithReason}
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]"
+                >
+                  Cancel Project
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

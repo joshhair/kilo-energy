@@ -4,12 +4,13 @@ import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery, useTableKeyNav } from '../../../lib/hooks';
 import { PHASES, ACTIVE_PHASES, Phase, Rep, TrainerAssignment } from '../../../lib/data';
-import { formatDate } from '../../../lib/utils';
-import { Search, Flag, X, ChevronUp, ChevronDown, ChevronsUpDown, FolderKanban, ChevronRight, ChevronLeft, UserPlus, ArrowLeftRight, Check, ArrowRight } from 'lucide-react';
+import { formatDate, downloadCSV } from '../../../lib/utils';
+import { Search, Flag, X, ChevronUp, ChevronDown, ChevronsUpDown, FolderKanban, ChevronRight, ChevronLeft, UserPlus, ArrowLeftRight, Check, ArrowRight, Download } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import { PaginationBar, buildPageRange } from '../components/PaginationBar';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type StatusFilter = 'active' | 'all' | 'completed' | 'cancelled' | 'on-hold';
 
@@ -116,6 +117,7 @@ function ProjectsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const isRep = currentRole !== 'admin';
+  const isSubDealer = currentRole === 'sub-dealer';
 
   // Read initial values from URL searchParams
   const [tab, setTab] = useState<'phase' | 'all'>(() => {
@@ -173,17 +175,21 @@ function ProjectsPageInner() {
   }, [searchInput]);
 
   // All projects the current user is allowed to see.
-  // Admins see everything; reps ONLY see their own deals — never all company deals.
+  // Admins see everything; reps ONLY see their own deals; sub-dealers see their sub-dealer deals.
   const visibleProjects =
     currentRole === 'admin'
       ? (dealScope === 'mine' ? projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId) : projects)
-      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+      : isSubDealer
+        ? projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId)
+        : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
 
   // Keep a stable alias for the header count — always rep's own deals for reps, all for admin.
   const myProjects =
     currentRole === 'admin'
       ? projects
-      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+      : isSubDealer
+        ? projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId)
+        : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
 
   const statusFiltered = applyStatusFilter(visibleProjects, statusFilter);
 
@@ -197,7 +203,15 @@ function ProjectsPageInner() {
     return matchSearch && matchInstaller;
   });
 
-  const handlePhaseChange = (projectId: string, phase: Phase) => {
+  // Destructive phase change confirmation
+  const [phaseConfirm, setPhaseConfirm] = useState<{ projectId: string; phase: Phase; projectName: string } | null>(null);
+
+  // Cancellation reason modal state
+  const [cancelReasonModal, setCancelReasonModal] = useState<{ projectId: string; projectName: string } | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelNotes, setCancelNotes] = useState('');
+
+  const doPhaseChange = (projectId: string, phase: Phase) => {
     const project = projects.find((p) => p.id === projectId);
     const previousPhase = project?.phase;
     updateProject(projectId, { phase });
@@ -205,9 +219,36 @@ function ProjectsPageInner() {
       `${project.customerName} moved to ${phase}`,
       'success',
       previousPhase && previousPhase !== phase
-        ? { label: 'Undo', onClick: () => handlePhaseChange(projectId, previousPhase) }
+        ? { label: 'Undo', onClick: () => doPhaseChange(projectId, previousPhase) }
         : undefined,
     );
+  };
+
+  const handlePhaseChange = (projectId: string, phase: Phase) => {
+    if (phase === 'Cancelled') {
+      const project = projects.find((p) => p.id === projectId);
+      setCancelReason('');
+      setCancelNotes('');
+      setCancelReasonModal({ projectId, projectName: project?.customerName ?? 'this project' });
+      return;
+    }
+    if (phase === 'On Hold') {
+      const project = projects.find((p) => p.id === projectId);
+      setPhaseConfirm({ projectId, phase, projectName: project?.customerName ?? 'this project' });
+      return;
+    }
+    doPhaseChange(projectId, phase);
+  };
+
+  const confirmCancelWithReason = () => {
+    if (!cancelReasonModal) return;
+    updateProject(cancelReasonModal.projectId, {
+      phase: 'Cancelled',
+      cancellationReason: cancelReason || undefined,
+      cancellationNotes: cancelNotes || undefined,
+    } as Partial<typeof projects[0]>);
+    toast(`${cancelReasonModal.projectName} cancelled`, 'info');
+    setCancelReasonModal(null);
   };
 
   const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '';
@@ -366,7 +407,8 @@ function ProjectsPageInner() {
           isAdmin={currentRole === 'admin'}
           currentRepId={currentRepId}
           dealScope={dealScope}
-          onPhaseChange={handlePhaseChange}
+          onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
+          readOnly={isSubDealer}
         />
       ) : (
         <TableView
@@ -376,11 +418,68 @@ function ProjectsPageInner() {
           isAdmin={currentRole === 'admin'}
           currentRepId={currentRepId}
           dealScope={dealScope}
-          onPhaseChange={handlePhaseChange}
+          onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
           setProjects={setProjects}
           hasActiveFilters={hasActiveFilters}
           clearAllFilters={clearAllFilters}
+          readOnly={isSubDealer}
         />
+      )}
+
+      {/* Destructive phase change confirmation */}
+      <ConfirmDialog
+        open={!!phaseConfirm}
+        onClose={() => setPhaseConfirm(null)}
+        onConfirm={() => {
+          if (phaseConfirm) doPhaseChange(phaseConfirm.projectId, phaseConfirm.phase);
+          setPhaseConfirm(null);
+        }}
+        title={`Move to ${phaseConfirm?.phase ?? ''}?`}
+        message={`Are you sure you want to move "${phaseConfirm?.projectName ?? ''}" to ${phaseConfirm?.phase ?? ''}? This will remove it from the active pipeline.`}
+        confirmLabel="Put On Hold"
+        danger={false}
+      />
+
+      {/* Cancellation Reason Modal */}
+      {cancelReasonModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setCancelReasonModal(null); }}>
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+              <h2 className="text-white font-bold text-base">Cancel Project</h2>
+              <button onClick={() => setCancelReasonModal(null)} className="text-slate-400 hover:text-white transition-colors rounded-lg p-1 hover:bg-slate-800">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-slate-400 text-sm">Why is <span className="text-white font-medium">{cancelReasonModal.projectName}</span> being cancelled?</p>
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Reason</label>
+                <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Select a reason...</option>
+                  <option value="Customer changed mind">Customer changed mind</option>
+                  <option value="Credit denied">Credit denied</option>
+                  <option value="Roof not suitable">Roof not suitable</option>
+                  <option value="Competitor won">Competitor won</option>
+                  <option value="Pricing issue">Pricing issue</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
+                <textarea rows={2} value={cancelNotes} onChange={(e) => setCancelNotes(e.target.value)} placeholder="Additional details..."
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-slate-500" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setCancelReasonModal(null)}
+                  className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">Go Back</button>
+                <button onClick={confirmCancelWithReason}
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]">Cancel Project</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -392,12 +491,14 @@ function KanbanView({
   currentRepId,
   dealScope,
   onPhaseChange,
+  readOnly = false,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
   isAdmin: boolean;
   currentRepId: string | null;
   dealScope: 'mine' | 'all';
   onPhaseChange: (id: string, phase: Phase) => void;
+  readOnly?: boolean;
 }) {
   const { toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -844,7 +945,7 @@ function KanbanView({
 
                         {/* Phase navigation — admin only, shows on hover */}
                         {isAdmin && (prevPhase || nextPhase) && (
-                          <div className="flex gap-1 justify-end mt-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-1 justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {prevPhase && (
                               <button
                                 title={`Move back to ${prevPhase}`}
@@ -1283,6 +1384,7 @@ function TableView({
   setProjects,
   hasActiveFilters,
   clearAllFilters,
+  readOnly = false,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
   searchInput: string;
@@ -1294,6 +1396,7 @@ function TableView({
   setProjects: React.Dispatch<React.SetStateAction<ReturnType<typeof useApp>['projects']>>;
   hasActiveFilters: boolean;
   clearAllFilters: () => void;
+  readOnly?: boolean;
 }) {
   const { reps, trainerAssignments, updateProject } = useApp();
   const { toast } = useToast();
@@ -1320,6 +1423,10 @@ function TableView({
   }, [sortKey, sortDirection]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(25);
+
+  // ── Table row keyboard navigation ──────────────────────────────────────────
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  useTableKeyNav(tbodyRef);
 
   // ── Keyboard shortcut: '/' focuses the search input ──────────────────────
   const searchRef = useRef<HTMLInputElement>(null);
@@ -1465,9 +1572,14 @@ function TableView({
     }
   };
 
-  // Determine if selected projects are mostly flagged (for toggle label)
+  // Derived selection stats — used by the floating action bar
   const selectedFlaggedCount = [...selectedProjectIds].filter((id) => projects.find((p) => p.id === id)?.flagged).length;
   const bulkFlagLabel = selectedFlaggedCount > selectedProjectIds.size / 2 ? 'Unflag' : 'Flag';
+  const selectedTotalKw = [...selectedProjectIds].reduce((sum, id) => {
+    const p = projects.find((proj) => proj.id === id);
+    return sum + (p?.kWSize ?? 0);
+  }, 0);
+  const [bulkPhaseTarget, setBulkPhaseTarget] = useState<Phase | ''>('');
 
   const handleBulkFlag = () => {
     const shouldFlag = bulkFlagLabel === 'Flag';
@@ -1479,6 +1591,29 @@ function TableView({
     setSelectedProjectIds(new Set());
   };
 
+  // Bulk change phase — with ConfirmDialog for destructive phases
+  const [bulkConfirm, setBulkConfirm] = useState<{ phase: Phase; count: number } | null>(null);
+
+  const handleBulkChangePhase = (targetPhase: Phase) => {
+    if (targetPhase === 'Cancelled' || targetPhase === 'On Hold') {
+      setBulkConfirm({ phase: targetPhase, count: selectedProjectIds.size });
+      setBulkPhaseTarget('');
+      return;
+    }
+    executeBulkPhaseChange(targetPhase);
+  };
+
+  const executeBulkPhaseChange = (targetPhase: Phase) => {
+    const count = selectedProjectIds.size;
+    selectedProjectIds.forEach((id) => {
+      onPhaseChange(id, targetPhase);
+    });
+    setSelectedProjectIds(new Set());
+    setBulkPhaseTarget('');
+    setBulkConfirm(null);
+    toast(`${count} project${count > 1 ? 's' : ''} moved to ${targetPhase}`, 'success');
+  };
+
   function thClass(colKey: SortKey) {
     const active = sortKey === colKey;
     return `text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white ${
@@ -1488,8 +1623,8 @@ function TableView({
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-xs">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-full md:max-w-xs min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
             ref={searchRef}
@@ -1523,14 +1658,79 @@ function TableView({
           )}
         </div>
         {/* Inline row-count summary — gives instant feedback on the current page slice */}
+        {searchInput.trim() && (
+          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{totalResults} result{totalResults !== 1 ? 's' : ''}</span>
+        )}
         <span className="text-slate-500 text-sm">
           {totalResults === 0
             ? 'No results'
             : `Showing ${startIdx + 1}–${endIdx} of ${totalResults}`}
         </span>
+        {isAdmin && sortedProjects.length > 0 && (
+          <button
+            onClick={() => {
+              const headers = ['Customer', 'Rep', 'Phase', 'Installer', 'Financer', 'kW', 'Net PPW', 'Sold Date', 'Flagged'];
+              const rows = sortedProjects.map((p) => [
+                p.customerName,
+                p.repName,
+                p.phase,
+                p.installer,
+                p.financer,
+                p.kWSize.toString(),
+                `$${p.netPPW.toFixed(2)}`,
+                formatDate(p.soldDate),
+                p.flagged ? 'Yes' : 'No',
+              ]);
+              downloadCSV(`projects-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+            }}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors"
+            title="Download filtered projects as CSV"
+          >
+            <Download className="w-3.5 h-3.5" /> CSV
+          </button>
+        )}
       </div>
 
-      <div className="card-surface rounded-2xl overflow-auto">
+      {/* ── Mobile card view (below md) ──────────────────────────────── */}
+      <div className="md:hidden space-y-3">
+        {pagedProjects.length === 0 && (
+          <div className="card-surface rounded-2xl px-5 py-12 text-center">
+            <p className="text-slate-400 text-sm">
+              {hasActiveFilters ? 'No projects match your filters.' : 'No projects yet.'}
+            </p>
+          </div>
+        )}
+        {pagedProjects.map((proj) => (
+          <Link key={proj.id} href={`/dashboard/projects/${proj.id}`}>
+            <div className={`card-surface rounded-xl p-4 active:scale-[0.98] transition-transform ${proj.flagged ? 'border-l-2 border-l-red-500' : ''}`}>
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-white font-medium text-sm flex items-center gap-1.5">
+                  {proj.customerName}
+                  {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
+                </span>
+                <PhaseBadge phase={proj.phase} />
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
+                <span>{proj.kWSize} kW</span>
+                <span>{proj.installer}</span>
+                <span>{relativeTime(proj.soldDate)}</span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Mobile pagination */}
+      <div className="md:hidden">
+        <PaginationBar
+          totalResults={totalResults} startIdx={startIdx} endIdx={endIdx}
+          currentPage={safeCurrentPage} totalPages={totalPages} rowsPerPage={rowsPerPage}
+          onPageChange={setCurrentPage} onRowsPerPageChange={setRowsPerPage}
+        />
+      </div>
+
+      {/* ── Desktop table view (md+) ─────────────────────────────────── */}
+      <div className="hidden md:block card-surface rounded-2xl overflow-auto">
         <div className="overflow-x-auto scroll-smooth">
           <table className="w-full text-sm">
             <thead className="table-header-frost sticky top-0 z-10 after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-gradient-to-r after:from-blue-500/20 after:via-blue-500/40 after:to-blue-500/20">
@@ -1579,7 +1779,7 @@ function TableView({
                 )}
               </tr>
             </thead>
-            <tbody>
+            <tbody ref={tbodyRef}>
               {pagedProjects.map((proj, i) => {
                 const myRole = !isAdmin
                   ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
@@ -1588,8 +1788,10 @@ function TableView({
                 return (
                   <tr
                     key={proj.id}
+                    tabIndex={0}
+                    role="row"
                     onClick={() => { try { sessionStorage.setItem('kilo-project-nav', JSON.stringify(sortedProjects.map((p) => p.id))); } catch {} tableRouter.push(`/dashboard/projects/${proj.id}`); }}
-                  className={`group table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 hover:bg-blue-500/[0.06] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.6)] transition-colors duration-150 cursor-pointer ${
+                  className={`group table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 hover:bg-blue-500/[0.06] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.6)] transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-inset ${
                     selectedProjectIds.has(proj.id)
                       ? '!bg-blue-900/15'
                       : proj.flagged
@@ -1793,10 +1995,16 @@ function TableView({
         >
           <div className="flex items-center gap-3">
 
-            {/* Selection count badge — blue accent pill */}
+            {/* Selection count badge — blue accent pill with total kW */}
             <span className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
               <span className="text-white font-bold tabular-nums">{selectedProjectIds.size}</span>
               <span className="text-blue-400 font-medium">selected</span>
+              {selectedTotalKw > 0 && (
+                <>
+                  <span className="text-slate-600 mx-0.5">&middot;</span>
+                  <span className="text-emerald-400 font-semibold tabular-nums">{selectedTotalKw.toFixed(1)} kW</span>
+                </>
+              )}
             </span>
 
             {/* Visual divider */}
@@ -1811,6 +2019,19 @@ function TableView({
               Advance Phase
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
+
+            {/* Change Phase — dropdown to pick any target phase */}
+            <select
+              value={bulkPhaseTarget}
+              onChange={(e) => { if (e.target.value) handleBulkChangePhase(e.target.value as Phase); }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-700/60 border border-slate-600/40 text-slate-300 rounded-xl px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer hover:bg-slate-600/80 transition-colors"
+            >
+              <option value="">Change Phase...</option>
+              {PHASES.map((ph) => (
+                <option key={ph} value={ph}>{ph}</option>
+              ))}
+            </select>
 
             {/* Flag / Unflag toggle */}
             <button
@@ -1833,6 +2054,17 @@ function TableView({
           </div>
         </div>
       )}
+
+      {/* Bulk phase change confirmation */}
+      <ConfirmDialog
+        open={!!bulkConfirm}
+        onClose={() => { setBulkConfirm(null); setBulkPhaseTarget(''); }}
+        onConfirm={() => { if (bulkConfirm) executeBulkPhaseChange(bulkConfirm.phase); }}
+        title={`Move ${bulkConfirm?.count ?? 0} project${(bulkConfirm?.count ?? 0) > 1 ? 's' : ''} to ${bulkConfirm?.phase ?? ''}?`}
+        message={`This will move ${bulkConfirm?.count ?? 0} selected project${(bulkConfirm?.count ?? 0) > 1 ? 's' : ''} to ${bulkConfirm?.phase ?? ''}. ${bulkConfirm?.phase === 'Cancelled' ? 'Cancelled projects are removed from the pipeline.' : 'On-hold projects are paused.'}`}
+        confirmLabel={bulkConfirm?.phase === 'Cancelled' ? 'Cancel Projects' : 'Put On Hold'}
+        danger={bulkConfirm?.phase === 'Cancelled'}
+      />
     </div>
   );
 }

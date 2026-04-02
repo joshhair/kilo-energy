@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
 
 // POST /api/projects — Create a new project/deal
 export async function POST(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
   const project = await prisma.project.create({
     data: {
@@ -26,8 +29,9 @@ export async function POST(req: NextRequest) {
       prepaidSubType: body.prepaidSubType || null,
       leadSource: body.leadSource || null,
       blitzId: body.blitzId || null,
+      subDealerId: body.subDealerId || null,
     },
-    include: { closer: true, setter: true, installer: true, financer: true },
+    include: { closer: true, setter: true, subDealer: true, installer: true, financer: true },
   });
   return NextResponse.json(project, { status: 201 });
 }

@@ -8,12 +8,13 @@ import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/dat
 import { formatDate } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
-import { ChevronRight, ChevronLeft, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
 import { RepSelector } from '../../components/RepSelector';
+import { Sparkline } from '../../../../lib/sparkline';
 
 export default function RepDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, reps } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, currentRepId, reps } = useApp();
   const hydrated = useIsHydrated();
 
   // Pagination state — payment history
@@ -30,7 +31,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
 
   if (!hydrated) return <RepDetailSkeleton />;
 
-  if (currentRole !== 'admin') {
+  if (currentRole !== 'admin' && id !== currentRepId) {
     return (
       <div className="p-8 text-center text-slate-500 text-sm">
         You don&apos;t have permission to view this page.
@@ -74,6 +75,33 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   const totalPending = repPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'Completed'].includes(p.phase));
 
+  // ── 6-month earnings sparkline data ───────────────────────────────────────
+  const monthlyEarnings = (() => {
+    const now = new Date();
+    const months: number[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const total = repPayroll
+        .filter((p) => p.date.startsWith(key))
+        .reduce((s, p) => s + p.amount, 0);
+      months.push(total);
+    }
+    return months;
+  })();
+
+  // ── Month-over-month trend for Total Deals and Total kW ───────────────────
+  const now = new Date();
+  const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  const thisMonthDeals = repProjects.filter((p) => p.soldDate.startsWith(thisMonthKey)).length;
+  const prevMonthDeals = repProjects.filter((p) => p.soldDate.startsWith(prevMonthKey)).length;
+  const thisMonthKW = repProjects.filter((p) => p.soldDate.startsWith(thisMonthKey)).reduce((s, p) => s + p.kWSize, 0);
+  const prevMonthKW = repProjects.filter((p) => p.soldDate.startsWith(prevMonthKey)).reduce((s, p) => s + p.kWSize, 0);
+  const dealsTrend = thisMonthDeals - prevMonthDeals; // positive = up, negative = down
+  const kwTrend = thisMonthKW - prevMonthKW;
+
   const assignment = trainerAssignments.find((a) => a.traineeId === id);
   const trainerRep = assignment ? reps.find((r) => r.id === assignment.trainerId) : null;
   const completedDeals = repProjects.length;
@@ -82,7 +110,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:p-8 max-w-4xl animate-fade-in-up">
       {/* Breadcrumb */}
       <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-slate-500 mb-6">
         <Link href="/dashboard" className="hover:text-slate-300 transition-colors">Dashboard</Link>
@@ -115,10 +143,10 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Deals',    value: repProjects.length,            color: 'text-blue-400',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400' },
-          { label: 'Active Pipeline', value: activeProjects.length,        color: 'text-blue-400',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400' },
-          { label: 'Total kW',       value: `${totalKW.toFixed(1)} kW`,    color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400' },
-          { label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-emerald-400', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400' },
+          { label: 'Total Deals',    value: repProjects.length,              color: 'text-blue-400',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-blue-400',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Total kW',       value: `${totalKW.toFixed(1)} kW`,      color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-emerald-400', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: '#10b981' },
         ].map((s) => (
           <div
             key={s.label}
@@ -127,7 +155,20 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
           >
             <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r mb-2 ${s.accentGradient}`} />
             <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">{s.label}</p>
-            <p className={`stat-value stat-value-glow ${s.glowClass} text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
+            <div className="flex items-center gap-2">
+              <p className={`stat-value stat-value-glow ${s.glowClass} text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
+              {s.trend !== null && s.trend > 0 && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
+                  <TrendingUp className="w-2.5 h-2.5" /> +{s.label === 'Total kW' ? s.trend.toFixed(1) : s.trend}
+                </span>
+              )}
+              {s.trend !== null && s.trend < 0 && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400">
+                  <TrendingDown className="w-2.5 h-2.5" /> {s.label === 'Total kW' ? s.trend.toFixed(1) : s.trend}
+                </span>
+              )}
+            </div>
+            {s.sparkData && <Sparkline data={s.sparkData} stroke={s.sparkStroke} />}
           </div>
         ))}
       </div>

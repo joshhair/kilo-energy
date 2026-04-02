@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { Reimbursement } from '../../../lib/data';
-import { formatDate } from '../../../lib/utils';
+import { formatDate, downloadCSV, fmt$ } from '../../../lib/utils';
+import { ReimbursementModal } from '../components/ReimbursementModal';
+import { RelativeDate } from '../components/RelativeDate';
 import { computeSparklineData, Sparkline } from '../../../lib/sparkline';
 import {
-  DollarSign, TrendingUp, Upload, Receipt, ChevronUp, ChevronDown,
+  DollarSign, TrendingUp, Receipt, ChevronUp, ChevronDown,
   ChevronsUpDown, X, Building2, CheckCircle2, XCircle,
-  Clock, ArrowRight,
+  Clock, ArrowRight, Users, Download,
 } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
 
@@ -27,31 +29,6 @@ const ACCENT_COLOR_MAP: Record<string, string> = {
   'from-blue-500 to-blue-400':       'rgba(59,130,246,0.08)',
   'from-violet-500 to-violet-400':   'rgba(139,92,246,0.08)',
 };
-
-// ── Reimbursement form validation ──────────────────────────────────────────────
-
-function validateReimbField(field: string, value: string): string {
-  switch (field) {
-    case 'amount':
-      if (!value) return 'Amount is required';
-      if (parseFloat(value) <= 0) return 'Must be greater than 0';
-      return '';
-    case 'date':
-      return value ? '' : 'Date is required';
-    case 'description':
-      return value.trim() ? '' : 'Description is required';
-    default:
-      return '';
-  }
-}
-
-function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
-  return errors[field] ? (
-    <p id={`${field}-error`} className="text-red-400 text-xs mt-1" role="alert">
-      {errors[field]}
-    </p>
-  ) : null;
-}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -129,119 +106,6 @@ function SparklineWithTooltip({ data, stroke }: { data: number[]; stroke: string
   );
 }
 
-// ── Reimbursement Modal ────────────────────────────────────────────────────────
-
-function ReimbursementModal({ onClose }: { onClose: () => void }) {
-  const { currentRepId, currentRepName, setReimbursements } = useApp();
-  const { toast } = useToast();
-  const [form, setForm] = useState({ amount: '', description: '', date: new Date().toISOString().split('T')[0], fileName: '' });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const updateForm = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
-
-  const handleBlur = (field: string) => {
-    setErrors((prev) => ({ ...prev, [field]: validateReimbField(field, form[field as keyof typeof form]) }));
-  };
-
-  const inputCls = (field: string) =>
-    `w-full bg-slate-800 border ${errors[field] ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500 text-sm`;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const fieldsToValidate = ['amount', 'date', 'description'] as const;
-    const newErrors: Record<string, string> = {};
-    let hasErrors = false;
-    for (const field of fieldsToValidate) {
-      const error = validateReimbField(field, form[field]);
-      newErrors[field] = error;
-      if (error) hasErrors = true;
-    }
-    setErrors(newErrors);
-    if (hasErrors) return;
-
-    const newReimb: Reimbursement = {
-      id: `reimb_${Date.now()}`,
-      repId: currentRepId ?? '',
-      repName: currentRepName ?? '',
-      amount: parseFloat(form.amount),
-      description: form.description,
-      date: form.date,
-      status: 'Pending',
-      receiptName: form.fileName || undefined,
-    };
-    setReimbursements((prev) => [...prev, newReimb]);
-    toast('Reimbursement request submitted', 'success');
-    onClose();
-  };
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Receipt className="w-4 h-4 text-violet-400" />
-            <h2 className="text-white font-bold text-base">Request Reimbursement</h2>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors rounded-lg p-1 hover:bg-slate-800">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="reimb-amount" className={labelCls}>Amount ($)</label>
-              <input id="reimb-amount" type="number" step="0.01" min="0.01" placeholder="0.00"
-                value={form.amount} onChange={(e) => updateForm('amount', e.target.value)}
-                onBlur={() => handleBlur('amount')} aria-invalid={!!errors.amount}
-                className={inputCls('amount')} />
-              <FieldError field="amount" errors={errors} />
-            </div>
-            <div>
-              <label htmlFor="reimb-date" className={labelCls}>Date</label>
-              <input id="reimb-date" type="date" value={form.date}
-                onChange={(e) => updateForm('date', e.target.value)} onBlur={() => handleBlur('date')}
-                aria-invalid={!!errors.date} className={inputCls('date')} />
-              <FieldError field="date" errors={errors} />
-            </div>
-          </div>
-          <div>
-            <label htmlFor="reimb-description" className={labelCls}>Description</label>
-            <input id="reimb-description" type="text" placeholder="e.g. Gas mileage, office supplies…"
-              value={form.description} onChange={(e) => updateForm('description', e.target.value)}
-              onBlur={() => handleBlur('description')} aria-invalid={!!errors.description}
-              className={inputCls('description')} />
-            <FieldError field="description" errors={errors} />
-          </div>
-          <div>
-            <label className={labelCls}>Receipt <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
-            <label className="flex items-center gap-2 bg-slate-800 border border-slate-700 border-dashed rounded-xl px-4 py-2.5 cursor-pointer hover:border-slate-600 transition-colors overflow-hidden">
-              <Upload className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-              <span className="text-slate-500 text-sm truncate">{form.fileName || 'Attach file…'}</span>
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
-                onChange={(e) => updateForm('fileName', e.target.files?.[0]?.name ?? '')} />
-            </label>
-          </div>
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
-              Cancel
-            </button>
-            <button type="submit"
-              className="flex-1 btn-primary text-white font-semibold px-5 py-2.5 rounded-xl text-sm active:scale-[0.97]"
-              style={{ backgroundColor: 'var(--brand)' }}>
-              Submit Request
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-
 // ── Next-payout date helpers ───────────────────────────────────────────────────
 
 /** Returns the next Friday on or after `from` (day=5 → today counts). */
@@ -282,19 +146,212 @@ function computeMonthlySparklineData(entries: { date: string; amount: number }[]
   return last6.map((m) => byMonth.get(m)!);
 }
 
+// ── Monthly bar-chart data helper ─────────────────────────────────────────────
+
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+interface MonthlyBarDatum {
+  key: string;        // "YYYY-MM"
+  label: string;      // "Jan", "Feb", …
+  paid: number;
+  pending: number;
+  reimbursement: number;
+}
+
+function computeMonthlyBarData(
+  payrollEntries: { date: string; amount: number; status: string; repId: string }[],
+  reimbursements: { date: string; amount: number; status: string; repId: string }[],
+  repId: string | null,
+): MonthlyBarDatum[] {
+  const map = new Map<string, MonthlyBarDatum>();
+
+  for (const e of payrollEntries) {
+    if (e.repId !== repId) continue;
+    const key = e.date.slice(0, 7);
+    if (!map.has(key)) {
+      const monthIdx = parseInt(key.slice(5, 7), 10) - 1;
+      map.set(key, { key, label: MONTH_LABELS[monthIdx], paid: 0, pending: 0, reimbursement: 0 });
+    }
+    const d = map.get(key)!;
+    if (e.status === 'Paid') d.paid += e.amount;
+    else d.pending += e.amount; // Pending + Draft
+  }
+
+  for (const r of reimbursements) {
+    if (r.repId !== repId) continue;
+    if (r.status !== 'Approved') continue;
+    const key = r.date.slice(0, 7);
+    if (!map.has(key)) {
+      const monthIdx = parseInt(key.slice(5, 7), 10) - 1;
+      map.set(key, { key, label: MONTH_LABELS[monthIdx], paid: 0, pending: 0, reimbursement: 0 });
+    }
+    map.get(key)!.reimbursement += r.amount;
+  }
+
+  const sorted = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  return sorted.slice(-6).map(([, v]) => v);
+}
+
+// ── Monthly Earnings Bar Chart ────────────────────────────────────────────────
+
+function MonthlyEarningsBarChart({
+  data,
+  onMonthClick,
+}: {
+  data: MonthlyBarDatum[];
+  onMonthClick?: (monthKey: string) => void;
+}) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; datum: MonthlyBarDatum } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  if (data.length === 0) return null;
+
+  const maxVal = Math.max(...data.map((d) => Math.max(d.paid, d.pending, d.reimbursement)), 1);
+  const chartH = 180;
+  const barAreaTop = 20; // leave room for value labels above bars
+
+  const hasReimb = data.some((d) => d.reimbursement > 0);
+  const barsPerGroup = hasReimb ? 3 : 2;
+
+  return (
+    <div className="card-surface rounded-2xl p-5 mb-8 animate-slide-in-scale">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="h-[2px] w-10 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-2" />
+          <h3 className="text-white font-bold text-sm tracking-wide">Monthly Earnings</h3>
+        </div>
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-xs text-slate-400">
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" />Paid</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400" />Pending</span>
+          {hasReimb && <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-violet-400" />Reimb.</span>}
+        </div>
+      </div>
+
+      <div className="relative w-full" style={{ minHeight: chartH + 36 }}>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 600 ${chartH + 36}`}
+          preserveAspectRatio="none"
+          className="w-full h-auto"
+          onMouseLeave={() => setTooltip(null)}
+        >
+          {/* Grid lines */}
+          {[0.25, 0.5, 0.75, 1].map((frac) => {
+            const y = barAreaTop + (chartH - (chartH * frac));
+            return <line key={frac} x1={0} x2={600} y1={y} y2={y} stroke="rgba(148,163,184,0.08)" strokeWidth={1} />;
+          })}
+
+          {data.map((d, i) => {
+            const groupW = 600 / data.length;
+            const groupX = i * groupW;
+            const gap = 4;
+            const totalGap = (barsPerGroup - 1) * gap;
+            const barW = Math.min((groupW * 0.6 - totalGap) / barsPerGroup, 40);
+            const groupBarW = barsPerGroup * barW + totalGap;
+            const startX = groupX + (groupW - groupBarW) / 2;
+
+            const bars = [
+              { value: d.paid, color: '#10b981', hoverColor: '#34d399' },
+              { value: d.pending, color: '#eab308', hoverColor: '#facc15' },
+              ...(hasReimb ? [{ value: d.reimbursement, color: '#8b5cf6', hoverColor: '#a78bfa' }] : []),
+            ];
+
+            return (
+              <g
+                key={d.key}
+                className="cursor-pointer"
+                onClick={() => onMonthClick?.(d.key)}
+                onMouseEnter={(e) => {
+                  const svg = svgRef.current;
+                  if (!svg) return;
+                  const rect = svg.getBoundingClientRect();
+                  const svgX = groupX + groupW / 2;
+                  const pxX = (svgX / 600) * rect.width;
+                  setTooltip({ x: pxX, y: 0, datum: d });
+                }}
+                onMouseLeave={() => setTooltip(null)}
+              >
+                {/* invisible hit area */}
+                <rect x={groupX} y={0} width={groupW} height={chartH + 36} fill="transparent" />
+
+                {bars.map((bar, bi) => {
+                  const bh = (bar.value / maxVal) * (chartH - barAreaTop);
+                  const bx = startX + bi * (barW + gap);
+                  const by = barAreaTop + (chartH - barAreaTop) - bh;
+                  return (
+                    <rect
+                      key={bi}
+                      x={bx}
+                      y={by}
+                      width={barW}
+                      height={Math.max(bh, 0)}
+                      rx={3}
+                      fill={bar.color}
+                      className="transition-all duration-150 hover:brightness-125"
+                    />
+                  );
+                })}
+
+                {/* Month label */}
+                <text
+                  x={groupX + groupW / 2}
+                  y={chartH + 28}
+                  textAnchor="middle"
+                  className="fill-slate-500 text-[11px] font-medium"
+                  style={{ fontSize: 11 }}
+                >
+                  {d.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Tooltip */}
+        {tooltip && (
+          <div
+            className="absolute z-20 pointer-events-none bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 shadow-xl text-xs whitespace-nowrap"
+            style={{
+              left: tooltip.x,
+              top: -4,
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <p className="text-slate-300 font-semibold mb-1">{tooltip.datum.label}</p>
+            <p className="text-emerald-400">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
+            <p className="text-yellow-400">Pending: ${tooltip.datum.pending.toLocaleString()}</p>
+            {tooltip.datum.reimbursement > 0 && (
+              <p className="text-violet-400">Reimb: ${tooltip.datum.reimbursement.toLocaleString()}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Rep Earnings View ──────────────────────────────────────────────────────────
 
 function RepEarningsView() {
   const searchParams = useSearchParams();
-  const { currentRepId, payrollEntries, reimbursements } = useApp();
+  const router = useRouter();
+  const { currentRepId, currentRepName, payrollEntries, reimbursements, setReimbursements } = useApp();
   const isHydrated = useIsHydrated();
+  const { toast } = useToast();
 
   type Tab = 'deal' | 'bonus' | 'reimbursements';
   const rawTab = searchParams.get('tab');
-  const [tab, setTab] = useState<Tab>(() => {
+  const [tab, setTabState] = useState<Tab>(() => {
     if (rawTab === 'reimbursements' || rawTab === 'bonus' || rawTab === 'deal') return rawTab;
     return 'deal';
   });
+  const setTab = (t: Tab) => {
+    setTabState(t);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', t);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   const [showReimbModal, setShowReimbModal] = useState(false);
 
@@ -319,6 +376,12 @@ function RepEarningsView() {
   const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Paid')),    [payrollEntries, currentRepId]);
   const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Pending')), [payrollEntries, currentRepId]);
   const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === currentRepId && r.status === 'Approved')), [reimbursements, currentRepId]);
+
+  // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
+  const monthlyBarData = useMemo(
+    () => computeMonthlyBarData(payrollEntries, reimbursements, currentRepId),
+    [payrollEntries, reimbursements, currentRepId],
+  );
 
   // Deal table sort + pagination
   const [dealSortKey, setDealSortKey]   = useState<DealSortKey>('date');
@@ -412,8 +475,25 @@ function RepEarningsView() {
   if (!isHydrated) return <EarningsSkeleton />;
 
   return (
-    <div className="p-4 md:p-8">
-      {showReimbModal && <ReimbursementModal onClose={() => setShowReimbModal(false)} />}
+    <div className="p-4 md:p-8 animate-fade-in-up">
+      <ReimbursementModal
+        open={showReimbModal}
+        onClose={() => setShowReimbModal(false)}
+        repId={currentRepId ?? ''}
+        repName={currentRepName ?? ''}
+        onSubmit={(data) => {
+          const newReimb: Reimbursement = { id: `reimb_${Date.now()}`, ...data, status: 'Pending' };
+          setReimbursements((prev) => [...prev, newReimb]);
+          fetch('/api/reimbursements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repId: data.repId, amount: data.amount, description: data.description, date: data.date, receiptName: data.receiptName }),
+          }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+            .catch((err) => { console.error(err); toast('Failed to save reimbursement', 'error'); });
+          toast('Reimbursement request submitted', 'success');
+          setShowReimbModal(false);
+        }}
+      />
 
       {/* Header */}
       <div className="mb-8">
@@ -428,13 +508,34 @@ function RepEarningsView() {
               <p className="text-slate-400 text-sm font-medium mt-0.5 tracking-wide">Your commission, bonus, and reimbursement history</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowReimbModal(true)}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
-          >
-            <Receipt className="w-4 h-4 text-violet-400" />
-            Request Reimbursement
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                const headers = ['Type', 'Customer / Note', 'Stage', 'Amount', 'Status', 'Date'];
+                const rows = sortedDeals.map((row) => {
+                  if (row.kind === 'payroll') {
+                    const e = row.entry as (typeof payrollEntries)[0];
+                    return [e.type, e.customerName || e.notes || '', e.paymentStage, `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
+                  }
+                  const r = row.entry as (typeof myReimbs)[0];
+                  return ['Reimbursement', r.description, 'Reimb', `$${r.amount.toFixed(2)}`, r.status, formatDate(r.date)];
+                });
+                downloadCSV(`my-earnings-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+              }}
+              disabled={sortedDeals.length === 0}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Download earnings as CSV"
+            >
+              <Download className="w-3.5 h-3.5" /> CSV
+            </button>
+            <button
+              onClick={() => setShowReimbModal(true)}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
+            >
+              <Receipt className="w-4 h-4 text-violet-400" />
+              Request Reimbursement
+            </button>
+          </div>
         </div>
       </div>
 
@@ -561,6 +662,9 @@ function RepEarningsView() {
 
       </div>
 
+      {/* ── Monthly Earnings Bar Chart ──────────────────────────────────────── */}
+      <MonthlyEarningsBarChart data={monthlyBarData} />
+
       {/* Tab bar */}
       <div className="flex flex-wrap gap-1 mb-5 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
         {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
@@ -581,7 +685,7 @@ function RepEarningsView() {
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50 table-scroll-shadow">
+                <thead className="table-header-frost">
                   <tr className="border-b border-slate-800">
                     {([
                       { key: 'customerName' as DealSortKey, label: 'Customer' },
@@ -677,7 +781,7 @@ function RepEarningsView() {
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50 table-scroll-shadow">
+                <thead className="table-header-frost">
                   <tr className="border-b border-slate-800">
                     {([
                       { key: 'notes'  as BonusSortKey, label: 'Description' },
@@ -696,9 +800,9 @@ function RepEarningsView() {
                   {pagedBonuses.map((b, i) => (
                     <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-slate-800/50 odd:bg-slate-900/30 even:bg-slate-800/30 hover:bg-slate-800/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-white">{b.notes || '—'}</td>
-                      <td className="px-5 py-3 text-blue-400 font-semibold whitespace-nowrap">${b.amount.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-blue-400 font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
                       <td className="px-5 py-3"><PayrollStatusBadge status={b.status} /></td>
-                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(b.date)}</td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap"><RelativeDate date={b.date} /></td>
                     </tr>
                   ))}
                   {sortedBonuses.length === 0 && (
@@ -771,7 +875,7 @@ function RepEarningsView() {
                     <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-slate-800/50 odd:bg-slate-900/30 even:bg-slate-800/30 hover:bg-slate-800/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-white">{r.description}</td>
                       <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
-                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(r.date)}</td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap"><RelativeDate date={r.date} /></td>
                       <td className="px-5 py-3 text-slate-400 text-xs">{r.receiptName || '—'}</td>
                       <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
                     </tr>
@@ -930,6 +1034,8 @@ function EarningsSkeleton() {
 // ── Admin Financials View ─────────────────────────────────────────────────────
 
 function AdminFinancialsView() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { payrollEntries, setPayrollEntries, reimbursements, setReimbursements, reps } = useApp();
   const { toast } = useToast();
 
@@ -940,7 +1046,17 @@ function AdminFinancialsView() {
   const pendingReimbs = reimbursements.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
 
   type AdminTab = 'payroll' | 'reimbursements' | 'by-rep';
-  const [tab, setTab] = useState<AdminTab>('payroll');
+  const rawTab = searchParams.get('tab');
+  const [tab, setTabState] = useState<AdminTab>(() => {
+    if (rawTab === 'payroll' || rawTab === 'reimbursements' || rawTab === 'by-rep') return rawTab;
+    return 'payroll';
+  });
+  const setTab = (t: AdminTab) => {
+    setTabState(t);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', t);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   // Payroll tab filters + pagination
   const [repFilter,    setRepFilter]    = useState('');
@@ -1015,11 +1131,17 @@ function AdminFinancialsView() {
 
   const approveReim = (id: string) => {
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Approved' } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => { console.error(err); toast('Failed to approve reimbursement', 'error'); });
     toast('Reimbursement approved', 'success');
   };
 
   const rejectReim = (id: string) => {
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Denied' } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => { console.error(err); toast('Failed to reject reimbursement', 'error'); });
     toast('Reimbursement rejected', 'info');
   };
 
@@ -1051,7 +1173,7 @@ function AdminFinancialsView() {
   const selectCls = 'bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-all input-focus-glow';
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 animate-fade-in-up">
       {/* Header */}
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -1167,9 +1289,9 @@ function AdminFinancialsView() {
                         <td className="px-5 py-3 text-white font-medium">{e.repName}</td>
                         <td className="px-5 py-3 text-slate-300">{e.customerName || '—'}</td>
                         <td className="px-5 py-3"><span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage || e.type}</span></td>
-                        <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${e.amount.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">{fmt$(e.amount)}</td>
                         <td className="px-5 py-3"><PayrollStatusBadge status={e.status} /></td>
-                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(e.date)}</td>
+                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap"><RelativeDate date={e.date} /></td>
                         <td className="px-5 py-3">
                           {e.status === 'Pending' && (
                             <button onClick={() => markPaid(e.id)}
@@ -1251,7 +1373,7 @@ function AdminFinancialsView() {
                         <td className="px-5 py-3 text-white font-medium">{r.repName}</td>
                         <td className="px-5 py-3 text-slate-300">{r.description}</td>
                         <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
-                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(r.date)}</td>
+                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap"><RelativeDate date={r.date} /></td>
                         <td className="px-5 py-3 text-slate-400 text-xs">{r.receiptName || '—'}</td>
                         <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
                         <td className="px-5 py-3">
@@ -1330,15 +1452,21 @@ function AdminFinancialsView() {
                           <p className="text-slate-500 text-xs capitalize">{s.rep.repType}</p>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">${s.paid.toLocaleString()}</td>
-                      <td className="px-5 py-3 text-yellow-400 font-medium whitespace-nowrap">${s.pending.toLocaleString()}</td>
-                      <td className="px-5 py-3 text-slate-400 whitespace-nowrap">${s.draft.toLocaleString()}</td>
-                      <td className="px-5 py-3 text-violet-400 whitespace-nowrap">{s.reimbPending > 0 ? `$${s.reimbPending.toLocaleString()}` : '—'}</td>
-                      <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">${s.total.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-emerald-400 font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
+                      <td className="px-5 py-3 text-yellow-400 font-medium whitespace-nowrap">{fmt$(s.pending)}</td>
+                      <td className="px-5 py-3 text-slate-400 whitespace-nowrap">{fmt$(s.draft)}</td>
+                      <td className="px-5 py-3 text-violet-400 whitespace-nowrap">{s.reimbPending > 0 ? fmt$(s.reimbPending) : '—'}</td>
+                      <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">{fmt$(s.total)}</td>
                     </tr>
                   ))}
                   {repSummary.length === 0 && (
-                    <tr><td colSpan={6} className="px-5 py-12 text-center text-slate-400 text-sm">No reps found.</td></tr>
+                    <tr><td colSpan={6} className="px-5 py-12 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Users className="w-10 h-10 text-slate-600" />
+                        <p className="text-sm font-semibold text-white">No reps found</p>
+                        <p className="text-xs text-slate-500">Rep earnings will appear here once deals are submitted and payroll is processed</p>
+                      </div>
+                    </td></tr>
                   )}
                 </tbody>
               </table>
@@ -1354,12 +1482,106 @@ function AdminFinancialsView() {
 // ── Main export ────────────────────────────────────────────────────────────────
 
 export default function EarningsPage() {
+  return (
+    <Suspense>
+      <EarningsPageInner />
+    </Suspense>
+  );
+}
+
+// ── Sub-Dealer Earnings View ─────────────────────────────────────────────────
+
+function SubDealerEarningsView() {
+  const { currentRepId, payrollEntries } = useApp();
+
+  // Sub-dealers only see M2 and M3 payroll entries
+  const myPayroll = payrollEntries.filter(
+    (p) => p.repId === currentRepId && (p.paymentStage === 'M2' || p.paymentStage === 'M3')
+  );
+
+  const totalEarned = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const totalPending = myPayroll.filter((p) => p.status === 'Pending' || p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+
+  const sorted = [...myPayroll].sort((a, b) => b.date.localeCompare(a.date));
+
+  return (
+    <div className="p-4 md:p-8 animate-fade-in-up">
+      <div className="mb-8">
+        <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
+        <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Earnings</h1>
+        <p className="text-slate-400 text-sm font-medium mt-1">Your M2 and M3 commission payments</p>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="card-surface rounded-2xl p-5">
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Total Earned</p>
+          <p className="text-3xl font-black text-emerald-400 tabular-nums">${totalEarned.toLocaleString()}</p>
+          <p className="text-slate-500 text-xs mt-1">{myPayroll.filter((p) => p.status === 'Paid').length} paid entries</p>
+        </div>
+        <div className="card-surface rounded-2xl p-5">
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Pending</p>
+          <p className="text-3xl font-black text-yellow-400 tabular-nums">${totalPending.toLocaleString()}</p>
+          <p className="text-slate-500 text-xs mt-1">{myPayroll.filter((p) => p.status !== 'Paid').length} pending entries</p>
+        </div>
+      </div>
+
+      {/* Earnings table */}
+      <div className="card-surface rounded-2xl">
+        <div className="px-6 py-4 border-b border-slate-800">
+          <h2 className="text-white font-bold tracking-tight text-base">Payment History</h2>
+        </div>
+        {sorted.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <DollarSign className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+            <p className="text-white font-bold text-sm mb-1">No earnings yet</p>
+            <p className="text-slate-500 text-xs">Earnings will appear once your deals reach the Installed phase.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="table-header-frost">
+                <tr className="border-b border-slate-800">
+                  <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Customer</th>
+                  <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Stage</th>
+                  <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Amount</th>
+                  <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Status</th>
+                  <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((entry) => (
+                  <tr key={entry.id} className="border-b border-slate-800/50 even:bg-slate-800/[0.15] hover:bg-blue-500/[0.03] transition-colors">
+                    <td className="px-6 py-3 text-white">{entry.customerName || '\u2014'}</td>
+                    <td className="px-6 py-3">
+                      <span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">{entry.paymentStage}</span>
+                    </td>
+                    <td className="px-6 py-3 text-emerald-400 font-semibold">${entry.amount.toLocaleString()}</td>
+                    <td className="px-6 py-3">
+                      <PayrollStatusBadge status={entry.status} />
+                    </td>
+                    <td className="px-6 py-3 text-slate-500 text-xs">{entry.date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EarningsPageInner() {
   const { currentRole } = useApp();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
 
   if (!isHydrated) return <EarningsSkeleton />;
   if (currentRole === 'admin') return <AdminFinancialsView />;
+  if (currentRole === 'sub-dealer') return <SubDealerEarningsView />;
   return <RepEarningsView />;
 }
 

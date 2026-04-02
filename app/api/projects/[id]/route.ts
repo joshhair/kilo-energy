@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '../../../../lib/db';
 
 // PATCH /api/projects/[id] — Update a project (phase change, notes, flag, etc.)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
 
@@ -19,6 +22,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.baselineOverrideJson !== undefined) data.baselineOverrideJson = body.baselineOverrideJson;
   if (body.leadSource !== undefined) data.leadSource = body.leadSource;
   if (body.blitzId !== undefined) data.blitzId = body.blitzId;
+  if (body.productType !== undefined) data.productType = body.productType;
+  if (body.kWSize !== undefined) data.kWSize = body.kWSize;
+  if (body.netPPW !== undefined) data.netPPW = body.netPPW;
+  if (body.setterId !== undefined) data.setterId = body.setterId || null;
+  if (body.soldDate !== undefined) data.soldDate = body.soldDate;
+  // FK resolution: installer/financer name → ID
+  if (body.installer !== undefined) {
+    const inst = await prisma.installer.findFirst({ where: { name: body.installer } });
+    if (inst) data.installerId = inst.id;
+  }
+  if (body.financer !== undefined) {
+    const fin = await prisma.financer.findFirst({ where: { name: body.financer } });
+    if (fin) data.financerId = fin.id;
+  }
 
   const project = await prisma.project.update({
     where: { id },
@@ -30,6 +47,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 // DELETE /api/projects/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   await prisma.project.delete({ where: { id } });
   return NextResponse.json({ success: true });

@@ -1,15 +1,17 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
-import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTIVES, INSTALLERS, FINANCERS, Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, REPS, Rep, NON_SOLARTECH_BASELINES, SOLARTECH_PRODUCTS, InstallerBaseline, SolarTechProduct, INSTALLER_PRICING_VERSIONS, InstallerPricingVersion, InstallerRates, PRODUCT_CATALOG_INSTALLER_CONFIGS, PRODUCT_CATALOG_PRODUCTS, ProductCatalogInstallerConfig, ProductCatalogProduct, PREPAID_OPTIONS, Phase, PRODUCT_CATALOG_PRICING_VERSIONS, ProductCatalogPricingVersion, ProductCatalogTier, INSTALLER_PAY_CONFIGS, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
+import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTIVES, INSTALLERS, FINANCERS, Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, REPS, Rep, SubDealer, SUB_DEALERS, NON_SOLARTECH_BASELINES, SOLARTECH_PRODUCTS, InstallerBaseline, SolarTechProduct, INSTALLER_PRICING_VERSIONS, InstallerPricingVersion, InstallerRates, PRODUCT_CATALOG_INSTALLER_CONFIGS, PRODUCT_CATALOG_PRODUCTS, ProductCatalogInstallerConfig, ProductCatalogProduct, PREPAID_OPTIONS, Phase, PRODUCT_CATALOG_PRICING_VERSIONS, ProductCatalogPricingVersion, ProductCatalogTier, INSTALLER_PAY_CONFIGS, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
 import { getM1PayDate, getM2PayDate } from './utils';
+import { persistFetch } from './persist';
 
-type Role = 'rep' | 'admin' | null;
+type Role = 'rep' | 'admin' | 'sub-dealer' | null;
 
 export interface ManagedItem { name: string; active: boolean; }
 
 interface AppContextType {
   dbReady: boolean;
+  dataError: boolean;
   currentRole: Role;
   currentRepId: string | null;
   currentRepName: string | null;
@@ -43,6 +45,10 @@ interface AppContextType {
   addRep: (firstName: string, lastName: string, email: string, phone: string, repType?: 'closer' | 'setter' | 'both', id?: string) => void;
   removeRep: (id: string) => void;
   updateRepType: (id: string, repType: 'closer' | 'setter' | 'both') => void;
+  // Sub-dealer management
+  subDealers: SubDealer[];
+  addSubDealer: (firstName: string, lastName: string, email: string, phone: string, id?: string) => void;
+  removeSubDealer: (id: string) => void;
   // Project editing
   updateProject: (id: string, updates: Partial<Project>) => void;
   // Editable baselines (derived from active pricing versions for backward compat)
@@ -57,7 +63,7 @@ interface AppContextType {
   createNewInstallerVersion: (installer: string, label: string, effectiveFrom: string, rates: InstallerRates) => void;
   solarTechProducts: SolarTechProduct[];
   updateSolarTechProduct: (id: string, updates: Partial<SolarTechProduct>) => void;
-  updateSolarTechTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number }>) => void;
+  updateSolarTechTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => void;
   // Product Catalog installer system
   productCatalogInstallerConfigs: Record<string, ProductCatalogInstallerConfig>;
   productCatalogProducts: ProductCatalogProduct[];
@@ -65,13 +71,14 @@ interface AppContextType {
   updateProductCatalogInstallerConfig: (name: string, config: Partial<ProductCatalogInstallerConfig>) => void;
   addProductCatalogProduct: (product: ProductCatalogProduct) => void;
   updateProductCatalogProduct: (id: string, updates: Partial<ProductCatalogProduct>) => void;
-  updateProductCatalogTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number }>) => void;
+  updateProductCatalogTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => void;
   removeProductCatalogProduct: (id: string) => void;
   // Product Catalog pricing versions
   productCatalogPricingVersions: ProductCatalogPricingVersion[];
   addProductCatalogPricingVersion: (version: ProductCatalogPricingVersion) => void;
   updateProductCatalogPricingVersion: (id: string, updates: Partial<ProductCatalogPricingVersion>) => void;
   createNewProductCatalogVersion: (productId: string, label: string, effectiveFrom: string, tiers: ProductCatalogTier[]) => void;
+  deleteProductCatalogPricingVersions: (versionIds: string[]) => void;
   deleteInstaller: (name: string) => void;
   // Per-installer prepaid options management
   installerPrepaidOptions: Record<string, string[]>;
@@ -83,14 +90,26 @@ interface AppContextType {
   installerPayConfigs: Record<string, InstallerPayConfig>;
   setInstallerPayConfigs: React.Dispatch<React.SetStateAction<Record<string, InstallerPayConfig>>>;
   updateInstallerPayConfig: (installer: string, pct: number) => void;
+  // Project Chatter — lightweight unread mention count for nav badge
+  unreadMentionCount: number;
+  refreshMentionCount: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [currentRole, setCurrentRole] = useState<Role>(null);
-  const [currentRepId, setCurrentRepId] = useState<string | null>(null);
-  const [currentRepName, setCurrentRepName] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState<Role>(() => {
+    if (typeof window === 'undefined') return null;
+    return (localStorage.getItem('kilo-role') as Role) ?? null;
+  });
+  const [currentRepId, setCurrentRepId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('kilo-rep-id') ?? null;
+  });
+  const [currentRepName, setCurrentRepName] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('kilo-rep-name') ?? null;
+  });
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const [payrollEntries, setPayrollEntries] = useState<PayrollEntry[]>(PAYROLL_ENTRIES);
   const [reimbursements, setReimbursements] = useState<Reimbursement[]>(REIMBURSEMENTS);
@@ -99,6 +118,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [installers, setInstallers] = useState<ManagedItem[]>(INSTALLERS.map((name) => ({ name, active: true })));
   const [financers, setFinancers] = useState<ManagedItem[]>(FINANCERS.map((name) => ({ name, active: true })));
   const [reps, setReps] = useState<Rep[]>(REPS.map((r) => ({ ...r })));
+  const [subDealers, setSubDealers] = useState<SubDealer[]>(SUB_DEALERS.map((sd) => ({ ...sd })));
   const [installerPricingVersions, setInstallerPricingVersions] = useState<InstallerPricingVersion[]>(INSTALLER_PRICING_VERSIONS.map((v) => ({ ...v })));
   const [solarTechProducts, setSolarTechProducts] = useState<SolarTechProduct[]>(SOLARTECH_PRODUCTS.map((p) => ({ ...p, tiers: p.tiers.map((t) => ({ ...t })) })));
   const [productCatalogInstallerConfigs, setProductCatalogInstallerConfigs] = useState<Record<string, ProductCatalogInstallerConfig>>({ ...PRODUCT_CATALOG_INSTALLER_CONFIGS });
@@ -109,6 +129,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [installerPayConfigs, setInstallerPayConfigs] = useState<Record<string, InstallerPayConfig>>({ ...INSTALLER_PAY_CONFIGS });
   const [dbReady, setDbReady] = useState(false);
+  const [dataError, setDataError] = useState(false);
+  const [unreadMentionCount, setUnreadMentionCount] = useState(0);
   const [idMaps, setIdMaps] = useState<{
     installerNameToId: Record<string, string>;
     financerNameToId: Record<string, string>;
@@ -122,6 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (cancelled) return;
         setReps(data.reps ?? []);
+        setSubDealers(data.subDealers ?? []);
         setInstallers((data.installers ?? []).map((name: string) => ({ name, active: true })));
         setFinancers((data.financers ?? []).map((name: string) => ({ name, active: true })));
         setProjects(data.projects ?? []);
@@ -140,15 +163,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setDbReady(true);
       })
       .catch((err) => {
-        console.warn('Failed to load data from API, using seed data:', err);
+        console.error('Failed to load data from API:', err);
+        setDataError(true);
         setDbReady(true);
       });
     return () => { cancelled = true; };
   }, []);
 
+  // Fetch unread mention count for current rep
+  const refreshMentionCount = useCallback(() => {
+    if (!currentRepId) { setUnreadMentionCount(0); return; }
+    fetch(`/api/mentions?userId=${encodeURIComponent(currentRepId)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setUnreadMentionCount(data.length);
+      })
+      .catch(() => {});
+  }, [currentRepId]);
+
+  useEffect(() => {
+    if (dbReady && currentRepId) refreshMentionCount();
+  }, [dbReady, currentRepId, refreshMentionCount]);
+
   // Helper: persist a payroll entry to the DB (fire and forget)
   const persistPayrollEntry = useCallback((entry: PayrollEntry) => {
-    fetch('/api/payroll', {
+    persistFetch('/api/payroll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -161,13 +200,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         date: entry.date,
         notes: entry.notes,
       }),
-    }).catch(console.error);
+    }, 'Failed to save payroll entry').catch(() => {});
   }, []);
 
   // Helper: delete payroll entries from DB by filter
   const deletePayrollEntriesFromDb = useCallback((ids: string[]) => {
     for (const id of ids) {
-      fetch(`/api/payroll/${id}`, { method: 'DELETE' }).catch(console.error);
+      persistFetch(`/api/payroll/${id}`, { method: 'DELETE' }, 'Failed to delete payroll entry').catch(() => {});
     }
   }, []);
 
@@ -188,7 +227,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // For tiered installers, use the first band for backward-compat display
       const flatRates = rates.type === 'tiered' ? rates.bands[0] : rates;
       if (!flatRates) continue;
-      result[name] = { closerPerW: flatRates.closerPerW, kiloPerW: flatRates.kiloPerW, ...(flatRates.setterPerW != null ? { setterPerW: flatRates.setterPerW } : {}) };
+      result[name] = { closerPerW: flatRates.closerPerW, kiloPerW: flatRates.kiloPerW, ...(flatRates.setterPerW != null ? { setterPerW: flatRates.setterPerW } : {}), ...(flatRates.subDealerPerW != null ? { subDealerPerW: flatRates.subDealerPerW } : {}) };
     }
     // Also include any NON_SOLARTECH_BASELINES entries without a pricing version
     for (const [name, baseline] of Object.entries(NON_SOLARTECH_BASELINES)) {
@@ -199,10 +238,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const activeInstallers = installers.filter((i) => i.active).map((i) => i.name);
   const activeFinancers = financers.filter((f) => f.active).map((f) => f.name);
-  const setInstallerActive = (name: string, active: boolean) =>
+  const setInstallerActive = (name: string, active: boolean) => {
     setInstallers((prev) => prev.map((i) => i.name === name ? { ...i, active } : i));
-  const setFinancerActive = (name: string, active: boolean) =>
+    const instId = idMaps.installerNameToId[name];
+    if (instId) {
+      persistFetch(`/api/installers/${instId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+      }, 'Failed to update installer status').catch(() => {});
+    }
+  };
+  const setFinancerActive = (name: string, active: boolean) => {
     setFinancers((prev) => prev.map((f) => f.name === name ? { ...f, active } : f));
+    const finId = idMaps.financerNameToId[name];
+    if (finId) {
+      persistFetch(`/api/financers/${finId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+      }, 'Failed to update financer status').catch(() => {});
+    }
+  };
   const addInstaller = (name: string) => {
     setInstallers((prev) => prev.find((i) => i.name === name) ? prev : [...prev, { name, active: true }]);
     // Ensure a baseline pricing version exists for the new installer
@@ -236,30 +293,86 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const tempId = id ?? `rep_${Date.now()}`;
     setReps((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim(), phone: phone.trim(), role: 'rep' as const, repType }]);
     // Persist and update with real DB id
-    fetch('/api/reps', {
+    persistFetch('/api/reps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ firstName, lastName, email, phone, repType }),
-    }).then((res) => res.json()).then((rep) => {
+    }, 'Failed to save new rep').then((res) => res.json()).then((rep) => {
       if (rep.id && rep.id !== tempId) {
         setReps((prev) => prev.map((r) => r.id === tempId ? { ...r, id: rep.id } : r));
       }
-    }).catch(console.error);
+    }).catch(() => {});
   };
   const removeRep = (id: string) => {
     setReps((prev) => prev.filter((r) => r.id !== id));
-    fetch(`/api/reps/${id}`, { method: 'DELETE' }).catch(console.error);
+    persistFetch(`/api/reps/${id}`, { method: 'DELETE' }, 'Failed to remove rep').catch(() => {});
   };
   const updateRepType = (id: string, repType: 'closer' | 'setter' | 'both') => {
     setReps((prev) => prev.map((r) => r.id === id ? { ...r, repType } : r));
-    fetch(`/api/reps/${id}`, {
+    persistFetch(`/api/reps/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repType }),
+    }, 'Failed to update rep type').catch(() => {});
+  };
+
+  // ── Sub-dealer management ──
+  const addSubDealer = (firstName: string, lastName: string, email: string, phone: string, id?: string) => {
+    const tempId = id ?? `sd_${Date.now()}`;
+    const name = `${firstName.trim()} ${lastName.trim()}`;
+    setSubDealers((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name, email: email.trim(), phone: phone.trim(), role: 'sub-dealer' as const }]);
+  };
+  const removeSubDealer = (id: string) => {
+    setSubDealers((prev) => prev.filter((sd) => sd.id !== id));
+  };
+
+  // ── Activity logging helper (fire-and-forget) ──
+  const logProjectActivity = (projectId: string, type: string, detail: string, meta?: string) => {
+    fetch(`/api/projects/${projectId}/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, detail, meta }),
     }).catch(console.error);
   };
 
   const updateProject = (id: string, updates: Partial<Project>) => {
+    // ── Log activity for significant changes ──
+    const old = projects.find((p) => p.id === id);
+    if (old) {
+      if (updates.phase !== undefined && updates.phase !== old.phase) {
+        logProjectActivity(id, 'phase_change', `Phase changed from ${old.phase} to ${updates.phase}`, JSON.stringify({ oldPhase: old.phase, newPhase: updates.phase }));
+      }
+      if (updates.flagged !== undefined && updates.flagged !== old.flagged) {
+        logProjectActivity(id, updates.flagged ? 'flagged' : 'unflagged', updates.flagged ? 'Project flagged' : 'Project unflagged');
+      }
+      if (updates.m1Paid !== undefined && updates.m1Paid !== old.m1Paid) {
+        logProjectActivity(id, 'm1_paid', updates.m1Paid ? 'M1 marked as paid' : 'M1 marked as unpaid');
+      }
+      if (updates.m2Paid !== undefined && updates.m2Paid !== old.m2Paid) {
+        logProjectActivity(id, 'm2_paid', updates.m2Paid ? 'M2 marked as paid' : 'M2 marked as unpaid');
+      }
+      if (updates.notes !== undefined && updates.notes !== old.notes) {
+        logProjectActivity(id, 'note_edit', 'Notes updated');
+      }
+      // Field edits
+      const fieldLabels: Record<string, string> = {
+        installer: 'Installer', financer: 'Financer', productType: 'Product Type',
+        kWSize: 'System Size (kW)', netPPW: 'Net PPW', soldDate: 'Sold Date',
+        m1Amount: 'M1 Amount', m2Amount: 'M2 Amount',
+      };
+      for (const [key, label] of Object.entries(fieldLabels)) {
+        const k = key as keyof Project;
+        if (updates[k] !== undefined && updates[k] !== old[k]) {
+          logProjectActivity(id, 'field_edit', `${label} changed from ${old[k]} to ${updates[k]}`, JSON.stringify({ field: key, old: old[k], new: updates[k] }));
+        }
+      }
+      if (updates.setterId !== undefined && updates.setterId !== old.setterId) {
+        const oldSetter = old.setterId ? reps.find((r) => r.id === old.setterId)?.name ?? old.setterId : 'none';
+        const newSetter = updates.setterId ? reps.find((r) => r.id === updates.setterId)?.name ?? updates.setterId : 'none';
+        logProjectActivity(id, 'setter_assigned', `Setter changed from ${oldSetter} to ${newSetter}`, JSON.stringify({ oldSetterId: old.setterId, newSetterId: updates.setterId }));
+      }
+    }
+
     // Persist to DB (fire and forget — local state is source of truth for UI)
     const dbUpdates: Record<string, unknown> = {};
     if (updates.phase !== undefined) dbUpdates.phase = updates.phase;
@@ -270,12 +383,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (updates.m2Paid !== undefined) dbUpdates.m2Paid = updates.m2Paid;
     if (updates.m2Amount !== undefined) dbUpdates.m2Amount = updates.m2Amount;
     if (updates.m3Amount !== undefined) dbUpdates.m3Amount = updates.m3Amount;
+    if (updates.installer !== undefined) dbUpdates.installer = updates.installer;
+    if (updates.financer !== undefined) dbUpdates.financer = updates.financer;
+    if (updates.productType !== undefined) dbUpdates.productType = updates.productType;
+    if (updates.kWSize !== undefined) dbUpdates.kWSize = updates.kWSize;
+    if (updates.netPPW !== undefined) dbUpdates.netPPW = updates.netPPW;
+    if (updates.setterId !== undefined) dbUpdates.setterId = updates.setterId;
+    if (updates.soldDate !== undefined) dbUpdates.soldDate = updates.soldDate;
+    if (updates.baselineOverride !== undefined) dbUpdates.baselineOverrideJson = updates.baselineOverride ? JSON.stringify(updates.baselineOverride) : null;
     if (Object.keys(dbUpdates).length > 0) {
-      fetch(`/api/projects/${id}`, {
+      persistFetch(`/api/projects/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dbUpdates),
-      }).catch(console.error);
+      }, 'Failed to save project changes').catch(() => {});
     }
 
     setProjects((prev) => {
@@ -327,11 +448,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         }
 
+        const isSubDealerDeal = !!old.subDealerId;
         const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance';
         const isInstalled = newPhase === 'Installed' && old.phase !== 'Installed';
         const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
 
-        if (isAcceptance || isInstalled) {
+        // Sub-dealer deals skip M1 payroll entirely — only M2 at Installed and M3 at PTO
+        if ((isAcceptance && !isSubDealerDeal) || isInstalled) {
           const stage: 'M1' | 'M2' = isAcceptance ? 'M1' : 'M2';
           const payDate = isAcceptance ? getM1PayDate() : getM2PayDate();
           const fullAmount = isAcceptance ? old.m1Amount : old.m2Amount;
@@ -349,11 +472,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const m3 = Math.round(fullAmount * ((100 - installPayPct) / 100) * 100) / 100;
             updated = updated.map((p) => p.id === id ? { ...p, m3Amount: m3 } : p);
             // Persist m3Amount to DB
-            fetch(`/api/projects/${id}`, {
+            persistFetch(`/api/projects/${id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ m3Amount: m3 }),
-            }).catch(console.error);
+            }, 'Failed to save M3 amount').catch(() => {});
           }
 
           const ts = Date.now();
@@ -409,6 +532,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
               });
             }
 
+            // ── Trainer override M2 entries (80% of override at Installed) ──
+            if (isInstalled) {
+              // Closer's trainer
+              const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
+              if (closerTrainerAssignment) {
+                const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
+                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId).length;
+                const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
+                const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * 0.80);
+                if (m2TrainerAmount > 0) {
+                  newEntries.push({
+                    id: `pay_${ts}_m2_trainer_c`,
+                    repId: closerTrainerAssignment.trainerId,
+                    repName: trainerRep?.name ?? '',
+                    projectId: id,
+                    customerName: old.customerName,
+                    amount: m2TrainerAmount,
+                    type: 'Deal',
+                    paymentStage: 'Trainer',
+                    status: 'Draft',
+                    date: payDate,
+                    notes: `Trainer override M2 — ${closerRep?.name ?? old.repName} ($${overrideRate.toFixed(2)}/W)`,
+                  });
+                }
+              }
+
+              // Setter's trainer
+              if (old.setterId) {
+                const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
+                if (setterTrainerAssignment) {
+                  const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
+                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId).length;
+                  const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
+                  const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * 0.80);
+                  if (m2SetterTrainerAmount > 0) {
+                    const setterRep = reps.find(r => r.id === old.setterId);
+                    newEntries.push({
+                      id: `pay_${ts}_m2_trainer_s`,
+                      repId: setterTrainerAssignment.trainerId,
+                      repName: setterTrainerRep?.name ?? '',
+                      projectId: id,
+                      customerName: old.customerName,
+                      amount: m2SetterTrainerAmount,
+                      type: 'Deal',
+                      paymentStage: 'Trainer',
+                      status: 'Draft',
+                      date: payDate,
+                      notes: `Trainer override M2 — ${setterRep?.name ?? old.setterName ?? ''} ($${setterOverrideRate.toFixed(2)}/W)`,
+                    });
+                  }
+                }
+              }
+            }
+
             const validEntries = newEntries.filter((e) => e.amount > 0);
             // Persist M1/M2 entries to DB
             validEntries.forEach((entry) => persistPayrollEntry(entry));
@@ -447,6 +624,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 notes: '',
               });
 
+              // ── Trainer override M3 entries (20% of override at PTO) ──
+              // Closer's trainer
+              const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
+              if (closerTrainerAssignment) {
+                const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
+                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId).length;
+                const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
+                const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * 0.20);
+                if (m3TrainerAmount > 0) {
+                  const closerRep = reps.find(r => r.id === old.repId);
+                  newEntries.push({
+                    id: `pay_${ts}_m3_trainer_c`,
+                    repId: closerTrainerAssignment.trainerId,
+                    repName: trainerRep?.name ?? '',
+                    projectId: id,
+                    customerName: old.customerName,
+                    amount: m3TrainerAmount,
+                    type: 'Deal',
+                    paymentStage: 'Trainer',
+                    status: 'Draft',
+                    date: payDate,
+                    notes: `Trainer override M3 — ${closerRep?.name ?? old.repName}`,
+                  });
+                }
+              }
+
+              // Setter's trainer
+              if (old.setterId) {
+                const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
+                if (setterTrainerAssignment) {
+                  const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
+                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId).length;
+                  const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
+                  const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * 0.20);
+                  if (m3SetterTrainerAmount > 0) {
+                    const setterRep = reps.find(r => r.id === old.setterId);
+                    newEntries.push({
+                      id: `pay_${ts}_m3_trainer_s`,
+                      repId: setterTrainerAssignment.trainerId,
+                      repName: setterTrainerRep?.name ?? '',
+                      projectId: id,
+                      customerName: old.customerName,
+                      amount: m3SetterTrainerAmount,
+                      type: 'Deal',
+                      paymentStage: 'Trainer',
+                      status: 'Draft',
+                      date: payDate,
+                      notes: `Trainer override M3 — ${setterRep?.name ?? old.setterName ?? ''}`,
+                    });
+                  }
+                }
+              }
+
               const validM3 = newEntries.filter((e) => e.amount > 0);
               // Persist M3 entries to DB
               validM3.forEach((entry) => persistPayrollEntry(entry));
@@ -478,14 +708,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           label: 'v1',
           effectiveFrom: '2020-01-01',
           effectiveTo: null,
-          rates: { type: 'flat', closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}) },
+          rates: { type: 'flat', closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) },
         };
         const instId = idMaps.installerNameToId[installer];
         if (instId) {
           fetch('/api/installer-pricing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ installerId: instId, label: 'v1', effectiveFrom: '2020-01-01', rateType: 'flat', tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW, kiloPerW: baseline.kiloPerW }] }),
+            body: JSON.stringify({ installerId: instId, label: 'v1', effectiveFrom: '2020-01-01', rateType: 'flat', tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW, kiloPerW: baseline.kiloPerW, subDealerPerW: baseline.subDealerPerW ?? null }] }),
           }).catch(console.error);
         }
         return [...prev, newVersion];
@@ -496,11 +726,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fetch(`/api/installer-pricing/${existing.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW ?? null, kiloPerW: baseline.kiloPerW }] }),
+        body: JSON.stringify({ tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW ?? null, kiloPerW: baseline.kiloPerW, subDealerPerW: baseline.subDealerPerW ?? null }] }),
       }).catch(console.error);
       return prev.map((v, i) =>
         i === activeIdx
-          ? { ...v, rates: { type: 'flat' as const, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}) } }
+          ? { ...v, rates: { type: 'flat' as const, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) } }
           : v,
       );
     });
@@ -557,13 +787,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
   const updateSolarTechProduct = (id: string, updates: Partial<SolarTechProduct>) =>
     setSolarTechProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...updates } : p));
-  const updateSolarTechTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number }>) =>
+  const updateSolarTechTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) =>
     setSolarTechProducts((prev) => prev.map((p) => p.id !== productId ? p : {
       ...p,
       tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
         ...t,
         ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
         ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
+        ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
       }),
     }));
 
@@ -577,13 +808,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProductCatalogProducts((prev) => [...prev, product]);
   const updateProductCatalogProduct = (id: string, updates: Partial<ProductCatalogProduct>) =>
     setProductCatalogProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...updates } : p));
-  const updateProductCatalogTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number }>) =>
+  const updateProductCatalogTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) =>
     setProductCatalogProducts((prev) => prev.map((p) => p.id !== productId ? p : {
       ...p,
       tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
         ...t,
         ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
         ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
+        ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
       }),
     }));
   const removeProductCatalogProduct = (id: string) =>
@@ -610,6 +842,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ),
         { id: newId, productId, label, effectiveFrom, effectiveTo: null, tiers },
       ];
+    });
+  };
+
+  const deleteProductCatalogPricingVersions = (versionIds: string[]) => {
+    setProductCatalogPricingVersions((prev) => prev.filter((v) => !versionIds.includes(v.id)));
+    // Persist each deletion to DB
+    versionIds.forEach((id) => {
+      fetch(`/api/product-pricing/${id}`, { method: 'DELETE' }).catch(console.error);
     });
   };
 
@@ -703,12 +943,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentRole(role);
     setCurrentRepId(repId ?? null);
     setCurrentRepName(repName ?? null);
+    if (role) localStorage.setItem('kilo-role', role);
+    else localStorage.removeItem('kilo-role');
+    if (repId) localStorage.setItem('kilo-rep-id', repId);
+    else localStorage.removeItem('kilo-rep-id');
+    if (repName) localStorage.setItem('kilo-rep-name', repName);
+    else localStorage.removeItem('kilo-rep-name');
   };
 
   const logout = () => {
     setCurrentRole(null);
     setCurrentRepId(null);
     setCurrentRepName(null);
+    localStorage.removeItem('kilo-role');
+    localStorage.removeItem('kilo-rep-id');
+    localStorage.removeItem('kilo-rep-name');
   };
 
   const addDeal = (
@@ -723,15 +972,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ) => {
     // Only add the project. Payroll entries are now auto-drafted when
     // milestone phases are reached (Acceptance → M1, Installed → M2).
+    // Trainer override entries are auto-drafted at M2 (80%) and M3 (20%).
     setProjects((prev) => [...prev, project]);
+
+    // Log creation activity (fire-and-forget, will use the local id first — updated when DB id arrives)
+    logProjectActivity(project.id, 'created', 'Project created');
 
     // Persist to DB
     const installerId = idMaps.installerNameToId[project.installer];
     const financerId = idMaps.financerNameToId[project.financer];
-    if (!installerId || !financerId) {
-      console.error('[addDeal] Cannot persist: missing ID mapping', { installer: project.installer, financer: project.financer, installerId, financerId });
-    }
-    if (installerId && financerId) {
+
+    const persistProject = (fId: string) => {
       fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -741,7 +992,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setterId: project.setterId || null,
           soldDate: project.soldDate,
           installerId,
-          financerId,
+          financerId: fId,
           productType: project.productType,
           kWSize: project.kWSize,
           netPPW: project.netPPW,
@@ -755,13 +1006,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
           prepaidSubType: project.prepaidSubType || null,
           leadSource: project.leadSource || null,
           blitzId: project.blitzId || null,
+          subDealerId: project.subDealerId || null,
         }),
       }).then((res) => res.json()).then((created) => {
         // Update local state with the DB-assigned id
         if (created.id && created.id !== project.id) {
           setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, id: created.id } : p));
         }
-      }).catch(console.error);
+      }).catch((err) => {
+        console.error('[addDeal] persist failed:', err);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save new deal' }));
+        }
+      });
+    };
+
+    if (!installerId) {
+      console.error('[addDeal] Cannot persist: missing installer ID mapping', { installer: project.installer });
+      return;
+    }
+
+    if (financerId) {
+      persistProject(financerId);
+    } else if (project.productType === 'Cash' || project.financer === 'Cash') {
+      // Cash deals: financer record may not exist yet — create it on the fly
+      fetch('/api/financers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Cash' }),
+      })
+        .then((res) => res.json())
+        .then((created) => {
+          const newId = created.id as string;
+          setIdMaps((prev) => ({
+            ...prev,
+            financerNameToId: { ...prev.financerNameToId, Cash: newId },
+          }));
+          persistProject(newId);
+        })
+        .catch((err) => {
+          console.error('[addDeal] Cash financer creation failed:', err);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer creation error' }));
+          }
+        });
+    } else {
+      console.error('[addDeal] Cannot persist: missing financer ID mapping', { financer: project.financer });
     }
   };
 
@@ -771,17 +1061,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e))
     );
     // Persist bulk status update
-    fetch('/api/payroll', {
+    persistFetch('/api/payroll', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: entryIds, status: 'Pending' }),
-    }).catch(console.error);
+    }, 'Failed to update payroll status').catch(() => {});
   };
 
   return (
     <AppContext.Provider
       value={{
         dbReady,
+        dataError,
         currentRole,
         currentRepId,
         currentRepName,
@@ -834,6 +1125,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addProductCatalogPricingVersion,
         updateProductCatalogPricingVersion,
         createNewProductCatalogVersion,
+        deleteProductCatalogPricingVersions,
         deleteInstaller,
         installerPrepaidOptions,
         getInstallerPrepaidOptions,
@@ -843,6 +1135,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         installerPayConfigs,
         setInstallerPayConfigs,
         updateInstallerPayConfig,
+        subDealers,
+        addSubDealer,
+        removeSubDealer,
+        unreadMentionCount,
+        refreshMentionCount,
       }}
     >
       {children}

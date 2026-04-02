@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, Fragment } from 'react';
+import { useEffect, useRef, useState, useMemo, Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../../lib/context';
@@ -10,22 +10,24 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Menu,
   X,
   HelpCircle,
 } from 'lucide-react';
+import { useClerk } from '@clerk/nextjs';
 import { CommandPalette, ShortcutsOverlay } from '../../lib/command-palette';
+import InstallPrompt from './components/InstallPrompt';
+import BottomNav from './components/BottomNav';
 
 // ─── Nav definitions (shared with CommandPalette) ──────────────────────────
 // Types and arrays live in lib/nav-items to avoid a circular dependency.
 // They are re-exported from here for any consumers that import from layout.
 
 // Re-export nav definitions so external modules can import them from layout.
-export { REP_NAV, ADMIN_NAV } from '../../lib/nav-items';
+export { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV } from '../../lib/nav-items';
 export type { NavItem, NavGroupDef, AnyNavItem } from '../../lib/nav-items';
 
 // Local imports — only what is directly referenced in this file.
-import { REP_NAV, ADMIN_NAV } from '../../lib/nav-items';
+import { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV } from '../../lib/nav-items';
 import type { NavItem } from '../../lib/nav-items';
 
 // ─── NavGroup component ────────────────────────────────────────────────────
@@ -158,10 +160,41 @@ function NavGroup({
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentRole, currentRepName, logout } = useApp();
+  const { currentRole, currentRepName, currentRepId, trainerAssignments, logout, projects, payrollEntries, dataError } = useApp();
+  const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [unreadMentionCount, setUnreadMentionCount] = useState(0);
+
+  // Fetch unread mention count periodically
+  useEffect(() => {
+    if (!currentRepId) return;
+    const fetchCount = () => {
+      fetch(`/api/mentions?userId=${currentRepId}`)
+        .then((res) => { if (!res.ok) throw new Error('fail'); return res.json(); })
+        .then((data) => {
+          const items = Array.isArray(data) ? data : data.mentions ?? [];
+          // Count mentions that are either unread OR have uncompleted check items
+          const actionable = items.filter((m: any) => {
+            const isUnread = !m.readAt;
+            const hasOpenTasks = (m.message?.checkItems ?? []).some((ci: any) => !ci.completed);
+            return isUnread || hasOpenTasks;
+          }).length;
+          setUnreadMentionCount(actionable);
+        })
+        .catch(() => setUnreadMentionCount(0));
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 60_000);
+    return () => clearInterval(interval);
+  }, [currentRepId]);
+
+  // Persist sidebar collapse state in localStorage (#8)
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar-collapsed');
+    if (saved === 'true') setCollapsed(true);
+  }, []);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -242,13 +275,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener('keydown', handler);
   }, [paletteOpen, shortcutsOpen, router]);
 
+  // ── Notification badge counts ──────────────────────────────────────────────
+  const navBadges = useMemo(() => {
+    const badges: Record<string, number> = {};
+    if (!projects || !payrollEntries) return badges;
+
+    if (currentRole === 'admin') {
+      // Admin: Projects badge shows flagged + stale counts (admin's responsibility)
+      const STALE_PHASES = new Set(['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed']);
+      const now = Date.now();
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      const flaggedCount = projects.filter((p) => p.flagged).length;
+      const staleCount = projects.filter((p) => {
+        if (!STALE_PHASES.has(p.phase)) return false;
+        const soldMs = new Date(p.soldDate).getTime();
+        return (now - soldMs) > thirtyDaysMs;
+      }).length;
+      const projectsBadge = flaggedCount + staleCount;
+      if (projectsBadge > 0) badges['Projects'] = projectsBadge;
+
+      // Payroll badge: count of Draft entries
+      const draftCount = payrollEntries.filter((e) => e.status === 'Draft').length;
+      if (draftCount > 0) badges['Payroll'] = draftCount;
+    }
+
+    // Rep/sub-dealer: no project or payroll badges — their action items come from chatter (unreadMentionCount handled separately)
+
+    return badges;
+  }, [projects, payrollEntries, currentRole]);
+
   if (!currentRole) return null;
 
-  const navItems = currentRole === 'admin' ? ADMIN_NAV : REP_NAV;
+  const isTrainer = trainerAssignments.some((a) => a.trainerId === currentRepId);
+  const repNav = isTrainer ? REP_NAV : REP_NAV.filter((item) => !('href' in item && item.href === '/dashboard/training'));
+  const navItems = currentRole === 'admin' ? ADMIN_NAV : currentRole === 'sub-dealer' ? SUB_DEALER_NAV : repNav;
 
   const handleLogout = () => {
     logout();
-    router.push('/');
+    signOut({ redirectUrl: '/sign-in' });
   };
 
   const initials = currentRepName
@@ -261,18 +325,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--navy-base)' }}>
 
-      {/* ── Mobile top bar (hidden on md+) ─────────────────────────────── */}
+      {/* ── Mobile top bar (hidden on md+) — minimal: logo only ────────── */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center gap-3 px-4 h-[60px] border-b border-slate-800/60"
+        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-center px-4 h-[48px] border-b border-slate-800/60"
         style={{ backgroundColor: 'var(--navy-card)' }}
       >
-        <button
-          onClick={() => setMobileOpen(true)}
-          aria-label="Open navigation menu"
-          className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
         <div className="flex items-baseline gap-1">
           <span className="text-white font-black tracking-tighter text-xl leading-none">kilo</span>
           <span className="text-white/70 font-light tracking-[0.2em] text-[10px] uppercase">ENERGY</span>
@@ -346,7 +403,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
           {/* Desktop: collapse chevron */}
           <button
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className="hidden md:flex text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
           >
@@ -417,7 +474,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       } ${showCollapsed ? 'justify-center' : ''}`}
                     >
                       {/* Icon bounces once whenever this route becomes active */}
-                      <Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${isActive ? ' nav-icon-active' : ''}`} />
+                      <span className="relative flex-shrink-0">
+                        <Icon className={`w-4 h-4 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${isActive ? ' nav-icon-active' : ''}`} />
+                        {(() => {
+                          const badgeCount = (navBadges[label] ?? 0) + (label === 'Projects' ? unreadMentionCount : 0);
+                          if (badgeCount <= 0) return null;
+                          return (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-white bg-red-500 shadow-sm shadow-red-500/30">
+                              {badgeCount > 99 ? '99+' : badgeCount}
+                            </span>
+                          );
+                        })()}
+                      </span>
                       {!showCollapsed && <span className="truncate">{label}</span>}
                     </Link>
                     {/* Tooltip popover — only shown when sidebar is collapsed */}
@@ -496,12 +564,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      {/* pt-[60px] reserves space for the fixed mobile top bar; reset on md+ */}
+      {/* pt-[48px] reserves space for the fixed mobile top bar; reset on md+ */}
       <main
         ref={mainRef}
-        className="flex-1 overflow-y-auto pt-[60px] md:pt-0 relative"
+        className="flex-1 overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
         style={{ backgroundColor: 'var(--navy-base)' }}
       >
+        {dataError && (
+          <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+            Failed to load data. Please check your connection and refresh.
+          </div>
+        )}
         <div key={pathname} className="animate-page-enter">
           {children}
         </div>
@@ -534,6 +607,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onClose={() => setShortcutsOpen(false)}
         paletteOpen={paletteOpen}
       />
+
+      {/* ── PWA install prompt (mobile only) ───────────────────────────── */}
+      <InstallPrompt />
+
+      {/* ── Bottom navigation bar (mobile only, hidden on md+) ────────── */}
+      <BottomNav role={currentRole} isTrainer={isTrainer} />
     </div>
   );
 }

@@ -15,7 +15,8 @@
  *  - excludeRepId    (optional) rep id to omit from the list (typically the closer)
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, Search, UserCircle2, X } from 'lucide-react';
 import { Rep, TrainerAssignment } from '../../../lib/data';
 
@@ -81,13 +82,36 @@ export function SetterPickerPopover({
     setSearchQuery('');
   };
 
+  // Portal dropdown position
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
+
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    const onScrollOrResize = () => updatePosition();
+    window.addEventListener('scroll', onScrollOrResize, { capture: true });
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', onScrollOrResize, { capture: true } as EventListenerOptions);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [open, updatePosition]);
+
   // Dismiss on outside click or Escape key
   useEffect(() => {
     if (!open) return;
     const handlePointerDown = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        closePopover();
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      closePopover();
     };
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closePopover();
@@ -162,10 +186,12 @@ export function SetterPickerPopover({
         </svg>
       </button>
 
-      {/* ── Dropdown panel ── */}
-      {open && (
+      {/* ── Dropdown panel (portaled) ── */}
+      {open && typeof document !== 'undefined' && createPortal(
         <div
-          className="absolute left-0 top-full mt-1.5 z-50 w-full min-w-[240px] bg-slate-800 border border-slate-700 rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel"
+          ref={dropdownRef}
+          className="fixed z-[9999] min-w-[240px] bg-slate-800 border border-slate-700 rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel"
+          style={{ top: dropdownPos.top, left: dropdownPos.left, width: Math.max(dropdownPos.width, 240) }}
           role="listbox"
           aria-label="Select setter"
         >
@@ -282,7 +308,8 @@ export function SetterPickerPopover({
             {/* Bottom breathing room */}
             <div className="h-1" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

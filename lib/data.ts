@@ -91,8 +91,20 @@ export interface Rep {
   name: string; // computed display name (keep for backward compat)
   email: string;
   phone: string;
-  role: 'rep';
+  role: 'rep' | 'sub-dealer';
   repType: 'closer' | 'setter' | 'both';
+  canRequestBlitz?: boolean;
+  canCreateBlitz?: boolean;
+}
+
+export interface SubDealer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'sub-dealer';
 }
 
 export interface TrainerOverrideTier {
@@ -179,6 +191,12 @@ export interface Project {
   // Lead source + blitz attribution
   leadSource?: string;
   blitzId?: string;
+  // Cancellation tracking
+  cancellationReason?: string;
+  cancellationNotes?: string;
+  // Sub-dealer attribution
+  subDealerId?: string;
+  subDealerName?: string;
 }
 
 export interface PayrollEntry {
@@ -189,7 +207,7 @@ export interface PayrollEntry {
   customerName: string;
   amount: number;
   type: 'Deal' | 'Bonus';
-  paymentStage: 'M1' | 'M2' | 'M3' | 'Bonus';
+  paymentStage: 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer';
   status: 'Draft' | 'Pending' | 'Paid';
   date: string;
   notes: string;
@@ -212,6 +230,12 @@ export const REPS: Rep[] = [
   { id: 'rep3', firstName: 'James',  lastName: 'Park',   name: 'James Park',    email: 'james@kiloenergy.com',  phone: '(555) 100-0003', role: 'rep', repType: 'closer' },
   { id: 'rep4', firstName: 'Taylor', lastName: 'Brooks', name: 'Taylor Brooks', email: 'taylor@kiloenergy.com', phone: '(555) 100-0004', role: 'rep', repType: 'setter' },
   { id: 'rep5', firstName: 'Jordan', lastName: 'Lee',    name: 'Jordan Lee',    email: 'jordan@kiloenergy.com', phone: '(555) 100-0005', role: 'rep', repType: 'both' },
+];
+
+export const SUB_DEALERS: SubDealer[] = [
+  { id: 'sd1', firstName: 'Chris', lastName: 'Nguyen',  name: 'Chris Nguyen',  email: 'chris@solardealers.com',  phone: '(555) 200-0001', role: 'sub-dealer' },
+  { id: 'sd2', firstName: 'Dana',  lastName: 'Morales', name: 'Dana Morales',  email: 'dana@greendealers.com',   phone: '(555) 200-0002', role: 'sub-dealer' },
+  { id: 'sd3', firstName: 'Pat',   lastName: 'Kim',     name: 'Pat Kim',       email: 'pat@sunstardealers.com',  phone: '(555) 200-0003', role: 'sub-dealer' },
 ];
 
 export const PROJECTS: Project[] = [
@@ -554,6 +578,14 @@ export const PAYROLL_ENTRIES: PayrollEntry[] = [
   { id: 'pay_p14_m1', repId: 'rep5', repName: 'Jordan Lee', projectId: 'proj14', customerName: 'Fiona Castillo', amount: 1050, type: 'Deal', paymentStage: 'M1', status: 'Pending', date: '2026-02-07', notes: '' },
   // proj15 — On Hold (Jordan Lee) — no new entries (was past Acceptance before hold)
   { id: 'pay_p15_m1', repId: 'rep5', repName: 'Jordan Lee', projectId: 'proj15', customerName: 'Thomas & Gwen Burke', amount: 1232, type: 'Deal', paymentStage: 'M1', status: 'Draft', date: '2026-02-21', notes: '' },
+  // ── Trainer override entries ──
+  // Alex Rivera (rep1) earns trainer overrides from trainee James Park (rep3)
+  { id: 'pay_t1_p7', repId: 'rep1', repName: 'Alex Rivera', projectId: 'proj7', customerName: 'William Foster', amount: 1680, type: 'Deal', paymentStage: 'Trainer', status: 'Paid', date: '2025-12-12', notes: 'Trainer override — James Park (Deal 1, $0.20/W)' },
+  { id: 'pay_t1_p8', repId: 'rep1', repName: 'Alex Rivera', projectId: 'proj8', customerName: 'Helen & Mark Russo', amount: 1020, type: 'Deal', paymentStage: 'Trainer', status: 'Pending', date: '2026-01-31', notes: 'Trainer override — James Park (Deal 2, $0.20/W)' },
+  // Maria Santos (rep2) earns trainer overrides from trainee Jordan Lee (rep5)
+  { id: 'pay_t2_p13', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj13', customerName: 'Kevin & Sara Okonkwo', amount: 1596, type: 'Deal', paymentStage: 'Trainer', status: 'Paid', date: '2025-12-26', notes: 'Trainer override — Jordan Lee (Deal 1, $0.20/W)' },
+  { id: 'pay_t2_p14', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj14', customerName: 'Fiona Castillo', amount: 1050, type: 'Deal', paymentStage: 'Trainer', status: 'Pending', date: '2026-02-07', notes: 'Trainer override — Jordan Lee (Deal 2, $0.20/W)' },
+  { id: 'pay_t2_p15', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj15', customerName: 'Thomas & Gwen Burke', amount: 1232, type: 'Deal', paymentStage: 'Trainer', status: 'Draft', date: '2026-02-21', notes: 'Trainer override — Jordan Lee (Deal 3, $0.20/W)' },
 ];
 
 const _SEED_PAYROLL_ENTRIES: PayrollEntry[] = [
@@ -798,6 +830,7 @@ export interface SolarTechTier {
   closerPerW: number;
   setterPerW: number;  // always closerPerW + 0.10
   kiloPerW: number;
+  subDealerPerW?: number;
 }
 
 export interface SolarTechProduct {
@@ -819,7 +852,8 @@ export const SOLARTECH_FAMILY_FINANCER: Record<string, string> = {
 };
 
 // Helper to build tiers array from parallel closer/kilo arrays
-function makeTiers(closer: number[], kilo: number[]): SolarTechTier[] {
+// subDealerOffset: if provided, subDealerPerW = kiloPerW + offset (e.g., 0.30)
+function makeTiers(closer: number[], kilo: number[], subDealerOffset?: number): SolarTechTier[] {
   const breaks = [1, 5, 10, 13];
   return closer.map((c, i) => ({
     minKW: breaks[i],
@@ -827,6 +861,7 @@ function makeTiers(closer: number[], kilo: number[]): SolarTechTier[] {
     closerPerW: c,
     setterPerW: Math.round((c + 0.10) * 100) / 100,
     kiloPerW: kilo[i],
+    ...(subDealerOffset != null ? { subDealerPerW: Math.round((kilo[i] + subDealerOffset) * 100) / 100 } : {}),
   }));
 }
 
@@ -837,56 +872,56 @@ export const SOLARTECH_PRODUCTS: SolarTechProduct[] = [
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'Q.Peak DUO BLK ML-G10.C+ 410 + Enphase IQ8HC',
-    tiers: makeTiers([3.45, 3.10, 2.90, 2.85], [2.90, 2.50, 2.35, 2.35]),
+    tiers: makeTiers([3.45, 3.10, 2.90, 2.85], [2.90, 2.50, 2.35, 2.35], 0.30),
   },
   {
     id: 'gl-qtron-1pw3',
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'Q.TRON + 1x Powerwall 3',
-    tiers: makeTiers([5.98, 4.57, 3.66, 3.61], [5.43, 3.97, 3.11, 3.11]),
+    tiers: makeTiers([5.98, 4.57, 3.66, 3.61], [5.43, 3.97, 3.11, 3.11], 0.30),
   },
   {
     id: 'gl-qtron-2pw3',
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'Q.TRON + 2x Powerwall 3',
-    tiers: makeTiers([8.28, 5.94, 4.47, 4.42], [7.73, 5.34, 3.92, 3.92]),
+    tiers: makeTiers([8.28, 5.94, 4.47, 4.42], [7.73, 5.34, 3.92, 3.92], 0.30),
   },
   {
     id: 'gl-qtron-3pw3',
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'Q.TRON + 3x Powerwall 3',
-    tiers: makeTiers([10.58, 7.30, 5.29, 5.24], [10.03, 6.70, 4.74, 4.74]),
+    tiers: makeTiers([10.58, 7.30, 5.29, 5.24], [10.03, 6.70, 4.74, 4.74], 0.30),
   },
   {
     id: 'gl-hyundai-dc-pw3',
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'Hyundai 440 DC + Powerwall 3',
-    tiers: makeTiers([2.85, 2.60, 2.50, 2.45], [2.35, 1.95, 1.90, 1.90]),
+    tiers: makeTiers([2.85, 2.60, 2.50, 2.45], [2.35, 1.95, 1.90, 1.90], 0.30),
   },
   {
     id: 'gl-hyundai-enphase',
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'Hyundai 440 + Enphase',
-    tiers: makeTiers([3.20, 2.90, 2.80, 2.75], [2.70, 2.25, 2.20, 2.20]),
+    tiers: makeTiers([3.20, 2.90, 2.80, 2.75], [2.70, 2.25, 2.20, 2.20], 0.30),
   },
   {
     id: 'gl-spr-dc-pw3',
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'SPR-MAX3 DC + Powerwall 3',
-    tiers: makeTiers([2.90, 2.65, 2.50, 2.45], [2.40, 2.00, 1.90, 1.90]),
+    tiers: makeTiers([2.90, 2.65, 2.50, 2.45], [2.40, 2.00, 1.90, 1.90], 0.30),
   },
   {
     id: 'gl-spr-enphase',
     family: 'Goodleap',
     financer: 'Goodleap',
     name: 'SPR-MAX3 + Enphase',
-    tiers: makeTiers([3.30, 3.05, 2.90, 2.85], [2.80, 2.40, 2.30, 2.30]),
+    tiers: makeTiers([3.30, 3.05, 2.90, 2.85], [2.80, 2.40, 2.30, 2.30], 0.30),
   },
 
   // ── Enfin Family ─────────────────────────────────────────────────────────────
@@ -895,21 +930,21 @@ export const SOLARTECH_PRODUCTS: SolarTechProduct[] = [
     family: 'Enfin',
     financer: 'Enfin',
     name: 'Q.Peak DUO DC + Powerwall 3',
-    tiers: makeTiers([3.20, 2.85, 2.80, 2.75], [2.70, 2.30, 2.25, 2.25]),
+    tiers: makeTiers([3.20, 2.85, 2.80, 2.75], [2.70, 2.30, 2.25, 2.25], 0.30),
   },
   {
     id: 'ef-qpeak-tesla',
     family: 'Enfin',
     financer: 'Enfin',
     name: 'Q.Peak DUO + Tesla PVI',
-    tiers: makeTiers([3.40, 3.05, 2.95, 2.90], [2.90, 2.50, 2.40, 2.40]),
+    tiers: makeTiers([3.40, 3.05, 2.95, 2.90], [2.90, 2.50, 2.40, 2.40], 0.30),
   },
   {
     id: 'ef-qpeak-enphase',
     family: 'Enfin',
     financer: 'Enfin',
     name: 'Q.Peak DUO + Enphase',
-    tiers: makeTiers([3.25, 2.90, 2.75, 2.70], [2.75, 2.35, 2.20, 2.20]),
+    tiers: makeTiers([3.25, 2.90, 2.75, 2.70], [2.75, 2.35, 2.20, 2.20], 0.30),
   },
 
   // ── LightReach Family ────────────────────────────────────────────────────────
@@ -918,63 +953,63 @@ export const SOLARTECH_PRODUCTS: SolarTechProduct[] = [
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'Hyundai 440 DC + Powerwall 3',
-    tiers: makeTiers([3.10, 2.75, 2.70, 2.65], [2.60, 2.20, 2.15, 2.15]),
+    tiers: makeTiers([3.10, 2.75, 2.70, 2.65], [2.60, 2.20, 2.15, 2.15], 0.30),
   },
   {
     id: 'lr-hyundai-tesla',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'Hyundai 440 + Tesla PVI',
-    tiers: makeTiers([3.30, 2.90, 2.85, 2.80], [2.80, 2.35, 2.30, 2.30]),
+    tiers: makeTiers([3.30, 2.90, 2.85, 2.80], [2.80, 2.35, 2.30, 2.30], 0.30),
   },
   {
     id: 'lr-hyundai-enphase',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'Hyundai 440 + Enphase',
-    tiers: makeTiers([3.45, 3.05, 3.00, 2.95], [2.95, 2.50, 2.45, 2.45]),
+    tiers: makeTiers([3.45, 3.05, 3.00, 2.95], [2.95, 2.50, 2.45, 2.45], 0.30),
   },
   {
     id: 'lr-spr-tesla',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'SPR-MAX3 + Tesla PVI',
-    tiers: makeTiers([3.30, 3.00, 2.90, 2.85], [2.85, 2.45, 2.35, 2.35]),
+    tiers: makeTiers([3.30, 3.00, 2.90, 2.85], [2.85, 2.45, 2.35, 2.35], 0.30),
   },
   {
     id: 'lr-spr-dc-pw3',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'SPR-MAX3 DC + Powerwall 3',
-    tiers: makeTiers([3.10, 2.80, 2.70, 2.65], [2.65, 2.25, 2.15, 2.15]),
+    tiers: makeTiers([3.10, 2.80, 2.70, 2.65], [2.65, 2.25, 2.15, 2.15], 0.30),
   },
   {
     id: 'lr-qpeak-tesla',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'Q.Peak DUO + Tesla PVI',
-    tiers: makeTiers([3.35, 3.05, 2.95, 2.90], [2.90, 2.50, 2.40, 2.40]),
+    tiers: makeTiers([3.35, 3.05, 2.95, 2.90], [2.90, 2.50, 2.40, 2.40], 0.30),
   },
   {
     id: 'lr-qpeak-enphase',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'Q.Peak DUO + Enphase',
-    tiers: makeTiers([3.60, 3.30, 3.15, 3.10], [3.15, 2.75, 2.60, 2.60]),
+    tiers: makeTiers([3.60, 3.30, 3.15, 3.10], [3.15, 2.75, 2.60, 2.60], 0.30),
   },
   {
     id: 'lr-qpeak-dc-pw3',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'Q.Peak DUO DC + Powerwall 3',
-    tiers: makeTiers([3.15, 2.85, 2.80, 2.75], [2.70, 2.30, 2.25, 2.25]),
+    tiers: makeTiers([3.15, 2.85, 2.80, 2.75], [2.70, 2.30, 2.25, 2.25], 0.30),
   },
   {
     id: 'lr-spr-enphase',
     family: 'Lightreach',
     financer: 'LightReach',
     name: 'SPR-MAX3 + Enphase',
-    tiers: makeTiers([3.50, 3.20, 3.10, 3.05], [3.05, 2.65, 2.55, 2.55]),
+    tiers: makeTiers([3.50, 3.20, 3.10, 3.05], [3.05, 2.65, 2.55, 2.55], 0.30),
   },
 
   // ── Cash/HDM/PE Family ───────────────────────────────────────────────────────
@@ -983,63 +1018,63 @@ export const SOLARTECH_PRODUCTS: SolarTechProduct[] = [
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'Hyundai/SEG 440 DC + Powerwall 3',
-    tiers: makeTiers([3.10, 2.75, 2.70, 2.65], [2.60, 2.20, 2.15, 2.15]),
+    tiers: makeTiers([3.10, 2.75, 2.70, 2.65], [2.60, 2.20, 2.15, 2.15], 0.30),
   },
   {
     id: 'ca-hyundai-tesla',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'Hyundai/SEG 440 + Tesla PVI',
-    tiers: makeTiers([3.30, 2.90, 2.85, 2.80], [2.80, 2.35, 2.30, 2.30]),
+    tiers: makeTiers([3.30, 2.90, 2.85, 2.80], [2.80, 2.35, 2.30, 2.30], 0.30),
   },
   {
     id: 'ca-hyundai-enphase',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'Hyundai/SEG 440 + Enphase',
-    tiers: makeTiers([3.45, 3.05, 3.00, 2.95], [2.95, 2.50, 2.45, 2.45]),
+    tiers: makeTiers([3.45, 3.05, 3.00, 2.95], [2.95, 2.50, 2.45, 2.45], 0.30),
   },
   {
     id: 'ca-spr-dc-pw3',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'SPR-MAX3 DC + Powerwall 3',
-    tiers: makeTiers([3.10, 2.80, 2.70, 2.65], [2.65, 2.25, 2.15, 2.15]),
+    tiers: makeTiers([3.10, 2.80, 2.70, 2.65], [2.65, 2.25, 2.15, 2.15], 0.30),
   },
   {
     id: 'ca-spr-tesla',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'SPR-MAX3 + Tesla PVI',
-    tiers: makeTiers([3.30, 3.00, 2.90, 2.85], [2.85, 2.45, 2.35, 2.35]),
+    tiers: makeTiers([3.30, 3.00, 2.90, 2.85], [2.85, 2.45, 2.35, 2.35], 0.30),
   },
   {
     id: 'ca-spr-enphase',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'SPR-MAX3 + Enphase',
-    tiers: makeTiers([3.50, 3.20, 3.10, 3.05], [3.05, 2.65, 2.55, 2.55]),
+    tiers: makeTiers([3.50, 3.20, 3.10, 3.05], [3.05, 2.65, 2.55, 2.55], 0.30),
   },
   {
     id: 'ca-qpeak-dc-pw3',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'Q.Peak DUO DC + Powerwall 3',
-    tiers: makeTiers([3.15, 2.85, 2.80, 2.75], [2.70, 2.30, 2.25, 2.25]),
+    tiers: makeTiers([3.15, 2.85, 2.80, 2.75], [2.70, 2.30, 2.25, 2.25], 0.30),
   },
   {
     id: 'ca-qpeak-tesla',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'Q.Peak DUO + Tesla PVI',
-    tiers: makeTiers([3.35, 3.05, 2.95, 2.90], [2.90, 2.50, 2.40, 2.40]),
+    tiers: makeTiers([3.35, 3.05, 2.95, 2.90], [2.90, 2.50, 2.40, 2.40], 0.30),
   },
   {
     id: 'ca-qpeak-enphase',
     family: 'Cash/HDM/PE',
     financer: 'Cash',
     name: 'Q.Peak DUO + Enphase',
-    tiers: makeTiers([3.60, 3.30, 3.15, 3.10], [3.15, 2.75, 2.60, 2.60]),
+    tiers: makeTiers([3.60, 3.30, 3.15, 3.10], [3.15, 2.75, 2.60, 2.60], 0.30),
   },
 ];
 
@@ -1065,6 +1100,7 @@ export interface InstallerBaseline {
   closerPerW: number;
   kiloPerW: number;
   setterPerW?: number;
+  subDealerPerW?: number;
 }
 
 // ─── Installer Pricing Version System (Standard track only) ──────────────────
@@ -1077,6 +1113,7 @@ export interface InstallerFlatRate {
   closerPerW: number;
   setterPerW?: number; // undefined = auto (closerPerW + $0.10)
   kiloPerW: number;
+  subDealerPerW?: number;
 }
 
 export interface InstallerTieredKWBand {
@@ -1085,6 +1122,7 @@ export interface InstallerTieredKWBand {
   closerPerW: number;
   setterPerW?: number; // undefined = auto (closerPerW + $0.10)
   kiloPerW: number;
+  subDealerPerW?: number;
 }
 
 export interface InstallerTieredRate {
@@ -1115,6 +1153,7 @@ export interface ProductCatalogTier {
   closerPerW: number;
   setterPerW: number;
   kiloPerW: number;
+  subDealerPerW?: number;
 }
 
 export interface ProductCatalogProduct {
@@ -1151,7 +1190,7 @@ export interface ProductCatalogPricingVersion {
 export const PRODUCT_CATALOG_PRICING_VERSIONS: ProductCatalogPricingVersion[] = [];
 
 // Builds 4 standard kW tiers (1–5, 5–10, 10–13, 13+) from parallel closer/kilo arrays
-export function makeProductCatalogTiers(closer: number[], kilo: number[]): ProductCatalogTier[] {
+export function makeProductCatalogTiers(closer: number[], kilo: number[], subDealerOffset?: number): ProductCatalogTier[] {
   const breaks = [1, 5, 10, 13];
   return closer.map((c, i) => ({
     minKW: breaks[i],
@@ -1159,6 +1198,7 @@ export function makeProductCatalogTiers(closer: number[], kilo: number[]): Produ
     closerPerW: c,
     setterPerW: Math.round((c + 0.10) * 100) / 100,
     kiloPerW: kilo[i],
+    ...(subDealerOffset != null ? { subDealerPerW: Math.round((kilo[i] + subDealerOffset) * 100) / 100 } : {}),
   }));
 }
 

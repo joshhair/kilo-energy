@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useIsHydrated, useFocusTrap } from '../../../lib/hooks';
 import { useApp } from '../../../lib/context';
 import { Search, ChevronRight, Users, Plus, Trash2, Trophy, Award, X } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -49,18 +50,38 @@ const PODIUM_BREATH_CLS: Record<number, string> = {
 };
 
 export default function RepsPage() {
+  return (
+    <Suspense>
+      <RepsPageInner />
+    </Suspense>
+  );
+}
+
+function RepsPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { currentRole, projects, payrollEntries, reps, addRep, removeRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Reps | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filterTab, setFilterTab] = useState<FilterTab>('all');
+
+  const initialFilter = (searchParams.get('filter') ?? 'all') as FilterTab;
+  const [filterTab, setFilterTabState] = useState<FilterTab>(FILTER_TABS.some(t => t.value === initialFilter) ? initialFilter : 'all');
+  const setFilterTab = (v: FilterTab) => {
+    setFilterTabState(v);
+    const params = new URLSearchParams(searchParams.toString());
+    if (v !== 'all') params.set('filter', v); else params.delete('filter');
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
   const isHydrated = useIsHydrated();
   const isAdmin = currentRole === 'admin';
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // ── Add Rep modal state ────────────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
+  const addRepPanelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(addRepPanelRef, showAddModal);
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -160,6 +181,96 @@ export default function RepsPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  // ── Compare mode ───────────────────────────────────────────────────────
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+
+  type ComparePeriod = 'this-week' | 'this-month' | 'last-month' | 'this-quarter' | 'last-quarter' | 'this-year' | 'custom';
+  const PERIOD_OPTIONS: { value: ComparePeriod; label: string }[] = [
+    { value: 'this-week', label: 'This Week' },
+    { value: 'this-month', label: 'This Month' },
+    { value: 'last-month', label: 'Last Month' },
+    { value: 'this-quarter', label: 'This Quarter' },
+    { value: 'last-quarter', label: 'Last Quarter' },
+    { value: 'this-year', label: 'This Year' },
+    { value: 'custom', label: 'Custom' },
+  ];
+  const [comparePeriod, setComparePeriod] = useState<ComparePeriod>('this-month');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+
+  /** Compute date ranges for current period and its "previous" comparison period */
+  const getCompareDateRanges = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const d = now.getDay(); // 0=Sun
+
+    const fmt = (dt: Date) => dt.toISOString().split('T')[0];
+    const startOfWeek = new Date(y, m, now.getDate() - (d === 0 ? 6 : d - 1)); // Monday
+    const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const q = Math.floor(m / 3);
+
+    switch (comparePeriod) {
+      case 'this-week': {
+        const prevStart = new Date(startOfWeek); prevStart.setDate(prevStart.getDate() - 7);
+        const prevEnd = new Date(prevStart); prevEnd.setDate(prevStart.getDate() + 6);
+        return { current: { from: fmt(startOfWeek), to: fmt(endOfWeek), label: 'This Week' }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: 'Last Week' } };
+      }
+      case 'this-month': {
+        const curStart = new Date(y, m, 1);
+        const curEnd = new Date(y, m + 1, 0);
+        const prevStart = new Date(y, m - 1, 1);
+        const prevEnd = new Date(y, m, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: 'This Month' }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: 'Last Month' } };
+      }
+      case 'last-month': {
+        const curStart = new Date(y, m - 1, 1);
+        const curEnd = new Date(y, m, 0);
+        const prevStart = new Date(y, m - 2, 1);
+        const prevEnd = new Date(y, m - 1, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: 'Last Month' }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: 'Month Before' } };
+      }
+      case 'this-quarter': {
+        const curStart = new Date(y, q * 3, 1);
+        const curEnd = new Date(y, q * 3 + 3, 0);
+        const prevStart = new Date(y, (q - 1) * 3, 1);
+        const prevEnd = new Date(y, q * 3, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: `Q${q + 1} ${y}` }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: `Q${q === 0 ? 4 : q} ${q === 0 ? y - 1 : y}` } };
+      }
+      case 'last-quarter': {
+        const pq = q === 0 ? 3 : q - 1;
+        const py = q === 0 ? y - 1 : y;
+        const curStart = new Date(py, pq * 3, 1);
+        const curEnd = new Date(py, pq * 3 + 3, 0);
+        const ppq = pq === 0 ? 3 : pq - 1;
+        const ppy = pq === 0 ? py - 1 : py;
+        const prevStart = new Date(ppy, ppq * 3, 1);
+        const prevEnd = new Date(ppy, ppq * 3 + 3, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: `Q${pq + 1} ${py}` }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: `Q${ppq + 1} ${ppy}` } };
+      }
+      case 'this-year': {
+        const curStart = new Date(y, 0, 1);
+        const curEnd = new Date(y, 11, 31);
+        const prevStart = new Date(y - 1, 0, 1);
+        const prevEnd = new Date(y - 1, 11, 31);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: `${y}` }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: `${y - 1}` } };
+      }
+      case 'custom': {
+        return { current: { from: customFrom, to: customTo, label: 'Custom' }, prev: null };
+      }
+    }
+  };
+
+  const toggleCompareId = (id: string) => {
+    setCompareIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else if (next.size < 3) next.add(id);
+      return next;
+    });
+  };
+
   const filtered = reps.filter((r) => {
     // Search filter
     if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
@@ -208,7 +319,7 @@ export default function RepsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 animate-fade-in-up">
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center justify-between mb-1">
@@ -360,6 +471,113 @@ export default function RepsPage() {
           )
         )}
       </div>
+      {debouncedSearch && (
+        <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full mb-4 inline-block">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+      )}
+
+      {/* ── Compare Reps ──────────────────────────────────────────────────── */}
+      {isAdmin && (
+        <div className="mb-6">
+          <button
+            onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
+            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'}`}
+          >
+            {compareMode ? `Comparing (${compareIds.size}/3) — Click to exit` : 'Compare Reps'}
+          </button>
+          {compareMode && compareIds.size === 0 && (
+            <p className="text-xs text-slate-500 mt-2">Select 2-3 reps below to compare side by side.</p>
+          )}
+        </div>
+      )}
+
+      {/* ── Comparison Cards ─────────────────────────────────────────────── */}
+      {compareMode && compareIds.size >= 2 && (() => {
+        const ranges = getCompareDateRanges();
+        const isInRange = (dateStr: string, from: string, to: string) => {
+          if (!from || !to) return false;
+          return dateStr >= from && dateStr <= to;
+        };
+        const compareReps = reps.filter((r) => compareIds.has(r.id));
+        return (
+          <div className="card-surface rounded-2xl p-5 mb-6 animate-slide-in-scale">
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold text-base">Rep Comparison</h3>
+                {ranges.prev && <span className="text-xs text-slate-500">vs {ranges.prev.label}</span>}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {PERIOD_OPTIONS.map((opt) => (
+                  <button key={opt.value} onClick={() => setComparePeriod(opt.value)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {comparePeriod === 'custom' && (
+                <div className="flex items-center gap-2">
+                  <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
+                    className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  <span className="text-slate-500 text-xs">to</span>
+                  <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
+                    className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+              )}
+            </div>
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${compareReps.length}, 1fr)` }}>
+              {compareReps.map((rep) => {
+                const rp = ranges.current.from && ranges.current.to
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  : [];
+                const rpAll = projects.filter((p) => p.repId === rep.id || p.setterId === rep.id);
+                const dealsClosed = rp.length;
+                const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
+                const avgDealSize = dealsClosed > 0 ? kwSold / dealsClosed : 0;
+                const commissionEarned = ranges.current.from && ranges.current.to
+                  ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to)).reduce((s, e) => s + e.amount, 0)
+                  : 0;
+                const cancelRate = rpAll.length > 0 ? (rpAll.filter((p) => p.phase === 'Cancelled').length / rpAll.length * 100) : 0;
+
+                // Previous period stats
+                const prevDeals = ranges.prev
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
+                  : null;
+                const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
+
+                return (
+                  <div key={rep.id} className="bg-slate-800/40 rounded-xl p-4 text-center">
+                    <div className="flex justify-center mb-2">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 p-[2px]">
+                        <div className="w-full h-full rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: 'var(--brand-dark)' }}>
+                          {rep.name.split(' ').map((n) => n[0]).join('')}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-white font-semibold text-sm mb-1">{rep.name}</p>
+                    <p className="text-slate-500 text-[10px] mb-3">{ranges.current.label}</p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Deals Closed</span>
+                        <span className="text-white font-semibold flex items-center gap-1">
+                          {dealsClosed}
+                          {deltaDeals !== null && deltaDeals !== 0 && (
+                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {deltaDeals > 0 ? '+' : ''}{deltaDeals}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between"><span className="text-slate-400">kW Sold</span><span className="text-white font-semibold">{kwSold.toFixed(1)}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-400">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
+                      <div className="flex justify-between"><span className="text-slate-400">Earned</span><span className="text-emerald-400 font-semibold">${commissionEarned.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-400">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-slate-300'}`}>{cancelRate.toFixed(0)}%</span></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="space-y-3">
         {filtered.map((rep, i) => {
@@ -378,8 +596,20 @@ export default function RepsPage() {
           const dashOffset = REP_RING_CIRCUMFERENCE * (1 - completionRate);
 
           return (
-            <Link key={rep.id} href={`/dashboard/reps/${rep.id}`}>
-              <div className={`rep-card relative card-surface rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer hover:bg-slate-800/50 md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)}`}>
+            <div key={rep.id} className="relative">
+              {compareMode && (
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+                  <input
+                    type="checkbox"
+                    checked={compareIds.has(rep.id)}
+                    onChange={() => toggleCompareId(rep.id)}
+                    disabled={!compareIds.has(rep.id) && compareIds.size >= 3}
+                    className="w-4 h-4 accent-blue-500 rounded cursor-pointer"
+                  />
+                </div>
+              )}
+            <Link href={`/dashboard/reps/${rep.id}`}>
+              <div className={`rep-card relative card-surface rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer hover:bg-slate-800/50 md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)} ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-blue-500/40' : ''}`}>
                 <div className="flex items-center gap-4">
 
                   {/* ── Avatar with conic progress ring ───────────────────── */}
@@ -551,6 +781,7 @@ export default function RepsPage() {
                 </div>
               </div>
             </Link>
+            </div>
           );
         })}
 
@@ -595,7 +826,7 @@ export default function RepsPage() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="card-surface border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
+          <div ref={addRepPanelRef} className="card-surface border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-white font-bold text-lg">Add New Rep</h3>
               <button onClick={resetAddModal} className="text-slate-500 hover:text-white transition-colors">

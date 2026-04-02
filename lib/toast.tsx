@@ -43,6 +43,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // Listen for persist-error events dispatched from context-level code
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const msg = (e as CustomEvent<string>).detail || 'Failed to save — please try again';
+      toast(msg, 'error');
+    };
+    window.addEventListener('kilo-persist-error', handler);
+    return () => window.removeEventListener('kilo-persist-error', handler);
+  }, [toast]);
+
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}

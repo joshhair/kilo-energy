@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useSyncExternalStore } from 'react';
+import { useRef, useState, useEffect, useSyncExternalStore, type RefObject } from 'react';
 
 /**
  * Returns `false` on the server / first paint and `true` after client hydration.
@@ -64,6 +64,84 @@ export function useScrollReveal<T extends HTMLElement = HTMLDivElement>(): [
   }, []);
 
   return [ref, isVisible];
+}
+
+/**
+ * Subscribe to a CSS media query and return whether it currently matches.
+ *
+ * @example
+ * const isDesktop = useMediaQuery('(min-width: 768px)');
+ */
+/**
+ * Traps keyboard focus within a container element while active.
+ *
+ * When the user presses Tab on the last focusable element it wraps to the first,
+ * and Shift+Tab on the first wraps to the last. On activation the first focusable
+ * element inside the container receives focus automatically.
+ */
+export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active: boolean) {
+  useEffect(() => {
+    if (!active || !containerRef.current) return;
+    const container = containerRef.current;
+    const focusableSelector =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusable = Array.from(container.querySelectorAll(focusableSelector));
+      if (focusable.length === 0) return;
+      const first = focusable[0] as HTMLElement;
+      const last = focusable[focusable.length - 1] as HTMLElement;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    container.addEventListener('keydown', handleKeyDown);
+    // Focus first focusable element
+    const first = container.querySelector(focusableSelector) as HTMLElement;
+    if (first) requestAnimationFrame(() => first.focus());
+    return () => container.removeEventListener('keydown', handleKeyDown);
+  }, [active, containerRef]);
+}
+
+/**
+ * Adds Up/Down arrow-key navigation to table rows within a tbody element.
+ *
+ * Attach the returned ref to the `<tbody>`. Rows should have `tabIndex={0}`.
+ * Up/Down arrows move focus between rows; Enter clicks the focused row.
+ */
+export function useTableKeyNav(tbodyRef: RefObject<HTMLTableSectionElement | null>) {
+  useEffect(() => {
+    const tbody = tbodyRef.current;
+    if (!tbody) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const row = target.closest('tr');
+      if (!row || row.parentElement !== tbody) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = row.nextElementSibling as HTMLElement | null;
+        if (next) next.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = row.previousElementSibling as HTMLElement | null;
+        if (prev) prev.focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        row.click();
+      }
+    };
+
+    tbody.addEventListener('keydown', handleKeyDown);
+    return () => tbody.removeEventListener('keydown', handleKeyDown);
+  }, [tbodyRef]);
 }
 
 /**
