@@ -199,7 +199,7 @@ export default function CalculatorPageWrapper() {
 function CalculatorPage() {
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
-  const { currentRepId, currentRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs } = useApp();
+  const { currentRepId, currentRole, effectiveRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
   const [installer, setInstaller] = useState('');
   const [solarTechFamily, setSolarTechFamily] = useState('');
@@ -582,6 +582,14 @@ function CalculatorPage() {
   const animatedTrainerTotal = useCountUp(trainerTotal);
   const animatedKiloTotal    = useCountUp(kiloTotal);
   const animatedGrandTotal   = useCountUp(closerTotal + setterTotal + trainerTotal);
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   if (!isHydrated) return <CalculatorSkeleton />;
 

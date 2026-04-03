@@ -60,7 +60,7 @@ export default function RepsPage() {
 function RepsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, projects, payrollEntries, reps, addRep, removeRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, addRep, removeRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Reps | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
@@ -76,6 +76,8 @@ function RepsPageInner() {
   };
   const isHydrated = useIsHydrated();
   const isAdmin = currentRole === 'admin';
+  const isPM = effectiveRole === 'project_manager';
+  const canManageReps = isAdmin; // PM cannot manage, only view
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // ── Add Rep modal state ────────────────────────────────────────────────────
@@ -337,7 +339,7 @@ function RepsPageInner() {
       </div>
 
       {/* Admin: add rep button */}
-      {isAdmin && (
+      {canManageReps && (
         <div className="mb-6">
           <button
             onClick={() => setShowAddModal(true)}
@@ -350,7 +352,7 @@ function RepsPageInner() {
       )}
 
       {/* ── Top Performers Podium ─────────────────────────────────────────── */}
-      {podiumDisplay.length === 3 && (
+      {podiumDisplay.length === 3 && !isPM && (
         <div className="card-surface rounded-2xl p-5 mb-8 animate-slide-in-scale" style={{ animationDelay: 'var(--podium-delay, 300ms)' }}>
           {/* Section header */}
           <div className="h-[3px] w-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 mb-3" />
@@ -412,7 +414,7 @@ function RepsPageInner() {
           { label: 'Total Reps', value: reps.length.toString(), color: 'text-blue-400', pillBg: 'bg-blue-500/10', pillBorder: 'border-blue-500/20' },
           { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), color: 'text-purple-400', pillBg: 'bg-purple-500/10', pillBorder: 'border-purple-500/20' },
           { label: 'kW Sold', value: `${projects.reduce((s, p) => s + p.kWSize, 0).toFixed(1)} kW`, color: 'text-yellow-400', pillBg: 'bg-yellow-500/10', pillBorder: 'border-yellow-500/20' },
-          { label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, color: 'text-emerald-400', pillBg: 'bg-emerald-500/10', pillBorder: 'border-emerald-500/20' },
+          ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, color: 'text-emerald-400', pillBg: 'bg-emerald-500/10', pillBorder: 'border-emerald-500/20' }] : []),
         ].map((stat) => (
           <div key={stat.label} className="flex items-center gap-2.5">
             <span className={`text-[11px] font-medium uppercase tracking-wider text-slate-500`}>{stat.label}</span>
@@ -678,7 +680,7 @@ function RepsPageInner() {
                       <p className="text-white font-semibold group-hover:text-blue-400 transition-colors">
                         {rep.name}
                       </p>
-                      {isAdmin ? (
+                      {canManageReps ? (
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); const nextRole = ROLE_NEXT[rep.repType]; updateRepType(rep.id, nextRole); toast(`${rep.name} role changed to ${ROLE_LABELS[nextRole]}`, 'success'); }}
                           title="Click to cycle role"
@@ -758,18 +760,20 @@ function RepsPageInner() {
                   </div>
 
                   {/* Paid */}
-                  <div
-                    className="text-center md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
-                    style={{ transitionDelay: '225ms' }}
-                  >
-                    <p className="font-semibold">
-                      <span className="text-emerald-400 bg-emerald-500/5 rounded-lg px-2 py-0.5">${repPaid.toLocaleString()}</span>
-                    </p>
-                    <p className="text-slate-500 text-xs mt-1">Paid Out</p>
-                  </div>
+                  {!isPM && (
+                    <div
+                      className="text-center md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
+                      style={{ transitionDelay: '225ms' }}
+                    >
+                      <p className="font-semibold">
+                        <span className="text-emerald-400 bg-emerald-500/5 rounded-lg px-2 py-0.5">${repPaid.toLocaleString()}</span>
+                      </p>
+                      <p className="text-slate-500 text-xs mt-1">Paid Out</p>
+                    </div>
+                  )}
 
                   <ChevronRight className="hidden md:block w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
-                  {isAdmin && (
+                  {canManageReps && (
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Remove ${rep.name}?`, message: 'Their existing deals will be unaffected.', onConfirm: () => { removeRep(rep.id); toast('Rep removed', 'info'); setConfirmAction(null); } }); }}
                       title="Remove rep"

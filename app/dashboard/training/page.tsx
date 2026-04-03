@@ -95,6 +95,7 @@ function TrainingPageInner() {
   const router = useRouter();
   const {
     currentRepId,
+    effectiveRole,
     trainerAssignments,
     payrollEntries,
     projects,
@@ -260,6 +261,14 @@ function TrainingPageInner() {
   }, [traineeData]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   if (!isHydrated) return <TrainingSkeleton />;
 

@@ -14,7 +14,8 @@ import { Sparkline } from '../../../../lib/sparkline';
 
 export default function RepDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, currentRepId, reps } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps } = useApp();
+  const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
 
   // Pagination state — payment history
@@ -31,7 +32,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
 
   if (!hydrated) return <RepDetailSkeleton />;
 
-  if (currentRole !== 'admin' && id !== currentRepId) {
+  if (currentRole !== 'admin' && currentRole !== 'project_manager' && id !== currentRepId) {
     return (
       <div className="p-8 text-center text-slate-500 text-sm">
         You don&apos;t have permission to view this page.
@@ -146,7 +147,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
           { label: 'Total Deals',    value: repProjects.length,              color: 'text-blue-400',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
           { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-blue-400',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
           { label: 'Total kW',       value: `${totalKW.toFixed(1)} kW`,      color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-emerald-400', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: '#10b981' },
+          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-emerald-400', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: '#10b981' }] : []),
         ].map((s) => (
           <div
             key={s.label}
@@ -264,7 +265,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
       )}
 
       {/* Commission roles table */}
-      <div className="card-surface rounded-2xl p-5 mb-6">
+      {!isPM && <div className="card-surface rounded-2xl p-5 mb-6">
         <h2 className="text-white font-semibold mb-4">Commission by Role</h2>
         <table className="w-full text-sm">
           <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
@@ -312,10 +313,10 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
             })()}
           </tbody>
         </table>
-      </div>
+      </div>}
 
       {/* Payment history */}
-      <div className="card-surface rounded-2xl overflow-hidden mb-6">
+      {!isPM && <div className="card-surface rounded-2xl overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
           <h2 className="text-white font-semibold">Payment History</h2>
           <div className="flex gap-4 text-sm">
@@ -375,7 +376,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
             currentPage={paySafePage} totalPages={payTotalPages} rowsPerPage={payPageSize}
             onPageChange={setPayPage} onRowsPerPageChange={(n) => { setPayPageSize(n); setPayPage(1); }} />
         )}
-      </div>
+      </div>}
 
       {/* Projects table */}
       <div className="card-surface rounded-2xl overflow-hidden">
@@ -390,7 +391,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
               <th className="text-left px-5 py-3 text-slate-400 font-medium">Phase</th>
               <th className="text-left px-5 py-3 text-slate-400 font-medium">Installer</th>
               <th className="text-left px-5 py-3 text-slate-400 font-medium">kW</th>
-              <th className="text-left px-5 py-3 text-slate-400 font-medium">Est. Pay</th>
+              {!isPM && <th className="text-left px-5 py-3 text-slate-400 font-medium">Est. Pay</th>}
             </tr>
           </thead>
           <tbody>
@@ -411,14 +412,16 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
                 </td>
                 <td className="px-5 py-3 text-slate-400">{proj.installer}</td>
                 <td className="px-5 py-3 text-slate-300">{proj.kWSize}</td>
-                <td className="px-5 py-3 text-emerald-400 font-semibold">
-                  ${(proj.m1Amount + proj.m2Amount).toLocaleString()}
-                </td>
+                {!isPM && (
+                  <td className="px-5 py-3 text-emerald-400 font-semibold">
+                    ${(proj.m1Amount + proj.m2Amount).toLocaleString()}
+                  </td>
+                )}
               </tr>
             ))}
             {repProjects.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-14 text-center">
+                <td colSpan={isPM ? 5 : 6} className="px-5 py-14 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center">
                       <FolderKanban className="w-6 h-6 text-slate-600 animate-pulse" />

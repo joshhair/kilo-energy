@@ -111,13 +111,14 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageInner() {
-  const { currentRole, currentRepId, projects, setProjects, updateProject, activeInstallers } = useApp();
+  const { currentRole, effectiveRole, currentRepId, projects, setProjects, updateProject, activeInstallers } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const isRep = currentRole !== 'admin';
+  const isRep = currentRole !== 'admin' && currentRole !== 'project_manager';
   const isSubDealer = currentRole === 'sub-dealer';
+  const isPM = effectiveRole === 'project_manager';
 
   // Read initial values from URL searchParams
   const [tab, setTab] = useState<'phase' | 'all'>(() => {
@@ -177,7 +178,7 @@ function ProjectsPageInner() {
   // All projects the current user is allowed to see.
   // Admins see everything; reps ONLY see their own deals; sub-dealers see their sub-dealer deals.
   const visibleProjects =
-    currentRole === 'admin'
+    currentRole === 'admin' || currentRole === 'project_manager'
       ? (dealScope === 'mine' ? projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId) : projects)
       : isSubDealer
         ? projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId)
@@ -185,7 +186,7 @@ function ProjectsPageInner() {
 
   // Keep a stable alias for the header count — always rep's own deals for reps, all for admin.
   const myProjects =
-    currentRole === 'admin'
+    currentRole === 'admin' || currentRole === 'project_manager'
       ? projects
       : isSubDealer
         ? projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId)
@@ -409,6 +410,7 @@ function ProjectsPageInner() {
           dealScope={dealScope}
           onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
           readOnly={isSubDealer}
+          hideFinancials={isPM}
         />
       ) : (
         <TableView
@@ -423,6 +425,7 @@ function ProjectsPageInner() {
           hasActiveFilters={hasActiveFilters}
           clearAllFilters={clearAllFilters}
           readOnly={isSubDealer}
+          hideFinancials={isPM}
         />
       )}
 
@@ -492,6 +495,7 @@ function KanbanView({
   dealScope,
   onPhaseChange,
   readOnly = false,
+  hideFinancials = false,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
   isAdmin: boolean;
@@ -499,6 +503,7 @@ function KanbanView({
   dealScope: 'mine' | 'all';
   onPhaseChange: (id: string, phase: Phase) => void;
   readOnly?: boolean;
+  hideFinancials?: boolean;
 }) {
   const { toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -655,9 +660,11 @@ function KanbanView({
                         {phaseProjects.length}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
-                    </p>
+                    {!hideFinancials && (
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <ChevronDown
@@ -720,11 +727,13 @@ function KanbanView({
                             {proj.repName}
                           </p>
                           {/* Commission row */}
-                          <div className="flex items-center justify-end mt-1">
-                            <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
-                              ${commissionTotal.toLocaleString()}
-                            </span>
-                          </div>
+                          {!hideFinancials && (
+                            <div className="flex items-center justify-end mt-1">
+                              <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
+                                ${commissionTotal.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Phase navigation — admin only; 44px touch targets */}
@@ -880,9 +889,11 @@ function KanbanView({
                     {phaseProjects.length}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
-                </p>
+                {!hideFinancials && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                  </p>
+                )}
               </div>
               {/* Scrollable card container with bottom-fade overflow hint */}
               <div className="relative">
@@ -937,11 +948,13 @@ function KanbanView({
                           {proj.repName}
                         </p>
                         {/* Mini commission preview + phase nav row */}
-                        <div className={`flex items-center mt-1.5 ${isAdmin && (prevPhase || nextPhase) ? 'justify-between' : 'justify-end'}`}>
-                          <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
-                            ${commissionTotal.toLocaleString()}
-                          </span>
-                        </div>
+                        {!hideFinancials && (
+                          <div className={`flex items-center mt-1.5 ${isAdmin && (prevPhase || nextPhase) ? 'justify-between' : 'justify-end'}`}>
+                            <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
+                              ${commissionTotal.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Phase navigation — admin only, shows on hover */}
                         {isAdmin && (prevPhase || nextPhase) && (
@@ -1024,9 +1037,11 @@ function KanbanView({
                     {phaseProjects.length}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
-                </p>
+                {!hideFinancials && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                  </p>
+                )}
               </div>
               {/* Scrollable card container with bottom-fade overflow hint */}
               <div className="relative">
@@ -1385,6 +1400,7 @@ function TableView({
   hasActiveFilters,
   clearAllFilters,
   readOnly = false,
+  hideFinancials = false,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
   searchInput: string;
@@ -1397,6 +1413,7 @@ function TableView({
   hasActiveFilters: boolean;
   clearAllFilters: () => void;
   readOnly?: boolean;
+  hideFinancials?: boolean;
 }) {
   const { reps, trainerAssignments, updateProject } = useApp();
   const { toast } = useToast();
@@ -1666,7 +1683,7 @@ function TableView({
             ? 'No results'
             : `Showing ${startIdx + 1}–${endIdx} of ${totalResults}`}
         </span>
-        {isAdmin && sortedProjects.length > 0 && (
+        {isAdmin && !hideFinancials && sortedProjects.length > 0 && (
           <button
             onClick={() => {
               const headers = ['Customer', 'Rep', 'Phase', 'Installer', 'Financer', 'kW', 'Net PPW', 'Sold Date', 'Flagged'];
@@ -1766,9 +1783,11 @@ function TableView({
                 <th className={thClass('kWSize')} onClick={() => handleSort('kWSize')}>
                   kW<SortIcon colKey="kWSize" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
-                <th className={thClass('netPPW')} onClick={() => handleSort('netPPW')}>
-                  Net PPW<SortIcon colKey="netPPW" sortKey={sortKey} sortDirection={sortDirection} />
-                </th>
+                {!hideFinancials && (
+                  <th className={thClass('netPPW')} onClick={() => handleSort('netPPW')}>
+                    Net PPW<SortIcon colKey="netPPW" sortKey={sortKey} sortDirection={sortDirection} />
+                  </th>
+                )}
                 <th className={thClass('soldDate')} onClick={() => handleSort('soldDate')}>
                   Sold Date<SortIcon colKey="soldDate" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
@@ -1860,7 +1879,7 @@ function TableView({
                   <td className="px-5 py-3 text-slate-400">{proj.installer}</td>
                   <td className="px-5 py-3 text-slate-400">{proj.financer}</td>
                   <td className="px-5 py-3 text-slate-300">{proj.kWSize}</td>
-                  <td className="px-5 py-3 text-slate-300">${proj.netPPW}</td>
+                  {!hideFinancials && <td className="px-5 py-3 text-slate-300">${proj.netPPW}</td>}
                   <td className="px-5 py-3 text-slate-500">
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-slate-600">{relativeTime(proj.soldDate)}</div>

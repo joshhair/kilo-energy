@@ -102,7 +102,7 @@ export default function VaultPage() {
 function VaultPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, currentRepId, currentRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { currentRole, effectiveRole, currentRepId, currentRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -344,6 +344,14 @@ function VaultPageInner() {
   );
   const pendingReimbs = myReimbs.filter((r) => r.status === 'Pending');
   const approvedReimbTotal = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   if (!isHydrated) return <VaultSkeleton />;
 

@@ -560,7 +560,8 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { currentRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts } = useApp();
+  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts } = useApp();
+  const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
   const isHydrated = useIsHydrated();
@@ -988,14 +989,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {currentRole === 'admin' ? (
+        {(currentRole === 'admin' || isPM) ? (
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={openEditModal}
-              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-900/20 transition-colors"
-            >
-              <Pencil className="w-3.5 h-3.5" /> Edit
-            </button>
+            {!isPM && (
+              <button
+                onClick={openEditModal}
+                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-900/20 transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </button>
+            )}
             <button
               onClick={handleFlag}
               className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border transition-colors ${
@@ -1007,12 +1010,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {project.flagged ? <FlagOff className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}
               {project.flagged ? 'Unflag' : 'Flag'}
             </button>
-            <Link
-              href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <Copy className="w-3.5 h-3.5" /> Duplicate
-            </Link>
+            {!isPM && (
+              <Link
+                href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
+                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" /> Duplicate
+              </Link>
+            )}
             {project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
@@ -1021,12 +1026,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 Cancel
               </button>
             )}
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </button>
+            {!isPM && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-2">
@@ -1060,7 +1067,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             ['Financer', project.financer],
             ['Product Type', project.productType],
             ['System Size', `${project.kWSize} kW`],
-            ['Net PPW', `$${project.netPPW}`],
+            ...(!isPM ? [['Net PPW', `$${project.netPPW}`]] : []),
             ['Sold Date', formatDate(project.soldDate)],
             ['Phase', project.phase],
           ].map(([label, value]) => (
@@ -1083,7 +1090,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
 
-        {currentRole === 'admin' && (
+        {(currentRole === 'admin' || isPM) && (
           <div className="mt-5 pt-5 border-t border-slate-800">
             <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Change Phase</p>
             <select
@@ -1100,7 +1107,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Commission — rep view shows their own payroll entries */}
-      {currentRole === 'rep' && (
+      {currentRole === 'rep' && !isPM && (
         <div className="card-surface rounded-2xl p-6 mb-5">
           <h2 className="text-white font-semibold mb-4">My Commission</h2>
           {myEntries.length > 0 ? (
@@ -1154,7 +1161,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       )}
 
       {/* Commission breakdown (admin) */}
-      {currentRole === 'admin' && (
+      {currentRole === 'admin' && !isPM && (
         <div className="card-surface rounded-2xl p-6 mb-5">
           <h2 className="text-white font-semibold mb-1">Commission Breakdown</h2>
 
@@ -1393,7 +1400,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <div className="card-surface rounded-2xl p-6">
         <h2 className="text-white font-semibold mb-3">Notes</h2>
 
-        {currentRole === 'admin' ? (
+        {(currentRole === 'admin' || isPM) ? (
           <div>
             <textarea
               rows={4}

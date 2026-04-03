@@ -706,7 +706,7 @@ function useCountUp(target: number, duration = 800): number {
 }
 
 export default function DashboardPage() {
-  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts } = useApp();
+  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -835,6 +835,10 @@ export default function DashboardPage() {
 
   if (!isHydrated) {
     return <DashboardSkeleton />;
+  }
+
+  if (effectiveRole === 'project_manager') {
+    return <PMDashboard projects={periodProjects} allProjects={projects} period={period} setPeriod={setPeriod} PERIODS={PERIODS} totalReps={reps.length} />;
   }
 
   if (currentRole === 'admin') {
@@ -1514,6 +1518,86 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+// ─── PM Dashboard (no financial data) ──────────────────────────────────────
+
+function PMDashboard({
+  projects,
+  allProjects,
+  period,
+  setPeriod,
+  PERIODS,
+  totalReps,
+}: {
+  projects: ReturnType<typeof useApp>['projects'];
+  allProjects: ReturnType<typeof useApp>['projects'];
+  period: Period;
+  setPeriod: (p: Period) => void;
+  PERIODS: { value: Period; label: string }[];
+  totalReps: number;
+}) {
+  const activeProjects = projects.filter((p) => !['Cancelled', 'On Hold'].includes(p.phase));
+  const phaseCounts = ACTIVE_PHASES.reduce((acc, phase) => {
+    acc[phase] = projects.filter((p) => p.phase === phase).length;
+    return acc;
+  }, {} as Record<string, number>);
+  const flaggedCount = projects.filter((p) => p.flagged).length;
+  const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Period filter */}
+      <div className="flex items-center gap-2">
+        {PERIODS.map((p) => (
+          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>{p.label}</button>
+        ))}
+      </div>
+
+      {/* Summary cards — NO dollar amounts */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Active Projects', value: activeProjects.length, color: 'text-blue-400' },
+          { label: 'Total Projects', value: projects.length, color: 'text-slate-300' },
+          { label: 'Total kW', value: `${totalKW.toFixed(1)}`, color: 'text-emerald-400' },
+          { label: 'Flagged', value: flaggedCount, color: flaggedCount > 0 ? 'text-red-400' : 'text-slate-500' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="card-surface rounded-2xl p-5">
+            <p className="text-xs text-slate-500 mb-1">{label}</p>
+            <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Pipeline breakdown */}
+      <div className="card-surface rounded-2xl p-6">
+        <h2 className="text-white font-semibold mb-4 flex items-center gap-2"><FolderKanban className="w-4 h-4 text-blue-400" /> Pipeline</h2>
+        <div className="space-y-2">
+          {ACTIVE_PHASES.map((phase) => {
+            const count = phaseCounts[phase] || 0;
+            const pct = projects.length > 0 ? (count / projects.length) * 100 : 0;
+            return (
+              <div key={phase} className="flex items-center gap-3">
+                <span className="text-xs text-slate-400 w-28 shrink-0">{phase}</span>
+                <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-xs text-slate-500 tabular-nums w-8 text-right">{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Team overview */}
+      <div className="card-surface rounded-2xl p-6">
+        <h2 className="text-white font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4 text-emerald-400" /> Team</h2>
+        <p className="text-slate-400 text-sm">{totalReps} active reps</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Admin Dashboard ───────────────────────────────────────────────────────
 
 function AdminDashboard({
   projects,

@@ -1575,9 +1575,17 @@ function SubDealerEarningsView() {
 }
 
 function EarningsPageInner() {
-  const { currentRole } = useApp();
+  const { currentRole, effectiveRole } = useApp();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   if (!isHydrated) return <EarningsSkeleton />;
   if (currentRole === 'admin') return <AdminFinancialsView />;

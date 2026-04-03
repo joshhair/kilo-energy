@@ -62,7 +62,7 @@ export default function PayrollPage() {
 function PayrollPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, reps, projects, reimbursements, setReimbursements } = useApp();
+  const { currentRole, effectiveRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, reps, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
@@ -195,6 +195,14 @@ function PayrollPageInner() {
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo]);
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   const filtered = payrollEntries.filter((p) => {
     if (p.status !== statusTab || p.type !== typeTab) return false;

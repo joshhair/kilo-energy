@@ -152,7 +152,7 @@ function isEndingSoon(endDate: string | null): boolean {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function IncentivesPage() {
-  const { currentRole, currentRepId, incentives, setIncentives, projects, payrollEntries, reps } = useApp();
+  const { currentRole, effectiveRole, currentRepId, incentives, setIncentives, projects, payrollEntries, reps } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Incentives | Kilo Energy'; }, []);
@@ -217,6 +217,14 @@ export default function IncentivesPage() {
     return items;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incentives, projects, payrollEntries, isAdmin]);
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   if (!isHydrated) {
     return <IncentivesSkeleton />;
