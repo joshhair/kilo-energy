@@ -114,6 +114,16 @@ export default function BlitzDetailPage() {
     if (el) setTabIndicator({ left: el.offsetLeft, width: el.offsetWidth });
   }, [tab, isAdmin, blitz]);
 
+  // Rep permissions (canRequestBlitz)
+  const [canRequestBlitz, setCanRequestBlitz] = useState(false);
+  const [cancelRequesting, setCancelRequesting] = useState(false);
+  useEffect(() => {
+    if (isAdmin || !currentRepId) return;
+    fetch(`/api/users/${currentRepId}`).then((r) => r.json()).then((u) => {
+      setCanRequestBlitz(u.canRequestBlitz ?? false);
+    }).catch(() => {});
+  }, [currentRepId, isAdmin]);
+
   // Computed metrics
   const approvedParticipants = blitz?.participants?.filter((p: any) => p.joinStatus === 'approved') ?? [];
   // Owner check — blitz leaders get participant management powers
@@ -245,6 +255,39 @@ export default function BlitzDetailPage() {
     loadBlitz();
   };
 
+  const handleDeleteBlitz = async () => {
+    const res = await fetch(`/api/blitzes/${blitzId}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast('Blitz deleted');
+      router.push('/dashboard/blitz');
+    } else {
+      toast('Failed to delete blitz');
+    }
+  };
+
+  const handleRequestCancellation = async (reason: string) => {
+    setCancelRequesting(true);
+    const res = await fetch('/api/blitz-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'cancel',
+        requestedById: currentRepId,
+        blitzId,
+        name: blitz?.name ?? '',
+        notes: reason,
+        startDate: blitz?.startDate ?? '',
+        endDate: blitz?.endDate ?? '',
+      }),
+    });
+    setCancelRequesting(false);
+    if (res.ok) {
+      toast('Cancellation request submitted for admin approval');
+    } else {
+      toast('Failed to submit cancellation request');
+    }
+  };
+
   if (!hydrated || loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <div className="relative w-10 h-10">
@@ -357,8 +400,23 @@ export default function BlitzDetailPage() {
                 {blitz.housing && <span className="flex items-center gap-1.5"><Home className="w-3.5 h-3.5" />{blitz.housing}</span>}
               </div>
             </div>
-            {isAdmin && (
-              <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-400 border border-slate-700 rounded-lg hover:text-white hover:border-slate-600 transition-colors shrink-0"><Pencil className="w-3.5 h-3.5" /> Edit</button>
+            {isAdmin ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-400 border border-slate-700 rounded-lg hover:text-white hover:border-slate-600 transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
+                <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); } })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+              </div>
+            ) : canRequestBlitz && blitz.status !== 'cancelled' && (
+              <button
+                disabled={cancelRequesting}
+                onClick={() => setConfirmAction({
+                  title: 'Request Blitz Cancellation?',
+                  message: `This will send a cancellation request for "${blitz.name}" to an admin for approval. The blitz will remain active until approved.`,
+                  onConfirm: () => { handleRequestCancellation('Requested by rep'); setConfirmAction(null); },
+                })}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors shrink-0 disabled:opacity-50"
+              >
+                <XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}
+              </button>
             )}
           </div>
         )}

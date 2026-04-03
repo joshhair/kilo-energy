@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { requireAuth } from '../../../../lib/api-auth';
+import { requireAuth, requireAdmin } from '../../../../lib/api-auth';
 
 // GET /api/blitzes/[id] — Get a single blitz
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -53,9 +53,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(blitz);
 }
 
-// DELETE /api/blitzes/[id]
+// DELETE /api/blitzes/[id] — Admin only
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   await prisma.blitz.delete({ where: { id } });
   return NextResponse.json({ success: true });

@@ -497,10 +497,11 @@ model Blitz {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  participants BlitzParticipant[]
-  costs        BlitzCost[]
-  incentives   Incentive[]
-  projects     Project[]
+  participants         BlitzParticipant[]
+  costs                BlitzCost[]
+  incentives           Incentive[]
+  projects             Project[]
+  cancellationRequests BlitzRequest[]
 
   @@index([status])
   @@index([ownerId])
@@ -592,6 +593,13 @@ model BlitzRequest {
   id            String @id @default(cuid())
   requestedById String
   requestedBy   User   @relation(fields: [requestedById], references: [id])
+
+  /// "create" | "cancel" — type of request
+  type          String @default("create")
+
+  /// For cancel requests: the blitz being requested for cancellation
+  blitzId       String?
+  blitz         Blitz?  @relation(fields: [blitzId], references: [id], onDelete: SetNull)
 
   name              String
   location          String @default("")

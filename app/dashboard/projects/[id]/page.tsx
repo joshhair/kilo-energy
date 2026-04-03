@@ -12,7 +12,7 @@ import {
   calculateCommission,
 } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
-import { Flag, FlagOff, AlertTriangle, X, Check, Clock, ArrowRight, Pencil, ChevronLeft, ChevronRight, Copy, Plus, RefreshCw, MessageSquare, Zap, User } from 'lucide-react';
+import { Flag, FlagOff, AlertTriangle, X, Check, Clock, ArrowRight, Pencil, ChevronLeft, ChevronRight, Copy, Plus, RefreshCw, MessageSquare, Zap, User, Trash2 } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ProjectChatter from '../../components/ProjectChatter';
@@ -625,6 +625,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [m1Val, setM1Val] = useState('');
   const [m2Val, setM2Val] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
@@ -748,6 +749,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     setShowCancelReasonModal(false);
     toast('Project cancelled', 'info');
     router.push('/dashboard/projects');
+  };
+
+  const handleDeleteProject = async () => {
+    setShowDeleteConfirm(false);
+    const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast('Project deleted permanently');
+      router.push('/dashboard/projects');
+    } else {
+      toast('Failed to delete project');
+    }
   };
 
   const doPhaseChange = (phase: Phase) => {
@@ -1009,6 +1021,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 Cancel
               </button>
             )}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
           </div>
         ) : (
           <div className="flex items-center gap-2">
@@ -1631,6 +1649,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         title="Cancel Project"
         message={`This will mark ${project.customerName} as Cancelled. This can be reversed by an admin.`}
         confirmLabel="Cancel Project"
+        danger={true}
+      />
+
+      {/* Delete Confirm Modal — Admin only */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteProject}
+        title="Permanently Delete Project"
+        message={`This will permanently delete "${project.customerName}" and all associated payroll entries, activity, and messages. This cannot be undone.`}
+        confirmLabel="Delete Forever"
         danger={true}
       />
 

@@ -15,7 +15,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const request = await prisma.blitzRequest.update({
     where: { id },
     data,
-    include: { requestedBy: true },
+    include: { requestedBy: true, blitz: true },
   });
+
+  // If approving a cancellation request, also cancel the blitz
+  if (body.status === 'approved' && request.type === 'cancel' && request.blitzId) {
+    await prisma.blitz.update({
+      where: { id: request.blitzId },
+      data: { status: 'cancelled' },
+    });
+  }
+
   return NextResponse.json(request);
 }

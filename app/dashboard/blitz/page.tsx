@@ -37,6 +37,8 @@ interface BlitzData {
 
 interface BlitzRequestData {
   id: string;
+  type: 'create' | 'cancel';
+  blitzId: string | null;
   name: string;
   location: string;
   startDate: string;
@@ -895,13 +897,18 @@ function BlitzPageInner() {
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
+                        {req.type === 'cancel' ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-500/20">New Blitz</span>
+                        )}
                         <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
                         {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-slate-400">
-                        {req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
-                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>
-                        <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>
+                        {req.type !== 'cancel' && req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
+                        {req.type !== 'cancel' && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>}
+                        {req.type !== 'cancel' && <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>}
                       </div>
                       {req.notes && <p className="text-sm text-slate-500 mt-2 line-clamp-2">{req.notes}</p>}
                       <p className="text-xs text-slate-600 mt-2">Requested by <span className="text-slate-400">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
