@@ -541,13 +541,19 @@ function SettingsPageInner() {
   const [newInstallerBaseline, setNewInstallerBaseline] = useState('');
   const [showSubDealerRates, setShowSubDealerRates] = useState(false);
 
-  // ── Admin users state ───────────────────────────────────────────────────────
-  const [adminUsers, setAdminUsers] = useState([
-    { id: 'admin1', name: 'Admin User', email: 'admin@kiloenergy.com' },
-  ]);
+  // ── Admin users state (loaded from DB) ──────────────────────────────────────
+  const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string }>>([]);
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [adminEmailError, setAdminEmailError] = useState('');
+
+  // Fetch admin users on mount
+  const loadAdmins = () => {
+    fetch('/api/reps?role=admin').then((r) => r.ok ? r.json() : []).then((users: Array<{ id: string; firstName: string; lastName: string; email: string }>) => {
+      setAdminUsers(users.map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email })));
+    }).catch(() => {});
+  };
+  useEffect(() => { loadAdmins(); }, []);
 
   // ── Installers / Financers state ────────────────────────────────────────────
   const [newInstaller, setNewInstaller] = useState('');
@@ -4139,11 +4145,23 @@ function SettingsPageInner() {
                       setAdminEmailError('Please enter a valid email address');
                       return;
                     }
-                    setAdminUsers((p) => [
-                      ...p,
-                      { id: `admin_${Date.now()}`, name: newAdminName, email: newAdminEmail },
-                    ]);
-                    toast('Admin user added', 'success');
+                    fetch('/api/reps', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        firstName: newAdminName.split(' ')[0] || newAdminName,
+                        lastName: newAdminName.split(' ').slice(1).join(' ') || '',
+                        email: newAdminEmail,
+                        role: 'admin',
+                      }),
+                    }).then((r) => {
+                      if (r.ok) {
+                        toast('Admin user added', 'success');
+                        loadAdmins();
+                      } else {
+                        toast('Failed to add admin user', 'error');
+                      }
+                    });
                     setNewAdminName('');
                     setNewAdminEmail('');
                     setAdminEmailError('');
@@ -4188,8 +4206,14 @@ function SettingsPageInner() {
                         title: `Delete ${u.name}?`,
                         message: 'Existing deals are unaffected.',
                         onConfirm: () => {
-                          setAdminUsers((p) => p.filter((a) => a.id !== u.id));
-                          toast('Admin user removed', 'info');
+                          fetch(`/api/reps/${u.id}`, { method: 'DELETE' }).then((r) => {
+                            if (r.ok) {
+                              toast('Admin user removed', 'info');
+                              loadAdmins();
+                            } else {
+                              toast('Failed to remove admin', 'error');
+                            }
+                          });
                           setConfirmAction(null);
                         },
                       });
