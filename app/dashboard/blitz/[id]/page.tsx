@@ -49,9 +49,9 @@ type TabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 export default function BlitzDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentRole, currentRepId, reps, installerPricingVersions, productCatalogProducts } = useApp();
+  const { currentRole, currentRepId, effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts } = useApp();
   const hydrated = useIsHydrated();
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = effectiveRole === 'admin';
   const { toast } = useToast();
   const blitzId = params.id as string;
 
@@ -118,24 +118,24 @@ export default function BlitzDetailPage() {
   const [canRequestBlitz, setCanRequestBlitz] = useState(false);
   const [cancelRequesting, setCancelRequesting] = useState(false);
   useEffect(() => {
-    if (isAdmin || !currentRepId) return;
-    fetch(`/api/users/${currentRepId}`).then((r) => r.json()).then((u) => {
+    if (isAdmin || !effectiveRepId) return;
+    fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       setCanRequestBlitz(u.canRequestBlitz ?? false);
     }).catch(() => {});
-  }, [currentRepId, isAdmin]);
+  }, [effectiveRepId, isAdmin]);
 
   // Computed metrics
   const approvedParticipants = blitz?.participants?.filter((p: any) => p.joinStatus === 'approved') ?? [];
   // Owner check — blitz leaders get participant management powers
-  const isOwner = !isAdmin && currentRepId != null && blitz?.owner?.id === currentRepId;
+  const isOwner = !isAdmin && effectiveRepId != null && blitz?.owner?.id === effectiveRepId;
   const canManage = isAdmin || isOwner;
 
   // For reps (non-admin, non-owner), filter deals to only their own
   const visibleProjects = useMemo(() => {
     if (!blitz?.projects) return [];
     if (isAdmin || isOwner) return blitz.projects;
-    return blitz.projects.filter((p: any) => p.closer?.id === currentRepId);
-  }, [blitz?.projects, isAdmin, isOwner, currentRepId]);
+    return blitz.projects.filter((p: any) => p.closer?.id === effectiveRepId);
+  }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const totalDeals = visibleProjects.length;
   const totalKW = visibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0);
@@ -272,7 +272,7 @@ export default function BlitzDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         type: 'cancel',
-        requestedById: currentRepId,
+        requestedById: effectiveRepId,
         blitzId,
         name: blitz?.name ?? '',
         notes: reason,
@@ -471,7 +471,7 @@ export default function BlitzDetailPage() {
           </div>
 
           {/* Rep personal blitz summary */}
-          {!isAdmin && currentRepId && visibleProjects.length > 0 && (
+          {!isAdmin && effectiveRepId && visibleProjects.length > 0 && (
             <div className="card-surface border-l-2 border-l-blue-500/60 rounded-2xl p-4">
               <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-3">Your Blitz Summary</p>
               <div className="grid grid-cols-3 gap-4 text-center">

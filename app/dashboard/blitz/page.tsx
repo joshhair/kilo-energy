@@ -428,9 +428,9 @@ export default function BlitzPage() {
 function BlitzPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, currentRepId, reps } = useApp();
+  const { currentRole, currentRepId, effectiveRole, effectiveRepId, reps } = useApp();
   const hydrated = useIsHydrated();
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = effectiveRole === 'admin';
 
   // URL-persisted state
   const initialTab = (searchParams.get('tab') ?? 'blitzes') as TabKey;
@@ -526,11 +526,11 @@ function BlitzPageInner() {
 
   // Fetch rep blitz permissions
   useEffect(() => {
-    if (isAdmin || !currentRepId) return;
-    fetch(`/api/users/${currentRepId}`).then((r) => r.json()).then((u) => {
+    if (isAdmin || !effectiveRepId) return;
+    fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       if (u) setUserPerms({ canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false });
     }).catch(() => {});
-  }, [isAdmin, currentRepId]);
+  }, [isAdmin, effectiveRepId]);
 
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
@@ -540,7 +540,7 @@ function BlitzPageInner() {
       list = list.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
     }
     return list;
-  }, [blitzes, statusFilter, search, isAdmin, currentRepId]);
+  }, [blitzes, statusFilter, search, isAdmin, effectiveRepId]);
 
   // Sorted blitzes
   const sortedBlitzes = useMemo(() => {
@@ -557,21 +557,21 @@ function BlitzPageInner() {
 
   // For reps: separate "My Blitzes" (participating/leading) from browseable ones
   const myBlitzes = useMemo(() => {
-    if (isAdmin || !currentRepId) return [];
+    if (isAdmin || !effectiveRepId) return [];
     return blitzes.filter((b) =>
-      b.owner.id === currentRepId ||
-      b.participants.some((p) => p.user.id === currentRepId)
+      b.owner.id === effectiveRepId ||
+      b.participants.some((p) => p.user.id === effectiveRepId)
     );
-  }, [blitzes, isAdmin, currentRepId]);
+  }, [blitzes, isAdmin, effectiveRepId]);
 
   const browseBlitzes = useMemo(() => {
     if (isAdmin) return sortedBlitzes;
-    if (!currentRepId) return sortedBlitzes;
+    if (!effectiveRepId) return sortedBlitzes;
     const myIds = new Set(myBlitzes.map((b) => b.id));
     return sortedBlitzes.filter((b) =>
       !myIds.has(b.id) && (b.status === 'upcoming' || b.status === 'active')
     );
-  }, [sortedBlitzes, isAdmin, currentRepId, myBlitzes]);
+  }, [sortedBlitzes, isAdmin, effectiveRepId, myBlitzes]);
 
   // Reset pages when filters change
   useEffect(() => { setBlitzPage(1); }, [statusFilter, search, sortBy]);
@@ -620,14 +620,14 @@ function BlitzPageInner() {
   };
 
   const handleJoinBlitz = async (blitzId: string) => {
-    if (!currentRepId) return;
+    if (!effectiveRepId) return;
     // Optimistic: show toast immediately, then refresh in background
     toast('Join request sent!', 'success');
     try {
       await fetch(`/api/blitzes/${blitzId}/participants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentRepId, joinStatus: 'pending' }),
+        body: JSON.stringify({ userId: effectiveRepId, joinStatus: 'pending' }),
       });
       loadData();
     } catch {
@@ -823,7 +823,7 @@ function BlitzPageInner() {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {paginatedAdminBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} index={i} />)}
+                  {paginatedAdminBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} index={i} />)}
                 </div>
                 {adminBlitzTotal > blitzPerPage && (
                   <PaginationBar
@@ -849,7 +849,7 @@ function BlitzPageInner() {
                     <UserCheck className="w-4 h-4" /> My Blitzes
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {myBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
+                    {myBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
                   </div>
                 </div>
               )}
@@ -861,7 +861,7 @@ function BlitzPageInner() {
                     <Search className="w-4 h-4" /> Browse Available
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {browseBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={currentRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
+                    {browseBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
                   </div>
                 </div>
               )}
@@ -955,7 +955,7 @@ function BlitzPageInner() {
         <CreateBlitzModal
           onClose={() => setShowCreate(false)}
           onCreated={loadData}
-          userId={currentRepId ?? 'admin2'}
+          userId={effectiveRepId ?? 'admin2'}
           reps={reps}
         />
       )}
@@ -965,7 +965,7 @@ function BlitzPageInner() {
         <RequestBlitzModal
           onClose={() => setShowRequestBlitz(false)}
           onSubmitted={loadData}
-          userId={currentRepId ?? ''}
+          userId={effectiveRepId ?? ''}
         />
       )}
     </div>

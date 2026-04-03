@@ -111,13 +111,13 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageInner() {
-  const { currentRole, effectiveRole, currentRepId, projects, setProjects, updateProject, activeInstallers } = useApp();
+  const { currentRole, effectiveRole, currentRepId, effectiveRepId, projects, setProjects, updateProject, activeInstallers } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const isRep = currentRole !== 'admin' && currentRole !== 'project_manager';
-  const isSubDealer = currentRole === 'sub-dealer';
+  const isRep = effectiveRole !== 'admin' && effectiveRole !== 'project_manager';
+  const isSubDealer = effectiveRole === 'sub-dealer';
   const isPM = effectiveRole === 'project_manager';
 
   // Read initial values from URL searchParams
@@ -178,19 +178,19 @@ function ProjectsPageInner() {
   // All projects the current user is allowed to see.
   // Admins see everything; reps ONLY see their own deals; sub-dealers see their sub-dealer deals.
   const visibleProjects =
-    currentRole === 'admin' || currentRole === 'project_manager'
-      ? (dealScope === 'mine' ? projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId) : projects)
+    effectiveRole === 'admin' || effectiveRole === 'project_manager'
+      ? (dealScope === 'mine' ? projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId) : projects)
       : isSubDealer
-        ? projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId)
-        : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+        ? projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
+        : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
 
   // Keep a stable alias for the header count — always rep's own deals for reps, all for admin.
   const myProjects =
-    currentRole === 'admin' || currentRole === 'project_manager'
+    effectiveRole === 'admin' || effectiveRole === 'project_manager'
       ? projects
       : isSubDealer
-        ? projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId)
-        : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+        ? projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
+        : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
 
   const statusFiltered = applyStatusFilter(visibleProjects, statusFilter);
 
@@ -405,8 +405,8 @@ function ProjectsPageInner() {
       {tab === 'phase' ? (
         <KanbanView
           projects={statusFiltered.filter((p) => !installerFilter || p.installer === installerFilter)}
-          isAdmin={currentRole === 'admin'}
-          currentRepId={currentRepId}
+          isAdmin={effectiveRole === 'admin'}
+          currentRepId={effectiveRepId}
           dealScope={dealScope}
           onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
           readOnly={isSubDealer}
@@ -417,8 +417,8 @@ function ProjectsPageInner() {
           projects={filtered}
           searchInput={searchInput}
           setSearchInput={setSearchInput}
-          isAdmin={currentRole === 'admin'}
-          currentRepId={currentRepId}
+          isAdmin={effectiveRole === 'admin'}
+          currentRepId={effectiveRepId}
           dealScope={dealScope}
           onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
           setProjects={setProjects}

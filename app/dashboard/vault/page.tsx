@@ -102,7 +102,7 @@ export default function VaultPage() {
 function VaultPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, currentRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { currentRole, effectiveRole, currentRepId, currentRepName, effectiveRepId, effectiveRepName, isViewingAs, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -168,7 +168,7 @@ function VaultPageInner() {
 
   // ── Filter entries to this rep ──
   const myEntries = useMemo(() => {
-    let entries = payrollEntries.filter((p) => p.repId === currentRepId);
+    let entries = payrollEntries.filter((p) => p.repId === effectiveRepId);
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -185,7 +185,7 @@ function VaultPageInner() {
       entries = entries.filter((e) => e.status === filterStatus);
     }
     return entries;
-  }, [payrollEntries, currentRepId, searchQuery, filterType, filterStatus]);
+  }, [payrollEntries, effectiveRepId, searchQuery, filterType, filterStatus]);
 
   // ── Group into pay periods (Friday weeks) ──
   const payPeriods = useMemo((): PayPeriod[] => {
@@ -218,39 +218,39 @@ function VaultPageInner() {
 
   // ── Overview stats ──
   const lifetimeEarned = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Paid' && p.date <= todayStr && p.amount > 0)
+    payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date <= todayStr && p.amount > 0)
       .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, currentRepId, todayStr]
+    [payrollEntries, effectiveRepId, todayStr]
   );
 
   const chargebackTotal = useMemo(() =>
-    Math.abs(payrollEntries.filter((p) => p.repId === currentRepId && p.amount < 0)
+    Math.abs(payrollEntries.filter((p) => p.repId === effectiveRepId && p.amount < 0)
       .reduce((s, p) => s + p.amount, 0)),
-    [payrollEntries, currentRepId]
+    [payrollEntries, effectiveRepId]
   );
 
   const pendingTotal = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === currentRepId && (p.status === 'Pending' || (p.status === 'Paid' && p.date > todayStr)))
+    payrollEntries.filter((p) => p.repId === effectiveRepId && (p.status === 'Pending' || (p.status === 'Paid' && p.date > todayStr)))
       .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, currentRepId, todayStr]
+    [payrollEntries, effectiveRepId, todayStr]
   );
 
   const draftTotal = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Draft')
+    payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Draft')
       .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, currentRepId]
+    [payrollEntries, effectiveRepId]
   );
 
   const nextPayoutTotal = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === currentRepId && p.date === nextFridayStr && p.status !== 'Draft')
+    payrollEntries.filter((p) => p.repId === effectiveRepId && p.date === nextFridayStr && p.status !== 'Draft')
       .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, currentRepId, nextFridayStr]
+    [payrollEntries, effectiveRepId, nextFridayStr]
   );
 
   // ── Projected outlook: deals in pipeline not yet at milestones ──
   const myProjects = useMemo(() =>
-    projects.filter((p) => (p.repId === currentRepId || p.setterId === currentRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold'),
-    [projects, currentRepId]
+    projects.filter((p) => (p.repId === effectiveRepId || p.setterId === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold'),
+    [projects, effectiveRepId]
   );
 
   const projectedM1 = useMemo(() => {
@@ -272,7 +272,7 @@ function VaultPageInner() {
   const annualProjection = useMemo(() => {
     const now = new Date();
     const allMyProjects = projects.filter((p) =>
-      (p.repId === currentRepId || p.setterId === currentRepId) && p.phase !== 'Cancelled'
+      (p.repId === effectiveRepId || p.setterId === effectiveRepId) && p.phase !== 'Cancelled'
     );
 
     // --- Signal 1: Deal closing pace ---
@@ -296,7 +296,7 @@ function VaultPageInner() {
 
     // --- Signal 3: Actual paid history ---
     const totalPaidPositive = payrollEntries
-      .filter((p) => p.repId === currentRepId && p.status === 'Paid' && p.amount > 0 && p.date <= todayStr)
+      .filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.amount > 0 && p.date <= todayStr)
       .reduce((s, p) => s + p.amount, 0);
 
     // --- Calculate projection ---
@@ -329,7 +329,7 @@ function VaultPageInner() {
     annual += pipelineBoost;
 
     return { annual, monthlyAvg, basis, details };
-  }, [projects, payrollEntries, currentRepId, todayStr, projectedM1, projectedM2]);
+  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -339,8 +339,8 @@ function VaultPageInner() {
 
   // ── Reimbursements ──
   const myReimbs = useMemo(() =>
-    reimbursements.filter((r) => r.repId === currentRepId),
-    [reimbursements, currentRepId]
+    reimbursements.filter((r) => r.repId === effectiveRepId),
+    [reimbursements, effectiveRepId]
   );
   const pendingReimbs = myReimbs.filter((r) => r.status === 'Pending');
   const approvedReimbTotal = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
@@ -355,7 +355,7 @@ function VaultPageInner() {
 
   if (!isHydrated) return <VaultSkeleton />;
 
-  if (currentRole !== 'rep' && currentRole !== 'sub-dealer') {
+  if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer') {
     return (
       <div className="p-8 text-center">
         <p className="text-slate-500 text-sm">My Pay is only available in the rep view.</p>
@@ -369,8 +369,8 @@ function VaultPageInner() {
       <ReimbursementModal
         open={showReimbModal}
         onClose={() => setShowReimbModal(false)}
-        repId={currentRepId ?? ''}
-        repName={currentRepName ?? ''}
+        repId={effectiveRepId ?? ''}
+        repName={effectiveRepName ?? ''}
         onSubmit={(data) => {
           const newReimb: Reimbursement = { id: `reimb_${Date.now()}`, ...data, status: 'Pending' };
           setReimbursements((prev) => [...prev, newReimb]);
@@ -587,11 +587,11 @@ function VaultPageInner() {
           className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Types</option>
-          {currentRole !== 'sub-dealer' && <option value="M1">M1 Only</option>}
+          {effectiveRole !== 'sub-dealer' && <option value="M1">M1 Only</option>}
           <option value="M2">M2 Only</option>
           <option value="M3">M3 Only</option>
-          {currentRole !== 'sub-dealer' && <option value="Bonus">Bonus Only</option>}
-          {currentRole !== 'sub-dealer' && <option value="Trainer">Trainer Only</option>}
+          {effectiveRole !== 'sub-dealer' && <option value="Bonus">Bonus Only</option>}
+          {effectiveRole !== 'sub-dealer' && <option value="Trainer">Trainer Only</option>}
         </select>
         <select
           value={filterStatus}

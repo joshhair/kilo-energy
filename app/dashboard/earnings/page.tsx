@@ -336,7 +336,7 @@ function MonthlyEarningsBarChart({
 function RepEarningsView() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRepId, currentRepName, payrollEntries, reimbursements, setReimbursements } = useApp();
+  const { currentRepId, currentRepName, effectiveRepId, effectiveRepName, payrollEntries, reimbursements, setReimbursements } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
 
@@ -355,13 +355,13 @@ function RepEarningsView() {
 
   const [showReimbModal, setShowReimbModal] = useState(false);
 
-  const myPayroll     = payrollEntries.filter((p) => p.repId === currentRepId);
+  const myPayroll     = payrollEntries.filter((p) => p.repId === effectiveRepId);
   const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus');
   const pendingItems  = myPayroll.filter((p) => p.status === 'Pending');
   const totalPaid     = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
   const totalPending  = pendingItems.reduce((s, p) => s + p.amount, 0);
   const pendingCount  = pendingItems.length;
-  const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === currentRepId), [reimbursements, currentRepId]);
+  const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === effectiveRepId), [reimbursements, effectiveRepId]);
 
   // Next-payout countdown (next Friday on or after today)
   const today          = new Date();
@@ -373,14 +373,14 @@ function RepEarningsView() {
   const daysLeft       = daysUntilDate(nextFriday, today);
 
   // Monthly sparkline data: last 6 calendar months per summary-card category
-  const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Paid')),    [payrollEntries, currentRepId]);
-  const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === currentRepId && p.status === 'Pending')), [payrollEntries, currentRepId]);
-  const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === currentRepId && r.status === 'Approved')), [reimbursements, currentRepId]);
+  const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid')),    [payrollEntries, effectiveRepId]);
+  const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')), [payrollEntries, effectiveRepId]);
+  const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved')), [reimbursements, effectiveRepId]);
 
   // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
   const monthlyBarData = useMemo(
-    () => computeMonthlyBarData(payrollEntries, reimbursements, currentRepId),
-    [payrollEntries, reimbursements, currentRepId],
+    () => computeMonthlyBarData(payrollEntries, reimbursements, effectiveRepId),
+    [payrollEntries, reimbursements, effectiveRepId],
   );
 
   // Deal table sort + pagination
@@ -398,7 +398,7 @@ function RepEarningsView() {
   type DealRow = | { kind: 'payroll'; entry: (typeof payrollEntries)[0] } | { kind: 'reimb'; entry: (typeof myReimbs)[0] };
 
   const sortedDeals = useMemo((): DealRow[] => {
-    const payrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === currentRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
+    const payrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
     const reimbRows: DealRow[] = myReimbs.map((r) => ({ kind: 'reimb' as const, entry: r }));
     return [...payrollRows, ...reimbRows].sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
@@ -421,7 +421,7 @@ function RepEarningsView() {
       }
       return dealSortDir === 'asc' ? cmp : -cmp;
     });
-  }, [payrollEntries, myReimbs, currentRepId, dealSortKey, dealSortDir]);
+  }, [payrollEntries, myReimbs, effectiveRepId, dealSortKey, dealSortDir]);
 
   const dealTotal      = sortedDeals.length;
   const dealTotalPages = Math.max(1, Math.ceil(dealTotal / dealPageSize));
@@ -443,7 +443,7 @@ function RepEarningsView() {
   };
 
   const sortedBonuses = useMemo(() => {
-    return payrollEntries.filter((p) => p.repId === currentRepId && p.type === 'Bonus').sort((a, b) => {
+    return payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Bonus').sort((a, b) => {
       let cmp = 0;
       switch (bonusSortKey) {
         case 'notes':  cmp = (a.notes ?? '').localeCompare(b.notes ?? ''); break;
@@ -453,7 +453,7 @@ function RepEarningsView() {
       }
       return bonusSortDir === 'asc' ? cmp : -cmp;
     });
-  }, [payrollEntries, currentRepId, bonusSortKey, bonusSortDir]);
+  }, [payrollEntries, effectiveRepId, bonusSortKey, bonusSortDir]);
 
   const bonusTotal      = sortedBonuses.length;
   const bonusTotalPages = Math.max(1, Math.ceil(bonusTotal / bonusPageSize));
@@ -479,8 +479,8 @@ function RepEarningsView() {
       <ReimbursementModal
         open={showReimbModal}
         onClose={() => setShowReimbModal(false)}
-        repId={currentRepId ?? ''}
-        repName={currentRepName ?? ''}
+        repId={effectiveRepId ?? ''}
+        repName={effectiveRepName ?? ''}
         onSubmit={(data) => {
           const newReimb: Reimbursement = { id: `reimb_${Date.now()}`, ...data, status: 'Pending' };
           setReimbursements((prev) => [...prev, newReimb]);
@@ -1492,11 +1492,11 @@ export default function EarningsPage() {
 // ── Sub-Dealer Earnings View ─────────────────────────────────────────────────
 
 function SubDealerEarningsView() {
-  const { currentRepId, payrollEntries } = useApp();
+  const { effectiveRepId, payrollEntries } = useApp();
 
   // Sub-dealers only see M2 and M3 payroll entries
   const myPayroll = payrollEntries.filter(
-    (p) => p.repId === currentRepId && (p.paymentStage === 'M2' || p.paymentStage === 'M3')
+    (p) => p.repId === effectiveRepId && (p.paymentStage === 'M2' || p.paymentStage === 'M3')
   );
 
   const totalEarned = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
@@ -1588,8 +1588,8 @@ function EarningsPageInner() {
   }
 
   if (!isHydrated) return <EarningsSkeleton />;
-  if (currentRole === 'admin') return <AdminFinancialsView />;
-  if (currentRole === 'sub-dealer') return <SubDealerEarningsView />;
+  if (effectiveRole === 'admin') return <AdminFinancialsView />;
+  if (effectiveRole === 'sub-dealer') return <SubDealerEarningsView />;
   return <RepEarningsView />;
 }
 

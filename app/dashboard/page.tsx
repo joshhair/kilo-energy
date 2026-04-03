@@ -706,7 +706,7 @@ function useCountUp(target: number, duration = 800): number {
 }
 
 export default function DashboardPage() {
-  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId } = useApp();
+  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId, effectiveRepName } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -725,14 +725,14 @@ export default function DashboardPage() {
   const periodPayroll = payrollEntries.filter((p) => isInPeriod(p.date, period));
 
   const myProjects =
-    currentRole === 'admin'
+    effectiveRole === 'admin'
       ? periodProjects
-      : periodProjects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+      : periodProjects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
 
   const myPayroll =
-    currentRole === 'admin'
+    effectiveRole === 'admin'
       ? periodPayroll
-      : periodPayroll.filter((p) => p.repId === currentRepId);
+      : periodPayroll.filter((p) => p.repId === effectiveRepId);
 
   // ── Previous-period data (used for trend badges on stat cards) ──────────────
   // Only 'this-month' and 'this-year' have a well-defined predecessor.
@@ -746,14 +746,14 @@ export default function DashboardPage() {
     : [];
 
   const myPrevProjects = hasPreviousPeriod
-    ? (currentRole === 'admin'
+    ? (effectiveRole === 'admin'
         ? prevPeriodProjects
-        : prevPeriodProjects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId))
+        : prevPeriodProjects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId))
     : [];
   const myPrevPayroll = hasPreviousPeriod
-    ? (currentRole === 'admin'
+    ? (effectiveRole === 'admin'
         ? prevPeriodPayroll
-        : prevPeriodPayroll.filter((p) => p.repId === currentRepId))
+        : prevPeriodPayroll.filter((p) => p.repId === effectiveRepId))
     : [];
 
   /**
@@ -787,10 +787,10 @@ export default function DashboardPage() {
   // every hook to be called in the same order on every render.
   const payrollProjectIds = new Set(myPayroll.map((p) => p.projectId).filter(Boolean));
   const mtdProjects = projects.filter(
-    (p) => (p.repId === currentRepId || p.setterId === currentRepId) && isThisMonth(p.soldDate)
+    (p) => (p.repId === effectiveRepId || p.setterId === effectiveRepId) && isThisMonth(p.soldDate)
   );
   const mtdPayrollCommission = payrollEntries
-    .filter((p) => p.repId === currentRepId && isThisMonth(p.date))
+    .filter((p) => p.repId === effectiveRepId && isThisMonth(p.date))
     .reduce((s, p) => s + p.amount, 0);
   const mtdUnmatchedCommission = mtdProjects
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
@@ -841,7 +841,7 @@ export default function DashboardPage() {
     return <PMDashboard projects={periodProjects} allProjects={projects} period={period} setPeriod={setPeriod} PERIODS={PERIODS} totalReps={reps.length} />;
   }
 
-  if (currentRole === 'admin') {
+  if (effectiveRole === 'admin') {
     return <AdminDashboard
       projects={periodProjects}
       allProjects={projects}
@@ -855,7 +855,7 @@ export default function DashboardPage() {
     />;
   }
 
-  if (currentRole === 'sub-dealer') {
+  if (effectiveRole === 'sub-dealer') {
     return <SubDealerDashboard
       projects={periodProjects}
       allProjects={projects}
@@ -865,8 +865,8 @@ export default function DashboardPage() {
       period={period}
       setPeriod={setPeriod}
       PERIODS={PERIODS}
-      currentRepId={currentRepId}
-      currentRepName={currentRepName}
+      currentRepId={effectiveRepId}
+      currentRepName={effectiveRepName}
     />;
   }
 
@@ -934,7 +934,7 @@ export default function DashboardPage() {
   const installedSparkData = computeSparklineData(myProjects.filter((p) => installedPhases.includes(p.phase)).map((p) => ({ date: p.soldDate, amount: p.kWSize })));
 
   const thisWeekPayroll = payrollEntries.filter(
-    (p) => p.repId === currentRepId && isThisWeek(p.date) && p.status !== 'Paid'
+    (p) => p.repId === effectiveRepId && isThisWeek(p.date) && p.status !== 'Paid'
   );
   const thisWeekTotal = thisWeekPayroll.reduce((s, p) => s + p.amount, 0);
 
@@ -944,10 +944,10 @@ export default function DashboardPage() {
 
   // All-time denominators used for MTD ring-chart ratios (period-independent)
   const allTimeDeals = projects.filter(
-    (p) => p.repId === currentRepId || p.setterId === currentRepId
+    (p) => p.repId === effectiveRepId || p.setterId === effectiveRepId
   ).length;
   const allTimeKW = projects
-    .filter((p) => p.repId === currentRepId || p.setterId === currentRepId)
+    .filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId)
     .reduce((s, p) => s + p.kWSize, 0);
   const allTimeEstPay = myProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
@@ -966,7 +966,7 @@ export default function DashboardPage() {
     return nf.toISOString().split('T')[0];
   })();
   const pendingPayrollTotal = payrollEntries
-    .filter((p) => p.repId === currentRepId && p.date === nextFridayDate && (p.status === 'Pending' || p.status === 'Paid'))
+    .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Pending' || p.status === 'Paid'))
     .reduce((sum, p) => sum + p.amount, 0);
 
   // Calculate label for next Friday (if today is Friday, show next week's Friday)
@@ -984,7 +984,7 @@ export default function DashboardPage() {
 
   // Incentives for this rep
   const myIncentives = incentives.filter(
-    (i) => i.active && (i.type === 'company' || (i.type === 'personal' && i.targetRepId === currentRepId))
+    (i) => i.active && (i.type === 'company' || (i.type === 'personal' && i.targetRepId === effectiveRepId))
   );
 
   const stats = [
@@ -1067,7 +1067,7 @@ export default function DashboardPage() {
       <div className="card-surface rounded-2xl mb-6">
         <div className="px-6 py-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {currentRepName}</p>
+            <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {effectiveRepName}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight">
               <span className="text-gradient-brand">Next Payout:</span> <span className="text-gradient-emerald">${pendingPayrollTotal.toLocaleString()}</span>
             </p>
@@ -1227,7 +1227,7 @@ export default function DashboardPage() {
           <NeedsAttentionSection
             activeProjects={projects.filter(
               (p) =>
-                (p.repId === currentRepId || p.setterId === currentRepId) &&
+                (p.repId === effectiveRepId || p.setterId === effectiveRepId) &&
                 ACTIVE_PHASES.includes(p.phase)
             )}
             mentions={dashMentions}
@@ -1240,7 +1240,7 @@ export default function DashboardPage() {
               fetch(`/api/projects/${projectId}/messages/${messageId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ checkItemId, completed, completedBy: currentRepId }),
+                body: JSON.stringify({ checkItemId, completed, completedBy: effectiveRepId }),
               }).then(() => {
                 // Update local state to remove the completed task
                 setDashMentions((prev) =>
