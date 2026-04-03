@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
 import { requireAuth } from '../../../lib/api-auth';
 
 // GET /api/blitzes — List all blitzes
 export async function GET() {
   try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  // PM must have canAccessBlitz permission
+  const clerkU = await currentUser();
+  const email = clerkU?.emailAddresses?.[0]?.emailAddress;
+  if (email) {
+    const u = await prisma.user.findFirst({ where: { email, active: true } });
+    if (u?.role === 'project_manager' && !u.canAccessBlitz) {
+      return NextResponse.json({ error: 'Forbidden — blitz access not enabled' }, { status: 403 });
+    }
+  }
   const blitzes = await prisma.blitz.findMany({
     include: {
       createdBy: true,

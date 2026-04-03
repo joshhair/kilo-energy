@@ -35,3 +35,25 @@ export async function requireAdmin() {
   }
   return user;
 }
+
+/**
+ * Require an authenticated Clerk user whose email maps to an internal User
+ * with role = 'admin' or 'project_manager'. Returns the internal User record.
+ * Throws NextResponse with 401 (unauthenticated) or 403 (not admin/PM).
+ */
+export async function requireAdminOrPM() {
+  const { userId } = await auth();
+  if (!userId) {
+    throw NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const clerkUser = await currentUser();
+  if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
+    throw NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const email = clerkUser.emailAddresses[0].emailAddress;
+  const user = await prisma.user.findFirst({ where: { email, role: { in: ['admin', 'project_manager'] } } });
+  if (!user) {
+    throw NextResponse.json({ error: 'Forbidden — admin or project manager access required' }, { status: 403 });
+  }
+  return user;
+}

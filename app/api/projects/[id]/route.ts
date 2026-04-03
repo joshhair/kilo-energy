@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+
+// Financial fields that project managers must NOT be able to modify
+const PM_BLOCKED_FIELDS = ['m1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'netPPW', 'baselineOverrideJson'];
 
 // PATCH /api/projects/[id] — Update a project (phase change, notes, flag, etc.)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -9,6 +12,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
+
+  // Check if the user is a project manager — strip financial fields if so
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+  if (email) {
+    const internalUser = await prisma.user.findFirst({ where: { email, active: true } });
+    if (internalUser?.role === 'project_manager') {
+      for (const field of PM_BLOCKED_FIELDS) {
+        delete body[field];
+      }
+    }
+  }
 
   // Build update data, only including fields that were sent
   const data: Record<string, unknown> = {};

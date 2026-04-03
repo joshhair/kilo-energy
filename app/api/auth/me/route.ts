@@ -33,5 +33,8 @@ export async function GET() {
     email: user.email,
     role: user.role,
     repType: user.repType,
+    canExport: user.canExport,
+    canCreateDeals: user.canCreateDeals,
+    canAccessBlitz: user.canAccessBlitz,
   });
 }

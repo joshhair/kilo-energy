@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, PlusCircle, X, Keyboard } from 'lucide-react';
-import { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV } from './nav-items';
+import { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV, PM_NAV } from './nav-items';
 import type { AnyNavItem, NavItem } from './nav-items';
 
 // ─── Internal types ───────────────────────────────────────────────────────────
@@ -195,7 +195,7 @@ export interface CommandPaletteProps {
   /** Called when the palette should close (Esc, backdrop click, item selection). */
   onClose: () => void;
   /** Current user role — determines which nav pages are shown. */
-  role: 'rep' | 'admin' | 'sub-dealer' | null;
+  role: 'rep' | 'admin' | 'sub-dealer' | 'project_manager' | null;
 }
 
 export function CommandPalette({ open, onOpen, onClose, role }: CommandPaletteProps) {
@@ -220,7 +220,7 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
   // ── Build full item list ──────────────────────────────────────────────────
 
   const allItems = useMemo((): PaletteItem[] => {
-    const navSource = role === 'admin' ? ADMIN_NAV : role === 'sub-dealer' ? SUB_DEALER_NAV : REP_NAV;
+    const navSource = role === 'admin' ? ADMIN_NAV : role === 'project_manager' ? PM_NAV : role === 'sub-dealer' ? SUB_DEALER_NAV : REP_NAV;
     const pages: PaletteItem[] = flattenNav(navSource)
       .filter((item) => !QA_EXACT_HREFS.has(item.href)) // deduplicate
       .map((item) => ({

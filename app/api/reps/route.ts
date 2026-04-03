@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireAdmin } from '../../../lib/api-auth';
+import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
 
-// GET /api/reps — List users by role (admin only)
+// GET /api/reps — List users by role (admin or PM)
 export async function GET(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  try { await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
   const role = req.nextUrl.searchParams.get('role') || 'rep';
   const users = await prisma.user.findMany({
     where: { role, active: true },

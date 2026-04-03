@@ -5,7 +5,7 @@ import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTI
 import { getM1PayDate, getM2PayDate } from './utils';
 import { persistFetch } from './persist';
 
-type Role = 'rep' | 'admin' | 'sub-dealer' | null;
+type Role = 'rep' | 'admin' | 'sub-dealer' | 'project_manager' | null;
 
 export interface ManagedItem { name: string; active: boolean; }
 
@@ -15,7 +15,7 @@ interface AppContextType {
   currentRole: Role;
   currentRepId: string | null;
   currentRepName: string | null;
-  setRole: (role: Role, repId?: string, repName?: string) => void;
+  setRole: (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }) => void;
   logout: () => void;
   projects: Project[];
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
@@ -93,6 +93,16 @@ interface AppContextType {
   // Project Chatter — lightweight unread mention count for nav badge
   unreadMentionCount: number;
   refreshMentionCount: () => void;
+  // View As (admin impersonation)
+  viewAsUser: { id: string; name: string; role: 'rep' | 'sub-dealer' } | null;
+  setViewAsUser: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+  clearViewAs: () => void;
+  isViewingAs: boolean;
+  effectiveRole: Role;
+  effectiveRepId: string | null;
+  effectiveRepName: string | null;
+  // PM permissions
+  pmPermissions: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -131,6 +141,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [dbReady, setDbReady] = useState(false);
   const [dataError, setDataError] = useState(false);
   const [unreadMentionCount, setUnreadMentionCount] = useState(0);
+  const [viewAsUser, setViewAsUserState] = useState<{ id: string; name: string; role: 'rep' | 'sub-dealer' } | null>(null);
+  const [pmPermissions, setPmPermissions] = useState<{ canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null>(null);
+
+  const setViewAsUser = useCallback((user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => {
+    setViewAsUserState(user);
+  }, []);
+  const clearViewAs = useCallback(() => { setViewAsUserState(null); }, []);
+  const isViewingAs = currentRole === 'admin' && viewAsUser !== null;
+  const effectiveRole: Role = isViewingAs ? viewAsUser!.role : currentRole;
+  const effectiveRepId = isViewingAs ? viewAsUser!.id : currentRepId;
+  const effectiveRepName = isViewingAs ? viewAsUser!.name : currentRepName;
   const [idMaps, setIdMaps] = useState<{
     installerNameToId: Record<string, string>;
     financerNameToId: Record<string, string>;
@@ -939,10 +960,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const setRole = (role: Role, repId?: string, repName?: string) => {
+  const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }) => {
     setCurrentRole(role);
     setCurrentRepId(repId ?? null);
     setCurrentRepName(repName ?? null);
+    setPmPermissions(role === 'project_manager' && pmPerms ? pmPerms : null);
     if (role) localStorage.setItem('kilo-role', role);
     else localStorage.removeItem('kilo-role');
     if (repId) localStorage.setItem('kilo-rep-id', repId);
@@ -1140,6 +1162,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         removeSubDealer,
         unreadMentionCount,
         refreshMentionCount,
+        viewAsUser,
+        setViewAsUser,
+        clearViewAs,
+        isViewingAs,
+        effectiveRole,
+        effectiveRepId,
+        effectiveRepName,
+        pmPermissions,
       }}
     >
       {children}

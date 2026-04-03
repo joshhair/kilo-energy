@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
 
 // POST /api/projects — Create a new project/deal
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // PM must have canCreateDeals permission
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+  if (email) {
+    const internalUser = await prisma.user.findFirst({ where: { email, active: true } });
+    if (internalUser?.role === 'project_manager' && !internalUser.canCreateDeals) {
+      return NextResponse.json({ error: 'Forbidden — deal creation not enabled for this account' }, { status: 403 });
+    }
+  }
   const body = await req.json();
   const project = await prisma.project.create({
     data: {

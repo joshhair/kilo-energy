@@ -22,7 +22,7 @@ model User {
   email     String   @unique
   phone     String   @default("")
 
-  /// "admin" | "rep" | "sub-dealer"
+  /// "admin" | "rep" | "sub-dealer" | "project_manager"
   role      String   @default("rep")
 
   /// "closer" | "setter" | "both" — only applies when role = "rep"
@@ -34,6 +34,13 @@ model User {
   canRequestBlitz Boolean @default(false)
   /// Whether this user can create/manage blitzes directly
   canCreateBlitz  Boolean @default(false)
+
+  /// PM-only: whether this project manager can export data
+  canExport       Boolean @default(false)
+  /// PM-only: whether this project manager can create new deals
+  canCreateDeals  Boolean @default(false)
+  /// PM-only: whether this project manager can access the Blitz module
+  canAccessBlitz  Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

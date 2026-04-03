@@ -77,6 +77,12 @@ const ADMIN_MORE_ITEMS: MoreSheetItem[] = [
   { href: '/dashboard/calculator', label: 'Calculator', icon: Calculator },
 ];
 
+const PM_BOTTOM_NAV: BottomNavItem[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
+  { href: '/dashboard/reps', label: 'Reps', icon: Users },
+];
+
 // ─── More Sheet (slide-up) ────────────────────────────────────────────────
 
 function MoreSheet({
@@ -164,7 +170,7 @@ export default function BottomNav({
   role,
   isTrainer = false,
 }: {
-  role: 'admin' | 'rep' | 'sub-dealer';
+  role: 'admin' | 'rep' | 'sub-dealer' | 'project_manager';
   isTrainer?: boolean;
 }) {
   const pathname = usePathname();
@@ -184,6 +190,9 @@ export default function BottomNav({
   if (role === 'admin') {
     navItems = ADMIN_BOTTOM_NAV;
     moreItems = ADMIN_MORE_ITEMS;
+  } else if (role === 'project_manager') {
+    navItems = PM_BOTTOM_NAV;
+    moreItems = [];
   } else if (role === 'sub-dealer') {
     navItems = SUB_DEALER_BOTTOM_NAV;
     moreItems = [];

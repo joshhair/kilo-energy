@@ -60,6 +60,14 @@ export const SUB_DEALER_NAV: AnyNavItem[] = [
   { href: '/dashboard/vault',      label: 'My Pay',     icon: Vault },
 ];
 
+// ─── Project Manager navigation (base — configurable items added at runtime) ─
+
+export const PM_NAV: AnyNavItem[] = [
+  { href: '/dashboard',            label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/dashboard/projects',   label: 'Projects',   icon: FolderKanban },
+  { href: '/dashboard/reps',       label: 'Reps',       icon: Users },
+];
+
 // ─── Admin navigation ────────────────────────────────────────────────────────
 
 export const ADMIN_NAV: AnyNavItem[] = [

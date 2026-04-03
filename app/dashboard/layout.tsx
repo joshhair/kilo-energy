@@ -12,6 +12,10 @@ import {
   ChevronUp,
   X,
   HelpCircle,
+  PlusCircle,
+  Tent,
+  Eye,
+  XCircle,
 } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { CommandPalette, ShortcutsOverlay } from '../../lib/command-palette';
@@ -27,7 +31,7 @@ export { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV } from '../../lib/nav-items';
 export type { NavItem, NavGroupDef, AnyNavItem } from '../../lib/nav-items';
 
 // Local imports — only what is directly referenced in this file.
-import { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV } from '../../lib/nav-items';
+import { REP_NAV, ADMIN_NAV, SUB_DEALER_NAV, PM_NAV } from '../../lib/nav-items';
 import type { NavItem } from '../../lib/nav-items';
 
 // ─── NavGroup component ────────────────────────────────────────────────────
@@ -160,7 +164,7 @@ function NavGroup({
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentRole, currentRepName, currentRepId, trainerAssignments, logout, projects, payrollEntries, dataError } = useApp();
+  const { currentRole, currentRepName, currentRepId, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, effectiveRepName, isViewingAs, viewAsUser, clearViewAs, pmPermissions } = useApp();
   const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
@@ -308,7 +312,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isTrainer = trainerAssignments.some((a) => a.trainerId === currentRepId);
   const repNav = isTrainer ? REP_NAV : REP_NAV.filter((item) => !('href' in item && item.href === '/dashboard/training'));
-  const navItems = currentRole === 'admin' ? ADMIN_NAV : currentRole === 'sub-dealer' ? SUB_DEALER_NAV : repNav;
+
+  // Build PM nav with conditional items
+  const buildPmNav = () => {
+    const items = [...PM_NAV];
+    if (pmPermissions?.canCreateDeals) items.splice(1, 0, { href: '/dashboard/new-deal', label: 'New Deal', icon: PlusCircle });
+    if (pmPermissions?.canAccessBlitz) items.push({ href: '/dashboard/blitz', label: 'Blitz', icon: Tent });
+    return items;
+  };
+
+  // Use effectiveRole for View As, currentRole for actual role
+  const roleForNav = isViewingAs ? effectiveRole : currentRole;
+  const navItems = roleForNav === 'admin' ? ADMIN_NAV
+    : roleForNav === 'project_manager' ? buildPmNav()
+    : roleForNav === 'sub-dealer' ? SUB_DEALER_NAV
+    : repNav;
 
   const handleLogout = () => {
     logout();
@@ -597,7 +615,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         open={paletteOpen}
         onOpen={() => setPaletteOpen(true)}
         onClose={() => setPaletteOpen(false)}
-        role={currentRole}
+        role={roleForNav}
       />
 
       {/* ── Keyboard shortcuts overlay (?) ──────────────────────────────── */}
@@ -612,7 +630,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <InstallPrompt />
 
       {/* ── Bottom navigation bar (mobile only, hidden on md+) ────────── */}
-      <BottomNav role={currentRole} isTrainer={isTrainer} />
+      <BottomNav role={roleForNav ?? 'rep'} isTrainer={isTrainer} />
     </div>
   );
 }

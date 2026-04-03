@@ -40,8 +40,12 @@ export default function LoginPage() {
         if (cancelled) return;
         if (res.ok) {
           const user = await res.json();
-          // user.role is 'admin' | 'rep' | 'sub-dealer'
-          setRole(user.role, user.id, user.name);
+          // user.role is 'admin' | 'rep' | 'sub-dealer' | 'project_manager'
+          setRole(user.role, user.id, user.name, user.role === 'project_manager' ? {
+            canExport: user.canExport ?? false,
+            canCreateDeals: user.canCreateDeals ?? false,
+            canAccessBlitz: user.canAccessBlitz ?? false,
+          } : undefined);
           router.push('/dashboard');
         } else if (res.status === 404) {
           setError('Access denied — your account is not registered. Contact your administrator.');
