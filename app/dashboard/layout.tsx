@@ -161,10 +161,67 @@ function NavGroup({
   );
 }
 
+// ─── View As Selector (admin only) ──────────────────────────────────────────
+
+function ViewAsSelector({ reps, subDealers, onSelect }: {
+  reps: Array<{ id: string; name: string }>;
+  subDealers: Array<{ id: string; name: string }>;
+  onSelect: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const allUsers = [
+    ...reps.map((r) => ({ ...r, role: 'rep' as const })),
+    ...subDealers.map((sd) => ({ ...sd, role: 'sub-dealer' as const })),
+  ];
+
+  const filtered = search.trim()
+    ? allUsers.filter((u) => u.name.toLowerCase().includes(search.toLowerCase()))
+    : allUsers;
+
+  return (
+    <div className="px-3 pb-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+      >
+        <Eye className="w-3.5 h-3.5 flex-shrink-0" />
+        <span>View As...</span>
+      </button>
+      {open && (
+        <div className="mt-1 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
+          <input
+            autoFocus
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search reps..."
+            className="w-full bg-transparent border-b border-slate-800 px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600"
+          />
+          <div className="max-h-48 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-slate-600 p-3 text-center">No matches</p>
+            ) : filtered.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => { onSelect(u); setOpen(false); setSearch(''); }}
+                className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center justify-between"
+              >
+                <span>{u.name}</span>
+                <span className="text-[10px] text-slate-600 capitalize">{u.role}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentRole, currentRepName, currentRepId, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, effectiveRepName, isViewingAs, viewAsUser, clearViewAs, pmPermissions } = useApp();
+  const { currentRole, currentRepName, currentRepId, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, effectiveRepName, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers } = useApp();
   const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
@@ -521,6 +578,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </ul>
         </nav>
 
+        {/* View As selector (admin only) */}
+        {currentRole === 'admin' && !isViewingAs && !showCollapsed && (
+          <ViewAsSelector reps={reps} subDealers={subDealers} onSelect={setViewAsUser} />
+        )}
+
         {/* Keyboard shortcuts help */}
         <div className={`px-3 pb-1 ${showCollapsed ? 'flex justify-center' : ''}`}>
           <button
@@ -591,6 +653,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {dataError && (
           <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
             Failed to load data. Please check your connection and refresh.
+          </div>
+        )}
+        {/* View As banner */}
+        {isViewingAs && viewAsUser && (
+          <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-amber-400" />
+              <span className="text-amber-300 text-sm font-medium">Viewing as <span className="text-white font-semibold">{viewAsUser.name}</span> <span className="text-amber-400/60 capitalize">({viewAsUser.role})</span></span>
+            </div>
+            <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-amber-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
+              <XCircle className="w-3.5 h-3.5" /> Exit
+            </button>
           </div>
         )}
         <div key={pathname} className="animate-page-enter">
