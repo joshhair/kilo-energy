@@ -22,8 +22,8 @@ export default function MobilePayroll() {
 
   const [statusTab, setStatusTab] = useState<StatusTab>('Pending');
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
-  const [showBonusSheet, setShowBonusSheet] = useState(false);
-  const [bonusForm, setBonusForm] = useState({ repId: '', amount: '', notes: '', date: '' });
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ repId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus', stage: 'Bonus' as string });
 
   // ── Summaries ─────────────────────────────────────────────────────────────
 
@@ -131,31 +131,31 @@ export default function MobilePayroll() {
     [payrollEntries, setPayrollEntries, toast],
   );
 
-  const handleAddBonus = useCallback(
+  const handleAddPayment = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!bonusForm.repId) {
+      if (!paymentForm.repId) {
         toast('Please select a rep', 'error');
         return;
       }
-      const rep = reps.find((r) => r.id === bonusForm.repId);
+      const rep = reps.find((r) => r.id === paymentForm.repId);
       const newEntry: PayrollEntry = {
         id: `pay_${Date.now()}`,
-        repId: bonusForm.repId,
+        repId: paymentForm.repId,
         repName: rep?.name ?? '',
         projectId: null,
         customerName: '',
-        amount: parseFloat(bonusForm.amount),
-        type: 'Bonus',
-        paymentStage: 'Bonus',
+        amount: parseFloat(paymentForm.amount),
+        type: paymentForm.type,
+        paymentStage: paymentForm.stage as 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer',
         status: 'Draft',
-        date: bonusForm.date || new Date().toISOString().split('T')[0],
-        notes: bonusForm.notes,
+        date: paymentForm.date || new Date().toISOString().split('T')[0],
+        notes: paymentForm.notes,
       };
       setPayrollEntries((prev) => [...prev, newEntry]);
-      setShowBonusSheet(false);
-      setBonusForm({ repId: '', amount: '', notes: '', date: '' });
-      toast(`Bonus added for ${rep?.name ?? 'rep'} — ${fmt$(parseFloat(bonusForm.amount))}`, 'success');
+      setShowAddPayment(false);
+      setPaymentForm({ repId: '', amount: '', notes: '', date: '', type: 'Bonus', stage: 'Bonus' });
+      toast(`Payment added for ${rep?.name ?? 'rep'} — ${fmt$(parseFloat(paymentForm.amount))}`, 'success');
 
       fetch('/api/payroll', {
         method: 'POST',
@@ -175,10 +175,10 @@ export default function MobilePayroll() {
         })
         .catch(() => {
           setPayrollEntries((prev) => prev.filter((p) => p.id !== newEntry.id));
-          toast('Failed to save bonus — entry removed', 'error');
+          toast('Failed to save payment — entry removed', 'error');
         });
     },
-    [bonusForm, reps, setPayrollEntries, toast],
+    [paymentForm, reps, setPayrollEntries, toast],
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -194,11 +194,11 @@ export default function MobilePayroll() {
         title="Payroll"
         right={
           <button
-            onClick={() => setShowBonusSheet(true)}
+            onClick={() => setShowAddPayment(true)}
             className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl bg-blue-600 text-white text-sm font-medium active:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
-            Bonus
+            Payment
           </button>
         }
       />
@@ -336,18 +336,18 @@ export default function MobilePayroll() {
         )}
       </MobileBottomSheet>
 
-      {/* ── Add Bonus sheet ── */}
+      {/* ── Add Payment sheet ── */}
       <MobileBottomSheet
-        open={showBonusSheet}
-        onClose={() => setShowBonusSheet(false)}
-        title="Add Bonus"
+        open={showAddPayment}
+        onClose={() => setShowAddPayment(false)}
+        title="Add Payment"
       >
-        <form onSubmit={handleAddBonus} className="px-5 space-y-4 pb-2">
+        <form onSubmit={handleAddPayment} className="px-5 space-y-4 pb-2">
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep</label>
             <select
-              value={bonusForm.repId}
-              onChange={(e) => setBonusForm((f) => ({ ...f, repId: e.target.value }))}
+              value={paymentForm.repId}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, repId: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
             >
               <option value="">Select rep...</option>
@@ -357,13 +357,45 @@ export default function MobilePayroll() {
             </select>
           </div>
           <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Type</label>
+            <div className="flex gap-2">
+              {(['Deal', 'Bonus'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setPaymentForm((f) => ({ ...f, type: t, stage: t === 'Bonus' ? 'Bonus' : 'M1' }))}
+                  className={`flex-1 min-h-[48px] rounded-xl text-sm font-medium transition-colors ${paymentForm.type === t ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          {paymentForm.type === 'Deal' && (
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Stage</label>
+              <div className="flex gap-2">
+                {['M1', 'M2', 'M3', 'Trainer'].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setPaymentForm((f) => ({ ...f, stage: s }))}
+                    className={`flex-1 min-h-[44px] rounded-xl text-sm font-medium transition-colors ${paymentForm.stage === s ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Amount</label>
             <input
               type="number"
               step="0.01"
               required
-              value={bonusForm.amount}
-              onChange={(e) => setBonusForm((f) => ({ ...f, amount: e.target.value }))}
+              value={paymentForm.amount}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0.00"
               className={`${inputCls} min-h-[48px]`}
             />
@@ -372,8 +404,8 @@ export default function MobilePayroll() {
             <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
             <input
               type="date"
-              value={bonusForm.date}
-              onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))}
+              value={paymentForm.date}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, date: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
             />
           </div>
@@ -381,8 +413,8 @@ export default function MobilePayroll() {
             <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Notes</label>
             <input
               type="text"
-              value={bonusForm.notes}
-              onChange={(e) => setBonusForm((f) => ({ ...f, notes: e.target.value }))}
+              value={paymentForm.notes}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Optional note"
               className={`${inputCls} min-h-[48px]`}
             />
@@ -391,7 +423,7 @@ export default function MobilePayroll() {
             type="submit"
             className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
           >
-            Add Bonus
+            Add Payment
           </button>
         </form>
       </MobileBottomSheet>
