@@ -17,13 +17,20 @@ export default defineConfig({
     {
       name: 'mobile',
       use: {
-        ...devices['iPhone 14 Pro'],
+        browserName: 'chromium',
+        viewport: { width: 393, height: 852 },
+        isMobile: true,
+        hasTouch: true,
+        userAgent: devices['iPhone 14 Pro'].userAgent,
       },
     },
     {
       name: 'tablet',
       use: {
-        ...devices['iPad Pro 11'],
+        browserName: 'chromium',
+        viewport: { width: 1024, height: 1366 },
+        isMobile: true,
+        hasTouch: true,
       },
     },
   ],

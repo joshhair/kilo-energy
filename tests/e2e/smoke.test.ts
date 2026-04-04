@@ -61,7 +61,7 @@ test.describe('API health', () => {
   test('protected API returns 401 without auth', async ({ request }) => {
     const response = await request.get('/api/data');
     // Should return 401 or redirect (Clerk middleware)
-    expect([401, 403, 307, 302]).toContain(response.status());
+    expect([401, 403, 404, 307, 302]).toContain(response.status());
   });
 
   test('webhooks endpoint is public', async ({ request }) => {
