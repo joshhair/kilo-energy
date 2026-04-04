@@ -78,28 +78,28 @@ export default function MobileDashboard() {
     );
 
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Dashboard" />
 
         {/* Inline stats — NO cards, just text */}
         <div className="grid grid-cols-2 gap-y-4 gap-x-8">
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
-            <p className="text-sm text-slate-500">Active Projects</p>
+            <p className="text-base text-slate-400">Active Projects</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{myProjects.length}</p>
-            <p className="text-sm text-slate-500">Total Projects</p>
+            <p className="text-base text-slate-400">Total Projects</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
-            <p className="text-sm text-slate-500">Total kW</p>
+            <p className="text-base text-slate-400">Total kW</p>
           </div>
           <div>
             <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
               {flaggedProjects.length}
             </p>
-            <p className="text-sm text-slate-500">Flagged</p>
+            <p className="text-base text-slate-400">Flagged</p>
           </div>
         </div>
 
@@ -131,7 +131,7 @@ export default function MobileDashboard() {
         {/* Needs Attention */}
         <MobileSection title="Needs Attention" collapsible count={flaggedProjects.length}>
           {flaggedProjects.length === 0 ? (
-            <p className="text-sm text-slate-500">All clear — no flagged projects.</p>
+            <p className="text-base text-slate-400">All clear — no flagged projects.</p>
           ) : (
             <div>
               {flaggedProjects.map((p, i) => (
@@ -156,7 +156,7 @@ export default function MobileDashboard() {
         {/* Recent */}
         <MobileSection title="Recent">
           {myProjects.length === 0 ? (
-            <p className="text-sm text-slate-500">No projects yet.</p>
+            <p className="text-base text-slate-400">No projects yet.</p>
           ) : (
             <div>
               {[...myProjects]
@@ -172,7 +172,7 @@ export default function MobileDashboard() {
                   >
                     <div className="min-w-0">
                       <span className="text-sm text-white">{p.customerName}</span>
-                      <span className="text-sm text-slate-500"> → {p.phase}</span>
+                      <span className="text-base text-slate-400"> → {p.phase}</span>
                     </div>
                     <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
                   </button>
@@ -257,7 +257,7 @@ export default function MobileDashboard() {
 
   if (effectiveRole === 'sub-dealer') {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Dashboard" />
 
         {/* Hero — next payout, no card wrapper */}
@@ -270,35 +270,35 @@ export default function MobileDashboard() {
               style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%` }}
             />
           </div>
-          <p className="text-sm text-slate-500 mt-1">{daysUntilPayday} days</p>
+          <p className="text-base text-slate-400 mt-1">{daysUntilPayday} days</p>
         </div>
 
         {/* Inline stats */}
         <div className="grid grid-cols-2 gap-y-4 gap-x-8 mt-6">
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{fmt$(totalPaid)}</p>
-            <p className="text-sm text-slate-500">Paid</p>
+            <p className="text-base text-slate-400">Paid</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
-            <p className="text-sm text-slate-500">kW Sold</p>
+            <p className="text-base text-slate-400">kW Sold</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
-            <p className="text-sm text-slate-500">Active Deals</p>
+            <p className="text-base text-slate-400">Active Deals</p>
           </div>
           <div>
             <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
               {flaggedProjects.length}
             </p>
-            <p className="text-sm text-slate-500">Flagged</p>
+            <p className="text-base text-slate-400">Flagged</p>
           </div>
         </div>
 
         {/* Recent */}
         <MobileSection title="Recent">
           {recentProjects.length === 0 ? (
-            <p className="text-sm text-slate-500">No projects yet.</p>
+            <p className="text-base text-slate-400">No projects yet.</p>
           ) : (
             <div>
               {recentProjects.map((p, i) => (
@@ -311,7 +311,7 @@ export default function MobileDashboard() {
                 >
                   <div className="min-w-0">
                     <span className="text-sm text-white">{p.customerName}</span>
-                    <span className="text-sm text-slate-500"> → {p.phase}</span>
+                    <span className="text-base text-slate-400"> → {p.phase}</span>
                   </div>
                   <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
                 </button>
@@ -326,7 +326,7 @@ export default function MobileDashboard() {
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Dashboard" />
 
       {/* Hero — next payout, no card wrapper */}
@@ -339,35 +339,35 @@ export default function MobileDashboard() {
             style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%` }}
           />
         </div>
-        <p className="text-sm text-slate-500 mt-1">{daysUntilPayday} days</p>
+        <p className="text-base text-slate-400 mt-1">{daysUntilPayday} days</p>
       </div>
 
       {/* Inline stats — no cards */}
       <div className="grid grid-cols-2 gap-y-4 gap-x-8 mt-6">
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{fmt$(totalPaid)}</p>
-          <p className="text-sm text-slate-500">Paid</p>
+          <p className="text-base text-slate-400">Paid</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
-          <p className="text-sm text-slate-500">kW Sold</p>
+          <p className="text-base text-slate-400">kW Sold</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
-          <p className="text-sm text-slate-500">Active Deals</p>
+          <p className="text-base text-slate-400">Active Deals</p>
         </div>
         <div>
           <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
             {flaggedProjects.length}
           </p>
-          <p className="text-sm text-slate-500">Flagged</p>
+          <p className="text-base text-slate-400">Flagged</p>
         </div>
       </div>
 
       {/* Needs Attention */}
       <MobileSection title="Needs Attention" collapsible count={flaggedProjects.length}>
         {flaggedProjects.length === 0 ? (
-          <p className="text-sm text-slate-500">All clear — no flagged projects.</p>
+          <p className="text-base text-slate-400">All clear — no flagged projects.</p>
         ) : (
           <div>
             {flaggedProjects.map((p, i) => (
@@ -392,7 +392,7 @@ export default function MobileDashboard() {
       {/* Recent */}
       <MobileSection title="Recent">
         {recentProjects.length === 0 ? (
-          <p className="text-sm text-slate-500">No projects yet.</p>
+          <p className="text-base text-slate-400">No projects yet.</p>
         ) : (
           <div>
             {recentProjects.map((p, i) => (
@@ -405,7 +405,7 @@ export default function MobileDashboard() {
               >
                 <div className="min-w-0">
                   <span className="text-sm text-white">{p.customerName}</span>
-                  <span className="text-sm text-slate-500"> → {p.phase}</span>
+                  <span className="text-base text-slate-400"> → {p.phase}</span>
                 </div>
                 <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
               </button>

@@ -76,10 +76,10 @@ export default function MobileEarnings() {
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-28">
+      <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="Earnings" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-sm text-slate-500">You don&apos;t have permission to view this page.</p>
+          <p className="text-base text-slate-400">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -101,7 +101,7 @@ export default function MobileEarnings() {
 
   if (!isHydrated) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Earnings" />
         <div className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 h-24 animate-pulse" />
         <div className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 h-48 animate-pulse" />
@@ -110,7 +110,7 @@ export default function MobileEarnings() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Earnings" />
 
       {/* ── Hero total ──────────────────────────────────────────────────── */}
@@ -141,7 +141,7 @@ export default function MobileEarnings() {
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
       <MobileSection title="Deal Payments" count={sortedDeals.length} collapsible defaultOpen>
         {sortedDeals.length === 0 ? (
-          <p className="text-sm text-slate-600 py-4 text-center">No deal payments for this period</p>
+          <p className="text-sm text-slate-500 py-4 text-center">No deal payments for this period</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedDeals.map((entry) => (
@@ -151,9 +151,9 @@ export default function MobileEarnings() {
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     {entry.paymentStage && (
-                      <span className="text-sm text-slate-600">{entry.paymentStage}</span>
+                      <span className="text-base text-slate-400">{entry.paymentStage}</span>
                     )}
-                    <span className="text-sm text-slate-600">{entry.date}</span>
+                    <span className="text-base text-slate-400">{entry.date}</span>
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
@@ -168,7 +168,7 @@ export default function MobileEarnings() {
       {/* ── Bonuses ─────────────────────────────────────────────────────── */}
       <MobileSection title="Bonuses" count={sortedBonuses.length} collapsible defaultOpen>
         {sortedBonuses.length === 0 ? (
-          <p className="text-sm text-slate-600 py-4 text-center">No bonuses for this period</p>
+          <p className="text-sm text-slate-500 py-4 text-center">No bonuses for this period</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedBonuses.map((entry) => (
@@ -177,7 +177,7 @@ export default function MobileEarnings() {
                   <p className="text-sm font-semibold text-white truncate">{entry.notes || 'Bonus'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-sm text-slate-600">{entry.date}</span>
+                    <span className="text-base text-slate-400">{entry.date}</span>
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
@@ -192,7 +192,7 @@ export default function MobileEarnings() {
       {/* ── Reimbursements ──────────────────────────────────────────────── */}
       <MobileSection title="Reimbursements" count={sortedReimbs.length} collapsible defaultOpen>
         {sortedReimbs.length === 0 ? (
-          <p className="text-sm text-slate-600 py-4 text-center">No reimbursements for this period</p>
+          <p className="text-sm text-slate-500 py-4 text-center">No reimbursements for this period</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedReimbs.map((entry) => (
@@ -201,7 +201,7 @@ export default function MobileEarnings() {
                   <p className="text-sm font-semibold text-white truncate">{entry.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-sm text-slate-600">{entry.date}</span>
+                    <span className="text-base text-slate-400">{entry.date}</span>
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">

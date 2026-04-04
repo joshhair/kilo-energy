@@ -1,0 +1,132 @@
+[
+  {
+    "page": "sign-in",
+    "path": "/sign-in",
+    "status": 200,
+    "redirectedTo": null,
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "sign-in.png"
+  },
+  {
+    "page": "dashboard",
+    "path": "/dashboard",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "dashboard.png"
+  },
+  {
+    "page": "projects",
+    "path": "/dashboard/projects",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fprojects",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "projects.png"
+  },
+  {
+    "page": "new-deal",
+    "path": "/dashboard/new-deal",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fnew-deal",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "new-deal.png"
+  },
+  {
+    "page": "vault",
+    "path": "/dashboard/vault",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fvault",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "vault.png"
+  },
+  {
+    "page": "payroll",
+    "path": "/dashboard/payroll",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fpayroll",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "payroll.png"
+  },
+  {
+    "page": "reps",
+    "path": "/dashboard/reps",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Freps",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "reps.png"
+  },
+  {
+    "page": "blitz",
+    "path": "/dashboard/blitz",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fblitz",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "blitz.png"
+  },
+  {
+    "page": "calculator",
+    "path": "/dashboard/calculator",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fcalculator",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "calculator.png"
+  },
+  {
+    "page": "incentives",
+    "path": "/dashboard/incentives",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fincentives",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "incentives.png"
+  },
+  {
+    "page": "training",
+    "path": "/dashboard/training",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Ftraining",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "training.png"
+  },
+  {
+    "page": "earnings",
+    "path": "/dashboard/earnings",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fearnings",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "earnings.png"
+  },
+  {
+    "page": "settings",
+    "path": "/dashboard/settings",
+    "status": 200,
+    "redirectedTo": "http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard%2Fsettings",
+    "title": "Kilo Energy",
+    "hasOverflow": false,
+    "smallTargets": 7,
+    "screenshot": "settings.png"
+  }
+]

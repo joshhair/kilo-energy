@@ -106,12 +106,12 @@ export default function MobileBlitz() {
   // PM access guard -- placed after all hooks
   if (isPM && pmPermissions && !pmPermissions.canAccessBlitz) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Blitz" />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <AlertCircle className="w-10 h-10 text-slate-600" />
+          <AlertCircle className="w-10 h-10 text-slate-500" />
           <p className="text-sm font-medium text-slate-400">Access Denied</p>
-          <p className="text-sm text-slate-600 text-center max-w-[240px]">
+          <p className="text-sm text-slate-500 text-center max-w-[240px]">
             You don&apos;t have permission to access Blitz. Contact an admin to request access.
           </p>
         </div>
@@ -177,7 +177,7 @@ export default function MobileBlitz() {
 
   if (loading) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Blitz" />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -189,7 +189,7 @@ export default function MobileBlitz() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Blitz" right={headerRight} />
 
       {/* Status pills */}
@@ -253,7 +253,7 @@ export default function MobileBlitz() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-semibold text-white truncate">{blitz.name}</p>
-                        <p className="text-sm text-slate-500 mt-1">{details}</p>
+                        <p className="text-base text-slate-400 mt-1">{details}</p>
                       </div>
                       <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
                     </div>
@@ -275,7 +275,7 @@ export default function MobileBlitz() {
               {pendingRequests.map((req) => (
                 <MobileCard key={req.id} onTap={() => router.push('/dashboard/blitz?tab=requests')}>
                   <p className="text-base font-semibold text-white">{req.name}</p>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-base text-slate-400 mt-1">
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
                   <MobileBadge value="Pending" variant="status" />

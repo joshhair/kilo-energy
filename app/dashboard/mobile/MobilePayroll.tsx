@@ -189,7 +189,7 @@ export default function MobilePayroll() {
     'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500';
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader
         title="Payroll"
         right={
@@ -206,7 +206,7 @@ export default function MobilePayroll() {
       {/* ── Hero ── */}
       <div>
         <p className="text-4xl font-black text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
-        <p className="text-sm text-slate-500 mt-1">pending approval</p>
+        <p className="text-base text-slate-400 mt-1">pending approval</p>
       </div>
 
       {/* ── Status tabs ── */}
@@ -252,7 +252,7 @@ export default function MobilePayroll() {
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-sm font-bold tabular-nums text-white">{fmt$(entry.amount)}</span>
-                      <span className="text-sm text-slate-500">{entry.paymentStage}</span>
+                      <span className="text-base text-slate-400">{entry.paymentStage}</span>
                     </div>
                   </button>
                 ))}
@@ -316,14 +316,6 @@ export default function MobilePayroll() {
             )}
             {selectedEntry.status !== 'Paid' && (
               <>
-                <MobileBottomSheet.Item
-                  label="Edit Amount"
-                  icon={Edit2}
-                  onTap={() => {
-                    setSelectedEntry(null);
-                    toast('Edit not yet implemented on mobile', 'info');
-                  }}
-                />
                 <MobileBottomSheet.Item
                   label="Delete"
                   icon={Trash2}

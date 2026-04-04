@@ -131,7 +131,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   if (!hydrated || loading) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <div className="h-6 w-24 bg-slate-800 rounded animate-pulse" />
         <div className="h-8 w-48 bg-slate-800 rounded animate-pulse" />
         <div className="h-4 w-32 bg-slate-800/60 rounded animate-pulse" />
@@ -141,7 +141,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   if (!blitz) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <button
           onClick={() => router.push('/dashboard/blitz')}
           className="flex items-center gap-1.5 text-sm text-slate-500 min-h-[48px]"
@@ -164,7 +164,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   ];
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/blitz')}
@@ -179,7 +179,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
         <div className="mt-1.5">
           <MobileBadge value={badgeVariantValue} variant="status" />
         </div>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-base text-slate-400 mt-1">
           {blitz.location && <>{blitz.location} &middot; </>}
           {formatDate(blitz.startDate)} &ndash; {formatDate(blitz.endDate)}
         </p>
@@ -336,7 +336,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-slate-400 capitalize">{c.category}</span>
                       {c.description && (
-                        <span className="text-sm text-slate-600 truncate">&middot; {c.description}</span>
+                        <span className="text-sm text-slate-500 truncate">&middot; {c.description}</span>
                       )}
                     </div>
                     <p className="text-sm text-slate-500 mt-0.5">{formatDate(c.date)}</p>
@@ -345,7 +345,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                     <span className="text-sm font-semibold text-white tabular-nums">{formatCurrency(c.amount)}</span>
                     <button
                       onClick={() => handleDeleteCost(c.id)}
-                      className="p-2 text-slate-600 active:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      className="p-2 text-slate-500 active:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

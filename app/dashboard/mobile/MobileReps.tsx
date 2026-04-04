@@ -90,7 +90,7 @@ export default function MobileReps() {
   };
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader
         title="Reps"
         right={
@@ -144,7 +144,7 @@ export default function MobileReps() {
                 </div>
 
                 {isAdmin && (
-                  <div className="flex gap-4 mt-3 text-sm text-slate-500">
+                  <div className="flex gap-4 mt-3 text-base text-slate-400">
                     <span>{deals} deals</span>
                     <span>&middot;</span>
                     <span>{kw.toFixed(1)} kW</span>

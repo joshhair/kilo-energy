@@ -73,7 +73,7 @@ export default function MobileIncentives() {
   // PM guard
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Incentives" />
         <MobileEmptyState
           icon={Trophy}
@@ -95,21 +95,8 @@ export default function MobileIncentives() {
   const expiredIncentives = visible.filter((i) => isExpired(i.endDate));
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
-      <MobilePageHeader
-        title="Incentives"
-        right={
-          isAdmin ? (
-            <a
-              href="/dashboard/incentives"
-              className="flex items-center gap-1.5 min-h-[52px] px-4 rounded-2xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create
-            </a>
-          ) : undefined
-        }
-      />
+    <div className="px-5 pt-4 pb-24 space-y-4">
+      <MobilePageHeader title="Incentives" />
 
       {/* Active Incentives */}
       <MobileSection title="Active Incentives" count={activeIncentives.length}>
@@ -207,7 +194,7 @@ function IncentiveCard({
           <p className="text-sm font-medium text-white">
             {formatIncentiveMetric(incentive.metric, progress)}
           </p>
-          <p className="text-sm text-slate-500">
+          <p className="text-base text-slate-400">
             / {formatIncentiveMetric(incentive.metric, maxThreshold)}
           </p>
         </div>
@@ -238,7 +225,7 @@ function IncentiveCard({
                   ) : reached ? (
                     <Target className="w-3 h-3 text-amber-400" />
                   ) : (
-                    <Target className="w-3 h-3 text-slate-600" />
+                    <Target className="w-3 h-3 text-slate-500" />
                   )}
                 </div>
                 <p className={`text-sm flex-1 ${ms.achieved ? 'text-emerald-400 line-through' : reached ? 'text-amber-300' : 'text-slate-500'}`}>

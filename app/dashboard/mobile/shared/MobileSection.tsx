@@ -23,21 +23,21 @@ export default function MobileSection({
       {collapsible ? (
         <button
           onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between mb-3 min-h-[48px]"
+          className="w-full flex items-center justify-between mb-2 min-h-[48px]"
         >
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{title}</h2>
+            <h2 className="text-base font-semibold text-slate-400 uppercase tracking-wider">{title}</h2>
             {count !== undefined && (
-              <span className="text-sm text-slate-600">{count}</span>
+              <span className="text-base text-slate-500">{count}</span>
             )}
           </div>
-          {open ? <ChevronUp className="w-4 h-4 text-slate-600" /> : <ChevronDown className="w-4 h-4 text-slate-600" />}
+          {open ? <ChevronUp className="w-5 h-5 text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-500" />}
         </button>
       ) : (
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{title}</h2>
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-base font-semibold text-slate-400 uppercase tracking-wider">{title}</h2>
           {count !== undefined && (
-            <span className="text-sm text-slate-600">{count}</span>
+            <span className="text-base text-slate-500">{count}</span>
           )}
         </div>
       )}

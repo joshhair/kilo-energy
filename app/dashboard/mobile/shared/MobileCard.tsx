@@ -11,7 +11,7 @@ export default function MobileCard({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const base = `rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 ${className}`;
+  const base = `rounded-2xl p-4 bg-slate-900/60 border border-slate-800/20 ${className}`;
 
   if (onTap) {
     return (

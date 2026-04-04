@@ -95,7 +95,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 text-slate-400" />
         <h2 className="text-base font-semibold text-white">Activity</h2>
-        <span className="text-sm text-slate-500">({total})</span>
+        <span className="text-base text-slate-400">({total})</span>
       </div>
 
       {loading && activities.length === 0 ? (
@@ -104,7 +104,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
           Loading...
         </div>
       ) : activities.length === 0 ? (
-        <p className="text-sm text-slate-500">No activity yet</p>
+        <p className="text-base text-slate-400">No activity yet</p>
       ) : (
         <div className="relative pl-6">
           <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-800" />
@@ -114,7 +114,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
               <div key={entry.id} className="relative mb-3 last:mb-0">
                 <div className={`absolute -left-4 top-1 w-2 h-2 rounded-full ${dotColor}`} />
                 <p className="text-sm text-slate-300">{entry.detail}</p>
-                <p className="text-sm text-slate-500">{relativeTime(entry.createdAt)}</p>
+                <p className="text-base text-slate-400">{relativeTime(entry.createdAt)}</p>
               </div>
             );
           })}
@@ -159,7 +159,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (!project) {
     return (
-      <div className="px-5 pt-4 pb-28 text-center text-sm text-slate-500">
+      <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         Project not found.
         <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back to Projects</button>
       </div>
@@ -168,7 +168,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (currentRole === 'rep' && project.repId !== currentRepId && project.setterId !== currentRepId) {
     return (
-      <div className="px-5 pt-4 pb-28 text-center text-sm text-slate-500">
+      <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         You don&apos;t have permission to view this project.
         <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
       </div>
@@ -177,7 +177,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (currentRole === 'sub-dealer' && project.subDealerId !== currentRepId && project.repId !== currentRepId) {
     return (
-      <div className="px-5 pt-4 pb-28 text-center text-sm text-slate-500">
+      <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         You don&apos;t have permission to view this project.
         <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
       </div>
@@ -265,7 +265,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
 
       {/* Back button */}
       <button
@@ -316,7 +316,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <div className="space-y-0">
         {infoRows.map(([label, value]) => (
           <div key={label} className="flex items-center justify-between py-3 border-b border-slate-800/20">
-            <span className="text-sm text-slate-500">{label}</span>
+            <span className="text-base text-slate-400">{label}</span>
             <span className="text-sm text-white">{value}</span>
           </div>
         ))}
@@ -376,7 +376,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {project.notes ? (
           <p className="text-sm text-slate-400 leading-relaxed">{project.notes}</p>
         ) : (
-          <p className="text-sm text-slate-600 italic">No notes</p>
+          <p className="text-sm text-slate-500 italic">No notes</p>
         )}
       </MobileSection>
 

@@ -49,10 +49,10 @@ export default function MobileCalculator() {
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-28">
+      <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="Calculator" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-sm text-slate-500">You don&apos;t have permission to view this page.</p>
+          <p className="text-base text-slate-400">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -114,7 +114,7 @@ export default function MobileCalculator() {
 
   if (!isHydrated) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Calculator" />
         <div className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 h-64 animate-pulse" />
       </div>
@@ -122,7 +122,7 @@ export default function MobileCalculator() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Calculator" />
 
       {/* ── Form inputs ───────────────────────────────────────────────────── */}
@@ -274,7 +274,7 @@ export default function MobileCalculator() {
 
           {/* Baseline info */}
           <div className="mt-4 pt-3 border-t border-slate-800/40">
-            <p className="text-sm text-slate-500">
+            <p className="text-base text-slate-400">
               Baseline: ${closerPerW.toFixed(2)}/W &middot; Sold: ${soldPPW.toFixed(2)}/W &middot; {kW.toFixed(1)} kW
             </p>
           </div>
@@ -285,7 +285,7 @@ export default function MobileCalculator() {
       {(!hasInput || soldPPW <= 0) && (
         <MobileCard>
           <div className="py-6 text-center">
-            <p className="text-sm text-slate-500">Fill in the fields above to calculate commission</p>
+            <p className="text-base text-slate-400">Fill in the fields above to calculate commission</p>
           </div>
         </MobileCard>
       )}

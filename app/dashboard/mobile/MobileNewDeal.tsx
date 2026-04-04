@@ -589,7 +589,7 @@ export default function MobileNewDeal() {
             {/* Setter (optional) */}
             {!isSubDealer && (
               <div>
-                <label className={labelCls}>Setter <span className="text-slate-600">(optional)</span></label>
+                <label className={labelCls}>Setter <span className="text-slate-500">(optional)</span></label>
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
@@ -700,7 +700,7 @@ export default function MobileNewDeal() {
                             onClick={() => !disabled && handleSolarTechFamilyChange(family)}
                             className={`min-h-[44px] px-3 rounded-xl text-sm font-medium border transition-all text-left ${
                               disabled
-                                ? 'bg-slate-800/40 border-slate-700/40 text-slate-600 opacity-50'
+                                ? 'bg-slate-800/40 border-slate-700/40 text-slate-500 opacity-50'
                                 : selected
                                   ? 'bg-blue-600/20 border-blue-500/60 text-blue-300'
                                   : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -712,7 +712,7 @@ export default function MobileNewDeal() {
                       })}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && (
-                      <p className="text-sm text-slate-500 mt-1">Only Prepaid family is compatible with {form.productType} deals</p>
+                      <p className="text-base text-slate-400 mt-1">Only Prepaid family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="solarTechFamily" />
                   </div>
@@ -799,7 +799,7 @@ export default function MobileNewDeal() {
                               onClick={() => !disabled && handlePcFamilyChange(family)}
                               className={`min-h-[44px] px-3 rounded-xl text-sm font-medium border transition-all text-left ${
                                 disabled
-                                  ? 'bg-slate-800/40 border-slate-700/40 text-slate-600 opacity-50'
+                                  ? 'bg-slate-800/40 border-slate-700/40 text-slate-500 opacity-50'
                                   : selected
                                     ? 'bg-blue-600/20 border-blue-500/60 text-blue-300'
                                     : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -812,7 +812,7 @@ export default function MobileNewDeal() {
                       })()}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && pcConfig.prepaidFamily && (
-                      <p className="text-sm text-slate-500 mt-1">Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
+                      <p className="text-base text-slate-400 mt-1">Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="pcFamily" />
                   </div>
@@ -975,7 +975,7 @@ export default function MobileNewDeal() {
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-sm">
                     {subDealerRate > 0 && (
-                      <div className="flex justify-between text-sm text-slate-500">
+                      <div className="flex justify-between text-base text-slate-400">
                         <span>Sub-dealer rate</span>
                         <span>${subDealerRate.toFixed(2)}/W</span>
                       </div>
@@ -987,12 +987,12 @@ export default function MobileNewDeal() {
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between text-sm text-slate-500">
+                    <div className="flex justify-between text-base text-slate-400">
                       <span>Your redline</span>
                       <span>${closerPerW.toFixed(2)}/W</span>
                     </div>
                     {currentRole === 'admin' && (
-                      <div className="flex justify-between text-sm text-slate-500">
+                      <div className="flex justify-between text-base text-slate-400">
                         <span>Kilo baseline</span>
                         <span>${kiloPerW.toFixed(2)}/W</span>
                       </div>
@@ -1001,7 +1001,7 @@ export default function MobileNewDeal() {
                       <span className="text-slate-400">Closer</span>
                       <span className="text-emerald-400 font-black">${closerTotal.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-slate-500">
+                    <div className="flex justify-between text-base text-slate-400">
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
                     </div>
                     {form.setterId && setterTotal > 0 && (
@@ -1011,7 +1011,7 @@ export default function MobileNewDeal() {
                       </div>
                     )}
                     {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between text-sm text-slate-500">
+                      <div className="flex justify-between text-base text-slate-400">
                         <span>Trainer ({trainerRep.name})</span>
                         <span className="text-amber-400">${trainerTotal.toLocaleString()}</span>
                       </div>
@@ -1122,7 +1122,7 @@ export default function MobileNewDeal() {
                       <span className="text-slate-400">Closer total</span>
                       <span className="text-emerald-400 font-black text-lg">${closerTotal.toLocaleString()}</span>
                     </div>
-                    <div className="text-sm text-slate-500">
+                    <div className="text-base text-slate-400">
                       M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}
                     </div>
                     {form.setterId && setterTotal > 0 && (
@@ -1131,7 +1131,7 @@ export default function MobileNewDeal() {
                           <span className="text-slate-400">Setter total</span>
                           <span className="text-blue-400 font-semibold">${setterTotal.toLocaleString()}</span>
                         </div>
-                        <div className="text-sm text-slate-500">
+                        <div className="text-base text-slate-400">
                           M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3 ? ` · M3: $${setterM3.toLocaleString()}` : ''}
                         </div>
                       </>
@@ -1158,7 +1158,7 @@ export default function MobileNewDeal() {
 
             {/* Notes */}
             <div>
-              <label className={labelCls}>Notes <span className="text-slate-600">(optional)</span></label>
+              <label className={labelCls}>Notes <span className="text-slate-500">(optional)</span></label>
               <textarea
                 placeholder="Add any notes about this deal..."
                 value={form.notes}
@@ -1166,7 +1166,7 @@ export default function MobileNewDeal() {
                 className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`}
               />
               <div className="flex items-center justify-between mt-1">
-                <p className="text-sm text-slate-600 italic">Internal notes only</p>
+                <p className="text-sm text-slate-500 italic">Internal notes only</p>
                 <p className={`text-sm ${form.notes.length >= 500 ? 'text-red-400' : form.notes.length >= 400 ? 'text-amber-400' : 'text-slate-500'}`}>
                   {form.notes.length}/500
                 </p>
@@ -1175,7 +1175,7 @@ export default function MobileNewDeal() {
 
             {/* Lead Source */}
             <div>
-              <label className={labelCls}>Lead Source <span className="text-slate-600">(optional)</span></label>
+              <label className={labelCls}>Lead Source <span className="text-slate-500">(optional)</span></label>
               <select
                 value={form.leadSource}
                 onChange={(e) => {

@@ -74,7 +74,7 @@ export default function MobileProjects() {
   }, [visibleProjects, phaseFilter, debouncedSearch]);
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Projects" />
 
       {/* Search */}
@@ -85,7 +85,7 @@ export default function MobileProjects() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="w-full min-h-[48px] rounded-2xl bg-slate-800/40 px-4 pl-10 text-sm text-white placeholder:text-slate-600 outline-none"
+          className="w-full min-h-[48px] rounded-2xl bg-slate-800/40 px-4 pl-10 text-sm text-white placeholder:text-slate-500 outline-none"
         />
       </div>
 
@@ -110,7 +110,7 @@ export default function MobileProjects() {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-sm text-slate-500">No projects found</p>
+            <p className="text-base text-slate-400">No projects found</p>
           </div>
         ) : (
           filtered.map((project) => (
@@ -125,7 +125,7 @@ export default function MobileProjects() {
                 </div>
                 <MobileBadge value={project.phase} />
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-base text-slate-400">
                 {project.installer} &middot; {project.kWSize} kW &middot; {relativeTime(project.soldDate)}
               </p>
             </MobileCard>

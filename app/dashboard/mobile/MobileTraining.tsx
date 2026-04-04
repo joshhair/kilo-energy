@@ -31,10 +31,10 @@ export default function MobileTraining() {
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-28">
+      <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="Training" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-sm text-slate-500">You don&apos;t have permission to view this page.</p>
+          <p className="text-base text-slate-400">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -87,7 +87,7 @@ export default function MobileTraining() {
 
   if (!isHydrated) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Training" />
         <div className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 h-48 animate-pulse" />
       </div>
@@ -97,11 +97,11 @@ export default function MobileTraining() {
   // ── Empty state ──────────────────────────────────────────────────────────
   if (!isTrainer) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Training" />
         <MobileCard>
           <div className="py-8 text-center">
-            <p className="text-sm text-slate-500">You don&apos;t have any trainees</p>
+            <p className="text-base text-slate-400">You don&apos;t have any trainees</p>
           </div>
         </MobileCard>
       </div>
@@ -109,7 +109,7 @@ export default function MobileTraining() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Training" />
 
       {/* ── My Trainees ─────────────────────────────────────────────────── */}
@@ -168,7 +168,7 @@ export default function MobileTraining() {
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
         {sortedOverrides.length === 0 ? (
-          <p className="text-sm text-slate-600 py-4 text-center">No override payments yet</p>
+          <p className="text-sm text-slate-500 py-4 text-center">No override payments yet</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedOverrides.map((entry) => (

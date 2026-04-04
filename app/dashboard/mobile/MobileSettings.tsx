@@ -70,7 +70,7 @@ export default function MobileSettings() {
   // Admin guard (uses currentRole, not effectiveRole)
   if (currentRole !== 'admin') {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-8">
+      <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Settings" />
         <MobileEmptyState
           icon={Shield}
@@ -83,7 +83,7 @@ export default function MobileSettings() {
 
   if (activeSection) {
     return (
-      <div className="px-5 pt-4 pb-28 space-y-6">
+      <div className="px-5 pt-4 pb-24 space-y-6">
         {/* Back button */}
         <button
           onClick={() => setActiveSection(null)}
@@ -106,7 +106,7 @@ export default function MobileSettings() {
 
   // Navigation list
   return (
-    <div className="px-5 pt-4 pb-28 space-y-8">
+    <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Settings" />
 
       {NAV.map(({ group, items }) => (
@@ -330,7 +330,7 @@ function AdminUsersSection() {
                 </div>
                 <button
                   onClick={() => handleDelete(admin.id)}
-                  className="p-2 text-slate-600 active:text-red-400 transition-colors"
+                  className="p-2 text-slate-500 active:text-red-400 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -396,7 +396,7 @@ function ProjectManagersSection() {
               </div>
               <button
                 onClick={() => handleDelete(pm.id)}
-                className="p-2 text-slate-600 active:text-red-400 transition-colors shrink-0"
+                className="p-2 text-slate-500 active:text-red-400 transition-colors shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -566,7 +566,7 @@ function ReadOnlyListSection({ title, description }: { title: string; descriptio
   return (
     <MobileCard>
       <p className="text-sm text-slate-400 mb-2">{description}</p>
-      <p className="text-sm text-slate-600">Open the desktop version for full access to {title.toLowerCase()}.</p>
+      <p className="text-base text-slate-400">Open the desktop version for full access to {title.toLowerCase()}.</p>
     </MobileCard>
   );
 }
