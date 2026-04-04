@@ -131,7 +131,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   if (!hydrated || loading) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <div className="h-6 w-24 bg-slate-800 rounded animate-pulse" />
         <div className="h-8 w-48 bg-slate-800 rounded animate-pulse" />
         <div className="h-4 w-32 bg-slate-800/60 rounded animate-pulse" />
@@ -141,7 +141,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   if (!blitz) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/blitz')}
           className="flex items-center gap-1.5 text-sm text-slate-500 min-h-[48px]"
@@ -164,7 +164,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   ];
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/blitz')}

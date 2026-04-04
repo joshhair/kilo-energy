@@ -265,7 +265,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
 
       {/* Back button */}
       <button

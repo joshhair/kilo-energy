@@ -65,12 +65,36 @@ export default function LoginPage() {
     return () => { cancelled = true; };
   }, [clerkLoaded, isSignedIn, currentRole, setRole, router]);
 
-  // Show loading state while Clerk loads or while we resolve the role
+  // Show branded splash screen while Clerk loads or while we resolve the role
   if (!clerkLoaded || !isSignedIn || (loading && !error)) {
     return (
-      <div className="min-h-screen flex items-center justify-center"
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8"
            style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}>
-        <div className="text-slate-500 text-sm">Verifying your account...</div>
+        {/* Logo icon */}
+        <div className="animate-splash flex flex-col items-center gap-6">
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+               style={{ background: 'linear-gradient(135deg, #2563eb, #10b981)' }}>
+            <span className="text-white font-black text-4xl" style={{ letterSpacing: '-2px' }}>K</span>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-white font-black tracking-tight leading-none"
+                  style={{ fontSize: '2.25rem', letterSpacing: '-0.04em' }}>
+              kilo
+            </span>
+            <span className="text-white font-light tracking-[0.25em] uppercase"
+                  style={{ fontSize: '0.85rem' }}>
+              ENERGY
+            </span>
+          </div>
+        </div>
+        {/* Loading indicator */}
+        <div className="flex flex-col items-center gap-3" style={{ animation: 'splashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both' }}>
+          <div className="w-8 h-8 relative">
+            <div className="absolute inset-0 rounded-full border-2 border-slate-700/40" />
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
+          </div>
+          <p className="text-slate-500 text-sm">Loading...</p>
+        </div>
       </div>
     );
   }

@@ -32,7 +32,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   if (!hydrated) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <div className="h-6 w-24 bg-slate-800 rounded animate-pulse" />
         <div className="h-8 w-48 bg-slate-800 rounded animate-pulse" />
         <div className="h-4 w-32 bg-slate-800/60 rounded animate-pulse" />
@@ -46,7 +46,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   if (!rep) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/reps')}
           className="flex items-center gap-1.5 text-sm text-slate-500 min-h-[48px]"
@@ -68,7 +68,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const repType = REP_TYPE_LABELS[rep.repType ?? ''] ?? rep.repType ?? 'Rep';
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/reps')}

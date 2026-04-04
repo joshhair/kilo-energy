@@ -365,7 +365,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return badges;
   }, [projects, payrollEntries, currentRole]);
 
-  if (!currentRole) return null;
+  if (!currentRole) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6"
+           style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+             style={{ background: 'linear-gradient(135deg, #2563eb, #10b981)' }}>
+          <span className="text-white font-black text-3xl" style={{ letterSpacing: '-2px' }}>K</span>
+        </div>
+        <div className="w-6 h-6 relative">
+          <div className="absolute inset-0 rounded-full border-2 border-slate-700/40" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   const isTrainer = trainerAssignments.some((a) => a.trainerId === currentRepId);
   const repNav = isTrainer ? REP_NAV : REP_NAV.filter((item) => !('href' in item && item.href === '/dashboard/training'));
