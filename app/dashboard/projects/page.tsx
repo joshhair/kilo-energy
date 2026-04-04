@@ -267,11 +267,11 @@ function ProjectsPageInner() {
   }
 
   return (
-    <div className="p-4 md:p-8 animate-fade-in-up">
+    <div className="px-3 pt-2 pb-4 md:p-8 animate-fade-in-up">
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-          <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Projects</h1>
+          <h1 className="text-2xl md:text-4xl font-black text-gradient-brand tracking-tight">Projects</h1>
           <p className="text-slate-400 text-sm font-medium mt-1 tracking-wide">{myProjects.length} total projects</p>
         </div>
         <Link
@@ -284,7 +284,7 @@ function ProjectsPageInner() {
       </div>
 
       {/* View + Status tabs */}
-      <div className="flex items-center gap-4 mb-4 flex-wrap">
+      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-4 md:flex-wrap">
         <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
           {viewIndicator && <div className="tab-indicator" style={viewIndicator} />}
           {(['phase', 'all'] as const).map((t, i) => (
@@ -292,7 +292,7 @@ function ProjectsPageInner() {
               key={t}
               ref={(el) => { viewTabRefs.current[i] = el; }}
               onClick={() => setTab(t)}
-              className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`relative z-10 px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-colors ${
                 tab === t ? 'text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -321,7 +321,7 @@ function ProjectsPageInner() {
         )}
 
         {/* Status filter */}
-        <div className="flex gap-1 bg-slate-800 rounded-xl p-1 tab-bar-container overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 bg-slate-800 rounded-xl p-1 tab-bar-container overflow-x-auto scrollbar-hide w-full md:w-auto">
           {statusFilterIndicator && <div className="tab-indicator" style={statusFilterIndicator} />}
           {([
             { value: 'active', label: 'Active' },
@@ -334,7 +334,7 @@ function ProjectsPageInner() {
               key={s.value}
               ref={(el) => { statusFilterRefs.current[i] = el; }}
               onClick={() => setStatusFilter(s.value)}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap ${
+              className={`relative z-10 px-4 py-1.5 min-h-[40px] rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap ${
                 statusFilter === s.value ? 'text-white' : 'text-slate-500 hover:text-white'
               }`}
             >
@@ -347,7 +347,7 @@ function ProjectsPageInner() {
         <select
           value={installerFilter}
           onChange={(e) => setInstallerFilter(e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-1.5 min-h-[36px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
         >
           <option value="">All Installers</option>
           {activeInstallers.map((i) => <option key={i} value={i}>{i}</option>)}
@@ -588,7 +588,7 @@ function KanbanView({
           placeholder="Search projects..."
           value={kanbanSearchInput}
           onChange={(e) => setKanbanSearchInput(e.target.value)}
-          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
         />
         {kanbanSearchInput && (
           <button
@@ -1084,7 +1084,7 @@ const TABLE_COL_WIDTHS = ['w-36', 'w-24', 'w-20', 'w-24', 'w-24', 'w-10', 'w-12'
 
 function ProjectsSkeleton() {
   return (
-    <div className="p-4 md:p-8">
+    <div className="px-3 pt-2 pb-4 md:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-2">
@@ -1095,7 +1095,7 @@ function ProjectsSkeleton() {
       </div>
 
       {/* Tab + filter bar */}
-      <div className="flex items-center gap-4 mb-4 flex-wrap">
+      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-4 md:flex-wrap">
         <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
           <div className="h-8 w-20 bg-slate-800 rounded-lg animate-skeleton" />
           <div className="h-8 w-24 bg-slate-700/50 rounded-lg animate-skeleton" style={{ animationDelay: '75ms' }} />
@@ -1640,7 +1640,7 @@ function TableView({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-2 md:gap-3 mb-4">
         <div className="relative flex-1 max-w-full md:max-w-xs min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
@@ -1651,7 +1651,7 @@ function TableView({
             onChange={(e) => setSearchInput(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+            className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
           />
           {/* Clear button — shown when there is a search query */}
           {searchInput ? (
@@ -1719,7 +1719,7 @@ function TableView({
         )}
         {pagedProjects.map((proj) => (
           <Link key={proj.id} href={`/dashboard/projects/${proj.id}`}>
-            <div className={`card-surface rounded-xl p-4 active:scale-[0.98] transition-transform ${proj.flagged ? 'border-l-2 border-l-red-500' : ''}`}>
+            <div className={`card-surface rounded-xl p-3 md:p-4 active:scale-[0.98] transition-transform min-h-[44px] ${proj.flagged ? 'border-l-2 border-l-red-500' : ''}`}>
               <div className="flex justify-between items-start mb-2">
                 <span className="text-white font-medium text-sm flex items-center gap-1.5">
                   {proj.customerName}

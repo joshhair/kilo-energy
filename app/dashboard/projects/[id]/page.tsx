@@ -222,7 +222,7 @@ function PhaseBadge({ phase }: { phase: Phase }) {
  */
 function ProjectDetailSkeleton() {
   return (
-    <div className="p-4 md:p-8 max-w-3xl">
+    <div className="px-3 pt-2 pb-4 md:p-8 max-w-3xl">
 
       {/* Breadcrumb placeholder */}
       <div
@@ -314,7 +314,7 @@ function ProjectDetailSkeleton() {
           style={{ animationDelay: '75ms' }}
         />
 
-        <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="space-y-1.5">
               {/* Label */}
@@ -923,7 +923,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     'bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl">
+    <div className="px-3 pt-2 pb-4 md:p-8 max-w-3xl">
       {/* Breadcrumb + Prev/Next */}
       <div className="flex items-center justify-between mb-6">
         <nav className="animate-breadcrumb-enter inline-flex items-center gap-0.5 text-xs text-slate-400 bg-slate-900/60 backdrop-blur-md border border-slate-800/60 rounded-xl px-4 py-2.5">
@@ -971,11 +971,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">{project.customerName}</h1>
+            <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">{project.customerName}</h1>
             {project.flagged && (
               <span className="flex items-center gap-1 bg-red-900/40 border border-red-500/30 text-red-400 text-xs px-2 py-0.5 rounded-full">
                 <AlertTriangle className="w-3 h-3" />
@@ -990,18 +990,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {(currentRole === 'admin' || isPM) ? (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-2">
             {!isPM && (
               <button
                 onClick={openEditModal}
-                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-900/20 transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </button>
             )}
             <button
               onClick={handleFlag}
-              className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border transition-colors ${
+              className={`flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border transition-colors ${
                 project.flagged
                   ? 'border-red-500/40 text-red-400 hover:bg-red-900/20'
                   : 'border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800'
@@ -1013,7 +1013,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <Link
                 href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
@@ -1021,7 +1021,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
-                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
               >
                 Cancel
               </button>
@@ -1029,18 +1029,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
             {(currentRepId === project.repId) && (
               <Link
                 href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
@@ -1048,7 +1048,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
-                className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 rounded-xl transition-colors"
+                className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
               >
                 Cancel Project
               </button>
@@ -1060,7 +1060,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Details grid */}
       <div className="card-surface rounded-2xl p-6 mb-5">
         <h2 className="text-white font-semibold mb-4">Project Details</h2>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
           {[
             ['Rep', project.repName],
             ['Installer', project.installer],

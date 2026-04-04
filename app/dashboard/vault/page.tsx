@@ -68,7 +68,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> =
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLES[status] ?? STATUS_STYLES.Draft;
   return (
-    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border ${s.bg} ${s.text}`}>
+    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 md:py-0.5 rounded-full text-xs font-medium border ${s.bg} ${s.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
       {status}
     </span>
@@ -83,7 +83,7 @@ function StageBadge({ stage }: { stage: string }) {
     : stage === 'M3' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20'
     : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${color}`}>
+    <span className={`inline-flex items-center px-2.5 py-1 md:py-0.5 md:px-2 rounded-full text-xs font-semibold border ${color}`}>
       {stage}
     </span>
   );
@@ -364,7 +364,7 @@ function VaultPageInner() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl animate-fade-in-up">
+    <div className="px-3 pt-2 pb-4 md:p-8 max-w-4xl animate-fade-in-up">
       {/* ── Reimbursement Modal ── */}
       <ReimbursementModal
         open={showReimbModal}
@@ -386,7 +386,7 @@ function VaultPageInner() {
 
       {/* ── Hero Banner — Next Payout + Page Title ── */}
       <div className="card-surface rounded-2xl mb-4 animate-slide-in-scale border-b-2 border-blue-500/15">
-        <div className="px-6 py-6 md:px-8 md:py-8">
+        <div className="px-4 py-4 md:px-8 md:py-8">
           <div className="flex items-center gap-3 mb-5">
             <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
               <VaultIcon className="w-5 h-5 text-blue-400" />
@@ -397,7 +397,7 @@ function VaultPageInner() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
-              <p className="text-4xl md:text-5xl font-black tabular-nums tracking-tight text-gradient-emerald leading-none"
+              <p className="text-3xl md:text-5xl font-black tabular-nums tracking-tight text-gradient-emerald leading-none"
                  style={{ textShadow: '0 0 32px rgba(16,185,129,0.30)' }}>
                 ${nextPayoutTotal.toLocaleString()}
               </p>
@@ -415,28 +415,28 @@ function VaultPageInner() {
       <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent mb-4" />
 
       {/* ── Financial Summary ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {/* Lifetime Earned — anchor card with emerald left border */}
-        <div className="card-surface card-surface-stat rounded-2xl p-5 animate-slide-in-scale stagger-1 border-l-2 border-l-emerald-500/40"
+        <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-1 border-l-2 border-l-emerald-500/40"
              style={{ '--card-accent': 'rgba(16,185,129,0.08)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
             <DollarSign className="w-4 h-4 text-emerald-400/50" />
           </div>
-          <p className="text-3xl font-black tabular-nums text-emerald-400 stat-value"
+          <p className="text-xl md:text-3xl font-black tabular-nums text-emerald-400 stat-value"
              style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)' }}>${lifetimeEarned.toLocaleString()}</p>
           {chargebackTotal > 0 && (
             <p className="text-red-400/70 text-[10px] font-semibold mt-1.5 tabular-nums">- ${chargebackTotal.toLocaleString()} chargebacks</p>
           )}
         </div>
         {/* On Pace For — standout card with amber left border + larger number */}
-        <div className="card-surface card-surface-stat rounded-2xl p-5 animate-slide-in-scale stagger-2 border-l-2 border-l-amber-500/40"
+        <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-2 border-l-2 border-l-amber-500/40"
              style={{ '--card-accent': 'rgba(245,158,11,0.10)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest">On Pace For</p>
             <TrendingUp className="w-4 h-4 text-amber-400/50" />
           </div>
-          <p className="text-3xl font-black tabular-nums text-amber-400 stat-value"
+          <p className="text-xl md:text-3xl font-black tabular-nums text-amber-400 stat-value"
              style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)' }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
@@ -449,13 +449,13 @@ function VaultPageInner() {
           </p>
         </div>
         {/* Pipeline — blue left border */}
-        <div className="card-surface card-surface-stat rounded-2xl p-5 animate-slide-in-scale stagger-3 border-l-2 border-l-blue-500/40"
+        <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-3 col-span-2 sm:col-span-1 border-l-2 border-l-blue-500/40"
              style={{ '--card-accent': 'rgba(59,130,246,0.08)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
             <TrendingUp className="w-4 h-4 text-blue-400/50" />
           </div>
-          <p className="text-2xl font-black tabular-nums text-blue-400 stat-value"
+          <p className="text-xl md:text-2xl font-black tabular-nums text-blue-400 stat-value"
              style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)' }}>${(projectedM1 + projectedM2).toLocaleString()}</p>
           <p className="text-slate-600 text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
@@ -510,7 +510,7 @@ function VaultPageInner() {
       </div>
 
       {/* ── Reimbursements ── */}
-      <div className="card-surface rounded-2xl p-4 mb-6 flex items-center justify-between">
+      <div className="card-surface rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
         <div className="flex items-center gap-3">
           <Receipt className="w-4 h-4 text-violet-400" />
           <div>
@@ -522,13 +522,13 @@ function VaultPageInner() {
             </p>
           </div>
         </div>
-        <button onClick={() => setShowReimbModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors">
+        <button onClick={() => setShowReimbModal(true)} className="flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[48px] sm:min-h-0 px-3 py-1.5 text-sm font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors">
           <Receipt className="w-3.5 h-3.5" /> New Request
         </button>
       </div>
 
       {/* ── Filters ── */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="flex flex-col md:flex-row flex-wrap items-stretch md:items-center gap-2 md:gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           <input
@@ -539,7 +539,7 @@ function VaultPageInner() {
             onChange={(e) => { setSearchQuery(e.target.value); setPeriodPage(1); }}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl pl-10 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
+            className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl pl-10 pr-8 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
           />
           {!searchQuery && !searchFocused && (
             <kbd
@@ -560,7 +560,7 @@ function VaultPageInner() {
               type="date"
               value={payFilterFrom}
               onChange={(e) => { setPayFilterFrom(e.target.value); setPeriodPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -569,7 +569,7 @@ function VaultPageInner() {
               type="date"
               value={payFilterTo}
               onChange={(e) => { setPayFilterTo(e.target.value); setPeriodPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             />
           </div>
         </div>
@@ -584,7 +584,7 @@ function VaultPageInner() {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Types</option>
           {effectiveRole !== 'sub-dealer' && <option value="M1">M1 Only</option>}
@@ -596,7 +596,7 @@ function VaultPageInner() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Statuses</option>
           <option value="Draft">Draft</option>
@@ -675,7 +675,7 @@ function VaultPageInner() {
                 type="button"
                 onClick={() => setExpandedPeriod(isOpen ? null : period.friday)}
                 aria-label={`${isOpen ? 'Collapse' : 'Expand'} pay period ${formatFridayLabel(period.friday)}`}
-                className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-slate-800/30 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:outline-none rounded-2xl"
+                className="w-full flex items-center gap-3 md:gap-4 px-3 md:px-5 py-4 min-h-[44px] text-left hover:bg-slate-800/30 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:outline-none rounded-2xl"
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                   period.isUpcoming ? 'bg-emerald-500/15' : period.isPast ? 'bg-slate-800' : 'bg-blue-500/10'
@@ -726,7 +726,7 @@ function VaultPageInner() {
                         </thead>
                         <tbody>
                           {period.entries.map((entry) => (
-                            <tr key={entry.id} className="border-b border-slate-800/30 hover:bg-slate-800/20 transition-colors">
+                            <tr key={entry.id} className="border-b border-slate-800/30 hover:bg-slate-800/20 transition-colors min-h-[44px]">
                               <td className="px-5 py-3">
                                 {entry.projectId ? (
                                   <Link href={`/dashboard/projects/${entry.projectId}`} className="text-white hover:text-emerald-400 transition-colors font-medium text-xs">
@@ -807,7 +807,7 @@ function VaultPageInner() {
 
 function VaultSkeleton() {
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="px-3 pt-2 pb-4 md:p-8 max-w-4xl">
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-slate-800 mb-3 animate-skeleton" />
         <div className="flex items-center gap-3 mb-1">

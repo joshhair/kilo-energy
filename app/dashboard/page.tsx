@@ -271,7 +271,7 @@ function NeedsAttentionSection({
               {capped.map((item) => (
                 <div
                   key={item.uid}
-                  className="flex items-center gap-4 px-6 py-3.5 hover:bg-slate-800/40 transition-colors group"
+                  className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-slate-800/40 transition-colors group"
                 >
                   <Link
                     href={`/dashboard/projects/${item.projectId}`}
@@ -488,7 +488,7 @@ function MyTasksSection({
           return (
             <div
               key={task.checkItemId}
-              className="flex items-center gap-3 px-6 py-3 hover:bg-slate-800/40 transition-colors group"
+              className="flex items-center gap-3 px-6 py-3 min-h-[44px] hover:bg-slate-800/40 transition-colors group"
             >
               <input
                 type="checkbox"
@@ -568,7 +568,7 @@ function PipelineOverview({ activeProjects }: { activeProjects: Array<{ phase: s
     <>
       {/* Stacked bar — overflow-hidden clips segment edges cleanly at the rounded corners */}
       <div className="relative mb-4" ref={barRef}>
-        <div className="flex h-8 rounded-xl bg-slate-800 overflow-hidden">
+        <div className="flex h-10 md:h-8 rounded-xl bg-slate-800 overflow-hidden">
           {nonEmpty.map((phase) => {
             const count = phaseCounts[phase];
             const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-slate-500', text: '', dot: '', chipBg: '', chipBorder: '' };
@@ -611,7 +611,7 @@ function PipelineOverview({ activeProjects }: { activeProjects: Array<{ phase: s
             <Link
               key={phase}
               href={`/dashboard/projects?phase=${encodeURIComponent(phase)}`}
-              className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full text-xs font-medium border whitespace-nowrap transition-all hover:brightness-110 ${s.chipBg} ${s.chipBorder} ${s.text}`}
+              className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 min-h-[32px] rounded-full text-xs font-medium border whitespace-nowrap transition-all hover:brightness-110 ${s.chipBg} ${s.chipBorder} ${s.text}`}
             >
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
               {count} in {phase}
@@ -1061,11 +1061,11 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-4 md:p-8 animate-fade-in-up">
+    <div className="px-3 pt-2 pb-4 md:p-8 animate-fade-in-up">
 
       {/* ── Welcome Banner with Glow CTA ─────────────────────────────────── */}
-      <div className="card-surface rounded-2xl mb-6">
-        <div className="px-6 py-6 flex items-center justify-between gap-4">
+      <div className="card-surface rounded-xl md:rounded-2xl mb-6">
+        <div className="px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {effectiveRepName}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight">
@@ -1083,7 +1083,7 @@ export default function DashboardPage() {
             <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-500 to-emerald-500 opacity-[0.06] blur-[2px] animate-pulse" />
             <Link
               href="/dashboard/new-deal"
-              className="relative inline-flex items-center gap-2.5 btn-primary text-white font-bold px-6 py-3 rounded-2xl text-sm"
+              className="relative inline-flex items-center gap-2.5 btn-primary text-white font-bold px-6 py-3 min-h-[48px] rounded-2xl text-sm"
             >
               <PlusCircle className="w-5 h-5" />
               Submit a Deal
@@ -1167,7 +1167,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Link
               href="/dashboard/new-deal"
-              className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl text-sm whitespace-nowrap"
+              className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-6 py-3 min-h-[48px] rounded-xl text-sm whitespace-nowrap"
             >
               <PlusCircle className="w-4 h-4" />
               Submit Your First Deal
@@ -1187,12 +1187,12 @@ export default function DashboardPage() {
         <>
           <div
             ref={statsRef}
-            className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6 ${statsVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
+            className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-4 mb-6 ${statsVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
           >
             {stats.map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
+                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
                   <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">

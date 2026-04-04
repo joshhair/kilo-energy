@@ -65,6 +65,50 @@ body {
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+/* ── Mobile-native feel ────────────────────────────────────────────────────
+   All rules scoped to max-width: 767px so desktop is completely unaffected. */
+
+@media (max-width: 767px) {
+  /* Tighter card border radius on mobile */
+  .card-surface,
+  .card-surface-stat,
+  .card-surface-interactive {
+    border-radius: 1rem;
+  }
+
+  /* Disable hover lift on mobile (touch devices don't hover) */
+  .card-surface:hover,
+  .card-surface-interactive:hover {
+    transform: none;
+  }
+
+  /* Full-bleed cards on mobile — edge-to-edge feel */
+  .mobile-full-bleed {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+/* Touch target minimum — use on any tappable element */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile badge — slightly larger than default for readability */
+.badge-mobile {
+  min-height: 28px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 /* Gradient text utilities */
 .text-gradient-brand {
   background: linear-gradient(135deg, #3B82F6, #60A5FA);
