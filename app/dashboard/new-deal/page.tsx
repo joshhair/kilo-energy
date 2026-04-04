@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import {
@@ -16,6 +16,7 @@ import { Check, Loader2, PlusCircle, CheckCircle2, ArrowRight, RotateCcw } from 
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { Breadcrumb } from '../components/Breadcrumb';
+import MobileNewDeal from '../mobile/MobileNewDeal';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -510,6 +511,7 @@ function NewDealPage() {
   const router = useRouter();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
   const isHydrated = useIsHydrated();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const isSubDealer = currentRole === 'sub-dealer';
 
   const blankForm = () => ({
@@ -973,6 +975,8 @@ function NewDealPage() {
   const labelCls = 'block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider';
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (isMobile) return <MobileNewDeal />;
 
   if (!isHydrated) return <NewDealSkeleton />;
 

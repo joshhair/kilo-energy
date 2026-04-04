@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useIsHydrated, useFocusTrap } from '../../../lib/hooks';
+import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
+import MobileReps from '../mobile/MobileReps';
 import { useApp } from '../../../lib/context';
 import { Search, ChevronRight, Users, Plus, Trash2, Trophy, Award, X } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -316,9 +317,13 @@ function RepsPageInner() {
         ]
       : [];
 
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   if (!isHydrated) {
     return <RepsSkeleton />;
   }
+
+  if (isMobile) return <MobileReps />;
 
   return (
     <div className="p-4 md:p-8 animate-fade-in-up">

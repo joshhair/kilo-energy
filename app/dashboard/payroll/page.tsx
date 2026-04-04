@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, Suspense, type CSSProperties } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated, useFocusTrap } from '../../../lib/hooks';
+import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$ } from '../../../lib/utils';
@@ -14,6 +14,7 @@ import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import Link from 'next/link';
+import MobilePayroll from '../mobile/MobilePayroll';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
 type TypeTab = 'Deal' | 'Bonus';
@@ -195,6 +196,9 @@ function PayrollPageInner() {
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo]);
+
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  if (isMobile) return <MobilePayroll />;
 
   if (effectiveRole === 'project_manager') {
     return (

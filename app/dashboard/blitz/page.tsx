@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated, useFocusTrap } from '../../../lib/hooks';
+import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
+import MobileBlitz from '../mobile/MobileBlitz';
 import { formatDate, formatCurrency } from '../../../lib/utils';
 import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap, UserPlus, UserCheck, ChevronDown, X } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
@@ -636,7 +637,11 @@ function BlitzPageInner() {
     }
   };
 
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   if (!hydrated) return <BlitzSkeleton />;
+
+  if (isMobile) return <MobileBlitz />;
 
   // Summary stats
   const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;

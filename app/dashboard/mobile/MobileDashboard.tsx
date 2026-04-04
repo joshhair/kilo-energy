@@ -11,6 +11,7 @@ import MobileStatCard from './shared/MobileStatCard';
 import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
 import MobileBadge from './shared/MobileBadge';
+import MobileAdminDashboard from './MobileAdminDashboard';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,8 +51,7 @@ export default function MobileDashboard() {
   } = useApp();
   const router = useRouter();
 
-  // Admin rendering handled by MobileAdminDashboard
-  if (effectiveRole === 'admin') return null;
+  if (effectiveRole === 'admin') return <MobileAdminDashboard />;
 
   // ── Shared data derivations ────────────────────────────────────────────────
 
