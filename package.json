@@ -13,6 +13,7 @@
     "test:unit": "vitest run tests/unit",
     "test:api": "vitest run tests/api",
     "test:e2e": "npx playwright test",
+    "test:mobile": "npx playwright test --project=mobile",
     "test:all": "vitest run && tsc --noEmit"
   },
   "prisma": {

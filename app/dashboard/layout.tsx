@@ -704,7 +704,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <InstallPrompt />
 
       {/* ── Bottom navigation bar (mobile only, hidden on md+) ────────── */}
-      <BottomNav role={roleForNav ?? 'rep'} isTrainer={isTrainer} />
+      <BottomNav role={roleForNav ?? 'rep'} isTrainer={isTrainer} onLogout={handleLogout} />
     </div>
   );
 }

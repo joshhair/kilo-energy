@@ -17,6 +17,7 @@ import {
   Trophy,
   Settings,
   X,
+  LogOut,
 } from 'lucide-react';
 
 type BottomNavItem = {
@@ -59,6 +60,7 @@ const SUB_DEALER_BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
   { href: '/dashboard/new-deal', label: 'New Deal', icon: PlusCircle, primary: true },
   { href: '/dashboard/vault', label: 'My Pay', icon: Vault },
+  { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 
 const ADMIN_BOTTOM_NAV: BottomNavItem[] = [
@@ -81,6 +83,7 @@ const PM_BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
   { href: '/dashboard/reps', label: 'Reps', icon: Users },
+  { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 
 // ─── More Sheet (slide-up) ────────────────────────────────────────────────
@@ -89,10 +92,12 @@ function MoreSheet({
   open,
   onClose,
   items,
+  onLogout,
 }: {
   open: boolean;
   onClose: () => void;
   items: MoreSheetItem[];
+  onLogout?: () => void;
 }) {
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -158,6 +163,19 @@ function MoreSheet({
               </Link>
             ))}
           </nav>
+          {/* Logout */}
+          {onLogout && (
+            <>
+              <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent my-3" />
+              <button
+                onClick={() => { onClose(); onLogout(); }}
+                className="flex items-center gap-3 w-full px-4 py-3 min-h-[48px] text-red-400 active:bg-red-900/20 rounded-xl transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-sm font-medium">Sign Out</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </>
@@ -169,9 +187,11 @@ function MoreSheet({
 export default function BottomNav({
   role,
   isTrainer = false,
+  onLogout,
 }: {
   role: 'admin' | 'rep' | 'sub-dealer' | 'project_manager';
   isTrainer?: boolean;
+  onLogout?: () => void;
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -209,7 +229,7 @@ export default function BottomNav({
 
   return (
     <>
-      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} items={moreItems} />
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} items={moreItems} onLogout={onLogout} />
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-slate-900/95 backdrop-blur-md border-t border-slate-800"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
