@@ -3,7 +3,8 @@
 import { use, useState, useEffect, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useApp } from '../../../../lib/context';
-import { useIsHydrated } from '../../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
+import MobileRepDetail from '../../mobile/MobileRepDetail';
 import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
@@ -17,6 +18,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Pagination state — payment history
   const [payPage, setPayPage] = useState(1);
@@ -31,6 +33,8 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   useEffect(() => { document.title = rep ? `${rep.name} | Kilo Energy` : 'Rep Detail | Kilo Energy'; }, [rep?.name]);
 
   if (!hydrated) return <RepDetailSkeleton />;
+
+  if (isMobile) return <MobileRepDetail repId={id} />;
 
   if (currentRole !== 'admin' && currentRole !== 'project_manager' && id !== currentRepId) {
     return (

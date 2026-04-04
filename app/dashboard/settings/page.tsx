@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect, Fragment, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import MobileSettings from '../mobile/MobileSettings';
 import { useToast } from '../../../lib/toast';
 import { SOLARTECH_FAMILIES, SolarTechFamily, getTrainerOverrideRate, TrainerAssignment, TrainerOverrideTier, InstallerRates, FINANCERS, ProductCatalogInstallerConfig, makeProductCatalogTiers, ProductCatalogTier, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { getCustomConfig } from '../../../lib/utils';
@@ -1106,7 +1107,11 @@ function SettingsPageInner() {
     }
   };
 
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   if (!isHydrated) return <SettingsSkeleton />;
+
+  if (isMobile) return <MobileSettings />;
 
   if (currentRole !== 'admin') {
     return (

@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, Suspense, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import MobileCalculator from '../mobile/MobileCalculator';
 import { getSolarTechBaseline, calculateCommission, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, SOLARTECH_PRODUCTS, getInstallerRatesForDeal, getProductCatalogBaseline, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2, Link2 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
@@ -582,6 +583,9 @@ function CalculatorPage() {
   const animatedTrainerTotal = useCountUp(trainerTotal);
   const animatedKiloTotal    = useCountUp(kiloTotal);
   const animatedGrandTotal   = useCountUp(closerTotal + setterTotal + trainerTotal);
+
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  if (isMobile) return <MobileCalculator />;
 
   if (effectiveRole === 'project_manager') {
     return (

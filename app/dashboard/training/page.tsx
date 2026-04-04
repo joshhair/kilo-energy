@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import MobileTraining from '../mobile/MobileTraining';
 import {
   TrainerAssignment,
   PayrollEntry,
@@ -260,7 +261,11 @@ function TrainingPageInner() {
     return traineeData.reduce((s, t) => s + t.currentRate, 0) / traineeData.length;
   }, [traineeData]);
 
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   // ── Render ─────────────────────────────────────────────────────────────────
+
+  if (isMobile) return <MobileTraining />;
 
   if (effectiveRole === 'project_manager') {
     return (

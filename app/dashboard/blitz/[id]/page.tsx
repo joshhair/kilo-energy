@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
-import { useIsHydrated } from '../../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
+import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
 import { formatDate, formatCurrency } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
 import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2, FolderKanban, Trophy } from 'lucide-react';
@@ -51,6 +52,7 @@ export default function BlitzDetailPage() {
   const router = useRouter();
   const { currentRole, currentRepId, effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts } = useApp();
   const hydrated = useIsHydrated();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const isAdmin = effectiveRole === 'admin';
   const { toast } = useToast();
   const blitzId = params.id as string;
@@ -287,6 +289,8 @@ export default function BlitzDetailPage() {
       toast('Failed to submit cancellation request');
     }
   };
+
+  if (isMobile) return <MobileBlitzDetail blitzId={blitzId} />;
 
   if (!hydrated || loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">

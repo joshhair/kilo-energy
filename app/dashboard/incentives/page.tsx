@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import MobileIncentives from '../mobile/MobileIncentives';
 import { formatDate } from '../../../lib/utils';
 import {
   computeIncentiveProgress,
@@ -217,6 +218,9 @@ export default function IncentivesPage() {
     return items;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incentives, projects, payrollEntries, isAdmin]);
+
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  if (isMobile) return <MobileIncentives />;
 
   if (effectiveRole === 'project_manager') {
     return (

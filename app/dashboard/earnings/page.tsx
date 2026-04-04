@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import MobileEarnings from '../mobile/MobileEarnings';
 import { useToast } from '../../../lib/toast';
 import { Reimbursement } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$ } from '../../../lib/utils';
@@ -1577,7 +1578,10 @@ function SubDealerEarningsView() {
 function EarningsPageInner() {
   const { currentRole, effectiveRole } = useApp();
   const isHydrated = useIsHydrated();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
+
+  if (isMobile) return <MobileEarnings />;
 
   if (effectiveRole === 'project_manager') {
     return (
