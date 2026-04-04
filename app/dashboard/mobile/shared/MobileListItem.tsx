@@ -7,18 +7,16 @@ export default function MobileListItem({
   subtitle,
   right,
   onTap,
-  accent,
 }: {
   title: string;
   subtitle?: string;
   right?: React.ReactNode;
   onTap?: () => void;
-  accent?: 'red';
 }) {
   const content = (
     <>
       <div className="flex-1 min-w-0">
-        <p className="text-base font-medium text-white truncate">{title}</p>
+        <p className="text-base font-semibold text-white truncate">{title}</p>
         {subtitle && <p className="text-sm text-slate-500 mt-0.5 truncate">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -30,17 +28,14 @@ export default function MobileListItem({
 
   if (onTap) {
     return (
-      <button
-        onClick={onTap}
-        className={`w-full flex items-center gap-3 min-h-[56px] py-3.5 px-5 text-left active:bg-slate-800/50 transition-colors ${accent === 'red' ? 'border-l-2 border-l-red-500' : ''}`}
-      >
+      <button onClick={onTap} className="w-full flex items-center gap-3 min-h-[48px] py-3 px-1 text-left active:bg-slate-800/40 transition-colors">
         {content}
       </button>
     );
   }
 
   return (
-    <div className={`flex items-center gap-3 min-h-[56px] py-3.5 px-5 ${accent === 'red' ? 'border-l-2 border-l-red-500' : ''}`}>
+    <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
       {content}
     </div>
   );

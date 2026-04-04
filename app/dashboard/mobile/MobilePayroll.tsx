@@ -5,115 +5,89 @@ import { useApp } from '../../../lib/context';
 import { fmt$ } from '../../../lib/utils';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
+import { Check, Edit2, Trash2, Plus } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
-import MobileCard from './shared/MobileCard';
-import MobileSection from './shared/MobileSection';
-import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
-import { Check, Edit2, Trash2, Plus, ChevronDown, ChevronUp, Search } from 'lucide-react';
 
-type StatusFilter = 'All' | 'Draft' | 'Pending' | 'Paid';
-type TypeTab = 'Deal' | 'Bonus';
+type StatusTab = 'Draft' | 'Pending' | 'Paid';
 
 export default function MobilePayroll() {
   const {
     payrollEntries,
     setPayrollEntries,
-    markForPayroll,
     reps,
-    projects,
     currentRole,
   } = useApp();
   const { toast } = useToast();
 
-  const [typeTab, setTypeTab] = useState<TypeTab>('Deal');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
-  const [filterRepId, setFilterRepId] = useState('');
-  const [repSearchQuery, setRepSearchQuery] = useState('');
-  const [repDropdownOpen, setRepDropdownOpen] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [statusTab, setStatusTab] = useState<StatusTab>('Pending');
+  const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
   const [showBonusSheet, setShowBonusSheet] = useState(false);
   const [bonusForm, setBonusForm] = useState({ repId: '', amount: '', notes: '', date: '' });
 
   // ── Summaries ─────────────────────────────────────────────────────────────
 
-  const draftTotal = useMemo(
-    () => payrollEntries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0),
-    [payrollEntries],
-  );
-  const draftCount = useMemo(
-    () => payrollEntries.filter((e) => e.status === 'Draft').length,
-    [payrollEntries],
-  );
   const pendingTotal = useMemo(
     () => payrollEntries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0),
-    [payrollEntries],
-  );
-  const pendingCount = useMemo(
-    () => payrollEntries.filter((e) => e.status === 'Pending').length,
-    [payrollEntries],
-  );
-  const paidTotal = useMemo(
-    () => payrollEntries.filter((e) => e.status === 'Paid').reduce((s, e) => s + e.amount, 0),
     [payrollEntries],
   );
 
   // ── Filtered entries ──────────────────────────────────────────────────────
 
   const filtered = useMemo(
-    () =>
-      payrollEntries.filter((e) => {
-        if (e.type !== typeTab) return false;
-        if (statusFilter !== 'All' && e.status !== statusFilter) return false;
-        if (filterRepId && e.repId !== filterRepId) return false;
-        return true;
-      }),
-    [payrollEntries, typeTab, statusFilter, filterRepId],
+    () => payrollEntries.filter((e) => e.status === statusTab),
+    [payrollEntries, statusTab],
   );
 
-  const hasPendingEntries = useMemo(
-    () => filtered.some((e) => e.status === 'Pending'),
-    [filtered],
-  );
+  // ── Group by rep ──────────────────────────────────────────────────────────
 
-  // ── Rep dropdown options ──────────────────────────────────────────────────
-
-  const repOptions = useMemo(() => {
-    const q = repSearchQuery.toLowerCase();
-    return reps.filter((r) => !q || r.name.toLowerCase().includes(q));
-  }, [reps, repSearchQuery]);
+  const groupedByRep = useMemo(() => {
+    const map = new Map<string, { repName: string; entries: PayrollEntry[]; total: number }>();
+    for (const entry of filtered) {
+      if (!map.has(entry.repId)) {
+        map.set(entry.repId, { repName: entry.repName, entries: [], total: 0 });
+      }
+      const group = map.get(entry.repId)!;
+      group.entries.push(entry);
+      group.total += entry.amount;
+    }
+    return [...map.values()].sort((a, b) => a.repName.localeCompare(b.repName));
+  }, [filtered]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
-  const handlePublish = useCallback(async () => {
-    const pendingVisible = filtered.filter((e) => e.status === 'Pending');
-    const ids = pendingVisible.map((e) => e.id);
-    const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
+  const handlePublishOrApproveAll = useCallback(async () => {
+    const target = filtered;
+    const ids = target.map((e) => e.id);
+    const amount = target.reduce((s, e) => s + e.amount, 0);
     const snapshot = [...payrollEntries];
 
-    setPayrollEntries((prev) =>
-      prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Paid' } : p)),
-    );
-    toast(`Payroll published — ${fmt$(amount)} marked as Paid`, 'success');
+    if (statusTab === 'Pending') {
+      // Publish — mark as Paid
+      setPayrollEntries((prev) =>
+        prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Paid' } : p)),
+      );
+      toast(`Payroll published — ${fmt$(amount)} marked as Paid`, 'success');
 
-    const results = await Promise.allSettled(
-      ids.map((id) =>
-        fetch(`/api/payroll/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'Paid' }),
-        }).then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res;
-        }),
-      ),
-    );
-    const failures = results.filter((r) => r.status === 'rejected');
-    if (failures.length > 0) {
-      setPayrollEntries(snapshot);
-      toast(`${failures.length} entries failed to save — rolled back`, 'error');
+      const results = await Promise.allSettled(
+        ids.map((id) =>
+          fetch(`/api/payroll/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'Paid' }),
+          }).then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res;
+          }),
+        ),
+      );
+      const failures = results.filter((r) => r.status === 'rejected');
+      if (failures.length > 0) {
+        setPayrollEntries(snapshot);
+        toast(`${failures.length} entries failed to save — rolled back`, 'error');
+      }
     }
-  }, [filtered, payrollEntries, setPayrollEntries, toast]);
+  }, [filtered, payrollEntries, setPayrollEntries, toast, statusTab]);
 
   const handleStatusChange = useCallback(
     async (entry: PayrollEntry, newStatus: 'Draft' | 'Pending' | 'Paid') => {
@@ -121,7 +95,7 @@ export default function MobilePayroll() {
       setPayrollEntries((prev) =>
         prev.map((p) => (p.id === entry.id ? { ...p, status: newStatus } : p)),
       );
-      setExpandedId(null);
+      setSelectedEntry(null);
       toast(`Entry moved to ${newStatus}`, 'success');
 
       try {
@@ -143,7 +117,7 @@ export default function MobilePayroll() {
     async (entry: PayrollEntry) => {
       const snapshot = [...payrollEntries];
       setPayrollEntries((prev) => prev.filter((p) => p.id !== entry.id));
-      setExpandedId(null);
+      setSelectedEntry(null);
       toast('Entry deleted', 'success');
 
       try {
@@ -181,8 +155,6 @@ export default function MobilePayroll() {
       setPayrollEntries((prev) => [...prev, newEntry]);
       setShowBonusSheet(false);
       setBonusForm({ repId: '', amount: '', notes: '', date: '' });
-      setTypeTab('Bonus');
-      setStatusFilter('All');
       toast(`Bonus added for ${rep?.name ?? 'rep'} — ${fmt$(parseFloat(bonusForm.amount))}`, 'success');
 
       fetch('/api/payroll', {
@@ -211,251 +183,160 @@ export default function MobilePayroll() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const STATUS_PILLS: StatusFilter[] = ['All', 'Draft', 'Pending', 'Paid'];
-
-  const selectedRepName = filterRepId
-    ? reps.find((r) => r.id === filterRepId)?.name ?? 'Unknown'
-    : 'All Reps';
+  const STATUS_TABS: StatusTab[] = ['Draft', 'Pending', 'Paid'];
 
   const inputCls =
     'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500';
 
   return (
-    <div className="px-5 pt-3 pb-24 space-y-8">
+    <div className="px-5 pt-4 pb-28 space-y-8">
       <MobilePageHeader
         title="Payroll"
-        right={typeTab === 'Bonus' ? (
+        right={
           <button
             onClick={() => setShowBonusSheet(true)}
-            className="flex items-center gap-1 min-h-[44px] px-3 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium active:bg-blue-700"
+            className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl bg-blue-600 text-white text-sm font-medium active:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
             Bonus
           </button>
-        ) : null}
+        }
       />
 
-      {/* Type tab bar */}
-      <div className="flex border-b border-slate-800">
-        {(['Deal', 'Bonus'] as TypeTab[]).map((tab) => (
+      {/* ── Hero ── */}
+      <div>
+        <p className="text-4xl font-black text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
+        <p className="text-xs text-slate-500 mt-1">pending approval</p>
+      </div>
+
+      {/* ── Status tabs ── */}
+      <div className="flex border-b border-slate-800/20">
+        {STATUS_TABS.map((tab) => (
           <button
             key={tab}
-            onClick={() => setTypeTab(tab)}
-            className={`flex-1 min-h-[40px] text-base font-medium pb-2 transition-colors ${
-              typeTab === tab
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-slate-500'
+            onClick={() => setStatusTab(tab)}
+            className={`flex-1 min-h-[48px] text-sm font-semibold transition-colors ${
+              statusTab === tab
+                ? 'text-white border-b-2 border-blue-500'
+                : 'text-slate-400'
             }`}
           >
-            {tab} Payments
+            {tab}
           </button>
         ))}
       </div>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
+      {/* ── Grouped entry list ── */}
+      {groupedByRep.length === 0 ? (
+        <p className="text-sm text-slate-500 text-center py-8">No {statusTab.toLowerCase()} entries.</p>
+      ) : (
+        <div className="space-y-6">
+          {groupedByRep.map((group) => (
+            <div key={group.repName}>
+              {/* Rep group header */}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-base font-semibold text-white">{group.repName}</p>
+                <p className="text-sm font-bold text-slate-400 tabular-nums">{fmt$(group.total)}</p>
+              </div>
 
-      {/* Status filter pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 no-scrollbar">
-        {STATUS_PILLS.map((pill) => (
-          <button
-            key={pill}
-            onClick={() => setStatusFilter(pill)}
-            className={`shrink-0 min-h-[36px] px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-              statusFilter === pill
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-400'
-            }`}
-          >
-            {pill}
-          </button>
-        ))}
-      </div>
-
-      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
-
-      {/* Summary card */}
-      <MobileCard>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-400 tracking-wide">Draft</span>
-            <span className="text-lg font-black text-white tabular-nums">
-              {fmt$(Math.round(draftTotal))}{' '}
-              <span className="text-slate-500 text-xs">({draftCount})</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-400 tracking-wide">Pending</span>
-            <span className="text-lg font-black text-amber-300 tabular-nums">
-              {fmt$(Math.round(pendingTotal))}{' '}
-              <span className="text-slate-500 text-xs">({pendingCount})</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between border-t border-slate-800/60 pt-2">
-            <span className="text-sm text-slate-400 tracking-wide">Total Paid</span>
-            <span className="text-lg font-black text-emerald-400 tabular-nums">
-              {fmt$(Math.round(paidTotal))}
-            </span>
-          </div>
-        </div>
-      </MobileCard>
-
-      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
-
-      {/* Rep filter dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setRepDropdownOpen(!repDropdownOpen)}
-          className="w-full min-h-[44px] flex items-center justify-between px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white"
-        >
-          <span className={filterRepId ? 'text-white' : 'text-slate-400'}>
-            {selectedRepName}
-          </span>
-          {repDropdownOpen ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {repDropdownOpen && (
-          <div className="absolute z-50 mt-1 left-0 right-0 max-h-64 overflow-y-auto rounded-xl bg-slate-900 border border-slate-700 shadow-xl">
-            <div className="sticky top-0 p-2 bg-slate-900 border-b border-slate-800">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="text"
-                  value={repSearchQuery}
-                  onChange={(e) => setRepSearchQuery(e.target.value)}
-                  placeholder="Search reps..."
-                  className="w-full min-h-[40px] pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none"
-                />
+              {/* Entries */}
+              <div>
+                {group.entries.map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => setSelectedEntry(entry)}
+                    className="w-full flex items-center justify-between py-3 border-b border-slate-800/20 text-left active:bg-slate-800/20 transition-colors"
+                  >
+                    <span className="text-sm text-white truncate mr-2">
+                      {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
+                    </span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-bold tabular-nums text-white">{fmt$(entry.amount)}</span>
+                      <span className="text-xs text-slate-500">{entry.paymentStage}</span>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
-            <button
-              onClick={() => {
-                setFilterRepId('');
-                setRepDropdownOpen(false);
-                setRepSearchQuery('');
-              }}
-              className="w-full min-h-[44px] px-4 py-3 text-left text-sm text-slate-400 hover:bg-slate-800 active:bg-slate-800"
-            >
-              All Reps
-            </button>
-            {repOptions.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => {
-                  setFilterRepId(r.id);
-                  setRepDropdownOpen(false);
-                  setRepSearchQuery('');
-                }}
-                className={`w-full min-h-[44px] px-4 py-3 text-left text-sm active:bg-slate-800 ${
-                  filterRepId === r.id ? 'text-blue-400 bg-blue-500/10' : 'text-white hover:bg-slate-800'
-                }`}
-              >
-                {r.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
-
-      {/* Entry cards */}
-      <div className="space-y-4">
-        {filtered.length === 0 ? (
-          <MobileCard>
-            <p className="text-sm text-slate-500 text-center py-4">No entries found.</p>
-          </MobileCard>
-        ) : (
-          filtered.map((entry) => {
-            const isExpanded = expandedId === entry.id;
-            const borderColor = entry.status === 'Paid' ? 'border-l-emerald-500' : entry.status === 'Pending' ? 'border-l-amber-500' : 'border-l-slate-600';
-            return (
-              <MobileCard key={entry.id} className={`border-l-[3px] ${borderColor}`}>
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : entry.id)}
-                  className="w-full text-left active:scale-[0.98] transition-transform"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-semibold text-white truncate">
-                      {entry.repName}
-                    </span>
-                    <span className="text-base font-bold text-emerald-400 tabular-nums">
-                      {fmt$(entry.amount)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className="text-sm text-slate-500 truncate">
-                      {entry.type === 'Deal' ? entry.customerName || '—' : entry.notes || '—'}
-                    </span>
-                    <MobileBadge
-                      value={entry.paymentStage}
-                      variant="status"
-                    />
-                  </div>
-                </button>
-
-                {/* Expanded actions */}
-                {isExpanded && (
-                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/60">
-                    {entry.status === 'Draft' && (
-                      <button
-                        onClick={() => handleStatusChange(entry, 'Pending')}
-                        className="flex items-center gap-1.5 min-h-[40px] px-3 py-2 rounded-lg bg-amber-600/20 text-amber-300 text-xs font-medium active:bg-amber-600/30"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        Approve
-                      </button>
-                    )}
-                    {entry.status === 'Pending' && (
-                      <>
-                        <button
-                          onClick={() => handleStatusChange(entry, 'Paid')}
-                          className="flex items-center gap-1.5 min-h-[40px] px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-300 text-xs font-medium active:bg-emerald-600/30"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          Pay
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange(entry, 'Draft')}
-                          className="flex items-center gap-1.5 min-h-[40px] px-3 py-2 rounded-lg bg-slate-700/40 text-slate-300 text-xs font-medium active:bg-slate-700/60"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          Revert
-                        </button>
-                      </>
-                    )}
-                    {entry.status !== 'Paid' && (
-                      <button
-                        onClick={() => handleDelete(entry)}
-                        className="flex items-center gap-1.5 min-h-[40px] px-3 py-2 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium active:bg-red-600/30 ml-auto"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                )}
-              </MobileCard>
-            );
-          })
-        )}
-      </div>
-
-      {/* Sticky bottom — Publish Payroll */}
-      {hasPendingEntries && (
+      {/* ── Sticky bottom action ── */}
+      {statusTab === 'Pending' && filtered.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
           <button
-            onClick={handlePublish}
-            className="w-full min-h-[52px] rounded-xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+            onClick={handlePublishOrApproveAll}
+            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors"
           >
             Publish Payroll
           </button>
         </div>
       )}
 
-      {/* Add Bonus Bottom Sheet */}
+      {statusTab === 'Draft' && filtered.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+          <button
+            onClick={() => {
+              const ids = filtered.map((e) => e.id);
+              setPayrollEntries((prev) =>
+                prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p)),
+              );
+              toast('All draft entries moved to Pending', 'success');
+              setStatusTab('Pending');
+            }}
+            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors"
+          >
+            Approve All
+          </button>
+        </div>
+      )}
+
+      {/* ── Entry action sheet ── */}
+      <MobileBottomSheet
+        open={!!selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+        title={selectedEntry?.customerName || selectedEntry?.repName || 'Entry'}
+      >
+        {selectedEntry && (
+          <div className="px-5 space-y-1 pb-2">
+            {selectedEntry.status === 'Draft' && (
+              <MobileBottomSheet.Item
+                label="Approve"
+                icon={Check}
+                onTap={() => handleStatusChange(selectedEntry, 'Pending')}
+              />
+            )}
+            {selectedEntry.status === 'Pending' && (
+              <MobileBottomSheet.Item
+                label="Mark as Paid"
+                icon={Check}
+                onTap={() => handleStatusChange(selectedEntry, 'Paid')}
+              />
+            )}
+            {selectedEntry.status !== 'Paid' && (
+              <>
+                <MobileBottomSheet.Item
+                  label="Edit Amount"
+                  icon={Edit2}
+                  onTap={() => {
+                    setSelectedEntry(null);
+                    toast('Edit not yet implemented on mobile', 'info');
+                  }}
+                />
+                <MobileBottomSheet.Item
+                  label="Delete"
+                  icon={Trash2}
+                  onTap={() => handleDelete(selectedEntry)}
+                  danger
+                />
+              </>
+            )}
+          </div>
+        )}
+      </MobileBottomSheet>
+
+      {/* ── Add Bonus sheet ── */}
       <MobileBottomSheet
         open={showBonusSheet}
         onClose={() => setShowBonusSheet(false)}
@@ -463,26 +344,20 @@ export default function MobilePayroll() {
       >
         <form onSubmit={handleAddBonus} className="px-5 space-y-4 pb-2">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-              Rep
-            </label>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep</label>
             <select
               value={bonusForm.repId}
               onChange={(e) => setBonusForm((f) => ({ ...f, repId: e.target.value }))}
-              className={`${inputCls} min-h-[44px]`}
+              className={`${inputCls} min-h-[48px]`}
             >
               <option value="">Select rep...</option>
               {reps.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
+                <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-              Amount
-            </label>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Amount</label>
             <input
               type="number"
               step="0.01"
@@ -490,35 +365,31 @@ export default function MobilePayroll() {
               value={bonusForm.amount}
               onChange={(e) => setBonusForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0.00"
-              className={`${inputCls} min-h-[44px]`}
+              className={`${inputCls} min-h-[48px]`}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-              Date
-            </label>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
             <input
               type="date"
               value={bonusForm.date}
               onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))}
-              className={`${inputCls} min-h-[44px]`}
+              className={`${inputCls} min-h-[48px]`}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-              Notes
-            </label>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Notes</label>
             <input
               type="text"
               value={bonusForm.notes}
               onChange={(e) => setBonusForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Optional note"
-              className={`${inputCls} min-h-[44px]`}
+              className={`${inputCls} min-h-[48px]`}
             />
           </div>
           <button
             type="submit"
-            className="w-full min-h-[48px] rounded-xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
           >
             Add Bonus
           </button>

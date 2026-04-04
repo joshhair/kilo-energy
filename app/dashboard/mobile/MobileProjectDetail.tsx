@@ -9,13 +9,14 @@ import {
   getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
 } from '../../../lib/data';
 import { formatDate } from '../../../lib/utils';
-import { ChevronLeft, Flag, FlagOff, Trash2, X as XIcon, Check, Clock, RefreshCw, ArrowRight, Zap, MessageSquare, Pencil, Plus, User } from 'lucide-react';
+import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Clock, RefreshCw } from 'lucide-react';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
+import MobileSection from './shared/MobileSection';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ProjectChatter from '../components/ProjectChatter';
 
-// ── Pipeline steps (same as desktop) ──
+// ── Pipeline steps ──
 
 const PIPELINE_STEPS: Phase[] = [
   'New', 'Acceptance', 'Site Survey', 'Design', 'Permitting',
@@ -43,19 +44,19 @@ function relativeTime(dateStr: string): string {
 
 // ── Activity type styling ──
 
-const ACTIVITY_STYLES: Record<string, { color: string }> = {
-  phase_change:    { color: 'bg-blue-500' },
-  flagged:         { color: 'bg-red-500' },
-  unflagged:       { color: 'bg-red-400' },
-  m1_paid:         { color: 'bg-emerald-500' },
-  m2_paid:         { color: 'bg-emerald-500' },
-  note_edit:       { color: 'bg-amber-500' },
-  field_edit:      { color: 'bg-slate-500' },
-  created:         { color: 'bg-purple-500' },
-  setter_assigned: { color: 'bg-cyan-500' },
+const ACTIVITY_STYLES: Record<string, string> = {
+  phase_change:    'bg-blue-500',
+  flagged:         'bg-red-500',
+  unflagged:       'bg-red-400',
+  m1_paid:         'bg-emerald-500',
+  m2_paid:         'bg-emerald-500',
+  note_edit:       'bg-amber-500',
+  field_edit:      'bg-slate-500',
+  created:         'bg-purple-500',
+  setter_assigned: 'bg-cyan-500',
 };
 
-// ── Activity Timeline (compact) ──
+// ── Activity Timeline ──
 
 interface ActivityEntry {
   id: string;
@@ -93,25 +94,25 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 text-slate-400" />
-        <h2 className="text-white font-semibold text-sm">Activity</h2>
-        <span className="text-slate-500 text-xs">({total})</span>
+        <h2 className="text-base font-semibold text-white">Activity</h2>
+        <span className="text-xs text-slate-500">({total})</span>
       </div>
 
       {loading && activities.length === 0 ? (
-        <div className="flex items-center gap-2 text-slate-500 text-sm py-4">
+        <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           Loading...
         </div>
       ) : activities.length === 0 ? (
-        <p className="text-slate-500 text-sm">No activity yet</p>
+        <p className="text-sm text-slate-500">No activity yet</p>
       ) : (
         <div className="relative pl-6">
           <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-800" />
           {activities.map((entry) => {
-            const style = ACTIVITY_STYLES[entry.type] ?? { color: 'bg-slate-600' };
+            const dotColor = ACTIVITY_STYLES[entry.type] ?? 'bg-slate-600';
             return (
               <div key={entry.id} className="relative mb-3 last:mb-0">
-                <div className={`absolute -left-4 top-1 w-2 h-2 rounded-full ${style.color} ring-3 ring-slate-900`} />
+                <div className={`absolute -left-4 top-1 w-2 h-2 rounded-full ${dotColor}`} />
                 <p className="text-sm text-slate-300">{entry.detail}</p>
                 <p className="text-xs text-slate-500">{relativeTime(entry.createdAt)}</p>
               </div>
@@ -124,7 +125,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="text-xs text-blue-400 active:text-blue-300 disabled:opacity-50"
+          className="min-h-[48px] text-xs text-blue-400 active:text-blue-300 disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>
@@ -142,6 +143,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
+  const isRep = effectiveRole === 'rep';
   const { toast } = useToast();
   const router = useRouter();
 
@@ -157,17 +159,16 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (!project) {
     return (
-      <div className="px-4 pt-3 pb-24 text-center text-slate-500 text-sm">
+      <div className="px-5 pt-4 pb-28 text-center text-sm text-slate-500">
         Project not found.
         <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back to Projects</button>
       </div>
     );
   }
 
-  // Permission check — reps only see their own
   if (currentRole === 'rep' && project.repId !== currentRepId && project.setterId !== currentRepId) {
     return (
-      <div className="px-4 pt-3 pb-24 text-center text-slate-500 text-sm">
+      <div className="px-5 pt-4 pb-28 text-center text-sm text-slate-500">
         You don&apos;t have permission to view this project.
         <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
       </div>
@@ -176,7 +177,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (currentRole === 'sub-dealer' && project.subDealerId !== currentRepId && project.repId !== currentRepId) {
     return (
-      <div className="px-4 pt-3 pb-24 text-center text-slate-500 text-sm">
+      <div className="px-5 pt-4 pb-28 text-center text-sm text-slate-500">
         You don&apos;t have permission to view this project.
         <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
       </div>
@@ -240,23 +241,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === currentRepId)
     : [];
 
-  const projectBaselines = (() => {
-    if (project.baselineOverride) return project.baselineOverride;
-    if (project.installer === 'SolarTech' && project.solarTechProductId) {
-      return getSolarTechBaseline(project.solarTechProductId, project.kWSize);
-    }
-    if (project.installerProductId) {
-      return getProductCatalogBaseline(productCatalogProducts, project.installerProductId, project.kWSize);
-    }
-    return getInstallerRatesForDeal(project.installer, project.soldDate, project.kWSize, installerPricingVersions);
-  })();
-
   // ── Phase stepper ──
 
   const currentStepIndex = PIPELINE_STEPS.indexOf(project.phase);
   const isOffTrack = currentStepIndex === -1;
 
-  // ── Info rows (label / value pairs) ──
+  // ── Info rows ──
 
   const infoRows: [string, string][] = [
     ['Rep', project.repName],
@@ -275,27 +265,25 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }
 
   return (
-    <div className="px-4 pt-3 pb-32 space-y-5">
+    <div className="px-5 pt-4 pb-28 space-y-8">
 
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/projects')}
-        className="flex items-center gap-1 text-sm text-slate-400 active:text-white transition-colors -ml-1"
+        className="flex items-center gap-1 text-sm text-slate-400 mb-4 min-h-[48px]"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ArrowLeft className="w-4 h-4" />
         Projects
       </button>
 
-      {/* Customer name + phase badge */}
-      <div>
-        <h1 className="text-xl font-bold text-white mb-2">{project.customerName}</h1>
-        <div className="flex items-center gap-2">
-          <MobileBadge value={project.phase} variant="phase" />
-          {project.flagged && (
-            <span className="flex items-center gap-1 bg-red-900/40 border border-red-500/30 text-red-400 text-[10px] px-2 py-0.5 rounded-full">
-              Flagged
-            </span>
-          )}
+      {/* Customer name + phase badge + flagged */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-white">{project.customerName}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <MobileBadge value={project.phase} />
+            {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500" />}
+          </div>
         </div>
       </div>
 
@@ -306,21 +294,16 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           const isCurrent = !isOffTrack && currentStepIndex === index;
           return (
             <div key={step} className="flex items-center gap-1.5">
-              <div className="relative flex items-center justify-center">
-                {isCurrent && (
-                  <span className="absolute w-4 h-4 rounded-full bg-blue-500/30 animate-pulse" />
-                )}
-                <div
-                  className={`w-2.5 h-2.5 rounded-full relative z-10 ${
-                    isCompleted
-                      ? 'bg-emerald-500'
-                      : isCurrent
-                      ? 'bg-blue-500 ring-2 ring-blue-500/30'
-                      : 'bg-slate-700'
-                  }`}
-                  title={step}
-                />
-              </div>
+              <div
+                className={`w-2.5 h-2.5 rounded-full ${
+                  isCompleted
+                    ? 'bg-emerald-500'
+                    : isCurrent
+                    ? 'bg-blue-500 ring-2 ring-blue-500/30'
+                    : 'bg-slate-700'
+                }`}
+                title={step}
+              />
               {index < PIPELINE_STEPS.length - 1 && (
                 <div className={`w-3 h-px ${isCompleted ? 'bg-emerald-600' : 'bg-slate-700'}`} />
               )}
@@ -329,63 +312,58 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         })}
       </div>
 
-      {/* Info rows */}
-      <MobileCard>
-        <div className="space-y-3">
-          {infoRows.map(([label, value]) => (
-            <div key={label} className="flex justify-between items-baseline">
-              <span className="text-xs text-slate-500 tracking-wide">{label}</span>
-              <span className="text-sm text-white">{value}</span>
-            </div>
-          ))}
-        </div>
-      </MobileCard>
+      {/* Info rows — no card wrapper, thin separators */}
+      <div className="space-y-0">
+        {infoRows.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between py-3 border-b border-slate-800/20">
+            <span className="text-xs text-slate-500">{label}</span>
+            <span className="text-sm text-white">{value}</span>
+          </div>
+        ))}
+      </div>
 
       {/* Commission card — hide for PM */}
       {!isPM && (
-        <MobileCard accent="emerald">
-          <h2 className="text-white font-semibold text-sm mb-3">Commission</h2>
+        <MobileCard>
+          <h2 className="text-base font-semibold text-white mb-3">Commission</h2>
           {myEntries.length > 0 && currentRole === 'rep' ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {myEntries.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-slate-300 text-sm font-medium">{entry.paymentStage}</p>
-                    <p className="text-slate-500 text-xs">{formatDate(entry.date)}</p>
-                  </div>
+                  <span className="text-sm text-white">{entry.paymentStage}</span>
                   <div className="flex items-center gap-2">
+                    <span className="text-sm text-emerald-400 font-bold">${entry.amount.toLocaleString()}</span>
                     <MobileBadge value={entry.status} variant="status" />
-                    <span className="text-emerald-400 font-bold text-sm">${entry.amount.toLocaleString()}</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {/* M1 */}
-              <div className="flex items-center justify-between bg-slate-800/50 rounded-lg px-3 py-2">
-                <div>
-                  <p className="text-slate-400 text-xs">M1</p>
-                  <p className="text-emerald-400 font-bold text-sm">${project.m1Amount.toLocaleString()}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white">M1</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-emerald-400 font-bold">${project.m1Amount.toLocaleString()}</span>
+                  <MobileBadge value={project.m1Paid ? 'Paid' : 'Pending'} variant="status" />
                 </div>
-                <MobileBadge value={project.m1Paid ? 'Paid' : 'Pending'} variant="status" />
               </div>
               {/* M2 */}
-              <div className="flex items-center justify-between bg-slate-800/50 rounded-lg px-3 py-2">
-                <div>
-                  <p className="text-slate-400 text-xs">M2</p>
-                  <p className="text-emerald-400 font-bold text-sm">${project.m2Amount.toLocaleString()}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white">M2</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-emerald-400 font-bold">${project.m2Amount.toLocaleString()}</span>
+                  <MobileBadge value={project.m2Paid ? 'Paid' : 'Pending'} variant="status" />
                 </div>
-                <MobileBadge value={project.m2Paid ? 'Paid' : 'Pending'} variant="status" />
               </div>
               {/* M3 */}
               {(project.m3Amount ?? 0) > 0 && (
-                <div className="flex items-center justify-between bg-slate-800/50 rounded-lg px-3 py-2">
-                  <div>
-                    <p className="text-slate-400 text-xs">M3</p>
-                    <p className="text-teal-400 font-bold text-sm">${(project.m3Amount ?? 0).toLocaleString()}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white">M3</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-emerald-400 font-bold">${(project.m3Amount ?? 0).toLocaleString()}</span>
+                    <MobileBadge value="Pending" variant="status" />
                   </div>
-                  <span className="text-xs text-slate-500 bg-slate-800 rounded px-2 py-0.5">Auto at PTO</span>
                 </div>
               )}
             </div>
@@ -393,52 +371,36 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         </MobileCard>
       )}
 
-      {/* Notes section (expandable) */}
-      <MobileCard>
-        <button
-          onClick={() => setNotesExpanded(!notesExpanded)}
-          className="w-full flex items-center justify-between"
-        >
-          <h2 className="text-white font-semibold text-sm">Notes</h2>
-          <span className="text-slate-500 text-xs">{notesExpanded ? 'Hide' : 'Show'}</span>
-        </button>
-        {notesExpanded && (
-          <div className="mt-3">
-            {project.notes ? (
-              <p className="text-slate-400 text-sm leading-relaxed">{project.notes}</p>
-            ) : (
-              <p className="text-slate-600 text-sm italic">No notes</p>
-            )}
-          </div>
+      {/* Notes — collapsible */}
+      <MobileSection title="Notes" collapsible defaultOpen={false}>
+        {project.notes ? (
+          <p className="text-sm text-slate-400 leading-relaxed">{project.notes}</p>
+        ) : (
+          <p className="text-sm text-slate-600 italic">No notes</p>
         )}
-      </MobileCard>
+      </MobileSection>
 
       {/* Messages / Chatter */}
       <ProjectChatter projectId={projectId} />
 
       {/* Activity Timeline */}
-      <MobileCard>
-        <MobileActivityTimeline projectId={projectId} />
-      </MobileCard>
+      <MobileActivityTimeline projectId={projectId} />
 
-      {/* Sticky bottom bar */}
-      <div
-        className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 border-t border-slate-800/60 shadow-lg shadow-black/30"
-        style={{ background: 'rgba(15, 25, 45, 0.95)', backdropFilter: 'blur(12px)' }}
-      >
+      {/* Sticky bottom action bar */}
+      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 bg-slate-900/95 border-t border-slate-800/20 px-5 py-3">
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[44px] bg-blue-600 active:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+            className="flex-1 min-h-[48px] bg-blue-600 active:bg-blue-700 text-white text-sm font-medium rounded-xl"
           >
             Change Phase &#x25BE;
           </button>
         )}
         <button
           onClick={() => setMoreSheetOpen(true)}
-          className="min-h-[44px] px-4 bg-slate-800/80 border border-slate-700/60 text-slate-300 text-sm font-medium rounded-xl active:bg-slate-700 transition-colors"
+          className="min-h-[48px] px-5 bg-slate-800/60 text-slate-300 text-sm font-medium rounded-xl active:bg-slate-700"
         >
-          &middot;&middot;&middot; More
+          &middot; &middot; &middot;
         </button>
       </div>
 

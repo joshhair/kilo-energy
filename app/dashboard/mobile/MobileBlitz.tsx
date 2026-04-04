@@ -4,9 +4,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate } from '../../../lib/utils';
-import { Plus, Tent, MapPin, Calendar, Users, Inbox, AlertCircle } from 'lucide-react';
+import { Plus, Tent, Inbox, AlertCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
+import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -43,23 +44,16 @@ const STATUS_PILLS: { value: BlitzStatus | 'all'; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-const STATUS_BADGE_CLS: Record<BlitzStatus, string> = {
-  upcoming: 'bg-blue-900/30 text-blue-300 border-blue-700/30',
-  active: 'bg-emerald-900/30 text-emerald-300 border-emerald-700/30',
-  completed: 'bg-slate-800/50 text-slate-400 border-slate-600/30',
-  cancelled: 'bg-red-900/30 text-red-300 border-red-700/30',
-};
-
-const STATUS_DOT_CLS: Record<BlitzStatus, string> = {
-  upcoming: 'bg-blue-400',
-  active: 'bg-emerald-400 animate-pulse',
-  completed: 'bg-slate-500',
-  cancelled: 'bg-red-400',
+const STATUS_BADGE_MAP: Record<BlitzStatus, string> = {
+  upcoming: 'Upcoming',
+  active: 'Active',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
 };
 
 export default function MobileBlitz() {
   const router = useRouter();
-  const { currentRole, effectiveRole, effectiveRepId, reps, pmPermissions } = useApp();
+  const { effectiveRole, effectiveRepId, pmPermissions } = useApp();
 
   const isAdmin = effectiveRole === 'admin';
   const isPM = effectiveRole === 'project_manager';
@@ -69,7 +63,10 @@ export default function MobileBlitz() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<BlitzStatus | 'all'>('all');
   const [tab, setTab] = useState<'blitzes' | 'requests'>('blitzes');
-  const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({ canRequestBlitz: false, canCreateBlitz: false });
+  const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({
+    canRequestBlitz: false,
+    canCreateBlitz: false,
+  });
 
   useEffect(() => {
     Promise.all([
@@ -98,14 +95,13 @@ export default function MobileBlitz() {
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
     if (statusFilter !== 'all') list = list.filter((b) => b.status === statusFilter);
-    // Sort newest first
     return [...list].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   }, [blitzes, statusFilter]);
 
-  // PM access guard — placed after all hooks
+  // PM access guard -- placed after all hooks
   if (isPM && pmPermissions && !pmPermissions.canAccessBlitz) {
     return (
-      <div className="px-5 pt-3 pb-24 space-y-8">
+      <div className="px-5 pt-4 pb-28 space-y-8">
         <MobilePageHeader title="Blitz" />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle className="w-10 h-10 text-slate-600" />
@@ -123,11 +119,11 @@ export default function MobileBlitz() {
   const canCreate = isAdmin || userPerms.canCreateBlitz;
   const canRequest = !isAdmin && !userPerms.canCreateBlitz && userPerms.canRequestBlitz;
 
-  // Determine the right-side header action
+  // Header right action
   const headerRight = canCreate ? (
     <button
       onClick={() => router.push('/dashboard/blitz?create=true')}
-      className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 text-white active:bg-blue-700 transition-colors"
+      className="flex items-center justify-center w-10 h-10 rounded-2xl bg-blue-600 text-white active:bg-blue-700 transition-colors"
       aria-label="Create blitz"
     >
       <Plus className="w-5 h-5" />
@@ -135,7 +131,7 @@ export default function MobileBlitz() {
   ) : canRequest ? (
     <button
       onClick={() => router.push('/dashboard/blitz?request=true')}
-      className="flex items-center justify-center min-h-[44px] px-4 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold active:bg-slate-700 transition-colors"
+      className="flex items-center justify-center min-h-[48px] px-4 rounded-2xl bg-slate-800/40 text-slate-300 text-xs font-semibold active:bg-slate-700 transition-colors"
     >
       <Plus className="w-4 h-4 mr-1" /> Request
     </button>
@@ -143,11 +139,11 @@ export default function MobileBlitz() {
 
   if (loading) {
     return (
-      <div className="px-5 pt-3 pb-24 space-y-8">
+      <div className="px-5 pt-4 pb-28 space-y-8">
         <MobilePageHeader title="Blitz" />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-xl bg-slate-800/40 animate-pulse" />
+            <div key={i} className="h-24 rounded-2xl bg-slate-800/40 animate-pulse" />
           ))}
         </div>
       </div>
@@ -155,19 +151,19 @@ export default function MobileBlitz() {
   }
 
   return (
-    <div className="px-5 pt-3 pb-24 space-y-8">
+    <div className="px-5 pt-4 pb-28 space-y-8">
       <MobilePageHeader title="Blitz" right={headerRight} />
 
-      {/* Status filter pills */}
+      {/* Status pills */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {STATUS_PILLS.map((s) => (
           <button
             key={s.value}
             onClick={() => setStatusFilter(s.value)}
-            className={`min-h-[36px] px-4 py-1.5 text-sm font-semibold rounded-full border whitespace-nowrap transition-colors ${
+            className={`min-h-[48px] px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors ${
               statusFilter === s.value
-                ? 'bg-blue-600/20 text-blue-400 border-blue-500/30 shadow-sm shadow-blue-500/20'
-                : 'bg-slate-800/40 text-slate-400 border-slate-700/30 active:bg-slate-700/50'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400'
             }`}
           >
             {s.label}
@@ -177,10 +173,10 @@ export default function MobileBlitz() {
 
       {/* Admin tabs: Blitzes / Requests */}
       {isAdmin && pendingRequests.length > 0 && (
-        <div className="flex gap-1 mb-4 p-1 bg-slate-800/40 rounded-xl">
+        <div className="flex gap-1 p-1 bg-slate-800/40 rounded-2xl">
           <button
             onClick={() => setTab('blitzes')}
-            className={`flex-1 min-h-[36px] text-xs font-semibold rounded-lg transition-colors ${
+            className={`flex-1 min-h-[48px] text-sm font-semibold rounded-xl transition-colors ${
               tab === 'blitzes' ? 'bg-slate-700 text-white' : 'text-slate-400 active:text-white'
             }`}
           >
@@ -188,7 +184,7 @@ export default function MobileBlitz() {
           </button>
           <button
             onClick={() => setTab('requests')}
-            className={`flex-1 min-h-[36px] text-xs font-semibold rounded-lg transition-colors relative ${
+            className={`flex-1 min-h-[48px] text-sm font-semibold rounded-xl transition-colors relative ${
               tab === 'requests' ? 'bg-slate-700 text-white' : 'text-slate-400 active:text-white'
             }`}
           >
@@ -206,32 +202,22 @@ export default function MobileBlitz() {
           {filteredBlitzes.length === 0 ? (
             <MobileEmptyState icon={Tent} title="No blitzes found" subtitle="Try a different status filter" />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredBlitzes.map((blitz) => {
                 const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
-                return (
-                  <MobileCard key={blitz.id} onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)} accent={blitz.status === 'upcoming' ? 'blue' : undefined}>
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="font-semibold text-white text-base truncate flex-1">{blitz.name}</p>
-                      <span className={`inline-flex items-center gap-1.5 min-h-[28px] px-3 py-1 text-[11px] font-semibold rounded-full border shrink-0 ${STATUS_BADGE_CLS[blitz.status]}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_CLS[blitz.status]}`} />
-                        {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
-                      </span>
-                    </div>
+                const dateRange = `${formatDate(blitz.startDate)} - ${formatDate(blitz.endDate)}`;
+                const details = [blitz.location, dateRange, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
+                  .filter(Boolean)
+                  .join(' \u00B7 ');
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
-                      {blitz.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />{blitz.location}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(blitz.startDate)} — {formatDate(blitz.endDate)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />{approvedCount} rep{approvedCount !== 1 ? 's' : ''}
-                      </span>
+                return (
+                  <MobileCard key={blitz.id} onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold text-white truncate">{blitz.name}</p>
+                        <p className="text-sm text-slate-500 mt-1">{details}</p>
+                      </div>
+                      <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
                     </div>
                   </MobileCard>
                 );
@@ -247,16 +233,14 @@ export default function MobileBlitz() {
           {pendingRequests.length === 0 ? (
             <MobileEmptyState icon={Inbox} title="No pending requests" />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {pendingRequests.map((req) => (
-                <MobileCard key={req.id} onTap={() => router.push(`/dashboard/blitz?tab=requests`)} accent="amber">
-                  <p className="font-semibold text-white text-base">{req.name}</p>
-                  <p className="text-sm text-slate-500 mt-0.5">
+                <MobileCard key={req.id} onTap={() => router.push('/dashboard/blitz?tab=requests')}>
+                  <p className="text-base font-semibold text-white">{req.name}</p>
+                  <p className="text-sm text-slate-500 mt-1">
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
-                  <span className="inline-flex items-center mt-2 min-h-[28px] px-3 py-1 text-[11px] font-semibold rounded-full border bg-amber-900/40 text-amber-300 border-amber-700/30">
-                    Pending
-                  </span>
+                  <MobileBadge value="Pending" variant="status" />
                 </MobileCard>
               ))}
             </div>

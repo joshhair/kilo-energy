@@ -3,13 +3,10 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, getM1PayDate } from '../../../lib/utils';
+import { fmt$ } from '../../../lib/utils';
 import { ACTIVE_PHASES } from '../../../lib/data';
 import MobilePageHeader from './shared/MobilePageHeader';
-import MobileCard from './shared/MobileCard';
-import MobileStatCard from './shared/MobileStatCard';
 import MobileSection from './shared/MobileSection';
-import MobileListItem from './shared/MobileListItem';
 import MobileBadge from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
 
@@ -27,17 +24,11 @@ function relativeTime(dateStr: string): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-const PIPELINE_BAR_COLORS: Record<string, string> = {
-  'New':             'bg-sky-500',
-  'Acceptance':      'bg-indigo-500',
-  'Site Survey':     'bg-violet-500',
-  'Design':          'bg-fuchsia-500',
-  'Permitting':      'bg-amber-500',
-  'Pending Install': 'bg-orange-500',
-  'Installed':       'bg-teal-500',
-  'PTO':             'bg-emerald-500',
-  'Completed':       'bg-green-500',
-};
+function stalledDays(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const then = new Date(y, m - 1, d);
+  return Math.floor((Date.now() - then.getTime()) / 86_400_000);
+}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -45,7 +36,6 @@ export default function MobileDashboard() {
   const {
     projects,
     payrollEntries,
-    reps,
     effectiveRole,
     effectiveRepId,
   } = useApp();
@@ -88,57 +78,107 @@ export default function MobileDashboard() {
     );
 
     return (
-      <div className="px-5 pt-3 pb-24 space-y-8">
+      <div className="px-5 pt-4 pb-28 space-y-8">
         <MobilePageHeader title="Dashboard" />
 
-        {/* 2x2 stat grid — NO dollar amounts */}
-        <div className="grid grid-cols-2 gap-4">
-          <MobileStatCard label="Active Projects" value={activeProjects.length} color="text-blue-400" />
-          <MobileStatCard label="Total Projects" value={myProjects.length} color="text-slate-300" />
-          <MobileStatCard label="Total kW" value={totalKW.toFixed(1)} color="text-emerald-400" />
-          <MobileStatCard
-            label="Flagged"
-            value={flaggedProjects.length}
-            color={flaggedProjects.length > 0 ? 'text-red-400' : 'text-slate-500'}
-          />
+        {/* Inline stats — NO cards, just text */}
+        <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+          <div>
+            <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
+            <p className="text-xs text-slate-500">Active Projects</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white tabular-nums">{myProjects.length}</p>
+            <p className="text-xs text-slate-500">Total Projects</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
+            <p className="text-xs text-slate-500">Total kW</p>
+          </div>
+          <div>
+            <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
+              {flaggedProjects.length}
+            </p>
+            <p className="text-xs text-slate-500">Flagged</p>
+          </div>
         </div>
 
         {/* Pipeline phase bars */}
         <MobileSection title="Pipeline">
-          <MobileCard>
-            <div className="space-y-2">
-              {ACTIVE_PHASES.map((phase) => {
-                const count = phaseCounts[phase] || 0;
-                const pct =
-                  myProjects.length > 0
-                    ? (count / myProjects.length) * 100
-                    : 0;
-                return (
-                  <div key={phase} className="flex items-center gap-3">
-                    <span className="text-sm text-slate-400 w-28 shrink-0">
-                      {phase}
-                    </span>
-                    <div className="flex-1 h-2.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${PIPELINE_BAR_COLORS[phase] ?? 'bg-blue-500/60'}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-slate-500 tabular-nums w-8 text-right">
-                      {count}
-                    </span>
+          <div className="space-y-1">
+            {ACTIVE_PHASES.map((phase) => {
+              const count = phaseCounts[phase] || 0;
+              const pct =
+                myProjects.length > 0
+                  ? (count / myProjects.length) * 100
+                  : 0;
+              return (
+                <div key={phase} className="flex items-center gap-3 py-2">
+                  <span className="text-sm text-slate-400 w-28 shrink-0">{phase}</span>
+                  <div className="flex-1 h-1.5 bg-slate-800 rounded-full">
+                    <div
+                      className="h-full bg-blue-500/60 rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
-                );
-              })}
-            </div>
-          </MobileCard>
+                  <span className="text-xs text-slate-500 w-6 text-right">{count}</span>
+                </div>
+              );
+            })}
+          </div>
         </MobileSection>
 
-        {/* Team */}
-        <MobileSection title="Team">
-          <MobileCard>
-            <p className="text-base text-slate-400">{reps.length} active reps</p>
-          </MobileCard>
+        {/* Needs Attention */}
+        <MobileSection title="Needs Attention" collapsible count={flaggedProjects.length}>
+          {flaggedProjects.length === 0 ? (
+            <p className="text-sm text-slate-500">All clear — no flagged projects.</p>
+          ) : (
+            <div>
+              {flaggedProjects.map((p, i) => (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors ${
+                    i < flaggedProjects.length - 1 ? 'border-b border-slate-800/30' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <p className="text-base font-semibold text-white truncate">{p.customerName}</p>
+                    <MobileBadge value={p.phase} />
+                  </div>
+                  <span className="text-xs text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </MobileSection>
+
+        {/* Recent */}
+        <MobileSection title="Recent">
+          {myProjects.length === 0 ? (
+            <p className="text-sm text-slate-500">No projects yet.</p>
+          ) : (
+            <div>
+              {[...myProjects]
+                .sort((a, b) => b.soldDate.localeCompare(a.soldDate))
+                .slice(0, 5)
+                .map((p, i, arr) => (
+                  <button
+                    key={p.id}
+                    onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                    className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors ${
+                      i < arr.length - 1 ? 'border-b border-slate-800/30' : ''
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <span className="text-sm text-white">{p.customerName}</span>
+                      <span className="text-sm text-slate-500"> → {p.phase}</span>
+                    </div>
+                    <span className="text-xs text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                  </button>
+                ))}
+            </div>
+          )}
         </MobileSection>
       </div>
     );
@@ -198,18 +238,11 @@ export default function MobileDashboard() {
     const nf = new Date(today);
     nf.setDate(today.getDate() + daysUntilPayday);
     return nf.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
+      weekday: 'short',
+      month: 'short',
       day: 'numeric',
     });
   }, [daysUntilPayday]);
-
-  const paydayCountdown =
-    daysUntilPayday === 1
-      ? 'Tomorrow'
-      : daysUntilPayday === 0
-        ? 'Today'
-        : `${daysUntilPayday} days`;
 
   // Recent activity — last 5 by soldDate
   const recentProjects = useMemo(
@@ -220,54 +253,71 @@ export default function MobileDashboard() {
     [myProjects],
   );
 
-  // ── Sub-dealer layout (simpler) ───────────────────────────────────────────
+  // ── Sub-dealer layout ─────────────────────────────────────────────────────
 
   if (effectiveRole === 'sub-dealer') {
     return (
-      <div className="px-5 pt-3 pb-24 space-y-8">
+      <div className="px-5 pt-4 pb-28 space-y-8">
         <MobilePageHeader title="Dashboard" />
 
-        {/* Next Payout */}
-        <MobileCard className="border-emerald-500/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
-          <p className="text-sm text-slate-500 mb-1">Next Payout</p>
-          <p className="text-3xl font-black text-emerald-400 tabular-nums">
-            {fmt$(pendingPayrollTotal)}
-          </p>
-          <p className="text-sm text-slate-500 mt-1">
-            {nextFridayLabel} &middot; {paydayCountdown}
-          </p>
-        </MobileCard>
-
-        {/* 2x2 stat grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" accent="emerald" />
-          <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" accent="amber" />
-          <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" accent="blue" />
-          <MobileStatCard
-            label="Flagged"
-            value={flaggedProjects.length}
-            color={flaggedProjects.length > 0 ? 'text-red-400' : 'text-slate-500'}
-            accent={flaggedProjects.length > 0 ? 'red' : undefined}
-          />
+        {/* Hero — next payout, no card wrapper */}
+        <div>
+          <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmt$(pendingPayrollTotal)}</p>
+          <p className="text-sm text-slate-400 mt-1">Next payout &middot; {nextFridayLabel}</p>
+          <div className="mt-3 h-1.5 bg-slate-800 rounded-full">
+            <div
+              className="h-full bg-emerald-500 rounded-full"
+              style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-500 mt-1">{daysUntilPayday} days</p>
         </div>
 
-        {/* Recent Activity */}
-        <MobileSection title="Recent Activity">
-          <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
-            {recentProjects.length === 0 ? (
-              <p className="text-base text-slate-500 p-4">No projects yet.</p>
-            ) : (
-              recentProjects.map((p) => (
-                <MobileListItem
+        {/* Inline stats */}
+        <div className="grid grid-cols-2 gap-y-4 gap-x-8 mt-6">
+          <div>
+            <p className="text-2xl font-bold text-white tabular-nums">{fmt$(totalPaid)}</p>
+            <p className="text-xs text-slate-500">Paid</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
+            <p className="text-xs text-slate-500">kW Sold</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
+            <p className="text-xs text-slate-500">Active Deals</p>
+          </div>
+          <div>
+            <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
+              {flaggedProjects.length}
+            </p>
+            <p className="text-xs text-slate-500">Flagged</p>
+          </div>
+        </div>
+
+        {/* Recent */}
+        <MobileSection title="Recent">
+          {recentProjects.length === 0 ? (
+            <p className="text-sm text-slate-500">No projects yet.</p>
+          ) : (
+            <div>
+              {recentProjects.map((p, i) => (
+                <button
                   key={p.id}
-                  title={p.customerName}
-                  subtitle={relativeTime(p.soldDate)}
-                  right={<MobileBadge value={p.phase} />}
-                  onTap={() => router.push(`/dashboard/projects/${p.id}`)}
-                />
-              ))
-            )}
-          </MobileCard>
+                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors ${
+                    i < recentProjects.length - 1 ? 'border-b border-slate-800/30' : ''
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <span className="text-sm text-white">{p.customerName}</span>
+                    <span className="text-sm text-slate-500"> → {p.phase}</span>
+                  </div>
+                  <span className="text-xs text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </MobileSection>
       </div>
     );
@@ -276,74 +326,92 @@ export default function MobileDashboard() {
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
-    <div className="px-5 pt-3 pb-24 space-y-8">
+    <div className="px-5 pt-4 pb-28 space-y-8">
       <MobilePageHeader title="Dashboard" />
 
-      {/* Next Payout */}
-      <MobileCard className="border-emerald-500/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
-        <p className="text-sm text-slate-500 mb-1">Next Payout</p>
-        <p className="text-3xl font-black text-emerald-400 tabular-nums">
-          {fmt$(pendingPayrollTotal)}
-        </p>
-        <p className="text-sm text-slate-500 mt-1">
-          {nextFridayLabel} &middot; {paydayCountdown}
-        </p>
-      </MobileCard>
+      {/* Hero — next payout, no card wrapper */}
+      <div>
+        <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmt$(pendingPayrollTotal)}</p>
+        <p className="text-sm text-slate-400 mt-1">Next payout &middot; {nextFridayLabel}</p>
+        <div className="mt-3 h-1.5 bg-slate-800 rounded-full">
+          <div
+            className="h-full bg-emerald-500 rounded-full"
+            style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%` }}
+          />
+        </div>
+        <p className="text-xs text-slate-500 mt-1">{daysUntilPayday} days</p>
+      </div>
 
-      {/* 2x2 stat grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" accent="emerald" />
-        <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" accent="amber" />
-        <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" accent="blue" />
-        <MobileStatCard
-          label="Flagged"
-          value={flaggedProjects.length}
-          color={flaggedProjects.length > 0 ? 'text-red-400' : 'text-slate-500'}
-          accent={flaggedProjects.length > 0 ? 'red' : undefined}
-        />
+      {/* Inline stats — no cards */}
+      <div className="grid grid-cols-2 gap-y-4 gap-x-8 mt-6">
+        <div>
+          <p className="text-2xl font-bold text-white tabular-nums">{fmt$(totalPaid)}</p>
+          <p className="text-xs text-slate-500">Paid</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
+          <p className="text-xs text-slate-500">kW Sold</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
+          <p className="text-xs text-slate-500">Active Deals</p>
+        </div>
+        <div>
+          <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
+            {flaggedProjects.length}
+          </p>
+          <p className="text-xs text-slate-500">Flagged</p>
+        </div>
       </div>
 
       {/* Needs Attention */}
-      <MobileSection
-        title="Needs Attention"
-        collapsible
-        count={flaggedProjects.length}
-      >
-        <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
-          {flaggedProjects.length === 0 ? (
-            <p className="text-base text-slate-500 p-4">All clear — no flagged projects.</p>
-          ) : (
-            flaggedProjects.map((p) => (
-              <div key={p.id} className="active:scale-[0.98] transition-transform">
-                <MobileListItem
-                  title={p.customerName}
-                  subtitle="Flagged for review"
-                  accent="red"
-                  onTap={() => router.push(`/dashboard/projects/${p.id}`)}
-                />
-              </div>
-            ))
-          )}
-        </MobileCard>
+      <MobileSection title="Needs Attention" collapsible count={flaggedProjects.length}>
+        {flaggedProjects.length === 0 ? (
+          <p className="text-sm text-slate-500">All clear — no flagged projects.</p>
+        ) : (
+          <div>
+            {flaggedProjects.map((p, i) => (
+              <button
+                key={p.id}
+                onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors ${
+                  i < flaggedProjects.length - 1 ? 'border-b border-slate-800/30' : ''
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <p className="text-base font-semibold text-white truncate">{p.customerName}</p>
+                  <MobileBadge value={p.phase} />
+                </div>
+                <span className="text-xs text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
+              </button>
+            ))}
+          </div>
+        )}
       </MobileSection>
 
-      {/* Recent Activity */}
-      <MobileSection title="Recent Activity">
-        <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
-          {recentProjects.length === 0 ? (
-            <p className="text-base text-slate-500 p-4">No projects yet.</p>
-          ) : (
-            recentProjects.map((p) => (
-              <MobileListItem
+      {/* Recent */}
+      <MobileSection title="Recent">
+        {recentProjects.length === 0 ? (
+          <p className="text-sm text-slate-500">No projects yet.</p>
+        ) : (
+          <div>
+            {recentProjects.map((p, i) => (
+              <button
                 key={p.id}
-                title={p.customerName}
-                subtitle={relativeTime(p.soldDate)}
-                right={<MobileBadge value={p.phase} />}
-                onTap={() => router.push(`/dashboard/projects/${p.id}`)}
-              />
-            ))
-          )}
-        </MobileCard>
+                onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors ${
+                  i < recentProjects.length - 1 ? 'border-b border-slate-800/30' : ''
+                }`}
+              >
+                <div className="min-w-0">
+                  <span className="text-sm text-white">{p.customerName}</span>
+                  <span className="text-sm text-slate-500"> → {p.phase}</span>
+                </div>
+                <span className="text-xs text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </MobileSection>
     </div>
   );

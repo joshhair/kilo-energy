@@ -970,7 +970,7 @@ export default function MobileNewDeal() {
 
             {/* Commission preview card */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <MobileCard accent="emerald" className="border-emerald-500/20 shadow-sm shadow-black/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
+              <MobileCard className="">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Preview</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-sm">
@@ -1107,7 +1107,7 @@ export default function MobileNewDeal() {
 
             {/* Commission breakdown */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <MobileCard accent="emerald" className="border-emerald-500/20 shadow-sm shadow-black/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
+              <MobileCard className="">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Breakdown</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-sm">

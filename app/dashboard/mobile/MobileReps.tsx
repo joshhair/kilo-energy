@@ -7,24 +7,11 @@ import { useToast } from '../../../lib/toast';
 import { Search, Plus, Users } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
+import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 
-const ROLE_LABELS = { closer: 'Closer', setter: 'Setter', both: 'Both' } as const;
-const ROLE_BADGE_CLS = {
-  closer: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-  setter: 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
-  both: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-} as const;
-
-const FILTER_TABS = [
-  { value: 'all', label: 'All' },
-  { value: 'closer', label: 'Closers' },
-  { value: 'setter', label: 'Setters' },
-  { value: 'both', label: 'Both' },
-] as const;
-type FilterTab = typeof FILTER_TABS[number]['value'];
-
+const ROLE_LABELS: Record<string, string> = { closer: 'Closer', setter: 'Setter', both: 'Both' };
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
 
 export default function MobileReps() {
@@ -33,13 +20,17 @@ export default function MobileReps() {
   const { toast } = useToast();
 
   const isAdmin = currentRole === 'admin';
-  const isPM = effectiveRole === 'project_manager';
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filterTab, setFilterTab] = useState<FilterTab>('all');
   const [showAddRep, setShowAddRep] = useState(false);
-  const [addForm, setAddForm] = useState({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer' as 'closer' | 'setter' | 'both' });
+  const [addForm, setAddForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    repType: 'closer' as 'closer' | 'setter' | 'both',
+  });
 
   // Debounce search
   useEffect(() => {
@@ -88,11 +79,9 @@ export default function MobileReps() {
   const filtered = useMemo(() => {
     return reps.filter((r) => {
       if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
-      if (filterTab === 'all') return true;
-      if (filterTab === 'both') return r.repType === 'both';
-      return r.repType === filterTab || r.repType === 'both';
+      return true;
     });
-  }, [reps, debouncedSearch, filterTab]);
+  }, [reps, debouncedSearch]);
 
   const getInitials = (name: string) => {
     const parts = name.split(' ').filter(Boolean);
@@ -101,14 +90,14 @@ export default function MobileReps() {
   };
 
   return (
-    <div className="px-5 pt-3 pb-24 space-y-8">
+    <div className="px-5 pt-4 pb-28 space-y-8">
       <MobilePageHeader
         title="Reps"
         right={
           isAdmin ? (
             <button
               onClick={() => setShowAddRep(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 text-white active:bg-blue-700 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-2xl bg-blue-600 text-white active:bg-blue-700 transition-colors"
               aria-label="Add rep"
             >
               <Plus className="w-5 h-5" />
@@ -125,39 +114,15 @@ export default function MobileReps() {
           placeholder="Search reps..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors"
+          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 bg-slate-800/40 rounded-2xl text-sm text-white placeholder:text-slate-500 focus:outline-none transition-colors"
         />
       </div>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
-
-      {/* Filter pills */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {FILTER_TABS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setFilterTab(t.value)}
-            className={`min-h-[36px] px-4 py-1.5 text-sm font-semibold rounded-full border whitespace-nowrap transition-colors ${
-              filterTab === t.value
-                ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
-                : 'bg-slate-800/40 text-slate-400 border-slate-700/30 active:bg-slate-700/50'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Rep count */}
-      <p className="text-xs text-slate-500 tracking-wide">{filtered.length} rep{filtered.length !== 1 ? 's' : ''}</p>
-
-      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
-
-      {/* Rep cards */}
+      {/* Rep list */}
       {filtered.length === 0 ? (
-        <MobileEmptyState icon={Users} title="No reps found" subtitle="Try adjusting your search or filter" />
+        <MobileEmptyState icon={Users} title="No reps found" subtitle="Try adjusting your search" />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filtered.map((rep) => {
             const deals = activeDealsByRep.get(rep.id) ?? 0;
             const kw = kwByRep.get(rep.id) ?? 0;
@@ -166,42 +131,25 @@ export default function MobileReps() {
             return (
               <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/reps/${rep.id}`)}>
                 <div className="flex items-center gap-3">
-                  {/* Initials circle */}
-                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-blue-600 text-white text-base font-bold shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                     {getInitials(rep.name)}
                   </div>
-
-                  {/* Name + email */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white text-base truncate">{rep.name}</p>
+                    <p className="text-base font-semibold text-white truncate">{rep.name}</p>
                     {rep.email && (
-                      <p className="text-sm text-slate-500 truncate">{rep.email}</p>
+                      <p className="text-xs text-slate-500 truncate">{rep.email}</p>
                     )}
                   </div>
-
-                  {/* Rep type badge */}
-                  <span className={`inline-flex items-center min-h-[28px] px-3 py-1 text-[11px] font-semibold rounded-full ${ROLE_BADGE_CLS[rep.repType]}`}>
-                    {ROLE_LABELS[rep.repType]}
-                  </span>
+                  <MobileBadge value={ROLE_LABELS[rep.repType] ?? rep.repType} />
                 </div>
 
-                {/* Stats row — admin sees deals, kW, total paid; PM sees deals + kW only */}
-                {(isAdmin || isPM) && (
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-800/40">
-                    <div>
-                      <p className="text-[11px] text-slate-500 tracking-wide">Deals</p>
-                      <p className="text-sm font-semibold text-white tabular-nums">{deals}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-500 tracking-wide">kW</p>
-                      <p className="text-sm font-semibold text-white tabular-nums">{kw.toFixed(1)}</p>
-                    </div>
-                    {isAdmin && (
-                      <div>
-                        <p className="text-[11px] text-slate-500 tracking-wide">Paid</p>
-                        <p className="text-sm font-semibold text-white tabular-nums">${paid.toLocaleString()}</p>
-                      </div>
-                    )}
+                {isAdmin && (
+                  <div className="flex gap-4 mt-3 text-xs text-slate-500">
+                    <span>{deals} deals</span>
+                    <span>&middot;</span>
+                    <span>{kw.toFixed(1)} kW</span>
+                    <span>&middot;</span>
+                    <span>${paid.toLocaleString()} paid</span>
                   </div>
                 )}
               </MobileCard>
@@ -255,7 +203,7 @@ export default function MobileReps() {
               value={addForm.firstName}
               onChange={(e) => setAddForm((f) => ({ ...f, firstName: e.target.value }))}
               placeholder="First name"
-              className="w-full min-h-[44px] bg-slate-800 border border-slate-700 text-white text-base rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-sm rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -266,7 +214,7 @@ export default function MobileReps() {
               value={addForm.lastName}
               onChange={(e) => setAddForm((f) => ({ ...f, lastName: e.target.value }))}
               placeholder="Last name"
-              className="w-full min-h-[44px] bg-slate-800 border border-slate-700 text-white text-base rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-sm rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -276,7 +224,7 @@ export default function MobileReps() {
               value={addForm.email}
               onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="email@example.com"
-              className="w-full min-h-[44px] bg-slate-800 border border-slate-700 text-white text-base rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-sm rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -287,7 +235,7 @@ export default function MobileReps() {
                   key={type}
                   type="button"
                   onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
-                  className={`flex-1 min-h-[44px] rounded-xl text-sm font-semibold transition-colors ${
+                  className={`flex-1 min-h-[48px] rounded-2xl text-sm font-semibold transition-colors ${
                     addForm.repType === type
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-800 text-slate-400 border border-slate-700'
@@ -300,7 +248,7 @@ export default function MobileReps() {
           </div>
           <button
             type="submit"
-            className="w-full min-h-[48px] rounded-xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
           >
             Add Rep
           </button>

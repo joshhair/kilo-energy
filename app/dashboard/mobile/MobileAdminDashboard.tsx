@@ -11,25 +11,21 @@ import {
   getInstallerRatesForDeal,
 } from '../../../lib/data';
 import MobilePageHeader from './shared/MobilePageHeader';
-import MobileCard from './shared/MobileCard';
-import MobileStatCard from './shared/MobileStatCard';
 import MobileSection from './shared/MobileSection';
-import MobileListItem from './shared/MobileListItem';
 import MobileBadge from './shared/MobileBadge';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const PIPELINE_BAR_COLORS: Record<string, string> = {
-  'New':             'bg-sky-500',
-  'Acceptance':      'bg-indigo-500',
-  'Site Survey':     'bg-violet-500',
-  'Design':          'bg-fuchsia-500',
-  'Permitting':      'bg-amber-500',
-  'Pending Install': 'bg-orange-500',
-  'Installed':       'bg-teal-500',
-  'PTO':             'bg-emerald-500',
-  'Completed':       'bg-green-500',
-};
+function fmtCompact(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+  return fmt$(n);
+}
+
+function fmtKW(n: number): string {
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -75,19 +71,16 @@ export default function MobileAdminDashboard() {
     [projects, installerPricingVersions, productCatalogProducts],
   );
 
-  const totalPaid = useMemo(
-    () =>
-      payrollEntries
-        .filter((e) => e.status === 'Paid')
-        .reduce((s, e) => s + e.amount, 0),
-    [payrollEntries],
+  const activeCount = useMemo(
+    () => projects.filter((p) => ACTIVE_PHASES.includes(p.phase)).length,
+    [projects],
   );
 
-  const activeCount = useMemo(
+  const totalKW = useMemo(
     () =>
-      projects.filter((p) =>
-        ACTIVE_PHASES.includes(p.phase),
-      ).length,
+      projects
+        .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
+        .reduce((s, p) => s + p.kWSize, 0),
     [projects],
   );
 
@@ -107,14 +100,14 @@ export default function MobileAdminDashboard() {
 
   // ── Payroll summary ───────────────────────────────────────────────────────
 
-  const { draftTotal, draftCount, pendingTotal, pendingCount } = useMemo(
+  const { draftCount, pendingCount } = useMemo(
     () => {
-      let dT = 0, dC = 0, pT = 0, pC = 0;
+      let dC = 0, pC = 0;
       for (const e of payrollEntries) {
-        if (e.status === 'Draft') { dT += e.amount; dC++; }
-        else if (e.status === 'Pending') { pT += e.amount; pC++; }
+        if (e.status === 'Draft') dC++;
+        else if (e.status === 'Pending') pC++;
       }
-      return { draftTotal: dT, draftCount: dC, pendingTotal: pT, pendingCount: pC };
+      return { draftCount: dC, pendingCount: pC };
     },
     [payrollEntries],
   );
@@ -132,90 +125,115 @@ export default function MobileAdminDashboard() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-5 pt-3 pb-24 space-y-8">
+    <div className="px-5 pt-4 pb-28 space-y-8">
       <MobilePageHeader title="Dashboard" />
 
-      {/* 2x2 stat grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <MobileStatCard label="Total Paid" value={fmt$(Math.round(totalPaid))} color="text-emerald-400" accent="emerald" />
-        <MobileStatCard label="Revenue" value={fmt$(Math.round(totalRevenue))} color="text-blue-400" accent="blue" />
-        <MobileStatCard label="Profit" value={fmt$(Math.round(totalProfit))} color="text-amber-400" accent="amber" />
-        <MobileStatCard label="Active Projects" value={activeCount} color="text-white" />
+      {/* Hero — total revenue, no card wrapper */}
+      <div>
+        <p className="text-4xl font-black text-white tabular-nums">{fmtCompact(Math.round(totalRevenue))}</p>
+        <p className="text-xs text-slate-500 mt-1">Revenue</p>
+      </div>
+
+      {/* Inline stats — 2x2 text grid, no cards */}
+      <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+        <div>
+          <p className="text-2xl font-bold text-white tabular-nums">{fmtCompact(Math.round(totalProfit))}</p>
+          <p className="text-xs text-slate-500">Profit</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-white tabular-nums">{activeCount}</p>
+          <p className="text-xs text-slate-500">Active</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-white tabular-nums">{reps.length}</p>
+          <p className="text-xs text-slate-500">Reps</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-white tabular-nums">{fmtKW(totalKW)}</p>
+          <p className="text-xs text-slate-500">kW</p>
+        </div>
       </div>
 
       {/* Pipeline */}
       <MobileSection title="Pipeline">
-        <MobileCard>
-          <div className="space-y-2">
-            {ACTIVE_PHASES.map((phase) => {
-              const count = phaseCounts[phase] || 0;
-              const pct =
-                projects.length > 0
-                  ? (count / projects.length) * 100
-                  : 0;
-              return (
-                <div key={phase} className="flex items-center gap-3">
-                  <span className="text-sm text-slate-400 w-28 shrink-0">
-                    {phase}
-                  </span>
-                  <div className="flex-1 h-2.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${PIPELINE_BAR_COLORS[phase] ?? 'bg-blue-500/60'}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-slate-500 tabular-nums w-8 text-right">
-                    {count}
-                  </span>
+        <div className="space-y-1">
+          {ACTIVE_PHASES.map((phase) => {
+            const count = phaseCounts[phase] || 0;
+            const pct =
+              projects.length > 0
+                ? (count / projects.length) * 100
+                : 0;
+            return (
+              <div key={phase} className="flex items-center gap-3 py-2">
+                <span className="text-sm text-slate-400 w-28 shrink-0">{phase}</span>
+                <div className="flex-1 h-1.5 bg-slate-800 rounded-full">
+                  <div
+                    className="h-full bg-blue-500/60 rounded-full"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
-              );
-            })}
-          </div>
-        </MobileCard>
+                <span className="text-xs text-slate-500 w-6 text-right">{count}</span>
+              </div>
+            );
+          })}
+        </div>
       </MobileSection>
 
-      {/* Payroll Status */}
-      <MobileSection title="Payroll Status">
-        <MobileCard onTap={() => router.push('/dashboard/payroll')}>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-base text-slate-400">Draft</span>
-              <span className="text-base text-white tabular-nums">
-                {fmt$(Math.round(draftTotal))}{' '}
-                <span className="text-slate-500 text-sm">({draftCount} entries)</span>
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-base text-slate-400">Pending</span>
-              <span className="text-base text-amber-300 tabular-nums">
-                {fmt$(Math.round(pendingTotal))}{' '}
-                <span className="text-slate-500 text-sm">({pendingCount} entries)</span>
-              </span>
-            </div>
-          </div>
-        </MobileCard>
+      {/* Payroll */}
+      <MobileSection title="Payroll">
+        <div>
+          {draftCount > 0 && (
+            <button
+              onClick={() => router.push('/dashboard/payroll')}
+              className="w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors border-b border-slate-800/30"
+            >
+              <span className="text-sm text-white">{draftCount} drafts need review</span>
+              <span className="text-xs text-slate-500">→</span>
+            </button>
+          )}
+          {pendingCount > 0 && (
+            <button
+              onClick={() => router.push('/dashboard/payroll')}
+              className="w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors"
+            >
+              <span className="text-sm text-amber-400">{pendingCount} entries pending</span>
+              <span className="text-xs text-slate-500">→</span>
+            </button>
+          )}
+          {draftCount === 0 && pendingCount === 0 && (
+            <p className="text-sm text-slate-500 py-3">All caught up.</p>
+          )}
+        </div>
       </MobileSection>
 
       {/* Recent Deals */}
       <MobileSection title="Recent Deals">
-        <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
-          {recentDeals.length === 0 ? (
-            <p className="text-base text-slate-500 p-4">No deals yet.</p>
-          ) : (
-            recentDeals.map((p) => {
+        {recentDeals.length === 0 ? (
+          <p className="text-sm text-slate-500">No deals yet.</p>
+        ) : (
+          <div>
+            {recentDeals.map((p, i) => {
               const rep = reps.find((r) => r.id === p.repId);
               return (
-                <MobileListItem
+                <button
                   key={p.id}
-                  title={p.customerName}
-                  subtitle={rep?.name ?? 'Unknown rep'}
-                  right={<MobileBadge value={p.phase} />}
-                  onTap={() => router.push(`/dashboard/projects/${p.id}`)}
-                />
+                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors ${
+                    i < recentDeals.length - 1 ? 'border-b border-slate-800/30' : ''
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-white truncate">{p.customerName}</p>
+                    <p className="text-xs text-slate-500 truncate">{rep?.name ?? 'Unknown rep'}</p>
+                  </div>
+                  <div className="shrink-0 ml-2">
+                    <MobileBadge value={p.phase} />
+                  </div>
+                </button>
               );
-            })
-          )}
-        </MobileCard>
+            })}
+          </div>
+        )}
       </MobileSection>
     </div>
   );
