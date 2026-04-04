@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate } from '../../../lib/utils';
 import { Plus, Tent, Inbox, AlertCircle } from 'lucide-react';
+import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
+import MobileBottomSheet from './shared/MobileBottomSheet';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
 
@@ -53,7 +55,8 @@ const STATUS_BADGE_MAP: Record<BlitzStatus, string> = {
 
 export default function MobileBlitz() {
   const router = useRouter();
-  const { effectiveRole, effectiveRepId, pmPermissions } = useApp();
+  const { effectiveRole, effectiveRepId, pmPermissions, reps } = useApp();
+  const { toast } = useToast();
 
   const isAdmin = effectiveRole === 'admin';
   const isPM = effectiveRole === 'project_manager';
@@ -63,6 +66,8 @@ export default function MobileBlitz() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<BlitzStatus | 'all'>('all');
   const [tab, setTab] = useState<'blitzes' | 'requests'>('blitzes');
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', location: '', startDate: '', endDate: '', notes: '' });
   const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({
     canRequestBlitz: false,
     canCreateBlitz: false,
@@ -120,9 +125,42 @@ export default function MobileBlitz() {
   const canRequest = !isAdmin && !userPerms.canCreateBlitz && userPerms.canRequestBlitz;
 
   // Header right action
+  const loadData = () => {
+    Promise.all([
+      fetch('/api/blitzes').then((r) => r.json()),
+      isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
+    ]).then(([b, r]) => { setBlitzes(b); setRequests(r); });
+  };
+
+  const handleCreateBlitz = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.name.trim() || !createForm.startDate || !createForm.endDate) return;
+    const res = await fetch('/api/blitzes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: createForm.name.trim(),
+        location: createForm.location.trim(),
+        startDate: createForm.startDate,
+        endDate: createForm.endDate,
+        notes: createForm.notes.trim(),
+        createdById: effectiveRepId,
+        ownerId: effectiveRepId,
+      }),
+    });
+    if (res.ok) {
+      toast('Blitz created');
+      setShowCreate(false);
+      setCreateForm({ name: '', location: '', startDate: '', endDate: '', notes: '' });
+      loadData();
+    } else {
+      toast('Failed to create blitz', 'error');
+    }
+  };
+
   const headerRight = canCreate ? (
     <button
-      onClick={() => router.push('/dashboard/blitz?create=true')}
+      onClick={() => setShowCreate(true)}
       className="flex items-center justify-center w-10 h-10 rounded-2xl bg-blue-600 text-white active:bg-blue-700 transition-colors"
       aria-label="Create blitz"
     >
@@ -130,7 +168,7 @@ export default function MobileBlitz() {
     </button>
   ) : canRequest ? (
     <button
-      onClick={() => router.push('/dashboard/blitz?request=true')}
+      onClick={() => setShowCreate(true)}
       className="flex items-center justify-center min-h-[48px] px-4 rounded-2xl bg-slate-800/40 text-slate-300 text-sm font-semibold active:bg-slate-700 transition-colors"
     >
       <Plus className="w-4 h-4 mr-1" /> Request
@@ -247,6 +285,56 @@ export default function MobileBlitz() {
           )}
         </>
       )}
+      {/* ── Create Blitz sheet ── */}
+      <MobileBottomSheet open={showCreate} onClose={() => setShowCreate(false)} title={canRequest && !canCreate ? 'Request Blitz' : 'Create Blitz'}>
+        <form onSubmit={handleCreateBlitz} className="px-5 space-y-4 pb-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5">Name</label>
+            <input
+              value={createForm.name}
+              onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="e.g. Austin April Blitz"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 rounded-xl px-3 text-sm text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5">Location</label>
+            <input
+              value={createForm.location}
+              onChange={(e) => setCreateForm((f) => ({ ...f, location: e.target.value }))}
+              placeholder="e.g. Austin, TX"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 rounded-xl px-3 text-sm text-white"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1.5">Start</label>
+              <input
+                type="date"
+                value={createForm.startDate}
+                onChange={(e) => setCreateForm((f) => ({ ...f, startDate: e.target.value }))}
+                className="w-full min-h-[48px] bg-slate-800 border border-slate-700 rounded-xl px-3 text-sm text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1.5">End</label>
+              <input
+                type="date"
+                value={createForm.endDate}
+                onChange={(e) => setCreateForm((f) => ({ ...f, endDate: e.target.value }))}
+                className="w-full min-h-[48px] bg-slate-800 border border-slate-700 rounded-xl px-3 text-sm text-white"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={!createForm.name.trim() || !createForm.startDate || !createForm.endDate}
+            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 disabled:opacity-40 transition-colors"
+          >
+            {canRequest && !canCreate ? 'Submit Request' : 'Create Blitz'}
+          </button>
+        </form>
+      </MobileBottomSheet>
     </div>
   );
 }

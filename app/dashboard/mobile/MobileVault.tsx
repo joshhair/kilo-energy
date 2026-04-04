@@ -198,12 +198,12 @@ export default function MobileVault() {
         </div>
       </div>
 
-      {/* ── New Request button ── */}
+      {/* ── Reimbursement link ── */}
       <button
-        onClick={() => router.push('/dashboard/vault?reimb=new')}
-        className="w-full min-h-[52px] flex items-center justify-center rounded-2xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
+        onClick={() => router.push('/dashboard/reimbursement')}
+        className="flex items-center gap-1 text-sm text-blue-400 active:text-blue-300 transition-colors"
       >
-        New Request
+        Request reimbursement →
       </button>
 
       {/* ── Pay History ── */}
