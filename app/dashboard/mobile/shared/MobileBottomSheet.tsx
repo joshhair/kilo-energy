@@ -17,10 +17,10 @@ function SheetItem({
   return (
     <button
       onClick={onTap}
-      className={`w-full flex items-center gap-3 min-h-[52px] px-5 py-3 text-left active:bg-slate-800/50 transition-colors ${danger ? 'text-red-400' : 'text-white'}`}
+      className={`w-full flex items-center gap-3 min-h-[56px] px-5 py-4 text-left active:bg-slate-800/50 transition-colors ${danger ? 'text-red-400' : 'text-white'}`}
     >
       {Icon && <Icon className="w-5 h-5 shrink-0" />}
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-base font-medium">{label}</span>
     </button>
   );
 }

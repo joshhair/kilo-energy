@@ -132,11 +132,11 @@ export default function MobileAdminDashboard() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-4 pt-3 pb-24 space-y-6">
+    <div className="px-5 pt-3 pb-24 space-y-8">
       <MobilePageHeader title="Dashboard" />
 
       {/* 2x2 stat grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <MobileStatCard label="Total Paid" value={fmt$(Math.round(totalPaid))} color="text-emerald-400" />
         <MobileStatCard label="Revenue" value={fmt$(Math.round(totalRevenue))} color="text-blue-400" />
         <MobileStatCard label="Profit" value={fmt$(Math.round(totalProfit))} color="text-amber-400" />
@@ -155,16 +155,16 @@ export default function MobileAdminDashboard() {
                   : 0;
               return (
                 <div key={phase} className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 w-28 shrink-0">
+                  <span className="text-sm text-slate-400 w-28 shrink-0">
                     {phase}
                   </span>
-                  <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="flex-1 h-2.5 bg-slate-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${PIPELINE_BAR_COLORS[phase] ?? 'bg-blue-500/60'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-xs text-slate-500 tabular-nums w-8 text-right">
+                  <span className="text-sm font-medium text-slate-500 tabular-nums w-8 text-right">
                     {count}
                   </span>
                 </div>
@@ -177,19 +177,19 @@ export default function MobileAdminDashboard() {
       {/* Payroll Status */}
       <MobileSection title="Payroll Status">
         <MobileCard onTap={() => router.push('/dashboard/payroll')}>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">Draft</span>
-              <span className="text-sm text-white tabular-nums">
+              <span className="text-base text-slate-400">Draft</span>
+              <span className="text-base text-white tabular-nums">
                 {fmt$(Math.round(draftTotal))}{' '}
-                <span className="text-slate-500 text-xs">({draftCount} entries)</span>
+                <span className="text-slate-500 text-sm">({draftCount} entries)</span>
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">Pending</span>
-              <span className="text-sm text-amber-300 tabular-nums">
+              <span className="text-base text-slate-400">Pending</span>
+              <span className="text-base text-amber-300 tabular-nums">
                 {fmt$(Math.round(pendingTotal))}{' '}
-                <span className="text-slate-500 text-xs">({pendingCount} entries)</span>
+                <span className="text-slate-500 text-sm">({pendingCount} entries)</span>
               </span>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function MobileAdminDashboard() {
       <MobileSection title="Recent Deals">
         <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
           {recentDeals.length === 0 ? (
-            <p className="text-sm text-slate-500 p-4">No deals yet.</p>
+            <p className="text-base text-slate-500 p-4">No deals yet.</p>
           ) : (
             recentDeals.map((p) => {
               const rep = reps.find((r) => r.id === p.repId);

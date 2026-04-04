@@ -105,7 +105,7 @@ export default function MobileBlitz() {
   // PM access guard — placed after all hooks
   if (isPM && pmPermissions && !pmPermissions.canAccessBlitz) {
     return (
-      <div className="px-4 pt-3 pb-24">
+      <div className="px-5 pt-3 pb-24 space-y-8">
         <MobilePageHeader title="Blitz" />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle className="w-10 h-10 text-slate-600" />
@@ -143,7 +143,7 @@ export default function MobileBlitz() {
 
   if (loading) {
     return (
-      <div className="px-4 pt-3 pb-24">
+      <div className="px-5 pt-3 pb-24 space-y-8">
         <MobilePageHeader title="Blitz" />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -155,16 +155,16 @@ export default function MobileBlitz() {
   }
 
   return (
-    <div className="px-4 pt-3 pb-24">
+    <div className="px-5 pt-3 pb-24 space-y-8">
       <MobilePageHeader title="Blitz" right={headerRight} />
 
       {/* Status filter pills */}
-      <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {STATUS_PILLS.map((s) => (
           <button
             key={s.value}
             onClick={() => setStatusFilter(s.value)}
-            className={`min-h-[36px] px-4 py-1.5 text-xs font-semibold rounded-full border whitespace-nowrap transition-colors ${
+            className={`min-h-[36px] px-4 py-1.5 text-sm font-semibold rounded-full border whitespace-nowrap transition-colors ${
               statusFilter === s.value
                 ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
                 : 'bg-slate-800/40 text-slate-400 border-slate-700/30 active:bg-slate-700/50'
@@ -206,20 +206,20 @@ export default function MobileBlitz() {
           {filteredBlitzes.length === 0 ? (
             <MobileEmptyState icon={Tent} title="No blitzes found" subtitle="Try a different status filter" />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {filteredBlitzes.map((blitz) => {
                 const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
                 return (
                   <MobileCard key={blitz.id} onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="font-medium text-white text-sm truncate flex-1">{blitz.name}</p>
+                      <p className="font-semibold text-white text-base truncate flex-1">{blitz.name}</p>
                       <span className={`inline-flex items-center gap-1.5 min-h-[28px] px-3 py-1 text-[11px] font-semibold rounded-full border shrink-0 ${STATUS_BADGE_CLS[blitz.status]}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_CLS[blitz.status]}`} />
                         {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
                       {blitz.location && (
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3" />{blitz.location}
@@ -247,11 +247,11 @@ export default function MobileBlitz() {
           {pendingRequests.length === 0 ? (
             <MobileEmptyState icon={Inbox} title="No pending requests" />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {pendingRequests.map((req) => (
                 <MobileCard key={req.id} onTap={() => router.push(`/dashboard/blitz?tab=requests`)}>
-                  <p className="font-medium text-white text-sm">{req.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="font-semibold text-white text-base">{req.name}</p>
+                  <p className="text-sm text-slate-500 mt-0.5">
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
                   <span className="inline-flex items-center mt-2 min-h-[28px] px-3 py-1 text-[11px] font-semibold rounded-full border bg-amber-900/40 text-amber-300 border-amber-700/30">

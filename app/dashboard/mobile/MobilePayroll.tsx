@@ -221,7 +221,7 @@ export default function MobilePayroll() {
     'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500';
 
   return (
-    <div className="px-4 pt-3 pb-24 space-y-4">
+    <div className="px-5 pt-3 pb-24 space-y-8">
       <MobilePageHeader
         title="Payroll"
         right={
@@ -241,7 +241,7 @@ export default function MobilePayroll() {
           <button
             key={tab}
             onClick={() => setTypeTab(tab)}
-            className={`flex-1 min-h-[40px] text-sm font-medium pb-2 transition-colors ${
+            className={`flex-1 min-h-[40px] text-base font-medium pb-2 transition-colors ${
               typeTab === tab
                 ? 'text-blue-400 border-b-2 border-blue-400'
                 : 'text-slate-500'
@@ -253,12 +253,12 @@ export default function MobilePayroll() {
       </div>
 
       {/* Status filter pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 no-scrollbar">
         {STATUS_PILLS.map((pill) => (
           <button
             key={pill}
             onClick={() => setStatusFilter(pill)}
-            className={`shrink-0 min-h-[36px] px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            className={`shrink-0 min-h-[36px] px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
               statusFilter === pill
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-800 text-slate-400'
@@ -274,21 +274,21 @@ export default function MobilePayroll() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-slate-400">Draft</span>
-            <span className="text-sm text-white tabular-nums">
+            <span className="text-lg font-bold text-white tabular-nums">
               {fmt$(Math.round(draftTotal))}{' '}
               <span className="text-slate-500 text-xs">({draftCount})</span>
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-slate-400">Pending</span>
-            <span className="text-sm text-amber-300 tabular-nums">
+            <span className="text-lg font-bold text-amber-300 tabular-nums">
               {fmt$(Math.round(pendingTotal))}{' '}
               <span className="text-slate-500 text-xs">({pendingCount})</span>
             </span>
           </div>
           <div className="flex items-center justify-between border-t border-slate-800/60 pt-2">
             <span className="text-sm text-slate-400">Total Paid</span>
-            <span className="text-sm text-emerald-400 tabular-nums font-semibold">
+            <span className="text-lg font-bold text-emerald-400 tabular-nums">
               {fmt$(Math.round(paidTotal))}
             </span>
           </div>
@@ -354,7 +354,7 @@ export default function MobilePayroll() {
       </div>
 
       {/* Entry cards */}
-      <div className="space-y-2">
+      <div className="space-y-4">
         {filtered.length === 0 ? (
           <MobileCard>
             <p className="text-sm text-slate-500 text-center py-4">No entries found.</p>
@@ -362,30 +362,29 @@ export default function MobilePayroll() {
         ) : (
           filtered.map((entry) => {
             const isExpanded = expandedId === entry.id;
+            const borderColor = entry.status === 'Paid' ? 'border-l-emerald-500' : entry.status === 'Pending' ? 'border-l-amber-500' : 'border-l-slate-600';
             return (
-              <MobileCard key={entry.id}>
+              <MobileCard key={entry.id} className={`border-l-[3px] ${borderColor}`}>
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                   className="w-full text-left"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-white truncate">
+                    <span className="text-base font-medium text-white truncate">
                       {entry.repName}
                     </span>
-                    <span className="text-sm font-bold text-emerald-400 tabular-nums">
+                    <span className="text-base font-bold text-emerald-400 tabular-nums">
                       {fmt$(entry.amount)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <span className="text-xs text-slate-500 truncate max-w-[120px]">
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-sm text-slate-500 truncate">
                       {entry.type === 'Deal' ? entry.customerName || '—' : entry.notes || '—'}
                     </span>
                     <MobileBadge
                       value={entry.paymentStage}
                       variant="status"
                     />
-                    <MobileBadge value={entry.status} variant="status" />
-                    <span className="text-[10px] text-slate-600">{entry.date}</span>
                   </div>
                 </button>
 
@@ -441,7 +440,7 @@ export default function MobilePayroll() {
         <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
           <button
             onClick={handlePublish}
-            className="w-full min-h-[48px] rounded-xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+            className="w-full min-h-[52px] rounded-xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
           >
             Publish Payroll
           </button>

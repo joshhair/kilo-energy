@@ -18,8 +18,8 @@ export default function MobileListItem({
   const content = (
     <>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white truncate">{title}</p>
-        {subtitle && <p className="text-xs text-slate-500 mt-0.5 truncate">{subtitle}</p>}
+        <p className="text-base font-medium text-white truncate">{title}</p>
+        {subtitle && <p className="text-sm text-slate-500 mt-0.5 truncate">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {right}
@@ -32,7 +32,7 @@ export default function MobileListItem({
     return (
       <button
         onClick={onTap}
-        className={`w-full flex items-center gap-3 min-h-[52px] py-3 px-4 text-left active:bg-slate-800/50 transition-colors ${accent === 'red' ? 'border-l-2 border-l-red-500' : ''}`}
+        className={`w-full flex items-center gap-3 min-h-[56px] py-3.5 px-5 text-left active:bg-slate-800/50 transition-colors ${accent === 'red' ? 'border-l-2 border-l-red-500' : ''}`}
       >
         {content}
       </button>
@@ -40,7 +40,7 @@ export default function MobileListItem({
   }
 
   return (
-    <div className={`flex items-center gap-3 min-h-[52px] py-3 px-4 ${accent === 'red' ? 'border-l-2 border-l-red-500' : ''}`}>
+    <div className={`flex items-center gap-3 min-h-[56px] py-3.5 px-5 ${accent === 'red' ? 'border-l-2 border-l-red-500' : ''}`}>
       {content}
     </div>
   );

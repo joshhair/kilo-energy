@@ -14,7 +14,7 @@ export default function MobileCard({
   const accentBorder = accent
     ? { red: 'border-l-2 border-l-red-500', blue: 'border-l-2 border-l-blue-500', emerald: 'border-l-2 border-l-emerald-500', amber: 'border-l-2 border-l-amber-500' }[accent]
     : '';
-  const base = `rounded-xl p-4 border border-slate-800/40 ${accentBorder} ${className}`;
+  const base = `rounded-xl p-5 border border-slate-800/30 ${accentBorder} ${className}`;
   const bg = 'background: rgba(15, 25, 45, 0.6)';
 
   if (onTap) {

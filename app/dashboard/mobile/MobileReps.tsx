@@ -96,7 +96,7 @@ export default function MobileReps() {
   };
 
   return (
-    <div className="px-4 pt-3 pb-24">
+    <div className="px-5 pt-3 pb-24 space-y-8">
       <MobilePageHeader
         title="Reps"
         right={
@@ -113,24 +113,24 @@ export default function MobileReps() {
       />
 
       {/* Search */}
-      <div className="relative mb-3">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
         <input
           type="text"
           placeholder="Search reps..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors"
+          className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors"
         />
       </div>
 
       {/* Filter pills */}
-      <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {FILTER_TABS.map((t) => (
           <button
             key={t.value}
             onClick={() => setFilterTab(t.value)}
-            className={`min-h-[36px] px-4 py-1.5 text-xs font-semibold rounded-full border whitespace-nowrap transition-colors ${
+            className={`min-h-[36px] px-4 py-1.5 text-sm font-semibold rounded-full border whitespace-nowrap transition-colors ${
               filterTab === t.value
                 ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
                 : 'bg-slate-800/40 text-slate-400 border-slate-700/30 active:bg-slate-700/50'
@@ -142,13 +142,13 @@ export default function MobileReps() {
       </div>
 
       {/* Rep count */}
-      <p className="text-xs text-slate-500 mb-2">{filtered.length} rep{filtered.length !== 1 ? 's' : ''}</p>
+      <p className="text-xs text-slate-500">{filtered.length} rep{filtered.length !== 1 ? 's' : ''}</p>
 
       {/* Rep cards */}
       {filtered.length === 0 ? (
         <MobileEmptyState icon={Users} title="No reps found" subtitle="Try adjusting your search or filter" />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {filtered.map((rep) => {
             const deals = activeDealsByRep.get(rep.id) ?? 0;
             const kw = kwByRep.get(rep.id) ?? 0;
@@ -158,15 +158,15 @@ export default function MobileReps() {
               <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/reps/${rep.id}`)}>
                 <div className="flex items-center gap-3">
                   {/* Initials circle */}
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white text-sm font-bold shrink-0">
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-blue-600 text-white text-base font-bold shrink-0">
                     {getInitials(rep.name)}
                   </div>
 
                   {/* Name + email */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white text-sm truncate">{rep.name}</p>
+                    <p className="font-semibold text-white text-base truncate">{rep.name}</p>
                     {rep.email && (
-                      <p className="text-xs text-slate-500 truncate">{rep.email}</p>
+                      <p className="text-sm text-slate-500 truncate">{rep.email}</p>
                     )}
                   </div>
 
@@ -181,16 +181,16 @@ export default function MobileReps() {
                   <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-800/40">
                     <div>
                       <p className="text-[11px] text-slate-500">Deals</p>
-                      <p className="text-sm font-semibold text-white">{deals}</p>
+                      <p className="text-sm font-semibold text-white tabular-nums">{deals}</p>
                     </div>
                     <div>
                       <p className="text-[11px] text-slate-500">kW</p>
-                      <p className="text-sm font-semibold text-white">{kw.toFixed(1)}</p>
+                      <p className="text-sm font-semibold text-white tabular-nums">{kw.toFixed(1)}</p>
                     </div>
                     {isAdmin && (
                       <div>
                         <p className="text-[11px] text-slate-500">Paid</p>
-                        <p className="text-sm font-semibold text-white">${paid.toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-white tabular-nums">${paid.toLocaleString()}</p>
                       </div>
                     )}
                   </div>

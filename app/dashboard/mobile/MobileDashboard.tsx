@@ -88,11 +88,11 @@ export default function MobileDashboard() {
     );
 
     return (
-      <div className="px-4 pt-3 pb-24 space-y-6">
+      <div className="px-5 pt-3 pb-24 space-y-8">
         <MobilePageHeader title="Dashboard" />
 
         {/* 2x2 stat grid — NO dollar amounts */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <MobileStatCard label="Active Projects" value={activeProjects.length} color="text-blue-400" />
           <MobileStatCard label="Total Projects" value={myProjects.length} color="text-slate-300" />
           <MobileStatCard label="Total kW" value={totalKW.toFixed(1)} color="text-emerald-400" />
@@ -115,16 +115,16 @@ export default function MobileDashboard() {
                     : 0;
                 return (
                   <div key={phase} className="flex items-center gap-3">
-                    <span className="text-xs text-slate-400 w-28 shrink-0">
+                    <span className="text-sm text-slate-400 w-28 shrink-0">
                       {phase}
                     </span>
-                    <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2.5 bg-slate-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${PIPELINE_BAR_COLORS[phase] ?? 'bg-blue-500/60'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="text-xs text-slate-500 tabular-nums w-8 text-right">
+                    <span className="text-sm font-medium text-slate-500 tabular-nums w-8 text-right">
                       {count}
                     </span>
                   </div>
@@ -137,7 +137,7 @@ export default function MobileDashboard() {
         {/* Team */}
         <MobileSection title="Team">
           <MobileCard>
-            <p className="text-sm text-slate-400">{reps.length} active reps</p>
+            <p className="text-base text-slate-400">{reps.length} active reps</p>
           </MobileCard>
         </MobileSection>
       </div>
@@ -224,22 +224,22 @@ export default function MobileDashboard() {
 
   if (effectiveRole === 'sub-dealer') {
     return (
-      <div className="px-4 pt-3 pb-24 space-y-6">
+      <div className="px-5 pt-3 pb-24 space-y-8">
         <MobilePageHeader title="Dashboard" />
 
         {/* Next Payout */}
         <MobileCard>
-          <p className="text-xs text-slate-500 mb-1">Next Payout</p>
-          <p className="text-2xl font-bold text-emerald-400 tabular-nums">
+          <p className="text-sm text-slate-500 mb-1">Next Payout</p>
+          <p className="text-3xl font-bold text-emerald-400 tabular-nums">
             {fmt$(pendingPayrollTotal)}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             {nextFridayLabel} &middot; {paydayCountdown}
           </p>
         </MobileCard>
 
         {/* 2x2 stat grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" />
           <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" />
           <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" />
@@ -254,7 +254,7 @@ export default function MobileDashboard() {
         <MobileSection title="Recent Activity">
           <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
             {recentProjects.length === 0 ? (
-              <p className="text-sm text-slate-500 p-4">No projects yet.</p>
+              <p className="text-base text-slate-500 p-4">No projects yet.</p>
             ) : (
               recentProjects.map((p) => (
                 <MobileListItem
@@ -275,22 +275,22 @@ export default function MobileDashboard() {
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
-    <div className="px-4 pt-3 pb-24 space-y-6">
+    <div className="px-5 pt-3 pb-24 space-y-8">
       <MobilePageHeader title="Dashboard" />
 
       {/* Next Payout */}
       <MobileCard>
-        <p className="text-xs text-slate-500 mb-1">Next Payout</p>
-        <p className="text-2xl font-bold text-emerald-400 tabular-nums">
+        <p className="text-sm text-slate-500 mb-1">Next Payout</p>
+        <p className="text-3xl font-bold text-emerald-400 tabular-nums">
           {fmt$(pendingPayrollTotal)}
         </p>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           {nextFridayLabel} &middot; {paydayCountdown}
         </p>
       </MobileCard>
 
       {/* 2x2 stat grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" />
         <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" />
         <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" />
@@ -309,7 +309,7 @@ export default function MobileDashboard() {
       >
         <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
           {flaggedProjects.length === 0 ? (
-            <p className="text-sm text-slate-500 p-4">All clear — no flagged projects.</p>
+            <p className="text-base text-slate-500 p-4">All clear — no flagged projects.</p>
           ) : (
             flaggedProjects.map((p) => (
               <MobileListItem
@@ -328,7 +328,7 @@ export default function MobileDashboard() {
       <MobileSection title="Recent Activity">
         <MobileCard className="divide-y divide-slate-800/60 !p-0 overflow-hidden">
           {recentProjects.length === 0 ? (
-            <p className="text-sm text-slate-500 p-4">No projects yet.</p>
+            <p className="text-base text-slate-500 p-4">No projects yet.</p>
           ) : (
             recentProjects.map((p) => (
               <MobileListItem
