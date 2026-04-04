@@ -144,11 +144,11 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/blitz')}
-          className="flex items-center gap-1.5 text-sm text-slate-500 min-h-[48px]"
+          className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
         >
           <ArrowLeft className="w-4 h-4" /> Blitz
         </button>
-        <p className="text-sm text-slate-500 text-center">Blitz not found.</p>
+        <p className="text-base text-slate-400 text-center">Blitz not found.</p>
       </div>
     );
   }
@@ -168,7 +168,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/blitz')}
-        className="flex items-center gap-1.5 text-sm text-slate-500 min-h-[48px]"
+        className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
       >
         <ArrowLeft className="w-4 h-4" /> Blitz
       </button>
@@ -191,10 +191,10 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 text-center text-sm font-medium min-h-[48px] transition-colors ${
+            className={`flex-1 text-center text-base font-medium min-h-[48px] transition-colors ${
               tab === t.key
                 ? 'text-white border-b-2 border-blue-500'
-                : 'text-slate-500'
+                : 'text-slate-400'
             }`}
           >
             {t.label}
@@ -205,18 +205,18 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       {/* ── Overview ── */}
       {tab === 'overview' && (
         <div className="space-y-6">
-          <p className="text-sm text-slate-400">
-            {approvedParticipants.length} participant{approvedParticipants.length !== 1 ? 's' : ''}
+          <p className="text-base text-slate-400">
+            <span className="text-lg font-bold text-white">{approvedParticipants.length}</span> participant{approvedParticipants.length !== 1 ? 's' : ''}
             {' \u00B7 '}
-            {totalDeals} deal{totalDeals !== 1 ? 's' : ''}
+            <span className="text-lg font-bold text-white">{totalDeals}</span> deal{totalDeals !== 1 ? 's' : ''}
             {' \u00B7 '}
-            {totalKW.toFixed(1)} kW
+            <span className="text-lg font-bold text-white">{totalKW.toFixed(1)}</span> kW
           </p>
 
           {blitz.notes && (
             <div>
-              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Notes</p>
-              <p className="text-sm text-slate-300">{blitz.notes}</p>
+              <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-1">Notes</p>
+              <p className="text-base text-slate-300">{blitz.notes}</p>
             </div>
           )}
         </div>
@@ -228,7 +228,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {canManage && (
             <button
               onClick={() => setShowAddParticipant(true)}
-              className="flex items-center gap-1.5 text-sm font-semibold text-blue-400 min-h-[48px]"
+              className="flex items-center gap-1.5 text-base font-semibold text-blue-400 min-h-[48px]"
             >
               <Plus className="w-4 h-4" /> Add Participant
             </button>
@@ -259,7 +259,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               <select
                 value={selectedRepId}
                 onChange={(e) => setSelectedRepId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white min-h-[48px]"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
               >
                 <option value="">Select a rep...</option>
                 {availableReps.map((r) => (
@@ -269,7 +269,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               <button
                 onClick={handleAddParticipant}
                 disabled={!selectedRepId || addingParticipant}
-                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-sm font-semibold bg-blue-600 text-white rounded-lg disabled:opacity-40 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold bg-blue-600 text-white rounded-lg disabled:opacity-40 transition-colors"
               >
                 {addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {addingParticipant ? 'Adding...' : 'Add'}
@@ -280,10 +280,10 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {/* Remove Participant bottom sheet */}
           <MobileBottomSheet open={!!removeTarget} onClose={() => setRemoveTarget(null)} title={removeTarget ? `Remove ${removeTarget.name}?` : undefined}>
             <div className="px-5 space-y-4">
-              <p className="text-sm text-slate-400">This will remove them from the blitz. They can be re-added later.</p>
+              <p className="text-base text-slate-400">This will remove them from the blitz. They can be re-added later.</p>
               <button
                 onClick={() => removeTarget && handleRemoveParticipant(removeTarget.id)}
-                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-sm font-semibold bg-red-600 text-white rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold bg-red-600 text-white rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" /> Remove
               </button>
@@ -318,7 +318,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
         <div className="space-y-4">
           <button
             onClick={() => setShowAddCost(true)}
-            className="flex items-center gap-1.5 text-sm font-semibold text-blue-400 min-h-[48px]"
+            className="flex items-center gap-1.5 text-base font-semibold text-blue-400 min-h-[48px]"
           >
             <Plus className="w-4 h-4" /> Add Cost
           </button>
@@ -334,18 +334,18 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-400 capitalize">{c.category}</span>
+                      <span className="text-base font-semibold text-slate-400 capitalize">{c.category}</span>
                       {c.description && (
-                        <span className="text-sm text-slate-500 truncate">&middot; {c.description}</span>
+                        <span className="text-base text-slate-400 truncate">&middot; {c.description}</span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-500 mt-0.5">{formatDate(c.date)}</p>
+                    <p className="text-base text-slate-400 mt-0.5">{formatDate(c.date)}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ml-3">
-                    <span className="text-sm font-semibold text-white tabular-nums">{formatCurrency(c.amount)}</span>
+                    <span className="text-lg font-bold text-white tabular-nums">{formatCurrency(c.amount)}</span>
                     <button
                       onClick={() => handleDeleteCost(c.id)}
-                      className="p-2 text-slate-500 active:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      className="p-2 text-slate-400 active:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -353,8 +353,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 </div>
               ))}
               <div className="flex items-center justify-between pt-3">
-                <span className="text-sm font-semibold text-slate-400">Total</span>
-                <span className="text-sm font-bold text-white">{formatCurrency(totalCosts)}</span>
+                <span className="text-base font-semibold text-slate-400">Total</span>
+                <span className="text-lg font-bold text-white">{formatCurrency(totalCosts)}</span>
               </div>
             </div>
           )}
@@ -363,11 +363,11 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <MobileBottomSheet open={showAddCost} onClose={() => setShowAddCost(false)} title="Add Cost">
             <div className="px-5 space-y-4">
               <div>
-                <label className="block text-sm text-slate-500 mb-1">Category</label>
+                <label className="block text-base text-slate-400 mb-1">Category</label>
                 <select
                   value={costCategory}
                   onChange={(e) => setCostCategory(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white min-h-[48px]"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
                 >
                   {COST_CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
@@ -375,37 +375,37 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-slate-500 mb-1">Amount</label>
+                <label className="block text-base text-slate-400 mb-1">Amount</label>
                 <input
                   type="number"
                   value={costAmount}
                   onChange={(e) => setCostAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white min-h-[48px]"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
                 />
               </div>
               <div>
-                <label className="block text-sm text-slate-500 mb-1">Description</label>
+                <label className="block text-base text-slate-400 mb-1">Description</label>
                 <input
                   value={costDesc}
                   onChange={(e) => setCostDesc(e.target.value)}
                   placeholder="Optional"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white min-h-[48px]"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
                 />
               </div>
               <div>
-                <label className="block text-sm text-slate-500 mb-1">Date</label>
+                <label className="block text-base text-slate-400 mb-1">Date</label>
                 <input
                   type="date"
                   value={costDate}
                   onChange={(e) => setCostDate(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white min-h-[48px]"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
                 />
               </div>
               <button
                 onClick={handleAddCost}
                 disabled={addingCost || !costAmount}
-                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-sm font-semibold bg-emerald-600 text-white rounded-lg disabled:opacity-40 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold bg-emerald-600 text-white rounded-lg disabled:opacity-40 transition-colors"
               >
                 {addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {addingCost ? 'Adding...' : 'Add Cost'}

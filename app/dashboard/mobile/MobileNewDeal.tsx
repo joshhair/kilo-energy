@@ -49,7 +49,7 @@ function genId(prefix: string): string {
 
 function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
   return errors[field] ? (
-    <p className="text-red-400 text-sm mt-1" role="alert">{errors[field]}</p>
+    <p className="text-red-400 text-base mt-1" role="alert">{errors[field]}</p>
   ) : null;
 }
 
@@ -74,7 +74,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           />
         ))}
       </div>
-      <span className="text-sm text-slate-400 font-medium">
+      <span className="text-base text-slate-400 font-medium">
         Step {currentStep + 1} of {DEAL_STEPS.length} — {DEAL_STEPS[currentStep]}
       </span>
     </div>
@@ -109,40 +109,40 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
           <CheckCircle2 className="w-7 h-7 text-green-400" strokeWidth={1.5} />
         </div>
         <h2 className="text-xl font-black text-white mb-1">Deal Submitted!</h2>
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-400 text-base">
           <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
         </p>
       </div>
 
       <MobileCard>
-        <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
-        <div className="space-y-2 text-sm">
+        <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-3">Deal Summary</p>
+        <div className="space-y-2 text-base">
           <div className="flex justify-between">
-            <span className="text-slate-500 text-sm">Installer</span>
+            <span className="text-slate-400 text-base">Installer</span>
             <span className="text-white font-medium">{deal.installer}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500 text-sm">Financer</span>
+            <span className="text-slate-400 text-base">Financer</span>
             <span className="text-white font-medium">{deal.financer || '---'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500 text-sm">Product Type</span>
+            <span className="text-slate-400 text-base">Product Type</span>
             <span className="text-white font-medium">{deal.productType}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500 text-sm">System</span>
+            <span className="text-slate-400 text-base">System</span>
             <span className="text-white font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</span>
           </div>
         </div>
       </MobileCard>
 
       <MobileCard>
-        <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Commission</p>
+        <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-3">Commission</p>
         {deal.closerTotal > 0 ? (
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-300 text-sm font-medium">{deal.repName} (Closer)</p>
-              <p className="text-slate-500 text-sm">
+              <p className="text-slate-300 text-base font-medium">{deal.repName} (Closer)</p>
+              <p className="text-slate-400 text-base">
                 M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}
                 {deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}
               </p>
@@ -150,11 +150,11 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
             <p className="text-xl font-black text-green-400">${deal.closerTotal.toLocaleString()}</p>
           </div>
         ) : (
-          <p className="text-slate-500 text-sm">Commission will be calculated once pricing is confirmed.</p>
+          <p className="text-slate-400 text-base">Commission will be calculated once pricing is confirmed.</p>
         )}
         {deal.setterTotal > 0 && (
           <div className="flex items-center justify-between border-t border-slate-700 pt-2 mt-2">
-            <p className="text-slate-300 text-sm font-medium">{deal.setterName} (Setter)</p>
+            <p className="text-slate-300 text-base font-medium">{deal.setterName} (Setter)</p>
             <p className="text-lg font-bold text-blue-400">${deal.setterTotal.toLocaleString()}</p>
           </div>
         )}
@@ -163,13 +163,13 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
       <div className="space-y-2 pt-2">
         <button
           onClick={() => router.push('/dashboard/projects')}
-          className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold rounded-xl text-sm active:scale-[0.97]"
+          className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold rounded-xl text-base active:scale-[0.97]"
         >
           View Projects <ArrowRight className="w-4 h-4" />
         </button>
         <button
           onClick={onReset}
-          className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-sm active:scale-[0.97]"
+          className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-base active:scale-[0.97]"
         >
           <RotateCcw className="w-4 h-4" /> Submit Another
         </button>
@@ -509,12 +509,12 @@ export default function MobileNewDeal() {
   // ── Style helpers ─────────────────────────────────────────────────────────
 
   const inputCls = (field: string) =>
-    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-sm text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors placeholder-slate-500`;
+    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-base text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors placeholder-slate-500`;
 
   const selectCls = (field: string) =>
-    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-sm text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors`;
+    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-base text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors`;
 
-  const labelCls = 'text-sm text-slate-500 mb-1 block';
+  const labelCls = 'text-base text-slate-400 mb-1 block';
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -589,7 +589,7 @@ export default function MobileNewDeal() {
             {/* Setter (optional) */}
             {!isSubDealer && (
               <div>
-                <label className={labelCls}>Setter <span className="text-slate-500">(optional)</span></label>
+                <label className={labelCls}>Setter <span className="text-slate-400">(optional)</span></label>
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
@@ -598,7 +598,7 @@ export default function MobileNewDeal() {
                   excludeRepId={closerId || undefined}
                 />
                 {setterAssignment && trainerRep && (
-                  <p className="text-sm text-amber-400 mt-1">
+                  <p className="text-base text-amber-400 mt-1">
                     Trainer: {trainerRep.name} -- ${trainerOverrideRate.toFixed(2)}/W
                   </p>
                 )}
@@ -612,7 +612,7 @@ export default function MobileNewDeal() {
             <button
               type="button"
               onClick={handleNext}
-              className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold rounded-xl text-sm active:scale-[0.97]"
+              className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold rounded-xl text-base active:scale-[0.97]"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>
@@ -657,7 +657,7 @@ export default function MobileNewDeal() {
                         setErrors((prev) => ({ ...prev, productType: '', financer: isCash ? '' : prev.financer }));
                         setTouched((prev) => { const next = new Set(prev); next.add('productType'); return next; });
                       }}
-                      className={`min-h-[44px] rounded-xl text-sm font-medium border transition-all ${
+                      className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
                         form.productType === pt
                           ? 'bg-blue-600 border-blue-500 text-white'
                           : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -673,7 +673,7 @@ export default function MobileNewDeal() {
 
             {/* Cash indicator */}
             {form.installer && form.productType === 'Cash' && (
-              <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-slate-300">
+              <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-base text-slate-300">
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
                 Cash deal -- no financer required
               </div>
@@ -698,9 +698,9 @@ export default function MobileNewDeal() {
                             type="button"
                             disabled={disabled}
                             onClick={() => !disabled && handleSolarTechFamilyChange(family)}
-                            className={`min-h-[44px] px-3 rounded-xl text-sm font-medium border transition-all text-left ${
+                            className={`min-h-[44px] px-3 rounded-xl text-base font-medium border transition-all text-left ${
                               disabled
-                                ? 'bg-slate-800/40 border-slate-700/40 text-slate-500 opacity-50'
+                                ? 'bg-slate-800/40 border-slate-700/40 text-slate-400 opacity-50'
                                 : selected
                                   ? 'bg-blue-600/20 border-blue-500/60 text-blue-300'
                                   : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -729,7 +729,7 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className={`min-h-[44px] rounded-xl text-sm font-medium border transition-all ${
+                            className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
                               form.prepaidSubType === opt
                                 ? 'bg-violet-600/20 border-violet-500/60 text-violet-300'
                                 : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -797,9 +797,9 @@ export default function MobileNewDeal() {
                               type="button"
                               disabled={disabled}
                               onClick={() => !disabled && handlePcFamilyChange(family)}
-                              className={`min-h-[44px] px-3 rounded-xl text-sm font-medium border transition-all text-left ${
+                              className={`min-h-[44px] px-3 rounded-xl text-base font-medium border transition-all text-left ${
                                 disabled
-                                  ? 'bg-slate-800/40 border-slate-700/40 text-slate-500 opacity-50'
+                                  ? 'bg-slate-800/40 border-slate-700/40 text-slate-400 opacity-50'
                                   : selected
                                     ? 'bg-blue-600/20 border-blue-500/60 text-blue-300'
                                     : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -830,7 +830,7 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className={`min-h-[44px] rounded-xl text-sm font-medium border transition-all ${
+                            className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
                               form.prepaidSubType === opt
                                 ? 'bg-violet-600/20 border-violet-500/60 text-violet-300'
                                 : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -908,7 +908,7 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className={`min-h-[44px] rounded-xl text-sm font-medium border transition-all ${
+                            className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
                               form.prepaidSubType === opt
                                 ? 'bg-violet-600/20 border-violet-500/60 text-violet-300'
                                 : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
@@ -955,7 +955,7 @@ export default function MobileNewDeal() {
               />
               <FieldError errors={errors} field="netPPW" />
               {!errors.netPPW && soldPPW > 0 && closerPerW > 0 && (
-                <p className={`text-sm mt-1 ${soldPPW >= closerPerW ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <p className={`text-base mt-1 ${soldPPW >= closerPerW ? 'text-emerald-400' : 'text-amber-400'}`}>
                   {soldPPW >= closerPerW
                     ? `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W above baseline`
                     : `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W below baseline -- no commission`}
@@ -971,9 +971,9 @@ export default function MobileNewDeal() {
             {/* Commission preview card */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Preview</p>
+                <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-2">Commission Preview</p>
                 {isSubDealer ? (
-                  <div className="space-y-1.5 text-sm">
+                  <div className="space-y-1.5 text-base">
                     {subDealerRate > 0 && (
                       <div className="flex justify-between text-base text-slate-400">
                         <span>Sub-dealer rate</span>
@@ -986,7 +986,7 @@ export default function MobileNewDeal() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-1.5 text-sm">
+                  <div className="space-y-1.5 text-base">
                     <div className="flex justify-between text-base text-slate-400">
                       <span>Your redline</span>
                       <span>${closerPerW.toFixed(2)}/W</span>
@@ -1035,14 +1035,14 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={handlePrev}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-sm active:scale-[0.97]"
+                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-base active:scale-[0.97]"
               >
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-blue-600 text-white font-semibold rounded-xl text-sm active:scale-[0.97]"
+                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-blue-600 text-white font-semibold rounded-xl text-base active:scale-[0.97]"
               >
                 Next <ChevronRight className="w-4 h-4" />
               </button>
@@ -1055,42 +1055,42 @@ export default function MobileNewDeal() {
           <div className="space-y-4">
             {/* Summary card */}
             <MobileCard>
-              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
-              <div className="space-y-2 text-sm">
+              <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-3">Deal Summary</p>
+              <div className="space-y-2 text-base">
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Customer</span>
+                  <span className="text-slate-400 text-base">Customer</span>
                   <span className="text-white font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Sold Date</span>
+                  <span className="text-slate-400 text-base">Sold Date</span>
                   <span className="text-white font-medium">{form.soldDate || '---'}</span>
                 </div>
                 {currentRole === 'admin' && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500 text-sm">Closer</span>
+                    <span className="text-slate-400 text-base">Closer</span>
                     <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
                   </div>
                 )}
                 {form.setterId && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500 text-sm">Setter</span>
+                    <span className="text-slate-400 text-base">Setter</span>
                     <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Installer</span>
+                  <span className="text-slate-400 text-base">Installer</span>
                   <span className="text-white font-medium">{form.installer || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Financer</span>
+                  <span className="text-slate-400 text-base">Financer</span>
                   <span className="text-white font-medium">{form.financer || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Product Type</span>
+                  <span className="text-slate-400 text-base">Product Type</span>
                   <span className="text-white font-medium">{form.productType || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">System</span>
+                  <span className="text-slate-400 text-base">System</span>
                   <span className="text-white font-medium">
                     {kW > 0 ? `${kW.toFixed(1)} kW` : '---'}
                     {kW > 0 && soldPPW > 0 && ` @ $${soldPPW.toFixed(2)}/W`}
@@ -1098,7 +1098,7 @@ export default function MobileNewDeal() {
                 </div>
                 {form.prepaidSubType && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500 text-sm">Prepaid Type</span>
+                    <span className="text-slate-400 text-base">Prepaid Type</span>
                     <span className="text-white font-medium">{form.prepaidSubType}</span>
                   </div>
                 )}
@@ -1108,16 +1108,16 @@ export default function MobileNewDeal() {
             {/* Commission breakdown */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Breakdown</p>
+                <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-2">Commission Breakdown</p>
                 {isSubDealer ? (
-                  <div className="space-y-1.5 text-sm">
+                  <div className="space-y-1.5 text-base">
                     <div className="flex justify-between">
                       <span className="text-slate-400">M2 commission</span>
                       <span className="text-emerald-400 font-black text-lg">${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-1.5 text-sm">
+                  <div className="space-y-1.5 text-base">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Closer total</span>
                       <span className="text-emerald-400 font-black text-lg">${closerTotal.toLocaleString()}</span>
@@ -1137,7 +1137,7 @@ export default function MobileNewDeal() {
                       </>
                     )}
                     {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5 text-sm">
+                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5 text-base">
                         <span className="text-slate-400">Trainer ({trainerRep.name})</span>
                         <span className="text-amber-400">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
                       </div>
@@ -1158,7 +1158,7 @@ export default function MobileNewDeal() {
 
             {/* Notes */}
             <div>
-              <label className={labelCls}>Notes <span className="text-slate-500">(optional)</span></label>
+              <label className={labelCls}>Notes <span className="text-slate-400">(optional)</span></label>
               <textarea
                 placeholder="Add any notes about this deal..."
                 value={form.notes}
@@ -1166,8 +1166,8 @@ export default function MobileNewDeal() {
                 className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`}
               />
               <div className="flex items-center justify-between mt-1">
-                <p className="text-sm text-slate-500 italic">Internal notes only</p>
-                <p className={`text-sm ${form.notes.length >= 500 ? 'text-red-400' : form.notes.length >= 400 ? 'text-amber-400' : 'text-slate-500'}`}>
+                <p className="text-base text-slate-400 italic">Internal notes only</p>
+                <p className={`text-base ${form.notes.length >= 500 ? 'text-red-400' : form.notes.length >= 400 ? 'text-amber-400' : 'text-slate-400'}`}>
                   {form.notes.length}/500
                 </p>
               </div>
@@ -1175,7 +1175,7 @@ export default function MobileNewDeal() {
 
             {/* Lead Source */}
             <div>
-              <label className={labelCls}>Lead Source <span className="text-slate-500">(optional)</span></label>
+              <label className={labelCls}>Lead Source <span className="text-slate-400">(optional)</span></label>
               <select
                 value={form.leadSource}
                 onChange={(e) => {
@@ -1234,14 +1234,14 @@ export default function MobileNewDeal() {
                 type="button"
                 onClick={handlePrev}
                 disabled={submitting}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-sm active:scale-[0.97] disabled:opacity-60"
+                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-base active:scale-[0.97] disabled:opacity-60"
               >
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className={`flex-1 min-h-[48px] flex items-center justify-center gap-2 bg-emerald-600 text-white font-semibold rounded-xl text-sm active:scale-[0.97] disabled:opacity-60 ${!submitting ? 'shadow-md shadow-emerald-500/20' : ''}`}
+                className={`flex-1 min-h-[48px] flex items-center justify-center gap-2 bg-emerald-600 text-white font-semibold rounded-xl text-base active:scale-[0.97] disabled:opacity-60 ${!submitting ? 'shadow-md shadow-emerald-500/20' : ''}`}
               >
                 {submitting ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>

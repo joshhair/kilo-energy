@@ -159,7 +159,7 @@ export default function MobileVault() {
       <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+          <p className="text-slate-400 text-base">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -173,7 +173,7 @@ export default function MobileVault() {
       <div>
         <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmt$(nextPayoutTotal)}</p>
         <p className="text-base text-slate-400 mt-1">Next payout</p>
-        <p className="text-sm text-slate-400 mt-0.5">
+        <p className="text-base text-slate-400 mt-0.5">
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
         </p>
       </div>
@@ -181,19 +181,19 @@ export default function MobileVault() {
       {/* ── Inline stats (2x2 text grid, no cards) ── */}
       <div className="grid grid-cols-2 gap-y-3 gap-x-6">
         <div>
-          <p className="text-sm font-semibold text-emerald-400 tabular-nums">{fmt$(lifetimeEarned)}</p>
+          <p className="text-lg font-bold text-emerald-400 tabular-nums">{fmt$(lifetimeEarned)}</p>
           <p className="text-base text-slate-400">Lifetime</p>
         </div>
         <div>
-          <p className="text-sm font-semibold text-blue-400 tabular-nums">{fmt$(pipelineTotal)}</p>
+          <p className="text-lg font-bold text-blue-400 tabular-nums">{fmt$(pipelineTotal)}</p>
           <p className="text-base text-slate-400">Pipeline</p>
         </div>
         <div>
-          <p className="text-sm font-semibold text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
+          <p className="text-lg font-bold text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
           <p className="text-base text-slate-400">Pending</p>
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-400 tabular-nums">{fmt$(draftTotal)}</p>
+          <p className="text-lg font-bold text-slate-400 tabular-nums">{fmt$(draftTotal)}</p>
           <p className="text-base text-slate-400">Draft</p>
         </div>
       </div>
@@ -201,7 +201,7 @@ export default function MobileVault() {
       {/* ── Reimbursement link ── */}
       <button
         onClick={() => router.push('/dashboard/reimbursement')}
-        className="flex items-center gap-1 text-sm text-blue-400 active:text-blue-300 transition-colors"
+        className="flex items-center gap-1 text-base text-blue-400 active:text-blue-300 transition-colors"
       >
         Request reimbursement →
       </button>
@@ -220,10 +220,10 @@ export default function MobileVault() {
               <div key={period.friday}>
                 {/* Friday group header */}
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-bold text-white">
+                  <p className="text-base font-bold text-white">
                     {formatFridayLabel(period.friday)}
                   </p>
-                  <p className="text-sm font-bold text-slate-400 tabular-nums">{fmt$(period.total)}</p>
+                  <p className="text-lg font-bold text-white tabular-nums">{fmt$(period.total)}</p>
                 </div>
 
                 {/* Entries */}
@@ -234,14 +234,14 @@ export default function MobileVault() {
                       className="flex items-center justify-between py-3 border-b border-slate-800/20"
                     >
                       <div>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-base font-semibold text-white">
                           {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
                         </p>
                         <p className="text-base text-slate-400">
                           {entry.paymentStage} &middot; {entry.date}
                         </p>
                       </div>
-                      <p className={`text-sm font-bold tabular-nums ${statusColor(entry.status)}`}>
+                      <p className={`text-lg font-bold tabular-nums ${statusColor(entry.status)}`}>
                         {fmt$(entry.amount)}
                       </p>
                     </div>

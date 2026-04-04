@@ -124,23 +124,23 @@ export default function MobileTraining() {
                   className="w-full px-4 py-3 flex items-center justify-between gap-3 min-h-[48px] active:bg-slate-800/40 transition-colors"
                 >
                   <div className="min-w-0 flex-1 text-left">
-                    <p className="text-sm font-semibold text-white truncate">{td.traineeName}</p>
-                    <p className="text-sm text-slate-500 mt-0.5">
-                      {td.dealCount} deals &middot; ${td.currentRate.toFixed(2)}/W
+                    <p className="text-base font-semibold text-white truncate">{td.traineeName}</p>
+                    <p className="text-base text-slate-400 mt-0.5">
+                      <span className="font-bold">{td.dealCount}</span> deals &middot; <span className="font-bold">${td.currentRate.toFixed(2)}/W</span>
                     </p>
                   </div>
                   {isOpen
-                    ? <ChevronUp className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                    : <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                    ? <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
                   }
                 </button>
 
                 {/* Expandable rate tiers */}
                 {isOpen && (
                   <div className="px-4 pb-3">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-base">
                       <thead>
-                        <tr className="text-slate-500 uppercase tracking-wider">
+                        <tr className="text-slate-400 uppercase tracking-wider">
                           <th className="text-left py-1 font-semibold">Deals Up To</th>
                           <th className="text-right py-1 font-semibold">Rate ($/W)</th>
                         </tr>
@@ -168,18 +168,18 @@ export default function MobileTraining() {
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
         {sortedOverrides.length === 0 ? (
-          <p className="text-sm text-slate-500 py-4 text-center">No override payments yet</p>
+          <p className="text-base text-slate-400 py-4 text-center">No override payments yet</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedOverrides.map((entry) => (
               <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white truncate">
+                  <p className="text-base font-semibold text-white truncate">
                     {entry.customerName || entry.notes || 'Override'}
                   </p>
-                  <p className="text-sm text-slate-500 mt-0.5">{entry.date}</p>
+                  <p className="text-base text-slate-400 mt-0.5">{entry.date}</p>
                 </div>
-                <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
                   {fmt$(entry.amount)}
                 </span>
               </div>

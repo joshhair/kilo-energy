@@ -51,7 +51,7 @@ function StatusDot({ status }: { status: string }) {
     status === 'Denied' ? 'bg-red-400' :
     'bg-slate-400';
   return (
-    <span className={`inline-flex items-center gap-1.5 text-sm text-slate-400`}>
+    <span className={`inline-flex items-center gap-1.5 text-base text-slate-400`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${color}`} />
       {status}
     </span>
@@ -115,7 +115,7 @@ export default function MobileEarnings() {
 
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard>
-        <p className="text-sm text-slate-500 uppercase tracking-wider mb-1">Total Earned</p>
+        <p className="text-base text-slate-400 uppercase tracking-wider mb-1">Total Earned</p>
         <p className="text-4xl font-black text-emerald-400 tabular-nums">
           {fmt$(totalEarned)}
         </p>
@@ -127,10 +127,10 @@ export default function MobileEarnings() {
           <button
             key={p.key}
             onClick={() => setPeriod(p.key)}
-            className={`min-h-[48px] px-4 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`min-h-[48px] px-4 rounded-xl text-base font-medium whitespace-nowrap transition-colors ${
               period === p.key
                 ? 'bg-slate-800 text-white'
-                : 'text-slate-500 active:bg-slate-800/40'
+                : 'text-slate-400 active:bg-slate-800/40'
             }`}
           >
             {p.label}
@@ -141,13 +141,13 @@ export default function MobileEarnings() {
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
       <MobileSection title="Deal Payments" count={sortedDeals.length} collapsible defaultOpen>
         {sortedDeals.length === 0 ? (
-          <p className="text-sm text-slate-500 py-4 text-center">No deal payments for this period</p>
+          <p className="text-base text-slate-400 py-4 text-center">No deal payments for this period</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedDeals.map((entry) => (
               <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white truncate">{entry.customerName || entry.notes || 'Deal'}</p>
+                  <p className="text-base font-semibold text-white truncate">{entry.customerName || entry.notes || 'Deal'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     {entry.paymentStage && (
@@ -156,7 +156,7 @@ export default function MobileEarnings() {
                     <span className="text-base text-slate-400">{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -168,19 +168,19 @@ export default function MobileEarnings() {
       {/* ── Bonuses ─────────────────────────────────────────────────────── */}
       <MobileSection title="Bonuses" count={sortedBonuses.length} collapsible defaultOpen>
         {sortedBonuses.length === 0 ? (
-          <p className="text-sm text-slate-500 py-4 text-center">No bonuses for this period</p>
+          <p className="text-base text-slate-400 py-4 text-center">No bonuses for this period</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedBonuses.map((entry) => (
               <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white truncate">{entry.notes || 'Bonus'}</p>
+                  <p className="text-base font-semibold text-white truncate">{entry.notes || 'Bonus'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     <span className="text-base text-slate-400">{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -192,19 +192,19 @@ export default function MobileEarnings() {
       {/* ── Reimbursements ──────────────────────────────────────────────── */}
       <MobileSection title="Reimbursements" count={sortedReimbs.length} collapsible defaultOpen>
         {sortedReimbs.length === 0 ? (
-          <p className="text-sm text-slate-500 py-4 text-center">No reimbursements for this period</p>
+          <p className="text-base text-slate-400 py-4 text-center">No reimbursements for this period</p>
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
             {sortedReimbs.map((entry) => (
               <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white truncate">{entry.description}</p>
+                  <p className="text-base font-semibold text-white truncate">{entry.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     <span className="text-base text-slate-400">{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
                   {fmt$(entry.amount)}
                 </span>
               </div>

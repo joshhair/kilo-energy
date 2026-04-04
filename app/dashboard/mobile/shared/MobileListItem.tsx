@@ -17,11 +17,11 @@ export default function MobileListItem({
     <>
       <div className="flex-1 min-w-0">
         <p className="text-base font-semibold text-white truncate">{title}</p>
-        {subtitle && <p className="text-sm text-slate-500 mt-0.5 truncate">{subtitle}</p>}
+        {subtitle && <p className="text-base text-slate-400 mt-0.5 truncate">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {right}
-        {onTap && <ChevronRight className="w-4 h-4 text-slate-600" />}
+        {onTap && <ChevronRight className="w-4 h-4 text-slate-500" />}
       </div>
     </>
   );

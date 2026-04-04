@@ -79,13 +79,13 @@ export default function MobileProjects() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="w-full min-h-[48px] rounded-2xl bg-slate-800/40 px-4 pl-10 text-sm text-white placeholder:text-slate-500 outline-none"
+          className="w-full min-h-[48px] rounded-2xl bg-slate-800/40 px-4 pl-10 text-base text-white placeholder:text-slate-400 outline-none"
         />
       </div>
 
@@ -95,7 +95,7 @@ export default function MobileProjects() {
           <button
             key={phase}
             onClick={() => setPhaseFilter(phase)}
-            className={`shrink-0 min-h-[36px] px-4 rounded-xl text-sm ${
+            className={`shrink-0 min-h-[36px] px-4 rounded-xl text-base ${
               phaseFilter === phase
                 ? 'bg-blue-600 text-white'
                 : 'text-slate-400'

@@ -87,7 +87,7 @@ export default function MobileSettings() {
         {/* Back button */}
         <button
           onClick={() => setActiveSection(null)}
-          className="flex items-center gap-1.5 min-h-[48px] text-sm font-medium text-blue-400 active:text-blue-300 transition-colors"
+          className="flex items-center gap-1.5 min-h-[48px] text-base font-medium text-blue-400 active:text-blue-300 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Settings
@@ -165,7 +165,7 @@ function InstallersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500 mb-2">Manage installer companies. Full editing available on desktop.</p>
+      <p className="text-base text-slate-400 mb-2">Manage installer companies. Full editing available on desktop.</p>
       {installers.length === 0 ? (
         <MobileEmptyState icon={Building2} title="No installers" />
       ) : (
@@ -177,10 +177,10 @@ function InstallersSection() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate">{inst.name}</p>
-                  <p className="text-sm text-slate-500 mt-0.5">Install Pay: {Math.round(installPct * 100)}%</p>
+                  <p className="text-base text-slate-400 mt-0.5">Install Pay: {Math.round(installPct * 100)}%</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-sm font-medium px-2 py-0.5 rounded-lg ${inst.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>
+                  <span className={`text-base font-medium px-2 py-0.5 rounded-lg ${inst.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
                     {inst.active ? 'Active' : 'Inactive'}
                   </span>
                   <Toggle
@@ -205,7 +205,7 @@ function FinancersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500 mb-2">Manage financing companies.</p>
+      <p className="text-base text-slate-400 mb-2">Manage financing companies.</p>
       {financers.length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
@@ -216,7 +216,7 @@ function FinancersSection() {
                 <p className="text-base font-semibold text-white truncate">{fin.name}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <span className={`text-sm font-medium px-2 py-0.5 rounded-lg ${fin.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>
+                <span className={`text-base font-medium px-2 py-0.5 rounded-lg ${fin.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
                   {fin.active ? 'Active' : 'Inactive'}
                 </span>
                 <Toggle
@@ -284,31 +284,31 @@ function AdminUsersSection() {
     }
   };
 
-  if (loading) return <p className="text-sm text-slate-500 py-8 text-center">Loading...</p>;
+  if (loading) return <p className="text-base text-slate-400 py-8 text-center">Loading...</p>;
 
   return (
     <div className="space-y-4">
       {/* Add form */}
       <MobileCard>
-        <p className="text-sm text-slate-500 mb-3">Add a new admin user</p>
+        <p className="text-base text-slate-400 mb-3">Add a new admin user</p>
         <div className="space-y-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Full name"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-base text-white placeholder-slate-500 focus:outline-none"
           />
           <input
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Email"
             type="email"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-base text-white placeholder-slate-500 focus:outline-none"
           />
           <button
             onClick={handleAdd}
             disabled={!newName.trim() || !newEmail.trim()}
-            className="w-full min-h-[48px] rounded-2xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-40 active:bg-blue-700 transition-colors"
+            className="w-full min-h-[48px] rounded-2xl bg-blue-600 text-white text-base font-semibold disabled:opacity-40 active:bg-blue-700 transition-colors"
           >
             Add Admin
           </button>
@@ -326,11 +326,11 @@ function AdminUsersSection() {
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate">{admin.name}</p>
-                  <p className="text-sm text-slate-500 mt-0.5 truncate">{admin.email}</p>
+                  <p className="text-base text-slate-400 mt-0.5 truncate">{admin.email}</p>
                 </div>
                 <button
                   onClick={() => handleDelete(admin.id)}
-                  className="p-2 text-slate-500 active:text-red-400 transition-colors"
+                  className="p-2 text-slate-400 active:text-red-400 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -379,11 +379,11 @@ function ProjectManagersSection() {
     if (res.ok) { toast('PM removed'); loadPMs(); }
   };
 
-  if (loading) return <p className="text-sm text-slate-500 py-8 text-center">Loading...</p>;
+  if (loading) return <p className="text-base text-slate-400 py-8 text-center">Loading...</p>;
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500 mb-2">Project managers can view projects and reps but not payroll or settings.</p>
+      <p className="text-base text-slate-400 mb-2">Project managers can view projects and reps but not payroll or settings.</p>
       {pms.length === 0 ? (
         <MobileEmptyState icon={Users} title="No project managers" />
       ) : (
@@ -392,11 +392,11 @@ function ProjectManagersSection() {
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
                 <p className="text-base font-semibold text-white truncate">{pm.firstName} {pm.lastName}</p>
-                <p className="text-sm text-slate-500 mt-0.5 truncate">{pm.email}</p>
+                <p className="text-base text-slate-400 mt-0.5 truncate">{pm.email}</p>
               </div>
               <button
                 onClick={() => handleDelete(pm.id)}
-                className="p-2 text-slate-500 active:text-red-400 transition-colors shrink-0"
+                className="p-2 text-slate-400 active:text-red-400 transition-colors shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -410,10 +410,10 @@ function ProjectManagersSection() {
                 <button
                   key={field}
                   onClick={() => togglePerm(pm.id, field, pm[field])}
-                  className={`flex items-center gap-1.5 text-sm px-2.5 py-1.5 rounded-lg border transition-colors min-h-[36px] ${
+                  className={`flex items-center gap-1.5 text-base px-2.5 py-1.5 rounded-lg border transition-colors min-h-[36px] ${
                     pm[field]
                       ? 'bg-emerald-900/30 text-emerald-300 border-emerald-500/30'
-                      : 'bg-slate-800/50 text-slate-500 border-slate-700/50'
+                      : 'bg-slate-800/50 text-slate-400 border-slate-700/50'
                   }`}
                 >
                   {pm[field] ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
@@ -455,7 +455,7 @@ function BlitzPermissionsSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500 mb-2">Control which reps can request or create blitzes.</p>
+      <p className="text-base text-slate-400 mb-2">Control which reps can request or create blitzes.</p>
       {reps.length === 0 ? (
         <MobileEmptyState icon={Tent} title="No reps" />
       ) : (
@@ -464,14 +464,14 @@ function BlitzPermissionsSection() {
           return (
             <MobileCard key={rep.id}>
               <p className="text-base font-semibold text-white mb-0.5">{rep.name}</p>
-              <p className="text-sm text-slate-500 mb-3">{rep.repType || 'Rep'}</p>
+              <p className="text-base text-slate-400 mb-3">{rep.repType || 'Rep'}</p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canRequestBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canRequestBlitz', v)}
                   />
-                  <span className="text-sm text-slate-400">Request</span>
+                  <span className="text-base text-slate-400">Request</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Toggle
@@ -479,7 +479,7 @@ function BlitzPermissionsSection() {
                     onChange={(v) => togglePermission(rep.id, 'canCreateBlitz', v)}
                     color="bg-emerald-600"
                   />
-                  <span className="text-sm text-slate-400">Create</span>
+                  <span className="text-base text-slate-400">Create</span>
                 </div>
               </div>
             </MobileCard>
@@ -497,7 +497,7 @@ function SubDealersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500 mb-2">Sub-dealer accounts. Full editing available on desktop.</p>
+      <p className="text-base text-slate-400 mb-2">Sub-dealer accounts. Full editing available on desktop.</p>
       {!subDealers || subDealers.length === 0 ? (
         <MobileEmptyState icon={Handshake} title="No sub-dealers" subtitle="Add sub-dealers from the desktop view." />
       ) : (
@@ -510,7 +510,7 @@ function SubDealersSection() {
                   <p className="text-base font-semibold text-white truncate">
                     {sd.firstName ?? ''} {sd.lastName ?? ''}
                   </p>
-                  {sd.email && <p className="text-sm text-slate-500 mt-0.5 truncate">{sd.email}</p>}
+                  {sd.email && <p className="text-base text-slate-400 mt-0.5 truncate">{sd.email}</p>}
                 </div>
               </div>
             </div>
@@ -545,14 +545,14 @@ function ExportSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500 mb-2">Download data as CSV files.</p>
+      <p className="text-base text-slate-400 mb-2">Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button
           key={type}
           onClick={() => handleExport(type)}
           className="w-full min-h-[52px] rounded-2xl bg-slate-900/60 border border-slate-800/20 px-5 text-left flex items-center gap-3 active:bg-slate-800/40 transition-colors"
         >
-          <Download className="w-5 h-5 text-slate-500 shrink-0" />
+          <Download className="w-5 h-5 text-slate-400 shrink-0" />
           <span className="text-base font-semibold text-white capitalize">{type}</span>
         </button>
       ))}
@@ -565,7 +565,7 @@ function ExportSection() {
 function ReadOnlyListSection({ title, description }: { title: string; description: string }) {
   return (
     <MobileCard>
-      <p className="text-sm text-slate-400 mb-2">{description}</p>
+      <p className="text-base text-slate-400 mb-2">{description}</p>
       <p className="text-base text-slate-400">Open the desktop version for full access to {title.toLowerCase()}.</p>
     </MobileCard>
   );

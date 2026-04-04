@@ -49,11 +49,11 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/reps')}
-          className="flex items-center gap-1.5 text-sm text-slate-500 min-h-[48px]"
+          className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
         >
           <ArrowLeft className="w-4 h-4" /> Reps
         </button>
-        <p className="text-sm text-slate-500 text-center">Rep not found.</p>
+        <p className="text-base text-slate-400 text-center">Rep not found.</p>
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/reps')}
-        className="flex items-center gap-1.5 text-sm text-slate-500 min-h-[48px]"
+        className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
       >
         <ArrowLeft className="w-4 h-4" /> Reps
       </button>
@@ -87,14 +87,14 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       </div>
 
       {/* Inline stats */}
-      <p className="text-sm text-slate-400">
-        {repProjects.length} deal{repProjects.length !== 1 ? 's' : ''}
+      <p className="text-base text-slate-400">
+        <span className="text-lg font-bold text-white">{repProjects.length}</span> deal{repProjects.length !== 1 ? 's' : ''}
         {' \u00B7 '}
-        {totalKW.toFixed(1)} kW
+        <span className="text-lg font-bold text-white">{totalKW.toFixed(1)}</span> kW
         {!isPM && (
           <>
             {' \u00B7 '}
-            <span className="text-emerald-400">${totalPaid.toLocaleString()} paid</span>
+            <span className="text-lg font-bold text-emerald-400">${totalPaid.toLocaleString()}</span> paid
           </>
         )}
       </p>
@@ -130,14 +130,14 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   className="flex items-center justify-between min-h-[48px] py-3 border-b border-slate-800/20 last:border-b-0"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
+                    <p className="text-base font-medium text-white truncate">
                       {entry.customerName || entry.notes || '\u2014'}
                     </p>
-                    <p className="text-sm text-slate-500 mt-0.5">
+                    <p className="text-base text-slate-400 mt-0.5">
                       {entry.paymentStage} &middot; {formatDate(entry.date)}
                     </p>
                   </div>
-                  <span className={`text-sm font-semibold tabular-nums ml-3 ${STATUS_AMOUNT_COLORS[entry.status] ?? 'text-slate-400'}`}>
+                  <span className={`text-lg font-bold tabular-nums ml-3 ${STATUS_AMOUNT_COLORS[entry.status] ?? 'text-slate-400'}`}>
                     ${entry.amount.toLocaleString()}
                   </span>
                 </div>

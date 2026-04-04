@@ -114,13 +114,13 @@ export default function MobileAdminDashboard() {
         <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmtCompact(Math.round(totalPaid))}</p>
         <div className="flex items-center gap-4 mt-3">
           <div>
-            <p className="text-lg font-bold text-white tabular-nums">{fmtCompact(Math.round(totalRevenue))}</p>
-            <p className="text-sm text-slate-500">Revenue</p>
+            <p className="text-xl font-bold text-white tabular-nums">{fmtCompact(Math.round(totalRevenue))}</p>
+            <p className="text-base text-slate-400">Revenue</p>
           </div>
           <div className="w-px h-8 bg-slate-800" />
           <div>
-            <p className="text-lg font-bold text-white tabular-nums">{fmtCompact(Math.round(totalProfit))}</p>
-            <p className="text-sm text-slate-500">Profit</p>
+            <p className="text-xl font-bold text-white tabular-nums">{fmtCompact(Math.round(totalProfit))}</p>
+            <p className="text-base text-slate-400">Profit</p>
           </div>
         </div>
       </MobileCard>
@@ -130,17 +130,17 @@ export default function MobileAdminDashboard() {
         <MobileCard onTap={() => router.push('/dashboard/projects')}>
           <FolderKanban className="w-5 h-5 text-blue-400 mb-2" />
           <p className="text-2xl font-black text-white tabular-nums">{active.length}</p>
-          <p className="text-sm text-slate-500">Active</p>
+          <p className="text-base text-slate-400">Active</p>
         </MobileCard>
         <MobileCard onTap={() => router.push('/dashboard/reps')}>
           <Users className="w-5 h-5 text-blue-400 mb-2" />
           <p className="text-2xl font-black text-white tabular-nums">{reps.length}</p>
-          <p className="text-sm text-slate-500">Reps</p>
+          <p className="text-base text-slate-400">Reps</p>
         </MobileCard>
         <MobileCard>
           <Zap className="w-5 h-5 text-amber-400 mb-2" />
           <p className="text-2xl font-black text-white tabular-nums">{totalKW.toFixed(0)}</p>
-          <p className="text-sm text-slate-500">kW</p>
+          <p className="text-base text-slate-400">kW</p>
         </MobileCard>
       </div>
 
@@ -150,7 +150,7 @@ export default function MobileAdminDashboard() {
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
             <p className="text-base font-semibold text-white">Needs Attention</p>
-            <span className="ml-auto text-sm font-bold text-amber-400">{needsAttention}</span>
+            <span className="ml-auto text-base font-bold text-amber-400">{needsAttention}</span>
           </div>
 
           {draftCount > 0 && (
@@ -162,7 +162,7 @@ export default function MobileAdminDashboard() {
                 <CreditCard className="w-4 h-4 text-slate-400" />
                 <span className="text-base text-white">{draftCount} payroll drafts</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-500" />
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             </button>
           )}
 
@@ -175,7 +175,7 @@ export default function MobileAdminDashboard() {
                 <CreditCard className="w-4 h-4 text-amber-400" />
                 <span className="text-base text-amber-300">{pendingCount} pending · {fmtCompact(pendingTotal)}</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-500" />
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             </button>
           )}
 
@@ -188,7 +188,7 @@ export default function MobileAdminDashboard() {
                 <Flag className="w-4 h-4 text-red-400" />
                 <span className="text-base text-red-300">{flaggedCount} flagged projects</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-500" />
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             </button>
           )}
 
@@ -201,7 +201,7 @@ export default function MobileAdminDashboard() {
                 <Clock className="w-4 h-4 text-slate-400" />
                 <span className="text-base text-slate-300">{stalledProjects.length} stalled projects</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-500" />
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             </button>
           )}
         </MobileCard>
@@ -216,11 +216,11 @@ export default function MobileAdminDashboard() {
             const pct = active.length > 0 ? (count / active.length) * 100 : 0;
             return (
               <div key={phase} className="flex items-center gap-3">
-                <span className="text-sm text-slate-400 w-24 shrink-0 truncate">{phase}</span>
+                <span className="text-base text-slate-400 w-24 shrink-0 truncate">{phase}</span>
                 <div className="flex-1 h-2 bg-slate-800 rounded-full">
                   <div className="h-full bg-blue-500/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
-                <span className="text-sm font-semibold text-white w-6 text-right tabular-nums">{count}</span>
+                <span className="text-lg font-bold text-white w-8 text-right tabular-nums">{count}</span>
               </div>
             );
           })}
@@ -232,14 +232,14 @@ export default function MobileAdminDashboard() {
         <MobileCard onTap={() => router.push('/dashboard/reps')}>
           <div className="flex items-center justify-between mb-3">
             <p className="text-base font-semibold text-white">Top Reps</p>
-            <ChevronRight className="w-4 h-4 text-slate-500" />
+            <ChevronRight className="w-4 h-4 text-slate-400" />
           </div>
           <div className="space-y-2">
             {topReps.map((r, i) => (
               <div key={r.name} className="flex items-center gap-3">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">{i + 1}</span>
                 <span className="text-base text-white flex-1">{r.name}</span>
-                <span className="text-sm text-slate-400">{r.count} deals</span>
+                <span className="text-base font-bold text-slate-400">{r.count} deals</span>
               </div>
             ))}
           </div>
@@ -250,10 +250,10 @@ export default function MobileAdminDashboard() {
       <MobileCard>
         <div className="flex items-center justify-between mb-3">
           <p className="text-base font-semibold text-white">Recent Deals</p>
-          <button onClick={() => router.push('/dashboard/projects')} className="text-sm text-blue-400 active:text-blue-300">View all</button>
+          <button onClick={() => router.push('/dashboard/projects')} className="text-base text-blue-400 active:text-blue-300">View all</button>
         </div>
         {recentDeals.length === 0 ? (
-          <p className="text-base text-slate-500">No deals yet.</p>
+          <p className="text-base text-slate-400">No deals yet.</p>
         ) : (
           <div className="space-y-0">
             {recentDeals.map((p, i) => {
@@ -266,7 +266,7 @@ export default function MobileAdminDashboard() {
                 >
                   <div className="min-w-0 flex-1 mr-3">
                     <p className="text-base text-white truncate">{p.customerName}</p>
-                    <p className="text-sm text-slate-500">{rep?.name ?? 'Unknown'} · {p.kWSize} kW</p>
+                    <p className="text-base text-slate-400">{rep?.name ?? 'Unknown'} · {p.kWSize} kW</p>
                   </div>
                   <MobileBadge value={p.phase} />
                 </button>

@@ -99,7 +99,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
       </div>
 
       {loading && activities.length === 0 ? (
-        <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+        <div className="flex items-center gap-2 text-base text-slate-400 py-4">
           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           Loading...
         </div>
@@ -113,7 +113,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
             return (
               <div key={entry.id} className="relative mb-3 last:mb-0">
                 <div className={`absolute -left-4 top-1 w-2 h-2 rounded-full ${dotColor}`} />
-                <p className="text-sm text-slate-300">{entry.detail}</p>
+                <p className="text-base text-slate-300">{entry.detail}</p>
                 <p className="text-base text-slate-400">{relativeTime(entry.createdAt)}</p>
               </div>
             );
@@ -125,7 +125,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="min-h-[48px] text-sm text-blue-400 active:text-blue-300 disabled:opacity-50"
+          className="min-h-[48px] text-base text-blue-400 active:text-blue-300 disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>
@@ -270,7 +270,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/projects')}
-        className="flex items-center gap-1 text-sm text-slate-400 mb-4 min-h-[48px]"
+        className="flex items-center gap-1 text-base text-slate-400 mb-4 min-h-[48px]"
       >
         <ArrowLeft className="w-4 h-4" />
         Projects
@@ -317,7 +317,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {infoRows.map(([label, value]) => (
           <div key={label} className="flex items-center justify-between py-3 border-b border-slate-800/20">
             <span className="text-base text-slate-400">{label}</span>
-            <span className="text-sm text-white">{value}</span>
+            <span className="text-base font-bold text-white">{value}</span>
           </div>
         ))}
       </div>
@@ -330,9 +330,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             <div className="space-y-3">
               {myEntries.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between">
-                  <span className="text-sm text-white">{entry.paymentStage}</span>
+                  <span className="text-base text-white">{entry.paymentStage}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-emerald-400 font-bold">${entry.amount.toLocaleString()}</span>
+                    <span className="text-lg text-emerald-400 font-bold">${entry.amount.toLocaleString()}</span>
                     <MobileBadge value={entry.status} variant="status" />
                   </div>
                 </div>
@@ -342,26 +342,26 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             <div className="space-y-3">
               {/* M1 */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white">M1</span>
+                <span className="text-base text-white">M1</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-emerald-400 font-bold">${project.m1Amount.toLocaleString()}</span>
+                  <span className="text-lg text-emerald-400 font-bold">${project.m1Amount.toLocaleString()}</span>
                   <MobileBadge value={project.m1Paid ? 'Paid' : 'Pending'} variant="status" />
                 </div>
               </div>
               {/* M2 */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white">M2</span>
+                <span className="text-base text-white">M2</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-emerald-400 font-bold">${project.m2Amount.toLocaleString()}</span>
+                  <span className="text-lg text-emerald-400 font-bold">${project.m2Amount.toLocaleString()}</span>
                   <MobileBadge value={project.m2Paid ? 'Paid' : 'Pending'} variant="status" />
                 </div>
               </div>
               {/* M3 */}
               {(project.m3Amount ?? 0) > 0 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-white">M3</span>
+                  <span className="text-base text-white">M3</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-emerald-400 font-bold">${(project.m3Amount ?? 0).toLocaleString()}</span>
+                    <span className="text-lg text-emerald-400 font-bold">${(project.m3Amount ?? 0).toLocaleString()}</span>
                     <MobileBadge value="Pending" variant="status" />
                   </div>
                 </div>
@@ -374,9 +374,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Notes — collapsible */}
       <MobileSection title="Notes" collapsible defaultOpen={false}>
         {project.notes ? (
-          <p className="text-sm text-slate-400 leading-relaxed">{project.notes}</p>
+          <p className="text-base text-slate-400 leading-relaxed">{project.notes}</p>
         ) : (
-          <p className="text-sm text-slate-500 italic">No notes</p>
+          <p className="text-base text-slate-400 italic">No notes</p>
         )}
       </MobileSection>
 
@@ -391,14 +391,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[48px] bg-blue-600 active:bg-blue-700 text-white text-sm font-medium rounded-xl"
+            className="flex-1 min-h-[48px] bg-blue-600 active:bg-blue-700 text-white text-base font-medium rounded-xl"
           >
             Change Phase &#x25BE;
           </button>
         )}
         <button
           onClick={() => setMoreSheetOpen(true)}
-          className="min-h-[48px] px-5 bg-slate-800/60 text-slate-300 text-sm font-medium rounded-xl active:bg-slate-700"
+          className="min-h-[48px] px-5 bg-slate-800/60 text-slate-300 text-base font-medium rounded-xl active:bg-slate-700"
         >
           &middot; &middot; &middot;
         </button>

@@ -108,13 +108,13 @@ export default function MobileReps() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Search reps..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 bg-slate-800/40 rounded-2xl text-sm text-white placeholder:text-slate-500 focus:outline-none transition-colors"
+          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 bg-slate-800/40 rounded-2xl text-base text-white placeholder:text-slate-400 focus:outline-none transition-colors"
         />
       </div>
 
@@ -131,13 +131,13 @@ export default function MobileReps() {
             return (
               <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/reps/${rep.id}`)}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-base font-bold shrink-0">
                     {getInitials(rep.name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-semibold text-white truncate">{rep.name}</p>
                     {rep.email && (
-                      <p className="text-sm text-slate-500 truncate">{rep.email}</p>
+                      <p className="text-base text-slate-400 truncate">{rep.email}</p>
                     )}
                   </div>
                   <MobileBadge value={ROLE_LABELS[rep.repType] ?? rep.repType} />
@@ -145,11 +145,11 @@ export default function MobileReps() {
 
                 {isAdmin && (
                   <div className="flex gap-4 mt-3 text-base text-slate-400">
-                    <span>{deals} deals</span>
+                    <span><span className="font-bold">{deals}</span> deals</span>
                     <span>&middot;</span>
-                    <span>{kw.toFixed(1)} kW</span>
+                    <span><span className="font-bold">{kw.toFixed(1)}</span> kW</span>
                     <span>&middot;</span>
-                    <span>${paid.toLocaleString()} paid</span>
+                    <span><span className="font-bold">${paid.toLocaleString()}</span> paid</span>
                   </div>
                 )}
               </MobileCard>
@@ -196,46 +196,46 @@ export default function MobileReps() {
           className="px-5 space-y-4 pb-2"
         >
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">First Name</label>
+            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">First Name</label>
             <input
               type="text"
               required
               value={addForm.firstName}
               onChange={(e) => setAddForm((f) => ({ ...f, firstName: e.target.value }))}
               placeholder="First name"
-              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-sm rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Last Name</label>
+            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Last Name</label>
             <input
               type="text"
               required
               value={addForm.lastName}
               onChange={(e) => setAddForm((f) => ({ ...f, lastName: e.target.value }))}
               placeholder="Last name"
-              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-sm rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Email</label>
+            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Email</label>
             <input
               type="email"
               value={addForm.email}
               onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="email@example.com"
-              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-sm rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep Type</label>
+            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep Type</label>
             <div className="flex gap-2">
               {(['closer', 'setter', 'both'] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
-                  className={`flex-1 min-h-[48px] rounded-2xl text-sm font-semibold transition-colors ${
+                  className={`flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors ${
                     addForm.repType === type
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-800 text-slate-400 border border-slate-700'
@@ -248,7 +248,7 @@ export default function MobileReps() {
           </div>
           <button
             type="submit"
-            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors"
           >
             Add Rep
           </button>

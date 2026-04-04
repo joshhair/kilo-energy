@@ -61,7 +61,7 @@ export default function MobileBottomSheet({
         </div>
         {title && (
           <div className="flex items-center justify-between px-5 py-2">
-            <p className="text-sm font-semibold text-white">{title}</p>
+            <p className="text-base font-semibold text-white">{title}</p>
             <button onClick={onClose} className="p-2 text-slate-500 active:text-white"><X className="w-5 h-5" /></button>
           </div>
         )}

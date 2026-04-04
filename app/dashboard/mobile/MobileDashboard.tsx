@@ -114,14 +114,14 @@ export default function MobileDashboard() {
                   : 0;
               return (
                 <div key={phase} className="flex items-center gap-3 py-2">
-                  <span className="text-sm text-slate-400 w-28 shrink-0">{phase}</span>
+                  <span className="text-base text-slate-400 w-28 shrink-0">{phase}</span>
                   <div className="flex-1 h-1.5 bg-slate-800 rounded-full">
                     <div
                       className="h-full bg-blue-500/60 rounded-full"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-sm text-slate-500 w-6 text-right">{count}</span>
+                  <span className="text-lg font-bold text-slate-400 w-8 text-right">{count}</span>
                 </div>
               );
             })}
@@ -146,7 +146,7 @@ export default function MobileDashboard() {
                     <p className="text-base font-semibold text-white truncate">{p.customerName}</p>
                     <MobileBadge value={p.phase} />
                   </div>
-                  <span className="text-sm text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
+                  <span className="text-base text-slate-400 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
                 </button>
               ))}
             </div>
@@ -171,10 +171,10 @@ export default function MobileDashboard() {
                     }`}
                   >
                     <div className="min-w-0">
-                      <span className="text-sm text-white">{p.customerName}</span>
+                      <span className="text-base text-white">{p.customerName}</span>
                       <span className="text-base text-slate-400"> → {p.phase}</span>
                     </div>
-                    <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                    <span className="text-base text-slate-400 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
                   </button>
                 ))}
             </div>
@@ -263,7 +263,7 @@ export default function MobileDashboard() {
         {/* Hero — next payout, no card wrapper */}
         <div>
           <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmt$(pendingPayrollTotal)}</p>
-          <p className="text-sm text-slate-400 mt-1">Next payout &middot; {nextFridayLabel}</p>
+          <p className="text-base text-slate-400 mt-1">Next payout &middot; {nextFridayLabel}</p>
           <div className="mt-3 h-1.5 bg-slate-800 rounded-full">
             <div
               className="h-full bg-emerald-500 rounded-full"
@@ -310,10 +310,10 @@ export default function MobileDashboard() {
                   }`}
                 >
                   <div className="min-w-0">
-                    <span className="text-sm text-white">{p.customerName}</span>
+                    <span className="text-base text-white">{p.customerName}</span>
                     <span className="text-base text-slate-400"> → {p.phase}</span>
                   </div>
-                  <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                  <span className="text-base text-slate-400 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
                 </button>
               ))}
             </div>
@@ -332,7 +332,7 @@ export default function MobileDashboard() {
       {/* Hero — next payout, no card wrapper */}
       <div>
         <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmt$(pendingPayrollTotal)}</p>
-        <p className="text-sm text-slate-400 mt-1">Next payout &middot; {nextFridayLabel}</p>
+        <p className="text-base text-slate-400 mt-1">Next payout &middot; {nextFridayLabel}</p>
         <div className="mt-3 h-1.5 bg-slate-800 rounded-full">
           <div
             className="h-full bg-emerald-500 rounded-full"
@@ -382,7 +382,7 @@ export default function MobileDashboard() {
                   <p className="text-base font-semibold text-white truncate">{p.customerName}</p>
                   <MobileBadge value={p.phase} />
                 </div>
-                <span className="text-sm text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
+                <span className="text-base text-slate-400 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
               </button>
             ))}
           </div>
@@ -404,10 +404,10 @@ export default function MobileDashboard() {
                 }`}
               >
                 <div className="min-w-0">
-                  <span className="text-sm text-white">{p.customerName}</span>
+                  <span className="text-base text-white">{p.customerName}</span>
                   <span className="text-base text-slate-400"> → {p.phase}</span>
                 </div>
-                <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                <span className="text-base text-slate-400 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
               </button>
             ))}
           </div>

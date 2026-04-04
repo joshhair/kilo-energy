@@ -108,9 +108,9 @@ export default function MobileCalculator() {
   const grandTotal = closerTotal + setterTotal;
 
   // ── Select styles ────────────────────────────────────────────────────────
-  const selectCls = 'w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none appearance-none';
-  const inputCls = 'w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none placeholder-slate-500';
-  const labelCls = 'block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1.5';
+  const selectCls = 'w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none appearance-none';
+  const inputCls = 'w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none placeholder-slate-500';
+  const labelCls = 'block text-base font-semibold text-slate-400 uppercase tracking-wider mb-1.5';
 
   if (!isHydrated) {
     return (
@@ -248,26 +248,26 @@ export default function MobileCalculator() {
       {/* ── Result card ─────────────────────────────────────────────────── */}
       {hasInput && soldPPW > 0 && (
         <MobileCard>
-          <p className="text-sm text-slate-500 uppercase tracking-wider mb-1">Commission</p>
+          <p className="text-base text-slate-400 uppercase tracking-wider mb-1">Commission</p>
           <p className="text-4xl font-black text-emerald-400 tabular-nums">
             ${closerTotal.toLocaleString()}
           </p>
 
           <div className="mt-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">Closer</span>
-              <span className="text-sm font-semibold text-white tabular-nums">${closerTotal.toLocaleString()}</span>
+              <span className="text-base text-slate-400">Closer</span>
+              <span className="text-xl font-bold text-white tabular-nums">${closerTotal.toLocaleString()}</span>
             </div>
             {setterTotal > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Setter</span>
-                <span className="text-sm font-semibold text-white tabular-nums">${setterTotal.toLocaleString()}</span>
+                <span className="text-base text-slate-400">Setter</span>
+                <span className="text-xl font-bold text-white tabular-nums">${setterTotal.toLocaleString()}</span>
               </div>
             )}
             {currentRole === 'admin' && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Kilo</span>
-                <span className="text-sm font-semibold text-white tabular-nums">${kiloTotal.toLocaleString()}</span>
+                <span className="text-base text-slate-400">Kilo</span>
+                <span className="text-xl font-bold text-white tabular-nums">${kiloTotal.toLocaleString()}</span>
               </div>
             )}
           </div>
