@@ -95,7 +95,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 text-slate-400" />
         <h2 className="text-base font-semibold text-white">Activity</h2>
-        <span className="text-xs text-slate-500">({total})</span>
+        <span className="text-sm text-slate-500">({total})</span>
       </div>
 
       {loading && activities.length === 0 ? (
@@ -114,7 +114,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
               <div key={entry.id} className="relative mb-3 last:mb-0">
                 <div className={`absolute -left-4 top-1 w-2 h-2 rounded-full ${dotColor}`} />
                 <p className="text-sm text-slate-300">{entry.detail}</p>
-                <p className="text-xs text-slate-500">{relativeTime(entry.createdAt)}</p>
+                <p className="text-sm text-slate-500">{relativeTime(entry.createdAt)}</p>
               </div>
             );
           })}
@@ -125,7 +125,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="min-h-[48px] text-xs text-blue-400 active:text-blue-300 disabled:opacity-50"
+          className="min-h-[48px] text-sm text-blue-400 active:text-blue-300 disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>
@@ -316,7 +316,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <div className="space-y-0">
         {infoRows.map(([label, value]) => (
           <div key={label} className="flex items-center justify-between py-3 border-b border-slate-800/20">
-            <span className="text-xs text-slate-500">{label}</span>
+            <span className="text-sm text-slate-500">{label}</span>
             <span className="text-sm text-white">{value}</span>
           </div>
         ))}

@@ -131,26 +131,26 @@ export default function MobileAdminDashboard() {
       {/* Hero — total revenue, no card wrapper */}
       <div>
         <p className="text-4xl font-black text-white tabular-nums">{fmtCompact(Math.round(totalRevenue))}</p>
-        <p className="text-xs text-slate-500 mt-1">Revenue</p>
+        <p className="text-sm text-slate-500 mt-1">Revenue</p>
       </div>
 
       {/* Inline stats — 2x2 text grid, no cards */}
       <div className="grid grid-cols-2 gap-y-4 gap-x-8">
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{fmtCompact(Math.round(totalProfit))}</p>
-          <p className="text-xs text-slate-500">Profit</p>
+          <p className="text-sm text-slate-500">Profit</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{activeCount}</p>
-          <p className="text-xs text-slate-500">Active</p>
+          <p className="text-sm text-slate-500">Active</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{reps.length}</p>
-          <p className="text-xs text-slate-500">Reps</p>
+          <p className="text-sm text-slate-500">Reps</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{fmtKW(totalKW)}</p>
-          <p className="text-xs text-slate-500">kW</p>
+          <p className="text-sm text-slate-500">kW</p>
         </div>
       </div>
 
@@ -172,7 +172,7 @@ export default function MobileAdminDashboard() {
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span className="text-xs text-slate-500 w-6 text-right">{count}</span>
+                <span className="text-sm text-slate-500 w-6 text-right">{count}</span>
               </div>
             );
           })}
@@ -188,7 +188,7 @@ export default function MobileAdminDashboard() {
               className="w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors border-b border-slate-800/30"
             >
               <span className="text-sm text-white">{draftCount} drafts need review</span>
-              <span className="text-xs text-slate-500">→</span>
+              <span className="text-sm text-slate-500">→</span>
             </button>
           )}
           {pendingCount > 0 && (
@@ -197,7 +197,7 @@ export default function MobileAdminDashboard() {
               className="w-full flex items-center justify-between min-h-[48px] py-3 text-left active:bg-slate-800/40 transition-colors"
             >
               <span className="text-sm text-amber-400">{pendingCount} entries pending</span>
-              <span className="text-xs text-slate-500">→</span>
+              <span className="text-sm text-slate-500">→</span>
             </button>
           )}
           {draftCount === 0 && pendingCount === 0 && (
@@ -224,7 +224,7 @@ export default function MobileAdminDashboard() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-white truncate">{p.customerName}</p>
-                    <p className="text-xs text-slate-500 truncate">{rep?.name ?? 'Unknown rep'}</p>
+                    <p className="text-sm text-slate-500 truncate">{rep?.name ?? 'Unknown rep'}</p>
                   </div>
                   <div className="shrink-0 ml-2">
                     <MobileBadge value={p.phase} />

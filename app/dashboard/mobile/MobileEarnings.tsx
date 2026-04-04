@@ -51,7 +51,7 @@ function StatusDot({ status }: { status: string }) {
     status === 'Denied' ? 'bg-red-400' :
     'bg-slate-400';
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs text-slate-400`}>
+    <span className={`inline-flex items-center gap-1.5 text-sm text-slate-400`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${color}`} />
       {status}
     </span>
@@ -115,7 +115,7 @@ export default function MobileEarnings() {
 
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard>
-        <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Total Earned</p>
+        <p className="text-sm text-slate-500 uppercase tracking-wider mb-1">Total Earned</p>
         <p className="text-4xl font-black text-emerald-400 tabular-nums">
           {fmt$(totalEarned)}
         </p>
@@ -151,9 +151,9 @@ export default function MobileEarnings() {
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     {entry.paymentStage && (
-                      <span className="text-xs text-slate-600">{entry.paymentStage}</span>
+                      <span className="text-sm text-slate-600">{entry.paymentStage}</span>
                     )}
-                    <span className="text-xs text-slate-600">{entry.date}</span>
+                    <span className="text-sm text-slate-600">{entry.date}</span>
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
@@ -177,7 +177,7 @@ export default function MobileEarnings() {
                   <p className="text-sm font-semibold text-white truncate">{entry.notes || 'Bonus'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-xs text-slate-600">{entry.date}</span>
+                    <span className="text-sm text-slate-600">{entry.date}</span>
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
@@ -201,7 +201,7 @@ export default function MobileEarnings() {
                   <p className="text-sm font-semibold text-white truncate">{entry.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-xs text-slate-600">{entry.date}</span>
+                    <span className="text-sm text-slate-600">{entry.date}</span>
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">

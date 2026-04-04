@@ -133,7 +133,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                     <p className="text-sm font-medium text-white truncate">
                       {entry.customerName || entry.notes || '\u2014'}
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm text-slate-500 mt-0.5">
                       {entry.paymentStage} &middot; {formatDate(entry.date)}
                     </p>
                   </div>

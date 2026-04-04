@@ -49,7 +49,7 @@ function genId(prefix: string): string {
 
 function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
   return errors[field] ? (
-    <p className="text-red-400 text-xs mt-1" role="alert">{errors[field]}</p>
+    <p className="text-red-400 text-sm mt-1" role="alert">{errors[field]}</p>
   ) : null;
 }
 
@@ -74,7 +74,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           />
         ))}
       </div>
-      <span className="text-xs text-slate-400 font-medium">
+      <span className="text-sm text-slate-400 font-medium">
         Step {currentStep + 1} of {DEAL_STEPS.length} — {DEAL_STEPS[currentStep]}
       </span>
     </div>
@@ -115,34 +115,34 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
       </div>
 
       <MobileCard>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
+        <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-slate-500 text-xs">Installer</span>
+            <span className="text-slate-500 text-sm">Installer</span>
             <span className="text-white font-medium">{deal.installer}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500 text-xs">Financer</span>
+            <span className="text-slate-500 text-sm">Financer</span>
             <span className="text-white font-medium">{deal.financer || '---'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500 text-xs">Product Type</span>
+            <span className="text-slate-500 text-sm">Product Type</span>
             <span className="text-white font-medium">{deal.productType}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500 text-xs">System</span>
+            <span className="text-slate-500 text-sm">System</span>
             <span className="text-white font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</span>
           </div>
         </div>
       </MobileCard>
 
       <MobileCard>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Commission</p>
+        <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Commission</p>
         {deal.closerTotal > 0 ? (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-300 text-sm font-medium">{deal.repName} (Closer)</p>
-              <p className="text-slate-500 text-xs">
+              <p className="text-slate-500 text-sm">
                 M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}
                 {deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}
               </p>
@@ -514,7 +514,7 @@ export default function MobileNewDeal() {
   const selectCls = (field: string) =>
     `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-sm text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors`;
 
-  const labelCls = 'text-xs text-slate-500 mb-1 block';
+  const labelCls = 'text-sm text-slate-500 mb-1 block';
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -598,7 +598,7 @@ export default function MobileNewDeal() {
                   excludeRepId={closerId || undefined}
                 />
                 {setterAssignment && trainerRep && (
-                  <p className="text-xs text-amber-400 mt-1">
+                  <p className="text-sm text-amber-400 mt-1">
                     Trainer: {trainerRep.name} -- ${trainerOverrideRate.toFixed(2)}/W
                   </p>
                 )}
@@ -712,7 +712,7 @@ export default function MobileNewDeal() {
                       })}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && (
-                      <p className="text-xs text-slate-500 mt-1">Only Prepaid family is compatible with {form.productType} deals</p>
+                      <p className="text-sm text-slate-500 mt-1">Only Prepaid family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="solarTechFamily" />
                   </div>
@@ -812,7 +812,7 @@ export default function MobileNewDeal() {
                       })()}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && pcConfig.prepaidFamily && (
-                      <p className="text-xs text-slate-500 mt-1">Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
+                      <p className="text-sm text-slate-500 mt-1">Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="pcFamily" />
                   </div>
@@ -955,7 +955,7 @@ export default function MobileNewDeal() {
               />
               <FieldError errors={errors} field="netPPW" />
               {!errors.netPPW && soldPPW > 0 && closerPerW > 0 && (
-                <p className={`text-xs mt-1 ${soldPPW >= closerPerW ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <p className={`text-sm mt-1 ${soldPPW >= closerPerW ? 'text-emerald-400' : 'text-amber-400'}`}>
                   {soldPPW >= closerPerW
                     ? `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W above baseline`
                     : `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W below baseline -- no commission`}
@@ -971,11 +971,11 @@ export default function MobileNewDeal() {
             {/* Commission preview card */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Preview</p>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Preview</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-sm">
                     {subDealerRate > 0 && (
-                      <div className="flex justify-between text-xs text-slate-500">
+                      <div className="flex justify-between text-sm text-slate-500">
                         <span>Sub-dealer rate</span>
                         <span>${subDealerRate.toFixed(2)}/W</span>
                       </div>
@@ -987,12 +987,12 @@ export default function MobileNewDeal() {
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between text-xs text-slate-500">
+                    <div className="flex justify-between text-sm text-slate-500">
                       <span>Your redline</span>
                       <span>${closerPerW.toFixed(2)}/W</span>
                     </div>
                     {currentRole === 'admin' && (
-                      <div className="flex justify-between text-xs text-slate-500">
+                      <div className="flex justify-between text-sm text-slate-500">
                         <span>Kilo baseline</span>
                         <span>${kiloPerW.toFixed(2)}/W</span>
                       </div>
@@ -1001,7 +1001,7 @@ export default function MobileNewDeal() {
                       <span className="text-slate-400">Closer</span>
                       <span className="text-emerald-400 font-black">${closerTotal.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-xs text-slate-500">
+                    <div className="flex justify-between text-sm text-slate-500">
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
                     </div>
                     {form.setterId && setterTotal > 0 && (
@@ -1011,7 +1011,7 @@ export default function MobileNewDeal() {
                       </div>
                     )}
                     {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between text-xs text-slate-500">
+                      <div className="flex justify-between text-sm text-slate-500">
                         <span>Trainer ({trainerRep.name})</span>
                         <span className="text-amber-400">${trainerTotal.toLocaleString()}</span>
                       </div>
@@ -1055,42 +1055,42 @@ export default function MobileNewDeal() {
           <div className="space-y-4">
             {/* Summary card */}
             <MobileCard>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
+              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs">Customer</span>
+                  <span className="text-slate-500 text-sm">Customer</span>
                   <span className="text-white font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs">Sold Date</span>
+                  <span className="text-slate-500 text-sm">Sold Date</span>
                   <span className="text-white font-medium">{form.soldDate || '---'}</span>
                 </div>
                 {currentRole === 'admin' && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500 text-xs">Closer</span>
+                    <span className="text-slate-500 text-sm">Closer</span>
                     <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
                   </div>
                 )}
                 {form.setterId && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500 text-xs">Setter</span>
+                    <span className="text-slate-500 text-sm">Setter</span>
                     <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs">Installer</span>
+                  <span className="text-slate-500 text-sm">Installer</span>
                   <span className="text-white font-medium">{form.installer || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs">Financer</span>
+                  <span className="text-slate-500 text-sm">Financer</span>
                   <span className="text-white font-medium">{form.financer || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs">Product Type</span>
+                  <span className="text-slate-500 text-sm">Product Type</span>
                   <span className="text-white font-medium">{form.productType || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs">System</span>
+                  <span className="text-slate-500 text-sm">System</span>
                   <span className="text-white font-medium">
                     {kW > 0 ? `${kW.toFixed(1)} kW` : '---'}
                     {kW > 0 && soldPPW > 0 && ` @ $${soldPPW.toFixed(2)}/W`}
@@ -1098,7 +1098,7 @@ export default function MobileNewDeal() {
                 </div>
                 {form.prepaidSubType && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500 text-xs">Prepaid Type</span>
+                    <span className="text-slate-500 text-sm">Prepaid Type</span>
                     <span className="text-white font-medium">{form.prepaidSubType}</span>
                   </div>
                 )}
@@ -1108,7 +1108,7 @@ export default function MobileNewDeal() {
             {/* Commission breakdown */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Breakdown</p>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Breakdown</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
@@ -1122,7 +1122,7 @@ export default function MobileNewDeal() {
                       <span className="text-slate-400">Closer total</span>
                       <span className="text-emerald-400 font-black text-lg">${closerTotal.toLocaleString()}</span>
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-sm text-slate-500">
                       M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}
                     </div>
                     {form.setterId && setterTotal > 0 && (
@@ -1131,13 +1131,13 @@ export default function MobileNewDeal() {
                           <span className="text-slate-400">Setter total</span>
                           <span className="text-blue-400 font-semibold">${setterTotal.toLocaleString()}</span>
                         </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-sm text-slate-500">
                           M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3 ? ` · M3: $${setterM3.toLocaleString()}` : ''}
                         </div>
                       </>
                     )}
                     {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5 text-xs">
+                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5 text-sm">
                         <span className="text-slate-400">Trainer ({trainerRep.name})</span>
                         <span className="text-amber-400">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
                       </div>
@@ -1166,8 +1166,8 @@ export default function MobileNewDeal() {
                 className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`}
               />
               <div className="flex items-center justify-between mt-1">
-                <p className="text-xs text-slate-600 italic">Internal notes only</p>
-                <p className={`text-xs ${form.notes.length >= 500 ? 'text-red-400' : form.notes.length >= 400 ? 'text-amber-400' : 'text-slate-500'}`}>
+                <p className="text-sm text-slate-600 italic">Internal notes only</p>
+                <p className={`text-sm ${form.notes.length >= 500 ? 'text-red-400' : form.notes.length >= 400 ? 'text-amber-400' : 'text-slate-500'}`}>
                   {form.notes.length}/500
                 </p>
               </div>

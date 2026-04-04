@@ -106,7 +106,7 @@ export default function MobileBlitz() {
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle className="w-10 h-10 text-slate-600" />
           <p className="text-sm font-medium text-slate-400">Access Denied</p>
-          <p className="text-xs text-slate-600 text-center max-w-[240px]">
+          <p className="text-sm text-slate-600 text-center max-w-[240px]">
             You don&apos;t have permission to access Blitz. Contact an admin to request access.
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function MobileBlitz() {
   ) : canRequest ? (
     <button
       onClick={() => router.push('/dashboard/blitz?request=true')}
-      className="flex items-center justify-center min-h-[48px] px-4 rounded-2xl bg-slate-800/40 text-slate-300 text-xs font-semibold active:bg-slate-700 transition-colors"
+      className="flex items-center justify-center min-h-[48px] px-4 rounded-2xl bg-slate-800/40 text-slate-300 text-sm font-semibold active:bg-slate-700 transition-colors"
     >
       <Plus className="w-4 h-4 mr-1" /> Request
     </button>

@@ -165,7 +165,7 @@ function InstallersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 mb-2">Manage installer companies. Full editing available on desktop.</p>
+      <p className="text-sm text-slate-500 mb-2">Manage installer companies. Full editing available on desktop.</p>
       {installers.length === 0 ? (
         <MobileEmptyState icon={Building2} title="No installers" />
       ) : (
@@ -177,10 +177,10 @@ function InstallersSection() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate">{inst.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Install Pay: {Math.round(installPct * 100)}%</p>
+                  <p className="text-sm text-slate-500 mt-0.5">Install Pay: {Math.round(installPct * 100)}%</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-lg ${inst.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>
+                  <span className={`text-sm font-medium px-2 py-0.5 rounded-lg ${inst.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>
                     {inst.active ? 'Active' : 'Inactive'}
                   </span>
                   <Toggle
@@ -205,7 +205,7 @@ function FinancersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 mb-2">Manage financing companies.</p>
+      <p className="text-sm text-slate-500 mb-2">Manage financing companies.</p>
       {financers.length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
@@ -216,7 +216,7 @@ function FinancersSection() {
                 <p className="text-base font-semibold text-white truncate">{fin.name}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-lg ${fin.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>
+                <span className={`text-sm font-medium px-2 py-0.5 rounded-lg ${fin.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>
                   {fin.active ? 'Active' : 'Inactive'}
                 </span>
                 <Toggle
@@ -290,7 +290,7 @@ function AdminUsersSection() {
     <div className="space-y-4">
       {/* Add form */}
       <MobileCard>
-        <p className="text-xs text-slate-500 mb-3">Add a new admin user</p>
+        <p className="text-sm text-slate-500 mb-3">Add a new admin user</p>
         <div className="space-y-2">
           <input
             value={newName}
@@ -326,7 +326,7 @@ function AdminUsersSection() {
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate">{admin.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">{admin.email}</p>
+                  <p className="text-sm text-slate-500 mt-0.5 truncate">{admin.email}</p>
                 </div>
                 <button
                   onClick={() => handleDelete(admin.id)}
@@ -383,7 +383,7 @@ function ProjectManagersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 mb-2">Project managers can view projects and reps but not payroll or settings.</p>
+      <p className="text-sm text-slate-500 mb-2">Project managers can view projects and reps but not payroll or settings.</p>
       {pms.length === 0 ? (
         <MobileEmptyState icon={Users} title="No project managers" />
       ) : (
@@ -392,7 +392,7 @@ function ProjectManagersSection() {
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
                 <p className="text-base font-semibold text-white truncate">{pm.firstName} {pm.lastName}</p>
-                <p className="text-xs text-slate-500 mt-0.5 truncate">{pm.email}</p>
+                <p className="text-sm text-slate-500 mt-0.5 truncate">{pm.email}</p>
               </div>
               <button
                 onClick={() => handleDelete(pm.id)}
@@ -410,7 +410,7 @@ function ProjectManagersSection() {
                 <button
                   key={field}
                   onClick={() => togglePerm(pm.id, field, pm[field])}
-                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors min-h-[36px] ${
+                  className={`flex items-center gap-1.5 text-sm px-2.5 py-1.5 rounded-lg border transition-colors min-h-[36px] ${
                     pm[field]
                       ? 'bg-emerald-900/30 text-emerald-300 border-emerald-500/30'
                       : 'bg-slate-800/50 text-slate-500 border-slate-700/50'
@@ -455,7 +455,7 @@ function BlitzPermissionsSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 mb-2">Control which reps can request or create blitzes.</p>
+      <p className="text-sm text-slate-500 mb-2">Control which reps can request or create blitzes.</p>
       {reps.length === 0 ? (
         <MobileEmptyState icon={Tent} title="No reps" />
       ) : (
@@ -464,14 +464,14 @@ function BlitzPermissionsSection() {
           return (
             <MobileCard key={rep.id}>
               <p className="text-base font-semibold text-white mb-0.5">{rep.name}</p>
-              <p className="text-xs text-slate-500 mb-3">{rep.repType || 'Rep'}</p>
+              <p className="text-sm text-slate-500 mb-3">{rep.repType || 'Rep'}</p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canRequestBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canRequestBlitz', v)}
                   />
-                  <span className="text-xs text-slate-400">Request</span>
+                  <span className="text-sm text-slate-400">Request</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Toggle
@@ -479,7 +479,7 @@ function BlitzPermissionsSection() {
                     onChange={(v) => togglePermission(rep.id, 'canCreateBlitz', v)}
                     color="bg-emerald-600"
                   />
-                  <span className="text-xs text-slate-400">Create</span>
+                  <span className="text-sm text-slate-400">Create</span>
                 </div>
               </div>
             </MobileCard>
@@ -497,7 +497,7 @@ function SubDealersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 mb-2">Sub-dealer accounts. Full editing available on desktop.</p>
+      <p className="text-sm text-slate-500 mb-2">Sub-dealer accounts. Full editing available on desktop.</p>
       {!subDealers || subDealers.length === 0 ? (
         <MobileEmptyState icon={Handshake} title="No sub-dealers" subtitle="Add sub-dealers from the desktop view." />
       ) : (
@@ -510,7 +510,7 @@ function SubDealersSection() {
                   <p className="text-base font-semibold text-white truncate">
                     {sd.firstName ?? ''} {sd.lastName ?? ''}
                   </p>
-                  {sd.email && <p className="text-xs text-slate-500 mt-0.5 truncate">{sd.email}</p>}
+                  {sd.email && <p className="text-sm text-slate-500 mt-0.5 truncate">{sd.email}</p>}
                 </div>
               </div>
             </div>
@@ -545,7 +545,7 @@ function ExportSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 mb-2">Download data as CSV files.</p>
+      <p className="text-sm text-slate-500 mb-2">Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button
           key={type}
@@ -566,7 +566,7 @@ function ReadOnlyListSection({ title, description }: { title: string; descriptio
   return (
     <MobileCard>
       <p className="text-sm text-slate-400 mb-2">{description}</p>
-      <p className="text-xs text-slate-600">Open the desktop version for full access to {title.toLowerCase()}.</p>
+      <p className="text-sm text-slate-600">Open the desktop version for full access to {title.toLowerCase()}.</p>
     </MobileCard>
   );
 }

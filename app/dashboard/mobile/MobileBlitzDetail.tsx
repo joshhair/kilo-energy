@@ -215,7 +215,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
           {blitz.notes && (
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Notes</p>
+              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Notes</p>
               <p className="text-sm text-slate-300">{blitz.notes}</p>
             </div>
           )}
@@ -334,12 +334,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-400 capitalize">{c.category}</span>
+                      <span className="text-sm font-semibold text-slate-400 capitalize">{c.category}</span>
                       {c.description && (
-                        <span className="text-xs text-slate-600 truncate">&middot; {c.description}</span>
+                        <span className="text-sm text-slate-600 truncate">&middot; {c.description}</span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(c.date)}</p>
+                    <p className="text-sm text-slate-500 mt-0.5">{formatDate(c.date)}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ml-3">
                     <span className="text-sm font-semibold text-white tabular-nums">{formatCurrency(c.amount)}</span>
@@ -363,7 +363,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <MobileBottomSheet open={showAddCost} onClose={() => setShowAddCost(false)} title="Add Cost">
             <div className="px-5 space-y-4">
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Category</label>
+                <label className="block text-sm text-slate-500 mb-1">Category</label>
                 <select
                   value={costCategory}
                   onChange={(e) => setCostCategory(e.target.value)}
@@ -375,7 +375,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Amount</label>
+                <label className="block text-sm text-slate-500 mb-1">Amount</label>
                 <input
                   type="number"
                   value={costAmount}
@@ -385,7 +385,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Description</label>
+                <label className="block text-sm text-slate-500 mb-1">Description</label>
                 <input
                   value={costDesc}
                   onChange={(e) => setCostDesc(e.target.value)}
@@ -394,7 +394,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Date</label>
+                <label className="block text-sm text-slate-500 mb-1">Date</label>
                 <input
                   type="date"
                   value={costDate}

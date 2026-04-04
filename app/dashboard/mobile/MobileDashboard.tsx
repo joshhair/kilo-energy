@@ -85,21 +85,21 @@ export default function MobileDashboard() {
         <div className="grid grid-cols-2 gap-y-4 gap-x-8">
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
-            <p className="text-xs text-slate-500">Active Projects</p>
+            <p className="text-sm text-slate-500">Active Projects</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{myProjects.length}</p>
-            <p className="text-xs text-slate-500">Total Projects</p>
+            <p className="text-sm text-slate-500">Total Projects</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
-            <p className="text-xs text-slate-500">Total kW</p>
+            <p className="text-sm text-slate-500">Total kW</p>
           </div>
           <div>
             <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
               {flaggedProjects.length}
             </p>
-            <p className="text-xs text-slate-500">Flagged</p>
+            <p className="text-sm text-slate-500">Flagged</p>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export default function MobileDashboard() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-xs text-slate-500 w-6 text-right">{count}</span>
+                  <span className="text-sm text-slate-500 w-6 text-right">{count}</span>
                 </div>
               );
             })}
@@ -146,7 +146,7 @@ export default function MobileDashboard() {
                     <p className="text-base font-semibold text-white truncate">{p.customerName}</p>
                     <MobileBadge value={p.phase} />
                   </div>
-                  <span className="text-xs text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
+                  <span className="text-sm text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
                 </button>
               ))}
             </div>
@@ -174,7 +174,7 @@ export default function MobileDashboard() {
                       <span className="text-sm text-white">{p.customerName}</span>
                       <span className="text-sm text-slate-500"> → {p.phase}</span>
                     </div>
-                    <span className="text-xs text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                    <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
                   </button>
                 ))}
             </div>
@@ -270,28 +270,28 @@ export default function MobileDashboard() {
               style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%` }}
             />
           </div>
-          <p className="text-xs text-slate-500 mt-1">{daysUntilPayday} days</p>
+          <p className="text-sm text-slate-500 mt-1">{daysUntilPayday} days</p>
         </div>
 
         {/* Inline stats */}
         <div className="grid grid-cols-2 gap-y-4 gap-x-8 mt-6">
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{fmt$(totalPaid)}</p>
-            <p className="text-xs text-slate-500">Paid</p>
+            <p className="text-sm text-slate-500">Paid</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
-            <p className="text-xs text-slate-500">kW Sold</p>
+            <p className="text-sm text-slate-500">kW Sold</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
-            <p className="text-xs text-slate-500">Active Deals</p>
+            <p className="text-sm text-slate-500">Active Deals</p>
           </div>
           <div>
             <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
               {flaggedProjects.length}
             </p>
-            <p className="text-xs text-slate-500">Flagged</p>
+            <p className="text-sm text-slate-500">Flagged</p>
           </div>
         </div>
 
@@ -313,7 +313,7 @@ export default function MobileDashboard() {
                     <span className="text-sm text-white">{p.customerName}</span>
                     <span className="text-sm text-slate-500"> → {p.phase}</span>
                   </div>
-                  <span className="text-xs text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                  <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
                 </button>
               ))}
             </div>
@@ -339,28 +339,28 @@ export default function MobileDashboard() {
             style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%` }}
           />
         </div>
-        <p className="text-xs text-slate-500 mt-1">{daysUntilPayday} days</p>
+        <p className="text-sm text-slate-500 mt-1">{daysUntilPayday} days</p>
       </div>
 
       {/* Inline stats — no cards */}
       <div className="grid grid-cols-2 gap-y-4 gap-x-8 mt-6">
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{fmt$(totalPaid)}</p>
-          <p className="text-xs text-slate-500">Paid</p>
+          <p className="text-sm text-slate-500">Paid</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{totalKW.toFixed(1)}</p>
-          <p className="text-xs text-slate-500">kW Sold</p>
+          <p className="text-sm text-slate-500">kW Sold</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white tabular-nums">{activeProjects.length}</p>
-          <p className="text-xs text-slate-500">Active Deals</p>
+          <p className="text-sm text-slate-500">Active Deals</p>
         </div>
         <div>
           <p className={`text-2xl font-bold tabular-nums ${flaggedProjects.length > 0 ? 'text-red-400' : 'text-white'}`}>
             {flaggedProjects.length}
           </p>
-          <p className="text-xs text-slate-500">Flagged</p>
+          <p className="text-sm text-slate-500">Flagged</p>
         </div>
       </div>
 
@@ -382,7 +382,7 @@ export default function MobileDashboard() {
                   <p className="text-base font-semibold text-white truncate">{p.customerName}</p>
                   <MobileBadge value={p.phase} />
                 </div>
-                <span className="text-xs text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
+                <span className="text-sm text-slate-500 shrink-0 ml-2">Stalled {stalledDays(p.soldDate)}d</span>
               </button>
             ))}
           </div>
@@ -407,7 +407,7 @@ export default function MobileDashboard() {
                   <span className="text-sm text-white">{p.customerName}</span>
                   <span className="text-sm text-slate-500"> → {p.phase}</span>
                 </div>
-                <span className="text-xs text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
+                <span className="text-sm text-slate-500 shrink-0 ml-2">{relativeTime(p.soldDate)}</span>
               </button>
             ))}
           </div>

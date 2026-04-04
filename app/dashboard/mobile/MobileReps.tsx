@@ -131,20 +131,20 @@ export default function MobileReps() {
             return (
               <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/reps/${rep.id}`)}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
                     {getInitials(rep.name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-semibold text-white truncate">{rep.name}</p>
                     {rep.email && (
-                      <p className="text-xs text-slate-500 truncate">{rep.email}</p>
+                      <p className="text-sm text-slate-500 truncate">{rep.email}</p>
                     )}
                   </div>
                   <MobileBadge value={ROLE_LABELS[rep.repType] ?? rep.repType} />
                 </div>
 
                 {isAdmin && (
-                  <div className="flex gap-4 mt-3 text-xs text-slate-500">
+                  <div className="flex gap-4 mt-3 text-sm text-slate-500">
                     <span>{deals} deals</span>
                     <span>&middot;</span>
                     <span>{kw.toFixed(1)} kW</span>
@@ -196,7 +196,7 @@ export default function MobileReps() {
           className="px-5 space-y-4 pb-2"
         >
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">First Name</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">First Name</label>
             <input
               type="text"
               required
@@ -207,7 +207,7 @@ export default function MobileReps() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Last Name</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Last Name</label>
             <input
               type="text"
               required
@@ -218,7 +218,7 @@ export default function MobileReps() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Email</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Email</label>
             <input
               type="email"
               value={addForm.email}
@@ -228,7 +228,7 @@ export default function MobileReps() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep Type</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep Type</label>
             <div className="flex gap-2">
               {(['closer', 'setter', 'both'] as const).map((type) => (
                 <button

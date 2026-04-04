@@ -125,7 +125,7 @@ export default function MobileTraining() {
                 >
                   <div className="min-w-0 flex-1 text-left">
                     <p className="text-sm font-semibold text-white truncate">{td.traineeName}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm text-slate-500 mt-0.5">
                       {td.dealCount} deals &middot; ${td.currentRate.toFixed(2)}/W
                     </p>
                   </div>
@@ -138,7 +138,7 @@ export default function MobileTraining() {
                 {/* Expandable rate tiers */}
                 {isOpen && (
                   <div className="px-4 pb-3">
-                    <table className="w-full text-xs">
+                    <table className="w-full text-sm">
                       <thead>
                         <tr className="text-slate-500 uppercase tracking-wider">
                           <th className="text-left py-1 font-semibold">Deals Up To</th>
@@ -177,7 +177,7 @@ export default function MobileTraining() {
                   <p className="text-sm font-semibold text-white truncate">
                     {entry.customerName || entry.notes || 'Override'}
                   </p>
-                  <p className="text-xs text-slate-500 mt-0.5">{entry.date}</p>
+                  <p className="text-sm text-slate-500 mt-0.5">{entry.date}</p>
                 </div>
                 <span className="text-sm font-semibold text-white tabular-nums whitespace-nowrap">
                   {fmt$(entry.amount)}

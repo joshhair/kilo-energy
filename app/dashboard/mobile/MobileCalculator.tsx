@@ -110,7 +110,7 @@ export default function MobileCalculator() {
   // ── Select styles ────────────────────────────────────────────────────────
   const selectCls = 'w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none appearance-none';
   const inputCls = 'w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none placeholder-slate-500';
-  const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5';
+  const labelCls = 'block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1.5';
 
   if (!isHydrated) {
     return (
@@ -248,7 +248,7 @@ export default function MobileCalculator() {
       {/* ── Result card ─────────────────────────────────────────────────── */}
       {hasInput && soldPPW > 0 && (
         <MobileCard>
-          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Commission</p>
+          <p className="text-sm text-slate-500 uppercase tracking-wider mb-1">Commission</p>
           <p className="text-4xl font-black text-emerald-400 tabular-nums">
             ${closerTotal.toLocaleString()}
           </p>
@@ -274,7 +274,7 @@ export default function MobileCalculator() {
 
           {/* Baseline info */}
           <div className="mt-4 pt-3 border-t border-slate-800/40">
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               Baseline: ${closerPerW.toFixed(2)}/W &middot; Sold: ${soldPPW.toFixed(2)}/W &middot; {kW.toFixed(1)} kW
             </p>
           </div>

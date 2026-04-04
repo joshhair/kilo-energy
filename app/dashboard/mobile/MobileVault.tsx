@@ -172,7 +172,7 @@ export default function MobileVault() {
       {/* ── Hero (no card wrapper) ── */}
       <div>
         <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmt$(nextPayoutTotal)}</p>
-        <p className="text-xs text-slate-500 mt-1">Next payout</p>
+        <p className="text-sm text-slate-500 mt-1">Next payout</p>
         <p className="text-sm text-slate-400 mt-0.5">
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
         </p>
@@ -182,19 +182,19 @@ export default function MobileVault() {
       <div className="grid grid-cols-2 gap-y-3 gap-x-6">
         <div>
           <p className="text-sm font-semibold text-emerald-400 tabular-nums">{fmt$(lifetimeEarned)}</p>
-          <p className="text-xs text-slate-500">Lifetime</p>
+          <p className="text-sm text-slate-500">Lifetime</p>
         </div>
         <div>
           <p className="text-sm font-semibold text-blue-400 tabular-nums">{fmt$(pipelineTotal)}</p>
-          <p className="text-xs text-slate-500">Pipeline</p>
+          <p className="text-sm text-slate-500">Pipeline</p>
         </div>
         <div>
           <p className="text-sm font-semibold text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
-          <p className="text-xs text-slate-500">Pending</p>
+          <p className="text-sm text-slate-500">Pending</p>
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-400 tabular-nums">{fmt$(draftTotal)}</p>
-          <p className="text-xs text-slate-500">Draft</p>
+          <p className="text-sm text-slate-500">Draft</p>
         </div>
       </div>
 
@@ -237,7 +237,7 @@ export default function MobileVault() {
                         <p className="text-sm font-semibold text-white">
                           {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-sm text-slate-500">
                           {entry.paymentStage} &middot; {entry.date}
                         </p>
                       </div>

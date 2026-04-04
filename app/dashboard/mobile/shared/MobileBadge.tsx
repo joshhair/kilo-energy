@@ -27,7 +27,7 @@ export default function MobileBadge({ value, variant = 'phase' }: { value: strin
   const colors = variant === 'phase' ? PHASE_COLORS : STATUS_COLORS;
   const cls = colors[value] ?? 'bg-slate-800/40 text-slate-400';
   return (
-    <span className={`inline-flex items-center min-h-[26px] px-2.5 py-0.5 text-xs font-semibold rounded-lg ${cls}`}>
+    <span className={`inline-flex items-center min-h-[28px] px-3 py-1 text-sm font-semibold rounded-lg ${cls}`}>
       {value}
     </span>
   );

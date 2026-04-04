@@ -206,7 +206,7 @@ export default function MobilePayroll() {
       {/* ── Hero ── */}
       <div>
         <p className="text-4xl font-black text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
-        <p className="text-xs text-slate-500 mt-1">pending approval</p>
+        <p className="text-sm text-slate-500 mt-1">pending approval</p>
       </div>
 
       {/* ── Status tabs ── */}
@@ -252,7 +252,7 @@ export default function MobilePayroll() {
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-sm font-bold tabular-nums text-white">{fmt$(entry.amount)}</span>
-                      <span className="text-xs text-slate-500">{entry.paymentStage}</span>
+                      <span className="text-sm text-slate-500">{entry.paymentStage}</span>
                     </div>
                   </button>
                 ))}
@@ -344,7 +344,7 @@ export default function MobilePayroll() {
       >
         <form onSubmit={handleAddPayment} className="px-5 space-y-4 pb-2">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep</label>
             <select
               value={paymentForm.repId}
               onChange={(e) => setPaymentForm((f) => ({ ...f, repId: e.target.value }))}
@@ -357,7 +357,7 @@ export default function MobilePayroll() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Type</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Type</label>
             <div className="flex gap-2">
               {(['Deal', 'Bonus'] as const).map((t) => (
                 <button
@@ -373,7 +373,7 @@ export default function MobilePayroll() {
           </div>
           {paymentForm.type === 'Deal' && (
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Stage</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Stage</label>
               <div className="flex gap-2">
                 {['M1', 'M2', 'M3', 'Trainer'].map((s) => (
                   <button
@@ -389,7 +389,7 @@ export default function MobilePayroll() {
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Amount</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Amount</label>
             <input
               type="number"
               step="0.01"
@@ -401,7 +401,7 @@ export default function MobilePayroll() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
             <input
               type="date"
               value={paymentForm.date}
@@ -410,7 +410,7 @@ export default function MobilePayroll() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Notes</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Notes</label>
             <input
               type="text"
               value={paymentForm.notes}
