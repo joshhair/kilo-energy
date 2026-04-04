@@ -137,9 +137,9 @@ export default function MobileAdminDashboard() {
 
       {/* 2x2 stat grid */}
       <div className="grid grid-cols-2 gap-4">
-        <MobileStatCard label="Total Paid" value={fmt$(Math.round(totalPaid))} color="text-emerald-400" />
-        <MobileStatCard label="Revenue" value={fmt$(Math.round(totalRevenue))} color="text-blue-400" />
-        <MobileStatCard label="Profit" value={fmt$(Math.round(totalProfit))} color="text-amber-400" />
+        <MobileStatCard label="Total Paid" value={fmt$(Math.round(totalPaid))} color="text-emerald-400" accent="emerald" />
+        <MobileStatCard label="Revenue" value={fmt$(Math.round(totalRevenue))} color="text-blue-400" accent="blue" />
+        <MobileStatCard label="Profit" value={fmt$(Math.round(totalProfit))} color="text-amber-400" accent="amber" />
         <MobileStatCard label="Active Projects" value={activeCount} color="text-white" />
       </div>
 

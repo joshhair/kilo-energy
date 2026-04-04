@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
+import { useToast } from '../../../lib/toast';
 import { Search, Plus, Users } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileEmptyState from './shared/MobileEmptyState';
+import MobileBottomSheet from './shared/MobileBottomSheet';
 
 const ROLE_LABELS = { closer: 'Closer', setter: 'Setter', both: 'Both' } as const;
 const ROLE_BADGE_CLS = {
@@ -27,7 +29,8 @@ const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 
 
 export default function MobileReps() {
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, addRep } = useApp();
+  const { toast } = useToast();
 
   const isAdmin = currentRole === 'admin';
   const isPM = effectiveRole === 'project_manager';
@@ -35,6 +38,8 @@ export default function MobileReps() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
+  const [showAddRep, setShowAddRep] = useState(false);
+  const [addForm, setAddForm] = useState({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer' as 'closer' | 'setter' | 'both' });
 
   // Debounce search
   useEffect(() => {
@@ -102,7 +107,7 @@ export default function MobileReps() {
         right={
           isAdmin ? (
             <button
-              onClick={() => router.push('/dashboard/reps?add=true')}
+              onClick={() => setShowAddRep(true)}
               className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 text-white active:bg-blue-700 transition-colors"
               aria-label="Add rep"
             >
@@ -124,6 +129,8 @@ export default function MobileReps() {
         />
       </div>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
+
       {/* Filter pills */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {FILTER_TABS.map((t) => (
@@ -142,7 +149,9 @@ export default function MobileReps() {
       </div>
 
       {/* Rep count */}
-      <p className="text-xs text-slate-500">{filtered.length} rep{filtered.length !== 1 ? 's' : ''}</p>
+      <p className="text-xs text-slate-500 tracking-wide">{filtered.length} rep{filtered.length !== 1 ? 's' : ''}</p>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
 
       {/* Rep cards */}
       {filtered.length === 0 ? (
@@ -180,16 +189,16 @@ export default function MobileReps() {
                 {(isAdmin || isPM) && (
                   <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-800/40">
                     <div>
-                      <p className="text-[11px] text-slate-500">Deals</p>
+                      <p className="text-[11px] text-slate-500 tracking-wide">Deals</p>
                       <p className="text-sm font-semibold text-white tabular-nums">{deals}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-slate-500">kW</p>
+                      <p className="text-[11px] text-slate-500 tracking-wide">kW</p>
                       <p className="text-sm font-semibold text-white tabular-nums">{kw.toFixed(1)}</p>
                     </div>
                     {isAdmin && (
                       <div>
-                        <p className="text-[11px] text-slate-500">Paid</p>
+                        <p className="text-[11px] text-slate-500 tracking-wide">Paid</p>
                         <p className="text-sm font-semibold text-white tabular-nums">${paid.toLocaleString()}</p>
                       </div>
                     )}
@@ -200,6 +209,103 @@ export default function MobileReps() {
           })}
         </div>
       )}
+
+      {/* Add Rep Bottom Sheet */}
+      <MobileBottomSheet
+        open={showAddRep}
+        onClose={() => setShowAddRep(false)}
+        title="Add Rep"
+      >
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!addForm.firstName.trim() || !addForm.lastName.trim()) {
+              toast('First and last name are required', 'error');
+              return;
+            }
+            try {
+              const res = await fetch('/api/reps', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  firstName: addForm.firstName.trim(),
+                  lastName: addForm.lastName.trim(),
+                  email: addForm.email.trim(),
+                  phone: addForm.phone.trim(),
+                  repType: addForm.repType,
+                }),
+              });
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const data = await res.json();
+              addRep(addForm.firstName.trim(), addForm.lastName.trim(), addForm.email.trim(), addForm.phone.trim(), addForm.repType, data.id);
+              setShowAddRep(false);
+              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer' });
+              toast(`${addForm.firstName} ${addForm.lastName} added`, 'success');
+            } catch {
+              toast('Failed to add rep', 'error');
+            }
+          }}
+          className="px-5 space-y-4 pb-2"
+        >
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">First Name</label>
+            <input
+              type="text"
+              required
+              value={addForm.firstName}
+              onChange={(e) => setAddForm((f) => ({ ...f, firstName: e.target.value }))}
+              placeholder="First name"
+              className="w-full min-h-[44px] bg-slate-800 border border-slate-700 text-white text-base rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Last Name</label>
+            <input
+              type="text"
+              required
+              value={addForm.lastName}
+              onChange={(e) => setAddForm((f) => ({ ...f, lastName: e.target.value }))}
+              placeholder="Last name"
+              className="w-full min-h-[44px] bg-slate-800 border border-slate-700 text-white text-base rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Email</label>
+            <input
+              type="email"
+              value={addForm.email}
+              onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
+              placeholder="email@example.com"
+              className="w-full min-h-[44px] bg-slate-800 border border-slate-700 text-white text-base rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep Type</label>
+            <div className="flex gap-2">
+              {(['closer', 'setter', 'both'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
+                  className={`flex-1 min-h-[44px] rounded-xl text-sm font-semibold transition-colors ${
+                    addForm.repType === type
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  }`}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="w-full min-h-[48px] rounded-xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 transition-colors"
+          >
+            Add Rep
+          </button>
+        </form>
+      </MobileBottomSheet>
     </div>
   );
 }

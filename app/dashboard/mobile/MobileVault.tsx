@@ -188,9 +188,9 @@ export default function MobileVault() {
       <MobilePageHeader title="My Pay" />
 
       {/* ── Next Payout Hero ── */}
-      <MobileCard className="mb-4" accent="emerald">
+      <MobileCard className="mb-4 border-emerald-500/20" accent="emerald" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Next Payout</p>
-        <p className="text-2xl font-bold text-emerald-400 tabular-nums">{fmt$(nextPayoutTotal)}</p>
+        <p className="text-2xl font-black text-emerald-400 tabular-nums">{fmt$(nextPayoutTotal)}</p>
         <div className="flex items-center justify-between mt-2">
           <p className="text-sm text-slate-400">{formatFridayLabel(nextFridayStr)}</p>
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
@@ -202,9 +202,9 @@ export default function MobileVault() {
 
       {/* ── 2x2 Stat Grid ── */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <MobileStatCard label="Lifetime" value={fmt$(lifetimeEarned)} color="text-emerald-400" />
-        <MobileStatCard label="Pipeline" value={fmt$(pipelineTotal)} color="text-blue-400" />
-        <MobileStatCard label="Pending" value={fmt$(pendingTotal)} color="text-amber-400" />
+        <MobileStatCard label="Lifetime" value={fmt$(lifetimeEarned)} color="text-emerald-400" accent="emerald" />
+        <MobileStatCard label="Pipeline" value={fmt$(pipelineTotal)} color="text-blue-400" accent="blue" />
+        <MobileStatCard label="Pending" value={fmt$(pendingTotal)} color="text-amber-400" accent="amber" />
         <MobileStatCard label="Draft" value={fmt$(draftTotal)} color="text-slate-400" />
       </div>
 
@@ -244,7 +244,7 @@ export default function MobileVault() {
               <div key={period.friday}>
                 {/* Friday date header */}
                 <div className="sticky top-0 z-10 flex items-center justify-between py-1.5 mb-1">
-                  <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider">
+                  <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide">
                     {formatFridayLabel(period.friday)}
                   </p>
                   <p className="text-xs font-bold text-slate-400 tabular-nums">{fmt$(period.total)}</p>

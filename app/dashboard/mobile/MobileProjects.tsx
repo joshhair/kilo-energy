@@ -94,7 +94,7 @@ export default function MobileProjects() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="w-full min-h-[44px] pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/40 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full min-h-[44px] pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/40 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner shadow-black/10"
         />
       </div>
 
@@ -106,7 +106,7 @@ export default function MobileProjects() {
             onClick={() => setPhaseFilter(phase)}
             className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
               phaseFilter === phase
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                 : 'bg-slate-800/60 text-slate-400 active:bg-slate-700/60'
             }`}
           >

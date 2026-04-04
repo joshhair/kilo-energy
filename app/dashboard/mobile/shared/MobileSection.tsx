@@ -9,17 +9,22 @@ export default function MobileSection({
   collapsible = false,
   defaultOpen = true,
   count,
+  divider = true,
 }: {
   title: string;
   children: React.ReactNode;
   collapsible?: boolean;
   defaultOpen?: boolean;
   count?: number;
+  divider?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
     <div>
+      {divider && (
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent mb-4" />
+      )}
       {collapsible ? (
         <button
           onClick={() => setOpen(!open)}

@@ -228,9 +228,9 @@ export default function MobileDashboard() {
         <MobilePageHeader title="Dashboard" />
 
         {/* Next Payout */}
-        <MobileCard>
+        <MobileCard className="border-emerald-500/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
           <p className="text-sm text-slate-500 mb-1">Next Payout</p>
-          <p className="text-3xl font-bold text-emerald-400 tabular-nums">
+          <p className="text-3xl font-black text-emerald-400 tabular-nums">
             {fmt$(pendingPayrollTotal)}
           </p>
           <p className="text-sm text-slate-500 mt-1">
@@ -240,13 +240,14 @@ export default function MobileDashboard() {
 
         {/* 2x2 stat grid */}
         <div className="grid grid-cols-2 gap-4">
-          <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" />
-          <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" />
-          <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" />
+          <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" accent="emerald" />
+          <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" accent="amber" />
+          <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" accent="blue" />
           <MobileStatCard
             label="Flagged"
             value={flaggedProjects.length}
             color={flaggedProjects.length > 0 ? 'text-red-400' : 'text-slate-500'}
+            accent={flaggedProjects.length > 0 ? 'red' : undefined}
           />
         </div>
 
@@ -279,9 +280,9 @@ export default function MobileDashboard() {
       <MobilePageHeader title="Dashboard" />
 
       {/* Next Payout */}
-      <MobileCard>
+      <MobileCard className="border-emerald-500/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
         <p className="text-sm text-slate-500 mb-1">Next Payout</p>
-        <p className="text-3xl font-bold text-emerald-400 tabular-nums">
+        <p className="text-3xl font-black text-emerald-400 tabular-nums">
           {fmt$(pendingPayrollTotal)}
         </p>
         <p className="text-sm text-slate-500 mt-1">
@@ -291,13 +292,14 @@ export default function MobileDashboard() {
 
       {/* 2x2 stat grid */}
       <div className="grid grid-cols-2 gap-4">
-        <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" />
-        <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" />
-        <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" />
+        <MobileStatCard label="Total Paid" value={fmt$(totalPaid)} color="text-emerald-400" accent="emerald" />
+        <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color="text-blue-400" accent="amber" />
+        <MobileStatCard label="Active Deals" value={activeProjects.length} color="text-white" accent="blue" />
         <MobileStatCard
           label="Flagged"
           value={flaggedProjects.length}
           color={flaggedProjects.length > 0 ? 'text-red-400' : 'text-slate-500'}
+          accent={flaggedProjects.length > 0 ? 'red' : undefined}
         />
       </div>
 
@@ -312,13 +314,14 @@ export default function MobileDashboard() {
             <p className="text-base text-slate-500 p-4">All clear — no flagged projects.</p>
           ) : (
             flaggedProjects.map((p) => (
-              <MobileListItem
-                key={p.id}
-                title={p.customerName}
-                subtitle="Flagged for review"
-                accent="red"
-                onTap={() => router.push(`/dashboard/projects/${p.id}`)}
-              />
+              <div key={p.id} className="active:scale-[0.98] transition-transform">
+                <MobileListItem
+                  title={p.customerName}
+                  subtitle="Flagged for review"
+                  accent="red"
+                  onTap={() => router.push(`/dashboard/projects/${p.id}`)}
+                />
+              </div>
             ))
           )}
         </MobileCard>

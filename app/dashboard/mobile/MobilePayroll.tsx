@@ -224,7 +224,7 @@ export default function MobilePayroll() {
     <div className="px-5 pt-3 pb-24 space-y-8">
       <MobilePageHeader
         title="Payroll"
-        right={
+        right={typeTab === 'Bonus' ? (
           <button
             onClick={() => setShowBonusSheet(true)}
             className="flex items-center gap-1 min-h-[44px] px-3 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium active:bg-blue-700"
@@ -232,7 +232,7 @@ export default function MobilePayroll() {
             <Plus className="w-4 h-4" />
             Bonus
           </button>
-        }
+        ) : null}
       />
 
       {/* Type tab bar */}
@@ -252,6 +252,8 @@ export default function MobilePayroll() {
         ))}
       </div>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
+
       {/* Status filter pills */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 no-scrollbar">
         {STATUS_PILLS.map((pill) => (
@@ -269,31 +271,35 @@ export default function MobilePayroll() {
         ))}
       </div>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
+
       {/* Summary card */}
       <MobileCard>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-400">Draft</span>
-            <span className="text-lg font-bold text-white tabular-nums">
+            <span className="text-sm text-slate-400 tracking-wide">Draft</span>
+            <span className="text-lg font-black text-white tabular-nums">
               {fmt$(Math.round(draftTotal))}{' '}
               <span className="text-slate-500 text-xs">({draftCount})</span>
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-400">Pending</span>
-            <span className="text-lg font-bold text-amber-300 tabular-nums">
+            <span className="text-sm text-slate-400 tracking-wide">Pending</span>
+            <span className="text-lg font-black text-amber-300 tabular-nums">
               {fmt$(Math.round(pendingTotal))}{' '}
               <span className="text-slate-500 text-xs">({pendingCount})</span>
             </span>
           </div>
           <div className="flex items-center justify-between border-t border-slate-800/60 pt-2">
-            <span className="text-sm text-slate-400">Total Paid</span>
-            <span className="text-lg font-bold text-emerald-400 tabular-nums">
+            <span className="text-sm text-slate-400 tracking-wide">Total Paid</span>
+            <span className="text-lg font-black text-emerald-400 tabular-nums">
               {fmt$(Math.round(paidTotal))}
             </span>
           </div>
         </div>
       </MobileCard>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
 
       {/* Rep filter dropdown */}
       <div className="relative">
@@ -353,6 +359,8 @@ export default function MobilePayroll() {
         )}
       </div>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
+
       {/* Entry cards */}
       <div className="space-y-4">
         {filtered.length === 0 ? (
@@ -367,10 +375,10 @@ export default function MobilePayroll() {
               <MobileCard key={entry.id} className={`border-l-[3px] ${borderColor}`}>
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : entry.id)}
-                  className="w-full text-left"
+                  className="w-full text-left active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-base font-medium text-white truncate">
+                    <span className="text-base font-semibold text-white truncate">
                       {entry.repName}
                     </span>
                     <span className="text-base font-bold text-emerald-400 tabular-nums">

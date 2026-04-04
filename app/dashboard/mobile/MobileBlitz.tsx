@@ -166,7 +166,7 @@ export default function MobileBlitz() {
             onClick={() => setStatusFilter(s.value)}
             className={`min-h-[36px] px-4 py-1.5 text-sm font-semibold rounded-full border whitespace-nowrap transition-colors ${
               statusFilter === s.value
-                ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
+                ? 'bg-blue-600/20 text-blue-400 border-blue-500/30 shadow-sm shadow-blue-500/20'
                 : 'bg-slate-800/40 text-slate-400 border-slate-700/30 active:bg-slate-700/50'
             }`}
           >
@@ -210,7 +210,7 @@ export default function MobileBlitz() {
               {filteredBlitzes.map((blitz) => {
                 const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
                 return (
-                  <MobileCard key={blitz.id} onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
+                  <MobileCard key={blitz.id} onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)} accent={blitz.status === 'upcoming' ? 'blue' : undefined}>
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="font-semibold text-white text-base truncate flex-1">{blitz.name}</p>
                       <span className={`inline-flex items-center gap-1.5 min-h-[28px] px-3 py-1 text-[11px] font-semibold rounded-full border shrink-0 ${STATUS_BADGE_CLS[blitz.status]}`}>
@@ -249,7 +249,7 @@ export default function MobileBlitz() {
           ) : (
             <div className="space-y-4">
               {pendingRequests.map((req) => (
-                <MobileCard key={req.id} onTap={() => router.push(`/dashboard/blitz?tab=requests`)}>
+                <MobileCard key={req.id} onTap={() => router.push(`/dashboard/blitz?tab=requests`)} accent="amber">
                   <p className="font-semibold text-white text-base">{req.name}</p>
                   <p className="text-sm text-slate-500 mt-0.5">
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}

@@ -315,7 +315,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     isCompleted
                       ? 'bg-emerald-500'
                       : isCurrent
-                      ? 'bg-blue-500'
+                      ? 'bg-blue-500 ring-2 ring-blue-500/30'
                       : 'bg-slate-700'
                   }`}
                   title={step}
@@ -334,7 +334,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         <div className="space-y-3">
           {infoRows.map(([label, value]) => (
             <div key={label} className="flex justify-between items-baseline">
-              <span className="text-xs text-slate-500">{label}</span>
+              <span className="text-xs text-slate-500 tracking-wide">{label}</span>
               <span className="text-sm text-white">{value}</span>
             </div>
           ))}
@@ -343,7 +343,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* Commission card — hide for PM */}
       {!isPM && (
-        <MobileCard>
+        <MobileCard accent="emerald">
           <h2 className="text-white font-semibold text-sm mb-3">Commission</h2>
           {myEntries.length > 0 && currentRole === 'rep' ? (
             <div className="space-y-2">
@@ -423,7 +423,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* Sticky bottom bar */}
       <div
-        className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 border-t border-slate-800/60"
+        className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 border-t border-slate-800/60 shadow-lg shadow-black/30"
         style={{ background: 'rgba(15, 25, 45, 0.95)', backdropFilter: 'blur(12px)' }}
       >
         {(isAdmin || isPM) && (

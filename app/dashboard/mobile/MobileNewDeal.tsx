@@ -68,13 +68,13 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               idx < currentStep
                 ? 'w-2.5 h-2.5 bg-emerald-500'
                 : idx === currentStep
-                ? 'w-2.5 h-2.5 bg-blue-500'
+                ? 'w-2.5 h-2.5 bg-blue-500 ring-2 ring-blue-500/30'
                 : 'w-2 h-2 bg-slate-700'
             }`}
           />
         ))}
       </div>
-      <span className="text-xs text-slate-400">
+      <span className="text-xs text-slate-400 font-medium">
         Step {currentStep + 1} of {DEAL_STEPS.length} — {DEAL_STEPS[currentStep]}
       </span>
     </div>
@@ -509,10 +509,10 @@ export default function MobileNewDeal() {
   // ── Style helpers ─────────────────────────────────────────────────────────
 
   const inputCls = (field: string) =>
-    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors placeholder-slate-500`;
+    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-sm text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors placeholder-slate-500`;
 
   const selectCls = (field: string) =>
-    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors`;
+    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-sm text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors`;
 
   const labelCls = 'text-xs text-slate-500 mb-1 block';
 
@@ -604,6 +604,9 @@ export default function MobileNewDeal() {
                 )}
               </div>
             )}
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
 
             {/* Next */}
             <button
@@ -960,9 +963,14 @@ export default function MobileNewDeal() {
               )}
             </div>
 
+            {/* Divider */}
+            {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
+              <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+            )}
+
             {/* Commission preview card */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <MobileCard accent="emerald">
+              <MobileCard accent="emerald" className="border-emerald-500/20 shadow-sm shadow-black/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Preview</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-sm">
@@ -974,7 +982,7 @@ export default function MobileNewDeal() {
                     )}
                     <div className="flex justify-between">
                       <span className="text-slate-400">M2 commission</span>
-                      <span className="text-emerald-400 font-semibold">${subDealerCommission.toLocaleString()}</span>
+                      <span className="text-emerald-400 font-black">${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
@@ -991,7 +999,7 @@ export default function MobileNewDeal() {
                     )}
                     <div className="flex justify-between">
                       <span className="text-slate-400">Closer</span>
-                      <span className="text-emerald-400 font-semibold">${closerTotal.toLocaleString()}</span>
+                      <span className="text-emerald-400 font-black">${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-xs text-slate-500">
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
@@ -1018,6 +1026,9 @@ export default function MobileNewDeal() {
                 )}
               </MobileCard>
             )}
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
 
             {/* Back + Next buttons */}
             <div className="flex gap-3">
@@ -1096,20 +1107,20 @@ export default function MobileNewDeal() {
 
             {/* Commission breakdown */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <MobileCard accent="emerald">
+              <MobileCard accent="emerald" className="border-emerald-500/20 shadow-sm shadow-black/20" style={{ boxShadow: 'inset 0 1px 0 rgba(16,185,129,0.1)' }}>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commission Breakdown</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-slate-400">M2 commission</span>
-                      <span className="text-emerald-400 font-bold text-lg">${subDealerCommission.toLocaleString()}</span>
+                      <span className="text-emerald-400 font-black text-lg">${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Closer total</span>
-                      <span className="text-emerald-400 font-bold text-lg">${closerTotal.toLocaleString()}</span>
+                      <span className="text-emerald-400 font-black text-lg">${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="text-xs text-slate-500">
                       M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}
@@ -1141,6 +1152,9 @@ export default function MobileNewDeal() {
                 )}
               </MobileCard>
             )}
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
 
             {/* Notes */}
             <div>
@@ -1227,7 +1241,7 @@ export default function MobileNewDeal() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-2 bg-emerald-600 text-white font-semibold rounded-xl text-sm active:scale-[0.97] disabled:opacity-60"
+                className={`flex-1 min-h-[48px] flex items-center justify-center gap-2 bg-emerald-600 text-white font-semibold rounded-xl text-sm active:scale-[0.97] disabled:opacity-60 ${!submitting ? 'shadow-md shadow-emerald-500/20' : ''}`}
               >
                 {submitting ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
