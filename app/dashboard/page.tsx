@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback, type CSSProperties } from 're
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../lib/context';
-import { useIsHydrated, useScrollReveal } from '../../lib/hooks';
+import { useIsHydrated, useScrollReveal, useMediaQuery } from '../../lib/hooks';
+import MobileDashboard from './mobile/MobileDashboard';
 import { computeSparklineData, Sparkline } from '../../lib/sparkline';
 import {
   computeIncentiveProgress, formatIncentiveMetric,
@@ -712,6 +713,7 @@ export default function DashboardPage() {
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [periodIndicator, setPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
   const isHydrated = useIsHydrated();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const router = useRouter();
 
   // Scroll-triggered reveal refs for below-fold dashboard sections
@@ -836,6 +838,8 @@ export default function DashboardPage() {
   if (!isHydrated) {
     return <DashboardSkeleton />;
   }
+
+  if (isMobile) return <MobileDashboard />;
 
   if (effectiveRole === 'project_manager') {
     return <PMDashboard projects={periodProjects} allProjects={projects} period={period} setPeriod={setPeriod} PERIODS={PERIODS} totalReps={reps.length} />;

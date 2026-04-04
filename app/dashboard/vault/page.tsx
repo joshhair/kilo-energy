@@ -4,7 +4,8 @@ import { useState, useMemo, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import MobileVault from '../mobile/MobileVault';
 import { useToast } from '../../../lib/toast';
 import { formatDate, getM1PayDate, getM2PayDate, fmt$ } from '../../../lib/utils';
 import { RelativeDate } from '../components/RelativeDate';
@@ -345,6 +346,8 @@ function VaultPageInner() {
   const pendingReimbs = myReimbs.filter((r) => r.status === 'Pending');
   const approvedReimbTotal = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
 
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -354,6 +357,8 @@ function VaultPageInner() {
   }
 
   if (!isHydrated) return <VaultSkeleton />;
+
+  if (isMobile) return <MobileVault />;
 
   if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer') {
     return (

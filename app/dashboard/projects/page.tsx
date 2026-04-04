@@ -11,6 +11,7 @@ import { Search, Flag, X, ChevronUp, ChevronDown, ChevronsUpDown, FolderKanban, 
 import { useToast } from '../../../lib/toast';
 import { PaginationBar, buildPageRange } from '../components/PaginationBar';
 import ConfirmDialog from '../components/ConfirmDialog';
+import MobileProjects from '../mobile/MobileProjects';
 
 type StatusFilter = 'active' | 'all' | 'completed' | 'cancelled' | 'on-hold';
 
@@ -116,6 +117,7 @@ function ProjectsPageInner() {
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const isRep = effectiveRole !== 'admin' && effectiveRole !== 'project_manager';
   const isSubDealer = effectiveRole === 'sub-dealer';
   const isPM = effectiveRole === 'project_manager';
@@ -261,6 +263,8 @@ function ProjectsPageInner() {
     setDebouncedSearch('');
     toast('Filters cleared', 'info');
   };
+
+  if (isMobile) return <MobileProjects />;
 
   if (!isHydrated) {
     return <ProjectsSkeleton />;

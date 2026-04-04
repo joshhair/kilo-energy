@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
-import { useIsHydrated } from '../../../../lib/hooks';
+import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
+import MobileProjectDetail from '../../mobile/MobileProjectDetail';
 import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
@@ -565,6 +566,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const { toast } = useToast();
   const router = useRouter();
   const isHydrated = useIsHydrated();
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   const project = projects.find((p) => p.id === id);
   useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
@@ -690,6 +692,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }, [showEditModal]);
 
   // (Cancel Confirm Escape handler removed — ConfirmDialog handles it internally)
+
+  // Mobile layout
+  if (isMobile) return <MobileProjectDetail projectId={id} />;
 
   // Return the skeleton loader during the server→client hydration window so
   // the page never flashes raw blank content when navigating to a project.
