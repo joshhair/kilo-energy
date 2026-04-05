@@ -692,7 +692,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
         )}
-        <div className="animate-page-enter">
+        <div key={pathname} className="animate-page-enter">
           {children}
         </div>
 
