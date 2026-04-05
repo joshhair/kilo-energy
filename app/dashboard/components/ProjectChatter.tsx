@@ -227,10 +227,11 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom of messages — only within the chatter container, not the page
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      // Use 'nearest' block to avoid scrolling the entire page on mobile
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [messages]);
 

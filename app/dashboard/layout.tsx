@@ -264,7 +264,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Reset scroll position when route changes
   useEffect(() => {
-    window.scrollTo(0, 0);
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [pathname]);
 
@@ -673,7 +672,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* pt-[48px] reserves space for the fixed mobile top bar; reset on md+ */}
       <main
         ref={mainRef}
-        className="flex-1 overflow-y-visible md:overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
+        className="flex-1 overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
         style={{ backgroundColor: 'var(--navy-base)' }}
       >
         {dataError && (
