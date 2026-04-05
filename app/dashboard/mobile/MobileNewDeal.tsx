@@ -104,44 +104,44 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
   return (
     <div className="px-4 pt-3 pb-24 space-y-4">
       <div className="flex flex-col items-center text-center pt-4 mb-4">
-        <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-3">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}>
           <CheckCircle2 className="w-7 h-7 text-green-400" strokeWidth={1.5} />
         </div>
         <h2 className="text-xl font-black text-white mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
-        <p className="text-slate-400 text-base">
+        <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
           <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
         </p>
       </div>
 
       <MobileCard>
-        <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-3">Deal Summary</p>
+        <p className="text-base font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
         <div className="space-y-2 text-base">
           <div className="flex justify-between">
-            <span className="text-slate-400 text-base">Installer</span>
+            <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Installer</span>
             <span className="text-white font-medium">{deal.installer}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400 text-base">Financer</span>
+            <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Financer</span>
             <span className="text-white font-medium">{deal.financer || '---'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400 text-base">Product Type</span>
+            <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Product Type</span>
             <span className="text-white font-medium">{deal.productType}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400 text-base">System</span>
+            <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>System</span>
             <span className="text-white font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</span>
           </div>
         </div>
       </MobileCard>
 
       <MobileCard>
-        <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-3">Commission</p>
+        <p className="text-base font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission</p>
         {deal.closerTotal > 0 ? (
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-300 text-base font-medium">{deal.repName} (Closer)</p>
-              <p className="text-slate-400 text-base">
+              <p className="text-base font-medium" style={{ color: 'var(--m-text-muted, #8899aa)' }}>{deal.repName} (Closer)</p>
+              <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                 M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}
                 {deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}
               </p>
@@ -149,11 +149,11 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
             <p className="text-xl font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${deal.closerTotal.toLocaleString()}</p>
           </div>
         ) : (
-          <p className="text-slate-400 text-base">Commission will be calculated once pricing is confirmed.</p>
+          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission will be calculated once pricing is confirmed.</p>
         )}
         {deal.setterTotal > 0 && (
-          <div className="flex items-center justify-between border-t border-slate-700 pt-2 mt-2">
-            <p className="text-slate-300 text-base font-medium">{deal.setterName} (Setter)</p>
+          <div className="flex items-center justify-between pt-2 mt-2" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+            <p className="text-base font-medium" style={{ color: 'var(--m-text-muted, #8899aa)' }}>{deal.setterName} (Setter)</p>
             <p className="text-lg font-bold text-blue-400">${deal.setterTotal.toLocaleString()}</p>
           </div>
         )}
@@ -173,7 +173,8 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
         </button>
         <button
           onClick={onReset}
-          className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-base active:scale-[0.97]"
+          className="w-full min-h-[48px] flex items-center justify-center gap-2 font-medium rounded-xl text-base active:scale-[0.97]"
+          style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', color: 'var(--m-text-muted, #8899aa)' }}
         >
           <RotateCcw className="w-4 h-4" /> Submit Another
         </button>
@@ -705,7 +706,7 @@ export default function MobileNewDeal() {
 
             {/* Cash indicator */}
             {form.installer && form.productType === 'Cash' && (
-              <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-base text-slate-300">
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-base" style={{ background: 'rgba(13,21,37,0.6)', border: '1px solid rgba(26,40,64,0.5)', color: 'var(--m-text-muted, #8899aa)' }}>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
                 Cash deal -- no financer required
               </div>
@@ -730,13 +731,14 @@ export default function MobileNewDeal() {
                             type="button"
                             disabled={disabled}
                             onClick={() => !disabled && handleSolarTechFamilyChange(family)}
-                            className={`min-h-[44px] px-3 rounded-xl text-base font-medium border transition-all text-left ${
-                              disabled
-                                ? 'bg-slate-800/40 border-slate-700/40 text-slate-400 opacity-50'
-                                : selected
-                                  ? 'bg-blue-600/20 border-blue-500/60 text-blue-300'
-                                  : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
+                            className={`min-h-[44px] px-3 rounded-xl text-base font-medium transition-all text-left ${
+                              disabled ? 'opacity-50' : ''
                             }`}
+                            style={{
+                              background: disabled ? 'rgba(13,21,37,0.4)' : selected ? 'rgba(37,99,235,0.2)' : 'rgba(13,21,37,0.6)',
+                              border: `1px solid ${disabled ? 'rgba(26,40,64,0.4)' : selected ? 'rgba(59,130,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              color: disabled ? 'var(--m-text-muted, #8899aa)' : selected ? '#93c5fd' : 'var(--m-text-muted, #8899aa)',
+                            }}
                           >
                             {isPrepaid ? 'Prepaid' : family}
                           </button>
@@ -744,7 +746,7 @@ export default function MobileNewDeal() {
                       })}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && (
-                      <p className="text-base text-slate-400 mt-1">Only Prepaid family is compatible with {form.productType} deals</p>
+                      <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Only Prepaid family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="solarTechFamily" />
                   </div>
@@ -761,11 +763,12 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
-                              form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300'
-                                : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
-                            }`}
+                            className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                            style={{
+                              background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
+                              border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--m-text-muted, #8899aa)',
+                            }}
                           >
                             {opt}
                           </button>
@@ -829,13 +832,14 @@ export default function MobileNewDeal() {
                               type="button"
                               disabled={disabled}
                               onClick={() => !disabled && handlePcFamilyChange(family)}
-                              className={`min-h-[44px] px-3 rounded-xl text-base font-medium border transition-all text-left ${
-                                disabled
-                                  ? 'bg-slate-800/40 border-slate-700/40 text-slate-400 opacity-50'
-                                  : selected
-                                    ? 'bg-blue-600/20 border-blue-500/60 text-blue-300'
-                                    : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
+                              className={`min-h-[44px] px-3 rounded-xl text-base font-medium transition-all text-left ${
+                                disabled ? 'opacity-50' : ''
                               }`}
+                              style={{
+                                background: disabled ? 'rgba(13,21,37,0.4)' : selected ? 'rgba(37,99,235,0.2)' : 'rgba(13,21,37,0.6)',
+                                border: `1px solid ${disabled ? 'rgba(26,40,64,0.4)' : selected ? 'rgba(59,130,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                                color: disabled ? 'var(--m-text-muted, #8899aa)' : selected ? '#93c5fd' : 'var(--m-text-muted, #8899aa)',
+                              }}
                             >
                               {family}
                             </button>
@@ -844,7 +848,7 @@ export default function MobileNewDeal() {
                       })()}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && pcConfig.prepaidFamily && (
-                      <p className="text-base text-slate-400 mt-1">Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
+                      <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="pcFamily" />
                   </div>
@@ -862,11 +866,12 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
-                              form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300'
-                                : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
-                            }`}
+                            className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                            style={{
+                              background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
+                              border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--m-text-muted, #8899aa)',
+                            }}
                           >
                             {opt}
                           </button>
@@ -940,11 +945,12 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
-                              form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300'
-                                : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
-                            }`}
+                            className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                            style={{
+                              background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
+                              border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--m-text-muted, #8899aa)',
+                            }}
                           >
                             {opt}
                           </button>
@@ -997,61 +1003,61 @@ export default function MobileNewDeal() {
 
             {/* Divider */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+              <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(26,40,64,0.5), transparent)' }} />
             )}
 
             {/* Commission preview card */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-2">Commission Preview</p>
+                <p className="text-base font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Preview</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-base">
                     {subDealerRate > 0 && (
-                      <div className="flex justify-between text-base text-slate-400">
+                      <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                         <span>Sub-dealer rate</span>
                         <span>${subDealerRate.toFixed(2)}/W</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-slate-400">M2 commission</span>
+                      <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>M2 commission</span>
                       <span className="font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-base">
-                    <div className="flex justify-between text-base text-slate-400">
+                    <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                       <span>Your redline</span>
                       <span>${closerPerW.toFixed(2)}/W</span>
                     </div>
                     {currentRole === 'admin' && (
-                      <div className="flex justify-between text-base text-slate-400">
+                      <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                         <span>Kilo baseline</span>
                         <span>${kiloPerW.toFixed(2)}/W</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Closer</span>
+                      <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Closer</span>
                       <span className="font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${closerTotal.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-base text-slate-400">
+                    <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
                     </div>
                     {form.setterId && setterTotal > 0 && (
-                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5">
-                        <span className="text-slate-400">Setter</span>
+                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                        <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Setter</span>
                         <span className="text-blue-400 font-semibold">${setterTotal.toLocaleString()}</span>
                       </div>
                     )}
                     {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between text-base text-slate-400">
+                      <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                         <span>Trainer ({trainerRep.name})</span>
                         <span className="text-amber-400">${trainerTotal.toLocaleString()}</span>
                       </div>
                     )}
                     {currentRole === 'admin' && (
-                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5">
-                        <span className="text-slate-400">Kilo revenue</span>
-                        <span className="text-slate-300 font-semibold">${kiloTotal.toLocaleString()}</span>
+                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                        <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Kilo revenue</span>
+                        <span className="font-semibold" style={{ color: 'var(--m-text-muted, #8899aa)' }}>${kiloTotal.toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -1103,42 +1109,42 @@ export default function MobileNewDeal() {
           <div className="space-y-7 flex-1 flex flex-col">
             {/* Summary card */}
             <MobileCard>
-              <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-3">Deal Summary</p>
+              <p className="text-base font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
               <div className="space-y-2 text-base">
                 <div className="flex justify-between">
-                  <span className="text-slate-400 text-base">Customer</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Customer</span>
                   <span className="text-white font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 text-base">Sold Date</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Sold Date</span>
                   <span className="text-white font-medium">{form.soldDate || '---'}</span>
                 </div>
                 {currentRole === 'admin' && (
                   <div className="flex justify-between">
-                    <span className="text-slate-400 text-base">Closer</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Closer</span>
                     <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
                   </div>
                 )}
                 {form.setterId && (
                   <div className="flex justify-between">
-                    <span className="text-slate-400 text-base">Setter</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Setter</span>
                     <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-slate-400 text-base">Installer</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Installer</span>
                   <span className="text-white font-medium">{form.installer || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 text-base">Financer</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Financer</span>
                   <span className="text-white font-medium">{form.financer || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 text-base">Product Type</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Product Type</span>
                   <span className="text-white font-medium">{form.productType || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 text-base">System</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>System</span>
                   <span className="text-white font-medium">
                     {kW > 0 ? `${kW.toFixed(1)} kW` : '---'}
                     {kW > 0 && soldPPW > 0 && ` @ $${soldPPW.toFixed(2)}/W`}
@@ -1146,7 +1152,7 @@ export default function MobileNewDeal() {
                 </div>
                 {form.prepaidSubType && (
                   <div className="flex justify-between">
-                    <span className="text-slate-400 text-base">Prepaid Type</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Prepaid Type</span>
                     <span className="text-white font-medium">{form.prepaidSubType}</span>
                   </div>
                 )}
@@ -1156,44 +1162,44 @@ export default function MobileNewDeal() {
             {/* Commission breakdown */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-2">Commission Breakdown</p>
+                <p className="text-base font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Breakdown</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">M2 commission</span>
+                      <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>M2 commission</span>
                       <span className="font-black text-lg" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Closer total</span>
+                      <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Closer total</span>
                       <span className="font-black text-lg" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${closerTotal.toLocaleString()}</span>
                     </div>
-                    <div className="text-base text-slate-400">
+                    <div className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                       M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}
                     </div>
                     {form.setterId && setterTotal > 0 && (
                       <>
-                        <div className="flex justify-between border-t border-slate-700/50 pt-1.5">
-                          <span className="text-slate-400">Setter total</span>
+                        <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                          <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Setter total</span>
                           <span className="text-blue-400 font-semibold">${setterTotal.toLocaleString()}</span>
                         </div>
-                        <div className="text-base text-slate-400">
+                        <div className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                           M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3 ? ` · M3: $${setterM3.toLocaleString()}` : ''}
                         </div>
                       </>
                     )}
                     {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5 text-base">
-                        <span className="text-slate-400">Trainer ({trainerRep.name})</span>
+                      <div className="flex justify-between pt-1.5 text-base" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                        <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Trainer ({trainerRep.name})</span>
                         <span className="text-amber-400">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
                       </div>
                     )}
                     {currentRole === 'admin' && (
-                      <div className="flex justify-between border-t border-slate-700/50 pt-1.5">
-                        <span className="text-slate-400">Kilo revenue</span>
-                        <span className="text-slate-300 font-semibold">${kiloTotal.toLocaleString()}</span>
+                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                        <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Kilo revenue</span>
+                        <span className="font-semibold" style={{ color: 'var(--m-text-muted, #8899aa)' }}>${kiloTotal.toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -1202,7 +1208,7 @@ export default function MobileNewDeal() {
             )}
 
             {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+            <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(26,40,64,0.5), transparent)' }} />
 
             {/* Notes */}
             <div>
@@ -1214,8 +1220,8 @@ export default function MobileNewDeal() {
                 className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`} style={v0InputStyle('')}
               />
               <div className="flex items-center justify-between mt-1">
-                <p className="text-base text-slate-400 italic">Internal notes only</p>
-                <p className={`text-base ${form.notes.length >= 500 ? 'text-red-400' : form.notes.length >= 400 ? 'text-amber-400' : 'text-slate-400'}`}>
+                <p className="text-base italic" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Internal notes only</p>
+                <p className="text-base" style={{ color: form.notes.length >= 500 ? '#f87171' : form.notes.length >= 400 ? '#fbbf24' : 'var(--m-text-muted, #8899aa)' }}>
                   {form.notes.length}/500
                 </p>
               </div>

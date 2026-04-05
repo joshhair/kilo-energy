@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Receipt, ArrowRight } from 'lucide-react';
 
 /**
- * Legacy route — reimbursement submissions have moved to the Earnings hub.
+ * Legacy route — reimbursement submissions have moved to the My Pay hub.
  * This page remains functional so any existing bookmarks or links still land
  * somewhere useful, but it simply points the rep to the new location.
  */
@@ -31,15 +31,15 @@ export default function ReimbursementRedirectPage() {
           <div>
             <h2 className="text-white font-bold text-base mb-2">Reimbursements have moved</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-5">
-              Expense reimbursements are now part of the unified <strong className="text-white">Earnings</strong> hub,
+              Expense reimbursements are now part of the unified <strong className="text-white">My Pay</strong> hub,
               giving you one place to view commissions, bonuses, and reimbursements together.
             </p>
             <Link
-              href="/dashboard/earnings?tab=reimbursements"
+              href="/dashboard/vault?tab=reimbursements"
               className="inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:opacity-90 active:scale-[0.98] shadow-lg shadow-blue-500/20 text-sm"
               style={{ backgroundColor: 'var(--brand)' }}
             >
-              Go to Earnings → Reimbursements
+              Go to My Pay → Reimbursements
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

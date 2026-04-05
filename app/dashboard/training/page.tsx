@@ -437,7 +437,7 @@ function TrainingPageInner() {
 
           {/* Earnings breakdown */}
           <div className="card-surface rounded-2xl p-6">
-            <h3 className="text-white font-bold text-sm mb-4 uppercase tracking-wider">Earnings Breakdown</h3>
+            <h3 className="text-white font-bold text-sm mb-4 uppercase tracking-wider">Pay Breakdown</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex items-center gap-3 bg-slate-800/40 rounded-xl px-4 py-3">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />

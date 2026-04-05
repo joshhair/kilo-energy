@@ -153,7 +153,7 @@ function MorePopover({
               color: '#ff6b6b',
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '1rem',
-              borderTop: '1px solid #1a2840',
+              borderTop: items.length > 0 ? '1px solid #1a2840' : 'none',
             }}
           >
             <LogOut className="w-5 h-5" />

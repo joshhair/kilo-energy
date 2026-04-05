@@ -271,7 +271,7 @@ export default function MobileVault() {
         {payPeriods.length === 0 ? (
           <MobileEmptyState
             icon={Banknote}
-            title="No earnings yet"
+            title="No payments yet"
             subtitle="Payroll entries will appear here as your deals hit milestones."
           />
         ) : (

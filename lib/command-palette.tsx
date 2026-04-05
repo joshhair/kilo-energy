@@ -155,7 +155,7 @@ const SHORTCUT_GROUPS: Array<{
     shortcuts: [
       { key: 'N', description: 'New Deal' },
       { key: 'P', description: 'Projects' },
-      { key: 'E', description: 'Earnings' },
+      { key: 'E', description: 'My Pay' },
       { key: 'D', description: 'Dashboard' },
       { key: '\u2318K', description: 'Command palette' },
       { key: '?', description: 'Keyboard shortcuts' },

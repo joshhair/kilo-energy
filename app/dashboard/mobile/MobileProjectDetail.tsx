@@ -45,15 +45,15 @@ function relativeTime(dateStr: string): string {
 // ── Activity type styling ──
 
 const ACTIVITY_STYLES: Record<string, string> = {
-  phase_change:    'bg-blue-500',
-  flagged:         'bg-red-500',
-  unflagged:       'bg-red-400',
-  m1_paid:         'bg-emerald-500',
-  m2_paid:         'bg-emerald-500',
-  note_edit:       'bg-amber-500',
-  field_edit:      'bg-slate-500',
-  created:         'bg-purple-500',
-  setter_assigned: 'bg-cyan-500',
+  phase_change:    'var(--m-accent2, #00b4d8)',
+  flagged:         '#ef4444',
+  unflagged:       '#f87171',
+  m1_paid:         '#10b981',
+  m2_paid:         '#10b981',
+  note_edit:       '#f59e0b',
+  field_edit:      'var(--m-text-muted, #8899aa)',
+  created:         '#a855f7',
+  setter_assigned: '#22d3ee',
 };
 
 // ── Activity Timeline ──
@@ -107,12 +107,12 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
         <p className="text-base text-slate-400">No activity yet</p>
       ) : (
         <div className="relative pl-6">
-          <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-800" />
+          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--m-border, #1a2840)' }} />
           {activities.map((entry) => {
-            const dotColor = ACTIVITY_STYLES[entry.type] ?? 'bg-slate-600';
+            const dotColor = ACTIVITY_STYLES[entry.type] ?? 'var(--m-text-dim, #445577)';
             return (
               <div key={entry.id} className="relative mb-3 last:mb-0">
-                <div className={`absolute -left-4 top-1 w-2 h-2 rounded-full ${dotColor}`} />
+                <div className="absolute -left-4 top-1 w-2 h-2 rounded-full" style={{ background: dotColor }} />
                 <p className="text-base text-slate-300">{entry.detail}</p>
                 <p className="text-base text-slate-400">{relativeTime(entry.createdAt)}</p>
               </div>
@@ -152,21 +152,6 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [notesExpanded, setNotesExpanded] = useState(false);
-
-  useEffect(() => {
-    // Scroll both window and main container to top — with small delay
-    // to override browser scroll restoration and animation timing
-    const scrollToTop = () => {
-      window.scrollTo(0, 0);
-      const main = document.querySelector('main');
-      if (main) main.scrollTop = 0;
-    };
-    scrollToTop();
-    // Also fire after a frame in case the browser restores scroll position
-    requestAnimationFrame(scrollToTop);
-    const timer = setTimeout(scrollToTop, 50);
-    return () => clearTimeout(timer);
-  }, [projectId]);
 
   useEffect(() => {
     document.title = project ? `${project.customerName} | Kilo Energy` : 'Project | Kilo Energy';

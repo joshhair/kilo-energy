@@ -1059,7 +1059,7 @@ export default function DashboardPage() {
       sparkData: chargebackSparkData,
       sparkStroke: '#ef4444',
       pctChange: undefined as number | null | undefined,
-      href: '/dashboard/earnings',
+      href: '/dashboard/vault',
       tooltip: 'Total negative adjustments from cancelled or clawed-back deals',
     },
   ];
@@ -1293,7 +1293,7 @@ export default function DashboardPage() {
         {[
           { key: 'N', label: 'New Deal' },
           { key: 'P', label: 'Projects' },
-          { key: 'E', label: 'Earnings' },
+          { key: 'E', label: 'My Pay' },
           { key: '⌘K', label: 'Search' },
         ].map(({ key, label }) => (
           <span key={key} className="inline-flex items-center gap-2">
@@ -1378,7 +1378,7 @@ export default function DashboardPage() {
             {thisWeekTotal > 0 && (
               <span className="text-emerald-400 font-bold">${thisWeekTotal.toLocaleString()}</span>
             )}
-            <Link href="/dashboard/earnings" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+            <Link href="/dashboard/vault" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1393,11 +1393,11 @@ export default function DashboardPage() {
               <p className="text-white font-bold text-sm mb-1">No payments this week</p>
               <p className="text-slate-500 text-xs mb-4">Payments will appear here once marked for payroll.</p>
               <Link
-                href="/dashboard/earnings"
+                href="/dashboard/vault"
                 className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
-                View Earnings History
+                View Pay History
               </Link>
             </div>
           </div>
@@ -2199,7 +2199,7 @@ function SubDealerDashboard({
             <p className="text-2xl md:text-3xl font-black tracking-tight">
               <span className="text-gradient-brand">Sub-Dealer Dashboard</span>
             </p>
-            <p className="text-slate-500 text-xs mt-1">Submit deals, track your pipeline and earnings</p>
+            <p className="text-slate-500 text-xs mt-1">Submit deals, track your pipeline and pay</p>
           </div>
           <div className="relative inline-flex shrink-0">
             <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 opacity-[0.06] blur-[2px] animate-pulse" />

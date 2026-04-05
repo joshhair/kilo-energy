@@ -262,6 +262,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const mainRef = useRef<HTMLElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // Reset scroll position when route changes (fixes project detail scroll-to-bottom bug)
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [pathname]);
+
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {
     if (mobileOpen) {

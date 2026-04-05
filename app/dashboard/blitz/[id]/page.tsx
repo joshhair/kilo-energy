@@ -468,7 +468,7 @@ export default function BlitzDetailPage() {
               </div>
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
-                <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Earnings</p>
+                <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
                 <p className="text-2xl font-bold text-emerald-400">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</p>
               </div>
             )}

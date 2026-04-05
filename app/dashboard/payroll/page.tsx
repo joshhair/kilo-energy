@@ -681,7 +681,7 @@ function PayrollPageInner() {
                       <div className="flex flex-col items-center gap-2">
                         <Receipt className="w-10 h-10 text-slate-600" />
                         <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected date range'}</p>
-                        <p className="text-xs text-slate-500">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their Vault page' : 'Try adjusting the date filters to find what you need'}</p>
+                        <p className="text-xs text-slate-500">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the date filters to find what you need'}</p>
                       </div>
                     </td>
                   </tr>

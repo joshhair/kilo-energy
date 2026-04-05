@@ -69,7 +69,7 @@ export default function MobileEarnings() {
   } = useApp();
   const isHydrated = useIsHydrated();
 
-  useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
+  useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
 
   const [period, setPeriod] = useState<Period>('all');
 
@@ -77,7 +77,7 @@ export default function MobileEarnings() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="px-5 pt-4 pb-24">
-        <MobilePageHeader title="Earnings" />
+        <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
@@ -102,7 +102,7 @@ export default function MobileEarnings() {
   if (!isHydrated) {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4">
-        <MobilePageHeader title="Earnings" />
+        <MobilePageHeader title="My Pay" />
         <div className="rounded-2xl p-5 h-24 animate-pulse" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }} />
         <div className="rounded-2xl p-5 h-48 animate-pulse" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }} />
       </div>
@@ -111,7 +111,7 @@ export default function MobileEarnings() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
-      <MobilePageHeader title="Earnings" />
+      <MobilePageHeader title="My Pay" />
 
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard hero>
