@@ -154,8 +154,18 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [notesExpanded, setNotesExpanded] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-    document.querySelector('main')?.scrollTo(0, 0);
+    // Scroll both window and main container to top — with small delay
+    // to override browser scroll restoration and animation timing
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
+      const main = document.querySelector('main');
+      if (main) main.scrollTop = 0;
+    };
+    scrollToTop();
+    // Also fire after a frame in case the browser restores scroll position
+    requestAnimationFrame(scrollToTop);
+    const timer = setTimeout(scrollToTop, 50);
+    return () => clearTimeout(timer);
   }, [projectId]);
 
   useEffect(() => {
