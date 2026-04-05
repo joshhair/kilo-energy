@@ -386,7 +386,7 @@ export default function MobileDashboard() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       {/* Greeting */}
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.6rem', color: '#fff' }}>{getGreeting(effectiveRepName ?? '')}</h1>
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2rem', color: '#fff' }}>{getGreeting(effectiveRepName ?? '')}</h1>
 
       {/* Period filter */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">

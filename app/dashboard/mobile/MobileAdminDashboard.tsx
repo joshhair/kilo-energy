@@ -122,7 +122,7 @@ export default function MobileAdminDashboard() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.6rem', color: '#fff', marginBottom: '1.25rem' }}>{getGreeting(currentRepName ?? '')}</h1>
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2rem', color: '#fff', marginBottom: '1.25rem' }}>{getGreeting(currentRepName ?? '')}</h1>
 
       {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
       <MobileCard hero>
