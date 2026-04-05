@@ -193,15 +193,15 @@ body {
 /* On mobile, use the faster mobile tab transition instead */
 @media (max-width: 767px) {
   .animate-page-enter {
-    animation: mobileTabEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: mobileTabEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
-/* Mobile tab/page transition — faster, subtler */
+/* Mobile tab/page transition — visible fade + slide */
 @keyframes mobileTabEnter {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
