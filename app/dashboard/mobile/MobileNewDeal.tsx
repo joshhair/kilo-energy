@@ -229,6 +229,13 @@ export default function MobileNewDeal() {
 
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    const el = document.querySelector('main');
+    if (el) el.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, [currentStep]);
+
   // Blitz list
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {

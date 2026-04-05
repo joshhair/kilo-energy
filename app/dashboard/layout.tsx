@@ -262,9 +262,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const mainRef = useRef<HTMLElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Reset scroll position when route changes (fixes project detail scroll-to-bottom bug)
+  // Reset scroll position when route changes
   useEffect(() => {
-    if (mainRef.current) mainRef.current.scrollTop = 0;
+    const resetScroll = () => {
+      if (mainRef.current) mainRef.current.scrollTop = 0;
+      // Also target by tag in case ref hasn't attached yet
+      const el = document.querySelector('main');
+      if (el) el.scrollTop = 0;
+      window.scrollTo(0, 0);
+    };
+    // Fire immediately, after paint, and after a delay to catch all timing scenarios
+    resetScroll();
+    requestAnimationFrame(resetScroll);
+    const t1 = setTimeout(resetScroll, 0);
+    const t2 = setTimeout(resetScroll, 50);
+    const t3 = setTimeout(resetScroll, 150);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [pathname]);
 
   // Lock body scroll when mobile sidebar is open
@@ -671,7 +684,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main content ────────────────────────────────────────────────── */}
       {/* pt-[48px] reserves space for the fixed mobile top bar; reset on md+ */}
       <main
-        key={pathname}
         ref={mainRef}
         className="flex-1 overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
         style={{ backgroundColor: 'var(--navy-base)' }}
