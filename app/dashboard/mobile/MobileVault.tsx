@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$ } from '../../../lib/utils';
+import { useToast } from '../../../lib/toast';
+import { fmt$, formatDate } from '../../../lib/utils';
 import { PayrollEntry } from '../../../lib/data';
 import { Banknote } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
+import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
+import MobileBottomSheet from './shared/MobileBottomSheet';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
@@ -65,7 +68,10 @@ interface PayPeriod {
 
 export default function MobileVault() {
   const router = useRouter();
-  const { effectiveRole, effectiveRepId, payrollEntries, projects, reimbursements } = useApp();
+  const { effectiveRole, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { toast } = useToast();
+  const [showReimbSheet, setShowReimbSheet] = useState(false);
+  const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
 
   const todayStr = new Date().toISOString().split('T')[0];
   const nextFriday = useMemo(() => getNextFriday(), []);
@@ -164,6 +170,36 @@ export default function MobileVault() {
       .sort((a, b) => b.friday.localeCompare(a.friday));
   }, [myEntries]);
 
+  // ── Reimbursements — only show active ones ──
+  const activeReimbs = useMemo(
+    () => reimbursements.filter((r) => r.repId === effectiveRepId && (r.status === 'Pending' || r.status === 'Approved')),
+    [reimbursements, effectiveRepId],
+  );
+
+  const handleSubmitReimb = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reimbForm.amount || !reimbForm.description) { toast('Amount and description required', 'error'); return; }
+    const res = await fetch('/api/reimbursements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        repId: effectiveRepId,
+        amount: parseFloat(reimbForm.amount),
+        description: reimbForm.description.trim(),
+        date: reimbForm.date || new Date().toISOString().split('T')[0],
+      }),
+    });
+    if (res.ok) {
+      const newReimb = await res.json();
+      setReimbursements((prev) => [...prev, { id: newReimb.id, repId: effectiveRepId!, repName: effectiveRepName ?? '', amount: parseFloat(reimbForm.amount), description: reimbForm.description.trim(), date: reimbForm.date || new Date().toISOString().split('T')[0], status: 'Pending' }]);
+      setShowReimbSheet(false);
+      setReimbForm({ amount: '', description: '', date: '' });
+      toast('Reimbursement request submitted');
+    } else {
+      toast('Failed to submit request', 'error');
+    }
+  }, [reimbForm, effectiveRepId, effectiveRepName, setReimbursements, toast]);
+
   // ── PM guard ──
   if (effectiveRole === 'project_manager') {
     return (
@@ -197,18 +233,35 @@ export default function MobileVault() {
         <MobileStatCard label="Draft" value={fmt$(draftTotal)} color={MUTED} />
       </div>
 
-      {/* ── Reimbursement link — v0 style button ── */}
+      {/* ── Active reimbursements (only if any) ── */}
+      {activeReimbs.length > 0 && (
+        <MobileSection title="Reimbursements" count={activeReimbs.length}>
+          <MobileCard>
+            {activeReimbs.map((r, i) => (
+              <div
+                key={r.id}
+                className={`flex items-center justify-between py-3 ${i < activeReimbs.length - 1 ? 'border-b' : ''}`}
+                style={{ borderColor: 'var(--m-border, #1a2840)' }}
+              >
+                <div>
+                  <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.description}</p>
+                  <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{formatDate(r.date)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{fmt$(r.amount)}</span>
+                  <MobileBadge value={r.status} variant="status" />
+                </div>
+              </div>
+            ))}
+          </MobileCard>
+        </MobileSection>
+      )}
+
+      {/* ── Reimbursement link ── */}
       <button
-        onClick={() => router.push('/dashboard/reimbursement')}
-        className="w-full rounded-xl py-3.5 px-5 text-left active:opacity-70 transition-opacity"
-        style={{
-          background: 'var(--m-card, #0d1525)',
-          border: '1px solid var(--m-border, #1a2840)',
-          color: ACCENT,
-          fontFamily: FONT_BODY,
-          fontSize: '1rem',
-          fontWeight: 500,
-        }}
+        onClick={() => setShowReimbSheet(true)}
+        className="active:opacity-70 transition-opacity"
+        style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}
       >
         Request reimbursement &rarr;
       </button>
@@ -260,6 +313,54 @@ export default function MobileVault() {
           </div>
         )}
       </MobileSection>
+
+      {/* ── Reimbursement bottom sheet ── */}
+      <MobileBottomSheet open={showReimbSheet} onClose={() => setShowReimbSheet(false)} title="Request Reimbursement">
+        <form onSubmit={handleSubmitReimb} className="px-5 space-y-5 pb-2">
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={reimbForm.amount}
+              onChange={(e) => setReimbForm((f) => ({ ...f, amount: e.target.value }))}
+              placeholder="0.00"
+              className="w-full min-h-[48px] outline-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}
+            />
+          </div>
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Description</label>
+            <input
+              type="text"
+              required
+              value={reimbForm.description}
+              onChange={(e) => setReimbForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="e.g. Gas mileage — site visits"
+              className="w-full min-h-[48px] outline-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}
+            />
+          </div>
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Date</label>
+            <input
+              type="date"
+              value={reimbForm.date}
+              onChange={(e) => setReimbForm((f) => ({ ...f, date: e.target.value }))}
+              className="w-full min-h-[48px] outline-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full active:opacity-80 transition-opacity"
+            style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '16px', padding: '18px', fontSize: '1rem', fontWeight: 500, color: '#04342C', fontFamily: FONT_BODY }}
+          >
+            Submit Request
+          </button>
+        </form>
+      </MobileBottomSheet>
     </div>
   );
 }

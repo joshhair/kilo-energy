@@ -55,27 +55,26 @@ function FieldError({ field, errors }: { field: string; errors: Record<string, s
 
 // ── Step indicator ───────────────────────────────────────────────────────────
 
-const DEAL_STEPS = ['People', 'Deal Details', 'Review & Notes'] as const;
+const DEAL_STEPS = ['People', 'Deal Details', 'Review'] as const;
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <div className="flex items-center gap-2 mb-4">
+    <div className="flex items-center gap-2 mb-2">
       <div className="flex items-center gap-1.5">
         {DEAL_STEPS.map((_, idx) => (
           <div
             key={idx}
             className="rounded-full transition-all"
             style={{
-              width: idx === currentStep ? 14 : 10,
-              height: 10,
-              borderRadius: idx === currentStep ? 5 : '50%',
-              background: idx < currentStep ? '#00b4d8' : idx === currentStep ? '#00e5a0' : 'var(--m-border, #1a2840)',
+              width: 8,
+              height: 8,
+              background: idx <= currentStep ? '#1de9b6' : 'rgba(255,255,255,0.2)',
             }}
           />
         ))}
       </div>
-      <span className="text-base font-medium" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        Step {currentStep + 1} of {DEAL_STEPS.length} — {DEAL_STEPS[currentStep]}
+      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        Step {currentStep + 1} of {DEAL_STEPS.length}
       </span>
     </div>
   );
@@ -514,21 +513,24 @@ export default function MobileNewDeal() {
   // ── Style helpers ─────────────────────────────────────────────────────────
 
   const v0InputStyle = (field: string): React.CSSProperties => ({
-    background: 'var(--m-card, #0d1525)',
-    border: errors[field] ? '1px solid #ef4444' : '1px solid var(--m-border, #1a2840)',
+    background: 'rgba(255,255,255,0.05)',
+    border: errors[field] ? '1px solid #ef4444' : '0.5px solid rgba(255,255,255,0.1)',
+    borderRadius: 14,
+    padding: '16px 18px',
+    fontSize: '1rem',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   });
 
-  const v0FocusCss = 'focus:!border-[rgba(0,229,160,0.3)] focus:shadow-[0_0_0_3px_rgba(0,229,160,0.08)]';
+  const v0FocusCss = 'focus:!border-[rgba(29,233,182,0.3)] focus:shadow-[0_0_0_3px_rgba(29,233,182,0.08)]';
 
-  const inputCls = (field: string) =>
-    `w-full min-h-[44px] rounded-xl px-3 text-base text-white focus:outline-none transition-colors placeholder-slate-500 ${v0FocusCss}`;
+  const inputCls = (_field: string) =>
+    `w-full text-white focus:outline-none transition-colors placeholder-[rgba(255,255,255,0.25)] ${v0FocusCss}`;
 
-  const selectCls = (field: string) =>
-    `w-full min-h-[44px] rounded-xl px-3 text-base text-white focus:outline-none transition-colors ${v0FocusCss}`;
+  const selectCls = (_field: string) =>
+    `w-full text-white focus:outline-none transition-colors appearance-none ${v0FocusCss}`;
 
-  const labelCls = 'text-base mb-1 block uppercase tracking-widest';
-  const labelStyle: React.CSSProperties = { color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" };
+  const labelCls = 'mb-1.5 block uppercase';
+  const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -548,14 +550,20 @@ export default function MobileNewDeal() {
   }
 
   return (
-    <div className="px-5 pt-3 pb-24">
+    <div className="px-6 pt-3 pb-24 flex flex-col min-h-[calc(100vh-120px)]">
       <StepIndicator currentStep={currentStep} />
 
-      <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+      {/* Page header */}
+      <div className="mb-6">
+        <p style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>NEW DEAL</p>
+        <h1 style={{ fontSize: '26px', fontWeight: 500, color: '#fff', lineHeight: 1.2, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{DEAL_STEPS[currentStep]}</h1>
+      </div>
+
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col">
 
         {/* ── Step 1: People ── */}
         {currentStep === 0 && (
-          <div className="space-y-4">
+          <div className="space-y-7 flex-1 flex flex-col">
             {/* Customer Name */}
             <div>
               <label className={labelCls} style={labelStyle}>Customer Name</label>
@@ -603,7 +611,7 @@ export default function MobileNewDeal() {
             {/* Setter (optional) */}
             {!isSubDealer && (
               <div>
-                <label className={labelCls} style={labelStyle}>Setter <span className="text-slate-400">(optional)</span></label>
+                <label className={labelCls} style={labelStyle}>Setter <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
@@ -619,28 +627,31 @@ export default function MobileNewDeal() {
               </div>
             )}
 
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+            {/* Spacer to push button to bottom */}
+            <div className="flex-1" />
 
             {/* Next */}
             <button
               type="button"
               onClick={handleNext}
-              className="w-full min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
+              className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
               style={{
-                background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
-                boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                borderRadius: 16,
+                padding: 18,
+                fontSize: 16,
+                color: '#04342C',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
-              Next <ChevronRight className="w-4 h-4" />
+              Next <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* ── Step 2: Deal Details ── */}
         {currentStep === 1 && (
-          <div className="space-y-4">
+          <div className="space-y-7 flex-1 flex flex-col">
             {/* Installer */}
             <div>
               <label className={labelCls} style={labelStyle}>Installer</label>
@@ -1048,29 +1059,40 @@ export default function MobileNewDeal() {
               </MobileCard>
             )}
 
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+            {/* Spacer to push buttons to bottom */}
+            <div className="flex-1" />
 
             {/* Back + Next buttons */}
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={handlePrev}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-base active:scale-[0.97]"
+                className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '0.5px solid rgba(255,255,255,0.1)',
+                  borderRadius: 16,
+                  padding: 18,
+                  fontSize: 16,
+                  color: 'rgba(255,255,255,0.6)',
+                }}
               >
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
+                className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                 style={{
-                  background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
-                  boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                  background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                  borderRadius: 16,
+                  padding: 18,
+                  fontSize: 16,
+                  color: '#04342C',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >
-                Next <ChevronRight className="w-4 h-4" />
+                Next <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1078,7 +1100,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 3: Review & Notes ── */}
         {currentStep === 2 && (
-          <div className="space-y-4">
+          <div className="space-y-7 flex-1 flex flex-col">
             {/* Summary card */}
             <MobileCard>
               <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-3">Deal Summary</p>
@@ -1184,7 +1206,7 @@ export default function MobileNewDeal() {
 
             {/* Notes */}
             <div>
-              <label className={labelCls} style={labelStyle}>Notes <span className="text-slate-400">(optional)</span></label>
+              <label className={labelCls} style={labelStyle}>Notes <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
               <textarea
                 placeholder="Add any notes about this deal..."
                 value={form.notes}
@@ -1201,7 +1223,7 @@ export default function MobileNewDeal() {
 
             {/* Lead Source */}
             <div>
-              <label className={labelCls} style={labelStyle}>Lead Source <span className="text-slate-400">(optional)</span></label>
+              <label className={labelCls} style={labelStyle}>Lead Source <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
               <select
                 value={form.leadSource}
                 onChange={(e) => {
@@ -1254,23 +1276,37 @@ export default function MobileNewDeal() {
               </div>
             )}
 
+            {/* Spacer to push buttons to bottom */}
+            <div className="flex-1" />
+
             {/* Back + Submit buttons */}
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={handlePrev}
                 disabled={submitting}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-slate-800 border border-slate-700 text-slate-300 font-medium rounded-xl text-base active:scale-[0.97] disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97] disabled:opacity-60"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '0.5px solid rgba(255,255,255,0.1)',
+                  borderRadius: 16,
+                  padding: 18,
+                  fontSize: 16,
+                  color: 'rgba(255,255,255,0.6)',
+                }}
               >
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97] disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
                 style={{
-                  background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
-                  boxShadow: !submitting ? '0 4px 20px rgba(0,229,160,0.25)' : 'none',
+                  background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                  borderRadius: 16,
+                  padding: 18,
+                  fontSize: 16,
+                  color: '#04342C',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >
