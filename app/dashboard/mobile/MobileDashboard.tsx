@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$ } from '../../../lib/utils';
@@ -12,6 +12,35 @@ import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
+
+type Period = 'all' | 'this-month' | 'last-month' | 'this-year';
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'this-month', label: 'This Month' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'this-year', label: 'This Year' },
+];
+
+function isInPeriod(dateStr: string, period: Period): boolean {
+  if (period === 'all') return true;
+  const now = new Date();
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (period === 'this-month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  if (period === 'last-month') {
+    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return date.getMonth() === lm.getMonth() && date.getFullYear() === lm.getFullYear();
+  }
+  if (period === 'this-year') return date.getFullYear() === now.getFullYear();
+  return true;
+}
+
+function getGreeting(name: string): string {
+  const h = new Date().getHours();
+  const prefix = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = name?.split(' ')[0] || '';
+  return firstName ? `${prefix}, ${firstName}` : prefix;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,8 +78,11 @@ export default function MobileDashboard() {
     payrollEntries,
     effectiveRole,
     effectiveRepId,
+    effectiveRepName,
+    reps,
   } = useApp();
   const router = useRouter();
+  const [period, setPeriod] = useState<Period>('all');
 
   if (effectiveRole === 'admin') return <MobileAdminDashboard />;
 
@@ -310,32 +342,97 @@ export default function MobileDashboard() {
     );
   }
 
+  // ── Period-filtered data ──────────────────────────────────────────────────
+
+  const periodProjects = useMemo(
+    () => myProjects.filter((p) => isInPeriod(p.soldDate, period)),
+    [myProjects, period],
+  );
+
+  const periodPayroll = useMemo(
+    () => myPayroll.filter((p) => isInPeriod(p.date, period)),
+    [myPayroll, period],
+  );
+
+  const periodPaid = useMemo(
+    () => periodPayroll.filter((p) => p.status === 'Paid' && p.amount > 0).reduce((s, p) => s + p.amount, 0),
+    [periodPayroll],
+  );
+
+  const periodKW = useMemo(
+    () => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0),
+    [periodProjects],
+  );
+
+  const periodActive = useMemo(
+    () => periodProjects.filter((p) => ACTIVE_PHASES.includes(p.phase)),
+    [periodProjects],
+  );
+
+  // Pipeline: sum of unpaid M1 + M2 + M3 on active projects
+  const pipelineValue = useMemo(
+    () => activeProjects.reduce((s, p) => {
+      let v = 0;
+      if (!p.m1Paid) v += p.m1Amount || 0;
+      if (!p.m2Paid) v += p.m2Amount || 0;
+      v += p.m3Amount || 0;
+      return s + v;
+    }, 0),
+    [activeProjects],
+  );
+
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <MobilePageHeader title="Dashboard" />
+      {/* Greeting */}
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.6rem', color: '#fff' }}>{getGreeting(effectiveRepName ?? '')}</h1>
 
-      {/* Hero — next payout */}
+      {/* Period filter */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
+        {PERIODS.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => setPeriod(p.value)}
+            className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[40px]"
+            style={{
+              fontFamily: FONT_BODY,
+              background: period === p.value ? ACCENT : 'var(--m-card, #0d1525)',
+              color: period === p.value ? '#000' : MUTED,
+              border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Hero card — next payout + stats combined */}
       <MobileCard hero>
-        <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
-        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
-        <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%`, background: ACCENT }}
-          />
+        <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
+
+        {/* Stats inside hero card */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: ACCENT }}>{fmt$(periodPaid)}</p>
+            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
+          </div>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: ACCENT2 }}>{fmt$(pipelineValue)}</p>
+            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
+          </div>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: '#fff' }}>{periodKW.toFixed(1)} <span style={{ fontSize: '0.9rem', color: MUTED }}>kW</span></p>
+            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Sold</p>
+          </div>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: '#fff' }}>{periodActive.length}</p>
+            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Active Deals</p>
+          </div>
         </div>
       </MobileCard>
-
-      {/* Stat grid — 2x2 */}
-      <div className="grid grid-cols-2 gap-3">
-        <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
-        <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color={ACCENT2} />
-        <MobileStatCard label="Active Deals" value={activeProjects.length} color="#fff" />
-        <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
-      </div>
 
       {/* Needs Attention — hidden if 0 */}
       {flaggedProjects.length > 0 && (
@@ -349,46 +446,40 @@ export default function MobileDashboard() {
             <button
               key={p.id}
               onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-              className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${
-                i < flaggedProjects.length - 1 ? 'border-b' : ''
-              }`}
+              className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
               style={{ borderColor: 'var(--m-border, #1a2840)' }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                 <MobileBadge value={p.phase} />
               </div>
-              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
+              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
             </button>
           ))}
         </MobileCard>
       )}
 
       {/* Recent */}
-      <MobileSection title="Recent">
-        {recentProjects.length === 0 ? (
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
-        ) : (
+      {recentProjects.length > 0 && (
+        <MobileSection title="Recent">
           <MobileCard>
             {recentProjects.map((p, i) => (
               <button
                 key={p.id}
                 onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${
-                  i < recentProjects.length - 1 ? 'border-b' : ''
-                }`}
+                className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${i < recentProjects.length - 1 ? 'border-b' : ''}`}
                 style={{ borderColor: 'var(--m-border, #1a2840)' }}
               >
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
                   <MobileBadge value={p.phase} />
                 </div>
-                <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
+                <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{relativeTime(p.soldDate)}</span>
               </button>
             ))}
           </MobileCard>
-        )}
-      </MobileSection>
+        </MobileSection>
+      )}
     </div>
   );
 }

@@ -548,10 +548,10 @@ export default function MobileNewDeal() {
   }
 
   return (
-    <div className="px-5 pt-3 pb-24 min-h-[calc(100vh-120px)] flex flex-col">
+    <div className="px-5 pt-3 pb-24">
       <StepIndicator currentStep={currentStep} />
 
-      <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col justify-center space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
 
         {/* ── Step 1: People ── */}
         {currentStep === 0 && (
