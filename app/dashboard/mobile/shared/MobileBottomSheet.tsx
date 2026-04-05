@@ -17,10 +17,11 @@ function SheetItem({
   return (
     <button
       onClick={onTap}
-      className={`w-full flex items-center gap-3 min-h-[52px] px-5 py-3 text-left active:bg-slate-800/40 transition-colors ${danger ? 'text-red-400' : 'text-white'}`}
+      className="w-full flex items-center gap-3 min-h-[52px] px-5 py-3 text-left active:opacity-70 transition-opacity"
+      style={{ color: danger ? 'var(--m-danger, #ff6b6b)' : '#fff' }}
     >
       {Icon && <Icon className="w-5 h-5 shrink-0 opacity-60" />}
-      <span className="text-base">{label}</span>
+      <span className="text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
     </button>
   );
 }
@@ -54,15 +55,15 @@ export default function MobileBottomSheet({
       <div className="fixed inset-0 bg-black/50 z-[60]" onClick={onClose} />
       <div
         className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-2xl"
-        style={{ background: '#0D1B2E', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ background: 'var(--m-card, #0d1525)', borderTop: '1px solid var(--m-border, #1a2840)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-slate-700" />
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--m-border, #1a2840)' }} />
         </div>
         {title && (
           <div className="flex items-center justify-between px-5 py-2">
-            <p className="text-base font-semibold text-white">{title}</p>
-            <button onClick={onClose} className="p-2 text-slate-500 active:text-white"><X className="w-5 h-5" /></button>
+            <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
+            <button onClick={onClose} className="p-2 active:opacity-50" style={{ color: 'var(--m-text-dim, #445577)' }}><X className="w-5 h-5" /></button>
           </div>
         )}
         <div className="pb-4">

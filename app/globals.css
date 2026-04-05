@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 
 :root {
   --brand: #2563EB;
@@ -65,15 +66,22 @@ body {
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-/* ── Mobile-native feel ────────────────────────────────────────────────────
+/* ── Mobile premium design system ──────────────────────────────────────────
    All rules scoped to max-width: 767px so desktop is completely unaffected. */
 
 @media (max-width: 767px) {
-  /* Tighter card border radius on mobile */
-  .card-surface,
-  .card-surface-stat,
-  .card-surface-interactive {
-    border-radius: 1rem;
+  :root {
+    --m-bg: #060b13;
+    --m-card: #0d1525;
+    --m-border: #1a2840;
+    --m-accent: #00e5a0;
+    --m-accent2: #00b4d8;
+    --m-text-muted: #8899aa;
+    --m-text-dim: #445577;
+    --m-danger: #ff6b6b;
+    --m-warning: #f5a623;
+    --m-font-display: 'DM Serif Display', serif;
+    --m-font-body: 'DM Sans', sans-serif;
   }
 
   /* Disable hover lift on mobile (touch devices don't hover) */
@@ -82,13 +90,11 @@ body {
     transform: none;
   }
 
-  /* Full-bleed cards on mobile — edge-to-edge feel */
-  .mobile-full-bleed {
-    margin-left: -0.75rem;
-    margin-right: -0.75rem;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+  /* Tighter card border radius on mobile */
+  .card-surface,
+  .card-surface-stat,
+  .card-surface-interactive {
+    border-radius: 1rem;
   }
 }
 

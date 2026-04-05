@@ -231,27 +231,28 @@ export default function BottomNav({
     <>
       <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} items={moreItems} onLogout={onLogout} />
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-slate-900/95 backdrop-blur-md border-t border-slate-800"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+        style={{ background: 'linear-gradient(to top, #080c14 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex items-end justify-around px-2 h-16">
+        <div className="flex items-end justify-around px-2 pt-3 pb-6">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             const isMore = item.href === '___more___';
 
-            // Primary / "New Deal" button — elevated style
+            // Primary / "New Deal" button — gradient FAB
             if (item.primary) {
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex flex-col items-center justify-center -mt-3 min-w-[56px] min-h-[44px]"
+                  className="flex flex-col items-center justify-center -mt-4 min-w-[56px]"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30 active:scale-95 transition-transform">
-                    <Icon className="w-6 h-6 text-white" />
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                    style={{ background: 'linear-gradient(135deg, #00e5a0 0%, #00b4d8 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
+                    <span className="text-2xl font-light text-black leading-none">+</span>
                   </div>
-                  <span className="text-[10px] font-medium text-blue-400 mt-0.5">{item.label}</span>
+                  <span className="text-[10px] font-medium mt-1" style={{ color: '#00e5a0', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
                 </Link>
               );
             }
@@ -262,12 +263,11 @@ export default function BottomNav({
                 <button
                   key="more"
                   onClick={() => setMoreOpen((v) => !v)}
-                  className={`flex flex-col items-center justify-center gap-0.5 py-2 min-w-[56px] min-h-[44px] transition-colors ${
-                    active ? 'text-blue-400' : 'text-slate-500'
-                  }`}
+                  className="flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[44px] transition-opacity"
+                  style={{ opacity: active ? 1 : 0.4 }}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-[10px] font-medium">{item.label}</span>
+                  <span style={{ color: active ? '#00e5a0' : '#fff' }}><Icon className="w-[18px] h-[18px]" /></span>
+                  <span className="text-[10px] tracking-wide" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
                 </button>
               );
             }
@@ -277,12 +277,11 @@ export default function BottomNav({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-0.5 py-2 min-w-[56px] min-h-[44px] transition-colors ${
-                  active ? 'text-blue-400' : 'text-slate-500'
-                }`}
+                className="flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[44px] transition-opacity"
+                style={{ opacity: active ? 1 : 0.4 }}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <span style={{ color: active ? '#00e5a0' : '#fff' }}><Icon className="w-[18px] h-[18px]" /></span>
+                <span className="text-[10px] tracking-wide" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
               </Link>
             );
           })}

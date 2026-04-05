@@ -18,27 +18,25 @@ export default function MobileSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
+  const headerContent = (
+    <div className="flex items-center gap-2">
+      <h2 className="tracking-widest uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem', fontWeight: 500 }}>{title}</h2>
+      {count !== undefined && (
+        <span className="px-2 py-0.5 rounded-full text-base" style={{ background: 'rgba(0,229,160,0.1)', color: 'var(--m-accent, #00e5a0)', fontSize: '0.7rem', fontWeight: 600 }}>{count}</span>
+      )}
+    </div>
+  );
+
   return (
     <div>
       {collapsible ? (
-        <button
-          onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between mb-2 min-h-[48px]"
-        >
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-slate-400 uppercase tracking-wider">{title}</h2>
-            {count !== undefined && (
-              <span className="text-base text-slate-500">{count}</span>
-            )}
-          </div>
-          {open ? <ChevronUp className="w-5 h-5 text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-500" />}
+        <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between mb-3 min-h-[48px]">
+          {headerContent}
+          {open ? <ChevronUp className="w-5 h-5" style={{ color: 'var(--m-text-dim, #445577)' }} /> : <ChevronDown className="w-5 h-5" style={{ color: 'var(--m-text-dim, #445577)' }} />}
         </button>
       ) : (
-        <div className="flex items-center gap-2 mb-2">
-          <h2 className="text-base font-semibold text-slate-400 uppercase tracking-wider">{title}</h2>
-          {count !== undefined && (
-            <span className="text-base text-slate-500">{count}</span>
-          )}
+        <div className="flex items-center gap-2 mb-3">
+          {headerContent}
         </div>
       )}
       {(!collapsible || open) && children}

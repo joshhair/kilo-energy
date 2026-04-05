@@ -1,33 +1,36 @@
 'use client';
 
-const PHASE_COLORS: Record<string, string> = {
-  'New': 'bg-sky-900/30 text-sky-300',
-  'Acceptance': 'bg-indigo-900/30 text-indigo-300',
-  'Site Survey': 'bg-violet-900/30 text-violet-300',
-  'Design': 'bg-fuchsia-900/30 text-fuchsia-300',
-  'Permitting': 'bg-amber-900/30 text-amber-300',
-  'Pending Install': 'bg-orange-900/30 text-orange-300',
-  'Installed': 'bg-teal-900/30 text-teal-300',
-  'PTO': 'bg-emerald-900/30 text-emerald-300',
-  'Completed': 'bg-green-900/30 text-green-300',
-  'Cancelled': 'bg-red-900/30 text-red-300',
-  'On Hold': 'bg-slate-800/40 text-slate-400',
+const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
+  'New':             { bg: 'rgba(0,229,160,0.12)', text: '#00e5a0' },
+  'Acceptance':      { bg: 'rgba(0,180,216,0.12)', text: '#00b4d8' },
+  'Site Survey':     { bg: 'rgba(245,166,35,0.12)', text: '#f5a623' },
+  'Design':          { bg: 'rgba(168,85,247,0.12)', text: '#a855f7' },
+  'Permitting':      { bg: 'rgba(245,166,35,0.12)', text: '#f5a623' },
+  'Pending Install': { bg: 'rgba(251,146,60,0.12)', text: '#fb923c' },
+  'Installed':       { bg: 'rgba(0,180,216,0.12)', text: '#00b4d8' },
+  'PTO':             { bg: 'rgba(0,229,160,0.12)', text: '#00e5a0' },
+  'Completed':       { bg: 'rgba(0,229,160,0.12)', text: '#00e5a0' },
+  'Cancelled':       { bg: 'rgba(255,107,107,0.12)', text: '#ff6b6b' },
+  'On Hold':         { bg: 'rgba(136,153,170,0.12)', text: '#8899aa' },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  'Draft': 'bg-slate-800/40 text-slate-400',
-  'Pending': 'bg-amber-900/30 text-amber-300',
-  'Paid': 'bg-emerald-900/30 text-emerald-300',
-  'Approved': 'bg-emerald-900/30 text-emerald-300',
-  'Denied': 'bg-red-900/30 text-red-300',
-  'Rejected': 'bg-red-900/30 text-red-300',
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  'Draft':    { bg: 'rgba(136,153,170,0.12)', text: '#8899aa' },
+  'Pending':  { bg: 'rgba(245,166,35,0.12)',  text: '#f5a623' },
+  'Paid':     { bg: 'rgba(0,229,160,0.12)',   text: '#00e5a0' },
+  'Approved': { bg: 'rgba(0,229,160,0.12)',   text: '#00e5a0' },
+  'Denied':   { bg: 'rgba(255,107,107,0.12)', text: '#ff6b6b' },
+  'Rejected': { bg: 'rgba(255,107,107,0.12)', text: '#ff6b6b' },
 };
 
 export default function MobileBadge({ value, variant = 'phase' }: { value: string; variant?: 'phase' | 'status' }) {
   const colors = variant === 'phase' ? PHASE_COLORS : STATUS_COLORS;
-  const cls = colors[value] ?? 'bg-slate-800/40 text-slate-400';
+  const c = colors[value] ?? { bg: 'rgba(136,153,170,0.12)', text: '#8899aa' };
   return (
-    <span className={`inline-flex items-center min-h-[28px] px-3 py-1 text-sm font-semibold rounded-lg ${cls}`}>
+    <span
+      className="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full"
+      style={{ background: c.bg, color: c.text, fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+    >
       {value}
     </span>
   );

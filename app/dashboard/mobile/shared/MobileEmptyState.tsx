@@ -13,9 +13,9 @@ export default function MobileEmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
-      {Icon && <Icon className="w-12 h-12 text-slate-500" />}
-      <p className="text-base font-medium text-slate-400">{title}</p>
-      {subtitle && <p className="text-base text-slate-400 text-center max-w-[260px]">{subtitle}</p>}
+      {Icon && <span style={{ color: 'var(--m-text-dim, #445577)' }}><Icon className="w-12 h-12" /></span>}
+      <p className="text-base font-medium" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
+      {subtitle && <p className="text-base text-center max-w-[260px]" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{subtitle}</p>}
     </div>
   );
 }
