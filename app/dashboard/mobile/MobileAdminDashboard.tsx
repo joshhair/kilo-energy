@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, formatDate } from '../../../lib/utils';
@@ -39,6 +39,34 @@ function fmtCompact(n: number): string {
   return fmt$(n);
 }
 
+type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year';
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'this-month', label: 'This Month' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'this-quarter', label: 'This Quarter' },
+  { value: 'this-year', label: 'This Year' },
+];
+
+function isInPeriod(dateStr: string, period: Period): boolean {
+  if (period === 'all') return true;
+  const now = new Date();
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (period === 'this-month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  if (period === 'last-month') {
+    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return date.getMonth() === lm.getMonth() && date.getFullYear() === lm.getFullYear();
+  }
+  if (period === 'this-quarter') {
+    const q = Math.floor(now.getMonth() / 3);
+    const dq = Math.floor((m - 1) / 3);
+    return dq === q && y === now.getFullYear();
+  }
+  if (period === 'this-year') return date.getFullYear() === now.getFullYear();
+  return true;
+}
+
 export default function MobileAdminDashboard() {
   const {
     projects,
@@ -49,6 +77,11 @@ export default function MobileAdminDashboard() {
     currentRepName,
   } = useApp();
   const router = useRouter();
+  const [period, setPeriod] = useState<Period>('all');
+
+  // ── Period-filtered data ────────────────────────────────────────────────
+  const periodProjects = useMemo(() => projects.filter((p) => isInPeriod(p.soldDate, period)), [projects, period]);
+  const periodPayroll = useMemo(() => payrollEntries.filter((p) => isInPeriod(p.date, period)), [payrollEntries, period]);
 
   // ── Baseline helper ─────────────────────────────────────────────────────
   function getBaselines(p: (typeof projects)[number]) {
@@ -58,12 +91,12 @@ export default function MobileAdminDashboard() {
     return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
   }
 
-  // ── Computations ────────────────────────────────────────────────────────
-  const active = useMemo(() => projects.filter((p) => ACTIVE_PHASES.includes(p.phase)), [projects]);
+  // ── Computations (period-filtered) ───────────────────────────────────────
+  const active = useMemo(() => periodProjects.filter((p) => ACTIVE_PHASES.includes(p.phase)), [periodProjects]);
 
   const { totalPaid, totalRevenue, totalProfit } = useMemo(() => {
     let paid = 0, rev = 0, prof = 0;
-    for (const e of payrollEntries) { if (e.status === 'Paid') paid += e.amount; }
+    for (const e of periodPayroll) { if (e.status === 'Paid') paid += e.amount; }
     for (const p of active) {
       const { closerPerW, kiloPerW } = getBaselines(p);
       const w = p.kWSize * 1000;
@@ -72,10 +105,10 @@ export default function MobileAdminDashboard() {
     }
     return { totalPaid: paid, totalRevenue: rev, totalProfit: prof };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, payrollEntries, installerPricingVersions, productCatalogProducts]);
+  }, [active, periodPayroll, installerPricingVersions, productCatalogProducts]);
 
   const totalKW = useMemo(() => active.reduce((s, p) => s + p.kWSize, 0), [active]);
-  const flaggedCount = useMemo(() => projects.filter((p) => p.flagged).length, [projects]);
+  const flaggedCount = useMemo(() => periodProjects.filter((p) => p.flagged).length, [periodProjects]);
 
   // Stalled projects (in same phase > 14 days)
   const stalledProjects = useMemo(() => {
@@ -122,7 +155,26 @@ export default function MobileAdminDashboard() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2rem', color: '#fff', marginBottom: '1.25rem' }}>{getGreeting(currentRepName ?? '')}</h1>
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2rem', color: '#fff' }}>{getGreeting(currentRepName ?? '')}</h1>
+
+      {/* Period filter */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
+        {PERIODS.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => setPeriod(p.value)}
+            className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[40px]"
+            style={{
+              fontFamily: FONT_BODY,
+              background: period === p.value ? ACCENT : 'var(--m-card, #0d1525)',
+              color: period === p.value ? '#000' : MUTED,
+              border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
 
       {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
       <MobileCard hero>
