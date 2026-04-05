@@ -132,9 +132,9 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   if (!hydrated || loading) {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-        <div className="h-6 w-24 bg-slate-800 rounded animate-pulse" />
-        <div className="h-8 w-48 bg-slate-800 rounded animate-pulse" />
-        <div className="h-4 w-32 bg-slate-800/60 rounded animate-pulse" />
+        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
+        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
+        <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)', opacity: 0.6 }} />
       </div>
     );
   }
@@ -144,11 +144,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/blitz')}
-          className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
+          className="flex items-center gap-1.5 text-base min-h-[48px]"
+          style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" /> Blitz
         </button>
-        <p className="text-base text-slate-400 text-center">Blitz not found.</p>
+        <p className="text-base text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Blitz not found.</p>
       </div>
     );
   }
@@ -168,34 +169,36 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/blitz')}
-        className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
+        className="flex items-center gap-1.5 text-base min-h-[48px]"
+        style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >
         <ArrowLeft className="w-4 h-4" /> Blitz
       </button>
 
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-white">{blitz.name}</h1>
+        <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{blitz.name}</h1>
         <div className="mt-1.5">
           <MobileBadge value={badgeVariantValue} variant="status" />
         </div>
-        <p className="text-base text-slate-400 mt-1">
+        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
           {blitz.location && <>{blitz.location} &middot; </>}
           {formatDate(blitz.startDate)} &ndash; {formatDate(blitz.endDate)}
         </p>
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-slate-800/20">
+      <div className="flex" style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}>
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 text-center text-base font-medium min-h-[48px] transition-colors ${
-              tab === t.key
-                ? 'text-white border-b-2 border-blue-500'
-                : 'text-slate-400'
-            }`}
+            className="flex-1 text-center text-base font-medium min-h-[48px] transition-colors"
+            style={{
+              color: tab === t.key ? '#00e5a0' : 'var(--m-text-muted, #8899aa)',
+              borderBottom: tab === t.key ? '2px solid #00e5a0' : '2px solid transparent',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             {t.label}
           </button>
@@ -205,18 +208,18 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       {/* ── Overview ── */}
       {tab === 'overview' && (
         <div className="space-y-6">
-          <p className="text-base text-slate-400">
-            <span className="text-lg font-bold text-white">{approvedParticipants.length}</span> participant{approvedParticipants.length !== 1 ? 's' : ''}
+          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{approvedParticipants.length}</span> participant{approvedParticipants.length !== 1 ? 's' : ''}
             {' \u00B7 '}
-            <span className="text-lg font-bold text-white">{totalDeals}</span> deal{totalDeals !== 1 ? 's' : ''}
+            <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{totalDeals}</span> deal{totalDeals !== 1 ? 's' : ''}
             {' \u00B7 '}
-            <span className="text-lg font-bold text-white">{totalKW.toFixed(1)}</span> kW
+            <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{totalKW.toFixed(1)}</span> kW
           </p>
 
           {blitz.notes && (
             <div>
-              <p className="text-base font-semibold text-slate-400 uppercase tracking-wider mb-1">Notes</p>
-              <p className="text-base text-slate-300">{blitz.notes}</p>
+              <p className="text-base font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</p>
+              <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.notes}</p>
             </div>
           )}
         </div>
@@ -228,7 +231,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {canManage && (
             <button
               onClick={() => setShowAddParticipant(true)}
-              className="flex items-center gap-1.5 text-base font-semibold text-blue-400 min-h-[48px]"
+              className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
+              style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             >
               <Plus className="w-4 h-4" /> Add Participant
             </button>
@@ -237,7 +241,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {blitz.participants?.length === 0 ? (
             <MobileEmptyState icon={Users} title="No participants yet" subtitle="Add reps to this blitz" />
           ) : (
-            <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/20">
+            <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', borderColor: 'var(--m-border, #1a2840)' }}>
               {blitz.participants.map((p: any) => {
                 const name = `${p.user.firstName} ${p.user.lastName}`;
                 const statusBadge = p.joinStatus === 'approved' ? 'Approved' : p.joinStatus === 'pending' ? 'Pending' : 'Denied';
@@ -259,7 +263,13 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               <select
                 value={selectedRepId}
                 onChange={(e) => setSelectedRepId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
+                className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+                style={{
+                  background: 'var(--m-card, #0d1525)',
+                  border: '1px solid var(--m-border, #1a2840)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  '--tw-ring-color': '#00e5a0',
+                } as React.CSSProperties}
               >
                 <option value="">Select a rep...</option>
                 {availableReps.map((r) => (
@@ -269,7 +279,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               <button
                 onClick={handleAddParticipant}
                 disabled={!selectedRepId || addingParticipant}
-                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold bg-blue-600 text-white rounded-lg disabled:opacity-40 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors"
+                style={{
+                  background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+                  boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
               >
                 {addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {addingParticipant ? 'Adding...' : 'Add'}
@@ -280,10 +295,11 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {/* Remove Participant bottom sheet */}
           <MobileBottomSheet open={!!removeTarget} onClose={() => setRemoveTarget(null)} title={removeTarget ? `Remove ${removeTarget.name}?` : undefined}>
             <div className="px-5 space-y-4">
-              <p className="text-base text-slate-400">This will remove them from the blitz. They can be re-added later.</p>
+              <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>This will remove them from the blitz. They can be re-added later.</p>
               <button
                 onClick={() => removeTarget && handleRemoveParticipant(removeTarget.id)}
-                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold bg-red-600 text-white rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-white rounded-lg transition-colors"
+                style={{ background: 'var(--m-danger, #ff6b6b)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 <Trash2 className="w-4 h-4" /> Remove
               </button>
@@ -298,7 +314,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {visibleProjects.length === 0 ? (
             <MobileEmptyState icon={FolderKanban} title="No deals yet" subtitle="Deals attributed to this blitz will appear here" />
           ) : (
-            <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/20">
+            <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', borderColor: 'var(--m-border, #1a2840)' }}>
               {visibleProjects.map((p: any) => (
                 <MobileListItem
                   key={p.id}
@@ -318,7 +334,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
         <div className="space-y-4">
           <button
             onClick={() => setShowAddCost(true)}
-            className="flex items-center gap-1.5 text-base font-semibold text-blue-400 min-h-[48px]"
+            className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
+            style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             <Plus className="w-4 h-4" /> Add Cost
           </button>
@@ -330,22 +347,24 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               {blitz.costs.map((c: any) => (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between min-h-[48px] py-3 border-b border-slate-800/20 last:border-b-0"
+                  className="flex items-center justify-between min-h-[48px] py-3 last:border-b-0"
+                  style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-semibold text-slate-400 capitalize">{c.category}</span>
+                      <span className="text-base font-semibold capitalize" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{c.category}</span>
                       {c.description && (
-                        <span className="text-base text-slate-400 truncate">&middot; {c.description}</span>
+                        <span className="text-base truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>&middot; {c.description}</span>
                       )}
                     </div>
-                    <p className="text-base text-slate-400 mt-0.5">{formatDate(c.date)}</p>
+                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatDate(c.date)}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ml-3">
-                    <span className="text-lg font-bold text-white tabular-nums">{formatCurrency(c.amount)}</span>
+                    <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(c.amount)}</span>
                     <button
                       onClick={() => handleDeleteCost(c.id)}
-                      className="p-2 text-slate-400 active:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      className="p-2 active:opacity-70 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      style={{ color: 'var(--m-text-muted, #8899aa)' }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -353,8 +372,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 </div>
               ))}
               <div className="flex items-center justify-between pt-3">
-                <span className="text-base font-semibold text-slate-400">Total</span>
-                <span className="text-lg font-bold text-white">{formatCurrency(totalCosts)}</span>
+                <span className="text-base font-semibold" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total</span>
+                <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(totalCosts)}</span>
               </div>
             </div>
           )}
@@ -363,11 +382,17 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <MobileBottomSheet open={showAddCost} onClose={() => setShowAddCost(false)} title="Add Cost">
             <div className="px-5 space-y-4">
               <div>
-                <label className="block text-base text-slate-400 mb-1">Category</label>
+                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Category</label>
                 <select
                   value={costCategory}
                   onChange={(e) => setCostCategory(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
+                  className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+                  style={{
+                    background: 'var(--m-card, #0d1525)',
+                    border: '1px solid var(--m-border, #1a2840)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    '--tw-ring-color': '#00e5a0',
+                  } as React.CSSProperties}
                 >
                   {COST_CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
@@ -375,37 +400,60 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 </select>
               </div>
               <div>
-                <label className="block text-base text-slate-400 mb-1">Amount</label>
+                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
                 <input
                   type="number"
                   value={costAmount}
                   onChange={(e) => setCostAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
+                  className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+                  style={{
+                    background: 'var(--m-card, #0d1525)',
+                    border: '1px solid var(--m-border, #1a2840)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    '--tw-ring-color': '#00e5a0',
+                  } as React.CSSProperties}
                 />
               </div>
               <div>
-                <label className="block text-base text-slate-400 mb-1">Description</label>
+                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Description</label>
                 <input
                   value={costDesc}
                   onChange={(e) => setCostDesc(e.target.value)}
                   placeholder="Optional"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
+                  className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+                  style={{
+                    background: 'var(--m-card, #0d1525)',
+                    border: '1px solid var(--m-border, #1a2840)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    '--tw-ring-color': '#00e5a0',
+                  } as React.CSSProperties}
                 />
               </div>
               <div>
-                <label className="block text-base text-slate-400 mb-1">Date</label>
+                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
                 <input
                   type="date"
                   value={costDate}
                   onChange={(e) => setCostDate(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-base text-white min-h-[48px]"
+                  className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+                  style={{
+                    background: 'var(--m-card, #0d1525)',
+                    border: '1px solid var(--m-border, #1a2840)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    '--tw-ring-color': '#00e5a0',
+                  } as React.CSSProperties}
                 />
               </div>
               <button
                 onClick={handleAddCost}
                 disabled={addingCost || !costAmount}
-                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold bg-emerald-600 text-white rounded-lg disabled:opacity-40 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors"
+                style={{
+                  background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+                  boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
               >
                 {addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {addingCost ? 'Adding...' : 'Add Cost'}

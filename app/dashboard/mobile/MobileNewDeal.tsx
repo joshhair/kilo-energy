@@ -64,17 +64,17 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
         {DEAL_STEPS.map((_, idx) => (
           <div
             key={idx}
-            className={`rounded-full transition-all ${
-              idx < currentStep
-                ? 'w-2.5 h-2.5 bg-emerald-500'
-                : idx === currentStep
-                ? 'w-2.5 h-2.5 bg-blue-500 ring-2 ring-blue-500/30'
-                : 'w-2 h-2 bg-slate-700'
-            }`}
+            className="rounded-full transition-all"
+            style={{
+              width: idx === currentStep ? 14 : 10,
+              height: 10,
+              borderRadius: idx === currentStep ? 5 : '50%',
+              background: idx < currentStep ? '#00b4d8' : idx === currentStep ? '#00e5a0' : 'var(--m-border, #1a2840)',
+            }}
           />
         ))}
       </div>
-      <span className="text-base text-slate-400 font-medium">
+      <span className="text-base font-medium" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         Step {currentStep + 1} of {DEAL_STEPS.length} — {DEAL_STEPS[currentStep]}
       </span>
     </div>
@@ -108,7 +108,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
         <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-3">
           <CheckCircle2 className="w-7 h-7 text-green-400" strokeWidth={1.5} />
         </div>
-        <h2 className="text-xl font-black text-white mb-1">Deal Submitted!</h2>
+        <h2 className="text-xl font-black text-white mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
         <p className="text-slate-400 text-base">
           <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
         </p>
@@ -147,7 +147,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
                 {deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}
               </p>
             </div>
-            <p className="text-xl font-black text-green-400">${deal.closerTotal.toLocaleString()}</p>
+            <p className="text-xl font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${deal.closerTotal.toLocaleString()}</p>
           </div>
         ) : (
           <p className="text-slate-400 text-base">Commission will be calculated once pricing is confirmed.</p>
@@ -163,7 +163,12 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
       <div className="space-y-2 pt-2">
         <button
           onClick={() => router.push('/dashboard/projects')}
-          className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold rounded-xl text-base active:scale-[0.97]"
+          className="w-full min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
+          style={{
+            background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+            boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
         >
           View Projects <ArrowRight className="w-4 h-4" />
         </button>
@@ -508,13 +513,22 @@ export default function MobileNewDeal() {
 
   // ── Style helpers ─────────────────────────────────────────────────────────
 
+  const v0InputStyle = (field: string): React.CSSProperties => ({
+    background: 'var(--m-card, #0d1525)',
+    border: errors[field] ? '1px solid #ef4444' : '1px solid var(--m-border, #1a2840)',
+    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+  });
+
+  const v0FocusCss = 'focus:!border-[rgba(0,229,160,0.3)] focus:shadow-[0_0_0_3px_rgba(0,229,160,0.08)]';
+
   const inputCls = (field: string) =>
-    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-base text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors placeholder-slate-500`;
+    `w-full min-h-[44px] rounded-xl px-3 text-base text-white focus:outline-none transition-colors placeholder-slate-500 ${v0FocusCss}`;
 
   const selectCls = (field: string) =>
-    `w-full min-h-[44px] bg-slate-800/60 border ${errors[field] ? 'border-red-500' : 'border-slate-700/50'} rounded-xl px-3 text-base text-white shadow-inner shadow-black/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 transition-colors`;
+    `w-full min-h-[44px] rounded-xl px-3 text-base text-white focus:outline-none transition-colors ${v0FocusCss}`;
 
-  const labelCls = 'text-base text-slate-400 mb-1 block';
+  const labelCls = 'text-base mb-1 block uppercase tracking-widest';
+  const labelStyle: React.CSSProperties = { color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -544,27 +558,27 @@ export default function MobileNewDeal() {
           <div className="space-y-4">
             {/* Customer Name */}
             <div>
-              <label className={labelCls}>Customer Name</label>
+              <label className={labelCls} style={labelStyle}>Customer Name</label>
               <input
                 type="text"
                 placeholder="e.g. John & Jane Smith"
                 value={form.customerName}
                 onChange={(e) => update('customerName', e.target.value)}
                 onBlur={() => handleBlur('customerName')}
-                className={inputCls('customerName')}
+                className={inputCls('customerName')} style={v0InputStyle('customerName')}
               />
               <FieldError errors={errors} field="customerName" />
             </div>
 
             {/* Sold Date */}
             <div>
-              <label className={labelCls}>Sold Date</label>
+              <label className={labelCls} style={labelStyle}>Sold Date</label>
               <input
                 type="date"
                 value={form.soldDate}
                 onChange={(e) => update('soldDate', e.target.value)}
                 onBlur={() => handleBlur('soldDate')}
-                className={inputCls('soldDate')}
+                className={inputCls('soldDate')} style={v0InputStyle('soldDate')}
               />
               <FieldError errors={errors} field="soldDate" />
             </div>
@@ -572,12 +586,12 @@ export default function MobileNewDeal() {
             {/* Closer (admin/PM only) */}
             {!isSubDealer && currentRole === 'admin' && (
               <div>
-                <label className={labelCls}>Closer (Rep)</label>
+                <label className={labelCls} style={labelStyle}>Closer (Rep)</label>
                 <select
                   value={form.repId}
                   onChange={(e) => update('repId', e.target.value)}
                   onBlur={() => handleBlur('repId')}
-                  className={selectCls('repId')}
+                  className={selectCls('repId')} style={v0InputStyle('repId')}
                 >
                   <option value="">-- Select closer --</option>
                   {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -589,7 +603,7 @@ export default function MobileNewDeal() {
             {/* Setter (optional) */}
             {!isSubDealer && (
               <div>
-                <label className={labelCls}>Setter <span className="text-slate-400">(optional)</span></label>
+                <label className={labelCls} style={labelStyle}>Setter <span className="text-slate-400">(optional)</span></label>
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
@@ -612,7 +626,12 @@ export default function MobileNewDeal() {
             <button
               type="button"
               onClick={handleNext}
-              className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold rounded-xl text-base active:scale-[0.97]"
+              className="w-full min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
+              style={{
+                background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+                boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>
@@ -624,12 +643,12 @@ export default function MobileNewDeal() {
           <div className="space-y-4">
             {/* Installer */}
             <div>
-              <label className={labelCls}>Installer</label>
+              <label className={labelCls} style={labelStyle}>Installer</label>
               <select
                 value={form.installer}
                 onChange={(e) => handleInstallerChange(e.target.value)}
                 onBlur={() => handleBlur('installer')}
-                className={selectCls('installer')}
+                className={selectCls('installer')} style={v0InputStyle('installer')}
               >
                 <option value="">-- Select installer --</option>
                 {activeInstallers.map((i) => <option key={i} value={i}>{i}</option>)}
@@ -640,7 +659,7 @@ export default function MobileNewDeal() {
             {/* Product Type */}
             {form.installer && (
               <div>
-                <label className={labelCls}>Product Type</label>
+                <label className={labelCls} style={labelStyle}>Product Type</label>
                 <div className="grid grid-cols-4 gap-2">
                   {PRODUCT_TYPES.map((pt) => (
                     <button
@@ -657,11 +676,13 @@ export default function MobileNewDeal() {
                         setErrors((prev) => ({ ...prev, productType: '', financer: isCash ? '' : prev.financer }));
                         setTouched((prev) => { const next = new Set(prev); next.add('productType'); return next; });
                       }}
-                      className={`min-h-[44px] rounded-xl text-base font-medium border transition-all ${
-                        form.productType === pt
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'bg-slate-800/60 border-slate-700/50 text-slate-400'
-                      }`}
+                      className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                      style={{
+                        background: form.productType === pt ? '#00e5a0' : 'var(--m-card, #0d1525)',
+                        color: form.productType === pt ? '#000' : 'var(--m-text-muted, #8899aa)',
+                        border: form.productType === pt ? 'none' : '1px solid var(--m-border, #1a2840)',
+                        fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                      }}
                     >
                       {pt}
                     </button>
@@ -685,7 +706,7 @@ export default function MobileNewDeal() {
                 <>
                   {/* SolarTech product family */}
                   <div>
-                    <label className={labelCls}>Product Family</label>
+                    <label className={labelCls} style={labelStyle}>Product Family</label>
                     <div className="grid grid-cols-2 gap-2">
                       {SOLARTECH_FAMILIES.map((family) => {
                         const selected = form.solarTechFamily === family;
@@ -722,7 +743,7 @@ export default function MobileNewDeal() {
                     form.solarTechFamily === 'Cash/HDM/PE' || (form.productType === 'Cash' || form.productType === 'Loan')
                   ) && (
                     <div>
-                      <label className={labelCls}>Prepaid Type</label>
+                      <label className={labelCls} style={labelStyle}>Prepaid Type</label>
                       <div className="grid grid-cols-2 gap-2">
                         {getInstallerPrepaidOptions(form.installer).map((opt) => (
                           <button
@@ -745,12 +766,12 @@ export default function MobileNewDeal() {
                   {/* SolarTech financer (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
                     <div>
-                      <label className={labelCls}>Financer</label>
+                      <label className={labelCls} style={labelStyle}>Financer</label>
                       <select
                         value={form.financer}
                         onChange={(e) => handleFinancerChange(e.target.value)}
                         onBlur={() => handleBlur('financer')}
-                        className={selectCls('financer')}
+                        className={selectCls('financer')} style={v0InputStyle('financer')}
                       >
                         <option value="">-- Select financer --</option>
                         {activeFinancers.map((f) => <option key={f} value={f}>{f}</option>)}
@@ -762,12 +783,12 @@ export default function MobileNewDeal() {
                   {/* SolarTech equipment package */}
                   {hasSolarTechProducts && (
                     <div>
-                      <label className={labelCls}>Equipment Package</label>
+                      <label className={labelCls} style={labelStyle}>Equipment Package</label>
                       <select
                         value={form.solarTechProductId}
                         onChange={(e) => update('solarTechProductId', e.target.value)}
                         onBlur={() => handleBlur('solarTechProductId')}
-                        className={selectCls('solarTechProductId')}
+                        className={selectCls('solarTechProductId')} style={v0InputStyle('solarTechProductId')}
                       >
                         <option value="">-- Select package --</option>
                         {SOLARTECH_PRODUCTS.filter((p) => p.family === solarTechFamily).map((p) => (
@@ -782,7 +803,7 @@ export default function MobileNewDeal() {
                 <>
                   {/* Product Catalog family */}
                   <div>
-                    <label className={labelCls}>Product Family</label>
+                    <label className={labelCls} style={labelStyle}>Product Family</label>
                     <div className="grid grid-cols-2 gap-2">
                       {(() => {
                         const cashOrLoan = form.productType === 'Cash' || form.productType === 'Loan';
@@ -823,7 +844,7 @@ export default function MobileNewDeal() {
                     (pcConfig.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily)
                   ) && (
                     <div>
-                      <label className={labelCls}>Prepaid Type</label>
+                      <label className={labelCls} style={labelStyle}>Prepaid Type</label>
                       <div className="grid grid-cols-2 gap-2">
                         {getInstallerPrepaidOptions(form.installer).map((opt) => (
                           <button
@@ -846,12 +867,12 @@ export default function MobileNewDeal() {
                   {/* PC financer (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
                     <div>
-                      <label className={labelCls}>Financer</label>
+                      <label className={labelCls} style={labelStyle}>Financer</label>
                       <select
                         value={form.financer}
                         onChange={(e) => handleFinancerChange(e.target.value)}
                         onBlur={() => handleBlur('financer')}
-                        className={selectCls('financer')}
+                        className={selectCls('financer')} style={v0InputStyle('financer')}
                       >
                         <option value="">-- Select financer --</option>
                         {activeFinancers.map((f) => <option key={f} value={f}>{f}</option>)}
@@ -863,12 +884,12 @@ export default function MobileNewDeal() {
                   {/* PC equipment package */}
                   {hasPcProducts && (
                     <div>
-                      <label className={labelCls}>Equipment Package</label>
+                      <label className={labelCls} style={labelStyle}>Equipment Package</label>
                       <select
                         value={form.installerProductId}
                         onChange={(e) => update('installerProductId', e.target.value)}
                         onBlur={() => handleBlur('installerProductId')}
-                        className={selectCls('installerProductId')}
+                        className={selectCls('installerProductId')} style={v0InputStyle('installerProductId')}
                       >
                         <option value="">-- Select package --</option>
                         {productCatalogProducts.filter((p) => p.installer === form.installer && p.family === pcFamily).map((p) => (
@@ -884,12 +905,12 @@ export default function MobileNewDeal() {
                   {/* Standard installer financer (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
                     <div>
-                      <label className={labelCls}>Financer</label>
+                      <label className={labelCls} style={labelStyle}>Financer</label>
                       <select
                         value={form.financer}
                         onChange={(e) => handleFinancerChange(e.target.value)}
                         onBlur={() => handleBlur('financer')}
-                        className={selectCls('financer')}
+                        className={selectCls('financer')} style={v0InputStyle('financer')}
                       >
                         <option value="">-- Select financer --</option>
                         {activeFinancers.map((f) => <option key={f} value={f}>{f}</option>)}
@@ -901,7 +922,7 @@ export default function MobileNewDeal() {
                   {/* Standard installer prepaid sub-type (Cash/Loan only) */}
                   {getInstallerPrepaidOptions(form.installer).length > 0 && (form.productType === 'Cash' || form.productType === 'Loan') && (
                     <div>
-                      <label className={labelCls}>Prepaid Type</label>
+                      <label className={labelCls} style={labelStyle}>Prepaid Type</label>
                       <div className="grid grid-cols-2 gap-2">
                         {getInstallerPrepaidOptions(form.installer).map((opt) => (
                           <button
@@ -926,7 +947,7 @@ export default function MobileNewDeal() {
 
             {/* System Size */}
             <div>
-              <label className={labelCls}>System Size (kW)</label>
+              <label className={labelCls} style={labelStyle}>System Size (kW)</label>
               <input
                 type="number"
                 step="0.1"
@@ -935,14 +956,14 @@ export default function MobileNewDeal() {
                 value={form.kWSize}
                 onChange={(e) => update('kWSize', e.target.value)}
                 onBlur={() => handleBlur('kWSize')}
-                className={inputCls('kWSize')}
+                className={inputCls('kWSize')} style={v0InputStyle('kWSize')}
               />
               <FieldError errors={errors} field="kWSize" />
             </div>
 
             {/* Net PPW */}
             <div>
-              <label className={labelCls}>Net PPW ($/W)</label>
+              <label className={labelCls} style={labelStyle}>Net PPW ($/W)</label>
               <input
                 type="number"
                 step="0.01"
@@ -951,7 +972,7 @@ export default function MobileNewDeal() {
                 value={form.netPPW}
                 onChange={(e) => update('netPPW', e.target.value)}
                 onBlur={() => handleBlur('netPPW')}
-                className={inputCls('netPPW')}
+                className={inputCls('netPPW')} style={v0InputStyle('netPPW')}
               />
               <FieldError errors={errors} field="netPPW" />
               {!errors.netPPW && soldPPW > 0 && closerPerW > 0 && (
@@ -982,7 +1003,7 @@ export default function MobileNewDeal() {
                     )}
                     <div className="flex justify-between">
                       <span className="text-slate-400">M2 commission</span>
-                      <span className="text-emerald-400 font-black">${subDealerCommission.toLocaleString()}</span>
+                      <span className="font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
@@ -999,7 +1020,7 @@ export default function MobileNewDeal() {
                     )}
                     <div className="flex justify-between">
                       <span className="text-slate-400">Closer</span>
-                      <span className="text-emerald-400 font-black">${closerTotal.toLocaleString()}</span>
+                      <span className="font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-base text-slate-400">
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
@@ -1042,7 +1063,12 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 bg-blue-600 text-white font-semibold rounded-xl text-base active:scale-[0.97]"
+                className="flex-1 min-h-[48px] flex items-center justify-center gap-1 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
+                style={{
+                  background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+                  boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
               >
                 Next <ChevronRight className="w-4 h-4" />
               </button>
@@ -1113,14 +1139,14 @@ export default function MobileNewDeal() {
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between">
                       <span className="text-slate-400">M2 commission</span>
-                      <span className="text-emerald-400 font-black text-lg">${subDealerCommission.toLocaleString()}</span>
+                      <span className="font-black text-lg" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Closer total</span>
-                      <span className="text-emerald-400 font-black text-lg">${closerTotal.toLocaleString()}</span>
+                      <span className="font-black text-lg" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="text-base text-slate-400">
                       M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}
@@ -1158,12 +1184,12 @@ export default function MobileNewDeal() {
 
             {/* Notes */}
             <div>
-              <label className={labelCls}>Notes <span className="text-slate-400">(optional)</span></label>
+              <label className={labelCls} style={labelStyle}>Notes <span className="text-slate-400">(optional)</span></label>
               <textarea
                 placeholder="Add any notes about this deal..."
                 value={form.notes}
                 onChange={(e) => update('notes', e.target.value)}
-                className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`}
+                className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`} style={v0InputStyle('')}
               />
               <div className="flex items-center justify-between mt-1">
                 <p className="text-base text-slate-400 italic">Internal notes only</p>
@@ -1175,7 +1201,7 @@ export default function MobileNewDeal() {
 
             {/* Lead Source */}
             <div>
-              <label className={labelCls}>Lead Source <span className="text-slate-400">(optional)</span></label>
+              <label className={labelCls} style={labelStyle}>Lead Source <span className="text-slate-400">(optional)</span></label>
               <select
                 value={form.leadSource}
                 onChange={(e) => {
@@ -1183,7 +1209,7 @@ export default function MobileNewDeal() {
                   update('leadSource', val);
                   if (val !== 'blitz') update('blitzId', '');
                 }}
-                className={selectCls('')}
+                className={selectCls('')} style={v0InputStyle('')}
               >
                 <option value="">-- Select --</option>
                 <option value="organic">Organic</option>
@@ -1198,7 +1224,7 @@ export default function MobileNewDeal() {
             {/* Blitz selector */}
             {form.leadSource === 'blitz' && (
               <div>
-                <label className={labelCls}>Blitz</label>
+                <label className={labelCls} style={labelStyle}>Blitz</label>
                 <select
                   value={form.blitzId}
                   onChange={(e) => {
@@ -1218,7 +1244,7 @@ export default function MobileNewDeal() {
                       }
                     }
                   }}
-                  className={selectCls('')}
+                  className={selectCls('')} style={v0InputStyle('')}
                 >
                   <option value="">-- Select Blitz --</option>
                   {availableBlitzes.map((b) => (
@@ -1241,7 +1267,12 @@ export default function MobileNewDeal() {
               <button
                 type="submit"
                 disabled={submitting}
-                className={`flex-1 min-h-[48px] flex items-center justify-center gap-2 bg-emerald-600 text-white font-semibold rounded-xl text-base active:scale-[0.97] disabled:opacity-60 ${!submitting ? 'shadow-md shadow-emerald-500/20' : ''}`}
+                className="flex-1 min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97] disabled:opacity-60"
+                style={{
+                  background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+                  boxShadow: !submitting ? '0 4px 20px rgba(0,229,160,0.25)' : 'none',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
               >
                 {submitting ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>

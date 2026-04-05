@@ -14,6 +14,17 @@ import { AlertTriangle, TrendingUp, Users, Zap, CreditCard, FolderKanban, Chevro
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
+import MobileStatCard from './shared/MobileStatCard';
+
+// ── Design tokens ────────────────────────────────────────────────────────────
+const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
+const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
+const ACCENT = 'var(--m-accent, #00e5a0)';
+const ACCENT2 = 'var(--m-accent2, #00b4d8)';
+const MUTED = 'var(--m-text-muted, #8899aa)';
+const DIM = 'var(--m-text-dim, #445577)';
+const DANGER = 'var(--m-danger, #ff6b6b)';
+const WARNING = 'var(--m-warning, #f5a623)';
 
 function fmtCompact(n: number): string {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
@@ -102,106 +113,97 @@ export default function MobileAdminDashboard() {
   const needsAttention = flaggedCount + draftCount + pendingCount + stalledProjects.length;
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-5">
+    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <MobilePageHeader title="Dashboard" />
 
-      {/* ── Hero: Total Paid with context ── */}
-      <MobileCard>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-base text-slate-400">Total Paid</p>
-          <TrendingUp className="w-5 h-5 text-emerald-500" />
+      {/* ── Hero: Total Paid with Revenue / Profit ── */}
+      <MobileCard hero>
+        <div className="flex items-center justify-between mb-2">
+          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Total Paid</p>
+          <TrendingUp className="w-5 h-5" style={{ color: ACCENT }} />
         </div>
-        <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmtCompact(Math.round(totalPaid))}</p>
-        <div className="flex items-center gap-4 mt-3">
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact(Math.round(totalPaid))}</p>
+        <div className="flex items-center gap-4 mt-4">
           <div>
-            <p className="text-xl font-bold text-white tabular-nums">{fmtCompact(Math.round(totalRevenue))}</p>
-            <p className="text-base text-slate-400">Revenue</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(Math.round(totalRevenue))}</p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Revenue</p>
           </div>
-          <div className="w-px h-8 bg-slate-800" />
+          <div className="h-8" style={{ width: '1px', background: 'var(--m-border, #1a2840)' }} />
           <div>
-            <p className="text-xl font-bold text-white tabular-nums">{fmtCompact(Math.round(totalProfit))}</p>
-            <p className="text-base text-slate-400">Profit</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(Math.round(totalProfit))}</p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Profit</p>
           </div>
         </div>
       </MobileCard>
 
       {/* ── Quick stats row ── */}
       <div className="grid grid-cols-3 gap-3">
-        <MobileCard onTap={() => router.push('/dashboard/projects')}>
-          <FolderKanban className="w-5 h-5 text-blue-400 mb-2" />
-          <p className="text-2xl font-black text-white tabular-nums">{active.length}</p>
-          <p className="text-base text-slate-400">Active</p>
-        </MobileCard>
-        <MobileCard onTap={() => router.push('/dashboard/reps')}>
-          <Users className="w-5 h-5 text-blue-400 mb-2" />
-          <p className="text-2xl font-black text-white tabular-nums">{reps.length}</p>
-          <p className="text-base text-slate-400">Reps</p>
-        </MobileCard>
-        <MobileCard>
-          <Zap className="w-5 h-5 text-amber-400 mb-2" />
-          <p className="text-2xl font-black text-white tabular-nums">{totalKW.toFixed(0)}</p>
-          <p className="text-base text-slate-400">kW</p>
-        </MobileCard>
+        <MobileStatCard label="Active" value={active.length} color={ACCENT} />
+        <MobileStatCard label="Reps" value={reps.length} color={ACCENT2} />
+        <MobileStatCard label="kW" value={totalKW.toFixed(0)} color={WARNING} />
       </div>
 
       {/* ── Needs Attention (action-oriented) ── */}
       {needsAttention > 0 && (
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-            <p className="text-base font-semibold text-white">Needs Attention</p>
-            <span className="ml-auto text-base font-bold text-amber-400">{needsAttention}</span>
+            <AlertTriangle className="w-5 h-5" style={{ color: WARNING }} />
+            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Needs Attention</p>
+            <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{needsAttention}</span>
           </div>
 
           {draftCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:bg-slate-800/40 transition-colors border-b border-slate-800/20"
+              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
+              style={{ borderColor: 'var(--m-border, #1a2840)' }}
             >
               <div className="flex items-center gap-3">
-                <CreditCard className="w-4 h-4 text-slate-400" />
-                <span className="text-base text-white">{draftCount} payroll drafts</span>
+                <CreditCard className="w-4 h-4" style={{ color: MUTED }} />
+                <span style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{draftCount} payroll drafts</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
+              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
           )}
 
           {pendingCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:bg-slate-800/40 transition-colors border-b border-slate-800/20"
+              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
+              style={{ borderColor: 'var(--m-border, #1a2840)' }}
             >
               <div className="flex items-center gap-3">
-                <CreditCard className="w-4 h-4 text-amber-400" />
-                <span className="text-base text-amber-300">{pendingCount} pending · {fmtCompact(pendingTotal)}</span>
+                <CreditCard className="w-4 h-4" style={{ color: WARNING }} />
+                <span style={{ color: WARNING, fontFamily: FONT_BODY, fontSize: '1rem' }}>{pendingCount} pending &middot; {fmtCompact(pendingTotal)}</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
+              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
           )}
 
           {flaggedCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:bg-slate-800/40 transition-colors border-b border-slate-800/20"
+              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
+              style={{ borderColor: 'var(--m-border, #1a2840)' }}
             >
               <div className="flex items-center gap-3">
-                <Flag className="w-4 h-4 text-red-400" />
-                <span className="text-base text-red-300">{flaggedCount} flagged projects</span>
+                <Flag className="w-4 h-4" style={{ color: DANGER }} />
+                <span style={{ color: DANGER, fontFamily: FONT_BODY, fontSize: '1rem' }}>{flaggedCount} flagged projects</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
+              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
           )}
 
           {stalledProjects.length > 0 && (
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:bg-slate-800/40 transition-colors"
+              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity"
             >
               <div className="flex items-center gap-3">
-                <Clock className="w-4 h-4 text-slate-400" />
-                <span className="text-base text-slate-300">{stalledProjects.length} stalled projects</span>
+                <Clock className="w-4 h-4" style={{ color: MUTED }} />
+                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{stalledProjects.length} stalled projects</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
+              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
           )}
         </MobileCard>
@@ -209,18 +211,18 @@ export default function MobileAdminDashboard() {
 
       {/* ── Pipeline snapshot ── */}
       <MobileCard>
-        <p className="text-base font-semibold text-white mb-3">Pipeline</p>
+        <p className="tracking-widest uppercase mb-4" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Pipeline</p>
         <div className="space-y-2">
           {ACTIVE_PHASES.filter((phase) => (phaseCounts[phase] || 0) > 0).map((phase) => {
             const count = phaseCounts[phase] || 0;
             const pct = active.length > 0 ? (count / active.length) * 100 : 0;
             return (
               <div key={phase} className="flex items-center gap-3">
-                <span className="text-base text-slate-400 w-24 shrink-0 truncate">{phase}</span>
-                <div className="flex-1 h-2 bg-slate-800 rounded-full">
-                  <div className="h-full bg-blue-500/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                <span className="w-24 shrink-0 truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{phase}</span>
+                <div className="flex-1 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: ACCENT }} />
                 </div>
-                <span className="text-lg font-bold text-white w-8 text-right tabular-nums">{count}</span>
+                <span className="w-8 text-right tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
               </div>
             );
           })}
@@ -230,16 +232,25 @@ export default function MobileAdminDashboard() {
       {/* ── Top Reps ── */}
       {topReps.length > 0 && (
         <MobileCard onTap={() => router.push('/dashboard/reps')}>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-base font-semibold text-white">Top Reps</p>
-            <ChevronRight className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center justify-between mb-4">
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Top Reps</p>
+            <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {topReps.map((r, i) => (
               <div key={r.name} className="flex items-center gap-3">
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">{i + 1}</span>
-                <span className="text-base text-white flex-1">{r.name}</span>
-                <span className="text-base font-bold text-slate-400">{r.count} deals</span>
+                <span
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{
+                    background: i === 0 ? 'rgba(0,229,160,0.15)' : i === 1 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
+                    color: i === 0 ? ACCENT : i === 1 ? ACCENT2 : MUTED,
+                    fontFamily: FONT_DISPLAY,
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <span className="flex-1 text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.name}</span>
+                <span className="font-bold tabular-nums" style={{ color: MUTED, fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{r.count} deals</span>
               </div>
             ))}
           </div>
@@ -248,25 +259,26 @@ export default function MobileAdminDashboard() {
 
       {/* ── Recent Deals ── */}
       <MobileCard>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-base font-semibold text-white">Recent Deals</p>
-          <button onClick={() => router.push('/dashboard/projects')} className="text-base text-blue-400 active:text-blue-300">View all</button>
+        <div className="flex items-center justify-between mb-4">
+          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Recent Deals</p>
+          <button onClick={() => router.push('/dashboard/projects')} className="active:opacity-70 transition-opacity" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>View all</button>
         </div>
         {recentDeals.length === 0 ? (
-          <p className="text-base text-slate-400">No deals yet.</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>No deals yet.</p>
         ) : (
-          <div className="space-y-0">
+          <div>
             {recentDeals.map((p, i) => {
               const rep = reps.find((r) => r.id === p.repId);
               return (
                 <button
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                  className={`w-full flex items-center justify-between min-h-[48px] py-2.5 text-left active:bg-slate-800/40 transition-colors ${i < recentDeals.length - 1 ? 'border-b border-slate-800/20' : ''}`}
+                  className={`w-full flex items-center justify-between min-h-[48px] py-2.5 text-left active:opacity-70 transition-opacity ${i < recentDeals.length - 1 ? 'border-b' : ''}`}
+                  style={{ borderColor: 'var(--m-border, #1a2840)' }}
                 >
                   <div className="min-w-0 flex-1 mr-3">
-                    <p className="text-base text-white truncate">{p.customerName}</p>
-                    <p className="text-base text-slate-400">{rep?.name ?? 'Unknown'} · {p.kWSize} kW</p>
+                    <p className="text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{rep?.name ?? 'Unknown'} &middot; {p.kWSize} kW</p>
                   </div>
                   <MobileBadge value={p.phase} />
                 </button>

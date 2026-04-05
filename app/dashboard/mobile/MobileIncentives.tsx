@@ -158,50 +158,53 @@ function IncentiveCard({
     ? reps.find((r: any) => r.id === incentive.targetRepId)?.name ?? 'Unknown Rep'
     : null;
 
-  const typeBadgeColor = incentive.type === 'company'
-    ? 'bg-blue-900/30 text-blue-300'
-    : 'bg-purple-900/30 text-purple-300';
+  const typeBadgeStyle: React.CSSProperties = incentive.type === 'company'
+    ? { background: 'rgba(0,180,216,0.15)', color: 'var(--m-accent2, #00b4d8)' }
+    : { background: 'rgba(0,229,160,0.15)', color: 'var(--m-accent, #00e5a0)' };
 
   const barFill = expired
-    ? 'bg-slate-600'
+    ? 'var(--m-text-dim, #445577)'
     : pct >= 100
-      ? 'bg-emerald-500'
-      : 'bg-blue-500';
+      ? 'var(--m-accent, #00e5a0)'
+      : 'var(--m-accent2, #00b4d8)';
 
   return (
     <MobileCard className={expired ? 'opacity-60' : ''}>
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-base font-semibold text-white leading-snug">{incentive.title}</p>
-        <span className={`inline-flex items-center px-2.5 py-0.5 text-base font-semibold rounded-lg shrink-0 ${typeBadgeColor}`}>
+        <p className="text-base font-semibold text-white leading-snug" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{incentive.title}</p>
+        <span
+          className="inline-flex items-center px-2.5 py-0.5 text-base font-semibold rounded-lg shrink-0"
+          style={typeBadgeStyle}
+        >
           {incentive.type === 'company' ? 'Company' : 'Personal'}
         </span>
       </div>
 
       {/* Target rep for personal incentives */}
       {targetRepName && (
-        <p className="text-base text-slate-400 mb-1">{targetRepName}</p>
+        <p className="text-base mb-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{targetRepName}</p>
       )}
 
       {/* Metric + Period */}
-      <p className="text-base text-slate-400 mb-3">
+      <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         {metricLabel(incentive.metric)} &middot; {getPeriodLabel(incentive)}
       </p>
 
       {/* Progress bar */}
       <div className="mb-3">
         <div className="flex items-baseline justify-between mb-1">
-          <p className="text-base font-medium text-white">
+          <p className="text-base font-medium text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
             {formatIncentiveMetric(incentive.metric, progress)}
           </p>
-          <p className="text-base text-slate-400">
+          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
             / {formatIncentiveMetric(incentive.metric, maxThreshold)}
           </p>
         </div>
-        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, #1a2840)' }}>
           <div
-            className={`h-full rounded-full transition-all duration-500 ${barFill}`}
-            style={{ width: `${pct}%` }}
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pct}%`, background: barFill }}
           />
         </div>
       </div>
@@ -213,22 +216,35 @@ function IncentiveCard({
             const reached = progress >= ms.threshold;
             return (
               <div key={ms.id} className="flex items-center gap-2 min-h-[28px]">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                  ms.achieved
-                    ? 'bg-emerald-500/20'
-                    : reached
-                      ? 'bg-amber-500/20'
-                      : 'bg-slate-800'
-                }`}>
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                  style={{
+                    background: ms.achieved
+                      ? 'rgba(0,229,160,0.2)'
+                      : reached
+                        ? 'rgba(245,166,35,0.2)'
+                        : 'var(--m-border, #1a2840)',
+                  }}
+                >
                   {ms.achieved ? (
-                    <Gift className="w-3 h-3 text-emerald-400" />
+                    <Gift className="w-3 h-3" style={{ color: 'var(--m-accent, #00e5a0)' }} />
                   ) : reached ? (
-                    <Target className="w-3 h-3 text-amber-400" />
+                    <Target className="w-3 h-3" style={{ color: 'var(--m-warning, #f5a623)' }} />
                   ) : (
-                    <Target className="w-3 h-3 text-slate-400" />
+                    <Target className="w-3 h-3" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
                   )}
                 </div>
-                <p className={`text-base flex-1 ${ms.achieved ? 'text-emerald-400 line-through' : reached ? 'text-amber-300' : 'text-slate-400'}`}>
+                <p
+                  className={`text-base flex-1 ${ms.achieved ? 'line-through' : ''}`}
+                  style={{
+                    color: ms.achieved
+                      ? 'var(--m-accent, #00e5a0)'
+                      : reached
+                        ? 'var(--m-warning, #f5a623)'
+                        : 'var(--m-text-muted, #8899aa)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
+                >
                   {formatIncentiveMetric(incentive.metric, ms.threshold)} &rarr; {ms.reward}
                 </p>
               </div>

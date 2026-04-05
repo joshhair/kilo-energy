@@ -97,7 +97,8 @@ export default function MobileReps() {
           isAdmin ? (
             <button
               onClick={() => setShowAddRep(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-2xl bg-blue-600 text-white active:bg-blue-700 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-2xl text-black active:opacity-80 transition-colors"
+              style={{ background: 'linear-gradient(135deg, #00e5a0, #00b4d8)', boxShadow: '0 0 20px rgba(0,229,160,0.3)' }}
               aria-label="Add rep"
             >
               <Plus className="w-5 h-5" />
@@ -108,13 +109,18 @@ export default function MobileReps() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
         <input
           type="text"
           placeholder="Search reps..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 bg-slate-800/40 rounded-2xl text-base text-white placeholder:text-slate-400 focus:outline-none transition-colors"
+          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-2xl text-base text-white focus:outline-none focus:ring-1 transition-colors"
+          style={{
+            background: 'var(--m-card, #0d1525)',
+            border: '1px solid var(--m-border, #1a2840)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
         />
       </div>
 
@@ -131,25 +137,28 @@ export default function MobileReps() {
             return (
               <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/reps/${rep.id}`)}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-base font-bold shrink-0">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-black text-base font-bold shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #00b4d8, #00e5a0)' }}
+                  >
                     {getInitials(rep.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-white truncate">{rep.name}</p>
+                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
                     {rep.email && (
-                      <p className="text-base text-slate-400 truncate">{rep.email}</p>
+                      <p className="text-base truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
                     )}
                   </div>
                   <MobileBadge value={ROLE_LABELS[rep.repType] ?? rep.repType} />
                 </div>
 
                 {isAdmin && (
-                  <div className="flex gap-4 mt-3 text-base text-slate-400">
-                    <span><span className="font-bold">{deals}</span> deals</span>
+                  <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{deals}</span> deals</span>
                     <span>&middot;</span>
-                    <span><span className="font-bold">{kw.toFixed(1)}</span> kW</span>
+                    <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{kw.toFixed(1)}</span> kW</span>
                     <span>&middot;</span>
-                    <span><span className="font-bold">${paid.toLocaleString()}</span> paid</span>
+                    <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${paid.toLocaleString()}</span> paid</span>
                   </div>
                 )}
               </MobileCard>
@@ -196,50 +205,70 @@ export default function MobileReps() {
           className="px-5 space-y-4 pb-2"
         >
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">First Name</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>First Name</label>
             <input
               type="text"
               required
               value={addForm.firstName}
               onChange={(e) => setAddForm((f) => ({ ...f, firstName: e.target.value }))}
               placeholder="First name"
-              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              style={{
+                background: 'var(--m-card, #0d1525)',
+                border: '1px solid var(--m-border, #1a2840)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                '--tw-ring-color': '#00e5a0',
+              } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Last Name</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Last Name</label>
             <input
               type="text"
               required
               value={addForm.lastName}
               onChange={(e) => setAddForm((f) => ({ ...f, lastName: e.target.value }))}
               placeholder="Last name"
-              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              style={{
+                background: 'var(--m-card, #0d1525)',
+                border: '1px solid var(--m-border, #1a2840)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                '--tw-ring-color': '#00e5a0',
+              } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Email</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Email</label>
             <input
               type="email"
               value={addForm.email}
               onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="email@example.com"
-              className="w-full min-h-[48px] bg-slate-800 border border-slate-700 text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              style={{
+                background: 'var(--m-card, #0d1525)',
+                border: '1px solid var(--m-border, #1a2840)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                '--tw-ring-color': '#00e5a0',
+              } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep Type</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
             <div className="flex gap-2">
               {(['closer', 'setter', 'both'] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
-                  className={`flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors ${
-                    addForm.repType === type
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-800 text-slate-400 border border-slate-700'
-                  }`}
+                  className="flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors"
+                  style={{
+                    background: addForm.repType === type ? '#00e5a0' : 'var(--m-card, #0d1525)',
+                    color: addForm.repType === type ? '#000' : 'var(--m-text-muted, #8899aa)',
+                    border: addForm.repType === type ? '1px solid #00e5a0' : '1px solid var(--m-border, #1a2840)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
                 >
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </button>
@@ -248,7 +277,12 @@ export default function MobileReps() {
           </div>
           <button
             type="submit"
-            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors"
+            style={{
+              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             Add Rep
           </button>

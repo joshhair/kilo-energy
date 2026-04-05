@@ -11,9 +11,9 @@ import MobileListItem from './shared/MobileListItem';
 import MobileEmptyState from './shared/MobileEmptyState';
 
 const STATUS_AMOUNT_COLORS: Record<string, string> = {
-  Paid: 'text-emerald-400',
-  Pending: 'text-amber-300',
-  Draft: 'text-slate-400',
+  Paid: '#00e5a0',
+  Pending: '#f5a623',
+  Draft: '#8899aa',
 };
 
 const REP_TYPE_LABELS: Record<string, string> = {
@@ -33,9 +33,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   if (!hydrated) {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-        <div className="h-6 w-24 bg-slate-800 rounded animate-pulse" />
-        <div className="h-8 w-48 bg-slate-800 rounded animate-pulse" />
-        <div className="h-4 w-32 bg-slate-800/60 rounded animate-pulse" />
+        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
+        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
+        <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)', opacity: 0.6 }} />
       </div>
     );
   }
@@ -49,11 +49,12 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/reps')}
-          className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
+          className="flex items-center gap-1.5 text-base min-h-[48px]"
+          style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" /> Reps
         </button>
-        <p className="text-base text-slate-400 text-center">Rep not found.</p>
+        <p className="text-base text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep not found.</p>
       </div>
     );
   }
@@ -72,29 +73,30 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/reps')}
-        className="flex items-center gap-1.5 text-base text-slate-400 min-h-[48px]"
+        className="flex items-center gap-1.5 text-base min-h-[48px]"
+        style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >
         <ArrowLeft className="w-4 h-4" /> Reps
       </button>
 
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-white">{rep.name}</h1>
+        <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{rep.name}</h1>
         <div className="mt-1.5">
           <MobileBadge value={repType} variant="status" />
         </div>
-        <p className="text-base text-slate-400 mt-1">{rep.email}</p>
+        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
       </div>
 
       {/* Inline stats */}
-      <p className="text-base text-slate-400">
-        <span className="text-lg font-bold text-white">{repProjects.length}</span> deal{repProjects.length !== 1 ? 's' : ''}
+      <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.length}</span> deal{repProjects.length !== 1 ? 's' : ''}
         {' \u00B7 '}
-        <span className="text-lg font-bold text-white">{totalKW.toFixed(1)}</span> kW
+        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{totalKW.toFixed(1)}</span> kW
         {!isPM && (
           <>
             {' \u00B7 '}
-            <span className="text-lg font-bold text-emerald-400">${totalPaid.toLocaleString()}</span> paid
+            <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
           </>
         )}
       </p>
@@ -104,7 +106,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         {activeProjects.length === 0 ? (
           <MobileEmptyState icon={FolderKanban} title="No active projects" />
         ) : (
-          <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/20">
+          <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', borderColor: 'var(--m-border, #1a2840)' }}>
             {activeProjects.map((proj) => (
               <MobileListItem
                 key={proj.id}
@@ -127,17 +129,24 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               {recentPayroll.map((entry) => (
                 <div
                   key={entry.id}
-                  className="flex items-center justify-between min-h-[48px] py-3 border-b border-slate-800/20 last:border-b-0"
+                  className="flex items-center justify-between min-h-[48px] py-3 last:border-b-0"
+                  style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium text-white truncate">
+                    <p className="text-base font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || entry.notes || '\u2014'}
                     </p>
-                    <p className="text-base text-slate-400 mt-0.5">
+                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.paymentStage} &middot; {formatDate(entry.date)}
                     </p>
                   </div>
-                  <span className={`text-lg font-bold tabular-nums ml-3 ${STATUS_AMOUNT_COLORS[entry.status] ?? 'text-slate-400'}`}>
+                  <span
+                    className="text-lg font-bold tabular-nums ml-3"
+                    style={{
+                      color: STATUS_AMOUNT_COLORS[entry.status] ?? 'var(--m-text-muted, #8899aa)',
+                      fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                    }}
+                  >
                     ${entry.amount.toLocaleString()}
                   </span>
                 </div>

@@ -186,7 +186,7 @@ export default function MobilePayroll() {
   const STATUS_TABS: StatusTab[] = ['Draft', 'Pending', 'Paid'];
 
   const inputCls =
-    'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-1 focus:ring-blue-500';
+    'w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none transition-colors';
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
@@ -195,7 +195,12 @@ export default function MobilePayroll() {
         right={
           <button
             onClick={() => setShowAddPayment(true)}
-            className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl bg-blue-600 text-white text-base font-medium active:bg-blue-700"
+            className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
+            style={{
+              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             <Plus className="w-4 h-4" />
             Payment
@@ -205,21 +210,22 @@ export default function MobilePayroll() {
 
       {/* ── Hero ── */}
       <div>
-        <p className="text-4xl font-black text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
-        <p className="text-base text-slate-400 mt-1">pending approval</p>
+        <p className="text-4xl font-black tabular-nums" style={{ color: '#f5a623', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(pendingTotal)}</p>
+        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>pending approval</p>
       </div>
 
       {/* ── Status tabs ── */}
-      <div className="flex border-b border-slate-800/20">
+      <div className="flex" style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}>
         {STATUS_TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setStatusTab(tab)}
-            className={`flex-1 min-h-[48px] text-base font-semibold transition-colors ${
-              statusTab === tab
-                ? 'text-white border-b-2 border-blue-500'
-                : 'text-slate-400'
-            }`}
+            className="flex-1 min-h-[48px] text-base font-semibold transition-colors"
+            style={{
+              color: statusTab === tab ? '#fff' : 'var(--m-text-muted, #8899aa)',
+              borderBottom: statusTab === tab ? '2px solid var(--m-accent, #00e5a0)' : '2px solid transparent',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             {tab}
           </button>
@@ -228,15 +234,15 @@ export default function MobilePayroll() {
 
       {/* ── Grouped entry list ── */}
       {groupedByRep.length === 0 ? (
-        <p className="text-base text-slate-400 text-center py-8">No {statusTab.toLowerCase()} entries.</p>
+        <p className="text-base text-center py-8" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No {statusTab.toLowerCase()} entries.</p>
       ) : (
         <div className="space-y-6">
           {groupedByRep.map((group) => (
-            <div key={group.repName}>
+            <div key={group.repName} className="rounded-2xl p-4" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
               {/* Rep group header */}
               <div className="flex items-center justify-between mb-2">
-                <p className="text-base font-semibold text-white">{group.repName}</p>
-                <p className="text-lg font-bold text-white tabular-nums">{fmt$(group.total)}</p>
+                <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{group.repName}</p>
+                <p className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(group.total)}</p>
               </div>
 
               {/* Entries */}
@@ -245,14 +251,15 @@ export default function MobilePayroll() {
                   <button
                     key={entry.id}
                     onClick={() => setSelectedEntry(entry)}
-                    className="w-full flex items-center justify-between py-3 border-b border-slate-800/20 text-left active:bg-slate-800/20 transition-colors"
+                    className="w-full flex items-center justify-between py-3 text-left active:opacity-80 transition-colors"
+                    style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}
                   >
-                    <span className="text-base text-white truncate mr-2">
+                    <span className="text-base text-white truncate mr-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-lg font-bold tabular-nums text-white">{fmt$(entry.amount)}</span>
-                      <span className="text-base text-slate-400">{entry.paymentStage}</span>
+                      <span className="text-lg font-bold tabular-nums text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(entry.amount)}</span>
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>{entry.paymentStage}</span>
                     </div>
                   </button>
                 ))}
@@ -267,7 +274,12 @@ export default function MobilePayroll() {
         <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
           <button
             onClick={handlePublishOrApproveAll}
-            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
+            style={{
+              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              boxShadow: '0 4px 20px rgba(0,229,160,0.3)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             Publish Payroll
           </button>
@@ -285,7 +297,12 @@ export default function MobilePayroll() {
               toast('All draft entries moved to Pending', 'success');
               setStatusTab('Pending');
             }}
-            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
+            style={{
+              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             Approve All
           </button>
@@ -336,11 +353,12 @@ export default function MobilePayroll() {
       >
         <form onSubmit={handleAddPayment} className="px-5 space-y-4 pb-2">
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Rep</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep</label>
             <select
               value={paymentForm.repId}
               onChange={(e) => setPaymentForm((f) => ({ ...f, repId: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
+              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             >
               <option value="">Select rep...</option>
               {reps.map((r) => (
@@ -349,14 +367,20 @@ export default function MobilePayroll() {
             </select>
           </div>
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Type</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Type</label>
             <div className="flex gap-2">
               {(['Deal', 'Bonus'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setPaymentForm((f) => ({ ...f, type: t, stage: t === 'Bonus' ? 'Bonus' : 'M1' }))}
-                  className={`flex-1 min-h-[48px] rounded-xl text-base font-medium transition-colors ${paymentForm.type === t ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                  className="flex-1 min-h-[48px] rounded-xl text-base font-medium transition-colors"
+                  style={{
+                    background: paymentForm.type === t ? '#00e5a0' : 'var(--m-card, #0d1525)',
+                    color: paymentForm.type === t ? '#000' : 'var(--m-text-muted, #8899aa)',
+                    border: paymentForm.type === t ? 'none' : '1px solid var(--m-border, #1a2840)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
                 >
                   {t}
                 </button>
@@ -365,14 +389,20 @@ export default function MobilePayroll() {
           </div>
           {paymentForm.type === 'Deal' && (
             <div>
-              <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Stage</label>
+              <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Stage</label>
               <div className="flex gap-2">
                 {['M1', 'M2', 'M3', 'Trainer'].map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setPaymentForm((f) => ({ ...f, stage: s }))}
-                    className={`flex-1 min-h-[44px] rounded-xl text-base font-medium transition-colors ${paymentForm.stage === s ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                    className="flex-1 min-h-[44px] rounded-xl text-base font-medium transition-colors"
+                    style={{
+                      background: paymentForm.stage === s ? '#00e5a0' : 'var(--m-card, #0d1525)',
+                      color: paymentForm.stage === s ? '#000' : 'var(--m-text-muted, #8899aa)',
+                      border: paymentForm.stage === s ? 'none' : '1px solid var(--m-border, #1a2840)',
+                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    }}
                   >
                     {s}
                   </button>
@@ -381,7 +411,7 @@ export default function MobilePayroll() {
             </div>
           )}
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Amount</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
             <input
               type="number"
               step="0.01"
@@ -390,30 +420,38 @@ export default function MobilePayroll() {
               onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0.00"
               className={`${inputCls} min-h-[48px]`}
+              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
             <input
               type="date"
               value={paymentForm.date}
               onChange={(e) => setPaymentForm((f) => ({ ...f, date: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
+              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <div>
-            <label className="block text-base font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Notes</label>
+            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
             <input
               type="text"
               value={paymentForm.notes}
               onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Optional note"
               className={`${inputCls} min-h-[48px]`}
+              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <button
             type="submit"
-            className="w-full min-h-[52px] rounded-2xl bg-blue-600 text-white text-base font-semibold active:bg-blue-700 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
+            style={{
+              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             Add Payment
           </button>

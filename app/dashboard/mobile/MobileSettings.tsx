@@ -87,14 +87,15 @@ export default function MobileSettings() {
         {/* Back button */}
         <button
           onClick={() => setActiveSection(null)}
-          className="flex items-center gap-1.5 min-h-[48px] text-base font-medium text-blue-400 active:text-blue-300 transition-colors"
+          className="flex items-center gap-1.5 min-h-[48px] text-base font-medium active:opacity-70 transition-colors"
+          style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" />
           Settings
         </button>
 
         {/* Section title */}
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
           {NAV.flatMap((g) => g.items).find((i) => i.id === activeSection)?.label ?? activeSection}
         </h1>
 
@@ -114,7 +115,7 @@ export default function MobileSettings() {
           <MobileCard>
             {items.map((item, idx) => (
               <div key={item.id}>
-                {idx > 0 && <div className="border-t border-slate-800/40 mx-1" />}
+                {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }} />}
                 <MobileListItem
                   title={item.label}
                   onTap={() => setActiveSection(item.id)}
@@ -147,11 +148,12 @@ function SectionContent({ section }: { section: SettingsSection }) {
 
 // ─── Toggle Switch ──────────────────────────────────────────────────────────
 
-function Toggle({ value, onChange, color = 'bg-blue-600' }: { value: boolean; onChange: (v: boolean) => void; color?: string }) {
+function Toggle({ value, onChange, color }: { value: boolean; onChange: (v: boolean) => void; color?: string }) {
   return (
     <button
       onClick={() => onChange(!value)}
-      className={`w-11 h-6 rounded-full transition-colors relative ${value ? color : 'bg-slate-700'}`}
+      className="w-11 h-6 rounded-full transition-colors relative"
+      style={{ background: value ? (color ?? '#00e5a0') : 'var(--m-border, #1a2840)' }}
     >
       <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${value ? 'translate-x-5' : 'translate-x-0.5'}`} />
     </button>
@@ -165,7 +167,7 @@ function InstallersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base text-slate-400 mb-2">Manage installer companies. Full editing available on desktop.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage installer companies. Full editing available on desktop.</p>
       {installers.length === 0 ? (
         <MobileEmptyState icon={Building2} title="No installers" />
       ) : (
@@ -176,17 +178,24 @@ function InstallersSection() {
             <MobileCard key={inst.name}>
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-white truncate">{inst.name}</p>
-                  <p className="text-base text-slate-400 mt-0.5">Install Pay: {Math.round(installPct * 100)}%</p>
+                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inst.name}</p>
+                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{Math.round(installPct * 100)}%</span></p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-base font-medium px-2 py-0.5 rounded-lg ${inst.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                  <span
+                    className="text-base font-medium px-2 py-0.5 rounded-lg"
+                    style={{
+                      background: inst.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, #0d1525)',
+                      color: inst.active ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    }}
+                  >
                     {inst.active ? 'Active' : 'Inactive'}
                   </span>
                   <Toggle
                     value={inst.active}
                     onChange={() => setInstallerActive(inst.name, !inst.active)}
-                    color="bg-emerald-600"
+                    color="#00e5a0"
                   />
                 </div>
               </div>
@@ -205,7 +214,7 @@ function FinancersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base text-slate-400 mb-2">Manage financing companies.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
       {financers.length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
@@ -213,16 +222,23 @@ function FinancersSection() {
           <MobileCard key={fin.name}>
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-white truncate">{fin.name}</p>
+                <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{fin.name}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <span className={`text-base font-medium px-2 py-0.5 rounded-lg ${fin.active ? 'bg-emerald-900/30 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                <span
+                  className="text-base font-medium px-2 py-0.5 rounded-lg"
+                  style={{
+                    background: fin.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, #0d1525)',
+                    color: fin.active ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
+                >
                   {fin.active ? 'Active' : 'Inactive'}
                 </span>
                 <Toggle
                   value={fin.active}
                   onChange={() => setFinancerActive(fin.name, !fin.active)}
-                  color="bg-emerald-600"
+                  color="#00e5a0"
                 />
               </div>
             </div>
@@ -284,31 +300,48 @@ function AdminUsersSection() {
     }
   };
 
-  if (loading) return <p className="text-base text-slate-400 py-8 text-center">Loading...</p>;
+  if (loading) return <p className="text-base py-8 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Loading...</p>;
 
   return (
     <div className="space-y-4">
       {/* Add form */}
       <MobileCard>
-        <p className="text-base text-slate-400 mb-3">Add a new admin user</p>
+        <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Add a new admin user</p>
         <div className="space-y-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Full name"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-base text-white placeholder-slate-500 focus:outline-none"
+            className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
+            style={{
+              background: 'var(--m-card, #0d1525)',
+              border: '1px solid var(--m-border, #1a2840)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              '--tw-ring-color': '#00e5a0',
+            } as React.CSSProperties}
           />
           <input
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Email"
             type="email"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-base text-white placeholder-slate-500 focus:outline-none"
+            className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
+            style={{
+              background: 'var(--m-card, #0d1525)',
+              border: '1px solid var(--m-border, #1a2840)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              '--tw-ring-color': '#00e5a0',
+            } as React.CSSProperties}
           />
           <button
             onClick={handleAdd}
             disabled={!newName.trim() || !newEmail.trim()}
-            className="w-full min-h-[48px] rounded-2xl bg-blue-600 text-white text-base font-semibold disabled:opacity-40 active:bg-blue-700 transition-colors"
+            className="w-full min-h-[48px] rounded-2xl text-black text-base font-semibold disabled:opacity-40 active:opacity-80 transition-colors"
+            style={{
+              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             Add Admin
           </button>
@@ -322,15 +355,16 @@ function AdminUsersSection() {
         <MobileCard>
           {admins.map((admin, idx) => (
             <div key={admin.id}>
-              {idx > 0 && <div className="border-t border-slate-800/40 mx-1" />}
+              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-white truncate">{admin.name}</p>
-                  <p className="text-base text-slate-400 mt-0.5 truncate">{admin.email}</p>
+                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.name}</p>
+                  <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.email}</p>
                 </div>
                 <button
                   onClick={() => handleDelete(admin.id)}
-                  className="p-2 text-slate-400 active:text-red-400 transition-colors"
+                  className="p-2 active:opacity-70 transition-colors"
+                  style={{ color: 'var(--m-text-muted, #8899aa)' }}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -379,11 +413,11 @@ function ProjectManagersSection() {
     if (res.ok) { toast('PM removed'); loadPMs(); }
   };
 
-  if (loading) return <p className="text-base text-slate-400 py-8 text-center">Loading...</p>;
+  if (loading) return <p className="text-base py-8 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Loading...</p>;
 
   return (
     <div className="space-y-3">
-      <p className="text-base text-slate-400 mb-2">Project managers can view projects and reps but not payroll or settings.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project managers can view projects and reps but not payroll or settings.</p>
       {pms.length === 0 ? (
         <MobileEmptyState icon={Users} title="No project managers" />
       ) : (
@@ -391,12 +425,13 @@ function ProjectManagersSection() {
           <MobileCard key={pm.id}>
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
-                <p className="text-base font-semibold text-white truncate">{pm.firstName} {pm.lastName}</p>
-                <p className="text-base text-slate-400 mt-0.5 truncate">{pm.email}</p>
+                <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.firstName} {pm.lastName}</p>
+                <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.email}</p>
               </div>
               <button
                 onClick={() => handleDelete(pm.id)}
-                className="p-2 text-slate-400 active:text-red-400 transition-colors shrink-0"
+                className="p-2 active:opacity-70 transition-colors shrink-0"
+                style={{ color: 'var(--m-text-muted, #8899aa)' }}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -410,11 +445,13 @@ function ProjectManagersSection() {
                 <button
                   key={field}
                   onClick={() => togglePerm(pm.id, field, pm[field])}
-                  className={`flex items-center gap-1.5 text-base px-2.5 py-1.5 rounded-lg border transition-colors min-h-[36px] ${
-                    pm[field]
-                      ? 'bg-emerald-900/30 text-emerald-300 border-emerald-500/30'
-                      : 'bg-slate-800/50 text-slate-400 border-slate-700/50'
-                  }`}
+                  className="flex items-center gap-1.5 text-base px-2.5 py-1.5 rounded-lg border transition-colors min-h-[36px]"
+                  style={{
+                    background: pm[field] ? 'rgba(0,229,160,0.15)' : 'var(--m-card, #0d1525)',
+                    color: pm[field] ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                    borderColor: pm[field] ? 'rgba(0,229,160,0.3)' : 'var(--m-border, #1a2840)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
                 >
                   {pm[field] ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                   {label}
@@ -455,7 +492,7 @@ function BlitzPermissionsSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base text-slate-400 mb-2">Control which reps can request or create blitzes.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Control which reps can request or create blitzes.</p>
       {reps.length === 0 ? (
         <MobileEmptyState icon={Tent} title="No reps" />
       ) : (
@@ -463,23 +500,24 @@ function BlitzPermissionsSection() {
           const perms = permissions[rep.id] ?? { canRequestBlitz: false, canCreateBlitz: false };
           return (
             <MobileCard key={rep.id}>
-              <p className="text-base font-semibold text-white mb-0.5">{rep.name}</p>
-              <p className="text-base text-slate-400 mb-3">{rep.repType || 'Rep'}</p>
+              <p className="text-base font-semibold text-white mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+              <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.repType || 'Rep'}</p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canRequestBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canRequestBlitz', v)}
+                    color="var(--m-accent2, #00b4d8)"
                   />
-                  <span className="text-base text-slate-400">Request</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Request</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canCreateBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canCreateBlitz', v)}
-                    color="bg-emerald-600"
+                    color="#00e5a0"
                   />
-                  <span className="text-base text-slate-400">Create</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Create</span>
                 </div>
               </div>
             </MobileCard>
@@ -497,20 +535,20 @@ function SubDealersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base text-slate-400 mb-2">Sub-dealer accounts. Full editing available on desktop.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Sub-dealer accounts. Full editing available on desktop.</p>
       {!subDealers || subDealers.length === 0 ? (
         <MobileEmptyState icon={Handshake} title="No sub-dealers" subtitle="Add sub-dealers from the desktop view." />
       ) : (
         <MobileCard>
           {subDealers.map((sd: any, idx: number) => (
             <div key={sd.id ?? idx}>
-              {idx > 0 && <div className="border-t border-slate-800/40 mx-1" />}
+              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-white truncate">
+                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {sd.firstName ?? ''} {sd.lastName ?? ''}
                   </p>
-                  {sd.email && <p className="text-base text-slate-400 mt-0.5 truncate">{sd.email}</p>}
+                  {sd.email && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
                 </div>
               </div>
             </div>
@@ -545,15 +583,19 @@ function ExportSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base text-slate-400 mb-2">Download data as CSV files.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button
           key={type}
           onClick={() => handleExport(type)}
-          className="w-full min-h-[52px] rounded-2xl bg-slate-900/60 border border-slate-800/20 px-5 text-left flex items-center gap-3 active:bg-slate-800/40 transition-colors"
+          className="w-full min-h-[52px] rounded-2xl px-5 text-left flex items-center gap-3 active:opacity-80 transition-colors"
+          style={{
+            background: 'var(--m-card, #0d1525)',
+            border: '1px solid var(--m-border, #1a2840)',
+          }}
         >
-          <Download className="w-5 h-5 text-slate-400 shrink-0" />
-          <span className="text-base font-semibold text-white capitalize">{type}</span>
+          <Download className="w-5 h-5 shrink-0" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
+          <span className="text-base font-semibold text-white capitalize" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{type}</span>
         </button>
       ))}
     </div>
@@ -565,8 +607,8 @@ function ExportSection() {
 function ReadOnlyListSection({ title, description }: { title: string; description: string }) {
   return (
     <MobileCard>
-      <p className="text-base text-slate-400 mb-2">{description}</p>
-      <p className="text-base text-slate-400">Open the desktop version for full access to {title.toLowerCase()}.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{description}</p>
+      <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Open the desktop version for full access to {title.toLowerCase()}.</p>
     </MobileCard>
   );
 }

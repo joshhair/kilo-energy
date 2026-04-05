@@ -45,14 +45,14 @@ function matchesPeriod(dateStr: string, period: Period): boolean {
 
 function StatusDot({ status }: { status: string }) {
   const color =
-    status === 'Paid' ? 'bg-emerald-400' :
-    status === 'Pending' ? 'bg-yellow-400' :
-    status === 'Approved' ? 'bg-emerald-400' :
-    status === 'Denied' ? 'bg-red-400' :
-    'bg-slate-400';
+    status === 'Paid' ? '#00e5a0' :
+    status === 'Pending' ? '#f5a623' :
+    status === 'Approved' ? '#00e5a0' :
+    status === 'Denied' ? '#ff6b6b' :
+    '#8899aa';
   return (
-    <span className={`inline-flex items-center gap-1.5 text-base text-slate-400`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${color}`} />
+    <span className="inline-flex items-center gap-1.5 text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
       {status}
     </span>
   );
@@ -79,7 +79,7 @@ export default function MobileEarnings() {
       <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="Earnings" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base text-slate-400">You don&apos;t have permission to view this page.</p>
+          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -103,8 +103,8 @@ export default function MobileEarnings() {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Earnings" />
-        <div className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 h-24 animate-pulse" />
-        <div className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 h-48 animate-pulse" />
+        <div className="rounded-2xl p-5 h-24 animate-pulse" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }} />
+        <div className="rounded-2xl p-5 h-48 animate-pulse" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }} />
       </div>
     );
   }
@@ -114,9 +114,9 @@ export default function MobileEarnings() {
       <MobilePageHeader title="Earnings" />
 
       {/* ── Hero total ──────────────────────────────────────────────────── */}
-      <MobileCard>
-        <p className="text-base text-slate-400 uppercase tracking-wider mb-1">Total Earned</p>
-        <p className="text-4xl font-black text-emerald-400 tabular-nums">
+      <MobileCard hero>
+        <p className="text-base uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
+        <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
           {fmt$(totalEarned)}
         </p>
       </MobileCard>
@@ -127,11 +127,12 @@ export default function MobileEarnings() {
           <button
             key={p.key}
             onClick={() => setPeriod(p.key)}
-            className={`min-h-[48px] px-4 rounded-xl text-base font-medium whitespace-nowrap transition-colors ${
-              period === p.key
-                ? 'bg-slate-800 text-white'
-                : 'text-slate-400 active:bg-slate-800/40'
-            }`}
+            className="min-h-[48px] px-4 rounded-xl text-base font-medium whitespace-nowrap transition-colors"
+            style={{
+              background: period === p.key ? '#00e5a0' : 'transparent',
+              color: period === p.key ? '#000' : 'var(--m-text-muted, #8899aa)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             {p.label}
           </button>
@@ -141,22 +142,26 @@ export default function MobileEarnings() {
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
       <MobileSection title="Deal Payments" count={sortedDeals.length} collapsible defaultOpen>
         {sortedDeals.length === 0 ? (
-          <p className="text-base text-slate-400 py-4 text-center">No deal payments for this period</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No deal payments for this period</p>
         ) : (
-          <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
-            {sortedDeals.map((entry) => (
-              <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+            {sortedDeals.map((entry, idx) => (
+              <div
+                key={entry.id}
+                className="px-4 py-3 flex items-center justify-between gap-3"
+                style={{ borderBottom: idx < sortedDeals.length - 1 ? '1px solid var(--m-border, #1a2840)' : 'none' }}
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate">{entry.customerName || entry.notes || 'Deal'}</p>
+                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.customerName || entry.notes || 'Deal'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     {entry.paymentStage && (
-                      <span className="text-base text-slate-400">{entry.paymentStage}</span>
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.paymentStage}</span>
                     )}
-                    <span className="text-base text-slate-400">{entry.date}</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -168,19 +173,23 @@ export default function MobileEarnings() {
       {/* ── Bonuses ─────────────────────────────────────────────────────── */}
       <MobileSection title="Bonuses" count={sortedBonuses.length} collapsible defaultOpen>
         {sortedBonuses.length === 0 ? (
-          <p className="text-base text-slate-400 py-4 text-center">No bonuses for this period</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No bonuses for this period</p>
         ) : (
-          <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
-            {sortedBonuses.map((entry) => (
-              <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+            {sortedBonuses.map((entry, idx) => (
+              <div
+                key={entry.id}
+                className="px-4 py-3 flex items-center justify-between gap-3"
+                style={{ borderBottom: idx < sortedBonuses.length - 1 ? '1px solid var(--m-border, #1a2840)' : 'none' }}
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate">{entry.notes || 'Bonus'}</p>
+                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.notes || 'Bonus'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-base text-slate-400">{entry.date}</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -192,19 +201,23 @@ export default function MobileEarnings() {
       {/* ── Reimbursements ──────────────────────────────────────────────── */}
       <MobileSection title="Reimbursements" count={sortedReimbs.length} collapsible defaultOpen>
         {sortedReimbs.length === 0 ? (
-          <p className="text-base text-slate-400 py-4 text-center">No reimbursements for this period</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reimbursements for this period</p>
         ) : (
-          <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
-            {sortedReimbs.map((entry) => (
-              <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+            {sortedReimbs.map((entry, idx) => (
+              <div
+                key={entry.id}
+                className="px-4 py-3 flex items-center justify-between gap-3"
+                style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--m-border, #1a2840)' : 'none' }}
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate">{entry.description}</p>
+                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-base text-slate-400">{entry.date}</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>

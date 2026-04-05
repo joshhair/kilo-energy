@@ -295,17 +295,17 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           return (
             <div key={step} className="flex items-center gap-1.5">
               <div
-                className={`w-2.5 h-2.5 rounded-full ${
-                  isCompleted
-                    ? 'bg-emerald-500'
-                    : isCurrent
-                    ? 'bg-blue-500 ring-2 ring-blue-500/30'
-                    : 'bg-slate-700'
-                }`}
+                className="rounded-full"
+                style={{
+                  width: 10,
+                  height: 10,
+                  background: isCompleted ? '#00e5a0' : isCurrent ? '#00b4d8' : 'var(--m-border, #1a2840)',
+                  boxShadow: isCurrent ? '0 0 0 3px rgba(0,180,216,0.3)' : 'none',
+                }}
                 title={step}
               />
               {index < PIPELINE_STEPS.length - 1 && (
-                <div className={`w-3 h-px ${isCompleted ? 'bg-emerald-600' : 'bg-slate-700'}`} />
+                <div className="w-3 h-px" style={{ background: isCompleted ? '#00e5a0' : 'var(--m-border, #1a2840)' }} />
               )}
             </div>
           );
@@ -315,9 +315,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Info rows — no card wrapper, thin separators */}
       <div className="space-y-0">
         {infoRows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between py-3 border-b border-slate-800/20">
-            <span className="text-base text-slate-400">{label}</span>
-            <span className="text-base font-bold text-white">{value}</span>
+          <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}>
+            <span className="text-base" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
+            <span className="text-base font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
           </div>
         ))}
       </div>
@@ -325,14 +325,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Commission card — hide for PM */}
       {!isPM && (
         <MobileCard>
-          <h2 className="text-base font-semibold text-white mb-3">Commission</h2>
+          <h2 className="text-base font-semibold text-white mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</h2>
           {myEntries.length > 0 && currentRole === 'rep' ? (
             <div className="space-y-3">
               {myEntries.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between">
-                  <span className="text-base text-white">{entry.paymentStage}</span>
+                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.paymentStage}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg text-emerald-400 font-bold">${entry.amount.toLocaleString()}</span>
+                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${entry.amount.toLocaleString()}</span>
                     <MobileBadge value={entry.status} variant="status" />
                   </div>
                 </div>
@@ -342,26 +342,26 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             <div className="space-y-3">
               {/* M1 */}
               <div className="flex items-center justify-between">
-                <span className="text-base text-white">M1</span>
+                <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M1</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg text-emerald-400 font-bold">${project.m1Amount.toLocaleString()}</span>
+                  <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m1Amount.toLocaleString()}</span>
                   <MobileBadge value={project.m1Paid ? 'Paid' : 'Pending'} variant="status" />
                 </div>
               </div>
               {/* M2 */}
               <div className="flex items-center justify-between">
-                <span className="text-base text-white">M2</span>
+                <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M2</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg text-emerald-400 font-bold">${project.m2Amount.toLocaleString()}</span>
+                  <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m2Amount.toLocaleString()}</span>
                   <MobileBadge value={project.m2Paid ? 'Paid' : 'Pending'} variant="status" />
                 </div>
               </div>
               {/* M3 */}
               {(project.m3Amount ?? 0) > 0 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-base text-white">M3</span>
+                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M3</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg text-emerald-400 font-bold">${(project.m3Amount ?? 0).toLocaleString()}</span>
+                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${(project.m3Amount ?? 0).toLocaleString()}</span>
                     <MobileBadge value="Pending" variant="status" />
                   </div>
                 </div>
@@ -387,18 +387,29 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <MobileActivityTimeline projectId={projectId} />
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 bg-slate-900/95 border-t border-slate-800/20 px-5 py-3">
+      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--m-card, #0d1525)', borderTop: '1px solid var(--m-border, #1a2840)' }}>
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[48px] bg-blue-600 active:bg-blue-700 text-white text-base font-medium rounded-xl"
+            className="flex-1 min-h-[48px] text-black text-base font-medium rounded-xl active:opacity-90"
+            style={{
+              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
           >
             Change Phase &#x25BE;
           </button>
         )}
         <button
           onClick={() => setMoreSheetOpen(true)}
-          className="min-h-[48px] px-5 bg-slate-800/60 text-slate-300 text-base font-medium rounded-xl active:bg-slate-700"
+          className="min-h-[48px] px-5 text-base font-medium rounded-xl active:opacity-80"
+          style={{
+            background: 'var(--m-card, #0d1525)',
+            border: '1px solid var(--m-border, #1a2840)',
+            color: 'var(--m-text-muted, #8899aa)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
         >
           &middot; &middot; &middot;
         </button>

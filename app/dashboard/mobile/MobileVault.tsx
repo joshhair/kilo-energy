@@ -8,7 +8,18 @@ import { PayrollEntry } from '../../../lib/data';
 import { Banknote } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
+import MobileCard from './shared/MobileCard';
+import MobileStatCard from './shared/MobileStatCard';
 import MobileEmptyState from './shared/MobileEmptyState';
+
+// ── Design tokens ────────────────────────────────────────────────────────────
+const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
+const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
+const ACCENT = 'var(--m-accent, #00e5a0)';
+const ACCENT2 = 'var(--m-accent2, #00b4d8)';
+const MUTED = 'var(--m-text-muted, #8899aa)';
+const DIM = 'var(--m-text-dim, #445577)';
+const WARNING = 'var(--m-warning, #f5a623)';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,9 +48,9 @@ function formatFridayLabel(dateStr: string): string {
 }
 
 function statusColor(status: string): string {
-  if (status === 'Paid') return 'text-emerald-400';
-  if (status === 'Pending') return 'text-amber-400';
-  return 'text-slate-400';
+  if (status === 'Paid') return ACCENT;
+  if (status === 'Pending') return WARNING;
+  return MUTED;
 }
 
 // ── Pay Period Group ─────────────────────────────────────────────────────────
@@ -156,54 +167,50 @@ export default function MobileVault() {
   // ── PM guard ──
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24">
+      <div className="px-5 pt-4 pb-24" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <p className="text-slate-400 text-base">You don&apos;t have permission to view this page.</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <MobilePageHeader title="My Pay" />
 
-      {/* ── Hero (no card wrapper) ── */}
-      <div>
-        <p className="text-4xl font-black text-emerald-400 tabular-nums">{fmt$(nextPayoutTotal)}</p>
-        <p className="text-base text-slate-400 mt-1">Next payout</p>
-        <p className="text-base text-slate-400 mt-0.5">
+      {/* ── Hero — next payout ── */}
+      <MobileCard hero>
+        <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(nextPayoutTotal)}</p>
+        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.5rem' }}>
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
         </p>
+      </MobileCard>
+
+      {/* ── Stat grid — 2x2 ── */}
+      <div className="grid grid-cols-2 gap-3">
+        <MobileStatCard label="Lifetime" value={fmt$(lifetimeEarned)} color={ACCENT} />
+        <MobileStatCard label="Pipeline" value={fmt$(pipelineTotal)} color={ACCENT2} />
+        <MobileStatCard label="Pending" value={fmt$(pendingTotal)} color={WARNING} />
+        <MobileStatCard label="Draft" value={fmt$(draftTotal)} color={MUTED} />
       </div>
 
-      {/* ── Inline stats (2x2 text grid, no cards) ── */}
-      <div className="grid grid-cols-2 gap-y-3 gap-x-6">
-        <div>
-          <p className="text-lg font-bold text-emerald-400 tabular-nums">{fmt$(lifetimeEarned)}</p>
-          <p className="text-base text-slate-400">Lifetime</p>
-        </div>
-        <div>
-          <p className="text-lg font-bold text-blue-400 tabular-nums">{fmt$(pipelineTotal)}</p>
-          <p className="text-base text-slate-400">Pipeline</p>
-        </div>
-        <div>
-          <p className="text-lg font-bold text-amber-400 tabular-nums">{fmt$(pendingTotal)}</p>
-          <p className="text-base text-slate-400">Pending</p>
-        </div>
-        <div>
-          <p className="text-lg font-bold text-slate-400 tabular-nums">{fmt$(draftTotal)}</p>
-          <p className="text-base text-slate-400">Draft</p>
-        </div>
-      </div>
-
-      {/* ── Reimbursement link ── */}
+      {/* ── Reimbursement link — v0 style button ── */}
       <button
         onClick={() => router.push('/dashboard/reimbursement')}
-        className="flex items-center gap-1 text-base text-blue-400 active:text-blue-300 transition-colors"
+        className="w-full rounded-xl py-3.5 px-5 text-left active:opacity-70 transition-opacity"
+        style={{
+          background: 'var(--m-card, #0d1525)',
+          border: '1px solid var(--m-border, #1a2840)',
+          color: ACCENT,
+          fontFamily: FONT_BODY,
+          fontSize: '1rem',
+          fontWeight: 500,
+        }}
       >
-        Request reimbursement →
+        Request reimbursement &rarr;
       </button>
 
       {/* ── Pay History ── */}
@@ -215,39 +222,40 @@ export default function MobileVault() {
             subtitle="Payroll entries will appear here as your deals hit milestones."
           />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {payPeriods.map((period) => (
-              <div key={period.friday}>
+              <MobileCard key={period.friday}>
                 {/* Friday group header */}
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-base font-bold text-white">
+                <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--m-border, #1a2840)' }}>
+                  <p className="font-bold text-white" style={{ fontFamily: FONT_BODY, fontSize: '0.9rem' }}>
                     {formatFridayLabel(period.friday)}
                   </p>
-                  <p className="text-lg font-bold text-white tabular-nums">{fmt$(period.total)}</p>
+                  <p className="tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{fmt$(period.total)}</p>
                 </div>
 
                 {/* Entries */}
                 <div>
-                  {period.entries.map((entry) => (
+                  {period.entries.map((entry, i) => (
                     <div
                       key={entry.id}
-                      className="flex items-center justify-between py-3 border-b border-slate-800/20"
+                      className={`flex items-center justify-between py-3 ${i < period.entries.length - 1 ? 'border-b' : ''}`}
+                      style={{ borderColor: 'var(--m-border, #1a2840)' }}
                     >
                       <div>
-                        <p className="text-base font-semibold text-white">
+                        <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>
                           {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
                         </p>
-                        <p className="text-base text-slate-400">
+                        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
                           {entry.paymentStage} &middot; {entry.date}
                         </p>
                       </div>
-                      <p className={`text-lg font-bold tabular-nums ${statusColor(entry.status)}`}>
+                      <p className="font-bold tabular-nums" style={{ color: statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>
                         {fmt$(entry.amount)}
                       </p>
                     </div>
                   ))}
                 </div>
-              </div>
+              </MobileCard>
             ))}
           </div>
         )}

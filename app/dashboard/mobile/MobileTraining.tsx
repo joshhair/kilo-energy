@@ -34,7 +34,7 @@ export default function MobileTraining() {
       <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="Training" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base text-slate-400">You don&apos;t have permission to view this page.</p>
+          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -89,7 +89,7 @@ export default function MobileTraining() {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Training" />
-        <div className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800/20 h-48 animate-pulse" />
+        <div className="rounded-2xl p-5 h-48 animate-pulse" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }} />
       </div>
     );
   }
@@ -101,7 +101,7 @@ export default function MobileTraining() {
         <MobilePageHeader title="Training" />
         <MobileCard>
           <div className="py-8 text-center">
-            <p className="text-base text-slate-400">You don&apos;t have any trainees</p>
+            <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have any trainees</p>
           </div>
         </MobileCard>
       </div>
@@ -114,45 +114,45 @@ export default function MobileTraining() {
 
       {/* ── My Trainees ─────────────────────────────────────────────────── */}
       <MobileSection title="My Trainees" count={traineeData.length}>
-        <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
-          {traineeData.map((td) => {
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+          {traineeData.map((td, idx) => {
             const isOpen = expandedTrainee === td.traineeId;
             return (
-              <div key={td.traineeId}>
+              <div key={td.traineeId} style={{ borderBottom: idx < traineeData.length - 1 ? '1px solid var(--m-border, #1a2840)' : 'none' }}>
                 <button
                   onClick={() => setExpandedTrainee(isOpen ? null : td.traineeId)}
-                  className="w-full px-4 py-3 flex items-center justify-between gap-3 min-h-[48px] active:bg-slate-800/40 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between gap-3 min-h-[48px] active:opacity-80 transition-colors"
                 >
                   <div className="min-w-0 flex-1 text-left">
-                    <p className="text-base font-semibold text-white truncate">{td.traineeName}</p>
-                    <p className="text-base text-slate-400 mt-0.5">
-                      <span className="font-bold">{td.dealCount}</span> deals &middot; <span className="font-bold">${td.currentRate.toFixed(2)}/W</span>
+                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>
+                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{td.dealCount}</span> deals &middot; <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${td.currentRate.toFixed(2)}/W</span>
                     </p>
                   </div>
                   {isOpen
-                    ? <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                    : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    ? <ChevronUp className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
+                    : <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
                   }
                 </button>
 
                 {/* Expandable rate tiers */}
                 {isOpen && (
                   <div className="px-4 pb-3">
-                    <table className="w-full text-base">
+                    <table className="w-full text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       <thead>
-                        <tr className="text-slate-400 uppercase tracking-wider">
-                          <th className="text-left py-1 font-semibold">Deals Up To</th>
-                          <th className="text-right py-1 font-semibold">Rate ($/W)</th>
+                        <tr style={{ color: 'var(--m-text-dim, #445577)' }}>
+                          <th className="text-left py-1 font-semibold uppercase tracking-widest">Deals Up To</th>
+                          <th className="text-right py-1 font-semibold uppercase tracking-widest">Rate ($/W)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {td.assignment.tiers.map((tier, i) => (
                           <tr
                             key={i}
-                            className={i === td.activeTierIndex ? 'text-emerald-400' : 'text-slate-400'}
+                            style={{ color: i === td.activeTierIndex ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)' }}
                           >
                             <td className="py-1">{tier.upToDeal === null ? 'Unlimited' : tier.upToDeal}</td>
-                            <td className="py-1 text-right tabular-nums">${tier.ratePerW.toFixed(2)}</td>
+                            <td className="py-1 text-right tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${tier.ratePerW.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -168,18 +168,22 @@ export default function MobileTraining() {
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
         {sortedOverrides.length === 0 ? (
-          <p className="text-base text-slate-400 py-4 text-center">No override payments yet</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No override payments yet</p>
         ) : (
-          <div className="rounded-2xl bg-slate-900/60 border border-slate-800/20 divide-y divide-slate-800/30 overflow-hidden">
-            {sortedOverrides.map((entry) => (
-              <div key={entry.id} className="px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+            {sortedOverrides.map((entry, idx) => (
+              <div
+                key={entry.id}
+                className="px-4 py-3 flex items-center justify-between gap-3"
+                style={{ borderBottom: idx < sortedOverrides.length - 1 ? '1px solid var(--m-border, #1a2840)' : 'none' }}
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate">
+                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {entry.customerName || entry.notes || 'Override'}
                   </p>
-                  <p className="text-base text-slate-400 mt-0.5">{entry.date}</p>
+                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</p>
                 </div>
-                <span className="text-lg font-bold text-white tabular-nums whitespace-nowrap">
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>

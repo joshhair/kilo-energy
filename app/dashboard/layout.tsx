@@ -416,12 +416,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Mobile top bar (hidden on md+) — minimal: logo only ────────── */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-center px-4 h-[48px] border-b border-slate-800/60"
-        style={{ backgroundColor: 'var(--navy-card)' }}
+        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-center px-4 h-[48px]"
+        style={{
+          background: 'rgba(6,11,19,0.9)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255,255,255,0.04)',
+        }}
       >
-        <div className="flex items-baseline gap-1">
-          <span className="text-white font-black tracking-tighter text-xl leading-none">kilo</span>
-          <span className="text-white/70 font-light tracking-[0.2em] text-[10px] uppercase">ENERGY</span>
+        <div className="flex items-baseline gap-0.5">
+          <span className="text-white font-black tracking-tighter text-xl leading-none" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kilo</span>
+          <span style={{ color: 'var(--m-accent, #00e5a0)', fontSize: '6px', lineHeight: 1, alignSelf: 'flex-end', marginBottom: '3px', marginLeft: '1px', marginRight: '1px' }}>&bull;</span>
+          <span className="tracking-[0.2em] uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '10px', fontWeight: 400 }}>energy</span>
         </div>
       </div>
 

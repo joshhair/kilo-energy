@@ -79,38 +79,48 @@ export default function MobileProjects() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="w-full min-h-[48px] rounded-2xl bg-slate-800/40 px-4 pl-10 text-base text-white placeholder:text-slate-400 outline-none"
+          className="w-full min-h-[48px] rounded-2xl px-4 pl-10 text-base text-white outline-none transition-colors"
+          style={{
+            background: 'var(--m-card, #0d1525)',
+            border: '1px solid var(--m-border, #1a2840)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
         />
       </div>
 
       {/* Phase filter pills */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
-        {PHASE_FILTERS.map((phase) => (
-          <button
-            key={phase}
-            onClick={() => setPhaseFilter(phase)}
-            className={`shrink-0 min-h-[36px] px-4 rounded-xl text-base ${
-              phaseFilter === phase
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-400'
-            }`}
-          >
-            {phase}
-          </button>
-        ))}
+        {PHASE_FILTERS.map((phase) => {
+          const isActive = phaseFilter === phase;
+          return (
+            <button
+              key={phase}
+              onClick={() => setPhaseFilter(phase)}
+              className="shrink-0 min-h-[36px] px-4 rounded-xl text-base font-medium transition-colors"
+              style={{
+                background: isActive ? '#00e5a0' : 'var(--m-card, #0d1525)',
+                color: isActive ? '#000' : 'var(--m-text-muted, #8899aa)',
+                border: isActive ? 'none' : '1px solid var(--m-border, #1a2840)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {phase}
+            </button>
+          );
+        })}
       </div>
 
       {/* Project cards */}
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-base text-slate-400">No projects found</p>
+            <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No projects found</p>
           </div>
         ) : (
           filtered.map((project) => (
@@ -120,12 +130,12 @@ export default function MobileProjects() {
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-white truncate">{project.customerName}</span>
+                  <span className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
                   {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
                 </div>
                 <MobileBadge value={project.phase} />
               </div>
-              <p className="text-base text-slate-400">
+              <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {project.installer} &middot; {project.kWSize} kW &middot; {relativeTime(project.soldDate)}
               </p>
             </MobileCard>
