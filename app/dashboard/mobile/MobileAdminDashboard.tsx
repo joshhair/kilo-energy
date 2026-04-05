@@ -116,22 +116,22 @@ export default function MobileAdminDashboard() {
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <MobilePageHeader title="Dashboard" />
 
-      {/* ── Hero: Total Paid with Revenue / Profit ── */}
+      {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
       <MobileCard hero>
         <div className="flex items-center justify-between mb-2">
-          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Total Paid</p>
+          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Revenue</p>
           <TrendingUp className="w-5 h-5" style={{ color: ACCENT }} />
         </div>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact(Math.round(totalPaid))}</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact(Math.round(totalRevenue))}</p>
         <div className="flex items-center gap-4 mt-4">
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(Math.round(totalRevenue))}</p>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Revenue</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(Math.round(totalProfit))}</p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Profit</p>
           </div>
           <div className="h-8" style={{ width: '1px', background: 'var(--m-border, #1a2840)' }} />
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(Math.round(totalProfit))}</p>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Profit</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(Math.round(totalPaid))}</p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid to Reps</p>
           </div>
         </div>
       </MobileCard>

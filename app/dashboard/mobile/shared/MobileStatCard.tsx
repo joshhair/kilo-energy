@@ -11,8 +11,8 @@ export default function MobileStatCard({
 }) {
   return (
     <div className="rounded-xl p-4" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
-      <p className="text-2xl font-bold tabular-nums" style={{ color, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{value}</p>
-      <p className="text-base mt-1 tracking-wide uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.7rem' }}>{label}</p>
+      <p className="text-3xl font-bold tabular-nums" style={{ color, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{value}</p>
+      <p className="mt-1.5 tracking-wide uppercase" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>{label}</p>
     </div>
   );
 }

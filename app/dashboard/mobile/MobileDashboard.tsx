@@ -112,7 +112,7 @@ export default function MobileDashboard() {
                     : 0;
                 return (
                   <div key={phase} className="flex items-center gap-3 py-2">
-                    <span className="w-28 shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{phase}</span>
+                    <span className="w-28 shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{phase}</span>
                     <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
                       <div
                         className="h-full rounded-full"
@@ -142,10 +142,10 @@ export default function MobileDashboard() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
-                    <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
+                    <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                     <MobileBadge value={p.phase} />
                   </div>
-                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
+                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
                 </button>
               ))}
             </MobileCard>
@@ -155,7 +155,7 @@ export default function MobileDashboard() {
         {/* Recent */}
         <MobileSection title="Recent">
           {myProjects.length === 0 ? (
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>No projects yet.</p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
           ) : (
             <MobileCard>
               {[...myProjects]
@@ -171,10 +171,10 @@ export default function MobileDashboard() {
                     style={{ borderColor: 'var(--m-border, #1a2840)' }}
                   >
                     <div className="min-w-0 flex items-center gap-2">
-                      <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</span>
+                      <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
                       <MobileBadge value={p.phase} />
                     </div>
-                    <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{relativeTime(p.soldDate)}</span>
+                    <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
                   </button>
                 ))}
             </MobileCard>
@@ -264,7 +264,7 @@ export default function MobileDashboard() {
         <MobileCard hero>
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
           <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
           <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
             <div
               className="h-full rounded-full"
@@ -284,7 +284,7 @@ export default function MobileDashboard() {
         {/* Recent */}
         <MobileSection title="Recent">
           {recentProjects.length === 0 ? (
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>No projects yet.</p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
           ) : (
             <MobileCard>
               {recentProjects.map((p, i) => (
@@ -297,10 +297,10 @@ export default function MobileDashboard() {
                   style={{ borderColor: 'var(--m-border, #1a2840)' }}
                 >
                   <div className="min-w-0 flex items-center gap-2">
-                    <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</span>
+                    <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
                     <MobileBadge value={p.phase} />
                   </div>
-                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{relativeTime(p.soldDate)}</span>
+                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
                 </button>
               ))}
             </MobileCard>
@@ -320,7 +320,7 @@ export default function MobileDashboard() {
       <MobileCard hero>
         <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
         <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
-        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
+        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
         <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
           <div
             className="h-full rounded-full"
@@ -342,7 +342,7 @@ export default function MobileDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="w-5 h-5" style={{ color: ACCENT }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Needs Attention</p>
+            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Needs Attention</p>
             <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{flaggedProjects.length}</span>
           </div>
           {flaggedProjects.map((p, i) => (
@@ -355,10 +355,10 @@ export default function MobileDashboard() {
               style={{ borderColor: 'var(--m-border, #1a2840)' }}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
+                <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                 <MobileBadge value={p.phase} />
               </div>
-              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
+              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
             </button>
           ))}
         </MobileCard>
@@ -367,7 +367,7 @@ export default function MobileDashboard() {
       {/* Recent */}
       <MobileSection title="Recent">
         {recentProjects.length === 0 ? (
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>No projects yet.</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
         ) : (
           <MobileCard>
             {recentProjects.map((p, i) => (
@@ -380,10 +380,10 @@ export default function MobileDashboard() {
                 style={{ borderColor: 'var(--m-border, #1a2840)' }}
               >
                 <div className="min-w-0 flex items-center gap-2">
-                  <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</span>
+                  <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
                   <MobileBadge value={p.phase} />
                 </div>
-                <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{relativeTime(p.soldDate)}</span>
+                <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
               </button>
             ))}
           </MobileCard>
