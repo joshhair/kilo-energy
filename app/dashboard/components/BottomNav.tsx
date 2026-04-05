@@ -86,9 +86,9 @@ const PM_BOTTOM_NAV: BottomNavItem[] = [
   { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 
-// ─── More Sheet (slide-up) ────────────────────────────────────────────────
+// ─── More Popover (floating menu above More button) ──────────────────────
 
-function MoreSheet({
+function MorePopover({
   open,
   onClose,
   items,
@@ -99,84 +99,67 @@ function MoreSheet({
   items: MoreSheetItem[];
   onLogout?: () => void;
 }) {
-  const sheetRef = useRef<HTMLDivElement>(null);
-
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
-
-  // Lock body scroll while open
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
 
   if (!open) return null;
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Invisible backdrop to catch taps outside */}
+      <div className="fixed inset-0 z-[60] md:hidden" onClick={onClose} />
+      {/* Popover card anchored above More button */}
       <div
-        className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:hidden"
-        onClick={onClose}
-      />
-      {/* Sheet */}
-      <div
-        ref={sheetRef}
-        className="fixed bottom-0 left-0 right-0 z-[70] md:hidden animate-slide-up-sheet"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed z-[70] md:hidden"
+        style={{
+          bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+          right: '12px',
+          minWidth: '180px',
+          background: '#0d1525',
+          border: '1px solid #1a2840',
+          borderRadius: '16px',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.4)',
+          overflow: 'hidden',
+          animation: 'mobileTabEnter 0.15s ease both',
+        }}
       >
-        <div className="bg-slate-900 border-t border-slate-700/60 rounded-t-2xl shadow-2xl shadow-black/50 px-4 pt-3 pb-4">
-          {/* Handle bar */}
-          <div className="flex justify-center mb-3">
-            <div className="w-10 h-1 rounded-full bg-slate-700" />
-          </div>
-          {/* Close button */}
-          <button
+        {items.map(({ href, label, icon: Icon }, i) => (
+          <Link
+            key={href}
+            href={href}
             onClick={onClose}
-            className="absolute top-3 right-4 p-1.5 text-slate-500 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
-            aria-label="Close menu"
+            className="flex items-center gap-3 min-h-[48px] px-5 py-3 active:opacity-70 transition-opacity"
+            style={{
+              color: '#fff',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '1rem',
+              borderBottom: i < items.length - 1 ? '1px solid #1a2840' : 'none',
+            }}
           >
-            <X className="w-4 h-4" />
+            <Icon className="w-5 h-5" />
+            <span>{label}</span>
+          </Link>
+        ))}
+        {/* Logout */}
+        {onLogout && (
+          <button
+            onClick={() => { onClose(); onLogout(); }}
+            className="flex items-center gap-3 w-full min-h-[48px] px-5 py-3 active:opacity-70 transition-opacity"
+            style={{
+              color: '#ff6b6b',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '1rem',
+              borderTop: '1px solid #1a2840',
+            }}
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Sign Out</span>
           </button>
-          {/* Items */}
-          <nav className="grid grid-cols-3 gap-2">
-            {items.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={onClose}
-                className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors min-h-[44px]"
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{label}</span>
-              </Link>
-            ))}
-          </nav>
-          {/* Logout */}
-          {onLogout && (
-            <>
-              <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent my-3" />
-              <button
-                onClick={() => { onClose(); onLogout(); }}
-                className="flex items-center gap-3 w-full px-4 py-3 min-h-[48px] text-red-400 active:bg-red-900/20 rounded-xl transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="text-sm font-medium">Sign Out</span>
-              </button>
-            </>
-          )}
-        </div>
+        )}
       </div>
     </>
   );
@@ -229,7 +212,7 @@ export default function BottomNav({
 
   return (
     <>
-      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} items={moreItems} onLogout={onLogout} />
+      <MorePopover open={moreOpen} onClose={() => setMoreOpen(false)} items={moreItems} onLogout={onLogout} />
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
         style={{ background: 'linear-gradient(to top, #080c14 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}

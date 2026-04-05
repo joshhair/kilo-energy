@@ -153,6 +153,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [notesExpanded, setNotesExpanded] = useState(false);
 
+  useEffect(() => { window.scrollTo(0, 0); }, [projectId]);
+
   useEffect(() => {
     document.title = project ? `${project.customerName} | Kilo Energy` : 'Project | Kilo Energy';
   }, [project?.customerName]);
