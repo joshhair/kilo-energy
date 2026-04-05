@@ -13,13 +13,14 @@ import MobileStatCard from './shared/MobileStatCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
 
-type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year';
+type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year' | 'last-year';
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'this-month', label: 'This Month' },
   { value: 'last-month', label: 'Last Month' },
   { value: 'this-quarter', label: 'This Quarter' },
   { value: 'this-year', label: 'This Year' },
+  { value: 'last-year', label: 'Last Year' },
 ];
 
 function isInPeriod(dateStr: string, period: Period): boolean {
@@ -38,6 +39,7 @@ function isInPeriod(dateStr: string, period: Period): boolean {
     return dq === q && y === now.getFullYear();
   }
   if (period === 'this-year') return date.getFullYear() === now.getFullYear();
+  if (period === 'last-year') return date.getFullYear() === now.getFullYear() - 1;
   return true;
 }
 
