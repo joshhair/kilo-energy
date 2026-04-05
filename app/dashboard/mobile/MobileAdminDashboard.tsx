@@ -26,6 +26,13 @@ const DIM = 'var(--m-text-dim, #445577)';
 const DANGER = 'var(--m-danger, #ff6b6b)';
 const WARNING = 'var(--m-warning, #f5a623)';
 
+function getGreeting(name: string): string {
+  const h = new Date().getHours();
+  const prefix = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = name?.split(' ')[0] || '';
+  return firstName ? `${prefix}, ${firstName}` : prefix;
+}
+
 function fmtCompact(n: number): string {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
@@ -39,6 +46,7 @@ export default function MobileAdminDashboard() {
     reps,
     installerPricingVersions,
     productCatalogProducts,
+    currentRepName,
   } = useApp();
   const router = useRouter();
 
@@ -114,7 +122,7 @@ export default function MobileAdminDashboard() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <MobilePageHeader title="Dashboard" />
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.6rem', color: '#fff', marginBottom: '1.25rem' }}>{getGreeting(currentRepName ?? '')}</h1>
 
       {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
       <MobileCard hero>
