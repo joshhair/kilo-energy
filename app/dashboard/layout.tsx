@@ -671,6 +671,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main content ────────────────────────────────────────────────── */}
       {/* pt-[48px] reserves space for the fixed mobile top bar; reset on md+ */}
       <main
+        key={pathname}
         ref={mainRef}
         className="flex-1 overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
         style={{ backgroundColor: 'var(--navy-base)' }}
@@ -692,7 +693,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
         )}
-        <div key={pathname} className="animate-page-enter">
+        <div className="animate-page-enter">
           {children}
         </div>
 

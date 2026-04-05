@@ -56,6 +56,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Mobile: bump base font size so all rem/text-* classes render ~25% bigger.
+   Also respect iOS Dynamic Type via -webkit-text-size-adjust. */
+@media (max-width: 767px) {
+  html {
+    font-size: 20px; /* default is 16px — this makes text-base = 20px, text-lg = 22.5px, etc. */
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
