@@ -8,6 +8,23 @@
   --navy-base: #0b0d11;
   --navy-card: #0f1117;
   --navy-hover: #1d2028;
+}
+
+/* ── Mobile typography scale-up (20%) ──────────────────────────────────────
+   Bumps the root font-size on phone-sized viewports so every rem-based
+   size — inline fontSize on stat cards, Tailwind text-* classes, labels,
+   inputs, buttons, all of it — scales proportionally by 20%. Desktop
+   stays at the browser default 16px. This is the standard accessibility-
+   zoom technique and gives Josh exactly "everything 20% larger on the
+   mobile app" without touching every component.
+   16px * 1.2 = 19.2px. */
+@media (max-width: 767px) {
+  html {
+    font-size: 19.2px;
+  }
+}
+
+:root {
   /* Desktop design system */
   --d-surface: #161920;
   --d-card: #1d2028;
@@ -87,9 +104,11 @@ body {
 ::-webkit-scrollbar-thumb { background: #272b35; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #00e07a; }
 
-/* Hidden scrollbar utility */
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-.scrollbar-hide::-webkit-scrollbar { display: none; }
+/* Hidden scrollbar utilities */
+.scrollbar-hide,
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* ── Mobile premium design system ──────────────────────────────────────────
    All rules scoped to max-width: 767px so desktop is completely unaffected. */
