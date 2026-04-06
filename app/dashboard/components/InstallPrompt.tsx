@@ -127,7 +127,7 @@ export default function InstallPrompt() {
         {!isIOS && (
           <button
             onClick={handleInstall}
-            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#00e07a] hover:bg-[#00e07a] text-white text-sm font-semibold transition-colors"
+            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#00e07a] hover:bg-[#00e07a] text-black text-sm font-semibold transition-colors"
           >
             <Download className="w-4 h-4" />
             Install

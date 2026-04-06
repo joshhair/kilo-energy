@@ -79,9 +79,9 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
                   <div
                     className={`relative w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold z-10 transition-all duration-500 ${
                       isCompleted
-                        ? 'bg-[#00e07a] text-white'
+                        ? 'bg-[#00e07a] text-black'
                         : isCurrent
-                        ? 'bg-[#00e07a] text-white ring-2 ring-[#00e07a] ring-offset-[3px] ring-offset-slate-900'
+                        ? 'bg-[#00e07a] text-black ring-2 ring-[#00e07a] ring-offset-[3px] ring-offset-slate-900'
                         : 'bg-[#1d2028] border border-[#272b35] text-[#8891a8]'
                     }`}
                   >

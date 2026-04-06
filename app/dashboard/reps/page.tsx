@@ -494,7 +494,7 @@ function RepsPageInner() {
         <div className="mb-6">
           <button
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-[#00e07a] text-white' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white border border-[#272b35]'}`}
+            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-[#00e07a] text-black' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white border border-[#272b35]'}`}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Click to exit` : 'Compare Reps'}
           </button>
@@ -522,7 +522,7 @@ function RepsPageInner() {
               <div className="flex flex-wrap gap-1">
                 {PERIOD_OPTIONS.map((opt) => (
                   <button key={opt.value} onClick={() => setComparePeriod(opt.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-[#00e07a] text-white' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white'}`}>
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-[#00e07a] text-black' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white'}`}>
                     {opt.label}
                   </button>
                 ))}

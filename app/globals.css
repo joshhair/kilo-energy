@@ -188,17 +188,15 @@ body {
   animation: fadeIn 0.4s ease-out both;
 }
 
-/* Premium page materialisation — blur-to-sharp + micro-scale with spring easing */
+/* Page transition — quick fade-in without flicker */
 @keyframes pageEnter {
   from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.995);
-    filter: blur(2px);
+    opacity: 0.5;
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
+    transform: translateY(0);
   }
 }
 
@@ -991,27 +989,9 @@ select {
    Opacity starts at 0 and cross-fades to 1 on hover so the effect eases in
    gracefully rather than snapping on. The animation only runs while hovered,
    so the GPU layer is promoted only when needed.                              */
+/* Stat card hover: simple border glow (no spinning laser) */
 .card-surface-stat::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from var(--glow-angle),
-    transparent            0deg,
-    var(--card-accent, rgba(59, 130, 246, 0.7)) 60deg,
-    transparent           120deg
-  );
-  opacity: 0;
-  transition: opacity 400ms ease;
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* On hover: reveal the border ring and start the perpetual rotation. */
-.card-surface-stat:hover::before {
-  opacity: 1;
-  animation: glowSpin 3s linear infinite;
+  content: none;
 }
 
 /* ── Interactive card surface — glass-morphism + animated conic-gradient glow border ── */
@@ -1035,31 +1015,9 @@ select {
   box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* Pseudo-element that renders the animated conic-gradient border ring.
-   Sits 1 px outside the card boundary at z-index -1 so the card background
-   eclipses it everywhere except the 1 px perimeter.
-   Fades in on hover (opacity 0 → 1) and starts the glowSpin rotation.         */
+/* Interactive card hover: simple glow (no spinning laser) */
 .card-surface-interactive::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from var(--glow-angle),
-    transparent                        0deg,
-    var(--card-accent, rgba(59, 130, 246, 0.7)) 60deg,
-    transparent                       120deg
-  );
-  opacity: 0;
-  transition: opacity 400ms ease;
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* On hover: reveal the border ring and start the perpetual rotation. */
-.card-surface-interactive:hover::before {
-  opacity: 1;
-  animation: glowSpin 3s linear infinite;
+  content: none;
 }
 
 /* ── Kanban board column staggered entrance animation ───────────────────────── */
@@ -1340,33 +1298,9 @@ select {
   position: relative;
 }
 
-/* Spinning conic-gradient border ring — sits 1 px outside the card boundary
-   at z-index -1 so the card's own opaque background eclipses the interior,
-   leaving only the thin perimeter visible as a gradient border.
-   Opacity stays at 0 at rest; cross-fades to 1 on hover so the effect
-   eases in gracefully. The animation is only started on hover to avoid
-   promoting an unnecessary GPU layer while the card is off-hover.             */
+/* Rep card hover: simple glow (no spinning laser) */
 .rep-card::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from var(--rep-border-angle, 0deg),
-    transparent,
-    rgba(59, 130, 246, 0.3),
-    transparent
-  );
-  opacity: 0;
-  transition: opacity 400ms ease;
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* On hover: reveal the border ring and start the perpetual rotation.           */
-.rep-card:hover::before {
-  opacity: 1;
-  animation: repBorderSpin 3s linear infinite;
+  content: none;
 }
 
 /* ── 3. Podium card breathing box-shadow — infinite pulse per rank ───────────── */

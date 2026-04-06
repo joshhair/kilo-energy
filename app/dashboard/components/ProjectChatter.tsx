@@ -674,7 +674,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             <button
               onClick={handleSend}
               disabled={!composeText.trim() || sending}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#00e07a] hover:bg-[#00e07a] text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#00e07a] hover:bg-[#00e07a] text-black disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
             >
               <Send className="w-3.5 h-3.5" />
               Send
