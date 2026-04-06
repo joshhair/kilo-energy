@@ -436,41 +436,41 @@ function PayrollPageInner() {
             </div>
           </div>
         ) : (
-          <div className="card-surface rounded-2xl overflow-hidden">
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
             <table className="w-full text-sm">
-              <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                <tr className="border-b border-slate-800">
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Customer / Note</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Stage</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Amount</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Date</th>
+              <thead>
+                <tr style={{ background: '#1d2028', borderBottom: '1px solid #333849' }}>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Customer / Note</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Stage</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Amount</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Status</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Date</th>
                 </tr>
               </thead>
               <tbody>
                 {myEntries.map((entry, i) => (
-                  <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 even:bg-slate-800/[0.15] hover:bg-blue-500/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
-                    <td className="px-5 py-3 text-slate-300">
+                  <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid #272b35', background: i % 2 === 0 ? '#161920' : '#191c24' }}>
+                    <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>
                       {entry.type === 'Deal' ? entry.customerName : (entry.notes || '—')}
                     </td>
                     <td className="px-5 py-3">
-                      <span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: '#1d2028', color: '#c2c8d8' }}>
                         {entry.paymentStage}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-emerald-400 font-semibold">{fmt$(entry.amount)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
                     <td className="px-5 py-3">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded`} style={
                         entry.status === 'Paid'
-                          ? 'bg-emerald-900/30 text-emerald-400'
+                          ? { background: 'rgba(0,224,122,0.12)', color: '#00e07a' }
                           : entry.status === 'Pending'
-                          ? 'bg-yellow-900/30 text-yellow-400'
-                          : 'bg-slate-700 text-slate-300'
-                      }`}>
+                          ? { background: 'rgba(255,176,32,0.12)', color: '#ffb020' }
+                          : { background: '#1d2028', color: '#4d9fff' }
+                      }>
                         {entry.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-slate-500 text-xs"><RelativeDate date={entry.date} /></td>
+                    <td className="px-5 py-3 text-xs" style={{ color: '#525c72' }}><RelativeDate date={entry.date} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -506,21 +506,23 @@ function PayrollPageInner() {
           <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
             <button
               onClick={() => setShowPaymentModal(true)}
-              className="btn-secondary bg-slate-700 hover:bg-slate-600 text-white font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+              className="font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] whitespace-nowrap transition-colors"
+              style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
             >
               + Add Payment
             </button>
             <button
               onClick={() => setShowBonusModal(true)}
-              className="btn-secondary bg-slate-700 hover:bg-slate-600 text-white font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+              className="font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] whitespace-nowrap transition-colors"
+              style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
             >
               + Add Bonus
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
               disabled={totalPending === 0}
-              className="btn-primary text-white font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
-              style={{ backgroundColor: 'var(--brand)' }}
+              className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
+              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
             >
               Publish Payroll
             </button>
@@ -540,7 +542,8 @@ function PayrollPageInner() {
                 downloadCSV(`payroll-${statusTab.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
               }}
               disabled={filtered.length === 0}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
               title="Download filtered payroll as CSV"
             >
               <Download className="w-3.5 h-3.5" /> CSV
@@ -548,7 +551,8 @@ function PayrollPageInner() {
             <button
               onClick={() => window.print()}
               disabled={filtered.length === 0}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap print:hidden"
+              className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap print:hidden"
+              style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
               title="Print payroll summary"
             >
               <Printer className="w-3.5 h-3.5" /> Print
@@ -558,16 +562,18 @@ function PayrollPageInner() {
       </div>
 
       {/* Top-level page view switcher */}
-      <div className="flex gap-1 mb-8 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+      <div className="flex gap-1 mb-8 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
         {pageViewIndicator && <div className="tab-indicator" style={pageViewIndicator} />}
         {(['payroll', 'reimbursements'] as PageView[]).map((v, i) => (
           <button
             key={v}
             ref={(el) => { pageViewRefs.current[i] = el; }}
             onClick={() => setPageView(v)}
-            className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              pageView === v ? 'text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={pageView === v
+              ? { background: '#00e07a', color: '#000', fontWeight: 700 }
+              : { color: '#c2c8d8' }
+            }
           >
             {v === 'payroll' ? (
               <><CreditCard className="w-3.5 h-3.5" /> Payroll</>
@@ -594,7 +600,8 @@ function PayrollPageInner() {
                 type="date"
                 value={reimFilterFrom}
                 onChange={(e) => setReimFilterFrom(e.target.value)}
-                className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -603,7 +610,8 @@ function PayrollPageInner() {
                 type="date"
                 value={reimFilterTo}
                 onChange={(e) => setReimFilterTo(e.target.value)}
-                className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
               />
             </div>
             {(reimFilterFrom || reimFilterTo) && (
@@ -617,25 +625,25 @@ function PayrollPageInner() {
             <span className="text-slate-600 text-xs ml-auto">{filteredReimbursements.length} request{filteredReimbursements.length !== 1 ? 's' : ''}</span>
           </div>
 
-          <div className="card-surface rounded-xl overflow-hidden">
+          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
             <table className="w-full text-sm">
-              <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                <tr className="border-b border-slate-800">
-                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Rep</th>
-                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Description</th>
-                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Amount</th>
-                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Date</th>
-                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Receipt</th>
-                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
+              <thead>
+                <tr style={{ background: '#1d2028', borderBottom: '1px solid #333849' }}>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Rep</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Description</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Amount</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Date</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Receipt</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Status</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredReimbursements.map((r, i) => (
-                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 even:bg-slate-800/[0.15] hover:bg-blue-500/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
-                    <td className="px-5 py-3 text-white font-medium">{r.repName}</td>
-                    <td className="px-5 py-3 text-slate-400">{r.description}</td>
-                    <td className="px-5 py-3 text-emerald-400 font-semibold">${r.amount.toFixed(2)}</td>
+                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid #272b35', background: i % 2 === 0 ? '#161920' : '#191c24' }}>
+                    <td className="px-5 py-3 font-medium" style={{ color: '#f0f2f7' }}>{r.repName}</td>
+                    <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>{r.description}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
                     <td className="px-5 py-3 text-slate-500 text-xs">{formatDate(r.date)}</td>
                     <td className="px-5 py-3 text-slate-400 text-xs">{r.receiptName || '—'}</td>
                     <td className="px-5 py-3">
@@ -702,16 +710,18 @@ function PayrollPageInner() {
       </div>
 
       {/* Status tabs */}
-      <div className="flex gap-1 mb-4 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
         {statusIndicator && <div className="tab-indicator" style={statusIndicator} />}
         {(['Draft', 'Pending', 'Paid'] as StatusTab[]).map((s, i) => (
           <button
             key={s}
             ref={(el) => { statusTabRefs.current[i] = el; }}
             onClick={() => changeStatusTab(s)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              statusTab === s ? 'text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className="relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={statusTab === s
+              ? { background: '#00e07a', color: '#000', fontWeight: 700 }
+              : { color: '#c2c8d8' }
+            }
           >
             {s}
             <span className="ml-1.5 text-xs opacity-70">
@@ -729,16 +739,18 @@ function PayrollPageInner() {
       </p>
 
       {/* Type tabs */}
-      <div className="flex gap-1 mb-6 bg-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+      <div className="flex gap-1 mb-6 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
         {typeIndicator && <div className="tab-indicator" style={typeIndicator} />}
         {(['Deal', 'Bonus'] as TypeTab[]).map((t, i) => (
           <button
             key={t}
             ref={(el) => { typeTabRefs.current[i] = el; }}
             onClick={() => changeTypeTab(t)}
-            className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              typeTab === t ? 'text-white' : 'text-slate-500 hover:text-white'
-            }`}
+            className="relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            style={typeTab === t
+              ? { background: '#00e07a', color: '#000', fontWeight: 700 }
+              : { color: '#8891a8' }
+            }
           >
             {t} Payments
           </button>
@@ -926,17 +938,17 @@ function PayrollPageInner() {
               .slice(0, 2)
               .toUpperCase();
             return (
-              <div key={repId} className={`card-surface rounded-2xl overflow-hidden shadow-inner shadow-slate-950/30 animate-slide-in-scale ${staggerCls}`}>
+              <div key={repId} className={`rounded-2xl overflow-hidden animate-slide-in-scale ${staggerCls}`} style={{ background: '#1d2028', border: '1px solid #272b35' }}>
                 {/* Gradient accent bar — colour keyed to active status tab */}
-                <div className={`h-[3px] bg-gradient-to-r ${accentBar}`} />
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/60">
+                <div className="h-[3px]" style={{ background: statusTab === 'Draft' ? '#4d9fff' : statusTab === 'Pending' ? '#ffb020' : '#00e07a' }} />
+                <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid #272b35' }}>
                   <div className="flex items-center gap-3">
                     {statusTab === 'Draft' && (
                       <input
                         type="checkbox"
                         checked={allRepSelected}
                         onChange={() => toggleRepGroup(entries)}
-                        className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 cursor-pointer"
+                        className="w-4 h-4 rounded border-slate-600 bg-slate-700 cursor-pointer" style={{ accentColor: '#00e07a' }}
                       />
                     )}
                     {/* Avatar circle showing rep initials */}
@@ -946,26 +958,28 @@ function PayrollPageInner() {
                     <span className="text-white font-black text-lg leading-tight">{entries[0].repName}</span>
                     <span className="text-slate-500 text-xs">{entries.length} payment{entries.length !== 1 ? 's' : ''}</span>
                   </div>
-                  <span className="text-emerald-400 font-black text-xl tabular-nums tracking-tight animate-count-up">${repTotal.toLocaleString()}</span>
+                  <span className="font-black text-xl tabular-nums tracking-tight animate-count-up" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${repTotal.toLocaleString()}</span>
                 </div>
-                <div className="rounded-xl border border-slate-800 overflow-hidden">
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
                 <table className="w-full text-sm">
-                  <thead className="table-header-frost">
-                    <tr className="border-b border-slate-800">
+                  <thead>
+                    <tr style={{ background: '#1d2028', borderBottom: '1px solid #333849' }}>
                       {statusTab === 'Draft' && <th className="pl-5 pr-2 py-3 w-8" />}
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Customer / Note</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Stage</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Amount</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Date</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Customer / Note</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Stage</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Amount</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {entries.map((entry, ei) => (
                       <tr
                         key={entry.id}
-                        className={`table-row-enter row-stagger-${Math.min(ei, 24)} relative border-b border-slate-800/50 even:bg-slate-800/15 hover:bg-slate-800/40 transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center ${
-                          selectedIds.has(entry.id) ? '!bg-yellow-900/10' : ''
-                        }`}
+                        className={`table-row-enter row-stagger-${Math.min(ei, 24)} relative transition-colors duration-150`}
+                        style={{
+                          borderBottom: '1px solid #272b35',
+                          background: selectedIds.has(entry.id) ? 'rgba(255,176,32,0.06)' : ei % 2 === 0 ? '#161920' : '#191c24',
+                        }}
                       >
                         {statusTab === 'Draft' && (
                           <td className="pl-5 pr-2 py-3 w-8">
@@ -973,22 +987,22 @@ function PayrollPageInner() {
                               type="checkbox"
                               checked={selectedIds.has(entry.id)}
                               onChange={() => toggleEntry(entry.id)}
-                              className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 cursor-pointer"
+                              className="w-4 h-4 rounded border-slate-600 bg-slate-700 cursor-pointer" style={{ accentColor: '#00e07a' }}
                             />
                           </td>
                         )}
-                        <td className="px-5 py-3 text-slate-300">
+                        <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>
                           {typeTab === 'Deal' ? entry.customerName : (entry.notes || '—')}
                         </td>
                         <td className="px-5 py-3">
-                          <span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">
+                          <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: '#1d2028', color: '#c2c8d8' }}>
                             {entry.paymentStage}
                           </span>
                           {entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes === 'Trainer override') && (
-                            <span className="ml-2 text-xs text-slate-500">{entry.notes}</span>
+                            <span className="ml-2 text-xs" style={{ color: '#525c72' }}>{entry.notes}</span>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-emerald-400 font-semibold">
+                        <td className="px-5 py-3 font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>
                           {fmt$(entry.amount)}
                         </td>
                         <td className="px-5 py-3 text-slate-500 text-xs"><RelativeDate date={entry.date} /></td>
@@ -1314,28 +1328,35 @@ function PayrollPageInner() {
 }
 
 function ReimBadge({ status }: { status: string }) {
-  const cls =
-    status === 'Approved' ? 'bg-emerald-900/50 text-emerald-400'
-    : status === 'Pending'  ? 'bg-yellow-900/50 text-yellow-400'
-    : 'bg-red-900/50 text-red-400';
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{status}</span>;
+  const st =
+    status === 'Approved' ? { background: 'rgba(0,224,122,0.12)', color: '#00e07a' }
+    : status === 'Pending'  ? { background: 'rgba(255,176,32,0.12)', color: '#ffb020' }
+    : { background: 'rgba(255,82,82,0.12)', color: '#ff5252' };
+  return <span className="px-2 py-0.5 rounded text-xs font-medium" style={st}>{status}</span>;
 }
+
+const STAT_CARD_STYLES: Record<string, { bg: string; border: string; accent: string; textColor: string }> = {
+  'from-blue-500 to-blue-400':       { bg: 'linear-gradient(135deg, #040c1c, #060e22)', border: '#4d9fff30', accent: '#4d9fff', textColor: '#4d9fff' },
+  'from-yellow-500 to-yellow-400':   { bg: 'linear-gradient(135deg, #120b00, #180e00)', border: '#ffb02030', accent: '#ffb020', textColor: '#ffb020' },
+  'from-emerald-500 to-emerald-400': { bg: 'linear-gradient(135deg, #00160d, #001c10)', border: '#00e07a30', accent: '#00e07a', textColor: '#00e07a' },
+};
 
 function StatCard({ label, value, color, accentGradient, className, entryCount }: { label: string; value: number; color: string; border?: string; accentGradient?: string; className?: string; entryCount?: number }) {
   const accent = accentGradient ?? 'from-blue-500 to-blue-400';
+  const s = STAT_CARD_STYLES[accent] ?? { bg: '#1d2028', border: '#272b35', accent: '#4d9fff', textColor: '#4d9fff' };
   return (
     <div
-      className={`card-surface card-surface-stat rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] ${className ?? ''}`}
-      style={{ '--card-accent': ACCENT_COLOR_MAP[accent] ?? 'transparent' } as CSSProperties}
+      className={`rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] ${className ?? ''}`}
+      style={{ background: s.bg, border: `1px solid ${s.border}` }}
     >
-      <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${accent}`} />
+      <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: s.accent }} />
       <div className="flex items-center justify-between mb-1">
-        <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>{label}</p>
         {entryCount !== undefined && (
-          <span className="text-slate-500 text-xs font-medium tabular-nums">{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</span>
+          <span className="text-xs font-medium tabular-nums" style={{ color: '#525c72' }}>{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</span>
         )}
       </div>
-      <p className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${color}`}>${value.toLocaleString()}</p>
+      <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ color: s.textColor, fontFamily: "'DM Serif Display', serif", textShadow: `0 0 20px ${s.accent}40` }}>${value.toLocaleString()}</p>
     </div>
   );
 }

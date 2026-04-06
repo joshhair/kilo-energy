@@ -50,11 +50,11 @@ function StaleBadge({ soldDate, phase }: { soldDate: string; phase: Phase }) {
   return (
     <span
       title={`${days} days since sold`}
-      className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${
-        isRed
-          ? 'bg-red-900/50 text-red-400 border border-red-500/30'
-          : 'bg-amber-900/50 text-amber-400 border border-amber-500/30'
-      }`}
+      className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0"
+      style={isRed
+        ? { background: 'rgba(255,82,82,0.15)', color: '#ff5252', border: '1px solid rgba(255,82,82,0.3)' }
+        : { background: 'rgba(255,176,32,0.15)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }
+      }
     >
       {days}d
     </span>
@@ -70,26 +70,44 @@ function applyStatusFilter(projects: ReturnType<typeof useApp>['projects'], stat
   return projects;
 }
 
-const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string }> = {
-  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400'     },
-  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-indigo-300',  dot: 'bg-indigo-400'  },
-  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-violet-300',  dot: 'bg-violet-400'  },
-  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400' },
-  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-amber-300',   dot: 'bg-amber-400'   },
-  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-orange-300',  dot: 'bg-orange-400'  },
-  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-teal-300',    dot: 'bg-teal-400'    },
-  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_rgba(34,197,94,0.25)]',   text: 'text-green-300',   dot: 'bg-green-400'   },
-  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-red-300',     dot: 'bg-red-400'     },
-  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+const PHASE_COLORS: Record<string, string> = {
+  'New': '#00c4f0',
+  'Acceptance': '#4d9fff',
+  'Site Survey': '#b47dff',
+  'Design': '#b47dff',
+  'Permitting': '#ffb020',
+  'Pending Install': '#ffb020',
+  'Installed': '#00d4c8',
+  'PTO': '#00e07a',
+  'Completed': '#00e07a',
+  'Cancelled': '#ff5252',
+  'On Hold': '#ffb020',
+};
+
+const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string; hex: string }> = {
+  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400',     hex: '#00c4f0' },
+  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-indigo-300',  dot: 'bg-indigo-400',  hex: '#4d9fff' },
+  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-violet-300',  dot: 'bg-violet-400',  hex: '#b47dff' },
+  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400', hex: '#b47dff' },
+  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-amber-300',   dot: 'bg-amber-400',   hex: '#ffb020' },
+  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-orange-300',  dot: 'bg-orange-400',  hex: '#ffb020' },
+  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-teal-300',    dot: 'bg-teal-400',    hex: '#00d4c8' },
+  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', hex: '#00e07a' },
+  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_rgba(34,197,94,0.25)]',   text: 'text-green-300',   dot: 'bg-green-400',   hex: '#00e07a' },
+  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-red-300',     dot: 'bg-red-400',     hex: '#ff5252' },
+  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400',  hex: '#ffb020' },
 };
 
 
 function PhaseBadge({ phase }: { phase: Phase }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-slate-600/30', shadow: '', text: 'text-slate-300', dot: 'bg-slate-400' };
+  const s = PHASE_PILL[phase] ?? { gradient: '', border: '', shadow: '', text: '', dot: '', hex: '#8891a8' };
+  const hex = s.hex ?? '#8891a8';
   return (
-    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
+    <span
+      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      style={{ background: `${hex}12`, border: `1px solid ${hex}30`, color: hex }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: hex }} />
       {phase}
     </span>
   );
@@ -289,16 +307,18 @@ function ProjectsPageInner() {
 
       {/* View + Status tabs */}
       <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-4 md:flex-wrap">
-        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
+        <div className="flex gap-1 rounded-xl p-1 tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
           {viewIndicator && <div className="tab-indicator" style={viewIndicator} />}
           {(['phase', 'all'] as const).map((t, i) => (
             <button
               key={t}
               ref={(el) => { viewTabRefs.current[i] = el; }}
               onClick={() => setTab(t)}
-              className={`relative z-10 px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-colors ${
-                tab === t ? 'text-white' : 'text-slate-400 hover:text-white'
-              }`}
+              className="relative z-10 px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-colors"
+              style={tab === t
+                ? { background: '#00e07a', color: '#000', fontWeight: 700 }
+                : { color: '#c2c8d8' }
+              }
             >
               {t === 'phase' ? 'By Phase' : 'All Projects'}
             </button>
@@ -307,16 +327,16 @@ function ProjectsPageInner() {
 
         {/* My Deals / All Deals segmented control — admin only */}
         {!isRep && (
-          <div className="flex gap-0.5 bg-slate-900 border border-slate-800 rounded-xl p-1">
+          <div className="flex gap-0.5 rounded-xl p-1" style={{ background: '#1d2028', border: '1px solid #333849' }}>
             {(['all', 'mine'] as const).map((scope) => (
               <button
                 key={scope}
                 onClick={() => setDealScope(scope)}
-                className={`relative px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                  dealScope === scope
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+                className="relative px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150"
+                style={dealScope === scope
+                  ? { background: '#00e07a', color: '#000', fontWeight: 700 }
+                  : { color: '#c2c8d8' }
+                }
               >
                 {scope === 'all' ? 'All Deals' : 'My Deals'}
               </button>
@@ -325,7 +345,7 @@ function ProjectsPageInner() {
         )}
 
         {/* Status filter */}
-        <div className="flex gap-1 bg-slate-800 rounded-xl p-1 tab-bar-container overflow-x-auto scrollbar-hide w-full md:w-auto">
+        <div className="flex gap-1 rounded-xl p-1 tab-bar-container overflow-x-auto scrollbar-hide w-full md:w-auto" style={{ background: '#1d2028', border: '1px solid #333849' }}>
           {statusFilterIndicator && <div className="tab-indicator" style={statusFilterIndicator} />}
           {([
             { value: 'active', label: 'Active' },
@@ -338,9 +358,11 @@ function ProjectsPageInner() {
               key={s.value}
               ref={(el) => { statusFilterRefs.current[i] = el; }}
               onClick={() => setStatusFilter(s.value)}
-              className={`relative z-10 px-4 py-1.5 min-h-[40px] rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap ${
-                statusFilter === s.value ? 'text-white' : 'text-slate-500 hover:text-white'
-              }`}
+              className="relative z-10 px-4 py-1.5 min-h-[40px] rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap"
+              style={statusFilter === s.value
+                ? { background: '#00e07a', color: '#000', fontWeight: 700 }
+                : { color: '#8891a8' }
+              }
             >
               {s.label}
             </button>
@@ -351,7 +373,8 @@ function ProjectsPageInner() {
         <select
           value={installerFilter}
           onChange={(e) => setInstallerFilter(e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-1.5 min-h-[36px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
+          className="rounded-xl px-3 py-1.5 min-h-[36px] text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] w-full md:w-auto"
+          style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
         >
           <option value="">All Installers</option>
           {activeInstallers.map((i) => <option key={i} value={i}>{i}</option>)}
@@ -362,7 +385,7 @@ function ProjectsPageInner() {
       {hasActiveFilters && (
         <div className="flex items-center gap-2 mb-6 flex-wrap">
           {statusFilter !== 'active' && (
-            <span className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}>
               Status: {STATUS_LABELS[statusFilter]}
               <button
                 onClick={() => setStatusFilter('active')}
@@ -374,7 +397,7 @@ function ProjectsPageInner() {
             </span>
           )}
           {installerFilter && (
-            <span className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}>
               Installer: {installerFilter}
               <button
                 onClick={() => setInstallerFilter('')}
@@ -386,7 +409,7 @@ function ProjectsPageInner() {
             </span>
           )}
           {searchInput && (
-            <span className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}>
               Search: &ldquo;{searchInput}&rdquo;
               <button
                 onClick={() => { setSearchInput(''); setDebouncedSearch(''); }}
@@ -592,7 +615,8 @@ function KanbanView({
           placeholder="Search projects..."
           value={kanbanSearchInput}
           onChange={(e) => setKanbanSearchInput(e.target.value)}
-          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+          className="w-full rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-slate-500"
+          style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
         />
         {kanbanSearchInput && (
           <button
@@ -886,10 +910,10 @@ function KanbanView({
           return (
             <div key={phase} className={`flex-shrink-0 w-52 snap-start kanban-col-enter kanban-col-${phaseIdx}`}>
               {/* Sticky column header — stays visible while cards scroll */}
-              <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-sm pb-2 mb-1">
+              <div className="sticky top-0 z-10 backdrop-blur-sm pb-2 mb-1 px-2 py-1.5 rounded-lg" style={{ background: `${PHASE_COLORS[phase] ?? '#8891a8'}12`, border: `1px solid ${PHASE_COLORS[phase] ?? '#8891a8'}30` }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{phase}</span>
-                  <span className="bg-slate-800 text-slate-400 text-xs px-1.5 py-0.5 rounded-full">
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: PHASE_COLORS[phase] ?? '#8891a8' }}>{phase}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: '#1d2028', color: '#8891a8' }}>
                     {phaseProjects.length}
                   </span>
                 </div>
@@ -919,13 +943,20 @@ function KanbanView({
                     const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
-                      <div className={`relative overflow-hidden bg-slate-900 border rounded-xl p-3 cursor-pointer transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity ${
-                        proj.flagged
-                          ? 'border-l-2 border-l-red-500 border-slate-800'
-                          : isMyCard && dealScope === 'all'
-                            ? 'border-slate-800 border-l-[3px] border-l-blue-500'
-                            : 'border-slate-800'
-                      }`}>
+                      <div
+                        className={`relative overflow-hidden rounded-xl p-3 cursor-pointer transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] active:shadow-none ${
+                          proj.flagged ? '' : ''
+                        }`}
+                        style={{
+                          background: '#161920',
+                          border: `1px solid #272b35`,
+                          borderLeft: proj.flagged
+                            ? '3px solid #ff5252'
+                            : isMyCard && dealScope === 'all'
+                              ? '3px solid #4d9fff'
+                              : `3px solid ${PHASE_COLORS[proj.phase] ?? '#272b35'}`,
+                        }}
+                      >
                         <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />
                         <div className="flex items-start justify-between gap-1 mb-1">
                           <p className="text-white text-xs font-medium leading-tight group-hover:text-blue-400 transition-colors">
@@ -954,7 +985,7 @@ function KanbanView({
                         {/* Mini commission preview + phase nav row */}
                         {!hideFinancials && (
                           <div className={`flex items-center mt-1.5 ${isAdmin && (prevPhase || nextPhase) ? 'justify-between' : 'justify-end'}`}>
-                            <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
+                            <span className="text-[10px] font-medium tabular-nums" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>
                               ${commissionTotal.toLocaleString()}
                             </span>
                           </div>
@@ -1034,10 +1065,10 @@ function KanbanView({
           return (
             <div key={phase} className="flex-shrink-0 w-52">
               {/* Sticky column header — stays visible while cards scroll */}
-              <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-sm pb-2 mb-1">
+              <div className="sticky top-0 z-10 backdrop-blur-sm pb-2 mb-1 px-2 py-1.5 rounded-lg" style={{ background: `${PHASE_COLORS[phase] ?? '#8891a8'}12`, border: `1px solid ${PHASE_COLORS[phase] ?? '#8891a8'}30` }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{phase}</span>
-                  <span className="bg-slate-800 text-slate-500 text-xs px-1.5 py-0.5 rounded-full">
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: PHASE_COLORS[phase] ?? '#8891a8' }}>{phase}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: '#1d2028', color: '#8891a8' }}>
                     {phaseProjects.length}
                   </span>
                 </div>
@@ -1052,8 +1083,8 @@ function KanbanView({
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
                   {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
                     <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
-                      <div className="relative bg-slate-900/60 border border-slate-800/60 rounded-xl p-3 cursor-pointer opacity-70 hover:opacity-100 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity">
-                        <p className="text-slate-400 text-xs font-medium">{proj.customerName}</p>
+                      <div className="relative rounded-xl p-3 cursor-pointer opacity-70 hover:opacity-100 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] active:shadow-none" style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${PHASE_COLORS[phase] ?? '#525c72'}` }}>
+                        <p className="text-xs font-medium" style={{ color: '#8891a8' }}>{proj.customerName}</p>
                         <p className="text-slate-600 text-xs">{proj.kWSize} kW · {proj.installer}</p>
                       </div>
                     </Link>
@@ -1655,7 +1686,8 @@ function TableView({
             onChange={(e) => setSearchInput(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+            className="w-full rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-slate-500"
+            style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
           />
           {/* Clear button — shown when there is a search query */}
           {searchInput ? (
@@ -1754,7 +1786,7 @@ function TableView({
       <div className="hidden md:block card-surface rounded-2xl overflow-auto">
         <div className="overflow-x-auto scroll-smooth">
           <table className="w-full text-sm">
-            <thead className="table-header-frost sticky top-0 z-10 after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-gradient-to-r after:from-blue-500/20 after:via-blue-500/40 after:to-blue-500/20">
+            <thead className="sticky top-0 z-10" style={{ background: '#1d2028' }}>
               <tr>
                 {isAdmin && (
                   <th className="px-3 py-3 w-10">
@@ -1814,15 +1846,18 @@ function TableView({
                     tabIndex={0}
                     role="row"
                     onClick={() => { try { sessionStorage.setItem('kilo-project-nav', JSON.stringify(sortedProjects.map((p) => p.id))); } catch {} tableRouter.push(`/dashboard/projects/${proj.id}`); }}
-                  className={`group table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-slate-800/50 hover:bg-blue-500/[0.06] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.6)] transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-inset ${
-                    selectedProjectIds.has(proj.id)
-                      ? '!bg-blue-900/15'
-                      : proj.flagged
-                        ? 'border-l-2 border-l-red-500'
-                        : isMyRow
-                          ? 'bg-blue-500/[0.04] border-l-[3px] border-l-blue-500'
-                          : 'odd:bg-[rgba(13,27,46,0.5)] even:bg-[rgba(30,58,95,0.08)]'
-                  }`}
+                  className={`group table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00e07a]/60 focus-visible:ring-inset`}
+                  style={{
+                    borderBottom: '1px solid #272b35',
+                    background: selectedProjectIds.has(proj.id)
+                      ? 'rgba(77,159,255,0.08)'
+                      : i % 2 === 0 ? '#161920' : '#191c24',
+                    borderLeft: proj.flagged
+                      ? '3px solid #ff5252'
+                      : isMyRow
+                        ? '3px solid #4d9fff'
+                        : undefined,
+                  }}
                 >
                   {isAdmin && (
                     <td className="px-3 py-3 w-10">
@@ -1883,7 +1918,7 @@ function TableView({
                   <td className="px-5 py-3 text-slate-400">{proj.installer}</td>
                   <td className="px-5 py-3 text-slate-400">{proj.financer}</td>
                   <td className="px-5 py-3 text-slate-300">{proj.kWSize}</td>
-                  {!hideFinancials && <td className="px-5 py-3 text-slate-300">${proj.netPPW}</td>}
+                  {!hideFinancials && <td className="px-5 py-3" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW}</td>}
                   <td className="px-5 py-3 text-slate-500">
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-slate-600">{relativeTime(proj.soldDate)}</div>

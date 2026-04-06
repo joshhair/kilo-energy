@@ -53,10 +53,17 @@ interface BlitzRequestData {
 }
 
 const STATUS_STYLES: Record<BlitzStatus, { bg: string; text: string; dot: string; border: string }> = {
-  upcoming:  { bg: 'bg-blue-900/30',    text: 'text-blue-300',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
-  active:    { bg: 'bg-emerald-900/30',  text: 'text-emerald-300', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
-  completed: { bg: 'bg-slate-800/50',     text: 'text-slate-400',    dot: 'bg-slate-500',    border: 'border-slate-600/30' },
-  cancelled: { bg: 'bg-red-900/30',      text: 'text-red-300',     dot: 'bg-red-400',     border: 'border-red-700/30' },
+  upcoming:  { bg: '', text: '', dot: '', border: '' },
+  active:    { bg: '', text: '', dot: '', border: '' },
+  completed: { bg: '', text: '', dot: '', border: '' },
+  cancelled: { bg: '', text: '', dot: '', border: '' },
+};
+
+const STATUS_INLINE: Record<BlitzStatus, { bg: string; color: string; dotBg: string; border: string }> = {
+  upcoming:  { bg: 'rgba(77,159,255,0.12)', color: '#4d9fff', dotBg: '#4d9fff', border: '1px solid rgba(77,159,255,0.3)' },
+  active:    { bg: 'rgba(0,224,122,0.12)',  color: '#00e07a', dotBg: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' },
+  completed: { bg: 'rgba(136,145,168,0.12)', color: '#8891a8', dotBg: '#8891a8', border: '1px solid rgba(136,145,168,0.3)' },
+  cancelled: { bg: 'rgba(255,82,82,0.12)',  color: '#ff5252', dotBg: '#ff5252', border: '1px solid rgba(255,82,82,0.3)' },
 };
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
@@ -104,7 +111,7 @@ function getBlitzProgress(blitz: BlitzData): { dayNum: number; totalDays: number
 
 function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz: BlitzData; currentUserId: string | null; isAdmin: boolean; onJoin: (blitzId: string) => Promise<void>; index?: number }) {
   const [joining, setJoining] = useState(false);
-  const style = STATUS_STYLES[blitz.status] ?? STATUS_STYLES.upcoming;
+  const style = STATUS_INLINE[blitz.status] ?? STATUS_INLINE.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
   const totalKW = blitz.projects.reduce((s, p) => s + p.kWSize, 0);
@@ -121,22 +128,25 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         {/* Status badge + timing */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${style.dot} ${blitz.status === 'active' ? 'animate-pulse' : ''}`} />
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
+              style={{ background: style.bg, color: style.color, border: style.border }}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${blitz.status === 'active' ? 'animate-pulse' : ''}`} style={{ backgroundColor: style.dotBg }} />
               {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
             </span>
             {timingLabel && (
-              <span className="text-[11px] font-medium text-slate-500">{timingLabel}</span>
+              <span className="text-[11px] font-medium" style={{ color: '#8891a8' }}>{timingLabel}</span>
             )}
           </div>
           <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
         </div>
 
         {/* Name */}
-        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-300 transition-colors">{blitz.name}</h3>
+        <h3 className="text-lg font-bold mb-1 group-hover:text-[#00c4f0] transition-colors" style={{ color: '#f0f2f7' }}>{blitz.name}</h3>
 
         {/* Location + dates */}
-        <div className="flex flex-col gap-1 text-sm text-slate-400 mb-4">
+        <div className="flex flex-col gap-1 text-sm mb-4" style={{ color: '#c2c8d8' }}>
           {blitz.location && (
             <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>
           )}
@@ -149,38 +159,38 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         {/* Progress bar for active blitzes */}
         {progress && (
           <div className="mb-4">
-            <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+            <div className="flex items-center justify-between text-[11px] mb-1" style={{ color: '#8891a8' }}>
               <span>Day {progress.dayNum} of {progress.totalDays}</span>
               <span>{progress.pct}%</span>
             </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#272b35' }}>
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
-                style={{ width: `${progress.pct}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progress.pct}%`, background: 'linear-gradient(90deg, #00e07a, #00c4f0)' }}
               />
             </div>
           </div>
         )}
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-800">
+        <div className="grid grid-cols-3 gap-3 pt-3" style={{ borderTop: '1px solid #272b35' }}>
           <div className="text-center">
-            <p className="text-xs text-slate-500 mb-0.5">Reps</p>
-            <p className="text-sm font-bold text-white">{approvedParticipants}</p>
+            <p className="text-xs mb-0.5" style={{ color: '#8891a8' }}>Reps</p>
+            <p className="text-sm font-bold" style={{ color: '#f0f2f7' }}>{approvedParticipants}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-slate-500 mb-0.5">Deals</p>
-            <p className="text-sm font-bold text-white">{totalDeals}</p>
+            <p className="text-xs mb-0.5" style={{ color: '#8891a8' }}>Deals</p>
+            <p className="text-sm font-bold" style={{ color: '#f0f2f7' }}>{totalDeals}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-slate-500 mb-0.5">kW</p>
-            <p className="text-sm font-bold text-white">{totalKW.toFixed(1)}</p>
+            <p className="text-xs mb-0.5" style={{ color: '#8891a8' }}>kW</p>
+            <p className="text-sm font-bold" style={{ color: '#f0f2f7' }}>{totalKW.toFixed(1)}</p>
           </div>
         </div>
 
         {/* Cost efficiency metrics — admin only, when costs exist */}
         {isAdmin && totalCosts > 0 && (
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px]" style={{ color: '#8891a8' }}>
             Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
             {' | '}
             Cost/kW: ${totalKW > 0 ? (totalCosts / totalKW).toFixed(2) : '--'}
@@ -189,8 +199,8 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
 
         {/* Owner tag + join action */}
         <div className="mt-3 flex items-center justify-between">
-          <div className="text-xs text-slate-500">
-            Led by <Link href={`/dashboard/reps/${blitz.owner.id}`} onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-blue-300 transition-colors">{blitz.owner.firstName} {blitz.owner.lastName}</Link>
+          <div className="text-xs" style={{ color: '#8891a8' }}>
+            Led by <Link href={`/dashboard/reps/${blitz.owner.id}`} onClick={(e) => e.stopPropagation()} className="hover:text-[#00c4f0] transition-colors" style={{ color: '#c2c8d8' }}>{blitz.owner.firstName} {blitz.owner.lastName}</Link>
           </div>
           {isOwner && (
             <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-blue-400 border border-blue-500/20">
@@ -214,7 +224,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         </div>
 
         {/* Hover glow bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(90deg, #00e07a, #00c4f0, #00e07a)' }} />
       </div>
     </Link>
   );
@@ -655,14 +665,14 @@ function BlitzPageInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <Tent className="w-7 h-7 text-blue-400" /> Blitz
+          <h1 className="text-2xl font-bold flex items-center gap-2.5" style={{ color: '#f0f2f7' }}>
+            <Tent className="w-7 h-7" style={{ color: '#00c4f0' }} /> Blitz
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Manage blitzes, track participation and profitability</p>
+          <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Manage blitzes, track participation and profitability</p>
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20">
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
               <Plus className="w-4 h-4" /> New Blitz
             </button>
           )}
@@ -722,16 +732,16 @@ function BlitzPageInner() {
 
       {/* Admin Tabs — Blitzes / Requests with sliding pill */}
       {isAdmin && (
-        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
-          {adminTabIndicator && <div className="tab-indicator" style={adminTabIndicator} />}
+        <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: '#161920', border: '1px solid #272b35' }}>
           {(['blitzes', 'requests'] as TabKey[]).map((t, i) => (
             <button
               key={t}
               ref={(el) => { adminTabRefs.current[i] = el; }}
               onClick={() => setTab(t)}
-              className={`relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${tab === t ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+              className="relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+              style={tab === t ? { background: '#00e07a', color: '#000' } : { color: '#c2c8d8' }}
             >
-              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-red-500 text-white rounded-full px-1">{pendingRequests.length}</span>}</>}
+              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: '#ff5252', color: '#fff' }}>{pendingRequests.length}</span>}</>}
             </button>
           ))}
         </div>
@@ -755,7 +765,8 @@ function BlitzPageInner() {
                   }
                 }}
                 placeholder="Search blitzes...  /"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder-slate-500 focus:outline-none input-focus-glow"
+                className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none input-focus-glow"
+                style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
               />
               {search && (
                 <button onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
@@ -772,7 +783,8 @@ function BlitzPageInner() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
-                className="appearance-none bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-slate-300 focus:outline-none input-focus-glow cursor-pointer hover:border-slate-600 transition-colors"
+                className="appearance-none rounded-xl pl-3 pr-8 py-2 text-sm focus:outline-none input-focus-glow cursor-pointer transition-colors"
+                style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.key} value={opt.key}>{opt.label}</option>
@@ -782,19 +794,23 @@ function BlitzPageInner() {
             </div>
 
             {/* Status filter tabs with sliding pill */}
-            <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
-              {statusIndicator && <div className="tab-indicator" style={statusIndicator} />}
+            <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: '#161920', border: '1px solid #272b35' }}>
               {STATUS_FILTER_OPTIONS.map((s, i) => {
                 const count = s === 'all' ? blitzes.length : blitzes.filter((b) => b.status === s).length;
+                const isActive = statusFilter === s;
                 return (
                   <button
                     key={s}
                     ref={(el) => { statusTabRefs.current[i] = el; }}
                     onClick={() => setStatusFilter(s)}
-                    className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${statusFilter === s ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                    style={isActive
+                      ? { background: '#00e07a', color: '#000' }
+                      : { background: '#1d2028', color: '#c2c8d8', border: '1px solid #333849' }
+                    }
                   >
                     {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-                    {count > 0 && <span className={`ml-1 ${statusFilter === s ? 'text-slate-300' : 'text-slate-600'}`}>{count}</span>}
+                    {count > 0 && <span className="ml-1" style={{ color: isActive ? 'rgba(0,0,0,0.6)' : '#525c72' }}>{count}</span>}
                   </button>
                 );
               })}
@@ -813,14 +829,14 @@ function BlitzPageInner() {
           ) : isAdmin ? (
             /* Admin sees all blitzes in one grid */
             paginatedAdminBlitzes.length === 0 && sortedBlitzes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
-                <Tent className="w-16 h-16 text-slate-600" />
+              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
+                <Tent className="w-16 h-16" style={{ color: '#525c72' }} />
                 <div className="text-center">
-                  <p className="text-lg font-semibold text-white">No blitzes found</p>
-                  <p className="text-sm text-slate-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
+                  <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No blitzes found</p>
+                  <p className="text-sm mt-1" style={{ color: '#8891a8' }}>{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
                 </div>
                 {!search && statusFilter === 'all' && (
-                  <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors">
+                  <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors" style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}>
                     Create a Blitz
                   </button>
                 )}
@@ -872,11 +888,11 @@ function BlitzPageInner() {
               )}
 
               {myBlitzes.length === 0 && browseBlitzes.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
-                  <Tent className="w-16 h-16 text-slate-600" />
+                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
+                  <Tent className="w-16 h-16" style={{ color: '#525c72' }} />
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-white">No blitzes available</p>
-                    <p className="text-sm text-slate-500 mt-1">{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Check back soon for upcoming blitzes'}</p>
+                    <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No blitzes available</p>
+                    <p className="text-sm mt-1" style={{ color: '#8891a8' }}>{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Check back soon for upcoming blitzes'}</p>
                   </div>
                 </div>
               )}
@@ -888,17 +904,17 @@ function BlitzPageInner() {
       {tab === 'requests' && isAdmin && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
-              <Inbox className="w-14 h-14 text-slate-600" />
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
+              <Inbox className="w-14 h-14" style={{ color: '#525c72' }} />
               <div className="text-center">
-                <p className="text-lg font-semibold text-white">No blitz requests</p>
-                <p className="text-sm text-slate-500 mt-1">Requests from reps will appear here for approval</p>
+                <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No blitz requests</p>
+                <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Requests from reps will appear here for approval</p>
               </div>
             </div>
           ) : (
             <>
               {paginatedRequests.map((req) => (
-                <div key={req.id} className="card-surface rounded-2xl p-5 hover:border-slate-700 transition-colors">
+                <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: '#161920', border: '1px solid #272b35' }}>
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">

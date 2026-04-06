@@ -77,11 +77,11 @@ function PpwHint({ soldPPW, closerPerW, hasError }: { soldPPW: number; closerPer
 function SectionHeader({ step, label }: { step: number; label: string }) {
   return (
     <div className="flex items-center gap-2.5 mb-4">
-      <span className="w-5 h-5 rounded-full bg-blue-600/20 border border-blue-600/40 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">
+      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: 'rgba(0,224,122,0.15)', border: '1px solid rgba(0,224,122,0.3)', color: '#00e07a' }}>
         {step}
       </span>
-      <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{label}</span>
-      <div className="flex-1 h-px bg-slate-800" />
+      <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+      <div className="flex-1 h-px" style={{ background: '#272b35' }} />
     </div>
   );
 }
@@ -120,22 +120,20 @@ function FormStepper({ currentStep, stepsComplete, progressPct, onStepClick, pul
                 onKeyDown={isComplete && onStepClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStepClick(idx); } } : undefined}
               >
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300 ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300 ${pulseStep === idx ? 'animate-pulse scale-110' : ''}`}
+                  style={
                     isComplete
-                      ? 'bg-emerald-600 text-white group-hover/step:bg-emerald-500 group-hover/step:shadow-lg group-hover/step:shadow-emerald-500/25'
+                      ? { background: '#00c4f0', color: '#000', boxShadow: '0 0 12px rgba(0,196,240,0.3)' }
                       : isCurrent
-                      ? 'bg-blue-600 text-white ring-2 ring-blue-500 ring-offset-[3px] ring-offset-[var(--navy-base)]'
-                      : 'bg-slate-800 border border-slate-700 text-slate-500'
-                  } ${pulseStep === idx ? 'animate-pulse shadow-lg shadow-emerald-500/40 scale-110' : ''}`}
+                      ? { background: '#00e07a', color: '#000', boxShadow: '0 0 12px rgba(0,224,122,0.4)', width: '2rem', height: '2rem' }
+                      : { background: '#272b35', color: '#525c72', border: '1px solid #333849' }
+                  }
                 >
                   {isComplete ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : idx + 1}
                 </div>
                 <span
-                  className={`mt-1 text-[10px] font-medium whitespace-nowrap transition-colors ${
-                    isCurrent    ? 'text-blue-400'
-                    : isComplete ? 'text-emerald-500 group-hover/step:text-emerald-400'
-                    : 'text-slate-600'
-                  }`}
+                  className="mt-1 text-[10px] font-medium whitespace-nowrap transition-colors"
+                  style={{ color: isCurrent ? '#00e07a' : isComplete ? '#00c4f0' : '#525c72' }}
                 >
                   {label}
                 </span>
@@ -144,10 +142,10 @@ function FormStepper({ currentStep, stepsComplete, progressPct, onStepClick, pul
               {/* Connector line between steps */}
               {idx < DEAL_STEPS.length - 1 && (
                 <div className="flex-1 mx-3 h-[2px] relative overflow-hidden rounded-full mt-[-10px]">
-                  <div className="absolute inset-0 bg-slate-700" />
+                  <div className="absolute inset-0" style={{ background: '#272b35' }} />
                   <div
-                    className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-400 transition-transform duration-500 origin-left"
-                    style={{ transform: `scaleX(${stepsComplete[idx] ? 1 : 0})` }}
+                    className="absolute inset-0 transition-transform duration-500 origin-left"
+                    style={{ background: 'linear-gradient(90deg, #00e07a, #00c4f0)', transform: `scaleX(${stepsComplete[idx] ? 1 : 0})` }}
                   />
                 </div>
               )}
@@ -188,14 +186,16 @@ function FormStepper({ currentStep, stepsComplete, progressPct, onStepClick, pul
       </div>
 
       {/* ── Thin progress bar ── */}
-      <div className="h-[2px] bg-slate-800/80">
+      <div className="h-[2px]" style={{ background: '#272b35' }}>
         <div
-          className={`h-full transition-[width,box-shadow] duration-500 ease-out ${
-            progressPct >= 100
-              ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-              : 'bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-500'
-          }`}
-          style={{ width: `${progressPct}%` }}
+          className="h-full transition-[width,box-shadow] duration-500 ease-out"
+          style={{
+            width: `${progressPct}%`,
+            background: progressPct >= 100
+              ? 'linear-gradient(90deg, #00e07a, #00c4f0)'
+              : 'linear-gradient(90deg, #00e07a, #00c4f0)',
+            boxShadow: progressPct >= 100 ? '0 0 12px rgba(0,224,122,0.3)' : undefined,
+          }}
         />
       </div>
     </div>
@@ -317,24 +317,24 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
       </div>
 
       {/* Success card */}
-      <div className="bg-slate-900 border border-green-700/30 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.08)]">
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.04))', border: '1px solid rgba(0,224,122,0.25)', boxShadow: '0 0 40px rgba(0,224,122,0.08)' }}>
         {/* Green top bar */}
-        <div className="h-1 bg-gradient-to-r from-green-500 to-emerald-400" />
+        <div className="h-1" style={{ background: 'linear-gradient(90deg, #00e07a, #00c4f0)' }} />
 
         <div className="p-8">
           {/* Icon + message */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-8 h-8 text-green-400" strokeWidth={1.5} />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.3)' }}>
+              <CheckCircle2 className="w-8 h-8" style={{ color: '#00e07a' }} strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-black text-white mb-1">Deal Submitted!</h2>
+            <h2 className="text-2xl font-black mb-1" style={{ color: '#f0f2f7' }}>Deal Submitted!</h2>
             <p className="text-slate-400 text-sm">
               <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
             </p>
           </div>
 
           {/* Deal summary */}
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 mb-4 space-y-2.5">
+          <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Summary</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
               <div>
@@ -357,7 +357,7 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
           </div>
 
           {/* Commission summary */}
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 mb-6 space-y-2.5">
+          <div className="rounded-xl p-4 mb-6 space-y-2.5" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Commission</p>
             {deal.closerTotal > 0 ? (
               <div className="flex items-center justify-between">
@@ -365,7 +365,7 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
                   <p className="text-slate-300 text-sm font-medium">{deal.repName} (Closer)</p>
                   <p className="text-slate-500 text-xs">M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}{deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}</p>
                 </div>
-                <p className="text-2xl font-black text-green-400">${deal.closerTotal.toLocaleString()}</p>
+                <p className="text-2xl font-black" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 20px #00e07a50' }}>${deal.closerTotal.toLocaleString()}</p>
               </div>
             ) : (
               <p className="text-slate-500 text-sm">Commission will be calculated once pricing is confirmed.</p>
@@ -384,14 +384,15 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
           <div className="flex gap-3">
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className="flex-1 inline-flex items-center justify-center gap-2 btn-primary text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
-              style={{ backgroundColor: 'var(--brand)' }}
+              className="flex-1 inline-flex items-center justify-center gap-2 font-bold px-5 py-2.5 rounded-xl text-sm transition-all hover:brightness-110 active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
             >
               View Projects <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={onReset}
-              className="flex-1 inline-flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-2 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors hover:brightness-125"
+              style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
             >
               <RotateCcw className="w-4 h-4" /> Submit Another
             </button>
@@ -478,10 +479,11 @@ function DealEntryPage({ onStart, projects }: { onStart: () => void; projects: {
           {/* CTA — matches dashboard glow style */}
           <div className="ml-[52px]">
             <div className="relative inline-flex">
-              <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-500 to-emerald-500 opacity-[0.06] blur-[2px] animate-pulse" />
+              <div className="absolute -inset-0.5 rounded-2xl opacity-[0.15] blur-[3px] animate-pulse" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)' }} />
               <button
                 onClick={onStart}
-                className="relative inline-flex items-center gap-2.5 btn-primary text-white font-bold px-8 py-4 rounded-2xl text-base active:scale-[0.97]"
+                className="relative inline-flex items-center gap-2.5 font-bold px-8 py-4 rounded-2xl text-base active:scale-[0.97] transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
               >
                 <PlusCircle className="w-5 h-5" />
                 Submit a Deal
@@ -967,12 +969,20 @@ function NewDealPage() {
   // ── Style helpers ──────────────────────────────────────────────────────────
 
   const inputCls = (field: string) =>
-    `w-full bg-slate-800 border ${errors[field] ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900 transition-all duration-200 input-focus-glow placeholder-slate-500`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00e07a]/50 focus-visible:border-[#00e07a] transition-all duration-200 placeholder-slate-500`;
+
+  const inputFieldStyle = (field: string): React.CSSProperties => ({
+    background: '#1d2028',
+    border: `1px solid ${errors[field] ? '#ff5252' : '#333849'}`,
+    color: '#f0f2f7',
+    fontFamily: "'DM Sans', sans-serif",
+  });
 
   const selectCls = (field: string) =>
-    `w-full bg-slate-800 border ${errors[field] ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900 transition-all duration-200 input-focus-glow`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00e07a]/50 focus-visible:border-[#00e07a] transition-all duration-200`;
 
-  const labelCls = 'block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider';
+  const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
+  const labelStyle: React.CSSProperties = { color: '#8891a8', fontFamily: "'DM Sans', sans-serif" };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -1053,11 +1063,11 @@ function NewDealPage() {
             <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-1 space-y-4">
               {currentRole === 'admin' && (
                 <div className="transition-all duration-200">
-                  <label htmlFor="field-repId" className={labelCls}>
+                  <label htmlFor="field-repId" className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">Closer (Rep) {fieldCheck('repId')}</span>
                   </label>
                   <select id="field-repId" value={form.repId} onChange={(e) => update('repId', e.target.value)}
-                    onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} className={selectCls('repId')}>
+                    onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
                     {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
@@ -1066,7 +1076,7 @@ function NewDealPage() {
               )}
 
               <div className="transition-all duration-200">
-                <label className={labelCls}>
+                <label className={labelCls} style={labelStyle}>
                   Setter <span className="text-slate-600 font-normal normal-case">(optional)</span>
                 </label>
                 <SetterPickerPopover
@@ -1091,22 +1101,22 @@ function NewDealPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="transition-all duration-200">
-                <label htmlFor="field-customerName" className={labelCls}>
+                <label htmlFor="field-customerName" className={labelCls} style={labelStyle}>
                   <span className="inline-flex items-center gap-1">Customer Name {fieldCheck('customerName')}</span>
                 </label>
                 <input id="field-customerName" ref={customerNameInputRef} type="text" placeholder="e.g. John & Jane Smith"
                   value={form.customerName} onChange={(e) => update('customerName', e.target.value)}
                   onBlur={() => handleBlur('customerName')} aria-invalid={!!errors.customerName}
-                  className={inputCls('customerName')} />
+                  className={inputCls('customerName')} style={inputFieldStyle('customerName')} />
                 <FieldError errors={errors} field="customerName" />
               </div>
               <div className="transition-all duration-200">
-                <label htmlFor="field-soldDate" className={labelCls}>
+                <label htmlFor="field-soldDate" className={labelCls} style={labelStyle}>
                   <span className="inline-flex items-center gap-1">Sold Date {fieldCheck('soldDate')}</span>
                 </label>
                 <input id="field-soldDate" type="date" value={form.soldDate}
                   onChange={(e) => update('soldDate', e.target.value)} onBlur={() => handleBlur('soldDate')}
-                  aria-invalid={!!errors.soldDate} className={inputCls('soldDate')} />
+                  aria-invalid={!!errors.soldDate} className={inputCls('soldDate')} style={inputFieldStyle('soldDate')} />
                 <FieldError errors={errors} field="soldDate" />
               </div>
             </div>
@@ -1124,7 +1134,7 @@ function NewDealPage() {
             <div className="card-surface rounded-2xl p-5 mb-4 animate-slide-in-scale stagger-1 space-y-4 overflow-visible relative z-10">
             {/* Installer */}
             <div className="transition-all duration-200">
-              <label htmlFor="field-installer" className={labelCls}>
+              <label htmlFor="field-installer" className={labelCls} style={labelStyle}>
                 <span className="inline-flex items-center gap-1">Installer {fieldCheck('installer')}</span>
               </label>
               <SearchableSelect
@@ -1140,7 +1150,7 @@ function NewDealPage() {
             {/* Product Type — shown once installer is selected */}
             {form.installer && (
               <div className="transition-all duration-200">
-                <label className={labelCls}>
+                <label className={labelCls} style={labelStyle}>
                   <span className="inline-flex items-center gap-1">Product Type {fieldCheck('productType')}</span>
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -1190,7 +1200,7 @@ function NewDealPage() {
                 <>
                   {/* SolarTech: product family picker */}
                   <div className="transition-all duration-200">
-                    <label className={labelCls}>
+                    <label className={labelCls} style={labelStyle}>
                       <span className="inline-flex items-center gap-1">Product Family {fieldCheck('solarTechFamily')}</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1231,7 +1241,7 @@ function NewDealPage() {
                     form.solarTechFamily === 'Cash/HDM/PE' || (form.productType === 'Cash' || form.productType === 'Loan')
                   ) && (
                     <div className="transition-all duration-200">
-                      <label className={labelCls}>
+                      <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Prepaid Type</span>
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1254,7 +1264,7 @@ function NewDealPage() {
                   {/* Financer — independent dropdown for SolarTech (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
                     <div className="transition-all duration-200">
-                      <label className={labelCls}>
+                      <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Financer {fieldCheck('financer')}</span>
                       </label>
                       <SearchableSelect
@@ -1271,7 +1281,7 @@ function NewDealPage() {
                   {/* Equipment Package — revealed once a family is selected */}
                   {hasSolarTechProducts && (
                     <div className="transition-all duration-200">
-                      <label htmlFor="field-solarTechProductId" className={labelCls}>
+                      <label htmlFor="field-solarTechProductId" className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Equipment Package {fieldCheck('solarTechProductId')}</span>
                       </label>
                       <SearchableSelect
@@ -1289,7 +1299,7 @@ function NewDealPage() {
                 <>
                   {/* Product Catalog installer: product family button picker */}
                   <div className="transition-all duration-200">
-                    <label className={labelCls}>
+                    <label className={labelCls} style={labelStyle}>
                       <span className="inline-flex items-center gap-1">Product Family {fieldCheck('pcFamily')}</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1333,7 +1343,7 @@ function NewDealPage() {
                     (pcConfig.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily)
                   ) && (
                     <div className="transition-all duration-200">
-                      <label className={labelCls}>
+                      <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Prepaid Type</span>
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1356,7 +1366,7 @@ function NewDealPage() {
                   {/* Financer — independent dropdown for PC installer (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
                     <div className="transition-all duration-200">
-                      <label className={labelCls}>
+                      <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Financer {fieldCheck('financer')}</span>
                       </label>
                       <SearchableSelect
@@ -1373,7 +1383,7 @@ function NewDealPage() {
                   {/* Product picker — revealed once a family is selected */}
                   {hasPcProducts && (
                     <div className="transition-all duration-200">
-                      <label htmlFor="field-installerProductId" className={labelCls}>
+                      <label htmlFor="field-installerProductId" className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Equipment Package {fieldCheck('installerProductId')}</span>
                       </label>
                       <SearchableSelect
@@ -1392,7 +1402,7 @@ function NewDealPage() {
                   {/* Standard installer: financer dropdown (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
                     <div className="transition-all duration-200">
-                      <label className={labelCls}>
+                      <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Financer {fieldCheck('financer')}</span>
                       </label>
                       <SearchableSelect
@@ -1409,7 +1419,7 @@ function NewDealPage() {
                   {/* Prepaid sub-type for standard installers — shown for Cash/Loan when installer has prepaid options */}
                   {getInstallerPrepaidOptions(form.installer).length > 0 && (form.productType === 'Cash' || form.productType === 'Loan') && (
                     <div className="transition-all duration-200">
-                      <label className={labelCls}>
+                      <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Prepaid Type</span>
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1437,14 +1447,14 @@ function NewDealPage() {
             <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-2 space-y-4 relative z-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="transition-all duration-200">
-                  <label htmlFor="field-kWSize" className={labelCls}>
+                  <label htmlFor="field-kWSize" className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">System Size (kW) {fieldCheck('kWSize')}</span>
                   </label>
                   <div className="relative">
                     <input id="field-kWSize" type="number" step="0.1" min="0.1" placeholder="8.4"
                       value={form.kWSize} onChange={(e) => update('kWSize', e.target.value)}
                       onBlur={() => handleBlur('kWSize')} aria-invalid={!!errors.kWSize}
-                      className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} />
+                      className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} style={inputFieldStyle('kWSize')} />
                     {kW > 0 && !errors.kWSize && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                         <Check className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
@@ -1454,14 +1464,14 @@ function NewDealPage() {
                   <FieldError errors={errors} field="kWSize" />
                 </div>
                 <div className="transition-all duration-200">
-                  <label htmlFor="field-netPPW" className={labelCls}>
+                  <label htmlFor="field-netPPW" className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">Net PPW ($/W) {fieldCheck('netPPW')}</span>
                   </label>
                   <div className="relative">
                     <input id="field-netPPW" type="number" step="0.01" min="0.01" placeholder="3.45"
                       value={form.netPPW} onChange={(e) => update('netPPW', e.target.value)}
                       onBlur={() => handleBlur('netPPW')} aria-invalid={!!errors.netPPW}
-                      className={inputCls('netPPW') + (soldPPW > 0 && !errors.netPPW ? ' pr-9' : '')} />
+                      className={inputCls('netPPW') + (soldPPW > 0 && !errors.netPPW ? ' pr-9' : '')} style={inputFieldStyle('netPPW')} />
                     {soldPPW > 0 && !errors.netPPW && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                         <Check className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
@@ -1475,8 +1485,8 @@ function NewDealPage() {
 
               {/* Commission preview */}
               <div style={{ maxHeight: showPreview || (isSubDealer && subDealerCommission > 0) ? '400px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s ease-in-out' }}>
-                <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 text-sm space-y-2">
-                  <p className="text-slate-400 font-medium text-xs uppercase tracking-wider mb-2">Commission Preview</p>
+                <div className="rounded-xl p-4 text-sm space-y-2" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.05))', border: '1px solid rgba(0,224,122,0.2)' }}>
+                  <p className="font-medium text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Commission Preview</p>
                   {isSubDealer ? (
                     <>
                       {subDealerRate > 0 && (
@@ -1509,8 +1519,8 @@ function NewDealPage() {
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Closer commission</span>
-                        <span className="text-emerald-400 font-semibold">
+                        <span style={{ color: '#8891a8' }}>Closer commission</span>
+                        <span className="font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
                           <TickerAmount amount={closerTotal} />
                           <span className="text-slate-500 font-normal">
                             {' '}(M1: <TickerAmount amount={closerM1} className="tabular-nums" /> · M2: <TickerAmount amount={closerM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={closerM3} className="tabular-nums" /></>})
@@ -1612,7 +1622,7 @@ function NewDealPage() {
 
             {/* Notes */}
             <div className="transition-all duration-200">
-              <label htmlFor="field-notes" className={labelCls}>
+              <label htmlFor="field-notes" className={labelCls} style={labelStyle}>
                 Notes <span className="text-slate-600 font-normal normal-case">(optional)</span>
               </label>
               <textarea
@@ -1626,7 +1636,7 @@ function NewDealPage() {
                   el.style.height = 'auto';
                   el.style.height = el.scrollHeight + 'px';
                 }}
-                className={inputCls('') + ' min-h-[80px] max-h-[200px] overflow-y-auto resize-none'}
+                className={inputCls('') + ' min-h-[80px] max-h-[200px] overflow-y-auto resize-none'} style={inputFieldStyle('')}
               />
               <div className="flex items-center justify-between mt-1 mb-4">
                 <p className="text-xs italic text-slate-600">Internal notes only — not visible to customer</p>
@@ -1642,7 +1652,7 @@ function NewDealPage() {
 
             {/* Lead Source + Blitz Attribution */}
             <div className="transition-all duration-200 pt-2 border-t border-slate-800/60">
-              <label htmlFor="field-leadSource" className={labelCls}>
+              <label htmlFor="field-leadSource" className={labelCls} style={labelStyle}>
                 Lead Source <span className="text-slate-600 font-normal normal-case">(optional)</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1654,7 +1664,7 @@ function NewDealPage() {
                     update('leadSource', val);
                     if (val !== 'blitz') update('blitzId', '');
                   }}
-                  className={inputCls('')}
+                  className={inputCls('')} style={inputFieldStyle('')}
                 >
                   <option value="">— Select —</option>
                   <option value="organic">Organic</option>
@@ -1690,7 +1700,7 @@ function NewDealPage() {
                         }
                       }
                     }}
-                    className={inputCls('')}
+                    className={inputCls('')} style={inputFieldStyle('')}
                   >
                     <option value="">— Select Blitz —</option>
                     {availableBlitzes.map((b) => (
@@ -1714,7 +1724,8 @@ function NewDealPage() {
               type="button"
               onClick={handlePrev}
               disabled={submitting}
-              className="btn-secondary bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-6 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 text-sm transition-colors"
+              className="font-medium px-6 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 text-sm transition-colors hover:brightness-125"
+              style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
             >
               Previous
             </button>
@@ -1725,8 +1736,8 @@ function NewDealPage() {
             <button
               type="button"
               onClick={handleNext}
-              className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-8 py-3 rounded-xl active:scale-[0.97] text-sm"
-              style={{ backgroundColor: 'var(--brand)' }}
+              className="inline-flex items-center gap-2 font-bold px-8 py-3 rounded-xl active:scale-[0.97] text-sm transition-all hover:brightness-110"
+              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
             >
               Next
             </button>
@@ -1735,12 +1746,12 @@ function NewDealPage() {
           {/* Submit — shown on the last step only, with pulsing glow */}
           {currentStep === DEAL_STEPS.length - 1 && (
             <div className="relative inline-flex">
-              {!submitting && <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-blue-500 to-emerald-500 opacity-[0.06] blur-[2px] animate-pulse" />}
+              {!submitting && <div className="absolute -inset-0.5 rounded-xl opacity-[0.15] blur-[3px] animate-pulse" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)' }} />}
             <button
               type="submit"
               disabled={submitting}
-              className="relative btn-primary inline-flex items-center gap-2 text-white font-semibold px-8 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-sm"
-              style={{ backgroundColor: 'var(--brand)' }}
+              className="relative inline-flex items-center gap-2 font-bold px-8 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 text-sm transition-all hover:brightness-110"
+              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>
@@ -1759,7 +1770,8 @@ function NewDealPage() {
             type="button"
             onClick={() => router.push('/dashboard')}
             disabled={submitting}
-            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-6 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 text-sm transition-colors"
+            className="font-medium px-6 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 text-sm transition-colors hover:brightness-125"
+            style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
           >
             Cancel
           </button>

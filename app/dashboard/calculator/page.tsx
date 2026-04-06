@@ -574,8 +574,11 @@ function CalculatorPage() {
   }, [resultHash, hasInput, soldPPW, closerTotal]);
 
 
-  const inputCls = 'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500';
-  const labelCls = 'block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider';
+  const inputCls = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all duration-200 placeholder-slate-500';
+  const inputStyle: CSSProperties = { background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7', fontFamily: "'DM Sans', sans-serif" };
+  const inputFocusRing = 'focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a]';
+  const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
+  const labelStyle: CSSProperties = { color: '#8891a8', fontFamily: "'DM Sans', sans-serif" };
 
   // Animated dollar counters — always called (hook rules), values are 0 when not shown
   const animatedCloserTotal  = useCountUp(closerTotal);
@@ -611,13 +614,13 @@ function CalculatorPage() {
         <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">Run numbers before you close — know your earning before you pitch.</p>
       </div>
 
-      <div className="card-surface rounded-2xl p-6 space-y-5 mb-6 overflow-visible relative z-20">
+      <div className="card-surface rounded-2xl p-6 space-y-5 mb-6 overflow-visible relative z-20" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
         {/* ── Quick Fill ──────────────────────────────────────────────────── */}
         {recentDeals.length > 0 && (
-          <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-3">
+          <div className="rounded-xl p-3" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
             <div className="flex items-center gap-1.5 mb-2">
-              <Zap className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-              <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Quick Fill</span>
+              <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#00c4f0' }} />
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#00c4f0' }}>Quick Fill</span>
             </div>
             <div className="flex items-center gap-2">
               <SearchableSelect
@@ -634,7 +637,8 @@ function CalculatorPage() {
                 type="button"
                 onClick={handleReset}
                 title="Clear all fields"
-                className="flex-shrink-0 p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                className="flex-shrink-0 p-2 rounded-lg hover:text-white transition-colors"
+                style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -643,7 +647,7 @@ function CalculatorPage() {
         )}
 
         <div>
-          <label className={labelCls}>
+          <label className={labelCls} style={labelStyle}>
             Installer
             <FieldTooltip text="The installation company handling this project. Rates vary by installer." />
           </label>
@@ -666,7 +670,7 @@ function CalculatorPage() {
         {isSolarTech && (
           <div className="space-y-4">
             <div>
-              <label className={labelCls}>Financing Family</label>
+              <label className={labelCls} style={labelStyle}>Financing Family</label>
               <div ref={stFamilyRef}>
                 <SearchableSelect
                   value={solarTechFamily}
@@ -681,7 +685,7 @@ function CalculatorPage() {
             </div>
             {solarTechFamily && hasSolarTechProducts && (
               <div>
-                <label className={labelCls}>Equipment Package</label>
+                <label className={labelCls} style={labelStyle}>Equipment Package</label>
                 <div ref={stProductRef}>
                   <SearchableSelect
                     value={solarTechProductId}
@@ -701,7 +705,7 @@ function CalculatorPage() {
         {isPcInstaller && pcConfig && (
           <div className="space-y-4">
             <div>
-              <label className={labelCls}>Financing Family</label>
+              <label className={labelCls} style={labelStyle}>Financing Family</label>
               <div ref={pcFamilyRef}>
                 <SearchableSelect
                   value={pcSelectedFamily}
@@ -713,7 +717,7 @@ function CalculatorPage() {
             </div>
             {pcSelectedFamily && pcFamilyProducts.length > 0 && (
               <div>
-                <label className={labelCls}>Equipment Package</label>
+                <label className={labelCls} style={labelStyle}>Equipment Package</label>
                 <div ref={pcProductRef}>
                   <SearchableSelect
                     value={pcProductId}
@@ -732,7 +736,7 @@ function CalculatorPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>
+            <label className={labelCls} style={labelStyle}>
               System Size (kW)
               <FieldTooltip text="Total system size in kilowatts. Larger systems = higher commission." />
             </label>
@@ -740,11 +744,11 @@ function CalculatorPage() {
               ref={kWSizeRef}
               type="number" step="0.1" min="0" placeholder="e.g. 8.4"
               value={kWSize} onChange={(e) => setKWSize(e.target.value)}
-              className={inputCls}
+              className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
             />
           </div>
           <div>
-            <label className={labelCls}>
+            <label className={labelCls} style={labelStyle}>
               Sold PPW ($/W)
               <FieldTooltip text="Price Per Watt — the rate you sold the system at. Must be above baseline to earn commission." />
             </label>
@@ -752,7 +756,7 @@ function CalculatorPage() {
               ref={netPPWRef}
               type="number" step="0.01" min="0" placeholder="e.g. 3.45"
               value={netPPW} onChange={(e) => setNetPPW(e.target.value)}
-              className={inputCls}
+              className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
             />
           </div>
         </div>
@@ -770,7 +774,7 @@ function CalculatorPage() {
 
           {hasSetter && (
             <div>
-              <label className={labelCls}>
+              <label className={labelCls} style={labelStyle}>
                 Setter
                 <FieldTooltip text="Select a setter to factor in their trainer assignment and baseline split." />
               </label>
@@ -801,20 +805,20 @@ function CalculatorPage() {
           <div className="space-y-4">
 
           {/* Baseline info */}
-          <div className="card-surface rounded-xl p-4 animate-slide-in-scale" style={{ animationDelay: '0ms' }}>
-            <p className="text-slate-500 text-xs uppercase tracking-wider mb-3">Baseline Rates</p>
+          <div className="card-surface rounded-xl p-4 animate-slide-in-scale" style={{ animationDelay: '0ms', background: '#1d2028', border: '1px solid #272b35' }}>
+            <p className="text-xs uppercase tracking-wider mb-3" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Baseline Rates</p>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-white font-bold text-lg">${closerPerW.toFixed(2)}<span className="text-slate-500 text-xs font-normal">/W</span></p>
-                <p className="text-slate-400 text-xs">Closer Baseline</p>
+                <p className="font-bold text-lg" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerPerW.toFixed(2)}<span className="text-xs font-normal" style={{ color: '#525c72' }}>/W</span></p>
+                <p className="text-xs" style={{ color: '#8891a8' }}>Closer Baseline</p>
               </div>
               <div>
-                <p className="text-white font-bold text-lg">${setterBaselinePerW.toFixed(2)}<span className="text-slate-500 text-xs font-normal">/W</span></p>
-                <p className="text-slate-400 text-xs">Setter Baseline</p>
+                <p className="font-bold text-lg" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterBaselinePerW.toFixed(2)}<span className="text-xs font-normal" style={{ color: '#525c72' }}>/W</span></p>
+                <p className="text-xs" style={{ color: '#8891a8' }}>Setter Baseline</p>
               </div>
               <div>
-                <p className="text-white font-bold text-lg">${breakEvenPPW.toFixed(2)}<span className="text-slate-500 text-xs font-normal">/W</span></p>
-                <p className="text-slate-400 text-xs">Break-Even PPW</p>
+                <p className="font-bold text-lg" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${breakEvenPPW.toFixed(2)}<span className="text-xs font-normal" style={{ color: '#525c72' }}>/W</span></p>
+                <p className="text-xs" style={{ color: '#8891a8' }}>Break-Even PPW</p>
               </div>
             </div>
           </div>
@@ -833,13 +837,13 @@ function CalculatorPage() {
               {/* Card 1 — Closer Pay (blue) */}
               <div
                 className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-1"
-                style={{ '--card-accent': 'rgba(59,130,246,0.15)' } as CSSProperties}
+                style={{ '--card-accent': 'rgba(59,130,246,0.15)', background: '#1d2028', border: '1px solid #272b35' } as CSSProperties}
               >
-                <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Closer Pay</p>
+                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</p>
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="stat-value text-gradient-brand font-bold text-2xl">${animatedCloserTotal.toLocaleString()}</p>
-                    <p className="text-slate-500 text-xs mt-1">M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3Split ? ` · M3: $${closerM3.toLocaleString()}` : ''}</p>
+                    <p className="stat-value font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 20px #00e07a50' }}>${animatedCloserTotal.toLocaleString()}</p>
+                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3Split ? ` · M3: $${closerM3.toLocaleString()}` : ''}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 mb-1">
                     <button
@@ -874,20 +878,20 @@ function CalculatorPage() {
               {hasSetter && (
                 <div
                   className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-2"
-                  style={{ '--card-accent': 'rgba(139,92,246,0.15)' } as CSSProperties}
+                  style={{ '--card-accent': 'rgba(139,92,246,0.15)', background: '#1d2028', border: '1px solid #272b35' } as CSSProperties}
                 >
-                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">
+                  <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>
                     Setter Pay{selectedSetterRep ? ` — ${selectedSetterRep.name}` : ''}
                   </p>
                   <div className="flex justify-between items-end">
                     <div>
-                      <p className="stat-value text-violet-400 font-bold text-2xl">${animatedSetterTotal.toLocaleString()}</p>
-                      <p className="text-slate-500 text-xs mt-1">M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3Split ? ` · M3: $${setterM3.toLocaleString()}` : ''}</p>
+                      <p className="stat-value font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#b47dff', textShadow: '0 0 20px #b47dff50' }}>${animatedSetterTotal.toLocaleString()}</p>
+                      <p className="text-xs mt-1" style={{ color: '#525c72' }}>M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3Split ? ` · M3: $${setterM3.toLocaleString()}` : ''}</p>
                     </div>
                     {trainerRep && trainerTotal > 0 && (
                       <div className="text-right">
-                        <p className="text-amber-400 font-semibold text-sm">${animatedTrainerTotal.toLocaleString()}</p>
-                        <p className="text-slate-500 text-xs">Trainer: {trainerRep.name}</p>
+                        <p className="font-semibold text-sm" style={{ color: '#ffb020' }}>${animatedTrainerTotal.toLocaleString()}</p>
+                        <p className="text-xs" style={{ color: '#525c72' }}>Trainer: {trainerRep.name}</p>
                       </div>
                     )}
                   </div>
@@ -898,20 +902,20 @@ function CalculatorPage() {
               {currentRole === 'admin' && (
                 <div
                   className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-3"
-                  style={{ '--card-accent': 'rgba(16,185,129,0.15)' } as CSSProperties}
+                  style={{ '--card-accent': 'rgba(0,224,122,0.15)', background: 'linear-gradient(135deg, rgba(0,224,122,0.12), rgba(0,196,240,0.08))', border: '1px solid rgba(0,224,122,0.25)' } as CSSProperties}
                 >
-                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Kilo Margin</p>
-                  <p className="stat-value text-emerald-400 font-bold text-2xl">${animatedKiloTotal.toLocaleString()}</p>
+                  <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</p>
+                  <p className="stat-value font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 20px #00e07a50' }}>${animatedKiloTotal.toLocaleString()}</p>
                 </div>
               )}
 
               {/* Card 4 — Total Commission (yellow) */}
               <div
                 className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-4"
-                style={{ '--card-accent': 'rgba(234,179,8,0.15)' } as CSSProperties}
+                style={{ '--card-accent': 'rgba(255,176,32,0.15)', background: '#1d2028', border: '1px solid #272b35' } as CSSProperties}
               >
-                <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Total Commission</p>
-                <p className="stat-value stat-value-glow stat-glow-blue text-yellow-400 font-bold text-2xl">${animatedGrandTotal.toLocaleString()}</p>
+                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Total Commission</p>
+                <p className="stat-value stat-value-glow stat-glow-blue font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#ffb020', textShadow: '0 0 20px #ffb02050' }}>${animatedGrandTotal.toLocaleString()}</p>
               </div>
 
               {/* Animated stacked bar chart — stagger-5 entrance; keyed so grow-on-mount re-triggers on every recalculation */}
@@ -938,8 +942,8 @@ function CalculatorPage() {
           <div className='h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent my-4' />
 
           {/* Target earnings tool */}
-          <div className="card-surface rounded-xl p-4 animate-slide-in-scale" style={{ animationDelay: '200ms' }}>
-            <p className="text-slate-500 text-xs uppercase tracking-wider mb-3">PPW Needed for Target Earning</p>
+          <div className="card-surface rounded-xl p-4 animate-slide-in-scale" style={{ animationDelay: '200ms', background: '#1d2028', border: '1px solid #272b35' }}>
+            <p className="text-xs uppercase tracking-wider mb-3" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>PPW Needed for Target Earning</p>
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <input
@@ -947,7 +951,7 @@ function CalculatorPage() {
                   placeholder="Target $ (e.g. 2000)"
                   value={targetEarning}
                   onChange={(e) => setTargetEarning(e.target.value)}
-                  className={inputCls}
+                  className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
                 />
               </div>
               <div className="text-right min-w-[100px]">
@@ -965,7 +969,7 @@ function CalculatorPage() {
 
           {/* ── Recent Calcs (localStorage history) ─────────────────────── */}
           {calcHistory.length > 0 && (
-            <div className="card-surface rounded-xl animate-slide-in-scale" style={{ animationDelay: '250ms' }}>
+            <div className="card-surface rounded-xl animate-slide-in-scale" style={{ animationDelay: '250ms', background: '#1d2028', border: '1px solid #272b35' }}>
               <button
                 type="button"
                 onClick={() => setHistoryOpen((v) => !v)}
@@ -987,7 +991,7 @@ function CalculatorPage() {
                   {calcHistory.map((entry, i) => (
                     <div
                       key={`${entry.timestamp}-${i}`}
-                      className="flex items-center justify-between gap-3 bg-slate-800/50 rounded-lg px-3 py-2"
+                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: '#1d2028', border: '1px solid #272b35' }}
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-white text-sm font-medium truncate">
@@ -1027,7 +1031,7 @@ function CalculatorPage() {
 
       {/* Recent Calcs — shown even when no active calc inputs */}
       {!hasInput && calcHistory.length > 0 && (
-        <div className="card-surface rounded-xl mb-6 animate-fade-in">
+        <div className="card-surface rounded-xl mb-6 animate-fade-in" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
           <button
             type="button"
             onClick={() => setHistoryOpen((v) => !v)}
@@ -1049,7 +1053,7 @@ function CalculatorPage() {
               {calcHistory.map((entry, i) => (
                 <div
                   key={`${entry.timestamp}-${i}`}
-                  className="flex items-center justify-between gap-3 bg-slate-800/50 rounded-lg px-3 py-2"
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: '#1d2028', border: '1px solid #272b35' }}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-medium truncate">

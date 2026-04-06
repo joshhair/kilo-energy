@@ -23,14 +23,19 @@ const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 
 
 const ROLE_LABELS = { closer: 'Closer', setter: 'Setter', both: 'Both' } as const;
 const ROLE_BADGE_CLS = {
-  closer: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-  setter: 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
-  both:   'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  closer: 'border',
+  setter: 'border',
+  both:   'border',
+} as const;
+const ROLE_BADGE_STYLES = {
+  closer: { background: 'rgba(77,159,255,0.1)', color: '#4d9fff', borderColor: 'rgba(77,159,255,0.25)' },
+  setter: { background: 'rgba(180,125,255,0.1)', color: '#b47dff', borderColor: 'rgba(180,125,255,0.25)' },
+  both:   { background: 'rgba(0,196,240,0.1)', color: '#00c4f0', borderColor: 'rgba(0,196,240,0.25)' },
 } as const;
 const ROLE_BADGE_HOVER = {
-  closer: 'hover:bg-blue-500/20',
-  setter: 'hover:bg-violet-500/20',
-  both:   'hover:bg-emerald-500/20',
+  closer: 'hover:brightness-125',
+  setter: 'hover:brightness-125',
+  both:   'hover:brightness-125',
 } as const;
 const ROLE_NEXT = { closer: 'setter', setter: 'both', both: 'closer' } as const;
 
@@ -348,8 +353,8 @@ function RepsPageInner() {
         <div className="mb-6">
           <button
             onClick={() => setShowAddModal(true)}
-            className="btn-primary flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-xl"
-            style={{ backgroundColor: 'var(--brand)' }}
+            className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
           >
             <Plus className="w-4 h-4" /> Add Rep
           </button>
@@ -413,17 +418,17 @@ function RepsPageInner() {
         </div>
       )}
 
-      {/* ── Summary Bar ──────────────────────────────────────────────────── */}
-      <div className="card-surface card-surface-stat rounded-2xl p-4 mb-8 flex items-center justify-between gap-6 flex-wrap">
+      {/* ── Summary Bar — GradCards ─────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Reps', value: reps.length.toString(), color: 'text-blue-400', pillBg: 'bg-blue-500/10', pillBorder: 'border-blue-500/20' },
-          { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), color: 'text-purple-400', pillBg: 'bg-purple-500/10', pillBorder: 'border-purple-500/20' },
-          { label: 'kW Sold', value: `${projects.reduce((s, p) => s + p.kWSize, 0).toFixed(1)} kW`, color: 'text-yellow-400', pillBg: 'bg-yellow-500/10', pillBorder: 'border-yellow-500/20' },
-          ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, color: 'text-emerald-400', pillBg: 'bg-emerald-500/10', pillBorder: 'border-emerald-500/20' }] : []),
+          { label: 'Total Reps', value: reps.length.toString(), gradient: 'linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))', borderColor: 'rgba(77,159,255,0.3)', valueColor: '#4d9fff' },
+          { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), gradient: 'linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))', borderColor: 'rgba(0,196,240,0.3)', valueColor: '#00c4f0' },
+          { label: 'kW Sold', value: `${projects.reduce((s, p) => s + p.kWSize, 0).toFixed(1)}`, gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
+          ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, gradient: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))', borderColor: 'rgba(0,224,122,0.3)', valueColor: '#00e07a' }] : []),
         ].map((stat) => (
-          <div key={stat.label} className="flex items-center gap-2.5">
-            <span className={`text-[11px] font-medium uppercase tracking-wider text-slate-500`}>{stat.label}</span>
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-bold border ${stat.color} ${stat.pillBg} ${stat.pillBorder}`}>
+          <div key={stat.label} className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: stat.gradient, border: `1px solid ${stat.borderColor}` }}>
+            <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{stat.label}</span>
+            <span className="text-2xl font-bold" style={{ fontFamily: "'DM Serif Display', serif", color: stat.valueColor, textShadow: `0 0 20px ${stat.valueColor}50` }}>
               {stat.value}
             </span>
           </div>
@@ -431,14 +436,15 @@ function RepsPageInner() {
       </div>
 
       {/* ── Role filter tabs ──────────────────────────────────────────────── */}
-      <div className="flex gap-1 mb-4 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
-        {filterIndicator && <div className="tab-indicator" style={filterIndicator} />}
+      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#161920', border: '1px solid #272b35' }}>
+        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: '#00e07a' }} />}
         {FILTER_TABS.map((t, i) => (
           <button
             key={t.value}
             ref={(el) => { filterTabRefs.current[i] = el; }}
             onClick={() => setFilterTab(t.value)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${filterTab === t.value ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97]`}
+            style={{ color: filterTab === t.value ? '#000' : '#8891a8' }}
           >
             {t.label}
           </button>
@@ -446,7 +452,7 @@ function RepsPageInner() {
       </div>
 
       <div className="relative max-w-xs mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#525c72' }} />
         <input
           ref={searchRef}
           type="text"
@@ -455,7 +461,8 @@ function RepsPageInner() {
           onChange={(e) => setSearch(e.target.value)}
           onFocus={() => setSearchFocused(true)}
           onBlur={() => setSearchFocused(false)}
-          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500"
+          className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500"
+          style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
         />
         {/* Clear button — shown when there is a search query */}
         {search ? (
@@ -616,7 +623,7 @@ function RepsPageInner() {
                 </div>
               )}
             <Link href={`/dashboard/reps/${rep.id}`}>
-              <div className={`rep-card relative card-surface rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer hover:bg-slate-800/50 md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)} ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-blue-500/40' : ''}`}>
+              <div className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)} ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-blue-500/40' : ''}`} style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? '#272b35'}` }}>
                 <div className="flex items-center gap-4">
 
                   {/* ── Avatar with conic progress ring ───────────────────── */}
@@ -660,10 +667,10 @@ function RepsPageInner() {
                     </svg>
 
                     {/* Avatar circle — inset so it sits inside the ring */}
-                    <div className="absolute inset-[3px] rounded-full bg-gradient-to-br from-blue-500 to-blue-700 p-[2px]">
+                    <div className="absolute inset-[3px] rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #4d9fff, #b47dff)' }}>
                       <div
                         className="w-full h-full rounded-full flex items-center justify-center text-white text-sm font-bold"
-                        style={{ backgroundColor: 'var(--brand-dark)' }}
+                        style={{ backgroundColor: '#161920' }}
                       >
                         {initials}
                       </div>
@@ -690,11 +697,12 @@ function RepsPageInner() {
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); const nextRole = ROLE_NEXT[rep.repType]; updateRepType(rep.id, nextRole); toast(`${rep.name} role changed to ${ROLE_LABELS[nextRole]}`, 'success'); }}
                           title="Click to cycle role"
                           className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${ROLE_BADGE_CLS[rep.repType]} ${ROLE_BADGE_HOVER[rep.repType]}`}
+                          style={ROLE_BADGE_STYLES[rep.repType]}
                         >
                           {ROLE_LABELS[rep.repType]}
                         </button>
                       ) : (
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${ROLE_BADGE_CLS[rep.repType]}`}>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${ROLE_BADGE_CLS[rep.repType]}`} style={ROLE_BADGE_STYLES[rep.repType]}>
                           {ROLE_LABELS[rep.repType]}
                         </span>
                       )}
@@ -718,9 +726,9 @@ function RepsPageInner() {
                     style={{ transitionDelay: '0ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="text-white bg-slate-500/10 rounded-lg px-2 py-0.5">{repProjects.length}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif", background: 'rgba(240,242,247,0.05)' }}>{repProjects.length}</span>
                     </p>
-                    <p className="text-slate-500 text-xs mt-1">Total Deals</p>
+                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>Total Deals</p>
                   </div>
 
                   {/* Active */}
@@ -729,9 +737,9 @@ function RepsPageInner() {
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="text-blue-400 bg-blue-500/10 rounded-lg px-2 py-0.5">{activeCount}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#00c4f0', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeCount}</span>
                     </p>
-                    <p className="text-slate-500 text-xs mt-1">Active</p>
+                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>Active</p>
                   </div>
 
                   {/* kW */}
@@ -740,9 +748,9 @@ function RepsPageInner() {
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="text-yellow-400 bg-yellow-500/10 rounded-lg px-2 py-0.5">{totalKW.toFixed(1)}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#ffb020', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{totalKW.toFixed(1)}</span>
                     </p>
-                    <p className="text-slate-500 text-xs mt-1">Total kW</p>
+                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>Total kW</p>
                   </div>
 
                   {/* Last Deal */}
@@ -771,9 +779,9 @@ function RepsPageInner() {
                       style={{ transitionDelay: '225ms' }}
                     >
                       <p className="font-semibold">
-                        <span className="text-emerald-400 bg-emerald-500/5 rounded-lg px-2 py-0.5">${repPaid.toLocaleString()}</span>
+                        <span className="rounded-lg px-2 py-0.5" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
                       </p>
-                      <p className="text-slate-500 text-xs mt-1">Paid Out</p>
+                      <p className="text-xs mt-1" style={{ color: '#525c72' }}>Paid Out</p>
                     </div>
                   )}
 
@@ -835,7 +843,7 @@ function RepsPageInner() {
           role="dialog"
           aria-modal="true"
         >
-          <div ref={addRepPanelRef} className="card-surface border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
+          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md" style={{ background: '#1d2028', border: '1px solid #333849' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-white font-bold text-lg">Add New Rep</h3>
               <button onClick={resetAddModal} className="text-slate-500 hover:text-white transition-colors">
@@ -846,55 +854,55 @@ function RepsPageInner() {
             {/* First Name + Last Name */}
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="text-slate-400 text-xs font-medium mb-1 block">First Name</label>
+                <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>First Name</label>
                 <input
                   type="text"
                   placeholder="First name"
                   value={newFirstName}
                   onChange={(e) => setNewFirstName(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-slate-400 text-xs font-medium mb-1 block">Last Name</label>
+                <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Last Name</label>
                 <input
                   type="text"
                   placeholder="Last name"
                   value={newLastName}
                   onChange={(e) => setNewLastName(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
                 />
               </div>
             </div>
 
             {/* Email */}
             <div className="mb-3">
-              <label className="text-slate-400 text-xs font-medium mb-1 block">Email</label>
+              <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Email</label>
               <input
                 type="email"
                 placeholder="rep@kiloenergy.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
               />
             </div>
 
             {/* Phone */}
             <div className="mb-4">
-              <label className="text-slate-400 text-xs font-medium mb-1 block">Phone</label>
+              <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Phone</label>
               <input
                 type="tel"
                 placeholder="(555) 000-0000"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
               />
             </div>
 
             {/* Role selector — pill buttons */}
             <div className="mb-4">
-              <label className="text-slate-400 text-xs font-medium mb-2 block">Role</label>
+              <label className="text-xs font-medium mb-2 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Role</label>
               <div className="flex gap-2">
                 {(['closer', 'setter', 'both'] as const).map((rt) => (
                   <button
@@ -915,7 +923,7 @@ function RepsPageInner() {
 
             {/* Optional Trainer Assignment */}
             <div className="mb-5">
-              <label className="text-slate-400 text-xs font-medium mb-1 block">Trainer (optional)</label>
+              <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Trainer (optional)</label>
               <RepSelector
                 value={newTrainerId}
                 onChange={setNewTrainerId}
@@ -929,15 +937,16 @@ function RepsPageInner() {
             <div className="flex gap-3">
               <button
                 onClick={resetAddModal}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors hover:brightness-125"
+                style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim()}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ backgroundColor: 'var(--brand)' }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
               >
                 Add Rep
               </button>

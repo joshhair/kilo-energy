@@ -483,11 +483,11 @@ export default function IncentivesPage() {
       {isAdmin && (
         <button
           onClick={() => { if (selectMode) clearSelection(); else setSelectMode(true); }}
-          className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-            selectMode
-              ? 'bg-blue-900/40 text-blue-400 border border-blue-500/30'
-              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white hover:bg-slate-700'
-          }`}
+          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg font-medium transition-colors whitespace-nowrap"
+          style={selectMode
+            ? { background: 'rgba(0,196,240,0.15)', color: '#00c4f0', border: '1px solid rgba(0,196,240,0.3)' }
+            : { background: '#1d2028', color: '#c2c8d8', border: '1px solid #333849' }
+          }
         >
           {selectMode ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
           {selectMode ? 'Cancel Select' : 'Select'}
@@ -501,10 +501,10 @@ export default function IncentivesPage() {
       <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Incentives' }]} />
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+          <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(90deg, #00e07a, #00c4f0)' }} />
           <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <Trophy className="w-5 h-5 text-blue-400" />
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(0,224,122,0.15)' }}>
+              <Trophy className="w-5 h-5" style={{ color: '#00e07a' }} />
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-gradient-gold tracking-tight">Incentives</h1>
           </div>
@@ -551,15 +551,16 @@ export default function IncentivesPage() {
                 URL.revokeObjectURL(url);
                 toast('Incentives CSV exported', 'info');
               }}
-              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium px-3 py-2.5 rounded-xl text-sm transition-all border border-slate-700"
+              className="flex items-center gap-2 font-medium px-3 py-2.5 rounded-xl text-sm transition-all"
+              style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
               title="Export CSV"
             >
               <Download className="w-4 h-4" />
             </button>
             <button
               onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all hover:opacity-90"
-              style={{ backgroundColor: 'var(--brand)' }}
+              className="flex items-center gap-2 font-medium px-4 py-2.5 rounded-xl text-sm transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}
             >
               <Plus className="w-4 h-4" />
               New Incentive
@@ -619,7 +620,7 @@ export default function IncentivesPage() {
         if (company.length === 0 && !isAdmin) return null;
         return (
           <div className="mb-8">
-            <h2 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#525c72', letterSpacing: '0.1em' }}>
               Company-Wide
             </h2>
             {filterSortToolbar}
@@ -656,7 +657,7 @@ export default function IncentivesPage() {
         if (personal.length === 0 && !isAdmin) return null;
         return (
           <div>
-            <h2 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#525c72', letterSpacing: '0.1em' }}>
               {isAdmin ? 'Personal Goals' : 'Your Personal Goals'}
             </h2>
             {filterSortToolbar}
@@ -940,8 +941,8 @@ function IncentiveCard({
 
   return (
     <div
-      className={`relative rounded-2xl border card-surface overflow-hidden transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${cardIndex} ${!incentive.active ? 'opacity-50' : ''}`}
-      style={{ borderColor: incentive.type === 'company' ? 'rgba(37,99,235,0.3)' : 'rgba(100,116,139,0.3)' }}
+      className={`relative rounded-2xl border overflow-hidden transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-[#00e07a]/5 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[#00e07a]/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${cardIndex} ${!incentive.active ? 'opacity-50' : ''}`}
+      style={{ borderColor: incentive.type === 'company' ? 'rgba(77,159,255,0.3)' : 'rgba(180,125,255,0.3)', background: '#161920' }}
     >
       {/* Header */}
       <div
@@ -959,13 +960,13 @@ function IncentiveCard({
           )}
           <div
             className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: incentive.type === 'company' ? 'var(--brand)' : '#F59E0B' }}
+            style={{ backgroundColor: incentive.type === 'company' ? '#4d9fff' : '#b47dff' }}
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-white font-semibold">{incentive.title}</p>
               {periodDisplay && (
-                <span className="text-xs bg-slate-800 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#1d2028', color: '#8891a8', border: '1px solid #333849' }}>
                   {periodDisplay}
                 </span>
               )}
@@ -997,18 +998,18 @@ function IncentiveCard({
           {/* Collapsed progress indicator */}
           {!expanded && (
             <div className="flex items-center gap-2.5">
-              <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: '#272b35' }}>
                 <div
                   className="h-full rounded-full"
                   style={{
                     width: `${pct}%`,
                     background: pct >= 100
-                      ? 'linear-gradient(90deg, #10b981, #34d399)'
-                      : 'linear-gradient(90deg, var(--brand), var(--brand-light))',
+                      ? 'linear-gradient(90deg, #00e07a, #00d4c8)'
+                      : 'linear-gradient(90deg, #00e07a, #00c4f0)',
                   }}
                 />
               </div>
-              <span className={`text-xs font-bold tabular-nums min-w-[2.5rem] text-right ${pct >= 100 ? 'text-emerald-400' : 'text-blue-400'}`}>
+              <span className="text-xs font-bold tabular-nums min-w-[2.5rem] text-right" style={{ color: pct >= 100 ? '#00e07a' : '#00c4f0' }}>
                 {Math.round(pct)}%
               </span>
             </div>
@@ -1056,17 +1057,17 @@ function IncentiveCard({
                 Progress: <span className="text-white font-semibold">{formatIncentiveMetric(incentive.metric, progress)}</span>
                 {' '}/ {formatIncentiveMetric(incentive.metric, maxThreshold)} {metricLabel[incentive.metric]}
               </span>
-              <span className={`font-bold text-base tabular-nums ${pct >= 100 ? 'text-emerald-400' : 'text-blue-400'}`}>{Math.round(pct)}%</span>
+              <span className="font-bold text-base tabular-nums" style={{ color: pct >= 100 ? '#00e07a' : '#00c4f0' }}>{Math.round(pct)}%</span>
             </div>
             <div className="relative h-3.5">
-              <div className="absolute inset-0 bg-slate-800 rounded-full overflow-hidden">
+              <div className="absolute inset-0 rounded-full overflow-hidden" style={{ background: '#272b35' }}>
                 <div
                   className="h-full rounded-full animate-progress-grow animate-progress-shimmer"
                   style={{
                     width: `${pct}%`,
                     background: pct >= 100
-                      ? 'linear-gradient(90deg, #10b981, #34d399)'
-                      : 'linear-gradient(90deg, var(--brand), var(--brand-light))',
+                      ? 'linear-gradient(90deg, #00e07a, #00d4c8)'
+                      : 'linear-gradient(90deg, #00e07a, #00c4f0)',
                     animationDelay: `${cardIndex * 120}ms`,
                   }}
                 />
@@ -1080,7 +1081,7 @@ function IncentiveCard({
                     className="absolute top-0 h-full w-0.5 rounded-full"
                     style={{
                       left: `${tickPct}%`,
-                      backgroundColor: ms.achieved ? '#10b981' : '#475569',
+                      backgroundColor: ms.achieved ? '#00e07a' : '#8891a8',
                     }}
                   />
                 );
@@ -1093,8 +1094,8 @@ function IncentiveCard({
                 return (
                   <span
                     key={ms.id}
-                    className={`absolute text-[9px] font-medium tabular-nums -translate-x-1/2 ${ms.achieved ? 'text-emerald-400' : 'text-slate-500'}`}
-                    style={{ left: `${tickPct}%` }}
+                    className="absolute text-[9px] font-medium tabular-nums -translate-x-1/2"
+                    style={{ color: ms.achieved ? '#00e07a' : '#8891a8', left: `${tickPct}%` }}
                   >
                     {formatIncentiveMetric(incentive.metric, ms.threshold)}
                   </span>
@@ -1110,31 +1111,38 @@ function IncentiveCard({
               return (
                 <div
                   key={milestone.id}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 border ${
-                    milestone.achieved
-                      ? 'border-emerald-500/30 bg-emerald-900/10 animate-milestone-achieve'
+                  className={`flex items-center justify-between rounded-xl px-4 py-3 ${milestone.achieved ? 'animate-milestone-achieve' : ''}`}
+                  style={{
+                    border: milestone.achieved
+                      ? '1px solid rgba(0,224,122,0.3)'
                       : hit
-                      ? 'border-blue-500/30 bg-blue-900/10'
-                      : 'border-slate-700/50 bg-slate-800/30'
-                  }`}
+                      ? '1px solid rgba(255,176,32,0.3)'
+                      : '1px solid rgba(39,43,53,0.5)',
+                    background: milestone.achieved
+                      ? 'rgba(0,224,122,0.06)'
+                      : hit
+                      ? 'rgba(255,176,32,0.06)'
+                      : 'rgba(29,32,40,0.3)',
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        milestone.achieved ? 'bg-emerald-500/20' : hit ? 'bg-blue-500/20' : 'bg-slate-700/50'
-                      }`}
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: milestone.achieved ? 'rgba(0,224,122,0.2)' : hit ? 'rgba(255,176,32,0.2)' : 'rgba(136,145,168,0.15)',
+                      }}
                     >
                       {milestone.achieved ? (
-                        <CheckCircle className="w-4 h-4 text-emerald-400 animate-milestone-check-pop" />
+                        <CheckCircle className="w-4 h-4 animate-milestone-check-pop" style={{ color: '#00e07a' }} />
                       ) : (
-                        <Trophy className={`w-3.5 h-3.5 ${hit ? 'text-blue-400' : 'text-slate-500'}`} />
+                        <Trophy className="w-3.5 h-3.5" style={{ color: hit ? '#ffb020' : '#8891a8' }} />
                       )}
                     </div>
                     <div>
-                      <p className={`text-sm font-semibold ${milestone.achieved ? 'text-emerald-400' : hit ? 'text-white' : 'text-slate-400'}`}>
+                      <p className="text-sm font-semibold" style={{ color: milestone.achieved ? '#00e07a' : hit ? '#f0f2f7' : '#c2c8d8' }}>
                         {milestone.reward}
                       </p>
-                      <p className="text-slate-500 text-xs">
+                      <p className="text-xs" style={{ color: '#8891a8' }}>
                         At {formatIncentiveMetric(incentive.metric, milestone.threshold)}
                       </p>
                     </div>
@@ -1163,7 +1171,7 @@ function IncentiveCard({
           </div>
 
           {incentive.endDate && (
-            <p className="text-slate-600 text-xs mt-3">
+            <p className="text-xs mt-3" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>
               Period: {formatDate(incentive.startDate)} — {formatDate(incentive.endDate)}
             </p>
           )}
@@ -1560,11 +1568,11 @@ function CreateIncentiveModal({
 
 function EmptyState({ message, subtitle }: { message: string; subtitle?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-slate-900/30 border border-dashed border-slate-800">
-      <Trophy className="w-12 h-12 text-slate-600" />
+    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
+      <Trophy className="w-12 h-12" style={{ color: '#525c72' }} />
       <div className="text-center">
-        <p className="text-lg font-semibold text-white">{message}</p>
-        <p className="text-sm text-slate-500 mt-1">{subtitle || 'Create an incentive to motivate your team and track progress'}</p>
+        <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>{message}</p>
+        <p className="text-sm mt-1" style={{ color: '#8891a8' }}>{subtitle || 'Create an incentive to motivate your team and track progress'}</p>
       </div>
     </div>
   );

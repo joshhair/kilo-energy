@@ -187,7 +187,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
           placeholder="Search reps..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none input-focus-glow transition-colors"
+          className="w-full bg-[#1d2028] border border-[#333849] rounded-xl pl-9 pr-4 py-2 text-sm text-[#f0f2f7] placeholder-[#525c72] focus:outline-none input-focus-glow transition-colors"
         />
       </div>
       {searchTerm && (
@@ -200,11 +200,11 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
           <button
             key={role}
             onClick={() => setRoleFilter(role)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              roleFilter === role
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+            style={roleFilter === role
+              ? { background: '#00e07a', color: '#000' }
+              : { background: '#1d2028', color: '#c2c8d8', border: '1px solid #333849' }
+            }
           >
             {role} <span className="ml-1 text-slate-500">{roleCounts[role]}</span>
           </button>
@@ -238,7 +238,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
       <div className="card-surface rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="table-header-frost">
-            <tr className="border-b border-slate-800 text-xs text-slate-500 uppercase tracking-wider">
+            <tr className="text-xs uppercase tracking-wider" style={{ borderBottom: '1px solid #272b35', color: '#8891a8' }}>
               <th className="text-left px-4 py-3">Rep</th>
               <th className="text-center px-4 py-3">Can Request</th>
               <th className="text-center px-4 py-3">Can Create</th>
@@ -250,7 +250,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
             ) : pageReps.map((rep) => {
               const perms = permissions[rep.id] ?? { canRequestBlitz: false, canCreateBlitz: false };
               return (
-                <tr key={rep.id} className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/40 transition-colors">
+                <tr key={rep.id} className="last:border-0 transition-colors" style={{ borderBottom: '1px solid rgba(39,43,53,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.background='rgba(29,32,40,0.4)'} onMouseLeave={(e) => e.currentTarget.style.background='transparent'}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${avatarColor(rep.repType)}`}>
@@ -266,7 +266,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => togglePermission(rep.id, 'canRequestBlitz', !perms.canRequestBlitz)}
-                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canRequestBlitz ? 'bg-blue-600' : 'bg-slate-700'}`}
+                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canRequestBlitz ? 'bg-[#00e07a]' : 'bg-[#1d2028]'}`}
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canRequestBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
@@ -279,7 +279,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => togglePermission(rep.id, 'canCreateBlitz', !perms.canCreateBlitz)}
-                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canCreateBlitz ? 'bg-emerald-600' : 'bg-slate-700'}`}
+                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canCreateBlitz ? 'bg-[#00e07a]' : 'bg-[#1d2028]'}`}
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canCreateBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
@@ -366,13 +366,13 @@ function SubDealersSection() {
             type="text" placeholder="First name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+            className="bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
           />
           <input
             type="text" placeholder="Last name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+            className="bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
           />
         </div>
         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -380,13 +380,13 @@ function SubDealersSection() {
             type="email" placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+            className="bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
           />
           <input
             type="tel" placeholder="Phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+            className="bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
           />
         </div>
         <button
@@ -521,17 +521,17 @@ function PMSection() {
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <label className="block text-[10px] text-slate-500 mb-0.5">First Name</label>
-          <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
+          <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[#1d2028] border border-[#333849] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
         </div>
         <div className="flex-1">
           <label className="block text-[10px] text-slate-500 mb-0.5">Last Name</label>
-          <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
+          <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[#1d2028] border border-[#333849] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
         </div>
         <div className="flex-[2]">
           <label className="block text-[10px] text-slate-500 mb-0.5">Email</label>
-          <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
+          <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[#1d2028] border border-[#333849] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
         </div>
-        <button onClick={handleAdd} className="btn-primary text-white px-3 py-2 rounded-xl active:scale-[0.97]" style={{ backgroundColor: 'var(--brand)' }}>
+        <button onClick={handleAdd} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
           <Plus className="w-4 h-4" />
         </button>
       </div>
@@ -1126,12 +1126,12 @@ function SettingsPageInner() {
   return (
     <div className="flex min-h-screen animate-fade-in-up">
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 border-r border-slate-800 p-4 pt-8 hidden md:block">
+      <aside className="w-56 flex-shrink-0 p-4 pt-8 hidden md:block" style={{ borderRight: '1px solid #272b35' }}>
         <div className="mb-6">
-          <div className="h-[3px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
+          <div className="h-[3px] w-8 rounded-full mb-3" style={{ background: 'linear-gradient(90deg, #00c4f0, #00e07a)' }} />
           <div className="flex items-center gap-2 mb-0.5">
-            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <Settings className="w-4 h-4 text-blue-400" />
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,196,240,0.15)' }}>
+              <Settings className="w-4 h-4" style={{ color: '#00c4f0' }} />
             </div>
             <h1 className="text-xl font-black text-white tracking-tight">Settings</h1>
           </div>
@@ -1147,21 +1147,21 @@ function SettingsPageInner() {
               left: 0,
               width: '100%',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, var(--brand), var(--brand-light))',
+              background: 'rgba(0,196,240,0.1)',
               transition: 'top 250ms cubic-bezier(0.4, 0, 0.2, 1), height 250ms cubic-bezier(0.4, 0, 0.2, 1)',
-              opacity: 0.15,
+              opacity: 1,
               zIndex: 0,
               pointerEvents: 'none',
               top: pillStyle.top,
               height: pillStyle.height,
-              boxShadow: '0 0 12px rgba(59,130,246,0.2)',
-              border: '1px solid rgba(59,130,246,0.3)',
+              boxShadow: '0 0 12px rgba(0,196,240,0.1)',
+              border: '1px solid rgba(0,196,240,0.25)',
             }}
           />
 
           {NAV.map(({ group, items }) => (
             <div key={group}>
-              <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest mb-1 px-2">{group}</p>
+              <p className="text-[10px] font-semibold uppercase mb-1 px-2" style={{ color: '#525c72', letterSpacing: '0.12em' }}>{group}</p>
               {items.map(({ id, label, icon: Icon }) => {
                 const flatIdx = ALL_NAV_ITEMS.findIndex(item => item.id === id);
                 const isActive = section === id;
@@ -1172,13 +1172,14 @@ function SettingsPageInner() {
                     onClick={() => handleSetSection(id)}
                     className={`relative z-[1] w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 group ${
                       isActive
-                        ? 'text-white before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-blue-500'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full'
+                        : 'hover:bg-slate-800/60'
                     }`}
+                    style={isActive ? { color: '#00c4f0' } : { color: '#c2c8d8' }}
                   >
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                    <span style={isActive ? { color: '#00c4f0' } : { color: '#525c72' }}><Icon className="w-4 h-4 flex-shrink-0" /></span>
                     <span className="truncate">{label}</span>
-                    {isActive && <ChevronRight className="w-3 h-3 text-blue-400 ml-auto flex-shrink-0" />}
+                    {isActive && <ChevronRight className="w-3 h-3 ml-auto flex-shrink-0" style={{ color: '#00c4f0' }} />}
                   </button>
                 );
               })}
@@ -1413,7 +1414,7 @@ function SettingsPageInner() {
                       value={trainerSearch}
                       onChange={(e) => { setTrainerSearch(e.target.value); setTrainerPage(1); }}
                       onKeyDown={(e) => { if (e.key === 'Escape') { setTrainerSearch(''); (e.target as HTMLInputElement).blur(); } }}
-                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                      className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                     />
                     {trainerSearch && (
                       <button onClick={() => { setTrainerSearch(''); setTrainerPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
@@ -1431,7 +1432,7 @@ function SettingsPageInner() {
                       setTrainerSortKey(key);
                       setTrainerSortDir(dir);
                     }}
-                    className="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="bg-[#1d2028] border border-[#333849] text-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                   >
                     <option value="trainee-asc">Trainee A-Z</option>
                     <option value="trainee-desc">Trainee Z-A</option>
@@ -1666,7 +1667,7 @@ function SettingsPageInner() {
                 type="text" placeholder="Installer name"
                 value={newInstaller}
                 onChange={(e) => setNewInstaller(e.target.value)}
-                className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-slate-800 border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-blue-500'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-slate-500`}
+                className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-slate-800 border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-[#00e07a]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72]`}
               />
               {installerDup && <p className="text-red-400 text-[10px] mb-2">Already exists</p>}
               {/* Pricing structure selector */}
@@ -1691,14 +1692,14 @@ function SettingsPageInner() {
                     <label className="block text-xs text-slate-500 mb-1">Closer $/W</label>
                     <input type="number" step="0.01" min="0" placeholder="2.90"
                       value={newInstallerCloser} onChange={(e) => setNewInstallerCloser(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+                      className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                     />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Kilo $/W</label>
                     <input type="number" step="0.01" min="0" placeholder="2.35"
                       value={newInstallerKilo} onChange={(e) => setNewInstallerKilo(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+                      className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                     />
                   </div>
                 </div>
@@ -1710,7 +1711,7 @@ function SettingsPageInner() {
                       <input type="text" placeholder="Family name (e.g. Goodleap)"
                         value={fam}
                         onChange={(e) => setNewPcFamilies((prev) => prev.map((f, j) => j === i ? e.target.value : f))}
-                        className="bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                        className="bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                       />
                       <button onClick={() => {
                         if (newPcFamilies.length <= 1) return;
@@ -1821,7 +1822,7 @@ function SettingsPageInner() {
                     type="text" placeholder="Search installers..."
                     value={installerSearch}
                     onChange={(e) => setInstallerSearch(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                    className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1933,7 +1934,7 @@ function SettingsPageInner() {
                                             if (e.key === 'Escape') setEditingPrepaid(null);
                                           }}
                                           autoFocus
-                                          className="flex-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                          className="flex-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                         />
                                         <button onClick={() => { if (editPrepaidVal.trim()) { updateInstallerPrepaidOption(inst.name, opt, editPrepaidVal.trim()); setEditingPrepaid(null); } }}
                                           className="text-emerald-400 hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
@@ -1962,7 +1963,7 @@ function SettingsPageInner() {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter' && newPrepaidOption.trim()) { addInstallerPrepaidOption(inst.name, newPrepaidOption.trim()); setNewPrepaidOption(''); }
                                 }}
-                                className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 placeholder-slate-600"
+                                className="flex-1 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                               />
                               <button
                                 onClick={() => { if (newPrepaidOption.trim()) { addInstallerPrepaidOption(inst.name, newPrepaidOption.trim()); setNewPrepaidOption(''); } }}
@@ -1997,7 +1998,7 @@ function SettingsPageInner() {
                                         updateInstallerPayConfig(inst.name, val);
                                       }
                                     }}
-                                    className="w-24 bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                    className="w-24 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                   />
                                   <p className="text-[10px] text-slate-600 mt-1">% paid at Installed. Remainder paid at PTO (M3).</p>
                                 </div>
@@ -2035,7 +2036,7 @@ function SettingsPageInner() {
                     ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
                     : <ChevronRight className="w-3.5 h-3.5 text-slate-600" />}
                   <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Archived</p>
-                  <span className="text-[10px] font-medium text-slate-600 bg-slate-800 border border-slate-700/50 px-1.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-medium text-slate-600 bg-[#1d2028] border border-[#333849]/50 px-1.5 py-0.5 rounded-full">
                     {archivedInstallers.length}
                   </span>
                   {installerSelectMode && archivedInstallers.length > 0 && (
@@ -2133,7 +2134,7 @@ function SettingsPageInner() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && newFinancer.trim() && !financerDup) { addFinancer(newFinancer.trim()); setNewFinancer(''); }
                     }}
-                    className={`w-full bg-slate-800 border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-blue-500'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-slate-500`}
+                    className={`w-full bg-slate-800 border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-[#00e07a]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72]`}
                   />
                   {financerDup && <p className="text-red-400 text-[10px] mt-1">Already exists</p>}
                 </div>
@@ -2208,7 +2209,7 @@ function SettingsPageInner() {
                     type="text" placeholder="Search financers..."
                     value={financerSearch}
                     onChange={(e) => setFinancerSearch(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                    className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -2300,7 +2301,7 @@ function SettingsPageInner() {
                     ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
                     : <ChevronRight className="w-3.5 h-3.5 text-slate-600" />}
                   <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Archived</p>
-                  <span className="text-[10px] font-medium text-slate-600 bg-slate-800 border border-slate-700/50 px-1.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-medium text-slate-600 bg-[#1d2028] border border-[#333849]/50 px-1.5 py-0.5 rounded-full">
                     {archivedFinancers.length}
                   </span>
                   {financerSelectMode && archivedFinancers.length > 0 && (
@@ -2397,7 +2398,7 @@ function SettingsPageInner() {
                       max={365}
                       value={customThresholds[phase] ?? CUSTOMIZATION_DEFAULT_THRESHOLDS[phase]}
                       onChange={(e) => setCustomThresholds((prev) => ({ ...prev, [phase]: Math.max(1, parseInt(e.target.value) || 1) }))}
-                      className="w-20 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-sm text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-20 bg-[#1d2028] border border-[#333849] rounded-lg px-3 py-1.5 text-[#f0f2f7] text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                     />
                   </div>
                 ))}
@@ -2421,7 +2422,7 @@ function SettingsPageInner() {
                     setThresholdsSaved(true);
                     setTimeout(() => setThresholdsSaved(false), 2000);
                   }}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white bg-slate-800 border border-slate-700 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white bg-[#1d2028] border border-[#333849] transition-colors"
                 >
                   Reset to Defaults
                 </button>
@@ -2460,13 +2461,13 @@ function SettingsPageInner() {
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">From</label>
                   <input type="date" value={exportDateFrom} onChange={(e) => setExportDateFrom(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                   />
                 </div>
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">To</label>
                   <input type="date" value={exportDateTo} onChange={(e) => setExportDateTo(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                   />
                 </div>
               </div>
@@ -2815,7 +2816,7 @@ function SettingsPageInner() {
                                     <input type="number" step="0.01" min="0"
                                       value={editInstallerVals.closerPerW}
                                       onChange={(e) => setEditInstallerVals((v) => ({ ...v, closerPerW: e.target.value }))}
-                                      className="w-20 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                      className="w-20 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                     />
                                   </td>
                                   <td className="px-4 py-2 text-right">
@@ -2823,14 +2824,14 @@ function SettingsPageInner() {
                                       value={editInstallerVals.setterPerW}
                                       placeholder={editInstallerVals.closerPerW ? String(Math.round((parseFloat(editInstallerVals.closerPerW) + 0.10) * 100) / 100) : '—'}
                                       onChange={(e) => setEditInstallerVals((v) => ({ ...v, setterPerW: e.target.value }))}
-                                      className="w-20 bg-slate-700 border border-slate-600 text-violet-300 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                      className="w-20 bg-slate-700 border border-slate-600 text-violet-300 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                     />
                                   </td>
                                   <td className="px-4 py-2 text-right">
                                     <input type="number" step="0.01" min="0"
                                       value={editInstallerVals.kiloPerW}
                                       onChange={(e) => setEditInstallerVals((v) => ({ ...v, kiloPerW: e.target.value }))}
-                                      className="w-20 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                      className="w-20 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                     />
                                   </td>
                                   {showSubDealerRates && (
@@ -2974,14 +2975,14 @@ function SettingsPageInner() {
                         <label className="block text-xs text-slate-400 mb-1">Version label</label>
                         <input type="text" placeholder="e.g. v2 — March 2025"
                           value={newVersionLabel} onChange={(e) => setNewVersionLabel(e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                         />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">Effective from</label>
                         <input type="date"
                           value={newVersionEffectiveFrom} onChange={(e) => setNewVersionEffectiveFrom(e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                         />
                       </div>
                     </div>
@@ -2992,7 +2993,7 @@ function SettingsPageInner() {
                         <label className="block text-xs text-slate-400 mb-1">Closer $/W</label>
                         <input type="number" step="0.01" min="0"
                           value={newVersionVals.closerPerW} onChange={(e) => setNewVersionVals((v) => ({ ...v, closerPerW: e.target.value }))}
-                          className="w-full bg-slate-800 border border-slate-700 text-emerald-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-emerald-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                         />
                       </div>
                       <div>
@@ -3001,14 +3002,14 @@ function SettingsPageInner() {
                           value={newVersionVals.setterPerW}
                           placeholder={newVersionVals.closerPerW ? String(Math.round((parseFloat(newVersionVals.closerPerW) + 0.10) * 100) / 100) : 'auto'}
                           onChange={(e) => setNewVersionVals((v) => ({ ...v, setterPerW: e.target.value }))}
-                          className="w-full bg-slate-800 border border-slate-700 text-violet-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder-slate-600"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-violet-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                         />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">Kilo $/W</label>
                         <input type="number" step="0.01" min="0"
                           value={newVersionVals.kiloPerW} onChange={(e) => setNewVersionVals((v) => ({ ...v, kiloPerW: e.target.value }))}
-                          className="w-full bg-slate-800 border border-slate-700 text-blue-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-blue-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                         />
                       </div>
                     </div>
@@ -3093,7 +3094,7 @@ function SettingsPageInner() {
                         <select
                           value={currentView}
                           onChange={(e) => setPcVersionView((prev) => ({ ...prev, [versionKey]: e.target.value }))}
-                          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                         >
                           <option value="current">Current (editable)</option>
                           {sortedGroups.map(([key, g]) => (
@@ -3134,7 +3135,7 @@ function SettingsPageInner() {
                           <>
                             <button
                               onClick={() => { setDupAllOpen('productcatalog'); setDupAllLabel(''); setDupAllEffectiveFrom(''); }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-600 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1d2028] border border-[#333849] text-slate-300 hover:text-white hover:border-slate-600 transition-colors"
                             >
                               <Copy className="w-3.5 h-3.5" /> Duplicate All as New Version
                             </button>
@@ -3177,7 +3178,7 @@ function SettingsPageInner() {
                                 value={bulkRateAdj}
                                 onChange={(e) => setBulkRateAdj(e.target.value)}
                                 placeholder="+/- 0.00"
-                                className="w-24 bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                className="w-24 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                               />
                               <span className="text-slate-500 text-xs">/W</span>
                             </div>
@@ -3225,7 +3226,7 @@ function SettingsPageInner() {
                                       return next;
                                     })}
                                     placeholder="0.00"
-                                    className="w-16 bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                    className="w-16 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                                   />
                                 </div>
                               </div>
@@ -3304,7 +3305,7 @@ function SettingsPageInner() {
                                   placeholder="Search products..."
                                   value={pcProductSearch}
                                   onChange={(e) => setPcProductSearch(e.target.value)}
-                                  className="w-48 bg-slate-800 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                  className="w-48 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                                 />
                               </div>
                             </div>
@@ -3381,7 +3382,7 @@ function SettingsPageInner() {
                                             }
                                             setEditingProductName(null);
                                           }}
-                                          className="w-full bg-slate-800 border border-blue-500 text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                          className="w-full bg-slate-800 border border-blue-500 text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                         />
                                       ) : (
                                         <span
@@ -3418,7 +3419,7 @@ function SettingsPageInner() {
                                               onFocus={(e) => e.target.select()}
                                               onChange={(e) => updateProductCatalogTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })}
                                               onKeyDown={(e) => handleTierKeyDown(e, pcDisplayProductIds, product.id, ti, 'closer')}
-                                              className="w-16 bg-slate-800 border border-slate-700 text-emerald-400 font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                              className="w-16 bg-[#1d2028] border border-[#333849] text-emerald-400 font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                             />
                                             {renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}
                                             <input
@@ -3428,7 +3429,7 @@ function SettingsPageInner() {
                                               onFocus={(e) => e.target.select()}
                                               onChange={(e) => updateProductCatalogTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })}
                                               onKeyDown={(e) => handleTierKeyDown(e, pcDisplayProductIds, product.id, ti, 'kilo')}
-                                              className="w-16 bg-slate-800 border border-slate-700 text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                              className="w-16 bg-[#1d2028] border border-[#333849] text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                             />
                                             {renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}
                                             {showSubDealerRates && (
@@ -3516,14 +3517,14 @@ function SettingsPageInner() {
                             <label className="block text-xs text-slate-400 mb-1">Product name</label>
                             <input type="text" placeholder="e.g. SunPower 400W"
                               value={newProductName} onChange={(e) => setNewProductName(e.target.value)}
-                              className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+                              className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">Family</label>
                             <select value={newProductFamily || currentFamily}
                               onChange={(e) => setNewProductFamily(e.target.value)}
-                              className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                             >
                               {config.families.map((f) => <option key={f} value={f}>{f}</option>)}
                             </select>
@@ -3547,7 +3548,7 @@ function SettingsPageInner() {
                                     type="number" step="0.01" min="0" placeholder={cPlaceholder}
                                     value={newProductTiers[idx].closerPerW}
                                     onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, closerPerW: e.target.value } : t))}
-                                    className="w-20 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                    className="w-20 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                                   />
                                 </div>
                                 <div className="flex items-center gap-1 flex-1">
@@ -3556,7 +3557,7 @@ function SettingsPageInner() {
                                     type="number" step="0.01" min="0" placeholder={kPlaceholder}
                                     value={newProductTiers[idx].kiloPerW}
                                     onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, kiloPerW: e.target.value } : t))}
-                                    className="w-20 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                    className="w-20 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                                   />
                                 </div>
                               </div>
@@ -3646,14 +3647,14 @@ function SettingsPageInner() {
                           <label className="block text-xs text-slate-400 mb-1">Version label</label>
                           <input type="text" placeholder="e.g. v2 — March 2026"
                             value={pcNewVersionLabel} onChange={(e) => setPcNewVersionLabel(e.target.value)}
-                            className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+                            className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                           />
                         </div>
                         <div>
                           <label className="block text-xs text-slate-400 mb-1">Effective from</label>
                           <input type="date"
                             value={pcNewVersionEffectiveFrom} onChange={(e) => setPcNewVersionEffectiveFrom(e.target.value)}
-                            className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                           />
                         </div>
                       </div>
@@ -3668,13 +3669,13 @@ function SettingsPageInner() {
                               <input type="number" step="0.01" min="0"
                                 value={pcNewVersionTiers[i]?.closerPerW ?? ''}
                                 onChange={(e) => setPcNewVersionTiers((prev) => prev.map((t, idx) => idx === i ? { ...t, closerPerW: e.target.value } : t))}
-                                className="w-full bg-slate-800 border border-slate-700 text-emerald-400 rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                className="w-full bg-[#1d2028] border border-[#333849] text-emerald-400 rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                 placeholder="Closer"
                               />
                               <input type="number" step="0.01" min="0"
                                 value={pcNewVersionTiers[i]?.kiloPerW ?? ''}
                                 onChange={(e) => setPcNewVersionTiers((prev) => prev.map((t, idx) => idx === i ? { ...t, kiloPerW: e.target.value } : t))}
-                                className="w-full bg-slate-800 border border-slate-700 text-blue-400 rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full bg-[#1d2028] border border-[#333849] text-blue-400 rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                 placeholder="Kilo"
                               />
                             </div>
@@ -3756,14 +3757,14 @@ function SettingsPageInner() {
                         <label className="block text-xs text-slate-400 mb-1">Version label</label>
                         <input type="text" placeholder="e.g. Q2 2026 Pricing"
                           value={dupAllLabel} onChange={(e) => setDupAllLabel(e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                         />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">Effective from</label>
                         <input type="date"
                           value={dupAllEffectiveFrom} onChange={(e) => setDupAllEffectiveFrom(e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                         />
                       </div>
                     </div>
@@ -3845,7 +3846,7 @@ function SettingsPageInner() {
                       <select
                         value={stCurrentView}
                         onChange={(e) => setStVersionView((prev) => ({ ...prev, [stFamily]: e.target.value }))}
-                        className="bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                       >
                         <option value="current">Current (editable)</option>
                         {stSortedGroups.map(([key, g]) => (
@@ -3886,7 +3887,7 @@ function SettingsPageInner() {
                         <>
                           <button
                             onClick={() => { setDupAllOpen('solartech'); setDupAllLabel(''); setDupAllEffectiveFrom(''); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-600 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1d2028] border border-[#333849] text-slate-300 hover:text-white hover:border-slate-600 transition-colors"
                           >
                             <Copy className="w-3.5 h-3.5" /> Duplicate All as New Version
                           </button>
@@ -3928,7 +3929,7 @@ function SettingsPageInner() {
                               value={bulkRateAdj}
                               onChange={(e) => setBulkRateAdj(e.target.value)}
                               placeholder="+/- 0.00"
-                              className="w-24 bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                              className="w-24 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                             />
                             <span className="text-slate-500 text-xs">/W</span>
                           </div>
@@ -3976,7 +3977,7 @@ function SettingsPageInner() {
                                     return next;
                                   })}
                                   placeholder="0.00"
-                                  className="w-16 bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                  className="w-16 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                                 />
                               </div>
                             </div>
@@ -4054,7 +4055,7 @@ function SettingsPageInner() {
                                 placeholder="Search products..."
                                 value={stProductSearch}
                                 onChange={(e) => setStProductSearch(e.target.value)}
-                                className="w-48 bg-slate-800 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"
+                                className="w-48 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                               />
                             </div>
                           </div>
@@ -4130,7 +4131,7 @@ function SettingsPageInner() {
                                           }
                                           setEditingProductName(null);
                                         }}
-                                        className="w-full bg-slate-800 border border-blue-500 text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full bg-slate-800 border border-blue-500 text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                       />
                                     ) : (
                                       <span
@@ -4170,7 +4171,7 @@ function SettingsPageInner() {
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => updateSolarTechTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })}
                                             onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'closer')}
-                                            className="w-16 bg-slate-800 border border-slate-700 text-emerald-400 font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                            className="w-16 bg-[#1d2028] border border-[#333849] text-emerald-400 font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                           />
                                           {renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}
                                           <input
@@ -4180,7 +4181,7 @@ function SettingsPageInner() {
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => updateSolarTechTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })}
                                             onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'kilo')}
-                                            className="w-16 bg-slate-800 border border-slate-700 text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="w-16 bg-[#1d2028] border border-[#333849] text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                           />
                                           {renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}
                                           {showSubDealerRates && (
@@ -4257,15 +4258,15 @@ function SettingsPageInner() {
                   type="text" placeholder="Name"
                   value={newAdminName}
                   onChange={(e) => setNewAdminName(e.target.value)}
-                  className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500"
+                  className="flex-1 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                 />
                 <div className="flex-1">
                   <input
                     type="email" placeholder="Email"
                     value={newAdminEmail}
                     onChange={(e) => { setNewAdminEmail(e.target.value); setAdminEmailError(''); }}
-                    className={`w-full bg-slate-800 border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-slate-500 ${
-                      adminEmailError ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-blue-500'
+                    className={`w-full bg-slate-800 border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72] ${
+                      adminEmailError ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-[#00e07a]'
                     }`}
                   />
                   {adminEmailError && <p className="text-red-400 text-[10px] mt-1">{adminEmailError}</p>}
@@ -4531,8 +4532,8 @@ function ConfirmDeleteDialog({
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-6">
-      <h2 className="text-xl font-bold text-white">{title}</h2>
-      <p className="text-slate-500 text-sm mt-0.5">{subtitle}</p>
+      <h2 className="text-xl font-bold" style={{ color: '#f0f2f7' }}>{title}</h2>
+      <p className="text-sm mt-0.5" style={{ color: '#8891a8' }}>{subtitle}</p>
     </div>
   );
 }
