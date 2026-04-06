@@ -35,7 +35,7 @@ export default function ReimbursementRedirectPage() {
               giving you one place to view commissions, bonuses, and reimbursements together.
             </p>
             <Link
-              href="/dashboard/vault?tab=reimbursements"
+              href="/dashboard/my-pay?tab=reimbursements"
               className="inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:opacity-90 active:scale-[0.98] shadow-lg shadow-blue-500/20 text-sm"
               style={{ backgroundColor: 'var(--brand)' }}
             >

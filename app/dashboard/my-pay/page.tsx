@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
-import MobileVault from '../mobile/MobileVault';
+import MobileMyPay from '../mobile/MobileMyPay';
 import { useToast } from '../../../lib/toast';
 import { formatDate, getM1PayDate, getM2PayDate, fmt$ } from '../../../lib/utils';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
-  Vault as VaultIcon, DollarSign, Clock, TrendingUp, ChevronDown, ChevronRight,
+  Wallet as PayIcon, DollarSign, Clock, TrendingUp, ChevronDown, ChevronRight,
   Search, Filter, ArrowRight, Receipt, Banknote, Calendar, ChevronLeft,
 } from 'lucide-react';
 import { buildPageRange } from '../components/PaginationBar';
@@ -92,15 +92,15 @@ function StageBadge({ stage }: { stage: string }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function VaultPage() {
+export default function MyPayPage() {
   return (
     <Suspense>
-      <VaultPageInner />
+      <MyPayPageInner />
     </Suspense>
   );
 }
 
-function VaultPageInner() {
+function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { currentRole, effectiveRole, currentRepId, currentRepName, effectiveRepId, effectiveRepName, isViewingAs, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
@@ -356,9 +356,9 @@ function VaultPageInner() {
     );
   }
 
-  if (!isHydrated) return <VaultSkeleton />;
+  if (!isHydrated) return <MyPaySkeleton />;
 
-  if (isMobile) return <MobileVault />;
+  if (isMobile) return <MobileMyPay />;
 
   if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer') {
     return (
@@ -394,7 +394,7 @@ function VaultPageInner() {
         <div className="px-4 py-4 md:px-8 md:py-8">
           <div className="flex items-center gap-3 mb-5">
             <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
-              <VaultIcon className="w-5 h-5 text-[#00e07a]" />
+              <PayIcon className="w-5 h-5 text-[#00e07a]" />
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Pay</h1>
           </div>
@@ -810,7 +810,7 @@ function VaultPageInner() {
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 
-function VaultSkeleton() {
+function MyPaySkeleton() {
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-4xl">
       <div className="mb-8">

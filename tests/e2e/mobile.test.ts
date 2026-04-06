@@ -24,7 +24,7 @@ const mobileScreens = [
   '/dashboard',
   '/dashboard/projects',
   '/dashboard/new-deal',
-  '/dashboard/vault',
+  '/dashboard/my-pay',
   '/dashboard/payroll',
   '/dashboard/reps',
   '/dashboard/blitz',

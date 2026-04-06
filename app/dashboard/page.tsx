@@ -1009,7 +1009,7 @@ export default function DashboardPage() {
       sparkData: paidSparkData,
       sparkStroke: '#00e07a',
       pctChange: computePctChange(totalPaid, prevTotalPaid),
-      href: '/dashboard/vault',
+      href: '/dashboard/my-pay',
       tooltip: 'Total commission disbursed to you across all payment stages',
     },
     {
@@ -1065,7 +1065,7 @@ export default function DashboardPage() {
       sparkData: chargebackSparkData,
       sparkStroke: '#ef4444',
       pctChange: undefined as number | null | undefined,
-      href: '/dashboard/vault',
+      href: '/dashboard/my-pay',
       tooltip: 'Total negative adjustments from cancelled or clawed-back deals',
     },
   ];
@@ -1125,7 +1125,7 @@ export default function DashboardPage() {
 
       {/* Next Payout shown in welcome banner above — no duplicate needed */}
 
-      {/* MTD ring charts removed — financial detail lives in the Vault */}
+      {/* MTD ring charts removed — financial detail lives in My Pay */}
 
       {/* ── Zero-project onboarding hero ─────────────────────────────────── */}
       {myProjects.length === 0 && (
@@ -1385,7 +1385,7 @@ export default function DashboardPage() {
             {thisWeekTotal > 0 && (
               <span className="text-[#00e07a] font-bold">${thisWeekTotal.toLocaleString()}</span>
             )}
-            <Link href="/dashboard/vault" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
+            <Link href="/dashboard/my-pay" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1400,7 +1400,7 @@ export default function DashboardPage() {
               <p className="text-white font-bold text-sm mb-1">No payments this week</p>
               <p className="text-[#8891a8] text-xs mb-4">Payments will appear here once marked for payroll.</p>
               <Link
-                href="/dashboard/vault"
+                href="/dashboard/my-pay"
                 className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
                 style={{ backgroundColor: 'var(--brand)' }}
               >

@@ -8,7 +8,7 @@ import {
   LayoutDashboard,
   FolderKanban,
   PlusCircle,
-  Vault,
+  Wallet,
   MoreHorizontal,
   CreditCard,
   Users,
@@ -46,7 +46,7 @@ const REP_BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
   { href: '/dashboard/new-deal', label: 'New Deal', icon: PlusCircle, primary: true },
-  { href: '/dashboard/vault', label: 'My Pay', icon: Vault },
+  { href: '/dashboard/my-pay', label: 'My Pay', icon: Wallet },
   { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 
@@ -65,7 +65,7 @@ const SUB_DEALER_BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
   { href: '/dashboard/new-deal', label: 'New Deal', icon: PlusCircle, primary: true },
-  { href: '/dashboard/vault', label: 'My Pay', icon: Vault },
+  { href: '/dashboard/my-pay', label: 'My Pay', icon: Wallet },
   { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 

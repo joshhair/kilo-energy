@@ -16,7 +16,7 @@ const PAGES = [
   { path: '/dashboard', name: 'dashboard' },
   { path: '/dashboard/projects', name: 'projects' },
   { path: '/dashboard/new-deal', name: 'new-deal' },
-  { path: '/dashboard/vault', name: 'vault' },
+  { path: '/dashboard/my-pay', name: 'my-pay' },
   { path: '/dashboard/payroll', name: 'payroll' },
   { path: '/dashboard/reps', name: 'reps' },
   { path: '/dashboard/blitz', name: 'blitz' },

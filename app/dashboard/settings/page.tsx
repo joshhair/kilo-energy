@@ -1069,17 +1069,13 @@ function SettingsPageInner() {
       });
     } else if (type === 'financer') {
       deletedEntityRef.current = { type: 'financer', name };
-      setHiddenFinancers((prev) => new Set([...prev, name]));
+      setFinancerActive(name, false);
       toast(`"${name}" deleted`, 'info', {
         label: 'Undo',
         onClick: () => {
           const saved = deletedEntityRef.current;
           if (saved?.type === 'financer') {
-            setHiddenFinancers((prev) => {
-              const next = new Set(prev);
-              next.delete(saved.name);
-              return next;
-            });
+            setFinancerActive(saved.name, true);
           }
         },
       });

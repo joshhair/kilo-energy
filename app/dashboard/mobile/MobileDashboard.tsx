@@ -392,7 +392,7 @@ export default function MobileDashboard() {
     [activeProjects],
   );
 
-  // On Pace: annual projection — matches desktop vault calculation exactly
+  // On Pace: annual projection — matches desktop My Pay calculation exactly
   const { onPaceAnnual, dealsPerMonth: paceDPM } = useMemo(() => {
     const now = new Date();
     const todayISO = now.toISOString().split('T')[0];
@@ -427,7 +427,7 @@ export default function MobileDashboard() {
       annual = Math.round(paceBasedAnnual);
     }
 
-    // Pipeline boost: 15% of projected M1 + M2 (same as desktop vault)
+    // Pipeline boost: 15% of projected M1 + M2 (same as desktop My Pay)
     const preAcceptance = ['New'];
     const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
     const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => s + (p.m1Amount ?? 0), 0);

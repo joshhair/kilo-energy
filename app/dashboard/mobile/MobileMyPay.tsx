@@ -66,7 +66,7 @@ interface PayPeriod {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function MobileVault() {
+export default function MobileMyPay() {
   const router = useRouter();
   const { effectiveRole, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();

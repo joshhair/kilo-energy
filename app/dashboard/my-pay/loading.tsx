@@ -1,4 +1,4 @@
-export default function VaultLoading() {
+export default function MyPayLoading() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}

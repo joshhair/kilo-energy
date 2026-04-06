@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
-import { requireAuth } from '../../../../../lib/api-auth';
+import { requireAdmin } from '../../../../../lib/api-auth';
 
 // POST /api/blitzes/[id]/costs — Add a cost
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
   const body = await req.json();
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 // DELETE /api/blitzes/[id]/costs — Delete a cost
 export async function DELETE(req: NextRequest) {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const costId = req.nextUrl.searchParams.get('costId');
   if (!costId) return NextResponse.json({ error: 'costId required' }, { status: 400 });
 
