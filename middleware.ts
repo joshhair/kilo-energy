@@ -1,9 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
+// ⚠️ AUTH TEMPORARILY DISABLED FOR VISUAL QA — RE-ENABLE BEFORE PRODUCTION DEPLOY
 const isPublicRoute = createRouteMatcher([
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks(.*)',
+  '/(.*)', // ALL routes public temporarily
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
