@@ -114,8 +114,9 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const style = STATUS_INLINE[blitz.status] ?? STATUS_INLINE.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
-  const totalKW = blitz.projects.reduce((s, p) => s + p.kWSize, 0);
-  const totalDeals = blitz.projects.length;
+  const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+  const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
+  const totalDeals = activeProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
   const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;
@@ -561,8 +562,8 @@ function BlitzPageInner() {
     switch (sortBy) {
       case 'newest': sorted.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); break;
       case 'oldest': sorted.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()); break;
-      case 'deals': sorted.sort((a, b) => b.projects.length - a.projects.length); break;
-      case 'kw': sorted.sort((a, b) => b.projects.reduce((s, p) => s + p.kWSize, 0) - a.projects.reduce((s, p) => s + p.kWSize, 0)); break;
+      case 'deals': sorted.sort((a, b) => b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length - a.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length); break;
+      case 'kw': sorted.sort((a, b) => b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0) - a.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0)); break;
       case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
     return sorted;

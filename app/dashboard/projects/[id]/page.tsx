@@ -1558,7 +1558,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
                   className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]">
                   <option value="">— None —</option>
-                  {reps.filter((r) => r.repType === 'setter' || r.repType === 'both').map((r) => (
+                  {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && r.id !== project.repId).map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>

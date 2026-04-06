@@ -198,9 +198,11 @@ function computeMonthlyBarData(
 function MonthlyEarningsBarChart({
   data,
   onMonthClick,
+  selectedMonth,
 }: {
   data: MonthlyBarDatum[];
   onMonthClick?: (monthKey: string) => void;
+  selectedMonth?: string | null;
 }) {
   const [tooltip, setTooltip] = useState<{ x: number; y: number; datum: MonthlyBarDatum } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -261,7 +263,8 @@ function MonthlyEarningsBarChart({
             return (
               <g
                 key={d.key}
-                className="cursor-pointer"
+                className="cursor-pointer transition-opacity duration-150"
+                style={{ opacity: selectedMonth && selectedMonth !== d.key ? 0.4 : 1 }}
                 onClick={() => onMonthClick?.(d.key)}
                 onMouseEnter={(e) => {
                   const svg = svgRef.current;
@@ -355,6 +358,13 @@ function RepEarningsView() {
   };
 
   const [showReimbModal, setShowReimbModal] = useState(false);
+  const [monthFilter, setMonthFilter] = useState<string | null>(null);
+
+  const monthFilterLabel = useMemo(() => {
+    if (!monthFilter) return null;
+    const [y, m] = monthFilter.split('-');
+    return `${MONTH_LABELS[parseInt(m, 10) - 1]} ${y}`;
+  }, [monthFilter]);
 
   const myPayroll     = payrollEntries.filter((p) => p.repId === effectiveRepId);
   const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus');
@@ -399,7 +409,8 @@ function RepEarningsView() {
   type DealRow = | { kind: 'payroll'; entry: (typeof payrollEntries)[0] } | { kind: 'reimb'; entry: (typeof myReimbs)[0] };
 
   const sortedDeals = useMemo((): DealRow[] => {
-    const payrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
+    const allPayrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
+    const payrollRows = monthFilter ? allPayrollRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allPayrollRows;
     return [...payrollRows].sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
       const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
@@ -421,7 +432,7 @@ function RepEarningsView() {
       }
       return dealSortDir === 'asc' ? cmp : -cmp;
     });
-  }, [payrollEntries, myReimbs, effectiveRepId, dealSortKey, dealSortDir]);
+  }, [payrollEntries, myReimbs, effectiveRepId, dealSortKey, dealSortDir, monthFilter]);
 
   const dealTotal      = sortedDeals.length;
   const dealTotalPages = Math.max(1, Math.ceil(dealTotal / dealPageSize));
@@ -443,7 +454,9 @@ function RepEarningsView() {
   };
 
   const sortedBonuses = useMemo(() => {
-    return payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Bonus').sort((a, b) => {
+    return payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Bonus')
+      .filter((p) => !monthFilter || p.date.startsWith(monthFilter))
+      .sort((a, b) => {
       let cmp = 0;
       switch (bonusSortKey) {
         case 'notes':  cmp = (a.notes ?? '').localeCompare(b.notes ?? ''); break;
@@ -453,7 +466,7 @@ function RepEarningsView() {
       }
       return bonusSortDir === 'asc' ? cmp : -cmp;
     });
-  }, [payrollEntries, effectiveRepId, bonusSortKey, bonusSortDir]);
+  }, [payrollEntries, effectiveRepId, bonusSortKey, bonusSortDir, monthFilter]);
 
   const bonusTotal      = sortedBonuses.length;
   const bonusTotalPages = Math.max(1, Math.ceil(bonusTotal / bonusPageSize));
@@ -471,6 +484,8 @@ function RepEarningsView() {
     const el = tabRefs.current[idx];
     if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
   }, [tab, isHydrated]);
+
+  useEffect(() => { setDealPage(1); setBonusPage(1); }, [monthFilter]);
 
   if (!isHydrated) return <EarningsSkeleton />;
 
@@ -662,7 +677,11 @@ function RepEarningsView() {
       </div>
 
       {/* ── Monthly Earnings Bar Chart ──────────────────────────────────────── */}
-      <MonthlyEarningsBarChart data={monthlyBarData} />
+      <MonthlyEarningsBarChart
+        data={monthlyBarData}
+        selectedMonth={monthFilter}
+        onMonthClick={(key) => setMonthFilter((prev) => prev === key ? null : key)}
+      />
 
       {/* Tab bar */}
       <div className="flex flex-wrap gap-1 mb-5 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit tab-bar-container">

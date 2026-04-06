@@ -114,7 +114,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
       </div>
 
       <MobileCard>
-        <p className="text-base font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
         <div className="space-y-2 text-base">
           <div className="flex justify-between">
             <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Installer</span>
@@ -136,7 +136,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
       </MobileCard>
 
       <MobileCard>
-        <p className="text-base font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission</p>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission</p>
         {deal.closerTotal > 0 ? (
           <div className="flex items-center justify-between">
             <div>
@@ -1027,7 +1027,7 @@ export default function MobileNewDeal() {
             {/* Commission preview card */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-base font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Preview</p>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Preview</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-base">
                     {subDealerRate > 0 && (
@@ -1127,7 +1127,7 @@ export default function MobileNewDeal() {
           <div className="space-y-7 flex-1 flex flex-col">
             {/* Summary card */}
             <MobileCard>
-              <p className="text-base font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
               <div className="space-y-2 text-base">
                 <div className="flex justify-between">
                   <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Customer</span>
@@ -1180,7 +1180,7 @@ export default function MobileNewDeal() {
             {/* Commission breakdown */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
               <MobileCard className="">
-                <p className="text-base font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Breakdown</p>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Breakdown</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between">

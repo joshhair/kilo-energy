@@ -150,7 +150,7 @@ export default function MobileCalculator() {
       <div className="space-y-4">
         {/* Installer */}
         <div>
-          <label className="block text-base font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Installer</label>
+          <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Installer</label>
           <select
             value={installer}
             onChange={(e) => {
@@ -174,7 +174,7 @@ export default function MobileCalculator() {
         {isSolarTech && (
           <>
             <div>
-              <label className="block text-base font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Financing Family</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Financing Family</label>
               <select
                 value={solarTechFamily}
                 onChange={(e) => { setSolarTechFamily(e.target.value); setSolarTechProductId(''); }}
@@ -189,7 +189,7 @@ export default function MobileCalculator() {
             </div>
             {solarTechFamily && solarTechFamilyProducts.length > 0 && (
               <div>
-                <label className="block text-base font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Equipment Package</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Equipment Package</label>
                 <select
                   value={solarTechProductId}
                   onChange={(e) => setSolarTechProductId(e.target.value)}
@@ -210,7 +210,7 @@ export default function MobileCalculator() {
         {isPcInstaller && pcConfig && (
           <>
             <div>
-              <label className="block text-base font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Financing Family</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Financing Family</label>
               <select
                 value={pcSelectedFamily}
                 onChange={(e) => { setPcSelectedFamily(e.target.value); setPcProductId(''); }}
@@ -225,7 +225,7 @@ export default function MobileCalculator() {
             </div>
             {pcSelectedFamily && pcFamilyProducts.length > 0 && (
               <div>
-                <label className="block text-base font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Equipment Package</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Equipment Package</label>
                 <select
                   value={pcProductId}
                   onChange={(e) => setPcProductId(e.target.value)}
@@ -245,7 +245,7 @@ export default function MobileCalculator() {
         {/* kW + PPW */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-base font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>System Size (kW)</label>
+            <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>System Size (kW)</label>
             <input
               type="number"
               step="0.1"
@@ -258,7 +258,7 @@ export default function MobileCalculator() {
             />
           </div>
           <div>
-            <label className="block text-base font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Net PPW ($)</label>
+            <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Net PPW ($)</label>
             <input
               type="number"
               step="0.01"
@@ -276,33 +276,33 @@ export default function MobileCalculator() {
       {/* ── Result card ─────────────────────────────────────────────────── */}
       {hasInput && soldPPW > 0 && (
         <MobileCard hero>
-          <p className="text-base uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
-          <p className="text-4xl font-black tabular-nums break-words" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(1.75rem, 9vw, 2.25rem)' }}>
+          <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
+          <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
             {fmt$(closerTotal)}
           </p>
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
-              <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
+              <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
+              <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
             </div>
             {setterTotal > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
-                <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
+                <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
+                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
               </div>
             )}
             {currentRole === 'admin' && (
               <div className="flex items-center justify-between">
-                <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
-                <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloTotal)}</span>
+                <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
+                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloTotal)}</span>
               </div>
             )}
           </div>
 
           {/* Baseline info */}
           <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
-            <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <p className="text-xs" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Baseline: ${closerPerW.toFixed(2)}/W &middot; Sold: ${soldPPW.toFixed(2)}/W &middot; {kW.toFixed(1)} kW
             </p>
           </div>
@@ -313,7 +313,7 @@ export default function MobileCalculator() {
       {(!hasInput || soldPPW <= 0) && (
         <MobileCard>
           <div className="py-6 text-center">
-            <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
+            <p className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
           </div>
         </MobileCard>
       )}

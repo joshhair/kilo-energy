@@ -195,7 +195,7 @@ function PayrollPageInner() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo]);
+  }, [statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
   if (isMobile) return <MobilePayroll />;
@@ -668,7 +668,7 @@ function PayrollPageInner() {
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Approved' } : x));
                               fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
                                 .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-                                .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); });
+                                .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); });
                               toast(`Reimbursement approved for ${r.repName}`, 'success');
                             }}
                             className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[#00e07a] px-2 py-1 rounded transition-colors"
@@ -680,7 +680,7 @@ function PayrollPageInner() {
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Denied' } : x));
                               fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
                                 .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-                                .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); });
+                                .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); });
                               toast(`Reimbursement denied for ${r.repName}`, 'error');
                             }}
                             className="flex items-center gap-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-400 px-2 py-1 rounded transition-colors"
@@ -793,9 +793,9 @@ function PayrollPageInner() {
           <DateRangeFilter
             from={payFilterFrom}
             to={payFilterTo}
-            onFromChange={(v) => { setPayFilterFrom(v); setAdminPage(1); }}
-            onToChange={(v) => { setPayFilterTo(v); setAdminPage(1); }}
-            onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); setAdminPage(1); }}
+            onFromChange={(v) => { setPayFilterFrom(v); setAdminPage(1); setSelectedIds(new Set()); }}
+            onToChange={(v) => { setPayFilterTo(v); setAdminPage(1); setSelectedIds(new Set()); }}
+            onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); setAdminPage(1); setSelectedIds(new Set()); }}
           />
           {/* Bulk actions (when selected) */}
           {statusTab === 'Draft' && selectedIds.size > 0 && (
@@ -940,6 +940,17 @@ function PayrollPageInner() {
               <p className="text-[#c2c8d8] text-sm mb-3">
                 This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[#00e07a] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
               </p>
+              {filterRepId && (() => {
+                const filteredRepName = reps.find((r) => r.id === filterRepId)?.name ?? 'selected rep';
+                return (
+                  <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                    <p className="text-yellow-300 text-xs leading-relaxed">
+                      <span className="font-semibold">Rep filter is active.</span> Only entries for <span className="font-semibold">{filteredRepName}</span> will be published. Other reps&apos; Pending entries will not be affected.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Per-rep breakdown */}
               {repSummary.length > 0 && (

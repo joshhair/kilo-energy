@@ -205,7 +205,7 @@ export default function MobileReps() {
           className="px-5 space-y-4 pb-2"
         >
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>First Name</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>First Name</label>
             <input
               type="text"
               required
@@ -222,7 +222,7 @@ export default function MobileReps() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Last Name</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Last Name</label>
             <input
               type="text"
               required
@@ -239,7 +239,7 @@ export default function MobileReps() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Email</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Email</label>
             <input
               type="email"
               value={addForm.email}
@@ -255,7 +255,7 @@ export default function MobileReps() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
             <div className="flex gap-2">
               {(['closer', 'setter', 'both'] as const).map((type) => (
                 <button

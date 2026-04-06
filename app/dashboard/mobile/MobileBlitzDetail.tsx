@@ -218,7 +218,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
           {blitz.notes && (
             <div>
-              <p className="text-base font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</p>
               <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.notes}</p>
             </div>
           )}
@@ -382,7 +382,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <MobileBottomSheet open={showAddCost} onClose={() => setShowAddCost(false)} title="Add Cost">
             <div className="px-5 space-y-4">
               <div>
-                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Category</label>
+                <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Category</label>
                 <select
                   value={costCategory}
                   onChange={(e) => setCostCategory(e.target.value)}
@@ -400,7 +400,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 </select>
               </div>
               <div>
-                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
+                <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
                 <input
                   type="number"
                   value={costAmount}
@@ -416,7 +416,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 />
               </div>
               <div>
-                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Description</label>
+                <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Description</label>
                 <input
                   value={costDesc}
                   onChange={(e) => setCostDesc(e.target.value)}
@@ -431,7 +431,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 />
               </div>
               <div>
-                <label className="block text-base mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
+                <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
                 <input
                   type="date"
                   value={costDate}

@@ -115,7 +115,7 @@ export default function MobileEarnings() {
 
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard hero>
-        <p className="text-base uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
+        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
         <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
           {fmt$(totalEarned)}
         </p>

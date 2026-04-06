@@ -353,7 +353,7 @@ export default function MobilePayroll() {
       >
         <form onSubmit={handleAddPayment} className="px-5 space-y-4 pb-2">
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep</label>
             <select
               value={paymentForm.repId}
               onChange={(e) => setPaymentForm((f) => ({ ...f, repId: e.target.value }))}
@@ -367,7 +367,7 @@ export default function MobilePayroll() {
             </select>
           </div>
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Type</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Type</label>
             <div className="flex gap-2">
               {(['Deal', 'Bonus'] as const).map((t) => (
                 <button
@@ -389,7 +389,7 @@ export default function MobilePayroll() {
           </div>
           {paymentForm.type === 'Deal' && (
             <div>
-              <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Stage</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Stage</label>
               <div className="flex gap-2">
                 {['M1', 'M2', 'M3', 'Trainer'].map((s) => (
                   <button
@@ -411,7 +411,7 @@ export default function MobilePayroll() {
             </div>
           )}
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
             <input
               type="number"
               step="0.01"
@@ -424,7 +424,7 @@ export default function MobilePayroll() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
             <input
               type="date"
               value={paymentForm.date}
@@ -434,7 +434,7 @@ export default function MobilePayroll() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
             <input
               type="text"
               value={paymentForm.notes}

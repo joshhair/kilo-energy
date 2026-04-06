@@ -737,7 +737,7 @@ function NewDealPage() {
   // Trainers are paid post-installation — M2 stage only, no M1.
   const m1Flat = kW >= 5 ? 1000 : 500;
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
-  const closerM1 = isSelfGen ? m1Flat : 0;
+  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
   const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : m1Flat;
   const setterM2Full = Math.max(0, setterTotal - setterM1);
@@ -1130,7 +1130,7 @@ function NewDealPage() {
                   <select id="field-repId" value={form.repId} onChange={(e) => update('repId', e.target.value)}
                     onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
-                    {reps.filter((r) => r.repType !== 'setter').map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
                   <FieldError errors={errors} field="repId" />
                 </div>

@@ -450,7 +450,7 @@ function CalculatorPage() {
   const isSelfGen = !hasSetter || setterBaselinePerW === 0;
   const installPayPct = (installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT);
   const hasM3Split = installPayPct < 100;
-  const closerM1 = isSelfGen ? m1Flat : 0;
+  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
   const closerM2Raw = Math.max(0, closerTotal - closerM1);
   const closerM2 = hasM3Split ? Math.round(closerM2Raw * (installPayPct / 100)) : closerM2Raw;
   const closerM3 = hasM3Split ? closerM2Raw - closerM2 : 0;
@@ -545,9 +545,21 @@ function CalculatorPage() {
   const breakEvenPPW = closerPerW;
   // PPW needed to earn a target amount
   const targetAmount = parseFloat(targetEarning) || 0;
-  const requiredPPW = hasInput && kW > 0
-    ? (targetAmount / (kW * 1000)) + closerPerW
-    : 0;
+  const requiredPPW = (() => {
+    if (!hasInput || kW <= 0) return 0;
+    if (!isSelfGen) {
+      // With setter: closer earns the differential band + half of everything above splitPoint.
+      // Reverse-solve: if target fits within the differential band, use simple formula;
+      // otherwise solve for the PPW where half-of-above-split makes up the remainder.
+      const closerDiff = (setterBaselinePerW - closerPerW) * kW * 1000;
+      if (targetAmount <= closerDiff) {
+        return targetAmount / (kW * 1000) + closerPerW;
+      }
+      const splitPoint = setterBaselinePerW + trainerRate;
+      return ((targetAmount - closerDiff) * 2) / (kW * 1000) + splitPoint;
+    }
+    return targetAmount / (kW * 1000) + closerPerW;
+  })();
 
   // Hash of all inputs — forces React to remount the results container on each
   // new calculation, replaying the slide-in-scale stagger entrance animation.

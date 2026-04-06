@@ -306,7 +306,7 @@ export default function MobileBlitz() {
       <MobileBottomSheet open={showCreate} onClose={() => setShowCreate(false)} title={canRequest && !canCreate ? 'Request Blitz' : 'Create Blitz'}>
         <form onSubmit={handleCreateBlitz} className="px-5 space-y-4 pb-2">
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Name</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Name</label>
             <input
               value={createForm.name}
               onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
@@ -321,7 +321,7 @@ export default function MobileBlitz() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Location</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Location</label>
             <input
               value={createForm.location}
               onChange={(e) => setCreateForm((f) => ({ ...f, location: e.target.value }))}
@@ -337,7 +337,7 @@ export default function MobileBlitz() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Start</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Start</label>
               <input
                 type="date"
                 value={createForm.startDate}
@@ -352,7 +352,7 @@ export default function MobileBlitz() {
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>End</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>End</label>
               <input
                 type="date"
                 value={createForm.endDate}

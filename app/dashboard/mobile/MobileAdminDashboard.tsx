@@ -157,7 +157,7 @@ export default function MobileAdminDashboard() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2rem', color: '#fff' }}>{getGreeting(currentRepName ?? '')}</h1>
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
 
       {/* Period filter */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">

@@ -442,7 +442,7 @@ export default function MobileDashboard() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       {/* Greeting */}
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: '#fff', lineHeight: 1.1 }}>{getGreeting(effectiveRepName ?? '')}</h1>
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>{getGreeting(effectiveRepName ?? '')}</h1>
 
       {/* Period filter */}
       <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>

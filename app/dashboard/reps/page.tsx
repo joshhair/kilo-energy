@@ -96,10 +96,11 @@ function RepsPageInner() {
   const [newPhone, setNewPhone] = useState('');
   const [newRepType, setNewRepType] = useState<'closer' | 'setter' | 'both'>('both');
   const [newTrainerId, setNewTrainerId] = useState('');
+  const [isAddingRep, setIsAddingRep] = useState(false);
 
   const resetAddModal = () => {
     setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewPhone('');
-    setNewRepType('both'); setNewTrainerId(''); setShowAddModal(false);
+    setNewRepType('both'); setNewTrainerId(''); setShowAddModal(false); setIsAddingRep(false);
   };
 
   // Escape key closes add-rep modal
@@ -112,7 +113,8 @@ function RepsPageInner() {
   }, [showAddModal]);
 
   const handleAddRep = () => {
-    if (!newFirstName.trim() || !newLastName.trim()) return;
+    if (!newFirstName.trim() || !newLastName.trim() || isAddingRep) return;
+    setIsAddingRep(true);
     const ts = Date.now();
     const repId = `rep_${ts}`;
     const trainerIdSnapshot = newTrainerId;
@@ -131,7 +133,7 @@ function RepsPageInner() {
             tiers: [{ upToDeal: null, ratePerW: 0.05 }],
           }),
         })
-          .then((r) => r.json())
+          .then((r) => { if (!r.ok) throw new Error('Failed to assign trainer'); return r.json(); })
           .then((assignment) => {
             setTrainerAssignments((prev) => [
               ...prev,
@@ -560,7 +562,7 @@ function RepsPageInner() {
             <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${compareReps.length}, 1fr)` }}>
               {compareReps.map((rep) => {
                 const rp = ranges.current.from && ranges.current.to
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && !PIPELINE_EXCLUDED.has(p.phase) && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const rpAll = projects.filter((p) => p.repId === rep.id || p.setterId === rep.id);
                 const dealsClosed = rp.length;
@@ -573,7 +575,7 @@ function RepsPageInner() {
 
                 // Previous period stats
                 const prevDeals = ranges.prev
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && !PIPELINE_EXCLUDED.has(p.phase) && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
                   : null;
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
 
@@ -965,7 +967,7 @@ function RepsPageInner() {
               </button>
               <button
                 onClick={handleAddRep}
-                disabled={!newFirstName.trim() || !newLastName.trim()}
+                disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
               >

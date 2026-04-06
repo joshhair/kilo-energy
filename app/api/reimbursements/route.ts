@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
 import { requireAuth } from '../../../lib/api-auth';
 
@@ -6,6 +7,19 @@ import { requireAuth } from '../../../lib/api-auth';
 export async function POST(req: NextRequest) {
   try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
+  const clerkUser = await currentUser();
+  if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const email = clerkUser.emailAddresses[0].emailAddress;
+  const internalUser = await prisma.user.findFirst({ where: { email } });
+  if (!internalUser) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // Non-admins can only submit reimbursements for themselves
+  if (internalUser.role !== 'admin' && body.repId !== internalUser.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   const reimbursement = await prisma.reimbursement.create({
     data: {
       repId: body.repId,
