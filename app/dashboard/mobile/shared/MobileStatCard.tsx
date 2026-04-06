@@ -16,16 +16,17 @@ export default function MobileStatCard({
         style={{
           color,
           fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
-          // Responsive clamp — scales with viewport so 3-col grids on 320-400px
-          // phones don't overflow for mid/large money values.
-          fontSize: 'clamp(1rem, 5vw, 1.75rem)',
+          // Responsive clamp with a readable floor — 1.25rem (20px) is the
+          // minimum so money values stay legible on narrow (320-360px)
+          // phones. Pair with fmtCompact$ at the caller for wide values.
+          fontSize: 'clamp(1.25rem, 5.5vw, 1.75rem)',
         }}
       >
         {value}
       </p>
       <p
         className="mt-1.5 tracking-wide uppercase truncate"
-        style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.7rem' }}
+        style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}
       >
         {label}
       </p>

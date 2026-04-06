@@ -429,7 +429,7 @@ function MyPayPageInner() {
             <DollarSign className="w-4 h-4 text-[#00e07a]/50" />
           </div>
           <p className="font-black tabular-nums text-[#00e07a] stat-value break-words"
-             style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.1rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
+             style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
           {chargebackTotal > 0 && (
             <p className="text-red-400/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">- {fmt$(chargebackTotal)} chargebacks</p>
           )}
@@ -442,7 +442,7 @@ function MyPayPageInner() {
             <TrendingUp className="w-4 h-4 text-amber-400/50" />
           </div>
           <p className="font-black tabular-nums text-amber-400 stat-value break-words"
-             style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)', fontSize: 'clamp(1.1rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
+             style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
           <p className="text-[#525c72] text-[10px] mt-1.5">
@@ -461,7 +461,7 @@ function MyPayPageInner() {
             <TrendingUp className="w-4 h-4 text-[#00e07a]/50" />
           </div>
           <p className="font-black tabular-nums text-[#00e07a] stat-value break-words"
-             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.05rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2)}</p>
+             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2)}</p>
           <p className="text-[#525c72] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
       </div>
