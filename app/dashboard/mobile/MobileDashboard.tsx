@@ -424,9 +424,11 @@ export default function MobileDashboard() {
       annual = Math.round(paceBasedAnnual);
     }
 
-    // Pipeline boost: 15% of projected M1 + M2
-    const projM1 = activeProjects.filter((p) => !p.m1Paid).reduce((s, p) => s + (p.m1Amount || 0), 0);
-    const projM2 = activeProjects.filter((p) => !p.m2Paid).reduce((s, p) => s + (p.m2Amount || 0), 0);
+    // Pipeline boost: 15% of projected M1 + M2 (same as desktop vault)
+    const preAcceptance = ['New'];
+    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
+    const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => s + (p.m1Amount ?? 0), 0);
+    const projM2 = allMyProjects.filter((p) => preInstalled.includes(p.phase)).reduce((s, p) => s + (p.m2Amount ?? 0), 0);
     annual += Math.round((projM1 + projM2) * 0.15);
 
     return annual;
