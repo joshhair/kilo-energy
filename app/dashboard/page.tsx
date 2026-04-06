@@ -1106,9 +1106,9 @@ export default function DashboardPage() {
               key={p.value}
               ref={(el) => { periodTabRefs.current[i] = el; }}
               onClick={() => setPeriod(p.value)}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
+              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
-                  ? 'text-white'
+                  ? 'text-black'
                   : 'text-[#c2c8d8] hover:text-white'
               }`}
             >
@@ -1780,9 +1780,9 @@ function AdminDashboard({
               key={p.value}
               ref={(el) => { adminPeriodTabRefs.current[i] = el; }}
               onClick={() => setPeriod(p.value)}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
+              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
-                  ? 'text-white'
+                  ? 'text-black'
                   : 'text-[#c2c8d8] hover:text-white'
               }`}
             >
@@ -2306,7 +2306,7 @@ function SubDealerDashboard({
               ref={(el) => { periodTabRefs.current[i] = el; }}
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-                period === p.value ? 'text-white' : 'text-[#c2c8d8] hover:text-white'
+                period === p.value ? 'text-black font-bold' : 'text-[#c2c8d8] hover:text-white'
               }`}
             >
               {p.label}
