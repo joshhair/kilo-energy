@@ -17,6 +17,26 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async headers() {
+    return [
+      // Force dashboard HTML to always revalidate. Without this, Safari
+      // on iOS can serve a cached HTML document that references an old
+      // CSS hash for hours, so new layout/typography changes never land.
+      // Static CSS/JS bundles stay long-cached (content-hashed filenames).
+      {
+        source: "/dashboard/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
+      {
+        source: "/dashboard",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
