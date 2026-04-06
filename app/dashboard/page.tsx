@@ -1088,7 +1088,7 @@ export default function DashboardPage() {
             <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-500 to-emerald-500 opacity-[0.06] blur-[2px] animate-pulse" />
             <Link
               href="/dashboard/new-deal"
-              className="relative inline-flex items-center gap-2.5 btn-primary text-white font-bold px-6 py-3 min-h-[48px] rounded-2xl text-sm"
+              className="relative inline-flex items-center gap-2.5 btn-primary text-black font-bold px-6 py-3 min-h-[48px] rounded-2xl text-sm"
             >
               <PlusCircle className="w-5 h-5" />
               Submit a Deal
@@ -1172,7 +1172,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Link
               href="/dashboard/new-deal"
-              className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-6 py-3 min-h-[48px] rounded-xl text-sm whitespace-nowrap"
+              className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-6 py-3 min-h-[48px] rounded-xl text-sm whitespace-nowrap"
             >
               <PlusCircle className="w-4 h-4" />
               Submit Your First Deal
@@ -1395,7 +1395,7 @@ export default function DashboardPage() {
               <p className="text-[#8891a8] text-xs mb-4">Payments will appear here once marked for payroll.</p>
               <Link
                 href="/dashboard/vault"
-                className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
+                className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 View Pay History
@@ -1457,7 +1457,7 @@ export default function DashboardPage() {
               <p className="text-[#8891a8] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
-                className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
+                className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 + New Deal
@@ -2287,7 +2287,7 @@ function SubDealerDashboard({
             <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 opacity-[0.06] blur-[2px] animate-pulse" />
             <Link
               href="/dashboard/new-deal"
-              className="relative inline-flex items-center gap-2.5 btn-primary text-white font-bold px-6 py-3 rounded-2xl text-sm"
+              className="relative inline-flex items-center gap-2.5 btn-primary text-black font-bold px-6 py-3 rounded-2xl text-sm"
             >
               <PlusCircle className="w-5 h-5" />
               Submit a Deal
@@ -2403,7 +2403,7 @@ function SubDealerDashboard({
               <p className="text-[#8891a8] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
-                className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
+                className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 + New Deal

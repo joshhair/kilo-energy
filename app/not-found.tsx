@@ -50,7 +50,7 @@ export default function NotFound() {
 
         <Link
           href="/dashboard"
-          className="inline-block btn-primary text-white font-semibold py-3 px-8 rounded-xl text-sm transition-all active:scale-[0.98]"
+          className="inline-block btn-primary text-black font-semibold py-3 px-8 rounded-xl text-sm transition-all active:scale-[0.98]"
         >
           Back to Dashboard
         </Link>

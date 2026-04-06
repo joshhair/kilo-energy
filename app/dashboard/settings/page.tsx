@@ -392,7 +392,7 @@ function SubDealersSection() {
         <button
           onClick={handleAdd}
           disabled={!firstName.trim() || !lastName.trim()}
-          className="btn-primary text-white text-sm px-4 py-2 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+          className="btn-primary text-black text-sm px-4 py-2 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
         >
           <Plus className="w-3.5 h-3.5" /> Add Sub-Dealer
         </button>
@@ -1350,7 +1350,7 @@ function SettingsPageInner() {
                         }
                       } catch (e) { console.error('Failed to persist trainer assignment:', e); }
                     }}
-                    className="btn-primary text-white px-3 py-2 rounded-xl active:scale-[0.97]"
+                    className="btn-primary text-black px-3 py-2 rounded-xl active:scale-[0.97]"
                     style={{ backgroundColor: 'var(--brand)' }}
                   >
                     <Plus className="w-4 h-4" />
@@ -2141,7 +2141,7 @@ function SettingsPageInner() {
                 <button
                   disabled={!newFinancer.trim() || financerDup}
                   onClick={() => { if (newFinancer.trim() && !financerDup) { addFinancer(newFinancer.trim()); setNewFinancer(''); } }}
-                  className="btn-primary text-white px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="btn-primary text-black px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   <Plus className="w-4 h-4" />
@@ -4300,7 +4300,7 @@ function SettingsPageInner() {
                     setNewAdminEmail('');
                     setAdminEmailError('');
                   }}
-                  className="btn-primary text-white px-3 py-2 rounded-xl active:scale-[0.97]"
+                  className="btn-primary text-black px-3 py-2 rounded-xl active:scale-[0.97]"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   <Plus className="w-4 h-4" />

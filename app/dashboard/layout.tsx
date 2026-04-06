@@ -139,7 +139,7 @@ function NavGroup({
                   <li key={href} className={staggerClass}>
                     <Link
                       href={href}
-                      className="group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm transition-all"
+                      className="group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm"
                       style={isActive
                         ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
                         : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500 }
@@ -572,10 +572,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Link
                       href={href}
                       title={showCollapsed ? label : undefined}
-                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${showCollapsed ? 'justify-center' : ''}`}
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${showCollapsed ? 'justify-center' : ''}`}
                       style={isActive
                         ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
-                        : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500 }
+                        : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500, border: '1px solid transparent' }
                       }
                     >
                       {/* Icon bounces once whenever this route becomes active */}

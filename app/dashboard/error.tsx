@@ -30,7 +30,7 @@ export default function DashboardError({
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <button
             onClick={reset}
-            className="btn-primary text-white font-semibold py-2.5 px-6 rounded-xl text-sm transition-all active:scale-[0.98]"
+            className="btn-primary text-black font-semibold py-2.5 px-6 rounded-xl text-sm transition-all active:scale-[0.98]"
           >
             Try Again
           </button>

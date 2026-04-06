@@ -951,7 +951,7 @@ function PayrollPageInner() {
               <div className="flex gap-3">
                 <button
                   onClick={handlePublish}
-                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   Publish Payroll
@@ -1026,7 +1026,7 @@ function PayrollPageInner() {
               <div className="flex gap-3 pt-1">
                 <button
                   type="submit"
-                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   Add Bonus
@@ -1117,7 +1117,7 @@ function PayrollPageInner() {
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="submit"
-                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97]"
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97]"
                   style={{ backgroundColor: 'var(--brand)' }}>
                   Add Payment
                 </button>
@@ -1164,7 +1164,7 @@ function PayrollPageInner() {
             {statusTab === 'Draft' && (
               <button
                 onClick={handleMarkForPayroll}
-                className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 Mark for Payroll →

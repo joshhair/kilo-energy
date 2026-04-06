@@ -653,7 +653,7 @@ function VaultPageInner() {
                 <p className="text-[#8891a8] text-xs mb-4">Payroll entries will appear here as your deals hit milestones</p>
                 <Link
                   href="/dashboard/new-deal"
-                  className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
+                  className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   + New Deal

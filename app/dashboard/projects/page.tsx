@@ -298,8 +298,8 @@ function ProjectsPageInner() {
         </div>
         <Link
           href="/dashboard/new-deal"
-          className="btn-primary text-white font-medium px-4 py-2 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-          style={{ backgroundColor: 'var(--brand)' }}
+          className="font-bold px-4 py-2 rounded-xl text-sm active:scale-[0.97]"
+          style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000', boxShadow: '0 0 20px rgba(0,224,122,0.25)' }}
         >
           + New Deal
         </Link>
@@ -2071,7 +2071,7 @@ function TableView({
             {/* Advance Phase — primary action */}
             <button
               onClick={handleBulkAdvance}
-              className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap inline-flex items-center gap-1.5"
+              className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap inline-flex items-center gap-1.5"
               style={{ backgroundColor: 'var(--brand)' }}
             >
               Advance Phase
