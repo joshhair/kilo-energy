@@ -536,7 +536,7 @@ function NewDealPage() {
     blitzId: '',
   });
 
-  const [view, setView] = useState<'entry' | 'form'>('entry');
+  const [view, setView] = useState<'entry' | 'form'>('form');
   const [form, setForm] = useState(blankForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
