@@ -6,14 +6,20 @@ This is the running log for this session. Every change, bug found, and fix is lo
 
 ## Summary
 
-| # | Item | Status | Type |
+| # | Item | Commit | Type |
 |---|------|--------|------|
-| 1 | Fix Vercel build — `prisma generate` before `next build` | Committed `cdd7c4e` | Bug fix |
-| 2 | Move green dot to left of "kilo" logo (mobile + desktop) | Uncommitted | Visual |
-| 3 | On Pace `/yr` → actual year label | Uncommitted | Visual |
-| 4 | Training Hub View As bug + gating fix | Uncommitted | **Bug fix** |
-| 5 | Manual rep-side visual sweep | In progress | Review |
-| 6 | Configure Improver agent for mobile UX focus | Pending | Agent config |
+| 1 | Fix Vercel build — `prisma generate` before `next build` | `cdd7c4e` | Bug fix |
+| 2 | Move green dot to left of "kilo" logo (mobile + desktop) | `b6e5ae0` | Visual |
+| 3 | On Pace `/yr` → "On Pace For 2026" (dynamic year) | `b6e5ae0` | Visual |
+| 4 | Training Hub View As bug + gating fix | `b6e5ae0` | **Bug fix** |
+| 5 | Payroll publish — publishes all pending, not filtered | `b6e5ae0` | Bug fix (agents) |
+| 6 | Trainer override tier — count completed deals only | `b6e5ae0` | Bug fix (agents) |
+| 7 | stalledDays NaN guard | `976778e` | Bug fix |
+| 8 | Mobile money-overflow: responsive clamp + break-words | `976778e` | Visual |
+| 9 | Calculator fmt$ helper + NaN/Infinity guards | `976778e` | Bug fix |
+| 10 | New Deal double-submit lock (useRef, synchronous) | `976778e` | Bug fix |
+| 11 | Improver agent — refocused on mobile UX | dev-agents | Agent config |
+| 12 | Agents now aware of deployed Vercel URL + freshness check | dev-agents | Agent config |
 
 ---
 
@@ -58,9 +64,37 @@ This is the running log for this session. Every change, bug found, and fix is lo
 
 ---
 
-### 5. Manual rep-side visual sweep
-**Status:** In progress
-**Scope:** Dashboard, New Deal, Projects, Earnings, Reimbursement, Training, Calculator, Settings — both desktop and mobile breakpoints.
+### 5. Manual rep-side visual sweep — findings
+**Status:** Findings logged; fixes in progress.
+**Method:** Deep source review by Explore agent over all mobile rep screens.
+
+**HIGH severity — fixing now:**
+1. **MobileDashboard Next Payout hero — money overflow risk** — large values like `$12,345` in `2.8rem` DM Serif Display can overflow on 320px phones. No `break-words`, no responsive font clamp. *Fix: responsive font size + break-words.*
+2. **MobileNewDeal — no loading UI during async submission** — `submitting` state is set but no spinner or disabled state visible during the 2–3s `addDeal()` call. User could double-submit. *Fix: loading overlay while submitting.*
+3. **MobileCalculator — inconsistent currency formatting** — uses `.toLocaleString()` instead of shared `fmt$()`, and no guard if value is NaN/undefined. *Fix: use fmt$ + NaN guard.*
+4. **MobileDashboard — stalled days NaN risk** — `stalledDays(p.soldDate)` returns NaN if date invalid, renders "Stalled NaNd". *Fix: null guard.*
+
+**MEDIUM severity — tracked for agents or next pass:**
+5. BottomNav More button touch target borderline 44px — should be 48.
+6. MobileSettings permission toggles wrap 3 rows on 320px — use grid-cols-2.
+7. Period filter mask may fail on older Android; verify `no-scrollbar` utility exists.
+8. MobileCard hero gradient decorative element may clip on very narrow screens.
+
+**LOW severity:**
+9. Greeting with empty name → "Good morning" only.
+10. MobileCalculator hydration skeleton doesn't match form shape → layout shift.
+
+---
+
+### 6. Agent team — pointed at deployed Vercel app
+**Status:** Committed and live.
+**Changes:**
+  - **New file:** `dev-agents/src/lib/vercelStatus.ts` — helper that queries Vercel CLI for latest prod deployment
+  - **orchestrator.ts:** pre-cycle freshness check — logs deploy status, records a critical finding if deployment is in Error state
+  - **tester.ts + improver.ts:** prompts now include `DEPLOYMENT CONTEXT: This app is LIVE at https://kilo-energy-joshhairs-projects.vercel.app` so agents know they're reviewing production code
+  - **Improver refocused on mobile UX:** sections rotation now mobile-first (MobileDashboard, BottomNav, MobileNewDeal, MobileTraining, MobileCalculator, MobileSettings, MobilePayroll, layout, vault). Prompt rewrote to prioritize transitions, animations, micro-interactions, touch feedback, safe-area insets, with exact timing/easing values.
+  - **Vercel production URL:** `https://kilo-energy-joshhairs-projects.vercel.app` (Vercel deployment protection enabled — auto-testers cannot browse it without a bypass token).
+  - **Current agent run:** Cycle 82, dashboard tunnel: https://christopher-computer-thanks-four.trycloudflare.com
 
 ---
 
@@ -73,7 +107,22 @@ This is the running log for this session. Every change, bug found, and fix is lo
 
 ## Agent Team Status
 
-- **Running:** Cycle 81 (started `2026-04-05 21:45` PDT)
+- **Running:** Cycle 82+ (restarted at 21:55 PDT with mobile-UX-focused improver prompt)
 - **Dashboard (local):** http://localhost:4242
-- **Public tunnel:** https://concerned-replies-serving-met.trycloudflare.com
+- **Public tunnel:** https://christopher-computer-thanks-four.trycloudflare.com
 - **Config:** Master=Opus, Workers=Sonnet, audit every 10 cycles
+- **Improver rotation:** Mobile-first — MobileDashboard, BottomNav, MobileNewDeal, Projects, MobileTraining, MobilePayroll, MobileCalculator, MobileSettings, layout (transitions), Vault
+- **Deployment awareness:** Testers + improver prompts now include the production URL and know that any finding is a live bug
+
+## How to review everything
+
+1. **Pull the latest `main`** — all shipped fixes are on Vercel now
+2. **This doc** — running log of every change with commit SHAs
+3. **git log --oneline origin/main -10** — commits from this session:
+   ```
+   976778e  Mobile HIGH-severity fixes from visual sweep
+   b6e5ae0  Multiple fixes: logo, On Pace label, Training Hub View As, payroll publish, trainer tier
+   cdd7c4e  Fix Vercel build — run prisma generate before next build
+   ```
+4. **Agent dashboard** — http://localhost:4242 locally, or the tunnel URL above on your phone
+5. **Remaining medium-severity items** from the visual sweep are listed above and will be picked up by the improver's mobile-focused cycles automatically, or I can knock them out on request.
