@@ -306,7 +306,7 @@ export default function MobileDashboard() {
         {/* Hero — next payout */}
         <MobileCard hero>
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 9vw, 2.5rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
           <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
             <div
@@ -442,7 +442,7 @@ export default function MobileDashboard() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       {/* Greeting */}
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2rem', color: '#fff' }}>{getGreeting(effectiveRepName ?? '')}</h1>
+      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: '#fff', lineHeight: 1.1 }}>{getGreeting(effectiveRepName ?? '')}</h1>
 
       {/* Period filter */}
       <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
@@ -470,7 +470,7 @@ export default function MobileDashboard() {
         {onPaceAnnual > 0 ? (
           <>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.9rem, 9.5vw, 2.8rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
               {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
             </p>
@@ -480,13 +480,13 @@ export default function MobileDashboard() {
                 <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
                 <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></p>
               </div>
-              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.3rem, 6vw, 1.5rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(pendingPayrollTotal)}</p>
+              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(pendingPayrollTotal)}</p>
             </div>
           </>
         ) : (
           <>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.9rem, 9.5vw, 2.8rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
           </>
         )}
@@ -494,19 +494,19 @@ export default function MobileDashboard() {
         {/* Stats inside hero card */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
           <div className="min-w-0">
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 5.5vw, 1.4rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(periodPaid)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(periodPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
           </div>
           <div className="min-w-0">
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 5.5vw, 1.4rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(pipelineValue)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(pipelineValue)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
           </div>
           <div className="min-w-0">
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 5.5vw, 1.4rem)', color: '#fff', lineHeight: 1.15 }}>{periodKW.toFixed(1)} <span style={{ fontSize: '0.9rem', color: MUTED }}>kW</span></p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: '#fff', lineHeight: 1.15 }}>{periodKW.toFixed(1)} <span style={{ fontSize: '0.9rem', color: MUTED }}>kW</span></p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Sold</p>
           </div>
           <div className="min-w-0">
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 5.5vw, 1.4rem)', color: '#fff', lineHeight: 1.15 }}>{periodActive.length}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: '#fff', lineHeight: 1.15 }}>{periodActive.length}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Active Deals</p>
           </div>
         </div>
