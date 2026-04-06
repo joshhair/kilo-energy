@@ -20,6 +20,40 @@ This is the running log for this session. Every change, bug found, and fix is lo
 | 10 | New Deal double-submit lock (useRef, synchronous) | `976778e` | Bug fix |
 | 11 | Improver agent — refocused on mobile UX | dev-agents | Agent config |
 | 12 | Agents now aware of deployed Vercel URL + freshness check | dev-agents | Agent config |
+| 13 | **8 cycles of agent fixes finally committed** (cycles 82–90) | `36be841` | Bug fixes (agents) |
+| 14 | `m3Paid` schema added — Turso prod ALTER TABLE applied | `36be841` | Schema |
+| 15 | Vault → My Pay overflow on stat cards (mobile clamp + break-words) | `36be841` | Visual |
+| 16 | **Full vault → my-pay rename** (route, files, components, icon, redirect) | `0c2a680` | **Refactor** |
+| 17 | dev-agents auto-commit + auto-push after green retest | dev-agents | Agent infra |
+
+## ⚠️ Critical realization mid-session
+
+Agents WERE finding and fixing real bugs (cycles 82–90 found 30+ issues, made 20+ corrections) but **none were ever committed to git or deployed to Vercel**. The fixes piled up in the local working tree only. Caught when Josh asked "are the agents actually fixing things?"
+
+**Resolution:**
+1. **Manually committed all 8 cycles of accumulated fixes** in `36be841` (30 files, 647 insertions)
+2. **Wired auto-commit into orchestrator**: after a successful retest, the orchestrator now stages `app/`, `lib/`, `prisma/schema.prisma`, `turso-schema.sql`, commits with a generated message naming the fixes, and pushes to main. Vercel auto-deploys.
+
+## Vault → My Pay rename — why this kept "popping up"
+
+Josh raised that "vault" was still surfacing in agent reports despite the rename "long ago". The truth: only the **display label** had been changed. Everything under the hood was still "vault":
+- Route `/dashboard/vault`
+- Folder `app/dashboard/vault/`
+- File `MobileVault.tsx`
+- Component names `VaultPage`, `VaultPageInner`, `VaultSkeleton`, `VaultLoading`, `MobileVault`
+- Lucide icon import `Vault`
+- 14 file references across nav, dashboard, reimbursement, comments, tests, scripts
+- Redirect comments
+
+When agents read source code, they naturally described things as "the vault page" because that's what the file was called. The user-facing label change masked years of dead code rot. Full rename completed in `0c2a680`:
+- Files moved with `git mv` (history preserved)
+- Components renamed: `MyPayPage`, `MyPayPageInner`, `MyPaySkeleton`, `MyPayLoading`, `MobileMyPay`
+- Lucide icon: `Vault` → `Wallet` (semantically clearer for "My Pay")
+- All hrefs updated
+- Comments updated (no more "desktop vault")
+- Tests + audit script updated
+- **Permanent redirect** in `next.config.ts`: `/dashboard/vault` → `/dashboard/my-pay` for any old bookmarks
+- Source code is now 100% "My Pay" — only mentions of "vault" left are in next.config.ts redirect comments (intentional) and historical markdown docs.
 
 ---
 
@@ -107,12 +141,13 @@ This is the running log for this session. Every change, bug found, and fix is lo
 
 ## Agent Team Status
 
-- **Running:** Cycle 82+ (restarted at 21:55 PDT with mobile-UX-focused improver prompt)
+- **Running:** Cycle 90+ (restarted with auto-commit hook)
 - **Dashboard (local):** http://localhost:4242
-- **Public tunnel:** https://christopher-computer-thanks-four.trycloudflare.com
+- **Public tunnel:** https://contained-forth-stats-apollo.trycloudflare.com
 - **Config:** Master=Opus, Workers=Sonnet, audit every 10 cycles
-- **Improver rotation:** Mobile-first — MobileDashboard, BottomNav, MobileNewDeal, Projects, MobileTraining, MobilePayroll, MobileCalculator, MobileSettings, layout (transitions), Vault
-- **Deployment awareness:** Testers + improver prompts now include the production URL and know that any finding is a live bug
+- **Improver rotation:** Mobile-first
+- **Deployment awareness:** Testers + improver prompts include the production URL
+- **Auto-commit:** ✅ Successful retest now triggers `git add app/ lib/ prisma/schema.prisma turso-schema.sql && git commit && git push` automatically. Fixes deploy to Vercel within minutes of being verified. (Note: rename references have been updated to "My Pay" — agents will stop saying "vault" once they re-read the renamed files.)
 
 ## How to review everything
 
@@ -120,6 +155,9 @@ This is the running log for this session. Every change, bug found, and fix is lo
 2. **This doc** — running log of every change with commit SHAs
 3. **git log --oneline origin/main -10** — commits from this session:
    ```
+   0c2a680  Rename: vault → my-pay everywhere (route, files, components, imports, redirect)
+   36be841  Mobile My Pay overflow fixes + 8 cycles of agent corrections + m3Paid schema
+   0eaf14e  Update SESSION_REVIEW with final session summary and commit list
    976778e  Mobile HIGH-severity fixes from visual sweep
    b6e5ae0  Multiple fixes: logo, On Pace label, Training Hub View As, payroll publish, trainer tier
    cdd7c4e  Fix Vercel build — run prisma generate before next build
