@@ -117,7 +117,7 @@ function RepsPageInner() {
     const repId = `rep_${ts}`;
     const trainerIdSnapshot = newTrainerId;
     const repPromise = addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId);
-    toast('Rep added', 'success');
+    repPromise?.then((rep) => { if (rep) toast('Rep added', 'success'); });
     // If a trainer was selected, persist assignment after real rep ID is known
     if (trainerIdSnapshot) {
       repPromise?.then((rep) => {

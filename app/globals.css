@@ -10,20 +10,6 @@
   --navy-hover: #1d2028;
 }
 
-/* ── Mobile typography scale-up (20%) ──────────────────────────────────────
-   Bumps the root font-size on phone-sized viewports so every rem-based
-   size — inline fontSize on stat cards, Tailwind text-* classes, labels,
-   inputs, buttons, all of it — scales proportionally by 20%. Desktop
-   stays at the browser default 16px. This is the standard accessibility-
-   zoom technique and gives Josh exactly "everything 20% larger on the
-   mobile app" without touching every component.
-   16px * 1.2 = 19.2px. */
-@media (max-width: 767px) {
-  html {
-    font-size: 19.2px;
-  }
-}
-
 :root {
   /* Desktop design system */
   --d-surface: #161920;
@@ -89,11 +75,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Mobile: bump base font size so all rem/text-* classes render ~25% bigger.
-   Also respect iOS Dynamic Type via -webkit-text-size-adjust. */
+/* Mobile: bump base font size so all rem/text-* classes render larger.
+   Previously 20px (25% over browser default). Bumped to 24px at Josh's
+   request — he wanted 20% bigger than the prior mobile baseline.
+   24px is 50% over the 16px browser default: text-base becomes 24px,
+   text-lg becomes 27px, text-sm becomes 21px. Every rem-based padding,
+   margin, and typography utility grows proportionally.
+   Also respects iOS Dynamic Type via -webkit-text-size-adjust. */
 @media (max-width: 767px) {
   html {
-    font-size: 20px; /* default is 16px — this makes text-base = 20px, text-lg = 22.5px, etc. */
+    font-size: 24px;
     -webkit-text-size-adjust: 100%;
   }
 }

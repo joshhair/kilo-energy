@@ -751,7 +751,7 @@ function PayrollPageInner() {
           >
             {s}
             <span className="ml-1.5 text-xs opacity-70">
-              ({payrollEntries.filter((p) => p.status === s && p.type === typeTab).length})
+              ({filteredByDateRep.filter((p) => p.status === s && p.type === typeTab).length})
             </span>
           </button>
         ))}
@@ -793,9 +793,9 @@ function PayrollPageInner() {
           <DateRangeFilter
             from={payFilterFrom}
             to={payFilterTo}
-            onFromChange={setPayFilterFrom}
-            onToChange={setPayFilterTo}
-            onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); }}
+            onFromChange={(v) => { setPayFilterFrom(v); setAdminPage(1); }}
+            onToChange={(v) => { setPayFilterTo(v); setAdminPage(1); }}
+            onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); setAdminPage(1); }}
           />
           {/* Bulk actions (when selected) */}
           {statusTab === 'Draft' && selectedIds.size > 0 && (
@@ -938,7 +938,7 @@ function PayrollPageInner() {
                 <h2 className="text-white font-semibold text-lg">Publish Payroll?</h2>
               </div>
               <p className="text-[#c2c8d8] text-sm mb-3">
-                This will mark all <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[#00e07a] font-semibold">Paid</span>. This action cannot be undone.
+                This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[#00e07a] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
               </p>
 
               {/* Per-rep breakdown */}

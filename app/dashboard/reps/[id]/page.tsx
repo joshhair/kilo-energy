@@ -109,7 +109,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
 
   const assignment = trainerAssignments.find((a) => a.traineeId === id);
   const trainerRep = assignment ? reps.find((r) => r.id === assignment.trainerId) : null;
-  const completedDeals = repProjects.length;
+  const completedDeals = repProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
   const currentOverrideRate = assignment ? getTrainerOverrideRate(assignment, completedDeals) : 0;
 
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
@@ -209,7 +209,14 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
                 </div>
               </div>
               <button
-                onClick={() => setTrainerAssignments((prev) => prev.filter((a) => a.id !== assignment.id))}
+                onClick={() => {
+                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
+                  fetch('/api/trainer-assignments', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: assignment.id }),
+                  });
+                }}
                 className="text-[#8891a8] hover:text-red-400 transition-colors text-xs font-medium flex items-center gap-1"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Remove
@@ -224,16 +231,44 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
                 value=""
                 onChange={(trainerId) => {
                   if (!trainerId) { setShowTrainerPicker(false); return; }
+                  const tempId = `ta_${Date.now()}`;
                   setTrainerAssignments((prev) => [
                     ...prev,
                     {
-                      id: `ta_${Date.now()}`,
+                      id: tempId,
                       trainerId,
                       traineeId: id,
                       tiers: [{ upToDeal: null, ratePerW: 0.05 }],
                     },
                   ]);
                   setShowTrainerPicker(false);
+                  fetch('/api/trainer-assignments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      trainerId,
+                      traineeId: id,
+                      tiers: [{ upToDeal: null, ratePerW: 0.05 }],
+                    }),
+                  })
+                    .then((r) => r.json())
+                    .then((assignment) => {
+                      setTrainerAssignments((prev) =>
+                        prev.map((a) =>
+                          a.id === tempId
+                            ? {
+                                id: assignment.id,
+                                trainerId: assignment.trainerId,
+                                traineeId: assignment.traineeId,
+                                tiers: (assignment.tiers ?? []).map((t: { upToDeal: number | null; ratePerW: number }) => ({
+                                  upToDeal: t.upToDeal,
+                                  ratePerW: t.ratePerW,
+                                })),
+                              }
+                            : a
+                        )
+                      );
+                    });
                 }}
                 reps={reps}
                 placeholder="-- Select trainer --"

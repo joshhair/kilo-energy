@@ -358,7 +358,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setReps((prev) => prev.map((r) => r.id === tempId ? { ...r, id: rep.id } : r));
       }
       return rep as { id: string };
-    }).catch(() => undefined);
+    }).catch(() => {
+      setReps((prev) => prev.filter((r) => r.id !== tempId));
+      return undefined;
+    });
   };
   const removeRep = (id: string) => {
     setReps((prev) => prev.filter((r) => r.id !== id));
@@ -591,7 +594,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Check if entries already exist for this project + stage to avoid duplicates
           setPayrollEntries((prevEntries) => {
             const alreadyExists = prevEntries.some(
-              (e) => e.projectId === id && e.paymentStage === stage
+              (e) => e.projectId === id && (e.paymentStage === stage || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))
             );
             if (alreadyExists) return prevEntries;
 

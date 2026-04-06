@@ -546,6 +546,10 @@ function NewDealPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const isDirty = useRef(false);
+  // Synchronous lock — React batches state updates inside the same event
+  // tick, so `submitting` (state) still reads false on a rapid double-click.
+  // The ref flips immediately and guards against double-submission.
+  const submittingRef = useRef(false);
 
   // Blitz list for lead source attribution
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
@@ -867,9 +871,11 @@ function NewDealPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     if (!dbReady) {
       toast('Data is still loading, please wait...', 'error');
+      submittingRef.current = false;
       return;
     }
 
@@ -891,7 +897,10 @@ function NewDealPage() {
       if (error) hasErrors = true;
     }
     setErrors(newErrors);
-    if (hasErrors) return;
+    if (hasErrors) {
+      submittingRef.current = false;
+      return;
+    }
 
     setSubmitting(true);
 
@@ -966,6 +975,7 @@ function NewDealPage() {
       repName: rep?.name ?? currentRepName ?? 'You',
     });
     setSubmitting(false);
+    submittingRef.current = false;
   };
 
   // ── Style helpers ──────────────────────────────────────────────────────────

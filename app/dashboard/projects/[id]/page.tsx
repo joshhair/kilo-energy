@@ -975,6 +975,33 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Pipeline stage tracker */}
       <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
 
+      {/* Phase quick-advance strip — admin/PM only, hidden when off-track */}
+      {(currentRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (() => {
+        const phaseIdx = PIPELINE_STEPS.indexOf(project.phase as typeof PIPELINE_STEPS[number]);
+        const prevStep = phaseIdx > 0 ? PIPELINE_STEPS[phaseIdx - 1] : null;
+        const nextStep = phaseIdx < PIPELINE_STEPS.length - 1 ? PIPELINE_STEPS[phaseIdx + 1] : null;
+        return (
+          <div className="flex items-center gap-2 mb-5 -mt-3">
+            {prevStep ? (
+              <button
+                onClick={() => handlePhaseChange(prevStep)}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] hover:text-white hover:border-amber-500/50 transition-colors"
+              >
+                ← {prevStep}
+              </button>
+            ) : <span />}
+            {nextStep && (
+              <button
+                onClick={() => handlePhaseChange(nextStep)}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] hover:text-white hover:border-[#00e07a]/50 transition-colors ml-auto"
+              >
+                {nextStep} →
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
@@ -1603,6 +1630,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   closerPerW: parseFloat(editVals.overrideCloserPerW) || 0,
                   kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0,
                 };
+              } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
+                previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW);
+              } else if (project.installerProductId) {
+                previewBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, previewKW, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
               } else {
                 previewBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, previewKW, installerPricingVersions);
               }

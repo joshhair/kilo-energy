@@ -212,9 +212,9 @@ function NeedsAttentionSection({
 
   // Note: @mentions are handled by the separate MyTasksSection, not Needs Attention
 
-  // Sort: by staleDays descending (most urgent first)
+  // Sort: by staleDays (stuck) or holdDays (on-hold) descending (most urgent first)
   items.sort((a, b) => {
-    return (b.staleDays ?? 0) - (a.staleDays ?? 0);
+    return (b.staleDays ?? b.holdDays ?? 0) - (a.staleDays ?? a.holdDays ?? 0);
   });
 
   const [open, setOpen] = useState(true);
@@ -798,7 +798,10 @@ export default function DashboardPage() {
     .reduce((s, p) => s + p.amount, 0);
   const mtdUnmatchedCommission = mtdProjects
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((s, p) => s + (p.repId === effectiveRepId ? (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) : 0), 0);
+    .reduce((s, p) => {
+      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
+    }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
 
   // Animated count-up for the MTD commission hero — always called (hook rules)
@@ -905,7 +908,7 @@ export default function DashboardPage() {
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      return sum + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : 0);
+      return sum + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
     }, 0);
   // M3: build a set of project IDs that already have an M3 payroll entry (paid or unpaid).
   // If unpaid, the amount is already in unpaidPayroll. If paid, it belongs in totalPaid.
@@ -936,7 +939,11 @@ export default function DashboardPage() {
   }, new Map<string, number>());
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
     const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-    const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : 0;
+    const totalExpected = p.repId === effectiveRepId
+      ? closerM1 + (p.m2Amount ?? 0)
+      : p.setterId === effectiveRepId
+        ? (p.m1Amount ?? 0)
+        : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0);
@@ -944,7 +951,10 @@ export default function DashboardPage() {
   const prevUnpaidPayroll = myPrevPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   const prevUnmatchedPay = myPrevProjects
     .filter((p) => !prevPayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((sum, p) => sum + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
+    .reduce((sum, p) => {
+      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      return sum + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
+    }, 0);
   const prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay;
   const prevTotalPaid = myPrevPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
   const prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
@@ -976,7 +986,10 @@ export default function DashboardPage() {
     .reduce((s, p) => s + p.kWSize, 0);
   const allTimeEstPay = myProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((s, p) => s + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
+    .reduce((s, p) => {
+      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
+    }, 0);
 
   // Circumference for the 48×48 SVG ring (r=20): 2π×20 ≈ 125.66
   const RING_CIRC = 125.66;
@@ -1756,7 +1769,7 @@ function AdminDashboard({
   const pipelineTotal = pipelineActive.length;
 
   // Attention items count (used for All Clear vs Needs Attention)
-  const attentionActiveProjects = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  const attentionActiveProjects = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase) || p.phase === 'On Hold');
   const PHASE_STUCK_THRESHOLDS_ADMIN = getPhaseStuckThresholds();
   const todayAdmin = new Date(); todayAdmin.setHours(0, 0, 0, 0);
   const attentionItemCount = (() => {

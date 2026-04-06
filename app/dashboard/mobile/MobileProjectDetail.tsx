@@ -23,6 +23,22 @@ const PIPELINE_STEPS: Phase[] = [
   'Pending Install', 'Installed', 'PTO', 'Completed',
 ];
 
+// Expected time a project typically spends in each phase.
+// Used on the project detail stepper caption.
+const PHASE_EXPECTED_TIME: Record<string, string> = {
+  'New': 'Typically 1–3 days',
+  'Acceptance': 'Typically 3–7 days',
+  'Site Survey': 'Typically 5–10 days',
+  'Design': 'Typically 7–14 days',
+  'Permitting': 'Typically 2–4 weeks',
+  'Pending Install': 'Typically 1–2 weeks',
+  'Installed': 'Typically 2–6 weeks until PTO',
+  'PTO': 'Final stage · utility approval',
+  'Completed': 'Finalized',
+  'Cancelled': 'Cancelled',
+  'On Hold': 'Paused',
+};
+
 // ── Relative time ──
 
 function relativeTime(dateStr: string): string {
@@ -332,18 +348,29 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       </div>
 
       <p
-        className="text-[11px] font-semibold tracking-wide mt-1"
+        className="font-bold tracking-wide mt-2"
         style={{
           color: isOffTrack
             ? (project.phase === 'Cancelled' ? '#ef4444' : '#f59e0b')
             : 'var(--m-accent2, #00b4d8)',
           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-          letterSpacing: '0.04em',
+          letterSpacing: '0.02em',
+          fontSize: '1rem',
+          lineHeight: 1.2,
         }}
       >
-        {isOffTrack
-          ? project.phase
-          : `Step ${currentStepIndex + 1} of ${PIPELINE_STEPS.length} — ${project.phase}`}
+        {project.phase}
+      </p>
+      <p
+        className="mt-0.5"
+        style={{
+          color: 'var(--m-text-dim, #445577)',
+          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          fontSize: '0.85rem',
+          lineHeight: 1.3,
+        }}
+      >
+        {PHASE_EXPECTED_TIME[project.phase] ?? '—'}
       </p>
 
       {/* Info rows — no card wrapper, thin separators */}
