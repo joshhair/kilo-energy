@@ -2,12 +2,28 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 
 :root {
-  --brand: #2563EB;
-  --brand-light: #3B82F6;
-  --brand-dark: #1D4ED8;
-  --navy-base: #060E1E;
-  --navy-card: #0D1B2E;
-  --navy-hover: #112238;
+  --brand: #00e07a;
+  --brand-light: #00c4f0;
+  --brand-dark: #00b868;
+  --navy-base: #0b0d11;
+  --navy-card: #0f1117;
+  --navy-hover: #1d2028;
+  /* Desktop design system */
+  --d-surface: #161920;
+  --d-card: #1d2028;
+  --d-border: #272b35;
+  --d-border2: #333849;
+  --d-text: #f0f2f7;
+  --d-sub: #c2c8d8;
+  --d-muted: #8891a8;
+  --d-dim: #525c72;
+  --d-green: #00e07a;
+  --d-cyan: #00c4f0;
+  --d-amber: #ffb020;
+  --d-red: #ff5252;
+  --d-blue: #4d9fff;
+  --d-purple: #b47dff;
+  --d-teal: #00d4c8;
 }
 
 /* ── Accessibility: reduced-motion safety net ───────────────────────────────
@@ -46,13 +62,13 @@ textarea:focus-visible,
   outline: none;
   box-shadow:
     0 0 0 2px var(--navy-base),
-    0 0 0 4px rgba(59, 130, 246, 0.5); /* blue-500 / 50 % — matches ring-blue-500/50 */
+    0 0 0 4px rgba(0, 224, 122, 0.3); /* green accent focus ring */
 }
 
 body {
   background-color: var(--navy-base);
-  color: #f1f5f9;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--d-text, #f0f2f7);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -369,29 +385,22 @@ body {
 /* Glass-morphism card surface with gradient wash + glow borders */
 .card-surface {
   position: relative;
-  background:
-    linear-gradient(135deg, rgba(30,58,138,0.10) 0%, transparent 50%, rgba(6,78,59,0.08) 100%),
-    linear-gradient(180deg, rgba(30,58,95,0.15) 0%, rgba(13,27,46,0.4) 100%);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(148,163,184,0.08);
-  border-top-color: rgba(59,130,246,0.15);
-  border-bottom-color: rgba(16,185,129,0.10);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03);
+  background: var(--d-surface, #161920);
+  border: 1px solid var(--d-border, #272b35);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   transition: transform 200ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 
 .card-surface:hover {
   transform: translateY(-1px);
-  border-color: rgba(148,163,184,0.15);
-  border-top-color: rgba(59,130,246,0.25);
-  border-bottom-color: rgba(16,185,129,0.18);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  border-color: var(--d-border2, #333849);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 12px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* Stat card variant — radial accent glow + bounce-scale on the number */
 .card-surface-stat {
   background: radial-gradient(ellipse at 90% 10%, var(--card-accent, transparent) 0%, transparent 60%),
-              linear-gradient(180deg, rgba(30,58,95,0.15) 0%, rgba(13,27,46,0.4) 100%);
+              var(--d-surface, #161920);
 }
 
 .card-surface-stat .stat-value {
@@ -465,7 +474,7 @@ select {
 
 .btn-primary:hover {
   filter: brightness(1.1);
-  box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 20px rgba(0, 224, 122, 0.25);
   /* Shimmer: a semi-transparent highlight band travels across the surface */
   background-image: linear-gradient(
     90deg,
