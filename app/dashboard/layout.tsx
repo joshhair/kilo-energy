@@ -104,15 +104,13 @@ function NavGroup({
       <button
         onClick={() => !sidebarCollapsed && setOpen((v) => !v)}
         title={sidebarCollapsed ? label : undefined}
-        className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-[background] w-full ${
-          isAnyChildActive
-            ? 'text-white bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:rounded-full before:bg-blue-500/60'
-            : 'text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-slate-800/80 hover:to-transparent'
-        } ${sidebarCollapsed ? 'justify-center' : ''} ${
-          open && !sidebarCollapsed ? 'bg-slate-800/30' : ''
-        }`}
+        className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-[background] w-full ${sidebarCollapsed ? 'justify-center' : ''}`}
+        style={isAnyChildActive
+          ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
+          : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500, ...(open && !sidebarCollapsed ? { background: 'rgba(0,224,122,0.05)' } : {}) }
+        }
       >
-        <Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${iconPop ? ' nav-group-icon-pop' : ''}`} />
+        <span style={{ opacity: isAnyChildActive ? 1 : 0.5, color: isAnyChildActive ? '#00e07a' : 'inherit', display: 'flex' }}><Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${iconPop ? ' nav-group-icon-pop' : ''}`} /></span>
         {!sidebarCollapsed && (
           <>
             <span className="truncate flex-1 text-left">{label}</span>
@@ -132,7 +130,7 @@ function NavGroup({
           style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
         >
           <div className="overflow-hidden">
-            <ul className={`ml-5 mt-0.5 space-y-0.5 border-l nav-sublist-border ${isAnyChildActive ? 'border-blue-500/50' : 'border-slate-700/50'}`}>
+            <ul className="ml-5 mt-0.5 space-y-0.5 border-l nav-sublist-border" style={{ borderColor: isAnyChildActive ? 'rgba(0,224,122,0.4)' : 'var(--d-border, #272b35)' }}>
               {items.map(({ href, label: childLabel, icon: ChildIcon }, idx) => {
                 const isActive = pathname.startsWith(href);
                 // Clamp stagger index to the 6 utility classes we have defined.
@@ -141,13 +139,13 @@ function NavGroup({
                   <li key={href} className={staggerClass}>
                     <Link
                       href={href}
-                      className={`group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        isActive
-                          ? 'relative bg-gradient-to-r from-blue-500/15 via-blue-500/10 to-transparent text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-5 before:rounded-full before:bg-blue-500 before:shadow-[0_0_12px_rgba(59,130,246,0.5)]'
-                          : 'text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-slate-800/80 hover:to-transparent'
-                      }`}
+                      className="group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm transition-all"
+                      style={isActive
+                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
+                        : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500 }
+                      }
                     >
-                      <ChildIcon className={`w-4 h-4 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${isActive ? ' nav-icon-active' : ''}`} />
+                      <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? '#00e07a' : 'inherit', display: 'flex' }}><ChildIcon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
                       <span className="truncate">{childLabel}</span>
                     </Link>
                   </li>
@@ -184,7 +182,8 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
     <div className="px-3 pb-2">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+        className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+        style={{ color: 'var(--d-muted, #8891a8)' }}
       >
         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
         <span>View As...</span>
@@ -455,36 +454,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
        */}
       <aside
         className={[
-          'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-800/60',
+          'fixed inset-y-0 left-0 z-40 flex flex-col border-r',
           'transition-all duration-300 ease-in-out',
           // Reset to in-flow on desktop
           'md:relative md:inset-auto md:z-auto md:translate-x-0',
           // Force full width on mobile regardless of collapsed state
-          'max-md:!w-[220px]',
+          'max-md:!w-[220px] max-md:border-slate-800/60',
           // Slide in / out on mobile
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
         style={{
           width: collapsed ? '64px' : '220px',
           backgroundColor: 'var(--navy-card)',
+          borderColor: 'var(--d-border, #272b35)',
+          fontFamily: "'DM Sans', sans-serif",
         }}
       >
         {/* Logo + collapse/close toggle */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-800/60 h-[60px]">
+        <div className="flex items-center justify-between px-4 py-4 h-[60px]" style={{ borderBottom: '1px solid var(--d-border, #272b35)' }}>
           {!showCollapsed && (
             <div className="flex items-center gap-2 overflow-hidden min-w-0">
-              <div className="flex items-baseline gap-1 overflow-hidden min-w-0">
-                <span className="text-white font-black tracking-tighter text-xl leading-none">kilo</span>
-                <span className="text-white/70 font-light tracking-[0.2em] text-[10px] uppercase">ENERGY</span>
+              <div className="flex items-baseline gap-0.5 overflow-hidden min-w-0">
+                <span className="text-white font-bold tracking-tighter text-xl leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
+                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#00e07a', boxShadow: '0 0 10px #00e07a', marginLeft: 2, marginRight: 2, alignSelf: 'center', flexShrink: 0 }} />
+                <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--d-muted, #8891a8)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
               </div>
               {/* ⌘K hint badge — opens command palette on click */}
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Open command palette (⌘K)"
-                className="flex-shrink-0 text-slate-600 hover:text-slate-400 transition-colors"
+                className="flex-shrink-0 hover:text-slate-400 transition-colors"
+                style={{ color: 'var(--d-muted, #8891a8)' }}
                 aria-label="Open command palette"
               >
-                <kbd className="font-mono text-[9px] bg-slate-800/80 border border-slate-700/60 rounded px-1.5 py-0.5 leading-none">
+                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, #1d2028)', border: '1px solid var(--d-border2, #333849)' }}>
                   ⌘K
                 </kbd>
               </button>
@@ -492,10 +495,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 onClick={() => setShortcutsOpen(true)}
                 title="Keyboard shortcuts (?)"
-                className="flex-shrink-0 text-slate-600 hover:text-slate-400 transition-colors"
+                className="flex-shrink-0 hover:text-slate-400 transition-colors"
+                style={{ color: 'var(--d-muted, #8891a8)' }}
                 aria-label="Open keyboard shortcuts"
               >
-                <kbd className="font-mono text-[9px] bg-slate-800/80 border border-slate-700/60 rounded px-1.5 py-0.5 leading-none">
+                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, #1d2028)', border: '1px solid var(--d-border2, #333849)' }}>
                   ?
                 </kbd>
               </button>
@@ -505,7 +509,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden md:flex text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
+            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
+            style={{ color: 'var(--d-muted, #8891a8)' }}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -522,7 +527,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav */}
         <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden relative">
           {/* Depth gradient — fades content as it scrolls under this edge */}
-          <div className="pointer-events-none sticky top-0 left-0 right-0 h-6 bg-gradient-to-b from-slate-800/20 to-transparent z-10 -mb-6" />
+          <div className="pointer-events-none sticky top-0 left-0 right-0 h-6 z-10 -mb-6" style={{ background: 'linear-gradient(to bottom, var(--navy-card), transparent)' }} />
           <ul className="space-y-0.5 px-2">
             {navItems.map((item, index) => {
               // ── NavGroup (collapsible section) ───────────────────────────
@@ -533,7 +538,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Fragment key={item.label}>
                     {/* 'TOOLS' section divider — only in expanded sidebar */}
                     {!showCollapsed && isFirstGroup && (
-                      <li className="text-[10px] text-slate-600 uppercase tracking-[0.2em] px-3 pt-4 pb-1">
+                      <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, #525c72)', letterSpacing: '0.14em' }}>
                         TOOLS
                       </li>
                     )}
@@ -559,7 +564,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Fragment key={href}>
                   {/* 'MAIN' section divider before the very first item — expanded only */}
                   {!showCollapsed && index === 0 && (
-                    <li className="text-[10px] text-slate-600 uppercase tracking-[0.2em] px-3 pt-4 pb-1">
+                    <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, #525c72)', letterSpacing: '0.14em' }}>
                       MAIN
                     </li>
                   )}
@@ -567,15 +572,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Link
                       href={href}
                       title={showCollapsed ? label : undefined}
-                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        isActive
-                          ? 'relative bg-gradient-to-r from-blue-500/15 via-blue-500/10 to-transparent text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-5 before:rounded-full before:bg-blue-500 before:shadow-[0_0_12px_rgba(59,130,246,0.5)]'
-                          : 'text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-slate-800/80 hover:to-transparent'
-                      } ${showCollapsed ? 'justify-center' : ''}`}
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${showCollapsed ? 'justify-center' : ''}`}
+                      style={isActive
+                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
+                        : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500 }
+                      }
                     >
                       {/* Icon bounces once whenever this route becomes active */}
                       <span className="relative flex-shrink-0">
-                        <Icon className={`w-4 h-4 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-400${isActive ? ' nav-icon-active' : ''}`} />
+                        <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? '#00e07a' : 'inherit', display: 'inline-flex' }}><Icon className={`w-4 h-4 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
                         {(() => {
                           const badgeCount = (navBadges[label] ?? 0) + (label === 'Projects' ? unreadMentionCount : 0);
                           if (badgeCount <= 0) return null;
@@ -613,7 +618,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setShortcutsOpen(true)}
             title="Keyboard shortcuts"
-            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+            className="flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+            style={{ color: 'var(--d-muted, #8891a8)' }}
             aria-label="Keyboard shortcuts"
           >
             <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -623,43 +629,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* User + Logout */}
         <div>
-          <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent" />
+          <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--d-border, #272b35), transparent)' }} />
         <div className="px-3 py-4">
           {!showCollapsed ? (
-            <div className="flex items-center gap-3 mb-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-[2px] rounded-full flex-shrink-0">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ backgroundColor: 'var(--brand-dark)' }}
-                >
-                  {initials}
-                </div>
+            <div className="flex items-center gap-3 mb-3 p-2 rounded-lg" style={{ background: 'var(--d-card, #1d2028)', border: '1px solid var(--d-border2, #333849)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #4d9fff, #b47dff)' }}>
+                {initials}
               </div>
               <div className="overflow-hidden">
-                <p className="text-white text-sm font-semibold truncate leading-tight">
+                <p className="text-xs font-bold truncate leading-tight" style={{ color: 'var(--d-text)', fontFamily: "'DM Sans', sans-serif", fontSize: 12 }}>
                   {currentRepName}
                 </p>
-                <p className="text-slate-500 text-xs capitalize">{currentRole}</p>
+                <p className="text-xs capitalize" style={{ color: 'var(--d-muted)', fontSize: 11 }}>{currentRole}</p>
               </div>
             </div>
           ) : (
             <div className="flex justify-center mb-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-[2px] rounded-full" title={currentRepName ?? ''}>
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ backgroundColor: 'var(--brand-dark)' }}
-                >
-                  {initials}
-                </div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: 'linear-gradient(135deg, #4d9fff, #b47dff)' }} title={currentRepName ?? ''}>
+                {initials}
               </div>
             </div>
           )}
           <button
             onClick={handleLogout}
             title={showCollapsed ? 'Logout' : undefined}
-            className={`flex items-center gap-2 text-xs text-slate-500 hover:text-red-400 transition-colors w-full ${
+            className={`flex items-center gap-2 text-xs transition-colors w-full ${
               showCollapsed ? 'justify-center' : ''
             }`}
+            style={{ color: 'var(--d-red, #ff5252)' }}
           >
             <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
             {!showCollapsed && 'Logout'}

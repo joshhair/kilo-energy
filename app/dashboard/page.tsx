@@ -225,6 +225,7 @@ function NeedsAttentionSection({
     <div
       ref={sectionRef}
       className={`card-surface rounded-2xl mb-6 ${sectionVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
+      style={items.length === 0 ? { borderLeft: '3px solid #00e07a' } : undefined}
     >
       {/* Collapsible header */}
       <button
@@ -237,10 +238,10 @@ function NeedsAttentionSection({
           <div className={`p-1.5 rounded-lg ${items.length > 0 ? 'bg-amber-500/15' : 'bg-emerald-500/15'}`}>
             {items.length > 0
               ? <AlertCircle className="w-4 h-4 text-amber-400" />
-              : <CheckCircle className="w-4 h-4 text-emerald-400" />
+              : <CheckCircle className="w-4 h-4" style={{ color: '#00e07a' }} />
             }
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base">
+          <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             {items.length > 0 ? 'Needs Attention' : 'All Clear'}
           </h2>
           {items.length > 0 && (
@@ -262,8 +263,8 @@ function NeedsAttentionSection({
           {items.length === 0 ? (
             /* ── Empty / all-clear state ── */
             <div className="flex items-center gap-3 px-6 py-6">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
+                <CheckCircle className="w-4 h-4" style={{ color: '#00e07a' }} />
               </div>
               <p className="text-slate-300 text-sm">All clear! No items need attention right now.</p>
             </div>
@@ -669,9 +670,9 @@ function TrendBadge({ pctChange }: { pctChange: number | null | undefined }) {
 }
 
 // ─── Animated Stat Value (wraps useCountUp for individual stat cards) ────────
-function AnimatedStatValue({ raw, format, className }: { raw: number; format: (n: number) => string; className?: string }) {
+function AnimatedStatValue({ raw, format, className, style }: { raw: number; format: (n: number) => string; className?: string; style?: CSSProperties }) {
   const animated = useCountUp(raw, 900);
-  return <p className={className}>{format(animated)}</p>;
+  return <p className={className} style={style}>{format(animated)}</p>;
 }
 // ─── Count-Up Hook ──────────────────────────────────────────────────────────
 function useCountUp(target: number, duration = 800): number {
@@ -1703,27 +1704,27 @@ function AdminDashboard({
   const completedCount = projects.filter((p) => p.phase === 'Completed').length;
 
   const topStats = [
-    { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
-    { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
-    { label: 'Total Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Total commission disbursed to all reps via payroll' },
-    { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/reps', tooltip: 'Number of active sales reps in the system' },
-    { label: 'Total kW Sold', value: `${totalKWSold.toFixed(1)} kW`, raw: Math.round(totalKWSold * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, color: 'text-sky-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
-    { label: 'Total kW Installed', value: `${totalKWInstalled.toFixed(1)} kW`, raw: Math.round(totalKWInstalled * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, color: 'text-amber-400', accentGradient: 'from-amber-500 to-amber-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status' },
+    { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
+    { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, accentHex: '#00c4f0', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
+    { label: 'Total Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Total commission disbursed to all reps via payroll' },
+    { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/reps', tooltip: 'Number of active sales reps in the system' },
+    { label: 'Total kW Sold', value: `${totalKWSold.toFixed(1)} kW`, raw: Math.round(totalKWSold * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
+    { label: 'Total kW Installed', value: `${totalKWInstalled.toFixed(1)} kW`, raw: Math.round(totalKWInstalled * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, accentHex: '#ff5252', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status (Chargebacks row)' },
   ];
 
   const pipelineStats = [
-    { label: 'Active Projects', value: activeCount, raw: activeCount, format: (n: number) => n.toString(), color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
-    { label: 'Inactive Projects', value: inactiveCount, raw: inactiveCount, format: (n: number) => n.toString(), color: 'text-slate-400', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?phase=On+Hold', tooltip: 'Projects that are cancelled or on hold' },
-    { label: 'Completed Projects', value: completedCount, raw: completedCount, format: (n: number) => n.toString(), color: 'text-emerald-400', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
+    { label: 'Active Projects', value: activeCount, raw: activeCount, format: (n: number) => n.toString(), accentHex: '#00c4f0', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
+    { label: 'Inactive Projects', value: inactiveCount, raw: inactiveCount, format: (n: number) => n.toString(), accentHex: '#525c72', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?phase=On+Hold', tooltip: 'Projects that are cancelled or on hold' },
+    { label: 'Completed Projects', value: completedCount, raw: completedCount, format: (n: number) => n.toString(), accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
   return (
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Admin Dashboard</h1>
-          <p className="text-slate-400 text-sm font-medium mt-1 tracking-wide">Overview of all reps and deals</p>
+          <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, #00e07a, #00c4f0)' }} />
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard</h1>
+          <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>Overview of all reps and deals</p>
         </div>
         <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
           {adminPeriodIndicator && <div className="tab-indicator" style={adminPeriodIndicator} />}
@@ -1745,28 +1746,23 @@ function AdminDashboard({
       </div>
 
       {/* Quick-action toolbar */}
-      <div className="flex gap-3 mb-6">
+      <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
         {[
-          { label: 'Run Payroll', href: '/dashboard/payroll', icon: Banknote, accent: 'from-emerald-500 to-emerald-400' },
-          { label: 'Add Rep', href: '/dashboard/reps', icon: UserPlus, accent: 'from-purple-500 to-purple-400' },
-          { label: 'New Deal', href: '/dashboard/new-deal', icon: PlusCircle, accent: 'from-blue-500 to-blue-400' },
-          { label: 'Settings', href: '/dashboard/settings', icon: Settings, accent: 'from-yellow-500 to-yellow-400' },
-        ].map((action) => {
-          const Icon = action.icon;
-          return (
-            <Link
-              key={action.label}
-              href={action.href}
-              className="card-surface rounded-xl px-4 py-2.5 flex items-center gap-2.5 text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 hover:translate-y-[-1px] active:scale-[0.97]"
-              style={{ '--card-accent': ACCENT_COLOR_MAP[action.accent] ?? 'transparent' } as CSSProperties}
-            >
-              <div className={`p-1.5 rounded-lg bg-gradient-to-r ${action.accent} bg-opacity-15`} style={{ backgroundColor: (ACCENT_COLOR_MAP[action.accent] ?? 'transparent').replace('0.08', '0.15') }}>
-                <Icon className="w-3.5 h-3.5 text-white" />
-              </div>
-              {action.label}
-            </Link>
-          );
-        })}
+          { label: 'Run Payroll', color: '#00e07a', grad: 'linear-gradient(135deg, #00160d, #001c10)', icon: '\u25C8', href: '/dashboard/payroll' },
+          { label: 'Add Rep', color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a, #0e0820)', icon: '\u25CE', href: '/dashboard/reps' },
+          { label: 'New Deal', color: '#00c4f0', grad: 'linear-gradient(135deg, #000e16, #001218)', icon: '\u2295', href: '/dashboard/new-deal' },
+          { label: 'Settings', color: '#ffb020', grad: 'linear-gradient(135deg, #120b00, #180e00)', icon: '\u2699', href: '/dashboard/settings' },
+        ].map(a => (
+          <Link key={a.label} href={a.href} style={{
+            display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center',
+            background: a.grad, border: `1px solid ${a.color}35`, borderRadius: 12,
+            padding: '11px 20px', color: a.color, fontSize: 13, fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            transition: 'all 0.2s', textDecoration: 'none',
+          }}>
+            <span style={{ fontSize: 16 }}>{a.icon}</span> {a.label}
+          </Link>
+        ))}
       </div>
 
       {/* Top 6 stats */}
@@ -1774,10 +1770,10 @@ function AdminDashboard({
         {topStats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
-              <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
+            <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${stat.accentHex}14` } as CSSProperties}>
+              <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: stat.accentHex }} />
               <div className="flex items-center justify-between mb-3">
-                <span className="text-slate-400 text-xs font-medium uppercase tracking-wider leading-tight flex items-center gap-1">
+                <span className="text-xs font-medium uppercase tracking-wider leading-tight flex items-center gap-1" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>
                   {stat.label}
                   {'tooltip' in stat && stat.tooltip && (
                     <span className="relative group/tip">
@@ -1789,11 +1785,11 @@ function AdminDashboard({
                   )}
                 </span>
                 <div className="flex items-center gap-1">
-                  <Icon className={`w-4 h-4 ${stat.color} shrink-0`} />
+                  <Icon className="w-4 h-4 shrink-0" style={{ color: stat.accentHex }} />
                   <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
-              <AnimatedStatValue raw={stat.raw} format={stat.format} className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${'gradient' in stat && stat.gradient ? stat.gradient : stat.color}`} />
+              <AnimatedStatValue raw={stat.raw} format={stat.format} className="stat-value text-3xl font-black tabular-nums animate-count-up" style={{ color: stat.accentHex, fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: `0 0 20px ${stat.accentHex}50` }} />
             </Link>
           );
         })}
@@ -1802,10 +1798,10 @@ function AdminDashboard({
       {/* Pipeline stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {pipelineStats.map((s, i) => (
-          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[s.accentGradient] ?? 'transparent' } as CSSProperties}>
-            <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${s.accentGradient}`} />
+          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${s.accentHex}14` } as CSSProperties}>
+            <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: s.accentHex }} />
             <div className="flex items-center justify-between mb-2">
-              <p className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
+              <p className="text-xs font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>
                 {s.label}
                 {'tooltip' in s && s.tooltip && (
                   <span className="relative group/tip">
@@ -1818,7 +1814,7 @@ function AdminDashboard({
               </p>
               <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <AnimatedStatValue raw={s.raw} format={s.format} className={`stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up ${s.color}`} />
+            <AnimatedStatValue raw={s.raw} format={s.format} className="stat-value text-3xl font-black tabular-nums animate-count-up" style={{ color: s.accentHex, fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: `0 0 20px ${s.accentHex}50` }} />
           </Link>
         ))}
       </div>
@@ -1826,10 +1822,8 @@ function AdminDashboard({
       {/* Pipeline Overview — stacked bar + phase chips */}
       <div className="card-surface rounded-2xl p-5 mb-8">
         <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(59,130,246,0.15)' }}>
-            <FolderKanban className="w-4 h-4 text-blue-400" />
-          </div>
-          <h2 className="text-white font-bold text-base tracking-tight">Pipeline Overview</h2>
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#00e07a', boxShadow: '0 0 6px #00e07a80' }} />
+          <h2 className="text-white font-bold text-base tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>Pipeline Overview</h2>
         </div>
         <PipelineOverview activeProjects={allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase))} />
       </div>
@@ -1865,7 +1859,7 @@ function AdminDashboard({
               <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.15)' }}>
                 <BarChart2 className="w-4 h-4 text-amber-400" />
               </div>
-              <h2 className="text-white font-bold text-base tracking-tight flex-1">Installer Insights</h2>
+              <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Installer Insights</h2>
               {insightsExpanded
                 ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
                 : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
@@ -1935,7 +1929,7 @@ function AdminDashboard({
               <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
                 <AlertCircle className="w-4 h-4 text-red-400" />
               </div>
-              <h2 className="text-white font-bold text-base tracking-tight flex-1">Cancellation Reasons</h2>
+              <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons</h2>
               <span className="text-slate-500 text-xs mr-2">{cancelledProjects.length} cancelled</span>
               {cancellationExpanded
                 ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
@@ -1992,7 +1986,7 @@ function AdminDashboard({
             onClick={() => setRecentExpanded(e => !e)}
             className="flex items-center gap-2 text-left group"
           >
-            <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
+            <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Projects</h2>
             {recentExpanded
               ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
               : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
