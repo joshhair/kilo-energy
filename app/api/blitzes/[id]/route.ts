@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { requireAuth, requireAdmin } from '../../../../lib/api-auth';
+import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
 
-// GET /api/blitzes/[id] — Get a single blitz
+// GET /api/blitzes/[id] — Get a single blitz. Access:
+// - admin, project_manager: yes
+// - owner, creator, or approved participant: yes
+// - everyone else: 403
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const blitz = await prisma.blitz.findUnique({
     where: { id },
@@ -20,6 +24,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
   if (!blitz) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  // ─── Visibility check ───
+  if (user.role !== 'admin' && user.role !== 'project_manager') {
+    const isOwner = blitz.ownerId === user.id;
+    const isCreator = blitz.createdById === user.id;
+    const isParticipant = blitz.participants.some(
+      (p) => p.userId === user.id && p.joinStatus === 'approved',
+    );
+    if (!isOwner && !isCreator && !isParticipant) {
+      return NextResponse.json({ error: 'Forbidden — not a participant' }, { status: 403 });
+    }
+  }
+
   return NextResponse.json(blitz);
 }
 

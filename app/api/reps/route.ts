@@ -1,16 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
+import { requireAdmin, requireInternalUser } from '../../../lib/api-auth';
 
-// GET /api/reps — List users by role (admin or PM)
+// GET /api/reps — List users by role.
+// - admin: full records (PII included)
+// - everyone else: PII (email, phone) is stripped
+// Reps/SDs/PMs all need the list for pickers (setter dropdown, new deal
+// form, etc.), but no one except admin needs contact info.
 export async function GET(req: NextRequest) {
-  try { await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
+  let viewer;
+  try { viewer = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const role = req.nextUrl.searchParams.get('role') || 'rep';
   const users = await prisma.user.findMany({
     where: { role, active: true },
     orderBy: { lastName: 'asc' },
   });
-  return NextResponse.json(users);
+
+  if (viewer.role === 'admin') {
+    return NextResponse.json(users);
+  }
+
+  // Strip PII + admin-only flags for non-admin viewers.
+  const stripped = users.map((u) => ({
+    id: u.id,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    role: u.role,
+    repType: u.repType,
+    active: u.active,
+    // No email, phone, or permission flags (canCreateDeals, canAccessBlitz, etc.)
+  }));
+  return NextResponse.json(stripped);
 }
 
 // POST /api/reps — Create a new rep (admin only)

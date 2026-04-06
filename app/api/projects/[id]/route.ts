@@ -1,28 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../../lib/db';
-import { requireAdmin } from '../../../../lib/api-auth';
+import { requireAdmin, requireInternalUser, userCanAccessProject } from '../../../../lib/api-auth';
 
 // Financial fields that project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS = ['m1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson'];
 
+// Fields reps/sub-dealers are NEVER allowed to modify on their own deals —
+// they can change notes, flag, and customer-facing info but not money,
+// phase (admin/PM only), or ownership.
+const REP_BLOCKED_FIELDS = [
+  'm1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid',
+  'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson',
+  'phase', 'closerId', 'setterId', 'subDealerId',
+];
+
 // PATCH /api/projects/[id] — Update a project (phase change, notes, flag, etc.)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const body = await req.json();
 
-  // Check if the user is a project manager — strip financial fields if so
-  const clerkUser = await currentUser();
-  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
-  if (email) {
-    const internalUser = await prisma.user.findFirst({ where: { email, active: true } });
-    if (internalUser?.role === 'project_manager') {
-      for (const field of PM_BLOCKED_FIELDS) {
-        delete body[field];
-      }
-    }
+  // ─── Project ownership check ───
+  // Reps + sub-dealers can only modify deals they're on.
+  const canAccess = await userCanAccessProject(user, id);
+  if (!canAccess) {
+    return NextResponse.json({ error: 'Forbidden — no access to this project' }, { status: 403 });
+  }
+
+  // ─── Field-level authorization ───
+  if (user.role === 'project_manager') {
+    for (const field of PM_BLOCKED_FIELDS) delete body[field];
+  } else if (user.role === 'rep' || user.role === 'sub-dealer') {
+    for (const field of REP_BLOCKED_FIELDS) delete body[field];
   }
 
   // Validate blitz participation before writing (mirrors POST /api/projects validation)

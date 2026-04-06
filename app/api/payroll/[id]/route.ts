@@ -22,10 +22,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(entry);
 }
 
-// DELETE /api/payroll/[id] (admin or PM — PMs need this for phase rollback)
+// DELETE /api/payroll/[id]
+// Admin: can delete any payroll entry.
+// PM: can only delete DRAFT entries (legitimate use case is phase rollback
+//     cleanup; PMs must never be able to reach Pending/Paid entries).
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  // For PMs, verify the entry is still Draft. Admin bypasses this.
+  if (actor.role !== 'admin') {
+    const entry = await prisma.payrollEntry.findUnique({ where: { id }, select: { status: true } });
+    if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (entry.status !== 'Draft') {
+      return NextResponse.json({ error: 'Forbidden — only admins can delete Pending or Paid entries' }, { status: 403 });
+    }
+  }
+
   await prisma.payrollEntry.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

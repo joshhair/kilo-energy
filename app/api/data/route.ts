@@ -1,12 +1,54 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
+import { getInternalUser } from '../../../lib/api-auth';
 
-// GET /api/data — Returns all data needed to hydrate the app context.
-// This replaces the hardcoded constants from lib/data.ts.
+// GET /api/data — Returns the data needed to hydrate the app context,
+// SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
+// projects, payroll, reimbursements, etc. This is the critical server-side
+// authorization layer — client-side filters were previously cosmetic.
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getInternalUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const isAdmin = user.role === 'admin';
+  const isPM = user.role === 'project_manager';
+  const isRep = user.role === 'rep';
+  const isSubDealer = user.role === 'sub-dealer';
+
+  // ─── Project filter: who sees which projects? ───
+  // Admin: all. PM: all. Rep: closer or setter. Sub-dealer: subDealerId match.
+  const projectWhere: Record<string, unknown> = {};
+  if (isRep) {
+    projectWhere.OR = [{ closerId: user.id }, { setterId: user.id }];
+  } else if (isSubDealer) {
+    projectWhere.OR = [{ subDealerId: user.id }, { closerId: user.id }];
+  }
+  // Admin + PM: no filter (empty where)
+
+  // ─── Payroll filter: rep/sub-dealer only see own. PM sees own (if any). ───
+  const payrollWhere: Record<string, unknown> = {};
+  if (!isAdmin) {
+    payrollWhere.repId = user.id;
+  }
+
+  // ─── Reimbursements: rep/sub-dealer/PM only see own ───
+  const reimbWhere: Record<string, unknown> = {};
+  if (!isAdmin) {
+    reimbWhere.repId = user.id;
+  }
+
+  // ─── Trainer assignments: rep sees where they're trainer or trainee. Admin sees all. ───
+  const trainerWhere: Record<string, unknown> = {};
+  if (!isAdmin) {
+    trainerWhere.OR = [{ trainerId: user.id }, { traineeId: user.id }];
+  }
+
+  // ─── Incentives: rep/sub-dealer see incentives targeting them or company-wide ───
+  const incentiveWhere: Record<string, unknown> = {};
+  if (!isAdmin) {
+    incentiveWhere.OR = [{ targetRepId: user.id }, { targetRepId: null }];
+  }
+
   const [
     users,
     installers,
@@ -26,6 +68,7 @@ export async function GET() {
     prisma.installer.findMany({ orderBy: { name: 'asc' } }),
     prisma.financer.findMany({ orderBy: { name: 'asc' } }),
     prisma.project.findMany({
+      where: projectWhere,
       include: {
         closer: true,
         setter: true,
@@ -36,14 +79,17 @@ export async function GET() {
       orderBy: { soldDate: 'desc' },
     }),
     prisma.payrollEntry.findMany({
+      where: payrollWhere,
       include: { rep: true, project: true },
       orderBy: { date: 'desc' },
     }),
     prisma.reimbursement.findMany({
+      where: reimbWhere,
       include: { rep: true },
       orderBy: { date: 'desc' },
     }),
     prisma.trainerAssignment.findMany({
+      where: trainerWhere,
       include: {
         trainer: true,
         trainee: true,
@@ -51,6 +97,7 @@ export async function GET() {
       },
     }),
     prisma.incentive.findMany({
+      where: incentiveWhere,
       include: { milestones: true, targetRep: true },
       orderBy: { startDate: 'desc' },
     }),
@@ -75,9 +122,9 @@ export async function GET() {
     prisma.installerPrepaidOption.findMany(),
   ]);
 
-  // Transform to match the shapes the existing context expects
-
-  // Reps: filter to role='rep' and add computed `name` field
+  // ─── Reps: strip PII (email, phone) for non-admin viewers ───
+  // Reps still need the list (to pick a setter in new-deal form, to display
+  // names on shared deals), but not contact info.
   const reps = users
     .filter((u) => u.role === 'rep')
     .map((u) => ({
@@ -85,15 +132,14 @@ export async function GET() {
       firstName: u.firstName,
       lastName: u.lastName,
       name: `${u.firstName} ${u.lastName}`,
-      email: u.email,
-      phone: u.phone,
+      email: isAdmin ? u.email : '',
+      phone: isAdmin ? u.phone : '',
       role: 'rep' as const,
       repType: u.repType as 'closer' | 'setter' | 'both',
       canRequestBlitz: u.canRequestBlitz ?? false,
       canCreateBlitz: u.canCreateBlitz ?? false,
     }));
 
-  // Sub-dealers: filter to role='sub-dealer'
   const subDealers = users
     .filter((u) => u.role === 'sub-dealer')
     .map((u) => ({
@@ -101,31 +147,31 @@ export async function GET() {
       firstName: u.firstName,
       lastName: u.lastName,
       name: `${u.firstName} ${u.lastName}`,
-      email: u.email,
-      phone: u.phone,
+      email: isAdmin ? u.email : '',
+      phone: isAdmin ? u.phone : '',
       role: 'sub-dealer' as const,
     }));
 
-  // Installers: just the name list (for backward compat)
   const installerNames = installers.map((i) => ({ name: i.name, active: i.active }));
   const financerNames = financers.map((f) => ({ name: f.name, active: f.active }));
 
-  // Installer pay configs
   const installerPayConfigs: Record<string, { installPayPct: number }> = {};
   for (const inst of installers) {
     installerPayConfigs[inst.name] = { installPayPct: inst.installPayPct };
   }
 
-  // Map installer IDs to names for FK resolution
   const instIdToName: Record<string, string> = {};
   for (const inst of installers) instIdToName[inst.id] = inst.name;
   const finIdToName: Record<string, string> = {};
   for (const fin of financers) finIdToName[fin.id] = fin.name;
 
-  // Projects: transform FKs back to name strings for backward compat
+  // ─── Projects: strip financial fields for PMs ───
+  // Admin: everything. PM: no m1/m2/m3 amounts or setter M2/M3. Rep/SD: full
+  // (own deals only — already filtered by where clause above).
+  const stripFinancials = isPM;
   const transformedProjects = projects.map((p) => ({
     id: p.id,
-    customerId: p.id, // no separate customer entity yet
+    customerId: p.id,
     customerName: p.customerName,
     repId: p.closerId,
     repName: `${p.closer.firstName} ${p.closer.lastName}`,
@@ -136,23 +182,23 @@ export async function GET() {
     financer: p.financer.name,
     productType: p.productType,
     kWSize: p.kWSize,
-    netPPW: p.netPPW,
+    netPPW: stripFinancials ? 0 : p.netPPW,
     phase: p.phase,
-    m1Paid: p.m1Paid,
-    m1Amount: p.m1Amount,
-    m2Paid: p.m2Paid,
-    m2Amount: p.m2Amount,
-    m3Paid: p.m3Paid ?? false,
-    m3Amount: p.m3Amount ?? undefined,
-    setterM2Amount: p.setterM2Amount ?? undefined,
-    setterM3Amount: p.setterM3Amount ?? undefined,
+    m1Paid: stripFinancials ? false : p.m1Paid,
+    m1Amount: stripFinancials ? 0 : p.m1Amount,
+    m2Paid: stripFinancials ? false : p.m2Paid,
+    m2Amount: stripFinancials ? 0 : p.m2Amount,
+    m3Paid: stripFinancials ? false : (p.m3Paid ?? false),
+    m3Amount: stripFinancials ? undefined : (p.m3Amount ?? undefined),
+    setterM2Amount: stripFinancials ? undefined : (p.setterM2Amount ?? undefined),
+    setterM3Amount: stripFinancials ? undefined : (p.setterM3Amount ?? undefined),
     notes: p.notes,
     flagged: p.flagged,
     solarTechProductId: p.installer.name === 'SolarTech' ? (p.productId ?? undefined) : undefined,
     installerProductId: p.installer.name !== 'SolarTech' ? (p.productId ?? undefined) : undefined,
     pricingVersionId: p.installerPricingVersionId ?? undefined,
     pcPricingVersionId: p.productPricingVersionId ?? undefined,
-    baselineOverride: p.baselineOverrideJson ? JSON.parse(p.baselineOverrideJson) : undefined,
+    baselineOverride: stripFinancials ? undefined : (p.baselineOverrideJson ? JSON.parse(p.baselineOverrideJson) : undefined),
     prepaidSubType: p.prepaidSubType ?? undefined,
     leadSource: p.leadSource ?? undefined,
     blitzId: p.blitzId ?? undefined,
@@ -162,7 +208,6 @@ export async function GET() {
     cancellationNotes: p.cancellationNotes ?? undefined,
   }));
 
-  // Payroll entries: transform FKs to name strings
   const transformedPayroll = payrollEntries.map((pe) => ({
     id: pe.id,
     repId: pe.repId,
@@ -177,7 +222,6 @@ export async function GET() {
     notes: pe.notes,
   }));
 
-  // Reimbursements
   const transformedReimbursements = reimbursements.map((r) => ({
     id: r.id,
     repId: r.repId,
@@ -189,7 +233,6 @@ export async function GET() {
     receiptName: r.receiptName ?? undefined,
   }));
 
-  // Trainer assignments
   const transformedTrainers = trainerAssignments.map((ta) => ({
     id: ta.id,
     trainerId: ta.trainerId,
@@ -200,7 +243,6 @@ export async function GET() {
     })),
   }));
 
-  // Incentives
   const transformedIncentives = incentives.map((inc) => ({
     id: inc.id,
     title: inc.title,
@@ -221,7 +263,8 @@ export async function GET() {
     blitzId: inc.blitzId ?? null,
   }));
 
-  // Installer pricing versions: transform to match existing InstallerPricingVersion type
+  // Installer pricing versions — non-sensitive reference data, all users need
+  // these to render deal forms and commission calculations.
   const transformedIPV = installerPricingVersions.map((v) => {
     const installerName = instIdToName[v.installerId] ?? v.installerId;
     const isTiered = v.rateType === 'tiered' || v.tiers.length > 1;
@@ -253,12 +296,10 @@ export async function GET() {
     };
   });
 
-  // SolarTech products: transform to match SolarTechProduct type
   const solarTechInstaller = installers.find((i) => i.name === 'SolarTech');
   const solarTechProducts = products
     .filter((p) => p.installerId === solarTechInstaller?.id)
     .map((p) => {
-      // Use the active pricing version tiers, or fall back to first version
       const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null)
         ?? p.pricingVersions[0];
       return {
@@ -285,7 +326,6 @@ export async function GET() {
       };
     });
 
-  // Product catalog products (non-SolarTech products)
   const productCatalogProducts = products
     .filter((p) => p.installerId !== solarTechInstaller?.id)
     .map((p) => {
@@ -307,7 +347,6 @@ export async function GET() {
       };
     });
 
-  // Product catalog installer configs
   const pcInstallerConfigs: Record<string, {
     families: string[];
     familyFinancerMap?: Record<string, string>;
@@ -322,7 +361,6 @@ export async function GET() {
     };
   }
 
-  // Product catalog pricing versions
   const transformedPCPV = productPricingVersions.map((v) => ({
     id: v.id,
     productId: v.productId,
@@ -339,7 +377,6 @@ export async function GET() {
     })),
   }));
 
-  // Prepaid options grouped by installer
   const installerPrepaidOptions: Record<string, string[]> = {};
   for (const opt of prepaidOptions) {
     const installerName = instIdToName[opt.installerId] ?? opt.installerId;
@@ -366,11 +403,15 @@ export async function GET() {
     productCatalogInstallerConfigs: pcInstallerConfigs,
     productCatalogPricingVersions: transformedPCPV,
     installerPrepaidOptions,
-    // Also return ID maps so the client can resolve FKs for mutations
     _idMaps: {
       installerNameToId: Object.fromEntries(installers.map((i) => [i.name, i.id])),
       financerNameToId: Object.fromEntries(financers.map((f) => [f.name, f.id])),
       repIdMap: Object.fromEntries(users.filter((u) => u.role === 'rep').map((u) => [u.id, { name: `${u.firstName} ${u.lastName}` }])),
+    },
+    // Current user role — so the client can mirror server enforcement in UI
+    _currentUser: {
+      id: user.id,
+      role: user.role,
     },
   });
 }

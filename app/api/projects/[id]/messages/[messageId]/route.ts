@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../../lib/db';
+import { requireInternalUser, requireProjectAccess } from '../../../../../../lib/api-auth';
 
 // PATCH /api/projects/[id]/messages/[messageId] — Update check items or mark mentions read
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; messageId: string }> },
 ) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { messageId } = await params;
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
+  const { id, messageId } = await params;
+  try { await requireProjectAccess(user, id); } catch (r) { return r as NextResponse; }
   const body = await req.json();
 
-  // Toggle check item completion
+  // Toggle check item completion — must be a user on the project.
   if (body.checkItemId) {
-    const data: any = {};
+    const data: Record<string, unknown> = {};
     if (body.completed !== undefined) {
       data.completed = body.completed;
-      data.completedBy = body.completedBy ?? null;
+      // Force completedBy to the current user — do not trust client-supplied value.
+      data.completedBy = body.completed ? user.id : null;
       data.completedAt = body.completed ? new Date() : null;
     }
     if (body.dueDate !== undefined) {
@@ -30,10 +32,10 @@ export async function PATCH(
     return NextResponse.json(updated);
   }
 
-  // Mark mentions as read
-  if (body.markMentionRead && body.userId) {
+  // Mark mentions as read — force targetUserId to current user, ignore body.
+  if (body.markMentionRead) {
     await prisma.projectMention.updateMany({
-      where: { messageId, userId: body.userId, readAt: null },
+      where: { messageId, userId: user.id, readAt: null },
       data: { readAt: new Date() },
     });
     return NextResponse.json({ success: true });

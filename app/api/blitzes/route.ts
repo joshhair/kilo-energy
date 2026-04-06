@@ -1,21 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
-import { requireAuth } from '../../../lib/api-auth';
+import { requireInternalUser } from '../../../lib/api-auth';
 
-// GET /api/blitzes — List all blitzes
+// GET /api/blitzes — List blitzes scoped to the current user's role.
+// Admin: all blitzes. PM: all blitzes if canAccessBlitz is true. Others:
+// only blitzes they own, created, or participate in (approved status).
 export async function GET() {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
-  // PM must have canAccessBlitz permission
-  const clerkU = await currentUser();
-  const email = clerkU?.emailAddresses?.[0]?.emailAddress;
-  if (email) {
-    const u = await prisma.user.findFirst({ where: { email, active: true } });
-    if (u?.role === 'project_manager' && !u.canAccessBlitz) {
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
+
+  if (user.role === 'project_manager') {
+    const pm = await prisma.user.findUnique({ where: { id: user.id }, select: { canAccessBlitz: true } });
+    if (!pm?.canAccessBlitz) {
       return NextResponse.json({ error: 'Forbidden — blitz access not enabled' }, { status: 403 });
     }
   }
+
+  // ─── Build a where clause that limits non-admin/non-PM users ───
+  const where: Record<string, unknown> =
+    user.role === 'admin' || user.role === 'project_manager'
+      ? {}
+      : {
+          OR: [
+            { ownerId: user.id },
+            { createdById: user.id },
+            { participants: { some: { userId: user.id, joinStatus: 'approved' } } },
+          ],
+        };
+
   const blitzes = await prisma.blitz.findMany({
+    where,
     include: {
       createdBy: true,
       owner: true,
@@ -31,18 +45,24 @@ export async function GET() {
   return NextResponse.json(blitzes);
 }
 
-// POST /api/blitzes — Create a new blitz
+// POST /api/blitzes — Create a new blitz. Admin or user with canCreateBlitz.
+// Owner/createdBy are forced to the current user to prevent spoofing.
 export async function POST(req: NextRequest) {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
-  const clerkU = await currentUser();
-  const email = clerkU?.emailAddresses?.[0]?.emailAddress;
-  if (email) {
-    const u = await prisma.user.findFirst({ where: { email, active: true } });
-    if (u && u.role !== 'admin' && !u.canCreateBlitz) {
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
+
+  if (user.role !== 'admin') {
+    const u = await prisma.user.findUnique({ where: { id: user.id }, select: { canCreateBlitz: true } });
+    if (!u?.canCreateBlitz) {
       return NextResponse.json({ error: 'Forbidden — blitz creation not enabled' }, { status: 403 });
     }
   }
+
   const body = await req.json();
+  // Force createdById + ownerId to the current user unless admin supplies an ownerId override.
+  const ownerId = user.role === 'admin' && body.ownerId ? body.ownerId : user.id;
+  const createdById = user.id;
+
   const blitz = await prisma.blitz.create({
     data: {
       name: body.name,
@@ -52,11 +72,11 @@ export async function POST(req: NextRequest) {
       endDate: body.endDate,
       notes: body.notes || '',
       status: body.status || 'upcoming',
-      createdById: body.createdById,
-      ownerId: body.ownerId,
+      createdById,
+      ownerId,
       // Auto-add the owner as an approved participant
       participants: {
-        create: { userId: body.ownerId, joinStatus: 'approved' },
+        create: { userId: ownerId, joinStatus: 'approved' },
       },
     },
     include: {

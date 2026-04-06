@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
+import { requireInternalUser, requireProjectAccess } from '../../../../../lib/api-auth';
 
-// GET /api/projects/[id]/messages — List messages for a project (paginated)
+// GET /api/projects/[id]/messages — List messages for a project (paginated).
+// Access: admin, PM, or a rep/sub-dealer who is on the deal.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+  try { await requireProjectAccess(user, id); } catch (r) { return r as NextResponse; }
 
   const url = new URL(_req.url);
   const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '30', 10) || 30, 1), 100);
@@ -26,12 +28,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json({ messages, total });
 }
 
-// POST /api/projects/[id]/messages — Create a new message
+// POST /api/projects/[id]/messages — Create a new message.
+// Access: same as GET. Author is forced to the current user to prevent spoofing.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+  try { await requireProjectAccess(user, id); } catch (r) { return r as NextResponse; }
   const body = await req.json();
+
+  // Force author to the current user — do not trust client-supplied authorId.
+  body.authorId = user.id;
+  body.authorName = `${user.firstName} ${user.lastName}`;
+  body.authorRole = user.role;
 
   if (!body.authorId || !body.authorName || !body.authorRole || !body.text) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

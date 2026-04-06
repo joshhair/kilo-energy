@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { requireAdmin, requireAdminOrPM } from '../../../../lib/api-auth';
+import { requireAdmin } from '../../../../lib/api-auth';
 
-// GET /api/users/[id] — Get a single user (admin or PM)
+// GET /api/users/[id] — Get a single user (admin only). Contains PII
+// (email, phone) and permission flags — not exposed to PMs.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });

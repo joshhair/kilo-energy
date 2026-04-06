@@ -1,26 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
-import { requireAuth, requireAdmin } from '../../../lib/api-auth';
+import { requireInternalUser } from '../../../lib/api-auth';
 
-// GET /api/blitz-requests — List all blitz requests
+// GET /api/blitz-requests — List blitz requests scoped to role.
+// Admin: all requests. Everyone else: only their own requests.
 export async function GET() {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
+  const where = user.role === 'admin' ? {} : { requestedById: user.id };
   const requests = await prisma.blitzRequest.findMany({
+    where,
     include: { requestedBy: true, blitz: true },
     orderBy: { createdAt: 'desc' },
   });
   return NextResponse.json(requests);
 }
 
-// POST /api/blitz-requests — Submit a blitz request (create or cancel)
+// POST /api/blitz-requests — Submit a blitz request (create or cancel).
+// Caller must have canRequestBlitz. requestedById is forced to the current
+// user to prevent spoofing.
 export async function POST(req: NextRequest) {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
-  const clerkUser = await currentUser();
-  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
-  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await prisma.user.findFirst({ where: { email } });
-  if (!user?.canRequestBlitz) return NextResponse.json({ error: 'Forbidden — blitz request permission required' }, { status: 403 });
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
+  const internal = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { canRequestBlitz: true },
+  });
+  if (!internal?.canRequestBlitz) {
+    return NextResponse.json({ error: 'Forbidden — blitz request permission required' }, { status: 403 });
+  }
   const body = await req.json();
   const type = body.type || 'create';
 

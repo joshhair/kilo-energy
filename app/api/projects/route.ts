@@ -1,22 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
+import { requireInternalUser } from '../../../lib/api-auth';
 
-// POST /api/projects — Create a new project/deal
+// POST /api/projects — Create a new project/deal.
+// - admin: can create deals with any closer/setter/sub-dealer
+// - project_manager: must have canCreateDeals flag; can create for any rep
+// - rep: must be the closer or the setter on the deal they create
+// - sub-dealer: must be the sub-dealer on the deal they create
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
 
-  // PM must have canCreateDeals permission
-  const clerkUser = await currentUser();
-  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
-  if (email) {
-    const internalUser = await prisma.user.findFirst({ where: { email, active: true } });
-    if (internalUser?.role === 'project_manager' && !internalUser.canCreateDeals) {
+  if (user.role === 'project_manager') {
+    const pm = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { canCreateDeals: true },
+    });
+    if (!pm?.canCreateDeals) {
       return NextResponse.json({ error: 'Forbidden — deal creation not enabled for this account' }, { status: 403 });
     }
   }
+
   const body = await req.json();
+
+  // ─── Ownership check: reps + SDs can only create deals they're on ───
+  if (user.role === 'rep') {
+    const isCloser = body.closerId === user.id;
+    const isSetter = body.setterId === user.id;
+    if (!isCloser && !isSetter) {
+      return NextResponse.json({ error: 'Forbidden — reps can only create deals they are on' }, { status: 403 });
+    }
+  } else if (user.role === 'sub-dealer') {
+    if (body.subDealerId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden — sub-dealers can only create their own deals' }, { status: 403 });
+    }
+  }
 
   // Validate blitz participation before writing
   if (body.blitzId && body.closerId) {
