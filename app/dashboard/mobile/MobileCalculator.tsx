@@ -17,6 +17,14 @@ import {
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Format a number as USD; safe against NaN / undefined / Infinity. */
+function fmt$(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return '$0';
+  return `$${Math.round(n).toLocaleString()}`;
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function MobileCalculator() {
@@ -269,25 +277,25 @@ export default function MobileCalculator() {
       {hasInput && soldPPW > 0 && (
         <MobileCard hero>
           <p className="text-base uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
-          <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-            ${closerTotal.toLocaleString()}
+          <p className="text-4xl font-black tabular-nums break-words" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(1.75rem, 9vw, 2.25rem)' }}>
+            {fmt$(closerTotal)}
           </p>
 
           <div className="mt-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
-              <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${closerTotal.toLocaleString()}</span>
+              <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
             </div>
             {setterTotal > 0 && (
               <div className="flex items-center justify-between">
                 <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
-                <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${setterTotal.toLocaleString()}</span>
+                <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
               </div>
             )}
             {currentRole === 'admin' && (
               <div className="flex items-center justify-between">
                 <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
-                <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${kiloTotal.toLocaleString()}</span>
+                <span className="text-xl font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloTotal)}</span>
               </div>
             )}
           </div>

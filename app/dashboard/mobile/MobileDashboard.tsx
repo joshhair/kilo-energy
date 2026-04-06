@@ -72,9 +72,12 @@ function relativeTime(dateStr: string): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-function stalledDays(dateStr: string): number {
+function stalledDays(dateStr: string | null | undefined): number | null {
+  if (!dateStr) return null;
   const [y, m, d] = dateStr.split('-').map(Number);
+  if (!y || !m || !d) return null;
   const then = new Date(y, m - 1, d);
+  if (Number.isNaN(then.getTime())) return null;
   return Math.floor((Date.now() - then.getTime()) / 86_400_000);
 }
 
@@ -185,7 +188,7 @@ export default function MobileDashboard() {
                     <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                     <MobileBadge value={p.phase} />
                   </div>
-                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
+                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{stalledDays(p.soldDate) !== null ? `Stalled ${stalledDays(p.soldDate)}d` : '—'}</span>
                 </button>
               ))}
             </MobileCard>
@@ -303,7 +306,7 @@ export default function MobileDashboard() {
         {/* Hero — next payout */}
         <MobileCard hero>
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-          <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 9vw, 2.5rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
           <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
             <div
@@ -467,7 +470,7 @@ export default function MobileDashboard() {
         {onPaceAnnual > 0 ? (
           <>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.9rem, 9.5vw, 2.8rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
               {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
             </p>
@@ -483,7 +486,7 @@ export default function MobileDashboard() {
         ) : (
           <>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.9rem, 9.5vw, 2.8rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
           </>
         )}
@@ -528,7 +531,7 @@ export default function MobileDashboard() {
                 <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                 <MobileBadge value={p.phase} />
               </div>
-              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>Stalled {stalledDays(p.soldDate)}d</span>
+              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{stalledDays(p.soldDate) !== null ? `Stalled ${stalledDays(p.soldDate)}d` : '—'}</span>
             </button>
           ))}
         </MobileCard>

@@ -224,6 +224,10 @@ export default function MobileNewDeal() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  // Synchronous lock — React batches state updates inside the same event
+  // tick, so `submitting` (state) still reads false on a rapid double-tap.
+  // The ref flips immediately and guards against double-submission.
+  const submittingRef = useRef(false);
   const [submitted, setSubmitted] = useState<SubmittedDeal | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -422,9 +426,11 @@ export default function MobileNewDeal() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     if (!dbReady) {
       toast('Data is still loading, please wait...', 'error');
+      submittingRef.current = false;
       return;
     }
 
@@ -446,7 +452,10 @@ export default function MobileNewDeal() {
       if (error) hasErrors = true;
     }
     setErrors(newErrors);
-    if (hasErrors) return;
+    if (hasErrors) {
+      submittingRef.current = false;
+      return;
+    }
 
     setSubmitting(true);
 
@@ -516,6 +525,7 @@ export default function MobileNewDeal() {
       repName: rep?.name ?? currentRepName ?? 'You',
     });
     setSubmitting(false);
+    submittingRef.current = false;
   };
 
   // ── Style helpers ─────────────────────────────────────────────────────────
