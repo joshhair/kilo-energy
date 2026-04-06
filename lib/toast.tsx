@@ -113,9 +113,9 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
 
   const config = {
     success: {
-      icon: <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />,
-      border: 'border-emerald-500/30',
-      progress: 'bg-emerald-500',
+      icon: <CheckCircle className="w-4 h-4 text-[#00e07a] flex-shrink-0" />,
+      border: 'border-[#00e07a]/30',
+      progress: 'bg-[#00e07a]',
     },
     error: {
       icon: <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />,
@@ -123,9 +123,9 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       progress: 'bg-red-500',
     },
     info: {
-      icon: <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />,
-      border: 'border-blue-500/30',
-      progress: 'bg-blue-500',
+      icon: <Info className="w-4 h-4 text-[#00e07a] flex-shrink-0" />,
+      border: 'border-[#00e07a]/30',
+      progress: 'bg-[#00e07a]',
     },
   }[toast.type];
 
@@ -136,7 +136,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       className={[
         'toast-item',
         'pointer-events-auto relative flex items-center gap-3 px-4 py-3',
-        'rounded-xl border bg-slate-900',
+        'rounded-xl border bg-[#161920]',
         config.border,
         'min-w-[280px] max-w-[400px] shadow-2xl overflow-hidden',
         leaving ? 'animate-toast-out' : 'animate-toast-in',
@@ -150,14 +150,14 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
             toast.action!.onClick();
             onDismiss(toast.id);
           }}
-          className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors flex-shrink-0 ml-1"
+          className="text-[#00e07a] hover:text-[#00c4f0] font-medium text-sm transition-colors flex-shrink-0 ml-1"
         >
           {toast.action.label}
         </button>
       )}
       <button
         onClick={() => onDismiss(toast.id)}
-        className="text-slate-500 hover:text-white transition-colors ml-1 flex-shrink-0"
+        className="text-[#8891a8] hover:text-white transition-colors ml-1 flex-shrink-0"
       >
         <X className="w-3.5 h-3.5" />
       </button>

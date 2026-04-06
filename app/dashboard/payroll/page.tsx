@@ -203,7 +203,7 @@ function PayrollPageInner() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }
@@ -373,9 +373,9 @@ function PayrollPageInner() {
       });
   };
 
-  const inputCls = 'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
+  const inputCls = 'w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
 
-  const labelCls = 'block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider';
+  const labelCls = 'block text-xs font-medium text-[#c2c8d8] mb-1.5 uppercase tracking-wider';
 
   if (!isHydrated) {
     return <PayrollSkeleton />;
@@ -393,22 +393,22 @@ function PayrollPageInner() {
       <div className="p-4 md:p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-blue-400" />
+            <CreditCard className="w-5 h-5 text-[#00e07a]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Payroll</h1>
-            <p className="text-slate-400 text-sm font-medium tracking-wide">Your commission and bonus payment history</p>
+            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide">Your commission and bonus payment history</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <StatCard label="Draft" value={myDraft} color="text-slate-300" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
+          <StatCard label="Draft" value={myDraft} color="text-[#c2c8d8]" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
           <StatCard label="Pending" value={myPending} color="text-yellow-400" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
-          <StatCard label="Paid" value={myPaid} color="text-emerald-400" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
+          <StatCard label="Paid" value={myPaid} color="text-[#00e07a]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
         </div>
         {myEntries.length === 0 ? (
           <div className="flex justify-center py-10">
-            <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+            <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
               {/* Illustration — wallet with coins (no earnings yet) */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Wallet body */}
@@ -416,16 +416,16 @@ function PayrollPageInner() {
                 <rect x="10" y="30" width="52" height="4" fill="#334155"/>
                 {/* Coin pocket */}
                 <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                <circle cx="53" cy="42" r="4" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <circle cx="53" cy="42" r="4" fill="#1d2028" stroke="#00c4f0" strokeWidth="1.5" strokeOpacity="0.5"/>
                 {/* Dashed lines — empty content indicator */}
                 <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                 <line x1="17" y1="46" x2="30" y2="46" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                 {/* Dollar sign badge */}
-                <circle cx="60" cy="22" r="9" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <circle cx="60" cy="22" r="9" fill="#1d2028" stroke="#00e07a" strokeWidth="1.5" strokeOpacity="0.5"/>
                 <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
               </svg>
-              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">No payroll entries yet</p>
-              <p className="text-slate-500 text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
+              <p className="text-[#c2c8d8] text-sm font-semibold leading-snug text-center">No payroll entries yet</p>
+              <p className="text-[#8891a8] text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
             </div>
           </div>
         ) : (
@@ -487,12 +487,12 @@ function PayrollPageInner() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-blue-400" />
+            <CreditCard className="w-5 h-5 text-[#00e07a]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Financials</h1>
-            <p className="text-slate-400 text-sm font-medium tracking-wide">Payroll and reimbursement management</p>
+            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide">Payroll and reimbursement management</p>
           </div>
         </div>
         {pageView === 'payroll' && (
@@ -586,9 +586,9 @@ function PayrollPageInner() {
         <div key={pageView} className="animate-tab-enter">
           {/* Date filter */}
           <div className="flex items-center gap-3 mb-5">
-            <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
+            <Filter className="w-4 h-4 text-[#8891a8] flex-shrink-0" />
             <div className="flex items-center gap-2">
-              <label className="text-xs text-slate-500 whitespace-nowrap">From</label>
+              <label className="text-xs text-[#8891a8] whitespace-nowrap">From</label>
               <input
                 type="date"
                 value={reimFilterFrom}
@@ -598,7 +598,7 @@ function PayrollPageInner() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-slate-500 whitespace-nowrap">To</label>
+              <label className="text-xs text-[#8891a8] whitespace-nowrap">To</label>
               <input
                 type="date"
                 value={reimFilterTo}
@@ -610,12 +610,12 @@ function PayrollPageInner() {
             {(reimFilterFrom || reimFilterTo) && (
               <button
                 onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); }}
-                className="text-xs text-slate-500 hover:text-white underline transition-colors"
+                className="text-xs text-[#8891a8] hover:text-white underline transition-colors"
               >
                 Clear
               </button>
             )}
-            <span className="text-slate-600 text-xs ml-auto">{filteredReimbursements.length} request{filteredReimbursements.length !== 1 ? 's' : ''}</span>
+            <span className="text-[#525c72] text-xs ml-auto">{filteredReimbursements.length} request{filteredReimbursements.length !== 1 ? 's' : ''}</span>
           </div>
 
           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
@@ -637,8 +637,8 @@ function PayrollPageInner() {
                     <td className="px-5 py-3 font-medium" style={{ color: '#f0f2f7' }}>{r.repName}</td>
                     <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>{r.description}</td>
                     <td className="px-5 py-3 font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
-                    <td className="px-5 py-3 text-slate-500 text-xs">{formatDate(r.date)}</td>
-                    <td className="px-5 py-3 text-slate-400 text-xs">{r.receiptName || '—'}</td>
+                    <td className="px-5 py-3 text-[#8891a8] text-xs">{formatDate(r.date)}</td>
+                    <td className="px-5 py-3 text-[#c2c8d8] text-xs">{r.receiptName || '—'}</td>
                     <td className="px-5 py-3">
                       <ReimBadge status={r.status} />
                     </td>
@@ -653,7 +653,7 @@ function PayrollPageInner() {
                                 .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); });
                               toast(`Reimbursement approved for ${r.repName}`, 'success');
                             }}
-                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 px-2 py-1 rounded transition-colors"
+                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[#00e07a] px-2 py-1 rounded transition-colors"
                           >
                             <Check className="w-3 h-3" /> Approve
                           </button>
@@ -671,7 +671,7 @@ function PayrollPageInner() {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-slate-600 text-xs">—</span>
+                        <span className="text-[#525c72] text-xs">—</span>
                       )}
                     </td>
                   </tr>
@@ -680,9 +680,9 @@ function PayrollPageInner() {
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
-                        <Receipt className="w-10 h-10 text-slate-600" />
+                        <Receipt className="w-10 h-10 text-[#525c72]" />
                         <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected date range'}</p>
-                        <p className="text-xs text-slate-500">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the date filters to find what you need'}</p>
+                        <p className="text-xs text-[#8891a8]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the date filters to find what you need'}</p>
                       </div>
                     </td>
                   </tr>
@@ -912,37 +912,37 @@ function PayrollPageInner() {
 
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-            <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
+            <div className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 rounded-lg bg-yellow-900/30">
                   <AlertTriangle className="w-5 h-5 text-yellow-400" />
                 </div>
                 <h2 className="text-white font-semibold text-lg">Publish Payroll?</h2>
               </div>
-              <p className="text-slate-400 text-sm mb-3">
-                This will mark all <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-emerald-400 font-semibold">Paid</span>. This action cannot be undone.
+              <p className="text-[#c2c8d8] text-sm mb-3">
+                This will mark all <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[#00e07a] font-semibold">Paid</span>. This action cannot be undone.
               </p>
 
               {/* Per-rep breakdown */}
               {repSummary.length > 0 && (
-                <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl mb-5 overflow-hidden">
-                  <div className="px-4 py-2 border-b border-slate-700/60 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Payout Breakdown</span>
-                    <span className="text-xs text-slate-500">{repSummary.length} rep{repSummary.length !== 1 ? 's' : ''}</span>
+                <div className="bg-[#1d2028]/60 border border-[#272b35]/60 rounded-xl mb-5 overflow-hidden">
+                  <div className="px-4 py-2 border-b border-[#272b35]/60 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[#c2c8d8] uppercase tracking-wider">Payout Breakdown</span>
+                    <span className="text-xs text-[#8891a8]">{repSummary.length} rep{repSummary.length !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="divide-y divide-slate-800/60 max-h-48 overflow-y-auto">
                     {repSummary.map((rep) => (
                       <div key={rep.name} className="flex items-center justify-between px-4 py-2.5">
                         <div>
                           <p className="text-white text-sm font-medium">{rep.name}</p>
-                          <p className="text-slate-500 text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
+                          <p className="text-[#8891a8] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
                         </div>
-                        <span className="text-emerald-400 font-bold tabular-nums">${rep.total.toLocaleString()}</span>
+                        <span className="text-[#00e07a] font-bold tabular-nums">${rep.total.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="px-4 py-2.5 border-t border-slate-700/60 flex items-center justify-between bg-slate-800/40">
-                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total</span>
+                  <div className="px-4 py-2.5 border-t border-[#272b35]/60 flex items-center justify-between bg-[#1d2028]/40">
+                    <span className="text-[#c2c8d8] text-xs font-semibold uppercase tracking-wider">Total</span>
                     <span className="text-white font-black tabular-nums">${totalPending.toLocaleString()}</span>
                   </div>
                 </div>
@@ -951,14 +951,14 @@ function PayrollPageInner() {
               <div className="flex gap-3">
                 <button
                   onClick={handlePublish}
-                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   Publish Payroll
                 </button>
                 <button
                   onClick={() => setShowPublishConfirm(false)}
-                  className="btn-secondary flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Cancel
                 </button>
@@ -971,12 +971,12 @@ function PayrollPageInner() {
       {/* Bonus Modal */}
       {showBonusModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div ref={bonusPanelRef} className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+          <div ref={bonusPanelRef} className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Bonus Payment</h2>
               <button
                 onClick={() => setShowBonusModal(false)}
-                className="text-slate-500 hover:text-white transition-colors"
+                className="text-[#8891a8] hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1026,7 +1026,7 @@ function PayrollPageInner() {
               <div className="flex gap-3 pt-1">
                 <button
                   type="submit"
-                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-primary flex-1 text-white font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   Add Bonus
@@ -1034,7 +1034,7 @@ function PayrollPageInner() {
                 <button
                   type="button"
                   onClick={() => setShowBonusModal(false)}
-                  className="btn-secondary flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Cancel
                 </button>
@@ -1050,10 +1050,10 @@ function PayrollPageInner() {
       {/* Manual Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div ref={paymentPanelRef} className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+          <div ref={paymentPanelRef} className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Deal Payment</h2>
-              <button onClick={() => setShowPaymentModal(false)} className="text-slate-500 hover:text-white transition-colors">
+              <button onClick={() => setShowPaymentModal(false)} className="text-[#8891a8] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1122,7 +1122,7 @@ function PayrollPageInner() {
                   Add Payment
                 </button>
                 <button type="button" onClick={() => setShowPaymentModal(false)}
-                  className="btn-secondary flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>
               </div>
@@ -1139,32 +1139,32 @@ function PayrollPageInner() {
            selection.                                                            */}
       {showActionBar && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-slate-900/80 border border-slate-700/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-[#161920]/80 border border-[#272b35]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
           role="toolbar"
           aria-label="Batch actions for selected entries"
         >
           <div className="flex items-center gap-3">
 
             {/* Selection count badge — blue accent pill */}
-            <span className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+            <span className="flex items-center gap-1.5 bg-[#00e07a]/15 border border-[#00e07a]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
               <span className="text-white font-bold tabular-nums">{selectedIds.size}</span>
-              <span className="text-blue-400 font-medium">selected</span>
+              <span className="text-[#00e07a] font-medium">selected</span>
               {selectedTotal > 0 && (
                 <>
-                  <span className="text-slate-600 mx-0.5">·</span>
-                  <span className="text-emerald-400 font-semibold tabular-nums">${selectedTotal.toLocaleString()}</span>
+                  <span className="text-[#525c72] mx-0.5">·</span>
+                  <span className="text-[#00e07a] font-semibold tabular-nums">${selectedTotal.toLocaleString()}</span>
                 </>
               )}
             </span>
 
             {/* Visual divider */}
-            <div className="h-5 w-px bg-slate-700/80 flex-shrink-0" />
+            <div className="h-5 w-px bg-[#272b35]/80 flex-shrink-0" />
 
             {/* Mark for Payroll — primary action (always Draft context when bar is visible) */}
             {statusTab === 'Draft' && (
               <button
                 onClick={handleMarkForPayroll}
-                className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+                className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 Mark for Payroll →
@@ -1175,7 +1175,7 @@ function PayrollPageInner() {
             <button
               onClick={() => setSelectedIds(new Set())}
               aria-label="Deselect all and dismiss toolbar"
-              className="btn-secondary p-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/40 text-slate-400 hover:text-white transition-colors flex-shrink-0"
+              className="btn-secondary p-1.5 rounded-lg bg-[#272b35]/60 hover:bg-[#525c72]/80 border border-[#272b35]/40 text-[#c2c8d8] hover:text-white transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1230,17 +1230,17 @@ function PayrollSkeleton() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           {/* Icon placeholder */}
-          <div className="h-9 w-9 bg-slate-800 rounded-lg animate-skeleton" />
+          <div className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton" />
           <div className="space-y-2">
             {/* Accent bar + title */}
-            <div className="h-[3px] w-12 bg-slate-700 rounded-full animate-skeleton" />
+            <div className="h-[3px] w-12 bg-[#272b35] rounded-full animate-skeleton" />
             <div
-              className="h-8 w-36 bg-slate-800 rounded animate-skeleton"
+              className="h-8 w-36 bg-[#1d2028] rounded animate-skeleton"
               style={{ animationDelay: '75ms' }}
             />
             {/* Subtitle */}
             <div
-              className="h-3 w-56 bg-slate-800/70 rounded animate-skeleton"
+              className="h-3 w-56 bg-[#1d2028]/70 rounded animate-skeleton"
               style={{ animationDelay: '100ms' }}
             />
           </div>
@@ -1248,11 +1248,11 @@ function PayrollSkeleton() {
         {/* Action buttons — Add Bonus + Publish Payroll */}
         <div className="flex gap-3">
           <div
-            className="h-9 w-24 bg-slate-800 rounded-xl animate-skeleton"
+            className="h-9 w-24 bg-[#1d2028] rounded-xl animate-skeleton"
             style={{ animationDelay: '50ms' }}
           />
           <div
-            className="h-9 w-32 bg-slate-800 rounded-xl animate-skeleton"
+            className="h-9 w-32 bg-[#1d2028] rounded-xl animate-skeleton"
             style={{ animationDelay: '100ms' }}
           />
         </div>
@@ -1263,15 +1263,15 @@ function PayrollSkeleton() {
         {[...Array(3)].map((_, i) => (
           <div key={i} className="card-surface rounded-2xl p-5 space-y-3">
             <div
-              className="h-[2px] w-12 bg-slate-700 rounded-full animate-skeleton"
+              className="h-[2px] w-12 bg-[#272b35] rounded-full animate-skeleton"
               style={{ animationDelay: `${i * 75}ms` }}
             />
             <div
-              className="h-3 w-16 bg-slate-800 rounded animate-skeleton"
+              className="h-3 w-16 bg-[#1d2028] rounded animate-skeleton"
               style={{ animationDelay: `${i * 75}ms` }}
             />
             <div
-              className="h-8 w-28 bg-slate-800 rounded animate-skeleton"
+              className="h-8 w-28 bg-[#1d2028] rounded animate-skeleton"
               style={{ animationDelay: `${i * 75 + 40}ms` }}
             />
           </div>
@@ -1279,11 +1279,11 @@ function PayrollSkeleton() {
       </div>
 
       {/* Tab-bar skeleton — two pill placeholders matching the Payroll / Reimbursements switcher */}
-      <div className="flex gap-1 mb-8 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 mb-8 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit">
         {[...Array(2)].map((_, i) => (
           <div
             key={i}
-            className="h-9 w-32 bg-slate-800 rounded-lg animate-skeleton"
+            className="h-9 w-32 bg-[#1d2028] rounded-lg animate-skeleton"
             style={{ animationDelay: `${i * 60}ms` }}
           />
         ))}
@@ -1294,31 +1294,31 @@ function PayrollSkeleton() {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className={`flex items-center gap-4 px-5 py-4 border-b border-slate-800/50 ${i % 2 === 1 ? 'opacity-60' : ''}`}
+            className={`flex items-center gap-4 px-5 py-4 border-b border-[#333849]/50 ${i % 2 === 1 ? 'opacity-60' : ''}`}
           >
             {/* Customer / rep name placeholder */}
             <div
-              className="h-4 w-40 bg-slate-800 rounded animate-skeleton"
+              className="h-4 w-40 bg-[#1d2028] rounded animate-skeleton"
               style={{ animationDelay: `${i * 60}ms` }}
             />
             {/* Stage badge placeholder */}
             <div
-              className="h-5 w-20 bg-slate-800/80 rounded animate-skeleton"
+              className="h-5 w-20 bg-[#1d2028]/80 rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 30}ms` }}
             />
             {/* Amount placeholder */}
             <div
-              className="ml-auto h-4 w-16 bg-slate-800 rounded animate-skeleton"
+              className="ml-auto h-4 w-16 bg-[#1d2028] rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 50}ms` }}
             />
             {/* Status badge placeholder */}
             <div
-              className="h-5 w-14 bg-slate-800/70 rounded animate-skeleton"
+              className="h-5 w-14 bg-[#1d2028]/70 rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 70}ms` }}
             />
             {/* Date placeholder */}
             <div
-              className="h-3 w-20 bg-slate-800/50 rounded animate-skeleton"
+              className="h-3 w-20 bg-[#1d2028]/50 rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 90}ms` }}
             />
           </div>

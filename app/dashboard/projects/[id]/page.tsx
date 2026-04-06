@@ -58,7 +58,7 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
   const isComplete = !isOffTrack && currentIndex === PIPELINE_STEPS.length - 1;
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6">
+    <div className="bg-[#161920]/60 border border-[#333849] rounded-2xl p-4 mb-6">
 
       {/* ── Horizontal stepper ── */}
       <div className="flex items-start w-full overflow-x-auto pb-0.5 gap-0">
@@ -79,10 +79,10 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
                   <div
                     className={`relative w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold z-10 transition-all duration-500 ${
                       isCompleted
-                        ? 'bg-emerald-600 text-white'
+                        ? 'bg-[#00e07a] text-white'
                         : isCurrent
-                        ? 'bg-blue-600 text-white ring-2 ring-blue-500 ring-offset-[3px] ring-offset-slate-900'
-                        : 'bg-slate-800 border border-slate-700 text-slate-500'
+                        ? 'bg-[#00e07a] text-white ring-2 ring-[#00e07a] ring-offset-[3px] ring-offset-slate-900'
+                        : 'bg-[#1d2028] border border-[#272b35] text-[#8891a8]'
                     }`}
                   >
                     {isCompleted ? (
@@ -96,9 +96,9 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
                 {/* Label */}
                 <span
                   className={`mt-1.5 text-[9px] leading-tight text-center font-medium w-full ${
-                    isCurrent   ? 'text-blue-400'
-                    : isCompleted ? 'text-emerald-500'
-                    : 'text-slate-600'
+                    isCurrent   ? 'text-[#00e07a]'
+                    : isCompleted ? 'text-[#00e07a]'
+                    : 'text-[#525c72]'
                   }`}
                 >
                   {step}
@@ -109,7 +109,7 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
               {index < PIPELINE_STEPS.length - 1 && (
                 <div
                   className={`flex-1 min-w-[6px] h-0.5 mt-4 shrink ${
-                    isCompleted ? 'stepper-connector-complete' : 'bg-slate-700'
+                    isCompleted ? 'stepper-connector-complete' : 'bg-[#272b35]'
                   }`}
                 />
               )}
@@ -119,7 +119,7 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
       </div>
 
       {/* ── Days-in-stage badge + next-action prompt ── */}
-      <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center gap-3">
+      <div className="mt-3 pt-3 border-t border-[#333849] flex flex-wrap items-center gap-3">
 
         {/* Badge — days elapsed since sold date */}
         {!isOffTrack && (
@@ -128,7 +128,7 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
               ? daysSinceSold > 60
                 ? 'bg-red-900/40 border border-red-500/20 text-red-300'
                 : 'bg-amber-900/40 border border-amber-500/20 text-amber-300'
-              : 'bg-blue-900/40 border border-blue-500/20 text-blue-300'
+              : 'bg-blue-900/40 border border-[#00e07a]/20 text-[#00c4f0]'
           }`}>
             <Clock className="w-3 h-3" />
             {daysSinceSold} day{daysSinceSold !== 1 ? 's' : ''} since sold
@@ -150,16 +150,16 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
 
         {/* Next-action prompt */}
         {nextHint && (
-          <p className="text-xs text-slate-400 flex items-center gap-1 min-w-0">
-            <ArrowRight className="w-3 h-3 text-slate-500 shrink-0" />
-            <span className="text-slate-500 shrink-0">Next:</span>
-            <span className="text-slate-300 truncate">{nextHint}</span>
+          <p className="text-xs text-[#c2c8d8] flex items-center gap-1 min-w-0">
+            <ArrowRight className="w-3 h-3 text-[#8891a8] shrink-0" />
+            <span className="text-[#8891a8] shrink-0">Next:</span>
+            <span className="text-[#c2c8d8] truncate">{nextHint}</span>
           </p>
         )}
 
         {/* Completion message */}
         {isComplete && (
-          <p className="text-xs text-emerald-400 font-medium">
+          <p className="text-xs text-[#00e07a] font-medium">
             Project complete!
           </p>
         )}
@@ -172,7 +172,7 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
             ? daysSinceSold > 60
               ? 'bg-red-900/20 border-red-500/20'
               : 'bg-amber-900/20 border-amber-500/20'
-            : 'bg-slate-800/40 border-slate-700/40'
+            : 'bg-[#1d2028]/40 border-[#272b35]/40'
         }`}>
           <span className={`text-sm font-semibold ${
             daysSinceSold > 30
@@ -185,7 +185,7 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
           </span>
           {nextHint && (
             <span className={`text-xs ${
-              daysSinceSold > 30 ? 'text-slate-400' : 'text-slate-500'
+              daysSinceSold > 30 ? 'text-[#c2c8d8]' : 'text-[#8891a8]'
             }`}>
               — {nextHint}
             </span>
@@ -206,10 +206,10 @@ function PhaseBadge({ phase }: { phase: Phase }) {
     : completed
     ? 'bg-green-900/50 text-green-400 ring-1 ring-green-500/30'
     : pto
-    ? 'bg-emerald-900/50 text-emerald-400'
+    ? 'bg-emerald-900/50 text-[#00e07a]'
     : onHold
     ? 'bg-yellow-900/50 text-yellow-400'
-    : 'bg-blue-900/50 text-blue-400';
+    : 'bg-blue-900/50 text-[#00e07a]';
   return <span className={`px-2.5 py-1 rounded-md text-sm font-medium ${cls}`}>{phase}{completed && ' ✓'}</span>;
 }
 
@@ -227,12 +227,12 @@ function ProjectDetailSkeleton() {
 
       {/* Breadcrumb placeholder */}
       <div
-        className="h-9 w-56 bg-slate-800 rounded-xl animate-skeleton mb-6"
+        className="h-9 w-56 bg-[#1d2028] rounded-xl animate-skeleton mb-6"
         style={{ animationDelay: '0ms' }}
       />
 
       {/* ── Pipeline stepper placeholder ── */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6">
+      <div className="bg-[#161920]/60 border border-[#333849] rounded-2xl p-4 mb-6">
 
         {/* 9 circles connected by connector lines */}
         <div className="flex items-start w-full overflow-x-auto pb-0.5 gap-0">
@@ -243,32 +243,32 @@ function ProjectDetailSkeleton() {
               <div className="flex flex-col items-center shrink-0 w-14">
                 {/* Circle */}
                 <div
-                  className="w-7 h-7 rounded-full bg-slate-800 animate-skeleton"
+                  className="w-7 h-7 rounded-full bg-[#1d2028] animate-skeleton"
                   style={{ animationDelay: `${i * 75}ms` }}
                 />
                 {/* Label text */}
                 <div
-                  className="mt-1.5 h-2 w-10 bg-slate-800/70 rounded animate-skeleton"
+                  className="mt-1.5 h-2 w-10 bg-[#1d2028]/70 rounded animate-skeleton"
                   style={{ animationDelay: `${i * 75}ms` }}
                 />
               </div>
 
               {/* Connector line — not rendered after the last step */}
               {i < 8 && (
-                <div className="flex-1 min-w-[6px] h-0.5 mt-4 shrink bg-slate-700/60" />
+                <div className="flex-1 min-w-[6px] h-0.5 mt-4 shrink bg-[#272b35]/60" />
               )}
             </div>
           ))}
         </div>
 
         {/* Days badge + next-action hint row */}
-        <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center gap-3">
+        <div className="mt-3 pt-3 border-t border-[#333849] flex flex-wrap items-center gap-3">
           <div
-            className="h-6 w-32 bg-slate-800 rounded-full animate-skeleton"
+            className="h-6 w-32 bg-[#1d2028] rounded-full animate-skeleton"
             style={{ animationDelay: '675ms' }}
           />
           <div
-            className="h-4 w-52 bg-slate-800/60 rounded animate-skeleton"
+            className="h-4 w-52 bg-[#1d2028]/60 rounded animate-skeleton"
             style={{ animationDelay: '750ms' }}
           />
         </div>
@@ -279,22 +279,22 @@ function ProjectDetailSkeleton() {
         <div className="space-y-3">
           {/* Blue accent bar */}
           <div
-            className="h-[3px] w-12 bg-slate-800 rounded-full animate-skeleton"
+            className="h-[3px] w-12 bg-[#1d2028] rounded-full animate-skeleton"
             style={{ animationDelay: '75ms' }}
           />
           {/* Customer name */}
           <div
-            className="h-9 w-56 bg-slate-800 rounded animate-skeleton"
+            className="h-9 w-56 bg-[#1d2028] rounded animate-skeleton"
             style={{ animationDelay: '150ms' }}
           />
           {/* Phase badge + sold date */}
           <div className="flex items-center gap-3">
             <div
-              className="h-6 w-20 bg-slate-800 rounded-md animate-skeleton"
+              className="h-6 w-20 bg-[#1d2028] rounded-md animate-skeleton"
               style={{ animationDelay: '225ms' }}
             />
             <div
-              className="h-4 w-28 bg-slate-800/60 rounded animate-skeleton"
+              className="h-4 w-28 bg-[#1d2028]/60 rounded animate-skeleton"
               style={{ animationDelay: '300ms' }}
             />
           </div>
@@ -302,7 +302,7 @@ function ProjectDetailSkeleton() {
 
         {/* Action button area */}
         <div
-          className="h-8 w-20 bg-slate-800 rounded-xl animate-skeleton"
+          className="h-8 w-20 bg-[#1d2028] rounded-xl animate-skeleton"
           style={{ animationDelay: '375ms' }}
         />
       </div>
@@ -311,7 +311,7 @@ function ProjectDetailSkeleton() {
       <div className="card-surface rounded-2xl p-6 mb-5">
         {/* Section heading */}
         <div
-          className="h-5 w-32 bg-slate-800 rounded animate-skeleton mb-4"
+          className="h-5 w-32 bg-[#1d2028] rounded animate-skeleton mb-4"
           style={{ animationDelay: '75ms' }}
         />
 
@@ -320,12 +320,12 @@ function ProjectDetailSkeleton() {
             <div key={i} className="space-y-1.5">
               {/* Label */}
               <div
-                className="h-2.5 w-14 bg-slate-800/70 rounded animate-skeleton"
+                className="h-2.5 w-14 bg-[#1d2028]/70 rounded animate-skeleton"
                 style={{ animationDelay: `${(i + 2) * 75}ms` }}
               />
               {/* Value */}
               <div
-                className="h-4 bg-slate-800 rounded animate-skeleton"
+                className="h-4 bg-[#1d2028] rounded animate-skeleton"
                 style={{
                   width: i % 3 === 0 ? '72%' : i % 3 === 1 ? '58%' : '65%',
                   animationDelay: `${(i + 2) * 75}ms`,
@@ -340,22 +340,22 @@ function ProjectDetailSkeleton() {
       <div className="card-surface rounded-2xl p-6">
         {/* Section heading */}
         <div
-          className="h-5 w-16 bg-slate-800 rounded animate-skeleton mb-3"
+          className="h-5 w-16 bg-[#1d2028] rounded animate-skeleton mb-3"
           style={{ animationDelay: '600ms' }}
         />
 
         {/* Three lines of faux note text */}
         <div className="space-y-2">
           <div
-            className="h-4 w-full bg-slate-800/80 rounded animate-skeleton"
+            className="h-4 w-full bg-[#1d2028]/80 rounded animate-skeleton"
             style={{ animationDelay: '675ms' }}
           />
           <div
-            className="h-4 w-4/5 bg-slate-800/70 rounded animate-skeleton"
+            className="h-4 w-4/5 bg-[#1d2028]/70 rounded animate-skeleton"
             style={{ animationDelay: '750ms' }}
           />
           <div
-            className="h-4 w-3/5 bg-slate-800/60 rounded animate-skeleton"
+            className="h-4 w-3/5 bg-[#1d2028]/60 rounded animate-skeleton"
             style={{ animationDelay: '825ms' }}
           />
         </div>
@@ -407,12 +407,12 @@ function InlineNotesEditor({ notes, onSave }: { notes: string; onSave: (text: st
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}
           maxLength={1000}
-          className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500 resize-none"
+          className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-slate-500 resize-none"
           placeholder="Add notes about this project..."
         />
         <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-slate-500">{text.length} / 1000</p>
-          {saved && <span className="text-xs text-emerald-400 animate-fade-in-up">Saved</span>}
+          <p className="text-xs text-[#8891a8]">{text.length} / 1000</p>
+          {saved && <span className="text-xs text-[#00e07a] animate-fade-in-up">Saved</span>}
         </div>
       </div>
     );
@@ -420,7 +420,7 @@ function InlineNotesEditor({ notes, onSave }: { notes: string; onSave: (text: st
 
   return (
     <div
-      className="group/notes cursor-pointer rounded-lg px-3 py-2 -mx-3 -my-2 hover:bg-slate-800/40 transition-colors"
+      className="group/notes cursor-pointer rounded-lg px-3 py-2 -mx-3 -my-2 hover:bg-[#1d2028]/40 transition-colors"
       onClick={() => setEditing(true)}
       role="button"
       tabIndex={0}
@@ -428,13 +428,13 @@ function InlineNotesEditor({ notes, onSave }: { notes: string; onSave: (text: st
     >
       <div className="flex items-start gap-2">
         {notes ? (
-          <p className="text-slate-400 text-sm leading-relaxed flex-1">{notes}</p>
+          <p className="text-[#c2c8d8] text-sm leading-relaxed flex-1">{notes}</p>
         ) : (
-          <p className="text-slate-600 text-sm italic flex-1">Click to add notes...</p>
+          <p className="text-[#525c72] text-sm italic flex-1">Click to add notes...</p>
         )}
-        <Pencil className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover/notes:opacity-100 transition-opacity shrink-0 mt-0.5" />
+        <Pencil className="w-3.5 h-3.5 text-[#525c72] opacity-0 group-hover/notes:opacity-100 transition-opacity shrink-0 mt-0.5" />
       </div>
-      {saved && <span className="text-xs text-emerald-400 mt-1 block">Saved</span>}
+      {saved && <span className="text-xs text-[#00e07a] mt-1 block">Saved</span>}
     </div>
   );
 }
@@ -461,13 +461,13 @@ function relativeTime(dateStr: string): string {
 // ─── Activity type styling ───────────────────────────────────────────────────
 
 const ACTIVITY_STYLES: Record<string, { color: string; icon: typeof Clock }> = {
-  phase_change:    { color: 'bg-blue-500',    icon: ArrowRight },
+  phase_change:    { color: 'bg-[#00e07a]',    icon: ArrowRight },
   flagged:         { color: 'bg-red-500',     icon: Flag },
   unflagged:       { color: 'bg-red-400',     icon: FlagOff },
-  m1_paid:         { color: 'bg-emerald-500', icon: Check },
-  m2_paid:         { color: 'bg-emerald-500', icon: Check },
+  m1_paid:         { color: 'bg-[#00e07a]', icon: Check },
+  m2_paid:         { color: 'bg-[#00e07a]', icon: Check },
   note_edit:       { color: 'bg-amber-500',   icon: MessageSquare },
-  field_edit:      { color: 'bg-slate-500',   icon: Pencil },
+  field_edit:      { color: 'bg-[#8891a8]',   icon: Pencil },
   created:         { color: 'bg-purple-500',  icon: Plus },
   setter_assigned: { color: 'bg-cyan-500',    icon: User },
 };
@@ -511,25 +511,25 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
   return (
     <div className="card-surface rounded-2xl p-6 mt-5">
       <div className="flex items-center gap-2 mb-4">
-        <Clock className="w-4 h-4 text-slate-400" />
+        <Clock className="w-4 h-4 text-[#c2c8d8]" />
         <h2 className="text-white font-semibold">Activity</h2>
-        <span className="text-slate-500 text-xs">({total})</span>
+        <span className="text-[#8891a8] text-xs">({total})</span>
       </div>
 
       {loading && activities.length === 0 ? (
-        <div className="flex items-center gap-2 text-slate-500 text-sm py-4">
+        <div className="flex items-center gap-2 text-[#8891a8] text-sm py-4">
           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           Loading activity...
         </div>
       ) : activities.length === 0 ? (
-        <p className="text-slate-500 text-sm">No activity recorded yet</p>
+        <p className="text-[#8891a8] text-sm">No activity recorded yet</p>
       ) : (
         <div className="relative pl-8">
           {/* Vertical line */}
-          <div className="absolute left-3 top-0 bottom-0 w-px bg-slate-800" />
+          <div className="absolute left-3 top-0 bottom-0 w-px bg-[#1d2028]" />
 
           {activities.map((entry) => {
-            const style = ACTIVITY_STYLES[entry.type] ?? { color: 'bg-slate-600', icon: Zap };
+            const style = ACTIVITY_STYLES[entry.type] ?? { color: 'bg-[#525c72]', icon: Zap };
             const Icon = style.icon;
             return (
               <div key={entry.id} className="relative mb-4 last:mb-0">
@@ -537,8 +537,8 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
                 <div className={`absolute -left-5 top-1 w-2.5 h-2.5 rounded-full ${style.color} ring-4 ring-slate-900`} />
                 {/* Content */}
                 <div>
-                  <p className="text-sm text-slate-300">{entry.detail}</p>
-                  <p className="text-xs text-slate-500">{relativeTime(entry.createdAt)}</p>
+                  <p className="text-sm text-[#c2c8d8]">{entry.detail}</p>
+                  <p className="text-xs text-[#8891a8]">{relativeTime(entry.createdAt)}</p>
                 </div>
               </div>
             );
@@ -550,7 +550,7 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="mt-3 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+          className="mt-3 text-xs text-[#00e07a] hover:text-[#00c4f0] transition-colors disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>
@@ -702,9 +702,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   if (!project) {
     return (
-      <div className="p-4 md:p-8 text-center text-slate-500">
+      <div className="p-4 md:p-8 text-center text-[#8891a8]">
         Project not found.{' '}
-        <Link href="/dashboard/projects" className="text-blue-400 hover:underline">
+        <Link href="/dashboard/projects" className="text-[#00e07a] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -714,9 +714,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // Reps can only view their own projects
   if (currentRole === 'rep' && project.repId !== currentRepId && project.setterId !== currentRepId) {
     return (
-      <div className="p-4 md:p-8 text-center text-slate-500 text-sm">
+      <div className="p-4 md:p-8 text-center text-[#8891a8] text-sm">
         You don&apos;t have permission to view this project.{' '}
-        <Link href="/dashboard/projects" className="text-blue-400 hover:underline">
+        <Link href="/dashboard/projects" className="text-[#00e07a] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -726,9 +726,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // Sub-dealers can only view projects assigned to them
   if (currentRole === 'sub-dealer' && project.subDealerId !== currentRepId && project.repId !== currentRepId) {
     return (
-      <div className="p-4 md:p-8 text-center text-slate-500 text-sm">
+      <div className="p-4 md:p-8 text-center text-[#8891a8] text-sm">
         You don&apos;t have permission to view this project.{' '}
-        <Link href="/dashboard/projects" className="text-blue-400 hover:underline">
+        <Link href="/dashboard/projects" className="text-[#00e07a] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -925,18 +925,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const m1Flat = project.kWSize >= 5 ? 1000 : 500;
 
   const inputCls =
-    'bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+    'bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]';
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-3xl">
       {/* Breadcrumb + Prev/Next */}
       <div className="flex items-center justify-between mb-6">
-        <nav className="animate-breadcrumb-enter inline-flex items-center gap-0.5 text-xs text-slate-400 bg-slate-900/60 backdrop-blur-md border border-slate-800/60 rounded-xl px-4 py-2.5">
-          <Link href="/dashboard" className="hover:bg-slate-800/50 hover:text-slate-200 transition-colors px-2 py-1 rounded-lg">Dashboard</Link>
-          <span className="text-slate-700 mx-1">/</span>
-          <Link href="/dashboard/projects" className="hover:bg-slate-800/50 hover:text-slate-200 transition-colors px-2 py-1 rounded-lg">Projects</Link>
-          <span className="text-slate-700 mx-1">/</span>
-          <span className="text-white font-medium bg-blue-500/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
+        <nav className="animate-breadcrumb-enter inline-flex items-center gap-0.5 text-xs text-[#c2c8d8] bg-[#161920]/60 backdrop-blur-md border border-[#333849]/60 rounded-xl px-4 py-2.5">
+          <Link href="/dashboard" className="hover:bg-[#1d2028]/50 hover:text-[#c2c8d8] transition-colors px-2 py-1 rounded-lg">Dashboard</Link>
+          <span className="text-[#525c72] mx-1">/</span>
+          <Link href="/dashboard/projects" className="hover:bg-[#1d2028]/50 hover:text-[#c2c8d8] transition-colors px-2 py-1 rounded-lg">Projects</Link>
+          <span className="text-[#525c72] mx-1">/</span>
+          <span className="text-white font-medium bg-[#00e07a]/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
         </nav>
 
         {/* Prev / Next project buttons */}
@@ -946,12 +946,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <Link
                 href={`/dashboard/projects/${prevProjectId}`}
                 title="Previous project (←)"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#1d2028]/60 border border-[#272b35]/60 text-[#c2c8d8] hover:text-white hover:border-[#272b35] transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Link>
             ) : (
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/30 border border-slate-800/40 text-slate-700 cursor-default">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#1d2028]/30 border border-[#333849]/40 text-[#525c72] cursor-default">
                 <ChevronLeft className="w-4 h-4" />
               </span>
             )}
@@ -959,12 +959,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <Link
                 href={`/dashboard/projects/${nextProjectId}`}
                 title="Next project (→)"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#1d2028]/60 border border-[#272b35]/60 text-[#c2c8d8] hover:text-white hover:border-[#272b35] transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </Link>
             ) : (
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/30 border border-slate-800/40 text-slate-700 cursor-default">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#1d2028]/30 border border-[#333849]/40 text-[#525c72] cursor-default">
                 <ChevronRight className="w-4 h-4" />
               </span>
             )}
@@ -990,7 +990,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </div>
           <div className="flex items-center gap-3">
             <PhaseBadge phase={project.phase} />
-            <span className="text-slate-500 text-sm">Sold {formatDate(project.soldDate)}</span>
+            <span className="text-[#8891a8] text-sm">Sold {formatDate(project.soldDate)}</span>
           </div>
         </div>
 
@@ -999,7 +999,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <button
                 onClick={openEditModal}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[#00e07a]/30 text-[#00e07a] hover:bg-blue-900/20 transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </button>
@@ -1009,7 +1009,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               className={`flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border transition-colors ${
                 project.flagged
                   ? 'border-red-500/40 text-red-400 hover:bg-red-900/20'
-                  : 'border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800'
+                  : 'border-[#272b35] text-[#c2c8d8] hover:text-white hover:bg-[#1d2028]'
               }`}
             >
               {project.flagged ? <FlagOff className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}
@@ -1018,7 +1018,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <Link
                 href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[#272b35] text-[#c2c8d8] hover:text-white hover:bg-[#1d2028] transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
@@ -1045,7 +1045,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {(currentRepId === project.repId) && (
               <Link
                 href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[#272b35] text-[#c2c8d8] hover:text-white hover:bg-[#1d2028] transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
@@ -1077,31 +1077,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             ['Phase', project.phase],
           ].map(([label, value]) => (
             <div key={label}>
-              <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">{label}</p>
+              <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">{label}</p>
               <p className="text-white">{value}</p>
             </div>
           ))}
           {project.setterId && (
             <div>
-              <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Setter</p>
+              <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Setter</p>
               <p className="text-white">{project.setterName}</p>
             </div>
           )}
           {project.leadSource && (
             <div>
-              <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Lead Source</p>
+              <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Lead Source</p>
               <p className="text-white capitalize">{project.leadSource === 'door_knock' ? 'Door Knock' : project.leadSource}</p>
             </div>
           )}
         </div>
 
         {(currentRole === 'admin' || isPM) && (
-          <div className="mt-5 pt-5 border-t border-slate-800">
-            <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Change Phase</p>
+          <div className="mt-5 pt-5 border-t border-[#333849]">
+            <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-2">Change Phase</p>
             <select
               value={project.phase}
               onChange={(e) => handlePhaseChange(e.target.value as Phase)}
-              className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
             >
               {PHASES.map((ph) => (
                 <option key={ph} value={ph}>{ph}</option>
@@ -1118,23 +1118,23 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           {myEntries.length > 0 ? (
             <div className="space-y-2">
               {myEntries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3">
+                <div key={entry.id} className="flex items-center justify-between bg-[#1d2028]/50 rounded-xl px-4 py-3">
                   <div>
-                    <p className="text-slate-300 text-sm font-medium">
+                    <p className="text-[#c2c8d8] text-sm font-medium">
                       {entry.paymentStage}
-                      {entry.notes ? <span className="text-slate-500 font-normal ml-1.5 text-xs">({entry.notes})</span> : null}
+                      {entry.notes ? <span className="text-[#8891a8] font-normal ml-1.5 text-xs">({entry.notes})</span> : null}
                     </p>
-                    <p className="text-slate-500 text-xs mt-0.5">{formatDate(entry.date)}</p>
+                    <p className="text-[#8891a8] text-xs mt-0.5">{formatDate(entry.date)}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                      entry.status === 'Paid' ? 'bg-emerald-900/50 text-[#00e07a]' :
                       entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
-                      'bg-slate-700 text-slate-400'
+                      'bg-[#272b35] text-[#c2c8d8]'
                     }`}>
                       {entry.status}
                     </span>
-                    <span className="text-emerald-400 font-bold">${entry.amount.toLocaleString()}</span>
+                    <span className="text-[#00e07a] font-bold">${entry.amount.toLocaleString()}</span>
                   </div>
                 </div>
               ))}
@@ -1142,22 +1142,22 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           ) : (
             <div>
               <div className="flex gap-4 mb-4">
-                <div className="flex-1 bg-slate-800/50 rounded-xl px-4 py-3">
-                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
-                  <p className="text-emerald-400 font-bold">${project.m1Amount.toLocaleString()}</p>
+                <div className="flex-1 bg-[#1d2028]/50 rounded-xl px-4 py-3">
+                  <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
+                  <p className="text-[#00e07a] font-bold">${project.m1Amount.toLocaleString()}</p>
                 </div>
-                <div className="flex-1 bg-slate-800/50 rounded-xl px-4 py-3">
-                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
-                  <p className="text-emerald-400 font-bold">${project.m2Amount.toLocaleString()}</p>
+                <div className="flex-1 bg-[#1d2028]/50 rounded-xl px-4 py-3">
+                  <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
+                  <p className="text-[#00e07a] font-bold">${project.m2Amount.toLocaleString()}</p>
                 </div>
                 {(project.m3Amount ?? 0) > 0 && (
-                  <div className="flex-1 bg-slate-800/50 rounded-xl px-4 py-3">
-                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
+                  <div className="flex-1 bg-[#1d2028]/50 rounded-xl px-4 py-3">
+                    <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
                     <p className="text-teal-400 font-bold">${(project.m3Amount ?? 0).toLocaleString()}</p>
                   </div>
                 )}
               </div>
-              <p className="text-slate-500 text-sm">
+              <p className="text-[#8891a8] text-sm">
                 No payments yet &mdash; commission will appear here as milestones are reached.
               </p>
             </div>
@@ -1172,119 +1172,119 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Baseline rates summary */}
           <div className="flex flex-wrap gap-3 mb-4 mt-2">
-            <span className="text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400">
-              Closer baseline: <span className="text-blue-300 font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
+            <span className="text-xs bg-[#1d2028] border border-[#272b35] rounded-lg px-3 py-1.5 text-[#c2c8d8]">
+              Closer baseline: <span className="text-[#00c4f0] font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
             </span>
-            <span className="text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400">
+            <span className="text-xs bg-[#1d2028] border border-[#272b35] rounded-lg px-3 py-1.5 text-[#c2c8d8]">
               Kilo cost: <span className="text-purple-300 font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
             </span>
-            <span className="text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400">
+            <span className="text-xs bg-[#1d2028] border border-[#272b35] rounded-lg px-3 py-1.5 text-[#c2c8d8]">
               Sold: <span className="text-white font-semibold">${project.netPPW.toFixed(3)}/W</span>
             </span>
           </div>
 
           <div className="space-y-4">
             {/* ── Closer ── */}
-            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+            <div className="bg-[#1d2028]/40 border border-[#272b35]/50 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="text-white text-sm font-semibold">{project.repName}</p>
-                  <p className="text-slate-500 text-xs">Closer</p>
+                  <p className="text-[#8891a8] text-xs">Closer</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-slate-400 text-xs">Expected M2</p>
-                  <p className="text-emerald-400 font-bold text-sm">${closerExpectedM2.toLocaleString()}</p>
+                  <p className="text-[#c2c8d8] text-xs">Expected M2</p>
+                  <p className="text-[#00e07a] font-bold text-sm">${closerExpectedM2.toLocaleString()}</p>
                 </div>
               </div>
               {closerEntries.length > 0 ? (
                 <div className="space-y-1.5">
                   {closerEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2">
+                    <div key={entry.id} className="flex items-center justify-between bg-[#1d2028]/70 rounded-lg px-3 py-2">
                       <div>
-                        <span className="text-slate-300 text-xs font-medium">{entry.paymentStage}</span>
-                        {entry.notes ? <span className="text-slate-500 text-xs ml-1.5">({entry.notes})</span> : null}
-                        <p className="text-slate-600 text-xs">{formatDate(entry.date)}</p>
+                        <span className="text-[#c2c8d8] text-xs font-medium">{entry.paymentStage}</span>
+                        {entry.notes ? <span className="text-[#8891a8] text-xs ml-1.5">({entry.notes})</span> : null}
+                        <p className="text-[#525c72] text-xs">{formatDate(entry.date)}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-[#00e07a]' :
                           entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
-                          'bg-slate-700 text-slate-400'
+                          'bg-[#272b35] text-[#c2c8d8]'
                         }`}>{entry.status}</span>
-                        <span className="text-emerald-400 font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                        <span className="text-[#00e07a] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-600 text-xs italic">No payroll entries yet.</p>
+                <p className="text-[#525c72] text-xs italic">No payroll entries yet.</p>
               )}
             </div>
 
             {/* ── Setter ── */}
             {project.setterId ? (
-              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+              <div className="bg-[#1d2028]/40 border border-[#272b35]/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="text-white text-sm font-semibold">{project.setterName}</p>
-                    <p className="text-slate-500 text-xs">Setter</p>
+                    <p className="text-[#8891a8] text-xs">Setter</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-slate-400 text-xs">Expected M1</p>
-                    <p className="text-emerald-400 font-bold text-sm">${m1Flat.toLocaleString()}</p>
+                    <p className="text-[#c2c8d8] text-xs">Expected M1</p>
+                    <p className="text-[#00e07a] font-bold text-sm">${m1Flat.toLocaleString()}</p>
                   </div>
                 </div>
                 {setterEntries.length > 0 ? (
                   <div className="space-y-1.5">
                     {setterEntries.map((entry) => (
-                      <div key={entry.id} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2">
+                      <div key={entry.id} className="flex items-center justify-between bg-[#1d2028]/70 rounded-lg px-3 py-2">
                         <div>
-                          <span className="text-slate-300 text-xs font-medium">{entry.paymentStage}</span>
-                          {entry.notes ? <span className="text-slate-500 text-xs ml-1.5">({entry.notes})</span> : null}
-                          <p className="text-slate-600 text-xs">{formatDate(entry.date)}</p>
+                          <span className="text-[#c2c8d8] text-xs font-medium">{entry.paymentStage}</span>
+                          {entry.notes ? <span className="text-[#8891a8] text-xs ml-1.5">({entry.notes})</span> : null}
+                          <p className="text-[#525c72] text-xs">{formatDate(entry.date)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-[#00e07a]' :
                             entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
-                            'bg-slate-700 text-slate-400'
+                            'bg-[#272b35] text-[#c2c8d8]'
                           }`}>{entry.status}</span>
-                          <span className="text-emerald-400 font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                          <span className="text-[#00e07a] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-600 text-xs italic">No payroll entries yet.</p>
+                  <p className="text-[#525c72] text-xs italic">No payroll entries yet.</p>
                 )}
               </div>
             ) : (
-              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
-                <p className="text-white text-sm font-semibold mb-0.5">{project.repName} <span className="text-slate-500 font-normal text-xs">(self-gen)</span></p>
-                <p className="text-slate-500 text-xs">M1 flat goes to closer — no setter on this deal</p>
+              <div className="bg-[#1d2028]/40 border border-[#272b35]/50 rounded-xl p-4">
+                <p className="text-white text-sm font-semibold mb-0.5">{project.repName} <span className="text-[#8891a8] font-normal text-xs">(self-gen)</span></p>
+                <p className="text-[#8891a8] text-xs">M1 flat goes to closer — no setter on this deal</p>
               </div>
             )}
 
             {/* ── Other entries (trainer overrides, bonuses, etc.) ── */}
             {otherEntries.length > 0 && (
-              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
-                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">Other Payouts</p>
+              <div className="bg-[#1d2028]/40 border border-[#272b35]/50 rounded-xl p-4">
+                <p className="text-[#c2c8d8] text-xs font-semibold uppercase tracking-wider mb-2">Other Payouts</p>
                 <div className="space-y-1.5">
                   {otherEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2">
+                    <div key={entry.id} className="flex items-center justify-between bg-[#1d2028]/70 rounded-lg px-3 py-2">
                       <div>
-                        <span className="text-slate-300 text-xs font-medium">{entry.repName}</span>
-                        <span className="text-slate-500 text-xs ml-1.5">{entry.paymentStage}</span>
-                        {entry.notes ? <span className="text-slate-500 text-xs ml-1.5">({entry.notes})</span> : null}
-                        <p className="text-slate-600 text-xs">{formatDate(entry.date)}</p>
+                        <span className="text-[#c2c8d8] text-xs font-medium">{entry.repName}</span>
+                        <span className="text-[#8891a8] text-xs ml-1.5">{entry.paymentStage}</span>
+                        {entry.notes ? <span className="text-[#8891a8] text-xs ml-1.5">({entry.notes})</span> : null}
+                        <p className="text-[#525c72] text-xs">{formatDate(entry.date)}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-emerald-400' :
+                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-[#00e07a]' :
                           entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
-                          'bg-slate-700 text-slate-400'
+                          'bg-[#272b35] text-[#c2c8d8]'
                         }`}>{entry.status}</span>
-                        <span className="text-emerald-400 font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                        <span className="text-[#00e07a] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                       </div>
                     </div>
                   ))}
@@ -1293,13 +1293,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             )}
 
             {/* ── Milestone toggles ── */}
-            <div className="border-t border-slate-800 pt-4 space-y-3">
-              <p className="text-slate-500 text-xs uppercase tracking-wider">Milestone Status</p>
+            <div className="border-t border-[#333849] pt-4 space-y-3">
+              <p className="text-[#8891a8] text-xs uppercase tracking-wider">Milestone Status</p>
 
               {/* M1 */}
-              <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
+              <div className="flex items-center justify-between bg-[#1d2028]/50 rounded-xl p-4">
                 <div>
-                  <p className="text-slate-300 text-sm font-medium">Milestone 1 (M1)</p>
+                  <p className="text-[#c2c8d8] text-sm font-medium">Milestone 1 (M1)</p>
                   {editM1 ? (
                     <div className="flex items-center gap-2 mt-1">
                       <input
@@ -1309,15 +1309,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         placeholder={String(project.m1Amount)}
                         className={inputCls + ' w-28'}
                       />
-                      <button onClick={saveM1} className="text-blue-400 hover:text-blue-300 text-xs">Save</button>
-                      <button onClick={() => setEditM1(false)} className="text-slate-500 hover:text-slate-400 text-xs">Cancel</button>
+                      <button onClick={saveM1} className="text-[#00e07a] hover:text-[#00c4f0] text-xs">Save</button>
+                      <button onClick={() => setEditM1(false)} className="text-[#8891a8] hover:text-[#c2c8d8] text-xs">Cancel</button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-emerald-400 font-semibold">${project.m1Amount.toLocaleString()}</p>
+                      <p className="text-[#00e07a] font-semibold">${project.m1Amount.toLocaleString()}</p>
                       <button
                         onClick={() => { setM1Val(String(project.m1Amount)); setEditM1(true); }}
-                        className="text-slate-500 hover:text-slate-300 text-xs"
+                        className="text-[#8891a8] hover:text-[#c2c8d8] text-xs"
                       >
                         Edit
                       </button>
@@ -1327,12 +1327,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleToggleM1}
-                    className="text-xs text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition-colors"
+                    className="text-xs text-[#c2c8d8] hover:text-white bg-[#272b35] hover:bg-[#525c72] px-2 py-1 rounded-lg transition-colors"
                   >
                     {project.m1Paid ? 'Mark Unpaid' : 'Mark Paid'}
                   </button>
                   <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                    project.m1Paid ? 'bg-emerald-900/50 text-emerald-400' : 'bg-yellow-900/50 text-yellow-400'
+                    project.m1Paid ? 'bg-emerald-900/50 text-[#00e07a]' : 'bg-yellow-900/50 text-yellow-400'
                   }`}>
                     {project.m1Paid ? 'Paid' : 'Pending'}
                   </span>
@@ -1340,9 +1340,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* M2 */}
-              <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
+              <div className="flex items-center justify-between bg-[#1d2028]/50 rounded-xl p-4">
                 <div>
-                  <p className="text-slate-300 text-sm font-medium">Milestone 2 (M2)</p>
+                  <p className="text-[#c2c8d8] text-sm font-medium">Milestone 2 (M2)</p>
                   {editM2 ? (
                     <div className="flex items-center gap-2 mt-1">
                       <input
@@ -1352,15 +1352,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         placeholder={String(project.m2Amount)}
                         className={inputCls + ' w-28'}
                       />
-                      <button onClick={saveM2} className="text-blue-400 hover:text-blue-300 text-xs">Save</button>
-                      <button onClick={() => setEditM2(false)} className="text-slate-500 hover:text-slate-400 text-xs">Cancel</button>
+                      <button onClick={saveM2} className="text-[#00e07a] hover:text-[#00c4f0] text-xs">Save</button>
+                      <button onClick={() => setEditM2(false)} className="text-[#8891a8] hover:text-[#c2c8d8] text-xs">Cancel</button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-emerald-400 font-semibold">${project.m2Amount.toLocaleString()}</p>
+                      <p className="text-[#00e07a] font-semibold">${project.m2Amount.toLocaleString()}</p>
                       <button
                         onClick={() => { setM2Val(String(project.m2Amount)); setEditM2(true); }}
-                        className="text-slate-500 hover:text-slate-300 text-xs"
+                        className="text-[#8891a8] hover:text-[#c2c8d8] text-xs"
                       >
                         Edit
                       </button>
@@ -1370,12 +1370,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleToggleM2}
-                    className="text-xs text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition-colors"
+                    className="text-xs text-[#c2c8d8] hover:text-white bg-[#272b35] hover:bg-[#525c72] px-2 py-1 rounded-lg transition-colors"
                   >
                     {project.m2Paid ? 'Mark Unpaid' : 'Mark Paid'}
                   </button>
                   <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                    project.m2Paid ? 'bg-emerald-900/50 text-emerald-400' : 'bg-yellow-900/50 text-yellow-400'
+                    project.m2Paid ? 'bg-emerald-900/50 text-[#00e07a]' : 'bg-yellow-900/50 text-yellow-400'
                   }`}>
                     {project.m2Paid ? 'Paid' : 'Pending'}
                   </span>
@@ -1384,14 +1384,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
               {/* M3 (read-only, auto-calculated) */}
               {(project.m3Amount ?? 0) > 0 && (
-                <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
+                <div className="flex items-center justify-between bg-[#1d2028]/50 rounded-xl p-4">
                   <div>
-                    <p className="text-slate-300 text-sm font-medium">Milestone 3 (M3) — PTO</p>
+                    <p className="text-[#c2c8d8] text-sm font-medium">Milestone 3 (M3) — PTO</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-teal-400 font-semibold">${(project.m3Amount ?? 0).toLocaleString()}</p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-700/50 text-slate-400">
+                  <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-[#272b35]/50 text-[#c2c8d8]">
                     Auto at PTO
                   </span>
                 </div>
@@ -1414,19 +1414,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               onBlur={handleAdminNotesBlur}
               placeholder="Add notes about this project..."
               maxLength={1000}
-              className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500 resize-none"
+              className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-slate-500 resize-none"
             />
             <div className="flex items-center justify-between mt-1">
               <p className={`text-xs transition-colors duration-200 ${
                 adminNotes.length >= 960 ? 'text-red-400' :
                 adminNotes.length >= 800 ? 'text-amber-400' :
-                'text-slate-500'
+                'text-[#8891a8]'
               }`}>
                 {adminNotes.length} / 1000
               </p>
-              {adminNotesSaved && <span className="text-xs text-emerald-400 animate-fade-in-up">Saved</span>}
+              {adminNotesSaved && <span className="text-xs text-[#00e07a] animate-fade-in-up">Saved</span>}
               {!adminNotesSaved && adminNotes !== (project.notes ?? '') && (
-                <span className="text-xs text-slate-500">Auto-saving...</span>
+                <span className="text-xs text-[#8891a8]">Auto-saving...</span>
               )}
             </div>
           </div>
@@ -1448,15 +1448,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {showEditModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) { setShowEditModal(false); setEditErrors({}); } }}>
-          <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-blue-900/30">
-                  <Pencil className="w-5 h-5 text-blue-400" />
+                  <Pencil className="w-5 h-5 text-[#00e07a]" />
                 </div>
                 <h2 className="text-white font-semibold">Edit Project</h2>
               </div>
-              <button onClick={() => { setShowEditModal(false); setEditErrors({}); }} className="text-slate-500 hover:text-white">
+              <button onClick={() => { setShowEditModal(false); setEditErrors({}); }} className="text-[#8891a8] hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1464,7 +1464,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="space-y-4">
               {/* Installer */}
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Installer</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">Installer</label>
                 <SearchableSelect
                   value={editVals.installer}
                   onChange={(val) => { setEditVals((v) => ({ ...v, installer: val })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
@@ -1477,7 +1477,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
               {/* Financer */}
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Financer</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">Financer</label>
                 <SearchableSelect
                   value={editVals.financer}
                   onChange={(val) => setEditVals((v) => ({ ...v, financer: val }))}
@@ -1488,7 +1488,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
               {/* Product Type */}
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Product Type</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">Product Type</label>
                 <div className="grid grid-cols-4 gap-2">
                   {(['PPA', 'Lease', 'Loan', 'Cash'] as const).map((pt) => (
                     <button
@@ -1497,8 +1497,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={() => setEditVals((v) => ({ ...v, productType: pt }))}
                       className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                         editVals.productType === pt
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]'
-                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-white'
+                          ? 'bg-[#00e07a] border-[#00e07a] text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
                       }`}
                     >
                       {pt}
@@ -1510,26 +1510,26 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {/* kW + PPW */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">System Size (kW)</label>
+                  <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">System Size (kW)</label>
                   <input type="number" step="0.1" value={editVals.kWSize}
                     onChange={(e) => { setEditVals((v) => ({ ...v, kWSize: e.target.value })); setEditErrors((prev) => ({ ...prev, kWSize: '' })); }}
-                    className={`w-full bg-slate-800 border ${editErrors.kWSize ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                    className={`w-full bg-[#1d2028] border ${editErrors.kWSize ? 'border-red-500' : 'border-[#272b35]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]`} />
                   {editErrors.kWSize && <p className="text-red-400 text-xs mt-1">{editErrors.kWSize}</p>}
                 </div>
                 <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Net PPW ($)</label>
+                  <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">Net PPW ($)</label>
                   <input type="number" step="0.01" value={editVals.netPPW}
                     onChange={(e) => { setEditVals((v) => ({ ...v, netPPW: e.target.value })); setEditErrors((prev) => ({ ...prev, netPPW: '' })); }}
-                    className={`w-full bg-slate-800 border ${editErrors.netPPW ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                    className={`w-full bg-[#1d2028] border ${editErrors.netPPW ? 'border-red-500' : 'border-[#272b35]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]`} />
                   {editErrors.netPPW && <p className="text-red-400 text-xs mt-1">{editErrors.netPPW}</p>}
                 </div>
               </div>
 
               {/* Setter */}
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Setter (optional)</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">Setter (optional)</label>
                 <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]">
                   <option value="">— None —</option>
                   {reps.filter((r) => r.repType === 'setter' || r.repType === 'both').map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
@@ -1539,52 +1539,52 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
               {/* Sold Date */}
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Sold Date</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">Sold Date</label>
                 <input type="date" value={editVals.soldDate}
                   onChange={(e) => { setEditVals((v) => ({ ...v, soldDate: e.target.value })); setEditErrors((prev) => ({ ...prev, soldDate: '' })); }}
-                  className={`w-full bg-slate-800 border ${editErrors.soldDate ? 'border-red-500' : 'border-slate-700'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                  className={`w-full bg-[#1d2028] border ${editErrors.soldDate ? 'border-red-500' : 'border-[#272b35]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]`} />
                 {editErrors.soldDate && <p className="text-red-400 text-xs mt-1">{editErrors.soldDate}</p>}
               </div>
 
               {/* Notes */}
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1">Notes</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1">Notes</label>
                 <textarea rows={2} value={editVals.notes} onChange={(e) => setEditVals((v) => ({ ...v, notes: e.target.value }))}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] resize-none" />
               </div>
 
               {/* Baseline Override */}
-              <div className="bg-slate-800/60 rounded-xl p-4">
+              <div className="bg-[#1d2028]/60 rounded-xl p-4">
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input type="checkbox" checked={editVals.useBaselineOverride}
                     onChange={(e) => setEditVals((v) => ({ ...v, useBaselineOverride: e.target.checked }))}
-                    className="w-4 h-4 rounded accent-blue-500" />
-                  <span className="text-slate-300 text-sm font-medium">Override baseline for this project</span>
+                    className="w-4 h-4 rounded accent-[#00e07a]" />
+                  <span className="text-[#c2c8d8] text-sm font-medium">Override baseline for this project</span>
                 </label>
                 {editVals.useBaselineOverride && (
                   <div className="grid grid-cols-3 gap-3 mt-2">
                     <div>
-                      <label className="text-slate-500 text-xs block mb-1">Closer $/W</label>
+                      <label className="text-[#8891a8] text-xs block mb-1">Closer $/W</label>
                       <input type="number" step="0.01" value={editVals.overrideCloserPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.closerPerW ?? 2.90)}
                         onChange={(e) => setEditVals((v) => ({ ...v, overrideCloserPerW: e.target.value }))}
-                        className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full bg-[#272b35] border border-[#272b35] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]" />
                     </div>
                     <div>
-                      <label className="text-slate-500 text-xs block mb-1">Setter $/W</label>
+                      <label className="text-[#8891a8] text-xs block mb-1">Setter $/W</label>
                       <input type="number" step="0.01" value={editVals.overrideSetterPerW}
                         placeholder={editVals.overrideCloserPerW
                           ? String(Math.round((parseFloat(editVals.overrideCloserPerW) + 0.10) * 100) / 100)
                           : String(Math.round(((installerBaselines[editVals.installer]?.closerPerW ?? 2.90) + 0.10) * 100) / 100)}
                         onChange={(e) => setEditVals((v) => ({ ...v, overrideSetterPerW: e.target.value }))}
-                        className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full bg-[#272b35] border border-[#272b35] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]" />
                     </div>
                     <div>
-                      <label className="text-slate-500 text-xs block mb-1">Kilo $/W</label>
+                      <label className="text-[#8891a8] text-xs block mb-1">Kilo $/W</label>
                       <input type="number" step="0.01" value={editVals.overrideKiloPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.kiloPerW ?? 2.35)}
                         onChange={(e) => setEditVals((v) => ({ ...v, overrideKiloPerW: e.target.value }))}
-                        className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full bg-[#272b35] border border-[#272b35] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]" />
                     </div>
                   </div>
                 )}
@@ -1613,20 +1613,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const belowBaseline = previewPPW < previewBaseline.closerPerW;
 
               return (
-                <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-amber-900/20 border border-amber-500/30' : 'bg-slate-800/60 border border-slate-700/40'}`}>
-                  <p className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-2">Commission Preview</p>
+                <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-amber-900/20 border border-amber-500/30' : 'bg-[#1d2028]/60 border border-[#272b35]/40'}`}>
+                  <p className="text-xs uppercase tracking-wider text-[#c2c8d8] font-medium mb-2">Commission Preview</p>
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
-                      <p className="text-slate-500 text-[10px] uppercase">Closer M1</p>
+                      <p className="text-[#8891a8] text-[10px] uppercase">Closer M1</p>
                       <p className="text-white font-bold text-sm">${closerM1.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500 text-[10px] uppercase">Closer M2</p>
-                      <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-emerald-400'}`}>${closerM2.toLocaleString()}</p>
+                      <p className="text-[#8891a8] text-[10px] uppercase">Closer M2</p>
+                      <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[#00e07a]'}`}>${closerM2.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500 text-[10px] uppercase">Kilo Margin</p>
-                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-blue-400'}`}>${kiloMargin.toLocaleString()}</p>
+                      <p className="text-[#8891a8] text-[10px] uppercase">Kilo Margin</p>
+                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[#00e07a]'}`}>${kiloMargin.toLocaleString()}</p>
                     </div>
                   </div>
                   {belowBaseline && (
@@ -1645,7 +1645,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 Save Changes
               </button>
               <button onClick={() => { setShowEditModal(false); setEditErrors({}); }}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
+                className="flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
                 Cancel
               </button>
             </div>
@@ -1700,24 +1700,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {showCancelReasonModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}>
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+          <div className="bg-[#161920] border border-[#272b35] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#333849]">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
                 <h2 className="text-white font-bold text-base">Cancel Project</h2>
               </div>
-              <button onClick={() => setShowCancelReasonModal(false)} className="text-slate-400 hover:text-white transition-colors rounded-lg p-1 hover:bg-slate-800">
+              <button onClick={() => setShowCancelReasonModal(false)} className="text-[#c2c8d8] hover:text-white transition-colors rounded-lg p-1 hover:bg-[#1d2028]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-slate-400 text-sm">Please provide a reason for cancelling <span className="text-white font-medium">{project.customerName}</span>.</p>
+              <p className="text-[#c2c8d8] text-sm">Please provide a reason for cancelling <span className="text-white font-medium">{project.customerName}</span>.</p>
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Reason</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
                 <select
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                 >
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
@@ -1729,19 +1729,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </select>
               </div>
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[#525c72] font-normal normal-case">(optional)</span></label>
                 <textarea
                   rows={3}
                   value={cancelNotes}
                   onChange={(e) => setCancelNotes(e.target.value)}
                   placeholder="Additional details..."
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-slate-500"
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] resize-none placeholder-slate-500"
                 />
               </div>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setShowCancelReasonModal(false)}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors"
+                  className="flex-1 bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] text-[#c2c8d8] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors"
                 >
                   Go Back
                 </button>

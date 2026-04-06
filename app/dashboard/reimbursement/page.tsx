@@ -16,21 +16,21 @@ export default function ReimbursementRedirectPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Receipt className="w-5 h-5 text-blue-400" />
+            <Receipt className="w-5 h-5 text-[#00e07a]" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Reimbursements</h1>
         </div>
-        <p className="text-slate-400/80 text-sm font-medium ml-12">This page has moved</p>
+        <p className="text-[#c2c8d8]/80 text-sm font-medium ml-12">This page has moved</p>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-lg">
+      <div className="bg-[#161920] border border-[#333849] rounded-2xl p-8 max-w-lg">
         <div className="flex items-start gap-4">
           <div className="shrink-0 mt-0.5 p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Receipt className="w-5 h-5 text-blue-400" />
+            <Receipt className="w-5 h-5 text-[#00e07a]" />
           </div>
           <div>
             <h2 className="text-white font-bold text-base mb-2">Reimbursements have moved</h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-5">
+            <p className="text-[#c2c8d8] text-sm leading-relaxed mb-5">
               Expense reimbursements are now part of the unified <strong className="text-white">My Pay</strong> hub,
               giving you one place to view commissions, bonuses, and reimbursements together.
             </p>

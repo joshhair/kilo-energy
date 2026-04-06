@@ -69,11 +69,11 @@ export default function LoginPage() {
   if (!clerkLoaded || !isSignedIn || (loading && !error)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-8"
-           style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}>
+           style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}>
         {/* Logo icon */}
         <div className="animate-splash flex flex-col items-center gap-6">
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-               style={{ background: 'linear-gradient(135deg, #2563eb, #10b981)' }}>
+               style={{ background: 'linear-gradient(135deg, #00e07a, #00e07a)' }}>
             <span className="text-white font-black text-4xl" style={{ letterSpacing: '-2px' }}>K</span>
           </div>
           <div className="flex items-baseline gap-1">
@@ -90,10 +90,10 @@ export default function LoginPage() {
         {/* Loading indicator */}
         <div className="flex flex-col items-center gap-3" style={{ animation: 'splashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both' }}>
           <div className="w-8 h-8 relative">
-            <div className="absolute inset-0 rounded-full border-2 border-slate-700/40" />
+            <div className="absolute inset-0 rounded-full border-2 border-[#272b35]/40" />
             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
           </div>
-          <p className="text-slate-500 text-sm">Loading...</p>
+          <p className="text-[#8891a8] text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -102,7 +102,7 @@ export default function LoginPage() {
   // Access denied or error state
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-         style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}>
+         style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}>
 
       {/* Background grid */}
       <div className="absolute inset-0 opacity-[0.03]"
@@ -121,7 +121,7 @@ export default function LoginPage() {
               ENERGY
             </span>
           </div>
-          <p className="text-slate-500 text-sm tracking-widest uppercase">Internal Portal</p>
+          <p className="text-[#8891a8] text-sm tracking-widest uppercase">Internal Portal</p>
         </div>
 
         {/* Card */}
@@ -136,7 +136,7 @@ export default function LoginPage() {
               <p className="text-white text-sm font-medium">{error}</p>
               <button
                 onClick={() => signOut({ redirectUrl: '/sign-in' })}
-                className="text-slate-400 hover:text-white text-xs transition-colors underline underline-offset-2"
+                className="text-[#c2c8d8] hover:text-white text-xs transition-colors underline underline-offset-2"
               >
                 Sign out and try a different account
               </button>
@@ -144,7 +144,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-slate-600 text-xs mt-6 tracking-wide">
+        <p className="text-center text-[#525c72] text-xs mt-6 tracking-wide">
           &copy; {new Date().getFullYear()} Kilo Energy &middot; Internal Use Only
         </p>
       </div>

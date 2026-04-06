@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}
     >
       {/* Background grid */}
       <div
@@ -35,7 +35,7 @@ export default function NotFound() {
 
         {/* 404 */}
         <p
-          className="text-slate-700 font-black leading-none"
+          className="text-[#525c72] font-black leading-none"
           style={{ fontSize: '8rem', letterSpacing: '-0.04em' }}
         >
           404
@@ -43,7 +43,7 @@ export default function NotFound() {
 
         <div className="space-y-2">
           <h1 className="text-white text-xl font-bold">Page Not Found</h1>
-          <p className="text-slate-500 text-sm max-w-xs mx-auto">
+          <p className="text-[#8891a8] text-sm max-w-xs mx-auto">
             The page you're looking for doesn't exist or has been moved.
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function NotFound() {
           Back to Dashboard
         </Link>
 
-        <p className="text-slate-600 text-xs tracking-wide pt-4">
+        <p className="text-[#525c72] text-xs tracking-wide pt-4">
           &copy; {new Date().getFullYear()} Kilo Energy
         </p>
       </div>

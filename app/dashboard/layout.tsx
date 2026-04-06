@@ -182,32 +182,32 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
     <div className="px-3 pb-2">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+        className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[#1d2028]"
         style={{ color: 'var(--d-muted, #8891a8)' }}
       >
         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
         <span>View As...</span>
       </button>
       {open && (
-        <div className="mt-1 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
+        <div className="mt-1 bg-[#161920] border border-[#272b35] rounded-lg overflow-hidden shadow-xl">
           <input
             autoFocus
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search reps..."
-            className="w-full bg-transparent border-b border-slate-800 px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600"
+            className="w-full bg-transparent border-b border-[#333849] px-3 py-2 text-xs text-white outline-none placeholder:text-[#525c72]"
           />
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-xs text-slate-600 p-3 text-center">No matches</p>
+              <p className="text-xs text-[#525c72] p-3 text-center">No matches</p>
             ) : filtered.map((u) => (
               <button
                 key={u.id}
                 onClick={() => { onSelect(u); setOpen(false); setSearch(''); }}
-                className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center justify-between"
+                className="w-full text-left px-3 py-2 text-xs text-[#c2c8d8] hover:bg-[#1d2028] hover:text-white transition-colors flex items-center justify-between"
               >
                 <span>{u.name}</span>
-                <span className="text-[10px] text-slate-600 capitalize">{u.role}</span>
+                <span className="text-[10px] text-[#525c72] capitalize">{u.role}</span>
               </button>
             ))}
           </div>
@@ -372,13 +372,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!currentRole) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6"
-           style={{ background: 'linear-gradient(135deg, #060E1E 0%, #0D1B2E 60%, #0F2040 100%)' }}>
+           style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}>
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-             style={{ background: 'linear-gradient(135deg, #2563eb, #10b981)' }}>
+             style={{ background: 'linear-gradient(135deg, #00e07a, #00e07a)' }}>
           <span className="text-white font-black text-3xl" style={{ letterSpacing: '-2px' }}>K</span>
         </div>
         <div className="w-6 h-6 relative">
-          <div className="absolute inset-0 rounded-full border-2 border-slate-700/40" />
+          <div className="absolute inset-0 rounded-full border-2 border-[#272b35]/40" />
           <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" />
         </div>
       </div>
@@ -459,7 +459,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           // Reset to in-flow on desktop
           'md:relative md:inset-auto md:z-auto md:translate-x-0',
           // Force full width on mobile regardless of collapsed state
-          'max-md:!w-[220px] max-md:border-slate-800/60',
+          'max-md:!w-[220px] max-md:border-[#333849]/60',
           // Slide in / out on mobile
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
@@ -483,7 +483,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Open command palette (⌘K)"
-                className="flex-shrink-0 hover:text-slate-400 transition-colors"
+                className="flex-shrink-0 hover:text-[#c2c8d8] transition-colors"
                 style={{ color: 'var(--d-muted, #8891a8)' }}
                 aria-label="Open command palette"
               >
@@ -495,7 +495,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 onClick={() => setShortcutsOpen(true)}
                 title="Keyboard shortcuts (?)"
-                className="flex-shrink-0 hover:text-slate-400 transition-colors"
+                className="flex-shrink-0 hover:text-[#c2c8d8] transition-colors"
                 style={{ color: 'var(--d-muted, #8891a8)' }}
                 aria-label="Open keyboard shortcuts"
               >
@@ -509,7 +509,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
+            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1d2028] flex-shrink-0"
             style={{ color: 'var(--d-muted, #8891a8)' }}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -518,7 +518,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation menu"
-            className="md:hidden text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 flex-shrink-0"
+            className="md:hidden text-[#8891a8] hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1d2028] flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -596,7 +596,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {/* Tooltip popover — only shown when sidebar is collapsed */}
                     {showCollapsed && (
                       <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 nav-tooltip-popover">
-                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-slate-800/90 border border-slate-700/40 px-2.5 py-1.5 text-xs font-medium text-white shadow-xl">
+                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-[#1d2028]/90 border border-[#272b35]/40 px-2.5 py-1.5 text-xs font-medium text-white shadow-xl">
                           {label}
                         </span>
                       </div>
@@ -618,7 +618,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setShortcutsOpen(true)}
             title="Keyboard shortcuts"
-            className="flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+            className="flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[#1d2028]"
             style={{ color: 'var(--d-muted, #8891a8)' }}
             aria-label="Keyboard shortcuts"
           >
@@ -697,7 +697,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <button
           onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Back to top"
-          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-600 shadow-lg shadow-black/30 transition-all duration-300 ${
+          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#1d2028] border border-[#272b35]/60 text-[#c2c8d8] hover:text-white hover:border-[#272b35] shadow-lg shadow-black/30 transition-all duration-300 ${
             showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
         >

@@ -124,7 +124,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>
-      <div className={`group relative card-surface rounded-2xl p-5 overflow-hidden hover:border-slate-600 hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer animate-slide-in-scale stagger-${Math.min(index, 6)}`}>
+      <div className={`group relative card-surface rounded-2xl p-5 overflow-hidden hover:border-[#272b35] hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer animate-slide-in-scale stagger-${Math.min(index, 6)}`}>
         {/* Status badge + timing */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
               <span className="text-[11px] font-medium" style={{ color: '#8891a8' }}>{timingLabel}</span>
             )}
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+          <ChevronRight className="w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
         </div>
 
         {/* Name */}
@@ -203,7 +203,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             Led by <Link href={`/dashboard/reps/${blitz.owner.id}`} onClick={(e) => e.stopPropagation()} className="hover:text-[#00c4f0] transition-colors" style={{ color: '#c2c8d8' }}>{blitz.owner.firstName} {blitz.owner.lastName}</Link>
           </div>
           {isOwner && (
-            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-blue-400 border border-blue-500/20">
+            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[#00e07a] border border-[#00e07a]/20">
               <Tent className="w-3 h-3" /> Leading
             </span>
           )}
@@ -211,13 +211,13 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             <button
               disabled={joining}
               onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setJoining(true); try { await onJoin(blitz.id); } catch {} finally { setJoining(false); } }}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[#00e07a]/20 text-[#00e07a] border border-[#00e07a]/30 rounded-lg hover:bg-[#00e07a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />} {joining ? 'Joining...' : 'Join'}
             </button>
           )}
           {!isOwner && myParticipation && (
-            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
+            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-[#00e07a] border border-[#00e07a]/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
               <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : 'Pending'}
             </span>
           )}
@@ -275,51 +275,51 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () =>
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
-      <div ref={modalPanelRef} className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-blue-400" /> New Blitz</h2>
+      <div ref={modalPanelRef} className="bg-[#161920] border border-[#272b35] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[#00e07a]" /> New Blitz</h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-slate-700'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Name *</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[#272b35]'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
             {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Blitz name is required</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Location / Market</label>
-            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Location / Market</label>
+            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Housing / Address</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 123 Main St, Apt 4" />
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Housing / Address</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 123 Main St, Apt 4" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-slate-700'}`} />
+              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
               {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-slate-700'}`} />
+              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Blitz Leader</label>
-            <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Leader</label>
+            <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
               <option value={userId}>Me</option>
               {reps.filter((r) => r.id !== userId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" />
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[#c2c8d8] hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-[#00e07a] text-white rounded-xl hover:bg-[#00e07a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
           </button>
@@ -374,50 +374,50 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
-      <div ref={requestPanelRef} className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
+      <div ref={requestPanelRef} className="bg-[#161920] border border-[#272b35] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-amber-400" /> Request a Blitz</h2>
-        <p className="text-sm text-slate-500 mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
+        <p className="text-sm text-[#8891a8] mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-slate-700'}`} placeholder="e.g. Austin Spring Blitz" />
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Name *</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[#272b35]'}`} placeholder="e.g. Austin Spring Blitz" />
             {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Name is required</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Location</label>
-              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
+              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Location</label>
+              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Expected Headcount</label>
-              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 8" />
+              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Expected Headcount</label>
+              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 8" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-slate-700'}`} />
+              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
               {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-slate-700'}`} />
+              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Housing Preferences</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Airbnb near downtown" />
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Housing Preferences</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Airbnb near downtown" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" placeholder="Why this blitz, what's the opportunity..." />
+            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" placeholder="Why this blitz, what's the opportunity..." />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[#c2c8d8] hover:text-white transition-colors">Cancel</button>
           <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-amber-600 text-white rounded-xl hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Tent className="w-4 h-4" />}
             {saving ? 'Submitting...' : 'Submit Request'}
@@ -677,7 +677,7 @@ function BlitzPageInner() {
             </button>
           )}
           {!isAdmin && !userPerms.canCreateBlitz && userPerms.canRequestBlitz && (
-            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-slate-300 text-sm font-semibold rounded-xl border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors">
+            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#1d2028] text-[#c2c8d8] text-sm font-semibold rounded-xl border border-[#272b35] hover:bg-[#272b35] hover:text-white transition-colors">
               <Plus className="w-4 h-4" /> Request Blitz
             </button>
           )}
@@ -686,26 +686,26 @@ function BlitzPageInner() {
 
       {/* Summary cards */}
       <div className={`grid grid-cols-2 ${isAdmin ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4`}>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': '#10b981' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': '#00e07a' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Active</span>
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
+            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Active</span>
+            <CheckCircle className="w-4 h-4 text-[#00e07a]" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>{activeBlitzes}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': '#3b82f6' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': '#00c4f0' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Upcoming</span>
-            <Clock className="w-4 h-4 text-blue-400" />
+            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Upcoming</span>
+            <Clock className="w-4 h-4 text-[#00e07a]" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#4d9fff' }}>{upcomingBlitzes}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': '#a855f7' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Deals</span>
+            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Deals</span>
             <TrendingUp className="w-4 h-4 text-purple-400" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{totalDeals}</p>
@@ -713,7 +713,7 @@ function BlitzPageInner() {
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': '#06b6d4' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Total kW</span>
+            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Total kW</span>
             <Zap className="w-4 h-4 text-cyan-400" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{totalKW.toFixed(1)}</p>
@@ -722,7 +722,7 @@ function BlitzPageInner() {
           <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
             <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 mb-3" />
             <div className="flex items-center justify-between mb-3">
-              <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Costs</span>
+              <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Costs</span>
               <DollarSign className="w-4 h-4 text-amber-400" />
             </div>
             <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#ffb020' }}>{formatCurrency(totalCosts)}</p>
@@ -753,7 +753,7 @@ function BlitzPageInner() {
           <div className="flex flex-wrap items-center gap-3">
             {/* Search with keyboard shortcut */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8891a8]" />
               <input
                 ref={searchRef}
                 value={search}
@@ -769,13 +769,13 @@ function BlitzPageInner() {
                 style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
               />
               {search && (
-                <button onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+                <button onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8891a8] hover:text-[#c2c8d8] transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
             {search && (
-              <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{sortedBlitzes.length} result{sortedBlitzes.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full">{sortedBlitzes.length} result{sortedBlitzes.length !== 1 ? 's' : ''}</span>
             )}
 
             {/* Sort dropdown */}
@@ -790,7 +790,7 @@ function BlitzPageInner() {
                   <option key={opt.key} value={opt.key}>{opt.label}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8] pointer-events-none" />
             </div>
 
             {/* Status filter tabs with sliding pill */}
@@ -821,10 +821,10 @@ function BlitzPageInner() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="relative w-10 h-10">
-                <div className="absolute inset-0 rounded-full border-2 border-slate-700/40" />
+                <div className="absolute inset-0 rounded-full border-2 border-[#272b35]/40" />
                 <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
               </div>
-              <p className="text-sm text-slate-500 font-medium">Loading blitzes...</p>
+              <p className="text-sm text-[#8891a8] font-medium">Loading blitzes...</p>
             </div>
           ) : isAdmin ? (
             /* Admin sees all blitzes in one grid */
@@ -866,7 +866,7 @@ function BlitzPageInner() {
               {/* My Blitzes */}
               {myBlitzes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[#c2c8d8] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <UserCheck className="w-4 h-4" /> My Blitzes
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -878,7 +878,7 @@ function BlitzPageInner() {
               {/* Browse available */}
               {browseBlitzes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[#c2c8d8] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Search className="w-4 h-4" /> Browse Available
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -921,23 +921,23 @@ function BlitzPageInner() {
                         {req.type === 'cancel' ? (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-500/20">New Blitz</span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[#00c4f0] border border-[#00e07a]/20">New Blitz</span>
                         )}
                         <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
                         {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                       </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-slate-400">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[#c2c8d8]">
                         {req.type !== 'cancel' && req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
                         {req.type !== 'cancel' && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>}
                         {req.type !== 'cancel' && <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>}
                       </div>
-                      {req.notes && <p className="text-sm text-slate-500 mt-2 line-clamp-2">{req.notes}</p>}
-                      <p className="text-xs text-slate-600 mt-2">Requested by <span className="text-slate-400">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
+                      {req.notes && <p className="text-sm text-[#8891a8] mt-2 line-clamp-2">{req.notes}</p>}
+                      <p className="text-xs text-[#525c72] mt-2">Requested by <span className="text-[#c2c8d8]">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {req.status === 'pending' ? (
                         <>
-                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#00e07a] text-white rounded-lg hover:bg-[#00e07a] disabled:opacity-50 transition-colors">
                             {processingRequest === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>
                           <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
@@ -945,7 +945,7 @@ function BlitzPageInner() {
                           </button>
                         </>
                       ) : (
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-500/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[#00e07a]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
                           {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                           {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                         </span>
@@ -1002,29 +1002,29 @@ function BlitzSkeleton() {
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 bg-slate-800 rounded animate-skeleton" />
-            <div className="h-8 w-24 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+            <div className="h-7 w-7 bg-[#1d2028] rounded animate-skeleton" />
+            <div className="h-8 w-24 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
           </div>
-          <div className="h-3 w-64 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: '150ms' }} />
+          <div className="h-3 w-64 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: '150ms' }} />
         </div>
-        <div className="h-10 w-28 bg-slate-800 rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
+        <div className="h-10 w-28 bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
       </div>
 
       {/* Stat cards row — 4 cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="card-surface rounded-2xl p-5 space-y-3">
-            <div className="h-[2px] w-12 bg-slate-700 rounded-full animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
-            <div className="h-3 w-16 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
-            <div className="h-8 w-20 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 40}ms` }} />
+            <div className="h-[2px] w-12 bg-[#272b35] rounded-full animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+            <div className="h-3 w-16 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+            <div className="h-8 w-20 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 40}ms` }} />
           </div>
         ))}
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="h-9 w-24 bg-slate-800 rounded-lg animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+          <div key={i} className="h-9 w-24 bg-[#1d2028] rounded-lg animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
         ))}
       </div>
 
@@ -1036,20 +1036,20 @@ function BlitzSkeleton() {
             <div key={i} className="card-surface rounded-2xl p-5 space-y-4">
               {/* Title + badge row */}
               <div className="flex items-center justify-between">
-                <div className="h-5 w-36 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
-                <div className="h-5 w-16 bg-slate-800 rounded-full animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+                <div className="h-5 w-36 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+                <div className="h-5 w-16 bg-[#1d2028] rounded-full animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
               </div>
               {/* Location + dates */}
               <div className="space-y-2">
-                <div className="h-3 w-44 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 40}ms` }} />
-                <div className="h-3 w-32 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 80}ms` }} />
+                <div className="h-3 w-44 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 40}ms` }} />
+                <div className="h-3 w-32 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 80}ms` }} />
               </div>
               {/* Stats row */}
               <div className="flex gap-6">
                 {[...Array(3)].map((_, si) => (
                   <div key={si} className="space-y-1">
-                    <div className="h-4 w-8 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
-                    <div className="h-3 w-12 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
+                    <div className="h-4 w-8 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
+                    <div className="h-3 w-12 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
                   </div>
                 ))}
               </div>

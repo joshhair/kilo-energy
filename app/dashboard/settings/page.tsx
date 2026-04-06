@@ -160,28 +160,28 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
   const avatarColor = (repType: string) => {
     const rt = repType?.toLowerCase() ?? '';
     if (rt === 'closer') return 'bg-purple-600';
-    if (rt === 'setter') return 'bg-blue-600';
+    if (rt === 'setter') return 'bg-[#00e07a]';
     if (rt === 'both') return 'bg-teal-600';
-    return 'bg-slate-600';
+    return 'bg-[#525c72]';
   };
   const roleBadge = (repType: string) => {
     const rt = repType?.toLowerCase() ?? '';
     if (rt === 'closer') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Closer</span>;
-    if (rt === 'setter') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">Setter</span>;
+    if (rt === 'setter') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#00e07a]/20 text-[#00c4f0]">Setter</span>;
     if (rt === 'both') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300">Both</span>;
-    return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-400">{repType || 'N/A'}</span>;
+    return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#8891a8]/20 text-[#c2c8d8]">{repType || 'N/A'}</span>;
   };
 
-  if (loading) return <div className="text-slate-500 text-sm py-8 text-center">Loading permissions...</div>;
+  if (loading) return <div className="text-[#8891a8] text-sm py-8 text-center">Loading permissions...</div>;
 
   return (
     <div key="blitz-permissions" className="animate-tab-enter max-w-3xl">
       <h2 className="text-lg font-bold text-white mb-1">Blitz Permissions</h2>
-      <p className="text-sm text-slate-500 mb-5">Control which reps can request or create blitzes.</p>
+      <p className="text-sm text-[#8891a8] mb-5">Control which reps can request or create blitzes.</p>
 
       {/* Search bar */}
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8891a8]" />
         <input
           type="text"
           placeholder="Search reps..."
@@ -191,7 +191,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
         />
       </div>
       {searchTerm && (
-        <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full mb-3 inline-block">{filteredReps.length} result{filteredReps.length !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full mb-3 inline-block">{filteredReps.length} result{filteredReps.length !== 1 ? 's' : ''}</span>
       )}
 
       {/* Role filter tabs */}
@@ -206,22 +206,22 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
               : { background: '#1d2028', color: '#c2c8d8', border: '1px solid #333849' }
             }
           >
-            {role} <span className="ml-1 text-slate-500">{roleCounts[role]}</span>
+            {role} <span className="ml-1 text-[#8891a8]">{roleCounts[role]}</span>
           </button>
         ))}
       </div>
 
       {/* Summary stats + bulk actions */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-4 text-xs text-slate-400">
-          <span><strong className="text-blue-400">{canRequestCount}</strong> can request</span>
-          <span><strong className="text-emerald-400">{canCreateCount}</strong> can create</span>
-          <span><strong className="text-slate-300">{filteredReps.length}</strong> total reps</span>
+        <div className="flex items-center gap-4 text-xs text-[#c2c8d8]">
+          <span><strong className="text-[#00e07a]">{canRequestCount}</strong> can request</span>
+          <span><strong className="text-[#00e07a]">{canCreateCount}</strong> can create</span>
+          <span><strong className="text-[#c2c8d8]">{filteredReps.length}</strong> total reps</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setConfirmDialog({ open: true, action: 'grant' })}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#00e07a]/20 text-[#00e07a] hover:bg-[#00e07a]/30 transition-colors"
           >
             Grant All
           </button>
@@ -246,7 +246,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
           </thead>
           <tbody>
             {pageReps.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-8 text-slate-500 text-sm">No reps match your filters.</td></tr>
+              <tr><td colSpan={3} className="text-center py-8 text-[#8891a8] text-sm">No reps match your filters.</td></tr>
             ) : pageReps.map((rep) => {
               const perms = permissions[rep.id] ?? { canRequestBlitz: false, canCreateBlitz: false };
               return (
@@ -270,7 +270,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canRequestBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
-                      <span className={`text-[10px] font-medium ${perms.canRequestBlitz ? 'text-blue-400' : 'text-slate-500'}`}>
+                      <span className={`text-[10px] font-medium ${perms.canRequestBlitz ? 'text-[#00e07a]' : 'text-[#8891a8]'}`}>
                         {perms.canRequestBlitz ? 'On' : 'Off'}
                       </span>
                     </div>
@@ -283,7 +283,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canCreateBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
-                      <span className={`text-[10px] font-medium ${perms.canCreateBlitz ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      <span className={`text-[10px] font-medium ${perms.canCreateBlitz ? 'text-[#00e07a]' : 'text-[#8891a8]'}`}>
                         {perms.canCreateBlitz ? 'On' : 'Off'}
                       </span>
                     </div>
@@ -307,9 +307,9 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
         )}
       </div>
 
-      <div className="mt-4 text-xs text-slate-600 space-y-1">
-        <p><strong className="text-slate-400">Can Request:</strong> Rep can submit blitz requests for admin approval</p>
-        <p><strong className="text-slate-400">Can Create:</strong> Rep can create and manage blitzes directly</p>
+      <div className="mt-4 text-xs text-[#525c72] space-y-1">
+        <p><strong className="text-[#c2c8d8]">Can Request:</strong> Rep can submit blitz requests for admin approval</p>
+        <p><strong className="text-[#c2c8d8]">Can Create:</strong> Rep can create and manage blitzes directly</p>
       </div>
 
       {/* Bulk action confirm dialog */}
@@ -400,29 +400,29 @@ function SubDealersSection() {
 
       {/* Sub-dealer list */}
       <div className="card-surface rounded-2xl">
-        <div className="px-5 py-3.5 border-b border-slate-800">
+        <div className="px-5 py-3.5 border-b border-[#333849]">
           <p className="text-white font-semibold text-sm">{subDealers.length} Sub-Dealer{subDealers.length !== 1 ? 's' : ''}</p>
         </div>
         {subDealers.length === 0 ? (
           <div className="px-5 py-8 text-center">
-            <Handshake className="w-6 h-6 text-slate-600 mx-auto mb-2" />
-            <p className="text-slate-500 text-xs">No sub-dealers added yet</p>
+            <Handshake className="w-6 h-6 text-[#525c72] mx-auto mb-2" />
+            <p className="text-[#8891a8] text-xs">No sub-dealers added yet</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
             {subDealers.map((sd) => {
               const dealCount = projects.filter((p) => p.subDealerId === sd.id).length;
               return (
-                <div key={sd.id} className="px-5 py-3 flex items-center justify-between gap-4 hover:bg-slate-800/30 transition-colors">
+                <div key={sd.id} className="px-5 py-3 flex items-center justify-between gap-4 hover:bg-[#1d2028]/30 transition-colors">
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-medium truncate">{sd.name}</p>
-                    <p className="text-slate-500 text-xs truncate">{sd.email}{sd.phone ? ` \u00b7 ${sd.phone}` : ''}</p>
+                    <p className="text-[#8891a8] text-xs truncate">{sd.email}{sd.phone ? ` \u00b7 ${sd.phone}` : ''}</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-slate-500 text-xs tabular-nums">{dealCount} deal{dealCount !== 1 ? 's' : ''}</span>
+                    <span className="text-[#8891a8] text-xs tabular-nums">{dealCount} deal{dealCount !== 1 ? 's' : ''}</span>
                     <button
                       onClick={() => setConfirmRemove(sd.id)}
-                      className="text-slate-600 hover:text-red-400 transition-colors p-1"
+                      className="text-[#525c72] hover:text-red-400 transition-colors p-1"
                       title="Remove sub-dealer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -511,24 +511,24 @@ function PMSection() {
     if (res.ok) { toast('Project manager removed'); loadPMs(); }
   };
 
-  if (loading) return <div className="text-sm text-slate-500 py-8 text-center">Loading...</div>;
+  if (loading) return <div className="text-sm text-[#8891a8] py-8 text-center">Loading...</div>;
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500">Project managers can view all projects and reps but cannot access payroll, pricing, or settings.</p>
+      <p className="text-xs text-[#8891a8]">Project managers can view all projects and reps but cannot access payroll, pricing, or settings.</p>
 
       {/* Add form */}
       <div className="flex items-end gap-2">
         <div className="flex-1">
-          <label className="block text-[10px] text-slate-500 mb-0.5">First Name</label>
+          <label className="block text-[10px] text-[#8891a8] mb-0.5">First Name</label>
           <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[#1d2028] border border-[#333849] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
         </div>
         <div className="flex-1">
-          <label className="block text-[10px] text-slate-500 mb-0.5">Last Name</label>
+          <label className="block text-[10px] text-[#8891a8] mb-0.5">Last Name</label>
           <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[#1d2028] border border-[#333849] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
         </div>
         <div className="flex-[2]">
-          <label className="block text-[10px] text-slate-500 mb-0.5">Email</label>
+          <label className="block text-[10px] text-[#8891a8] mb-0.5">Email</label>
           <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[#1d2028] border border-[#333849] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
         </div>
         <button onClick={handleAdd} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
@@ -539,7 +539,7 @@ function PMSection() {
       {/* PM list with permission toggles */}
       {pms.length === 0 ? (
         <div className="card-surface rounded-2xl p-5 text-center">
-          <p className="text-slate-500 text-sm">No project managers yet</p>
+          <p className="text-[#8891a8] text-sm">No project managers yet</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -548,9 +548,9 @@ function PMSection() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="text-white font-medium text-sm">{pm.firstName} {pm.lastName}</p>
-                  <p className="text-slate-500 text-xs">{pm.email}</p>
+                  <p className="text-[#8891a8] text-xs">{pm.email}</p>
                 </div>
-                <button onClick={() => handleDelete(pm.id)} className="text-slate-600 hover:text-red-400 transition-colors">
+                <button onClick={() => handleDelete(pm.id)} className="text-[#525c72] hover:text-red-400 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -565,8 +565,8 @@ function PMSection() {
                     onClick={() => togglePerm(pm.id, field, pm[field])}
                     className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
                       pm[field]
-                        ? 'bg-emerald-900/30 text-emerald-300 border-emerald-500/30'
-                        : 'bg-slate-800/50 text-slate-500 border-slate-700/50'
+                        ? 'bg-emerald-900/30 text-emerald-300 border-[#00e07a]/30'
+                        : 'bg-[#1d2028]/50 text-[#8891a8] border-[#272b35]/50'
                     }`}
                   >
                     {pm[field] ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
@@ -985,7 +985,7 @@ function SettingsPageInner() {
     if (delta === 0) return null;
     const isPositive = delta > 0;
     return (
-      <span className={`text-[9px] font-medium leading-none ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+      <span className={`text-[9px] font-medium leading-none ${isPositive ? 'text-[#00e07a]' : 'text-red-400'}`}>
         {isPositive ? '+' : ''}{delta.toFixed(2)}
       </span>
     );
@@ -1116,7 +1116,7 @@ function SettingsPageInner() {
   if (currentRole !== 'admin') {
     return (
       <div className="p-8 text-center">
-        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }
@@ -1135,7 +1135,7 @@ function SettingsPageInner() {
             </div>
             <h1 className="text-xl font-black text-white tracking-tight">Settings</h1>
           </div>
-          <p className="text-slate-500 text-xs ml-8">App configuration</p>
+          <p className="text-[#8891a8] text-xs ml-8">App configuration</p>
         </div>
 
         <nav ref={navRef} className="relative space-y-4">
@@ -1173,7 +1173,7 @@ function SettingsPageInner() {
                     className={`relative z-[1] w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 group ${
                       isActive
                         ? 'before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full'
-                        : 'hover:bg-slate-800/60'
+                        : 'hover:bg-[#1d2028]/60'
                     }`}
                     style={isActive ? { color: '#00c4f0' } : { color: '#c2c8d8' }}
                   >
@@ -1189,7 +1189,7 @@ function SettingsPageInner() {
       </aside>
 
       {/* Mobile horizontal tab bar */}
-      <div className="md:hidden border-b border-slate-800 w-full">
+      <div className="md:hidden border-b border-[#333849] w-full">
         <div className="flex items-center gap-1 px-3 pt-4 pb-2 overflow-x-auto scrollbar-hide">
           {ALL_NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const isActive = section === id;
@@ -1199,11 +1199,11 @@ function SettingsPageInner() {
                 onClick={() => handleSetSection(id)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${
                   isActive
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-[#00e07a]/20 text-[#00e07a] border border-[#00e07a]/30 shadow-sm shadow-blue-500/10'
+                    : 'text-[#c2c8d8] hover:text-white hover:bg-[#1d2028]/60 border border-transparent'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#00e07a]' : 'text-[#8891a8]'}`} />
                 {label}
               </button>
             );
@@ -1220,12 +1220,12 @@ function SettingsPageInner() {
           if (!currentNav) return null;
           const NavIcon = currentNav.icon;
           return (
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-4">
-              <Settings className="w-3 h-3 text-slate-600" />
+            <div className="flex items-center gap-1.5 text-xs text-[#8891a8] mb-4">
+              <Settings className="w-3 h-3 text-[#525c72]" />
               <span>Settings</span>
-              <ChevronRight className="w-3 h-3 text-slate-700" />
-              <NavIcon className="w-3 h-3 text-blue-400" />
-              <span className="text-slate-300 font-medium">{currentNav.label}</span>
+              <ChevronRight className="w-3 h-3 text-[#525c72]" />
+              <NavIcon className="w-3 h-3 text-[#00e07a]" />
+              <span className="text-[#c2c8d8] font-medium">{currentNav.label}</span>
             </div>
           );
         })()}
@@ -1239,14 +1239,14 @@ function SettingsPageInner() {
           return (
             <div className="flex items-center gap-3 mb-6 flex-wrap">
               {[
-                { label: 'Active Installers', value: activeInstallerCount, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-                { label: 'Active Financers', value: activeFinancerCount, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                { label: 'Active Installers', value: activeInstallerCount, color: 'text-[#00e07a]', bg: 'bg-[#00e07a]/10 border-[#00e07a]/20' },
+                { label: 'Active Financers', value: activeFinancerCount, color: 'text-[#00e07a]', bg: 'bg-[#00e07a]/10 border-[#00e07a]/20' },
                 { label: 'Trainer Assignments', value: trainerCount, color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20' },
                 { label: 'Admin Users', value: adminCount, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
               ].map(({ label, value, color, bg }) => (
                 <div key={label} className={`${bg} border rounded-xl px-3 py-1.5 flex items-center gap-2`}>
                   <span className={`text-sm font-bold tabular-nums ${color}`}>{value}</span>
-                  <span className="text-xs text-slate-400">{label}</span>
+                  <span className="text-xs text-[#c2c8d8]">{label}</span>
                 </div>
               ))}
             </div>
@@ -1307,7 +1307,7 @@ function SettingsPageInner() {
               <h2 className="text-white font-semibold mb-4">Assign Trainer to Rep</h2>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs text-slate-400 mb-1">Trainee (Rep)</label>
+                  <label className="block text-xs text-[#c2c8d8] mb-1">Trainee (Rep)</label>
                   <SearchableSelect
                     value={newTraineeId}
                     onChange={(v) => setNewTraineeId(v)}
@@ -1316,7 +1316,7 @@ function SettingsPageInner() {
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs text-slate-400 mb-1">Trainer</label>
+                  <label className="block text-xs text-[#c2c8d8] mb-1">Trainer</label>
                   <SearchableSelect
                     value={newTrainerId}
                     onChange={(v) => setNewTrainerId(v)}
@@ -1357,18 +1357,18 @@ function SettingsPageInner() {
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mt-2">Default tiers: $0.20/W (deals 1-10) &rarr; $0.10/W (11-25) &rarr; $0.05/W (26+)</p>
+              <p className="text-xs text-[#8891a8] mt-2">Default tiers: $0.20/W (deals 1-10) &rarr; $0.10/W (11-25) &rarr; $0.05/W (26+)</p>
             </div>
 
             {trainerAssignments.length === 0 ? (
-              <div className="card-surface rounded-2xl p-5 border border-slate-800/60">
+              <div className="card-surface rounded-2xl p-5 border border-[#333849]/60">
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
                     <Layers className="w-4 h-4 text-amber-400" />
                   </div>
                   <div>
                     <p className="text-white font-medium text-sm mb-1">What are trainer overrides?</p>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <p className="text-[#c2c8d8] text-xs leading-relaxed">
                       When a rep is assigned a trainer, the trainer earns an override commission on every deal the trainee closes. Override rates are tiered and decrease as the trainee gains experience. Use the form above to create your first assignment.
                     </p>
                   </div>
@@ -1383,23 +1383,23 @@ function SettingsPageInner() {
                       <Layers className="w-3.5 h-3.5 text-amber-400" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Active Assignments</p>
+                      <p className="text-[10px] text-[#8891a8] uppercase tracking-wider font-semibold">Active Assignments</p>
                       <p className="text-white font-bold text-lg leading-tight">{trainerAssignments.length}</p>
                     </div>
                   </div>
-                  <div className="w-px h-8 bg-slate-800" />
+                  <div className="w-px h-8 bg-[#1d2028]" />
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-blue-500/10">
-                      <Users className="w-3.5 h-3.5 text-blue-400" />
+                    <div className="p-1.5 rounded-lg bg-[#00e07a]/10">
+                      <Users className="w-3.5 h-3.5 text-[#00e07a]" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Unique Trainers</p>
+                      <p className="text-[10px] text-[#8891a8] uppercase tracking-wider font-semibold">Unique Trainers</p>
                       <p className="text-white font-bold text-lg leading-tight">{uniqueTrainers}</p>
                     </div>
                   </div>
-                  <div className="w-px h-8 bg-slate-800" />
+                  <div className="w-px h-8 bg-[#1d2028]" />
                   <div>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Avg Override Rate</p>
+                    <p className="text-[10px] text-[#8891a8] uppercase tracking-wider font-semibold">Avg Override Rate</p>
                     <p className="text-amber-400 font-bold text-lg leading-tight">${avgRate.toFixed(2)}/W</p>
                   </div>
                 </div>
@@ -1407,7 +1407,7 @@ function SettingsPageInner() {
                 {/* Search + sort */}
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8]" />
                     <input
                       ref={trainerSearchRef}
                       type="text" placeholder='Search trainee or trainer...  press "/" to focus'
@@ -1417,13 +1417,13 @@ function SettingsPageInner() {
                       className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                     />
                     {trainerSearch && (
-                      <button onClick={() => { setTrainerSearch(''); setTrainerPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                      <button onClick={() => { setTrainerSearch(''); setTrainerPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8891a8] hover:text-white transition-colors">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
                   {trainerSearch && (
-                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
+                    <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
                   )}
                   <select
                     value={`${trainerSortKey}-${trainerSortDir}`}
@@ -1432,7 +1432,7 @@ function SettingsPageInner() {
                       setTrainerSortKey(key);
                       setTrainerSortDir(dir);
                     }}
-                    className="bg-[#1d2028] border border-[#333849] text-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
+                    className="bg-[#1d2028] border border-[#333849] text-[#c2c8d8] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                   >
                     <option value="trainee-asc">Trainee A-Z</option>
                     <option value="trainee-desc">Trainee Z-A</option>
@@ -1448,7 +1448,7 @@ function SettingsPageInner() {
                 {/* Compact table */}
                 <div className="card-surface rounded-2xl overflow-hidden">
                   {/* Header row */}
-                  <div className="grid grid-cols-[1fr_1fr_70px_90px_100px_72px] gap-2 px-4 py-2.5 border-b border-slate-800 text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  <div className="grid grid-cols-[1fr_1fr_70px_90px_100px_72px] gap-2 px-4 py-2.5 border-b border-[#333849] text-[10px] text-[#8891a8] uppercase tracking-wider font-semibold">
                     <span>Trainee</span>
                     <span>Trainer</span>
                     <span className="text-center">Deals</span>
@@ -1457,7 +1457,7 @@ function SettingsPageInner() {
                     <span></span>
                   </div>
                   {pageRows.length === 0 && (
-                    <div className="px-4 py-8 text-center text-slate-500 text-sm">
+                    <div className="px-4 py-8 text-center text-[#8891a8] text-sm">
                       No assignments match your search.
                     </div>
                   )}
@@ -1466,34 +1466,34 @@ function SettingsPageInner() {
                     return (
                       <div key={a.id}>
                         {/* Compact row */}
-                        <div className={`grid grid-cols-[1fr_1fr_70px_90px_100px_72px] gap-2 px-4 py-2.5 items-center text-sm border-b border-slate-800/50 transition-colors ${isEditing ? 'bg-slate-800/40' : 'hover:bg-slate-800/30'}`}>
+                        <div className={`grid grid-cols-[1fr_1fr_70px_90px_100px_72px] gap-2 px-4 py-2.5 items-center text-sm border-b border-[#333849]/50 transition-colors ${isEditing ? 'bg-[#1d2028]/40' : 'hover:bg-[#1d2028]/30'}`}>
                           {/* Trainee */}
                           <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-[#00e07a]/20 text-[#00e07a] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                               {getInitials(trainee?.name ?? '??')}
                             </div>
-                            <Link href={`/dashboard/reps/${a.traineeId}`} className="text-white truncate hover:text-blue-300 transition-colors">{trainee?.name ?? 'Unknown'}</Link>
+                            <Link href={`/dashboard/reps/${a.traineeId}`} className="text-white truncate hover:text-[#00c4f0] transition-colors">{trainee?.name ?? 'Unknown'}</Link>
                           </div>
                           {/* Trainer */}
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                               {getInitials(trainer?.name ?? '??')}
                             </div>
-                            <Link href={`/dashboard/reps/${a.trainerId}`} className="text-slate-300 truncate hover:text-blue-300 transition-colors">{trainer?.name ?? 'Unknown'}</Link>
+                            <Link href={`/dashboard/reps/${a.trainerId}`} className="text-[#c2c8d8] truncate hover:text-[#00c4f0] transition-colors">{trainer?.name ?? 'Unknown'}</Link>
                           </div>
                           {/* Deals */}
-                          <span className="text-center text-slate-400">{completedDeals}</span>
+                          <span className="text-center text-[#c2c8d8]">{completedDeals}</span>
                           {/* Rate */}
                           <span className="text-center text-amber-400 font-medium">${currentRate.toFixed(2)}/W</span>
                           {/* Tier */}
-                          <span className="text-center text-slate-400 text-xs">{tierLabel}</span>
+                          <span className="text-center text-[#c2c8d8] text-xs">{tierLabel}</span>
                           {/* Actions */}
                           <div className="flex items-center justify-end gap-1.5">
                             {!isEditing ? (
                               <>
                                 <button
                                   onClick={() => { setEditingAssignmentId(a.id); setEditingTiers([...a.tiers]); }}
-                                  className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700/60 transition-colors"
+                                  className="p-1.5 rounded-lg text-[#8891a8] hover:text-white hover:bg-[#272b35]/60 transition-colors"
                                   title="Edit tiers"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
@@ -1508,7 +1508,7 @@ function SettingsPageInner() {
                                       message: 'This will remove the trainer-trainee relationship. Both accounts remain active.',
                                     });
                                   }}
-                                  className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                  className="p-1.5 rounded-lg text-[#525c72] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                   title="Delete assignment"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1529,14 +1529,14 @@ function SettingsPageInner() {
                                       body: JSON.stringify({ id: a.id, tiers: editingTiers }),
                                     }).catch(console.error);
                                   }}
-                                  className="p-1.5 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors"
+                                  className="p-1.5 rounded-lg text-[#00e07a] hover:text-[#00c4f0] hover:bg-[#00e07a]/10 transition-colors"
                                   title="Save"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => setEditingAssignmentId(null)}
-                                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-700/60 transition-colors"
+                                  className="p-1.5 rounded-lg text-[#8891a8] hover:text-[#c2c8d8] hover:bg-[#272b35]/60 transition-colors"
                                   title="Cancel"
                                 >
                                   <X className="w-3.5 h-3.5" />
@@ -1548,11 +1548,11 @@ function SettingsPageInner() {
 
                         {/* Inline tier editor (expands below row when editing) */}
                         {isEditing && (
-                          <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-800/50 space-y-1.5">
+                          <div className="px-4 py-3 bg-[#1d2028]/30 border-b border-[#333849]/50 space-y-1.5">
                             {editingTiers.map((tier, i) => (
-                              <div key={i} className="flex items-center gap-3 rounded px-3 py-2 text-sm bg-slate-800/50">
-                                <span className="text-slate-500 text-xs w-12">Tier {i + 1}</span>
-                                <span className="text-slate-500 text-xs">Up to deal</span>
+                              <div key={i} className="flex items-center gap-3 rounded px-3 py-2 text-sm bg-[#1d2028]/50">
+                                <span className="text-[#8891a8] text-xs w-12">Tier {i + 1}</span>
+                                <span className="text-[#8891a8] text-xs">Up to deal</span>
                                 <input
                                   type="number" min="1" placeholder="Infinity"
                                   value={tier.upToDeal ?? ''}
@@ -1564,9 +1564,9 @@ function SettingsPageInner() {
                                     )
                                   }
                                   disabled={i === editingTiers.length - 1}
-                                  className="w-16 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
+                                  className="w-16 bg-[#272b35] border border-[#272b35] text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
                                 />
-                                <span className="text-slate-500 text-xs">$</span>
+                                <span className="text-[#8891a8] text-xs">$</span>
                                 <input
                                   type="number" step="0.01" min="0"
                                   value={tier.ratePerW}
@@ -1577,9 +1577,9 @@ function SettingsPageInner() {
                                       )
                                     )
                                   }
-                                  className="w-16 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                  className="w-16 bg-[#272b35] border border-[#272b35] text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                                 />
-                                <span className="text-slate-500 text-xs">/W</span>
+                                <span className="text-[#8891a8] text-xs">/W</span>
                                 <button
                                   onClick={() => {
                                     if (editingTiers.length <= 1) return;
@@ -1592,7 +1592,7 @@ function SettingsPageInner() {
                                     });
                                   }}
                                   disabled={editingTiers.length <= 1}
-                                  className="text-slate-600 hover:text-red-400 transition-colors disabled:opacity-30"
+                                  className="text-[#525c72] hover:text-red-400 transition-colors disabled:opacity-30"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -1609,7 +1609,7 @@ function SettingsPageInner() {
                                   return [...updated, { upToDeal: null, ratePerW: 0.05 }];
                                 });
                               }}
-                              className="flex items-center gap-1 text-slate-400 hover:text-white text-xs mt-1 transition-colors"
+                              className="flex items-center gap-1 text-[#c2c8d8] hover:text-white text-xs mt-1 transition-colors"
                             >
                               <Plus className="w-3 h-3" /> Add tier
                             </button>
@@ -1667,7 +1667,7 @@ function SettingsPageInner() {
                 type="text" placeholder="Installer name"
                 value={newInstaller}
                 onChange={(e) => setNewInstaller(e.target.value)}
-                className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-slate-800 border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-[#00e07a]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72]`}
+                className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-[#1d2028] border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-[#272b35] focus:ring-[#00e07a]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72]`}
               />
               {installerDup && <p className="text-red-400 text-[10px] mb-2">Already exists</p>}
               {/* Pricing structure selector */}
@@ -1678,8 +1678,8 @@ function SettingsPageInner() {
                     onClick={() => setNewInstallerStructure(s)}
                     className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${
                       newInstallerStructure === s
-                        ? 'bg-blue-500/20 border-blue-500 text-blue-300'
-                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                        ? 'bg-[#00e07a]/20 border-[#00e07a] text-[#00c4f0]'
+                        : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:text-white'
                     }`}
                   >
                     {s === 'standard' ? 'Standard (Flat Rate)' : 'Product Catalog'}
@@ -1689,14 +1689,14 @@ function SettingsPageInner() {
               {newInstallerStructure === 'standard' ? (
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Closer $/W</label>
+                    <label className="block text-xs text-[#8891a8] mb-1">Closer $/W</label>
                     <input type="number" step="0.01" min="0" placeholder="2.90"
                       value={newInstallerCloser} onChange={(e) => setNewInstallerCloser(e.target.value)}
                       className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Kilo $/W</label>
+                    <label className="block text-xs text-[#8891a8] mb-1">Kilo $/W</label>
                     <input type="number" step="0.01" min="0" placeholder="2.35"
                       value={newInstallerKilo} onChange={(e) => setNewInstallerKilo(e.target.value)}
                       className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
@@ -1705,7 +1705,7 @@ function SettingsPageInner() {
                 </div>
               ) : (
                 <div className="mb-3 space-y-2">
-                  <p className="text-xs text-slate-500 mb-2">Add product families (you can add products after creating the installer)</p>
+                  <p className="text-xs text-[#8891a8] mb-2">Add product families (you can add products after creating the installer)</p>
                   {newPcFamilies.map((fam, i) => (
                     <div key={i} className="grid grid-cols-[1fr_28px] gap-2 items-center">
                       <input type="text" placeholder="Family name (e.g. Goodleap)"
@@ -1716,14 +1716,14 @@ function SettingsPageInner() {
                       <button onClick={() => {
                         if (newPcFamilies.length <= 1) return;
                         setNewPcFamilies((prev) => prev.filter((_, j) => j !== i));
-                      }} disabled={newPcFamilies.length <= 1} className="text-slate-600 hover:text-red-400 disabled:opacity-30 transition-colors">
+                      }} disabled={newPcFamilies.length <= 1} className="text-[#525c72] hover:text-red-400 disabled:opacity-30 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
                   <button
                     onClick={() => setNewPcFamilies((prev) => [...prev, ''])}
-                    className="flex items-center gap-1 text-slate-400 hover:text-white text-xs transition-colors"
+                    className="flex items-center gap-1 text-[#c2c8d8] hover:text-white text-xs transition-colors"
                   >
                     <Plus className="w-3 h-3" /> Add family
                   </button>
@@ -1759,19 +1759,19 @@ function SettingsPageInner() {
               >
                 <Plus className="w-4 h-4" /> Add Installer
               </button>
-              <p className="text-xs text-slate-600 mt-2">Standard: flat rate · Product Catalog: SolarTech-style per-product pricing</p>
+              <p className="text-xs text-[#525c72] mt-2">Standard: flat rate · Product Catalog: SolarTech-style per-product pricing</p>
               </>); })()}
             </div>
 
             {installers.length === 0 && (
-              <div className="card-surface rounded-2xl p-5 border border-slate-800/60">
+              <div className="card-surface rounded-2xl p-5 border border-[#333849]/60">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
-                    <Building2 className="w-4 h-4 text-blue-400" />
+                  <div className="p-2 rounded-lg bg-[#00e07a]/10 flex-shrink-0">
+                    <Building2 className="w-4 h-4 text-[#00e07a]" />
                   </div>
                   <div>
                     <p className="text-white font-medium text-sm mb-1">No installers yet</p>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <p className="text-[#c2c8d8] text-xs leading-relaxed">
                       Installers are the companies that handle solar panel installation. Add your first installer above to start configuring pricing baselines and creating deals.
                     </p>
                   </div>
@@ -1787,14 +1787,14 @@ function SettingsPageInner() {
               return (
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2 px-1">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active</p>
-                  <span className="text-[10px] text-slate-600 tabular-nums">{filteredActive.length} of {activeInstallers.length} installers</span>
+                  <p className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider">Active</p>
+                  <span className="text-[10px] text-[#525c72] tabular-nums">{filteredActive.length} of {activeInstallers.length} installers</span>
                   <button
                     onClick={() => { setInstallerSelectMode((v) => !v); setSelectedInstallers(new Set()); }}
                     className={`ml-auto flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg border transition-colors ${
                       installerSelectMode
-                        ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-                        : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-white'
+                        ? 'bg-[#00e07a]/15 border-[#00e07a]/30 text-[#00e07a]'
+                        : 'bg-[#1d2028] border-[#272b35] text-[#8891a8] hover:text-white'
                     }`}
                   >
                     <ListChecks className="w-3 h-3" /> {installerSelectMode ? 'Done' : 'Select'}
@@ -1807,17 +1807,17 @@ function SettingsPageInner() {
                         if (selectedInstallers.size === filteredActive.length) setSelectedInstallers(new Set());
                         else setSelectedInstallers(new Set(filteredActive.map((i) => i.name)));
                       }}
-                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-[#c2c8d8] hover:text-white transition-colors"
                     >
                       {selectedInstallers.size === filteredActive.length
-                        ? <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
+                        ? <CheckSquare className="w-3.5 h-3.5 text-[#00e07a]" />
                         : <Square className="w-3.5 h-3.5" />}
                       Select all
                     </button>
                   </div>
                 )}
                 <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8]" />
                   <input
                     type="text" placeholder="Search installers..."
                     value={installerSearch}
@@ -1830,7 +1830,7 @@ function SettingsPageInner() {
                     const instPrepaid = getInstallerPrepaidOptions(inst.name);
                     const isExpanded = prepaidInstallerExpanded === inst.name;
                     return (
-                      <div key={inst.name} className={`card-surface rounded-xl overflow-hidden ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-blue-500/40' : ''}`}>
+                      <div key={inst.name} className={`card-surface rounded-xl overflow-hidden ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[#00e07a]/40' : ''}`}>
                         <div className="px-4 py-3 flex items-center justify-between group">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             {installerSelectMode && (
@@ -1843,15 +1843,15 @@ function SettingsPageInner() {
                                 className="flex-shrink-0"
                               >
                                 {selectedInstallers.has(inst.name)
-                                  ? <CheckSquare className="w-4 h-4 text-blue-400" />
-                                  : <Square className="w-4 h-4 text-slate-600" />}
+                                  ? <CheckSquare className="w-4 h-4 text-[#00e07a]" />
+                                  : <Square className="w-4 h-4 text-[#525c72]" />}
                               </button>
                             )}
                             <div>
                               <p className="text-white text-sm font-medium">{inst.name}</p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 {productCatalogInstallerConfigs[inst.name] && (
-                                  <span className="text-[10px] text-blue-400/70">Product Catalog</span>
+                                  <span className="text-[10px] text-[#00e07a]/70">Product Catalog</span>
                                 )}
                                 {instPrepaid.length > 0 && (
                                   <span className="text-[10px] text-violet-400/70">Prepaid: {instPrepaid.join(', ')}</span>
@@ -1861,9 +1861,9 @@ function SettingsPageInner() {
                                 const usedFinancers = Array.from(new Set(projects.filter((p) => p.installer === inst.name).map((p) => p.financer))).filter(Boolean);
                                 return usedFinancers.length > 0 ? (
                                   <div className="flex items-center gap-1 mt-1 flex-wrap">
-                                    <span className="text-[9px] text-slate-600 mr-0.5">Used with:</span>
+                                    <span className="text-[9px] text-[#525c72] mr-0.5">Used with:</span>
                                     {usedFinancers.map((f) => (
-                                      <span key={f} className="text-[9px] text-slate-500 bg-slate-800/80 border border-slate-700/50 px-1.5 py-0.5 rounded-full">{f}</span>
+                                      <span key={f} className="text-[9px] text-[#8891a8] bg-[#1d2028]/80 border border-[#272b35]/50 px-1.5 py-0.5 rounded-full">{f}</span>
                                     ))}
                                   </div>
                                 ) : null;
@@ -1882,21 +1882,21 @@ function SettingsPageInner() {
                                 }
                               }}
                               title="Configure pay schedule"
-                              className={`transition-colors ${payScheduleExpanded === inst.name ? 'text-emerald-400' : 'text-slate-600 hover:text-emerald-400 opacity-0 group-hover:opacity-100'}`}
+                              className={`transition-colors ${payScheduleExpanded === inst.name ? 'text-[#00e07a]' : 'text-[#525c72] hover:text-[#00e07a] opacity-0 group-hover:opacity-100'}`}
                             >
                               <DollarSign className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => { setPrepaidInstallerExpanded(isExpanded ? null : inst.name); setNewPrepaidOption(''); setEditingPrepaid(null); setPayScheduleExpanded(null); }}
                               title="Configure prepaid options"
-                              className={`transition-colors ${isExpanded ? 'text-violet-400' : 'text-slate-600 hover:text-violet-400 opacity-0 group-hover:opacity-100'}`}
+                              className={`transition-colors ${isExpanded ? 'text-violet-400' : 'text-[#525c72] hover:text-violet-400 opacity-0 group-hover:opacity-100'}`}
                             >
                               <CreditCard className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setInstallerActive(inst.name, false)}
                               title="Archive installer"
-                              className="text-slate-600 hover:text-amber-400 transition-colors opacity-0 group-hover:opacity-100"
+                              className="text-[#525c72] hover:text-amber-400 transition-colors opacity-0 group-hover:opacity-100"
                             >
                               <EyeOff className="w-3.5 h-3.5" />
                             </button>
@@ -1910,7 +1910,7 @@ function SettingsPageInner() {
                                   : 'This will not affect existing projects but will prevent new deals with this installer.',
                               })}
                               title="Permanently delete installer"
-                              className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                              className="text-[#525c72] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -1919,12 +1919,12 @@ function SettingsPageInner() {
 
                         {/* Expandable prepaid options panel */}
                         {isExpanded && (
-                          <div className="px-4 pb-4 pt-1 border-t border-slate-800/50">
+                          <div className="px-4 pb-4 pt-1 border-t border-[#333849]/50">
                             <p className="text-xs font-semibold text-violet-400/80 uppercase tracking-wider mb-2">Prepaid Options</p>
                             {instPrepaid.length > 0 && (
                               <div className="space-y-1.5 mb-3">
                                 {instPrepaid.map((opt) => (
-                                  <div key={opt} className="flex items-center justify-between bg-slate-800/50 rounded-lg px-3 py-2 group/item">
+                                  <div key={opt} className="flex items-center justify-between bg-[#1d2028]/50 rounded-lg px-3 py-2 group/item">
                                     {editingPrepaid === `${inst.name}::${opt}` ? (
                                       <div className="flex items-center gap-2 flex-1 mr-2">
                                         <input type="text" value={editPrepaidVal}
@@ -1934,21 +1934,21 @@ function SettingsPageInner() {
                                             if (e.key === 'Escape') setEditingPrepaid(null);
                                           }}
                                           autoFocus
-                                          className="flex-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                          className="flex-1 bg-[#272b35] border border-[#272b35] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                         />
                                         <button onClick={() => { if (editPrepaidVal.trim()) { updateInstallerPrepaidOption(inst.name, opt, editPrepaidVal.trim()); setEditingPrepaid(null); } }}
-                                          className="text-emerald-400 hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
+                                          className="text-[#00e07a] hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
                                         <button onClick={() => setEditingPrepaid(null)}
-                                          className="text-slate-500 hover:text-slate-300"><X className="w-3.5 h-3.5" /></button>
+                                          className="text-[#8891a8] hover:text-[#c2c8d8]"><X className="w-3.5 h-3.5" /></button>
                                       </div>
                                     ) : (
                                       <>
                                         <span className="text-white text-xs font-medium">{opt}</span>
                                         <div className="flex items-center gap-1.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
                                           <button onClick={() => { setEditingPrepaid(`${inst.name}::${opt}`); setEditPrepaidVal(opt); }}
-                                            className="text-slate-500 hover:text-blue-400 transition-colors"><Pencil className="w-3 h-3" /></button>
+                                            className="text-[#8891a8] hover:text-[#00e07a] transition-colors"><Pencil className="w-3 h-3" /></button>
                                           <button onClick={() => removeInstallerPrepaidOption(inst.name, opt)}
-                                            className="text-slate-500 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                                            className="text-[#8891a8] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
                                         </div>
                                       </>
                                     )}
@@ -1973,7 +1973,7 @@ function SettingsPageInner() {
                               </button>
                             </div>
                             {instPrepaid.length === 0 && (
-                              <p className="text-[10px] text-slate-600 mt-1.5">No prepaid options yet. Add one to enable prepaid tracking for this installer.</p>
+                              <p className="text-[10px] text-[#525c72] mt-1.5">No prepaid options yet. Add one to enable prepaid tracking for this installer.</p>
                             )}
                           </div>
                         )}
@@ -1983,11 +1983,11 @@ function SettingsPageInner() {
                           const currentPct = installerPayConfigs[inst.name]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
                           const remainder = 100 - currentPct;
                           return (
-                            <div className="px-4 pb-4 pt-1 border-t border-slate-800/50">
-                              <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-2">Pay Schedule</p>
+                            <div className="px-4 pb-4 pt-1 border-t border-[#333849]/50">
+                              <p className="text-xs font-semibold text-[#00e07a]/80 uppercase tracking-wider mb-2">Pay Schedule</p>
                               <div className="space-y-3">
                                 <div>
-                                  <label className="block text-xs text-slate-400 mb-1">Install payment %</label>
+                                  <label className="block text-xs text-[#c2c8d8] mb-1">Install payment %</label>
                                   <input
                                     type="number" min="0" max="100" step="1"
                                     value={editPayPct}
@@ -2000,16 +2000,16 @@ function SettingsPageInner() {
                                     }}
                                     className="w-24 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                   />
-                                  <p className="text-[10px] text-slate-600 mt-1">% paid at Installed. Remainder paid at PTO (M3).</p>
+                                  <p className="text-[10px] text-[#525c72] mt-1">% paid at Installed. Remainder paid at PTO (M3).</p>
                                 </div>
-                                <div className="bg-slate-800/50 rounded-lg px-3 py-2">
-                                  <p className="text-xs text-slate-300 font-medium">
-                                    M2: <span className="text-emerald-400">{currentPct}%</span> at Install
-                                    <span className="text-slate-600 mx-1.5">&middot;</span>
-                                    M3: <span className="text-blue-400">{remainder}%</span> at PTO
+                                <div className="bg-[#1d2028]/50 rounded-lg px-3 py-2">
+                                  <p className="text-xs text-[#c2c8d8] font-medium">
+                                    M2: <span className="text-[#00e07a]">{currentPct}%</span> at Install
+                                    <span className="text-[#525c72] mx-1.5">&middot;</span>
+                                    M3: <span className="text-[#00e07a]">{remainder}%</span> at PTO
                                   </p>
                                   {remainder === 0 && (
-                                    <p className="text-[10px] text-slate-600 mt-0.5">Full payment at install — no M3 created.</p>
+                                    <p className="text-[10px] text-[#525c72] mt-0.5">Full payment at install — no M3 created.</p>
                                   )}
                                 </div>
                               </div>
@@ -2033,10 +2033,10 @@ function SettingsPageInner() {
                   className="flex items-center gap-2 mb-2 px-1 w-full text-left group"
                 >
                   {archivedInstallersOpen
-                    ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
-                    : <ChevronRight className="w-3.5 h-3.5 text-slate-600" />}
-                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Archived</p>
-                  <span className="text-[10px] font-medium text-slate-600 bg-[#1d2028] border border-[#333849]/50 px-1.5 py-0.5 rounded-full">
+                    ? <ChevronDown className="w-3.5 h-3.5 text-[#525c72]" />
+                    : <ChevronRight className="w-3.5 h-3.5 text-[#525c72]" />}
+                  <p className="text-xs font-semibold text-[#525c72] uppercase tracking-wider">Archived</p>
+                  <span className="text-[10px] font-medium text-[#525c72] bg-[#1d2028] border border-[#333849]/50 px-1.5 py-0.5 rounded-full">
                     {archivedInstallers.length}
                   </span>
                   {installerSelectMode && archivedInstallers.length > 0 && (
@@ -2051,10 +2051,10 @@ function SettingsPageInner() {
                           return next;
                         });
                       }}
-                      className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-white transition-colors ml-auto"
+                      className="flex items-center gap-1.5 text-xs text-[#8891a8] hover:text-white transition-colors ml-auto"
                     >
                       {archivedInstallers.every((i) => selectedInstallers.has(i.name))
-                        ? <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
+                        ? <CheckSquare className="w-3.5 h-3.5 text-[#00e07a]" />
                         : <Square className="w-3.5 h-3.5" />}
                       Select all
                     </span>
@@ -2063,7 +2063,7 @@ function SettingsPageInner() {
                 {archivedInstallersOpen && (
                 <div className="grid grid-cols-2 gap-2">
                   {archivedInstallers.map((inst) => (
-                    <div key={inst.name} className={`bg-slate-900/50 border border-slate-800/50 rounded-xl px-4 py-3 flex items-center justify-between group ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-blue-500/40' : ''}`}>
+                    <div key={inst.name} className={`bg-[#161920]/50 border border-[#333849]/50 rounded-xl px-4 py-3 flex items-center justify-between group ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[#00e07a]/40' : ''}`}>
                       <div className="flex items-center gap-2 min-w-0">
                         {installerSelectMode && (
                           <button
@@ -2075,18 +2075,18 @@ function SettingsPageInner() {
                             className="flex-shrink-0"
                           >
                             {selectedInstallers.has(inst.name)
-                              ? <CheckSquare className="w-4 h-4 text-blue-400" />
-                              : <Square className="w-4 h-4 text-slate-600" />}
+                              ? <CheckSquare className="w-4 h-4 text-[#00e07a]" />
+                              : <Square className="w-4 h-4 text-[#525c72]" />}
                           </button>
                         )}
-                        <p className="text-slate-600 text-sm line-through">{inst.name}</p>
+                        <p className="text-[#525c72] text-sm line-through">{inst.name}</p>
                       </div>
                       {!installerSelectMode && (
                       <div className="flex items-center gap-1.5 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setInstallerActive(inst.name, true)}
                           title="Restore installer"
-                          className="text-slate-600 hover:text-emerald-400 transition-colors"
+                          className="text-[#525c72] hover:text-[#00e07a] transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -2100,7 +2100,7 @@ function SettingsPageInner() {
                               : 'This will not affect existing projects but will prevent new deals with this installer.',
                           })}
                           title="Permanently delete installer"
-                          className="text-slate-600 hover:text-red-400 transition-colors"
+                          className="text-[#525c72] hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2134,7 +2134,7 @@ function SettingsPageInner() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && newFinancer.trim() && !financerDup) { addFinancer(newFinancer.trim()); setNewFinancer(''); }
                     }}
-                    className={`w-full bg-slate-800 border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-[#00e07a]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72]`}
+                    className={`w-full bg-[#1d2028] border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-[#272b35] focus:ring-[#00e07a]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72]`}
                   />
                   {financerDup && <p className="text-red-400 text-[10px] mt-1">Already exists</p>}
                 </div>
@@ -2151,14 +2151,14 @@ function SettingsPageInner() {
             </div>
 
             {financers.filter((f) => !hiddenFinancers.has(f.name)).length === 0 && (
-              <div className="card-surface rounded-2xl p-5 border border-slate-800/60">
+              <div className="card-surface rounded-2xl p-5 border border-[#333849]/60">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
-                    <Landmark className="w-4 h-4 text-blue-400" />
+                  <div className="p-2 rounded-lg bg-[#00e07a]/10 flex-shrink-0">
+                    <Landmark className="w-4 h-4 text-[#00e07a]" />
                   </div>
                   <div>
                     <p className="text-white font-medium text-sm mb-1">No financers yet</p>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <p className="text-[#c2c8d8] text-xs leading-relaxed">
                       Financers are the lending partners that fund solar installations. Add your first financer above to make it available in the deal form.
                     </p>
                   </div>
@@ -2174,14 +2174,14 @@ function SettingsPageInner() {
               return (
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-2 px-1">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active</p>
-                  <span className="text-[10px] text-slate-600 tabular-nums">{filteredActiveFinancers.length} of {activeFinancers.length} financers</span>
+                  <p className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider">Active</p>
+                  <span className="text-[10px] text-[#525c72] tabular-nums">{filteredActiveFinancers.length} of {activeFinancers.length} financers</span>
                   <button
                     onClick={() => { setFinancerSelectMode((v) => !v); setSelectedFinancers(new Set()); }}
                     className={`ml-auto flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg border transition-colors ${
                       financerSelectMode
-                        ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-                        : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-white'
+                        ? 'bg-[#00e07a]/15 border-[#00e07a]/30 text-[#00e07a]'
+                        : 'bg-[#1d2028] border-[#272b35] text-[#8891a8] hover:text-white'
                     }`}
                   >
                     <ListChecks className="w-3 h-3" /> {financerSelectMode ? 'Done' : 'Select'}
@@ -2194,17 +2194,17 @@ function SettingsPageInner() {
                         if (selectedFinancers.size === filteredActiveFinancers.length) setSelectedFinancers(new Set());
                         else setSelectedFinancers(new Set(filteredActiveFinancers.map((f) => f.name)));
                       }}
-                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-[#c2c8d8] hover:text-white transition-colors"
                     >
                       {selectedFinancers.size === filteredActiveFinancers.length
-                        ? <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
+                        ? <CheckSquare className="w-3.5 h-3.5 text-[#00e07a]" />
                         : <Square className="w-3.5 h-3.5" />}
                       Select all
                     </button>
                   </div>
                 )}
                 <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8]" />
                   <input
                     type="text" placeholder="Search financers..."
                     value={financerSearch}
@@ -2214,7 +2214,7 @@ function SettingsPageInner() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {filteredActiveFinancers.map((fin) => (
-                    <div key={fin.name} className={`card-surface rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-blue-500/40' : ''}`}>
+                    <div key={fin.name} className={`card-surface rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[#00e07a]/40' : ''}`}>
                       <div className="flex items-center gap-2 min-w-0">
                         {financerSelectMode && (
                           <button
@@ -2226,8 +2226,8 @@ function SettingsPageInner() {
                             className="flex-shrink-0"
                           >
                             {selectedFinancers.has(fin.name)
-                              ? <CheckSquare className="w-4 h-4 text-blue-400" />
-                              : <Square className="w-4 h-4 text-slate-600" />}
+                              ? <CheckSquare className="w-4 h-4 text-[#00e07a]" />
+                              : <Square className="w-4 h-4 text-[#525c72]" />}
                           </button>
                         )}
                         <div className="min-w-0">
@@ -2238,8 +2238,8 @@ function SettingsPageInner() {
                               return (
                                 <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                                   dealCount > 0
-                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                    : 'bg-slate-800 text-slate-600 border border-slate-700/50'
+                                    ? 'bg-[#00e07a]/10 text-[#00e07a] border border-[#00e07a]/20'
+                                    : 'bg-[#1d2028] text-[#525c72] border border-[#272b35]/50'
                                 }`}>
                                   {dealCount} deal{dealCount !== 1 ? 's' : ''}
                                 </span>
@@ -2250,9 +2250,9 @@ function SettingsPageInner() {
                             const usedInstallers = Array.from(new Set(projects.filter((p) => p.financer === fin.name).map((p) => p.installer))).filter(Boolean);
                             return usedInstallers.length > 0 ? (
                               <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                <span className="text-[9px] text-slate-600 mr-0.5">Used with:</span>
+                                <span className="text-[9px] text-[#525c72] mr-0.5">Used with:</span>
                                 {usedInstallers.map((inst) => (
-                                  <span key={inst} className="text-[9px] text-slate-500 bg-slate-800/80 border border-slate-700/50 px-1.5 py-0.5 rounded-full">{inst}</span>
+                                  <span key={inst} className="text-[9px] text-[#8891a8] bg-[#1d2028]/80 border border-[#272b35]/50 px-1.5 py-0.5 rounded-full">{inst}</span>
                                 ))}
                               </div>
                             ) : null;
@@ -2264,7 +2264,7 @@ function SettingsPageInner() {
                         <button
                           onClick={() => setFinancerActive(fin.name, false)}
                           title="Archive financer"
-                          className="text-slate-600 hover:text-amber-400 transition-colors"
+                          className="text-[#525c72] hover:text-amber-400 transition-colors"
                         >
                           <EyeOff className="w-3.5 h-3.5" />
                         </button>
@@ -2276,7 +2276,7 @@ function SettingsPageInner() {
                             message: 'This will not affect existing projects but will prevent new deals with this financer.',
                           })}
                           title="Permanently delete financer"
-                          className="text-slate-600 hover:text-red-400 transition-colors"
+                          className="text-[#525c72] hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2298,10 +2298,10 @@ function SettingsPageInner() {
                   className="flex items-center gap-2 mb-2 px-1 w-full text-left group"
                 >
                   {archivedFinancersOpen
-                    ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
-                    : <ChevronRight className="w-3.5 h-3.5 text-slate-600" />}
-                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Archived</p>
-                  <span className="text-[10px] font-medium text-slate-600 bg-[#1d2028] border border-[#333849]/50 px-1.5 py-0.5 rounded-full">
+                    ? <ChevronDown className="w-3.5 h-3.5 text-[#525c72]" />
+                    : <ChevronRight className="w-3.5 h-3.5 text-[#525c72]" />}
+                  <p className="text-xs font-semibold text-[#525c72] uppercase tracking-wider">Archived</p>
+                  <span className="text-[10px] font-medium text-[#525c72] bg-[#1d2028] border border-[#333849]/50 px-1.5 py-0.5 rounded-full">
                     {archivedFinancers.length}
                   </span>
                   {financerSelectMode && archivedFinancers.length > 0 && (
@@ -2316,10 +2316,10 @@ function SettingsPageInner() {
                           return next;
                         });
                       }}
-                      className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-white transition-colors ml-auto"
+                      className="flex items-center gap-1.5 text-xs text-[#8891a8] hover:text-white transition-colors ml-auto"
                     >
                       {archivedFinancers.every((f) => selectedFinancers.has(f.name))
-                        ? <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
+                        ? <CheckSquare className="w-3.5 h-3.5 text-[#00e07a]" />
                         : <Square className="w-3.5 h-3.5" />}
                       Select all
                     </span>
@@ -2328,7 +2328,7 @@ function SettingsPageInner() {
                 {archivedFinancersOpen && (
                 <div className="grid grid-cols-2 gap-2">
                   {archivedFinancers.map((fin) => (
-                    <div key={fin.name} className={`bg-slate-900/50 border border-slate-800/50 rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-blue-500/40' : ''}`}>
+                    <div key={fin.name} className={`bg-[#161920]/50 border border-[#333849]/50 rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[#00e07a]/40' : ''}`}>
                       <div className="flex items-center gap-2 min-w-0">
                         {financerSelectMode && (
                           <button
@@ -2340,18 +2340,18 @@ function SettingsPageInner() {
                             className="flex-shrink-0"
                           >
                             {selectedFinancers.has(fin.name)
-                              ? <CheckSquare className="w-4 h-4 text-blue-400" />
-                              : <Square className="w-4 h-4 text-slate-600" />}
+                              ? <CheckSquare className="w-4 h-4 text-[#00e07a]" />
+                              : <Square className="w-4 h-4 text-[#525c72]" />}
                           </button>
                         )}
-                        <p className="text-slate-600 text-sm line-through">{fin.name}</p>
+                        <p className="text-[#525c72] text-sm line-through">{fin.name}</p>
                       </div>
                       {!financerSelectMode && (
                       <div className="flex items-center gap-1.5 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setFinancerActive(fin.name, true)}
                           title="Restore financer"
-                          className="text-slate-600 hover:text-emerald-400 transition-colors"
+                          className="text-[#525c72] hover:text-[#00e07a] transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -2363,7 +2363,7 @@ function SettingsPageInner() {
                             message: 'This will not affect existing projects but will prevent new deals with this financer.',
                           })}
                           title="Permanently delete financer"
-                          className="text-slate-600 hover:text-red-400 transition-colors"
+                          className="text-[#525c72] hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2387,11 +2387,11 @@ function SettingsPageInner() {
             {/* Pipeline Alert Thresholds */}
             <div className="card-surface rounded-2xl p-5 mb-6">
               <h2 className="text-white font-semibold mb-1">Pipeline Alert Thresholds</h2>
-              <p className="text-slate-500 text-xs mb-4">Days from sold date before a project is flagged as &ldquo;stuck&rdquo; in each phase.</p>
+              <p className="text-[#8891a8] text-xs mb-4">Days from sold date before a project is flagged as &ldquo;stuck&rdquo; in each phase.</p>
               <div className="space-y-3">
                 {['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'].map((phase) => (
                   <div key={phase} className="flex items-center justify-between gap-4">
-                    <span className="text-sm text-slate-300 min-w-[120px]">{phase}</span>
+                    <span className="text-sm text-[#c2c8d8] min-w-[120px]">{phase}</span>
                     <input
                       type="number"
                       min={1}
@@ -2422,7 +2422,7 @@ function SettingsPageInner() {
                     setThresholdsSaved(true);
                     setTimeout(() => setThresholdsSaved(false), 2000);
                   }}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white bg-[#1d2028] border border-[#333849] transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-[#c2c8d8] hover:text-white bg-[#1d2028] border border-[#333849] transition-colors"
                 >
                   Reset to Defaults
                 </button>
@@ -2459,13 +2459,13 @@ function SettingsPageInner() {
               <h2 className="text-white font-semibold mb-3">Date Range Filter</h2>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">From</label>
+                  <label className="block text-xs text-[#c2c8d8] mb-1">From</label>
                   <input type="date" value={exportDateFrom} onChange={(e) => setExportDateFrom(e.target.value)}
                     className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">To</label>
+                  <label className="block text-xs text-[#c2c8d8] mb-1">To</label>
                   <input type="date" value={exportDateTo} onChange={(e) => setExportDateTo(e.target.value)}
                     className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                   />
@@ -2473,104 +2473,104 @@ function SettingsPageInner() {
               </div>
               {(exportDateFrom || exportDateTo) && (
                 <button onClick={() => { setExportDateFrom(''); setExportDateTo(''); }}
-                  className="text-slate-500 hover:text-white text-xs mt-2 transition-colors">Clear dates</button>
+                  className="text-[#8891a8] hover:text-white text-xs mt-2 transition-colors">Clear dates</button>
               )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <button
                 onClick={() => toggleExport('payments')}
-                className={`bg-slate-900 rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
+                className={`bg-[#161920] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
                   exportSelected.has('payments')
-                    ? 'border border-blue-500/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
-                    : 'border border-slate-800 hover:border-slate-700/50'
+                    ? 'border border-[#00e07a]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+                    : 'border border-[#333849] hover:border-[#272b35]/50'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('payments') ? 'bg-blue-500/15' : 'bg-slate-800/80'}`}>
-                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('payments') ? 'bg-[#00e07a]/15' : 'bg-[#1d2028]/80'}`}>
+                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-[#00e07a]' : 'text-[#c2c8d8]'}`} />
                   </div>
                   {exportSelected.has('payments') && (
-                    <span className="text-xs font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">Selected</span>
+                    <span className="text-xs font-medium text-[#00e07a] bg-[#00e07a]/10 border border-[#00e07a]/20 px-2 py-0.5 rounded-full">Selected</span>
                   )}
                 </div>
                 <h2 className="text-white font-bold tracking-tight text-base mb-1">Payments Export</h2>
-                <p className="text-slate-500 text-sm leading-relaxed mb-3">All payroll entries including deal commissions, bonuses, and payment status.</p>
-                <p className="text-slate-400 text-xs font-medium tabular-nums">{filteredPayroll.length} of {payrollEntries.length} records</p>
+                <p className="text-[#8891a8] text-sm leading-relaxed mb-3">All payroll entries including deal commissions, bonuses, and payment status.</p>
+                <p className="text-[#c2c8d8] text-xs font-medium tabular-nums">{filteredPayroll.length} of {payrollEntries.length} records</p>
               </button>
               <button
                 onClick={() => toggleExport('projects')}
-                className={`bg-slate-900 rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
+                className={`bg-[#161920] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
                   exportSelected.has('projects')
-                    ? 'border border-blue-500/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
-                    : 'border border-slate-800 hover:border-slate-700/50'
+                    ? 'border border-[#00e07a]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+                    : 'border border-[#333849] hover:border-[#272b35]/50'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('projects') ? 'bg-blue-500/15' : 'bg-slate-800/80'}`}>
-                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('projects') ? 'bg-[#00e07a]/15' : 'bg-[#1d2028]/80'}`}>
+                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-[#00e07a]' : 'text-[#c2c8d8]'}`} />
                   </div>
                   {exportSelected.has('projects') && (
-                    <span className="text-xs font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">Selected</span>
+                    <span className="text-xs font-medium text-[#00e07a] bg-[#00e07a]/10 border border-[#00e07a]/20 px-2 py-0.5 rounded-full">Selected</span>
                   )}
                 </div>
                 <h2 className="text-white font-bold tracking-tight text-base mb-1">Projects Export</h2>
-                <p className="text-slate-500 text-sm leading-relaxed mb-3">Full project pipeline with installers, financers, kW size, PPW, and payment milestones.</p>
-                <p className="text-slate-400 text-xs font-medium tabular-nums">{filteredProjects.length} of {projects.length} records</p>
+                <p className="text-[#8891a8] text-sm leading-relaxed mb-3">Full project pipeline with installers, financers, kW size, PPW, and payment milestones.</p>
+                <p className="text-[#c2c8d8] text-xs font-medium tabular-nums">{filteredProjects.length} of {projects.length} records</p>
               </button>
               <button
                 onClick={() => toggleExport('baselines')}
-                className={`bg-slate-900 rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
+                className={`bg-[#161920] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
                   exportSelected.has('baselines')
-                    ? 'border border-blue-500/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
-                    : 'border border-slate-800 hover:border-slate-700/50'
+                    ? 'border border-[#00e07a]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+                    : 'border border-[#333849] hover:border-[#272b35]/50'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('baselines') ? 'bg-blue-500/15' : 'bg-slate-800/80'}`}>
-                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('baselines') ? 'bg-[#00e07a]/15' : 'bg-[#1d2028]/80'}`}>
+                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-[#00e07a]' : 'text-[#c2c8d8]'}`} />
                   </div>
                   {exportSelected.has('baselines') && (
-                    <span className="text-xs font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">Selected</span>
+                    <span className="text-xs font-medium text-[#00e07a] bg-[#00e07a]/10 border border-[#00e07a]/20 px-2 py-0.5 rounded-full">Selected</span>
                   )}
                 </div>
                 <h2 className="text-white font-bold tracking-tight text-base mb-1">Baselines Export</h2>
-                <p className="text-slate-500 text-sm leading-relaxed mb-3">Installer baselines, SolarTech tiers, and Product Catalog tiers with closer/kilo rates.</p>
-                <p className="text-slate-400 text-xs font-medium tabular-nums">{installerPricingVersions.length + solarTechProducts.length + productCatalogProducts.length} total rows</p>
+                <p className="text-[#8891a8] text-sm leading-relaxed mb-3">Installer baselines, SolarTech tiers, and Product Catalog tiers with closer/kilo rates.</p>
+                <p className="text-[#c2c8d8] text-xs font-medium tabular-nums">{installerPricingVersions.length + solarTechProducts.length + productCatalogProducts.length} total rows</p>
               </button>
               <button
                 onClick={() => toggleExport('trainers')}
-                className={`bg-slate-900 rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
+                className={`bg-[#161920] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
                   exportSelected.has('trainers')
-                    ? 'border border-blue-500/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
-                    : 'border border-slate-800 hover:border-slate-700/50'
+                    ? 'border border-[#00e07a]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+                    : 'border border-[#333849] hover:border-[#272b35]/50'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('trainers') ? 'bg-blue-500/15' : 'bg-slate-800/80'}`}>
-                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('trainers') ? 'bg-[#00e07a]/15' : 'bg-[#1d2028]/80'}`}>
+                    <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-[#00e07a]' : 'text-[#c2c8d8]'}`} />
                   </div>
                   {exportSelected.has('trainers') && (
-                    <span className="text-xs font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">Selected</span>
+                    <span className="text-xs font-medium text-[#00e07a] bg-[#00e07a]/10 border border-[#00e07a]/20 px-2 py-0.5 rounded-full">Selected</span>
                   )}
                 </div>
                 <h2 className="text-white font-bold tracking-tight text-base mb-1">Trainer Assignments</h2>
-                <p className="text-slate-500 text-sm leading-relaxed mb-3">Trainee/trainer pairs with tier breakdowns and completed deal counts.</p>
-                <p className="text-slate-400 text-xs font-medium tabular-nums">{trainerAssignments.length} assignments</p>
+                <p className="text-[#8891a8] text-sm leading-relaxed mb-3">Trainee/trainer pairs with tier breakdowns and completed deal counts.</p>
+                <p className="text-[#c2c8d8] text-xs font-medium tabular-nums">{trainerAssignments.length} assignments</p>
               </button>
             </div>
             {exportSelected.size > 0 && (
               <div className="mb-6">
                 <div className="card-surface rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-500/10">
-                      <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+                    <div className="p-2 rounded-lg bg-[#00e07a]/10">
+                      <FileSpreadsheet className="w-4 h-4 text-[#00e07a]" />
                     </div>
                     <div>
                       <p className="text-white text-sm font-semibold">
                         {[...exportSelected].map((t) => ({ payments: 'Payments', projects: 'Projects', baselines: 'Baselines', trainers: 'Trainers' }[t])).join(' + ')} Export ready
                       </p>
-                      <p className="text-slate-500 text-xs">
+                      <p className="text-[#8891a8] text-xs">
                         {[
                           exportSelected.has('payments') ? `${filteredPayroll.length} payment records` : '',
                           exportSelected.has('projects') ? `${filteredProjects.length} project records` : '',
@@ -2654,7 +2654,7 @@ function SettingsPageInner() {
                       }
                       toast(`Export started — ${exportSelected.size} file${exportSelected.size > 1 ? 's' : ''} downloading`, 'info');
                     }}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 active:scale-[0.97] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
+                    className="flex items-center gap-2 bg-[#00e07a] hover:bg-[#00e07a] active:scale-[0.97] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
                   >
                     <Download className="w-4 h-4" />
                     Download CSV{exportSelected.size > 1 ? 's' : ''}
@@ -2676,7 +2676,7 @@ function SettingsPageInner() {
               const pcInstallerNames = Object.keys(productCatalogInstallerConfigs).filter((n) => n !== 'SolarTech');
               const allTabs = ['standard', 'solartech', ...pcInstallerNames];
               return (
-                <div className="flex gap-1 mb-5 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container flex-wrap">
+                <div className="flex gap-1 mb-5 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit tab-bar-container flex-wrap">
                   {baselineIndicator && <div className="tab-indicator" style={baselineIndicator} />}
                   {allTabs.map((t, i) => (
                     <button
@@ -2684,7 +2684,7 @@ function SettingsPageInner() {
                       ref={(el) => { baselineTabRefs.current[i] = el; }}
                       onClick={() => setBaselineTab(t)}
                       className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-[0.97] ${
-                        baselineTab === t ? 'text-white' : 'text-slate-400 hover:text-white'
+                        baselineTab === t ? 'text-white' : 'text-[#c2c8d8] hover:text-white'
                       }`}
                     >
                       {t === 'standard' ? 'Standard' : t === 'solartech' ? 'SolarTech' : t}
@@ -2697,17 +2697,17 @@ function SettingsPageInner() {
             {/* Standard — flat installer baselines (inline-editable) */}
             {baselineTab === 'standard' && (
               <div className={`card-surface rounded-xl overflow-hidden transition-all duration-300 ${showSubDealerRates ? 'max-w-4xl' : 'max-w-2xl'}`}>
-                <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="px-5 py-4 border-b border-[#333849] flex items-center justify-between">
                   <div>
                     <h2 className="text-white font-semibold">Standard Installer Baselines</h2>
-                    <p className="text-slate-500 text-xs mt-0.5">Click the pencil to edit · Setter defaults to Closer + $0.10/W (leave blank) · Kilo = company margin floor</p>
+                    <p className="text-[#8891a8] text-xs mt-0.5">Click the pencil to edit · Setter defaults to Closer + $0.10/W (leave blank) · Kilo = company margin floor</p>
                   </div>
                   <button
                     onClick={() => setShowSubDealerRates((v) => !v)}
-                    className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors shrink-0"
+                    className="flex items-center gap-2 text-xs font-medium text-[#c2c8d8] hover:text-white transition-colors shrink-0"
                   >
                     <span>Sub-Dealer Rates</span>
-                    <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                    <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-[#272b35]'}`}>
                       <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
                     </span>
                   </button>
@@ -2715,9 +2715,9 @@ function SettingsPageInner() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="table-header-frost">
-                      <tr className="border-b border-slate-800">
+                      <tr className="border-b border-[#333849]">
                         <th
-                          className="text-left px-5 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-white transition-colors"
+                          className="text-left px-5 py-3 text-[#c2c8d8] font-medium cursor-pointer select-none hover:text-white transition-colors"
                           onClick={() => toggleBaselineSort('installer')}
                         >
                           <span className="inline-flex items-center gap-1">
@@ -2727,9 +2727,9 @@ function SettingsPageInner() {
                             )}
                           </span>
                         </th>
-                        <th className="text-right px-4 py-3 text-slate-400 font-medium">Structure</th>
+                        <th className="text-right px-4 py-3 text-[#c2c8d8] font-medium">Structure</th>
                         <th
-                          className="text-right px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-white transition-colors"
+                          className="text-right px-4 py-3 text-[#c2c8d8] font-medium cursor-pointer select-none hover:text-white transition-colors"
                           onClick={() => toggleBaselineSort('closer')}
                         >
                           <span className="inline-flex items-center gap-1 justify-end">
@@ -2739,9 +2739,9 @@ function SettingsPageInner() {
                             )}
                           </span>
                         </th>
-                        <th className="text-right px-4 py-3 text-slate-400 font-medium">Setter $/W</th>
+                        <th className="text-right px-4 py-3 text-[#c2c8d8] font-medium">Setter $/W</th>
                         <th
-                          className="text-right px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-white transition-colors"
+                          className="text-right px-4 py-3 text-[#c2c8d8] font-medium cursor-pointer select-none hover:text-white transition-colors"
                           onClick={() => toggleBaselineSort('kilo')}
                         >
                           <span className="inline-flex items-center gap-1 justify-end">
@@ -2791,13 +2791,13 @@ function SettingsPageInner() {
                         const isShowingHistory = showVersionHistory === installer;
                         return (
                           <Fragment key={installer}>
-                            <tr className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
+                            <tr className="border-b border-[#333849]/50 hover:bg-[#1d2028]/30 transition-colors group">
                               <td className="px-5 py-3 text-white font-medium">
                                 {installer}
                                 {historyCount > 0 && (
                                   <button
                                     onClick={() => setShowVersionHistory(isShowingHistory ? null : installer)}
-                                    className="ml-2 text-slate-600 hover:text-slate-400 transition-colors inline-flex items-center gap-0.5"
+                                    className="ml-2 text-[#525c72] hover:text-[#c2c8d8] transition-colors inline-flex items-center gap-0.5"
                                     title="View version history"
                                   >
                                     <History className="w-3 h-3" />
@@ -2806,7 +2806,7 @@ function SettingsPageInner() {
                                 )}
                               </td>
                               <td className="px-4 py-3 text-right">
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#272b35] text-[#c2c8d8]">
                                   Standard
                                 </span>
                               </td>
@@ -2816,7 +2816,7 @@ function SettingsPageInner() {
                                     <input type="number" step="0.01" min="0"
                                       value={editInstallerVals.closerPerW}
                                       onChange={(e) => setEditInstallerVals((v) => ({ ...v, closerPerW: e.target.value }))}
-                                      className="w-20 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                      className="w-20 bg-[#272b35] border border-[#272b35] text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                     />
                                   </td>
                                   <td className="px-4 py-2 text-right">
@@ -2824,14 +2824,14 @@ function SettingsPageInner() {
                                       value={editInstallerVals.setterPerW}
                                       placeholder={editInstallerVals.closerPerW ? String(Math.round((parseFloat(editInstallerVals.closerPerW) + 0.10) * 100) / 100) : '—'}
                                       onChange={(e) => setEditInstallerVals((v) => ({ ...v, setterPerW: e.target.value }))}
-                                      className="w-20 bg-slate-700 border border-slate-600 text-violet-300 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                      className="w-20 bg-[#272b35] border border-[#272b35] text-violet-300 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                     />
                                   </td>
                                   <td className="px-4 py-2 text-right">
                                     <input type="number" step="0.01" min="0"
                                       value={editInstallerVals.kiloPerW}
                                       onChange={(e) => setEditInstallerVals((v) => ({ ...v, kiloPerW: e.target.value }))}
-                                      className="w-20 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                      className="w-20 bg-[#272b35] border border-[#272b35] text-white rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                     />
                                   </td>
                                   {showSubDealerRates && (
@@ -2840,7 +2840,7 @@ function SettingsPageInner() {
                                         value={editInstallerVals.subDealerPerW}
                                         placeholder="—"
                                         onChange={(e) => setEditInstallerVals((v) => ({ ...v, subDealerPerW: e.target.value }))}
-                                        className="w-20 bg-slate-700 border border-slate-600 text-amber-400 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                        className="w-20 bg-[#272b35] border border-[#272b35] text-amber-400 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
                                       />
                                     </td>
                                   )}
@@ -2859,10 +2859,10 @@ function SettingsPageInner() {
                                           });
                                         }
                                         setEditingInstaller(null);
-                                      }} className="text-blue-400 hover:text-blue-300 transition-colors">
+                                      }} className="text-[#00e07a] hover:text-[#00c4f0] transition-colors">
                                         <Check className="w-4 h-4" />
                                       </button>
-                                      <button onClick={() => setEditingInstaller(null)} className="text-slate-500 hover:text-slate-300 transition-colors">
+                                      <button onClick={() => setEditingInstaller(null)} className="text-[#8891a8] hover:text-[#c2c8d8] transition-colors">
                                         <X className="w-4 h-4" />
                                       </button>
                                     </div>
@@ -2870,19 +2870,19 @@ function SettingsPageInner() {
                                 </>
                               ) : (
                                 <>
-                                  <td className="px-4 py-3 text-emerald-400 font-medium text-right">${rates.closerPerW.toFixed(2)}</td>
+                                  <td className="px-4 py-3 text-[#00e07a] font-medium text-right">${rates.closerPerW.toFixed(2)}</td>
                                   <td className="px-4 py-3 text-right">
                                     <span className={`font-medium text-xs ${hasCustomSetter ? 'text-violet-300' : 'text-violet-400/60'}`}>
                                       ${displaySetter.toFixed(2)}
-                                      {!hasCustomSetter && <span className="text-slate-600 ml-1 text-[10px]">auto</span>}
+                                      {!hasCustomSetter && <span className="text-[#525c72] ml-1 text-[10px]">auto</span>}
                                     </span>
                                   </td>
-                                  <td className="px-4 py-3 text-blue-400 font-medium text-right">${rates.kiloPerW.toFixed(2)}</td>
+                                  <td className="px-4 py-3 text-[#00e07a] font-medium text-right">${rates.kiloPerW.toFixed(2)}</td>
                                   {showSubDealerRates && (
                                     <td className="px-4 py-3 text-right">
                                       {rates.subDealerPerW != null
                                         ? <span className="text-amber-400 font-medium">${rates.subDealerPerW.toFixed(2)}</span>
-                                        : <span className="text-slate-600">&mdash;</span>}
+                                        : <span className="text-[#525c72]">&mdash;</span>}
                                     </td>
                                   )}
                                   <td className="px-4 py-3 text-right">
@@ -2898,7 +2898,7 @@ function SettingsPageInner() {
                                           });
                                         }}
                                         title="Edit current rates"
-                                        className="text-slate-600 hover:text-slate-300 transition-colors"
+                                        className="text-[#525c72] hover:text-[#c2c8d8] transition-colors"
                                       >
                                         <Pencil className="w-3.5 h-3.5" />
                                       </button>
@@ -2915,7 +2915,7 @@ function SettingsPageInner() {
                                             : { closerPerW: '2.90', setterPerW: '', kiloPerW: '2.35' });
                                         }}
                                         title="Create new pricing version"
-                                        className="text-slate-600 hover:text-blue-400 transition-colors"
+                                        className="text-[#525c72] hover:text-[#00e07a] transition-colors"
                                       >
                                         <GitBranch className="w-3.5 h-3.5" />
                                       </button>
@@ -2926,19 +2926,19 @@ function SettingsPageInner() {
                             </tr>
                             {/* Version history rows */}
                             {isShowingHistory && allVersions.filter((v) => v.effectiveTo !== null).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom)).map((v) => (
-                              <tr key={v.id} className="border-b border-slate-800/30 bg-slate-800/20">
-                                <td className="px-5 py-2 pl-10 text-slate-500 text-xs">{v.label}</td>
+                              <tr key={v.id} className="border-b border-[#333849]/30 bg-[#1d2028]/20">
+                                <td className="px-5 py-2 pl-10 text-[#8891a8] text-xs">{v.label}</td>
                                 <td className="px-4 py-2 text-right">
-                                  <span className="text-[10px] text-slate-600">Standard</span>
+                                  <span className="text-[10px] text-[#525c72]">Standard</span>
                                 </td>
-                                <td colSpan={2} className="px-4 py-2 text-slate-600 text-xs text-right">
+                                <td colSpan={2} className="px-4 py-2 text-[#525c72] text-xs text-right">
                                   {v.effectiveFrom} → {v.effectiveTo}
                                 </td>
-                                <td className="px-4 py-2 text-slate-600 text-right text-xs">
+                                <td className="px-4 py-2 text-[#525c72] text-right text-xs">
                                   {v.rates.type === 'flat' ? `$${v.rates.closerPerW.toFixed(2)} / $${v.rates.kiloPerW.toFixed(2)}` : 'Tiered'}
                                 </td>
                                 {showSubDealerRates && (
-                                  <td className="px-4 py-2 text-slate-600 text-right text-xs">
+                                  <td className="px-4 py-2 text-[#525c72] text-right text-xs">
                                     {v.rates.type === 'flat' && v.rates.subDealerPerW != null ? `$${v.rates.subDealerPerW.toFixed(2)}` : '—'}
                                   </td>
                                 )}
@@ -2957,13 +2957,13 @@ function SettingsPageInner() {
             {/* ── New Version Modal ─────────────────────────────────────────────── */}
             {newVersionFor && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
+                <div className="bg-[#161920] border border-[#272b35]/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-white font-bold">New Pricing Version</h3>
-                      <p className="text-slate-500 text-xs mt-0.5">{newVersionFor} — closes current version on the day before effective date</p>
+                      <p className="text-[#8891a8] text-xs mt-0.5">{newVersionFor} — closes current version on the day before effective date</p>
                     </div>
-                    <button onClick={() => setNewVersionFor(null)} className="text-slate-500 hover:text-white transition-colors">
+                    <button onClick={() => setNewVersionFor(null)} className="text-[#8891a8] hover:text-white transition-colors">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
@@ -2972,14 +2972,14 @@ function SettingsPageInner() {
                     {/* Label + effective date */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Version label</label>
+                        <label className="block text-xs text-[#c2c8d8] mb-1">Version label</label>
                         <input type="text" placeholder="e.g. v2 — March 2025"
                           value={newVersionLabel} onChange={(e) => setNewVersionLabel(e.target.value)}
                           className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Effective from</label>
+                        <label className="block text-xs text-[#c2c8d8] mb-1">Effective from</label>
                         <input type="date"
                           value={newVersionEffectiveFrom} onChange={(e) => setNewVersionEffectiveFrom(e.target.value)}
                           className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
@@ -2990,14 +2990,14 @@ function SettingsPageInner() {
                     {/* Rate inputs */}
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Closer $/W</label>
+                        <label className="block text-xs text-[#c2c8d8] mb-1">Closer $/W</label>
                         <input type="number" step="0.01" min="0"
                           value={newVersionVals.closerPerW} onChange={(e) => setNewVersionVals((v) => ({ ...v, closerPerW: e.target.value }))}
-                          className="w-full bg-[#1d2028] border border-[#333849] text-emerald-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-[#00e07a] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Setter $/W</label>
+                        <label className="block text-xs text-[#c2c8d8] mb-1">Setter $/W</label>
                         <input type="number" step="0.01" min="0"
                           value={newVersionVals.setterPerW}
                           placeholder={newVersionVals.closerPerW ? String(Math.round((parseFloat(newVersionVals.closerPerW) + 0.10) * 100) / 100) : 'auto'}
@@ -3006,10 +3006,10 @@ function SettingsPageInner() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Kilo $/W</label>
+                        <label className="block text-xs text-[#c2c8d8] mb-1">Kilo $/W</label>
                         <input type="number" step="0.01" min="0"
                           value={newVersionVals.kiloPerW} onChange={(e) => setNewVersionVals((v) => ({ ...v, kiloPerW: e.target.value }))}
-                          className="w-full bg-[#1d2028] border border-[#333849] text-blue-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
+                          className="w-full bg-[#1d2028] border border-[#333849] text-[#00e07a] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
                         />
                       </div>
                     </div>
@@ -3017,7 +3017,7 @@ function SettingsPageInner() {
 
                   <div className="flex gap-3 mt-5">
                     <button onClick={() => setNewVersionFor(null)}
-                      className="flex-1 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                      className="flex-1 py-2 rounded-xl text-sm font-medium bg-[#1d2028] text-[#c2c8d8] hover:bg-[#272b35] transition-colors"
                     >
                       Cancel
                     </button>
@@ -3054,7 +3054,7 @@ function SettingsPageInner() {
                 <div>
                   {/* Family sub-tabs */}
                   {config.families.length > 0 && (
-                    <div className="flex gap-1 mb-4 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+                    <div className="flex gap-1 mb-4 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit tab-bar-container">
                       {pcFamilyIndicator && <div className="tab-indicator" style={pcFamilyIndicator} />}
                       {config.families.map((fam, i) => {
                         const pcFamCount = productCatalogProducts.filter((p) => p.installer === installerName && p.family === fam).length;
@@ -3064,10 +3064,10 @@ function SettingsPageInner() {
                           ref={(el) => { pcFamilyTabRefs.current[i] = el; }}
                           onClick={() => setPcFamily((prev) => ({ ...prev, [installerName]: fam }))}
                           className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97] ${
-                            currentFamily === fam ? 'text-white' : pcFamCount === 0 ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-white'
+                            currentFamily === fam ? 'text-white' : pcFamCount === 0 ? 'text-[#525c72] hover:text-[#c2c8d8]' : 'text-[#c2c8d8] hover:text-white'
                           }`}
                         >
-                          {fam} <span className={`ml-0.5 ${currentFamily === fam ? 'text-slate-300' : 'text-slate-600'}`}>({pcFamCount})</span>
+                          {fam} <span className={`ml-0.5 ${currentFamily === fam ? 'text-[#c2c8d8]' : 'text-[#525c72]'}`}>({pcFamCount})</span>
                         </button>
                         );
                       })}
@@ -3135,7 +3135,7 @@ function SettingsPageInner() {
                           <>
                             <button
                               onClick={() => { setDupAllOpen('productcatalog'); setDupAllLabel(''); setDupAllEffectiveFrom(''); }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1d2028] border border-[#333849] text-slate-300 hover:text-white hover:border-slate-600 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1d2028] border border-[#333849] text-[#c2c8d8] hover:text-white hover:border-[#272b35] transition-colors"
                             >
                               <Copy className="w-3.5 h-3.5" /> Duplicate All as New Version
                             </button>
@@ -3146,8 +3146,8 @@ function SettingsPageInner() {
                             onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'productcatalog' ? null : 'productcatalog'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                               bulkAdjustOpen === 'productcatalog'
-                                ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-                                : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+                                ? 'bg-[#00e07a]/15 border-[#00e07a]/30 text-[#00e07a]'
+                                : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:text-white hover:border-[#272b35]'
                             }`}
                           >
                             <Sliders className="w-3.5 h-3.5" /> Bulk Adjust
@@ -3170,9 +3170,9 @@ function SettingsPageInner() {
                         <div>
                           <p className="text-white text-xs font-semibold mb-2">Bulk Rate Adjustment</p>
                           <div className="flex items-center gap-3 flex-wrap">
-                            <label className="text-slate-400 text-xs whitespace-nowrap">Adjust closer baselines by</label>
+                            <label className="text-[#c2c8d8] text-xs whitespace-nowrap">Adjust closer baselines by</label>
                             <div className="flex items-center gap-1">
-                              <span className="text-slate-500 text-xs">$</span>
+                              <span className="text-[#8891a8] text-xs">$</span>
                               <input
                                 type="number" step="0.01"
                                 value={bulkRateAdj}
@@ -3180,10 +3180,10 @@ function SettingsPageInner() {
                                 placeholder="+/- 0.00"
                                 className="w-24 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                               />
-                              <span className="text-slate-500 text-xs">/W</span>
+                              <span className="text-[#8891a8] text-xs">/W</span>
                             </div>
                             {adjVal !== 0 && (
-                              <span className="text-slate-500 text-[10px]">
+                              <span className="text-[#8891a8] text-[10px]">
                                 {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} x 4 tiers affected
                               </span>
                             )}
@@ -3208,15 +3208,15 @@ function SettingsPageInner() {
                         </div>
 
                         {/* Tool B: Kilo Spread Minimums */}
-                        <div className="border-t border-slate-800 pt-4">
+                        <div className="border-t border-[#333849] pt-4">
                           <p className="text-white text-xs font-semibold mb-2">Kilo Spread Minimums</p>
-                          <p className="text-slate-500 text-[10px] mb-2">Sets closerPerW = kiloPerW + spread for each tier (Kilo rate is the anchor)</p>
+                          <p className="text-[#8891a8] text-[10px] mb-2">Sets closerPerW = kiloPerW + spread for each tier (Kilo rate is the anchor)</p>
                           <div className="grid grid-cols-4 gap-2 mb-3">
                             {['Under 5kW', '5-10kW', '10-13kW', '13+ kW'].map((label, i) => (
                               <div key={label}>
-                                <p className="text-[10px] text-slate-500 mb-1 text-center">{label} spread</p>
+                                <p className="text-[10px] text-[#8891a8] mb-1 text-center">{label} spread</p>
                                 <div className="flex items-center gap-1 justify-center">
-                                  <span className="text-slate-500 text-xs">$</span>
+                                  <span className="text-[#8891a8] text-xs">$</span>
                                   <input
                                     type="number" step="0.01" min="0"
                                     value={bulkSpreadInputs[i]}
@@ -3233,7 +3233,7 @@ function SettingsPageInner() {
                             ))}
                           </div>
                           {anySpreadSet && (
-                            <p className="text-slate-500 text-[10px] mb-2">
+                            <p className="text-[#8891a8] text-[10px] mb-2">
                               Preview: {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} will have closer baselines recalculated per tier
                             </p>
                           )}
@@ -3280,26 +3280,26 @@ function SettingsPageInner() {
                     const pcSpreadMax = pcAllClosers.length > 0 ? Math.max(...pcAllClosers) : 0;
                     return (
                       <div className="card-surface rounded-xl overflow-hidden max-w-3xl">
-                        <div className="px-5 py-4 border-b border-slate-800">
+                        <div className="px-5 py-4 border-b border-[#333849]">
                           <div className="flex items-center justify-between gap-3">
                             <div>
                               <h2 className="text-white font-semibold">{installerName} — {currentFamily}</h2>
-                              <p className="text-slate-500 text-xs mt-0.5">
+                              <p className="text-[#8891a8] text-xs mt-0.5">
                                 {pcIsArchive ? 'Viewing archived version (read-only)' : 'Click any value to edit · Setter = Closer + $0.10/W auto-calculated'}
                               </p>
                             </div>
                             <div className="flex items-center gap-3">
                               <button
                                 onClick={() => setShowSubDealerRates((v) => !v)}
-                                className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors shrink-0"
+                                className="flex items-center gap-2 text-xs font-medium text-[#c2c8d8] hover:text-white transition-colors shrink-0"
                               >
                                 <span>SD Rate</span>
-                                <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                                <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-[#272b35]'}`}>
                                   <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
                                 </span>
                               </button>
                               <div className="relative">
-                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8]" />
                                 <input
                                   type="text"
                                   placeholder="Search products..."
@@ -3314,10 +3314,10 @@ function SettingsPageInner() {
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead className="table-header-frost">
-                              <tr className="border-b border-slate-800">
-                                <th className="text-left px-5 py-3 text-slate-400 font-medium">Product</th>
+                              <tr className="border-b border-[#333849]">
+                                <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Product</th>
                                 {['1–5 kW', '5–10 kW', '10–13 kW', '13+ kW'].map((label) => (
-                                  <th key={label} className="text-center px-4 py-3 text-slate-400 font-medium whitespace-nowrap">{label}</th>
+                                  <th key={label} className="text-center px-4 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">{label}</th>
                                 ))}
                                 <th className="px-4 py-3 w-10" />
                               </tr>
@@ -3328,14 +3328,14 @@ function SettingsPageInner() {
                             <tbody>
                               {/* Family summary stats row */}
                               {filteredProducts.length > 0 && (
-                                <tr className="bg-slate-800/60 border-b border-slate-800">
-                                  <td className="px-5 py-2 text-slate-400 text-xs font-medium">{pcSummaryCount} product{pcSummaryCount !== 1 ? 's' : ''}</td>
+                                <tr className="bg-[#1d2028]/60 border-b border-[#333849]">
+                                  <td className="px-5 py-2 text-[#c2c8d8] text-xs font-medium">{pcSummaryCount} product{pcSummaryCount !== 1 ? 's' : ''}</td>
                                   {[0, 1, 2, 3].map((ti) => {
                                     const profits = filteredProducts.map((p) => (p.tiers[ti]?.closerPerW ?? 0) - (p.tiers[ti]?.kiloPerW ?? 0));
                                     const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
                                     return (
                                       <td key={ti} className="px-2 py-2 text-center">
-                                        <span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                                        <span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-[#00e07a]/70' : 'text-red-400/70'}`}>
                                           ${avgProfit.toFixed(2)} profit
                                         </span>
                                       </td>
@@ -3343,7 +3343,7 @@ function SettingsPageInner() {
                                   })}
                                   {showSubDealerRates && <td />}
                                   <td className="px-4 py-2 text-center">
-                                    <span className="text-slate-500 text-[10px]">${pcSpreadMin.toFixed(2)}–${pcSpreadMax.toFixed(2)}</span>
+                                    <span className="text-[#8891a8] text-[10px]">${pcSpreadMin.toFixed(2)}–${pcSpreadMax.toFixed(2)}</span>
                                   </td>
                                 </tr>
                               )}
@@ -3354,7 +3354,7 @@ function SettingsPageInner() {
                                   ? pcAllVersions.find((v) => v.label === pcArchiveLabel && v.effectiveFrom === pcArchiveFrom)
                                   : null;
                                 return (
-                                  <tr key={product.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
+                                  <tr key={product.id} className="border-b border-[#333849]/50 hover:bg-[#1d2028]/30 transition-colors group">
                                     <td className="px-5 py-3 text-white text-xs max-w-[200px]">
                                       {editingProductName === product.id ? (
                                         <input
@@ -3382,31 +3382,31 @@ function SettingsPageInner() {
                                             }
                                             setEditingProductName(null);
                                           }}
-                                          className="w-full bg-slate-800 border border-blue-500 text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                          className="w-full bg-[#1d2028] border border-[#00e07a] text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                         />
                                       ) : (
                                         <span
-                                          className="cursor-pointer hover:text-blue-300 transition-colors inline-flex items-center gap-1.5 group/name"
+                                          className="cursor-pointer hover:text-[#00c4f0] transition-colors inline-flex items-center gap-1.5 group/name"
                                           onClick={() => { if (!pcIsArchive) { setEditingProductName(product.id); setEditProductNameVal(product.name); } }}
                                         >
                                           {product.name}
-                                          {!pcIsArchive && <Pencil className="w-3 h-3 text-slate-600 opacity-0 group-hover/name:opacity-100 transition-opacity" />}
+                                          {!pcIsArchive && <Pencil className="w-3 h-3 text-[#525c72] opacity-0 group-hover/name:opacity-100 transition-opacity" />}
                                         </span>
                                       )}
                                       {pcIsArchive && !archiveVersion && (
-                                        <span className="ml-2 text-slate-600 text-[10px]">(no data for this version)</span>
+                                        <span className="ml-2 text-[#525c72] text-[10px]">(no data for this version)</span>
                                       )}
                                     </td>
                                     {pcIsArchive ? (
                                       archiveVersion ? archiveVersion.tiers.map((tier, ti) => (
                                         <td key={ti} className="px-2 py-2 text-center">
                                           <div className="flex flex-col gap-1 items-center">
-                                            <span className="text-emerald-400/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span>
-                                            <span className="text-blue-400/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>
+                                            <span className="text-[#00e07a]/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span>
+                                            <span className="text-[#00e07a]/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>
                                           </div>
                                         </td>
                                       )) : (
-                                        <td colSpan={4} className="px-4 py-3 text-center text-slate-600 text-xs">No version data</td>
+                                        <td colSpan={4} className="px-4 py-3 text-center text-[#525c72] text-xs">No version data</td>
                                       )
                                     ) : (
                                       product.tiers.map((tier, ti) => (
@@ -3419,7 +3419,7 @@ function SettingsPageInner() {
                                               onFocus={(e) => e.target.select()}
                                               onChange={(e) => updateProductCatalogTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })}
                                               onKeyDown={(e) => handleTierKeyDown(e, pcDisplayProductIds, product.id, ti, 'closer')}
-                                              className="w-16 bg-[#1d2028] border border-[#333849] text-emerald-400 font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                              className="w-16 bg-[#1d2028] border border-[#333849] text-[#00e07a] font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                             />
                                             {renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}
                                             <input
@@ -3429,7 +3429,7 @@ function SettingsPageInner() {
                                               onFocus={(e) => e.target.select()}
                                               onChange={(e) => updateProductCatalogTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })}
                                               onKeyDown={(e) => handleTierKeyDown(e, pcDisplayProductIds, product.id, ti, 'kilo')}
-                                              className="w-16 bg-[#1d2028] border border-[#333849] text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                              className="w-16 bg-[#1d2028] border border-[#333849] text-[#00e07a]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                             />
                                             {renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}
                                             {showSubDealerRates && (
@@ -3442,7 +3442,7 @@ function SettingsPageInner() {
                                                   const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0;
                                                   updateProductCatalogTier(product.id, ti, { subDealerPerW: val });
                                                 }}
-                                                className="w-16 bg-slate-800 border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                className="w-16 bg-[#1d2028] border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500"
                                               />
                                             )}
                                           </div>
@@ -3464,7 +3464,7 @@ function SettingsPageInner() {
                                               })));
                                             }}
                                             title="Create new pricing version"
-                                            className="text-slate-600 hover:text-blue-400 transition-colors"
+                                            className="text-[#525c72] hover:text-[#00e07a] transition-colors"
                                           >
                                             <GitBranch className="w-3.5 h-3.5" />
                                           </button>
@@ -3480,7 +3480,7 @@ function SettingsPageInner() {
                                                 },
                                               });
                                             }}
-                                            className="text-slate-700 hover:text-red-400 transition-colors"
+                                            className="text-[#525c72] hover:text-red-400 transition-colors"
                                           >
                                             <Trash2 className="w-3.5 h-3.5" />
                                           </button>
@@ -3492,7 +3492,7 @@ function SettingsPageInner() {
                               })}
                               {pcDisplayProducts.length === 0 && (
                                 <tr>
-                                  <td colSpan={6} className="px-5 py-8 text-center text-slate-600">
+                                  <td colSpan={6} className="px-5 py-8 text-center text-[#525c72]">
                                     {pcProductSearch.trim() ? 'No products match your search.' : 'No products for this family.'}
                                   </td>
                                 </tr>
@@ -3500,8 +3500,8 @@ function SettingsPageInner() {
                             </tbody>
                           </table>
                         </div>
-                        <div className="px-5 py-3 border-t border-slate-800/50 bg-slate-800/20">
-                          <p className="text-xs text-slate-600">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p>
+                        <div className="px-5 py-3 border-t border-[#333849]/50 bg-[#1d2028]/20">
+                          <p className="text-xs text-[#525c72]">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p>
                         </div>
                       </div>
                     );
@@ -3514,14 +3514,14 @@ function SettingsPageInner() {
                         <p className="text-white text-sm font-medium mb-3">Add Product to {installerName}</p>
                         <div className="grid grid-cols-2 gap-3 mb-3">
                           <div>
-                            <label className="block text-xs text-slate-400 mb-1">Product name</label>
+                            <label className="block text-xs text-[#c2c8d8] mb-1">Product name</label>
                             <input type="text" placeholder="e.g. SunPower 400W"
                               value={newProductName} onChange={(e) => setNewProductName(e.target.value)}
                               className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-slate-400 mb-1">Family</label>
+                            <label className="block text-xs text-[#c2c8d8] mb-1">Family</label>
                             <select value={newProductFamily || currentFamily}
                               onChange={(e) => setNewProductFamily(e.target.value)}
                               className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
@@ -3532,7 +3532,7 @@ function SettingsPageInner() {
                         </div>
                         {/* Tier pricing inputs */}
                         <div className="mb-3">
-                          <p className="text-xs text-slate-400 mb-2">Tier Pricing ($/W)</p>
+                          <p className="text-xs text-[#c2c8d8] mb-2">Tier Pricing ($/W)</p>
                           <div className="space-y-2">
                             {[
                               { label: '1–5 kW', idx: 0, cPlaceholder: '2.90', kPlaceholder: '2.35' },
@@ -3541,23 +3541,23 @@ function SettingsPageInner() {
                               { label: '13+ kW', idx: 3, cPlaceholder: '2.75', kPlaceholder: '2.20' },
                             ].map(({ label, idx, cPlaceholder, kPlaceholder }) => (
                               <div key={idx} className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 w-16 flex-shrink-0">{label}</span>
+                                <span className="text-xs text-[#8891a8] w-16 flex-shrink-0">{label}</span>
                                 <div className="flex items-center gap-1 flex-1">
-                                  <span className="text-[10px] text-slate-600">Closer</span>
+                                  <span className="text-[10px] text-[#525c72]">Closer</span>
                                   <input
                                     type="number" step="0.01" min="0" placeholder={cPlaceholder}
                                     value={newProductTiers[idx].closerPerW}
                                     onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, closerPerW: e.target.value } : t))}
-                                    className="w-20 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
+                                    className="w-20 bg-[#272b35] border border-[#272b35] text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                                   />
                                 </div>
                                 <div className="flex items-center gap-1 flex-1">
-                                  <span className="text-[10px] text-slate-600">Kilo</span>
+                                  <span className="text-[10px] text-[#525c72]">Kilo</span>
                                   <input
                                     type="number" step="0.01" min="0" placeholder={kPlaceholder}
                                     value={newProductTiers[idx].kiloPerW}
                                     onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, kiloPerW: e.target.value } : t))}
-                                    className="w-20 bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
+                                    className="w-20 bg-[#272b35] border border-[#272b35] text-white rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                                   />
                                 </div>
                               </div>
@@ -3605,7 +3605,7 @@ function SettingsPageInner() {
                                 { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' },
                               ]);
                             }}
-                            className="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                            className="px-4 py-2 rounded-xl text-sm font-medium bg-[#1d2028] text-[#c2c8d8] hover:bg-[#272b35] transition-colors"
                           >
                             Cancel
                           </button>
@@ -3614,7 +3614,7 @@ function SettingsPageInner() {
                     ) : (
                       <button
                         onClick={() => { setAddingProductFor(installerName); setNewProductFamily(currentFamily); setNewProductTiers([{ closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }]); }}
-                        className="flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors"
+                        className="flex items-center gap-2 text-[#c2c8d8] hover:text-white text-sm transition-colors"
                       >
                         <Plus className="w-4 h-4" /> Add product to {installerName}
                       </button>
@@ -3629,13 +3629,13 @@ function SettingsPageInner() {
               const pcProduct = productCatalogProducts.find((p) => p.id === pcNewVersionFor) || solarTechProducts.find((p) => p.id === pcNewVersionFor);
               return pcProduct ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                  <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel">
+                  <div className="bg-[#161920] border border-[#272b35]/80 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-white font-bold">New Pricing Version</h3>
-                        <p className="text-slate-500 text-xs mt-0.5">{pcProduct.name} — closes current version on the day before effective date</p>
+                        <p className="text-[#8891a8] text-xs mt-0.5">{pcProduct.name} — closes current version on the day before effective date</p>
                       </div>
-                      <button onClick={() => setPcNewVersionFor(null)} className="text-slate-500 hover:text-white transition-colors">
+                      <button onClick={() => setPcNewVersionFor(null)} className="text-[#8891a8] hover:text-white transition-colors">
                         <X className="w-5 h-5" />
                       </button>
                     </div>
@@ -3644,14 +3644,14 @@ function SettingsPageInner() {
                       {/* Label + effective date */}
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs text-slate-400 mb-1">Version label</label>
+                          <label className="block text-xs text-[#c2c8d8] mb-1">Version label</label>
                           <input type="text" placeholder="e.g. v2 — March 2026"
                             value={pcNewVersionLabel} onChange={(e) => setPcNewVersionLabel(e.target.value)}
                             className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-slate-400 mb-1">Effective from</label>
+                          <label className="block text-xs text-[#c2c8d8] mb-1">Effective from</label>
                           <input type="date"
                             value={pcNewVersionEffectiveFrom} onChange={(e) => setPcNewVersionEffectiveFrom(e.target.value)}
                             className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
@@ -3661,21 +3661,21 @@ function SettingsPageInner() {
 
                       {/* Tier inputs — 4 brackets */}
                       <div>
-                        <p className="text-xs text-slate-400 mb-2">Tier pricing (Closer $/W · Kilo $/W)</p>
+                        <p className="text-xs text-[#c2c8d8] mb-2">Tier pricing (Closer $/W · Kilo $/W)</p>
                         <div className="grid grid-cols-4 gap-2">
                           {['1–5 kW', '5–10 kW', '10–13 kW', '13+ kW'].map((bracket, i) => (
                             <div key={bracket} className="space-y-1">
-                              <p className="text-[10px] text-slate-500 text-center">{bracket}</p>
+                              <p className="text-[10px] text-[#8891a8] text-center">{bracket}</p>
                               <input type="number" step="0.01" min="0"
                                 value={pcNewVersionTiers[i]?.closerPerW ?? ''}
                                 onChange={(e) => setPcNewVersionTiers((prev) => prev.map((t, idx) => idx === i ? { ...t, closerPerW: e.target.value } : t))}
-                                className="w-full bg-[#1d2028] border border-[#333849] text-emerald-400 rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                className="w-full bg-[#1d2028] border border-[#333849] text-[#00e07a] rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                 placeholder="Closer"
                               />
                               <input type="number" step="0.01" min="0"
                                 value={pcNewVersionTiers[i]?.kiloPerW ?? ''}
                                 onChange={(e) => setPcNewVersionTiers((prev) => prev.map((t, idx) => idx === i ? { ...t, kiloPerW: e.target.value } : t))}
-                                className="w-full bg-[#1d2028] border border-[#333849] text-blue-400 rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                className="w-full bg-[#1d2028] border border-[#333849] text-[#00e07a] rounded-xl px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                 placeholder="Kilo"
                               />
                             </div>
@@ -3686,7 +3686,7 @@ function SettingsPageInner() {
 
                     <div className="flex gap-3 mt-5">
                       <button onClick={() => setPcNewVersionFor(null)}
-                        className="flex-1 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                        className="flex-1 py-2 rounded-xl text-sm font-medium bg-[#1d2028] text-[#c2c8d8] hover:bg-[#272b35] transition-colors"
                       >
                         Cancel
                       </button>
@@ -3741,27 +3741,27 @@ function SettingsPageInner() {
 
               return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                  <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
+                  <div className="bg-[#161920] border border-[#272b35]/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-white font-bold">Duplicate All as New Version</h3>
-                        <p className="text-slate-500 text-xs mt-0.5">Snapshot current pricing for {targetProducts.length} product{targetProducts.length !== 1 ? 's' : ''} in {familyLabel}</p>
+                        <p className="text-[#8891a8] text-xs mt-0.5">Snapshot current pricing for {targetProducts.length} product{targetProducts.length !== 1 ? 's' : ''} in {familyLabel}</p>
                       </div>
-                      <button onClick={() => setDupAllOpen(null)} className="text-slate-500 hover:text-white transition-colors">
+                      <button onClick={() => setDupAllOpen(null)} className="text-[#8891a8] hover:text-white transition-colors">
                         <X className="w-5 h-5" />
                       </button>
                     </div>
 
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Version label</label>
+                        <label className="block text-xs text-[#c2c8d8] mb-1">Version label</label>
                         <input type="text" placeholder="e.g. Q2 2026 Pricing"
                           value={dupAllLabel} onChange={(e) => setDupAllLabel(e.target.value)}
                           className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Effective from</label>
+                        <label className="block text-xs text-[#c2c8d8] mb-1">Effective from</label>
                         <input type="date"
                           value={dupAllEffectiveFrom} onChange={(e) => setDupAllEffectiveFrom(e.target.value)}
                           className="w-full bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]"
@@ -3771,7 +3771,7 @@ function SettingsPageInner() {
 
                     <div className="flex gap-3 mt-5">
                       <button onClick={() => setDupAllOpen(null)}
-                        className="flex-1 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                        className="flex-1 py-2 rounded-xl text-sm font-medium bg-[#1d2028] text-[#c2c8d8] hover:bg-[#272b35] transition-colors"
                       >
                         Cancel
                       </button>
@@ -3809,7 +3809,7 @@ function SettingsPageInner() {
             {baselineTab === 'solartech' && (
               <div>
                 {/* Family sub-tabs */}
-                <div className="flex gap-1 mb-4 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit tab-bar-container">
+                <div className="flex gap-1 mb-4 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit tab-bar-container">
                   {stFamilyIndicator && <div className="tab-indicator" style={stFamilyIndicator} />}
                   {SOLARTECH_FAMILIES.map((fam, i) => {
                     const famCount = solarTechProducts.filter((p) => p.family === fam).length;
@@ -3819,10 +3819,10 @@ function SettingsPageInner() {
                       ref={(el) => { stFamilyRefs.current[i] = el; }}
                       onClick={() => setStFamily(fam)}
                       className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97] ${
-                        stFamily === fam ? 'text-white' : famCount === 0 ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-white'
+                        stFamily === fam ? 'text-white' : famCount === 0 ? 'text-[#525c72] hover:text-[#c2c8d8]' : 'text-[#c2c8d8] hover:text-white'
                       }`}
                     >
-                      {fam} <span className={`ml-0.5 ${stFamily === fam ? 'text-slate-300' : 'text-slate-600'}`}>({famCount})</span>
+                      {fam} <span className={`ml-0.5 ${stFamily === fam ? 'text-[#c2c8d8]' : 'text-[#525c72]'}`}>({famCount})</span>
                     </button>
                     );
                   })}
@@ -3887,7 +3887,7 @@ function SettingsPageInner() {
                         <>
                           <button
                             onClick={() => { setDupAllOpen('solartech'); setDupAllLabel(''); setDupAllEffectiveFrom(''); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1d2028] border border-[#333849] text-slate-300 hover:text-white hover:border-slate-600 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1d2028] border border-[#333849] text-[#c2c8d8] hover:text-white hover:border-[#272b35] transition-colors"
                           >
                             <Copy className="w-3.5 h-3.5" /> Duplicate All as New Version
                           </button>
@@ -3895,8 +3895,8 @@ function SettingsPageInner() {
                             onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'solartech' ? null : 'solartech'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                               bulkAdjustOpen === 'solartech'
-                                ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-                                : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+                                ? 'bg-[#00e07a]/15 border-[#00e07a]/30 text-[#00e07a]'
+                                : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:text-white hover:border-[#272b35]'
                             }`}
                           >
                             <Sliders className="w-3.5 h-3.5" /> Bulk Adjust
@@ -3921,9 +3921,9 @@ function SettingsPageInner() {
                       <div>
                         <p className="text-white text-xs font-semibold mb-2">Bulk Rate Adjustment</p>
                         <div className="flex items-center gap-3">
-                          <label className="text-slate-400 text-xs whitespace-nowrap">Adjust closer baselines by</label>
+                          <label className="text-[#c2c8d8] text-xs whitespace-nowrap">Adjust closer baselines by</label>
                           <div className="flex items-center gap-1">
-                            <span className="text-slate-500 text-xs">$</span>
+                            <span className="text-[#8891a8] text-xs">$</span>
                             <input
                               type="number" step="0.01"
                               value={bulkRateAdj}
@@ -3931,10 +3931,10 @@ function SettingsPageInner() {
                               placeholder="+/- 0.00"
                               className="w-24 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a] placeholder-[#525c72]"
                             />
-                            <span className="text-slate-500 text-xs">/W</span>
+                            <span className="text-[#8891a8] text-xs">/W</span>
                           </div>
                           {adjVal !== 0 && (
-                            <span className="text-slate-500 text-[10px]">
+                            <span className="text-[#8891a8] text-[10px]">
                               {familyProducts.length} product{familyProducts.length !== 1 ? 's' : ''} x 4 tiers affected
                             </span>
                           )}
@@ -3959,15 +3959,15 @@ function SettingsPageInner() {
                       </div>
 
                       {/* Tool B: Kilo Spread Minimums */}
-                      <div className="border-t border-slate-800 pt-4">
+                      <div className="border-t border-[#333849] pt-4">
                         <p className="text-white text-xs font-semibold mb-2">Kilo Spread Minimums</p>
-                        <p className="text-slate-500 text-[10px] mb-2">Sets closerPerW = kiloPerW + spread for each tier (Kilo rate is the anchor)</p>
+                        <p className="text-[#8891a8] text-[10px] mb-2">Sets closerPerW = kiloPerW + spread for each tier (Kilo rate is the anchor)</p>
                         <div className="grid grid-cols-4 gap-2 mb-3">
                           {['Under 5kW', '5-10kW', '10-13kW', '13+ kW'].map((label, i) => (
                             <div key={label}>
-                              <p className="text-[10px] text-slate-500 mb-1 text-center">{label} spread</p>
+                              <p className="text-[10px] text-[#8891a8] mb-1 text-center">{label} spread</p>
                               <div className="flex items-center gap-1 justify-center">
-                                <span className="text-slate-500 text-xs">$</span>
+                                <span className="text-[#8891a8] text-xs">$</span>
                                 <input
                                   type="number" step="0.01" min="0"
                                   value={bulkSpreadInputs[i]}
@@ -3984,7 +3984,7 @@ function SettingsPageInner() {
                           ))}
                         </div>
                         {anySpreadSet && (
-                          <p className="text-slate-500 text-[10px] mb-2">
+                          <p className="text-[#8891a8] text-[10px] mb-2">
                             Preview: {familyProducts.length} product{familyProducts.length !== 1 ? 's' : ''} will have closer baselines recalculated per tier
                           </p>
                         )}
@@ -4030,26 +4030,26 @@ function SettingsPageInner() {
                   const stSpreadMax = stAllClosers.length > 0 ? Math.max(...stAllClosers) : 0;
                   return (
                     <div className="card-surface rounded-xl overflow-hidden">
-                      <div className="px-5 py-4 border-b border-slate-800">
+                      <div className="px-5 py-4 border-b border-[#333849]">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <h2 className="text-white font-semibold">{stFamily}</h2>
-                            <p className="text-slate-500 text-xs mt-0.5">
+                            <p className="text-[#8891a8] text-xs mt-0.5">
                               {stIsArchive ? 'Viewing archived version (read-only)' : 'Click any value to edit · Setter = Closer + $0.10/W auto-calculated'}
                             </p>
                           </div>
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => setShowSubDealerRates((v) => !v)}
-                              className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors shrink-0"
+                              className="flex items-center gap-2 text-xs font-medium text-[#c2c8d8] hover:text-white transition-colors shrink-0"
                             >
                               <span>SD Rate</span>
-                              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-[#272b35]'}`}>
                                 <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
                               </span>
                             </button>
                             <div className="relative">
-                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8]" />
                               <input
                                 type="text"
                                 placeholder="Search products..."
@@ -4064,10 +4064,10 @@ function SettingsPageInner() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead className="table-header-frost">
-                            <tr className="border-b border-slate-800">
-                              <th className="text-left px-5 py-3 text-slate-400 font-medium">Product</th>
+                            <tr className="border-b border-[#333849]">
+                              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Product</th>
                               {['1–5 kW', '5–10 kW', '10–13 kW', '13+ kW'].map((label) => (
-                                <th key={label} className="text-center px-4 py-3 text-slate-400 font-medium whitespace-nowrap">{label}</th>
+                                <th key={label} className="text-center px-4 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">{label}</th>
                               ))}
                               <th className="px-4 py-3 w-10" />
                             </tr>
@@ -4078,14 +4078,14 @@ function SettingsPageInner() {
                           <tbody>
                             {/* Family summary stats row */}
                             {stAllFamilyProducts.length > 0 && (
-                              <tr className="bg-slate-800/60 border-b border-slate-800">
-                                <td className="px-5 py-2 text-slate-400 text-xs font-medium">{stSummaryCount} product{stSummaryCount !== 1 ? 's' : ''}</td>
+                              <tr className="bg-[#1d2028]/60 border-b border-[#333849]">
+                                <td className="px-5 py-2 text-[#c2c8d8] text-xs font-medium">{stSummaryCount} product{stSummaryCount !== 1 ? 's' : ''}</td>
                                 {[0, 1, 2, 3].map((ti) => {
                                   const profits = stAllFamilyProducts.map((p) => (p.tiers[ti]?.closerPerW ?? 0) - (p.tiers[ti]?.kiloPerW ?? 0));
                                   const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
                                   return (
                                     <td key={ti} className="px-2 py-2 text-center">
-                                      <span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                                      <span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-[#00e07a]/70' : 'text-red-400/70'}`}>
                                         ${avgProfit.toFixed(2)} profit
                                       </span>
                                     </td>
@@ -4093,7 +4093,7 @@ function SettingsPageInner() {
                                 })}
                                 {showSubDealerRates && <td />}
                                 <td className="px-4 py-2 text-center">
-                                  <span className="text-slate-500 text-[10px]">${stSpreadMin.toFixed(2)}–${stSpreadMax.toFixed(2)}</span>
+                                  <span className="text-[#8891a8] text-[10px]">${stSpreadMin.toFixed(2)}–${stSpreadMax.toFixed(2)}</span>
                                 </td>
                               </tr>
                             )}
@@ -4103,7 +4103,7 @@ function SettingsPageInner() {
                                 ? stAllVersions.find((v) => v.label === stArchiveLabel && v.effectiveFrom === stArchiveFrom)
                                 : null;
                               return (
-                                <tr key={product.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
+                                <tr key={product.id} className="border-b border-[#333849]/50 hover:bg-[#1d2028]/30 transition-colors group">
                                   <td className="px-5 py-3 text-white text-xs max-w-[200px]">
                                     {editingProductName === product.id ? (
                                       <input
@@ -4131,34 +4131,34 @@ function SettingsPageInner() {
                                           }
                                           setEditingProductName(null);
                                         }}
-                                        className="w-full bg-slate-800 border border-blue-500 text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                        className="w-full bg-[#1d2028] border border-[#00e07a] text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                       />
                                     ) : (
                                       <span
-                                        className="cursor-pointer hover:text-blue-300 transition-colors inline-flex items-center gap-1.5 group/name"
+                                        className="cursor-pointer hover:text-[#00c4f0] transition-colors inline-flex items-center gap-1.5 group/name"
                                         onClick={() => { if (!stIsArchive) { setEditingProductName(product.id); setEditProductNameVal(product.name); } }}
                                       >
                                         {product.name}
-                                        {!stIsArchive && <Pencil className="w-3 h-3 text-slate-600 opacity-0 group-hover/name:opacity-100 transition-opacity" />}
+                                        {!stIsArchive && <Pencil className="w-3 h-3 text-[#525c72] opacity-0 group-hover/name:opacity-100 transition-opacity" />}
                                       </span>
                                     )}
                                     {stIsArchive && !archiveVersion && (
-                                      <span className="ml-2 text-slate-600 text-[10px]">(no data for this version)</span>
+                                      <span className="ml-2 text-[#525c72] text-[10px]">(no data for this version)</span>
                                     )}
                                   </td>
                                   {stIsArchive ? (
                                     archiveVersion ? archiveVersion.tiers.map((tier, ti) => (
                                       <td key={ti} className="px-2 py-2 text-center">
                                         <div className="flex flex-col gap-1 items-center">
-                                          <span className="text-emerald-400/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span>
-                                          <span className="text-blue-400/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>
+                                          <span className="text-[#00e07a]/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span>
+                                          <span className="text-[#00e07a]/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>
                                           {showSubDealerRates && (
                                             <span className="text-amber-400/50 text-xs">{(tier as any).subDealerPerW != null ? `$${(tier as any).subDealerPerW.toFixed(2)}` : '—'}</span>
                                           )}
                                         </div>
                                       </td>
                                     )) : (
-                                      <td colSpan={4} className="px-4 py-3 text-center text-slate-600 text-xs">No version data</td>
+                                      <td colSpan={4} className="px-4 py-3 text-center text-[#525c72] text-xs">No version data</td>
                                     )
                                   ) : (
                                     product.tiers.map((tier, ti) => (
@@ -4171,7 +4171,7 @@ function SettingsPageInner() {
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => updateSolarTechTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })}
                                             onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'closer')}
-                                            className="w-16 bg-[#1d2028] border border-[#333849] text-emerald-400 font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                            className="w-16 bg-[#1d2028] border border-[#333849] text-[#00e07a] font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                           />
                                           {renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}
                                           <input
@@ -4181,7 +4181,7 @@ function SettingsPageInner() {
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => updateSolarTechTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })}
                                             onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'kilo')}
-                                            className="w-16 bg-[#1d2028] border border-[#333849] text-blue-400/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+                                            className="w-16 bg-[#1d2028] border border-[#333849] text-[#00e07a]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                                           />
                                           {renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}
                                           {showSubDealerRates && (
@@ -4194,7 +4194,7 @@ function SettingsPageInner() {
                                                 const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0;
                                                 updateSolarTechTier(product.id, ti, { subDealerPerW: val });
                                               }}
-                                              className="w-16 bg-slate-800 border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                              className="w-16 bg-[#1d2028] border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500"
                                             />
                                           )}
                                         </div>
@@ -4216,7 +4216,7 @@ function SettingsPageInner() {
                                             })));
                                           }}
                                           title="Create new pricing version"
-                                          className="text-slate-600 hover:text-blue-400 transition-colors"
+                                          className="text-[#525c72] hover:text-[#00e07a] transition-colors"
                                         >
                                           <GitBranch className="w-3.5 h-3.5" />
                                         </button>
@@ -4228,7 +4228,7 @@ function SettingsPageInner() {
                             })}
                             {stDisplayProducts.length === 0 && (
                               <tr>
-                                <td colSpan={6} className="px-5 py-8 text-center text-slate-600">
+                                <td colSpan={6} className="px-5 py-8 text-center text-[#525c72]">
                                   {stProductSearch.trim() ? 'No products match your search.' : 'No products for this family.'}
                                 </td>
                               </tr>
@@ -4236,8 +4236,8 @@ function SettingsPageInner() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="px-5 py-3 border-t border-slate-800/50 bg-slate-800/20">
-                        <p className="text-xs text-slate-600">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p>
+                      <div className="px-5 py-3 border-t border-[#333849]/50 bg-[#1d2028]/20">
+                        <p className="text-xs text-[#525c72]">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p>
                       </div>
                     </div>
                   );
@@ -4265,8 +4265,8 @@ function SettingsPageInner() {
                     type="email" placeholder="Email"
                     value={newAdminEmail}
                     onChange={(e) => { setNewAdminEmail(e.target.value); setAdminEmailError(''); }}
-                    className={`w-full bg-slate-800 border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72] ${
-                      adminEmailError ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-[#00e07a]'
+                    className={`w-full bg-[#1d2028] border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72] ${
+                      adminEmailError ? 'border-red-500 focus:ring-red-500' : 'border-[#272b35] focus:ring-[#00e07a]'
                     }`}
                   />
                   {adminEmailError && <p className="text-red-400 text-[10px] mt-1">{adminEmailError}</p>}
@@ -4308,14 +4308,14 @@ function SettingsPageInner() {
               </div>
             </div>
             {adminUsers.length === 0 ? (
-              <div className="card-surface rounded-2xl p-5 border border-slate-800/60">
+              <div className="card-surface rounded-2xl p-5 border border-[#333849]/60">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
-                    <UserPlus className="w-4 h-4 text-blue-400" />
+                  <div className="p-2 rounded-lg bg-[#00e07a]/10 flex-shrink-0">
+                    <UserPlus className="w-4 h-4 text-[#00e07a]" />
                   </div>
                   <div>
                     <p className="text-white font-medium text-sm mb-1">No admin users</p>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <p className="text-[#c2c8d8] text-xs leading-relaxed">
                       Add an admin user above to grant full administrative access to the app.
                     </p>
                   </div>
@@ -4329,7 +4329,7 @@ function SettingsPageInner() {
                 <div key={u.id} className="card-surface rounded-xl px-5 py-3 flex items-center justify-between">
                   <div>
                     <p className="text-white font-medium text-sm">{u.name}</p>
-                    <p className="text-slate-500 text-xs">{u.email}</p>
+                    <p className="text-[#8891a8] text-xs">{u.email}</p>
                   </div>
                   <button
                     disabled={isOnlyAdmin}
@@ -4352,7 +4352,7 @@ function SettingsPageInner() {
                         },
                       });
                     }}
-                    className={`transition-colors ${isOnlyAdmin ? 'text-slate-700 cursor-not-allowed' : 'text-slate-600 hover:text-red-400'}`}
+                    className={`transition-colors ${isOnlyAdmin ? 'text-[#525c72] cursor-not-allowed' : 'text-[#525c72] hover:text-red-400'}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -4383,19 +4383,19 @@ function SettingsPageInner() {
         const hasArchived = selectedArchivedInstallers.length > 0 || selectedArchivedFinancers.length > 0;
         return (
           <div
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-slate-900/80 border border-slate-700/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-[#161920]/80 border border-[#272b35]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
             role="toolbar"
             aria-label="Batch actions for selected items"
           >
             <div className="flex items-center gap-3">
               {/* Selection count badge */}
-              <span className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+              <span className="flex items-center gap-1.5 bg-[#00e07a]/15 border border-[#00e07a]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
                 <span className="text-white font-bold tabular-nums">{totalCount}</span>
-                <span className="text-blue-400 font-medium">selected</span>
+                <span className="text-[#00e07a] font-medium">selected</span>
               </span>
 
               {/* Visual divider */}
-              <div className="h-5 w-px bg-slate-700/80 flex-shrink-0" />
+              <div className="h-5 w-px bg-[#272b35]/80 flex-shrink-0" />
 
               {/* Archive Selected — only if some active items are selected */}
               {hasActive && (
@@ -4429,7 +4429,7 @@ function SettingsPageInner() {
                     setInstallerSelectMode(false);
                     setFinancerSelectMode(false);
                   }}
-                  className="flex items-center gap-1.5 text-white font-semibold px-4 py-1.5 rounded-xl text-sm bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 active:scale-[0.97] transition-all whitespace-nowrap"
+                  className="flex items-center gap-1.5 text-white font-semibold px-4 py-1.5 rounded-xl text-sm bg-[#00e07a] hover:bg-[#00e07a] shadow-lg shadow-emerald-500/20 active:scale-[0.97] transition-all whitespace-nowrap"
                 >
                   <Eye className="w-3.5 h-3.5" /> Restore Selected
                 </button>
@@ -4439,7 +4439,7 @@ function SettingsPageInner() {
               <button
                 onClick={() => { setSelectedInstallers(new Set()); setSelectedFinancers(new Set()); setInstallerSelectMode(false); setFinancerSelectMode(false); }}
                 aria-label="Deselect all and dismiss toolbar"
-                className="btn-secondary p-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/40 text-slate-400 hover:text-white transition-colors flex-shrink-0"
+                className="btn-secondary p-1.5 rounded-lg bg-[#272b35]/60 hover:bg-[#525c72]/80 border border-[#272b35]/40 text-[#c2c8d8] hover:text-white transition-colors flex-shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -4500,7 +4500,7 @@ function ConfirmDeleteDialog({
       className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
+      <div className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-red-400" />
@@ -4509,11 +4509,11 @@ function ConfirmDeleteDialog({
             Delete {confirm.type === 'trainer' ? `Assignment: ${confirm.name}` : confirm.name}?
           </h3>
         </div>
-        <p className="text-slate-400 text-sm mb-5">{confirm.message}</p>
+        <p className="text-[#c2c8d8] text-sm mb-5">{confirm.message}</p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[#272b35] text-[#c2c8d8] hover:bg-[#525c72] transition-colors"
           >
             Cancel
           </button>
@@ -4544,34 +4544,34 @@ function SettingsSkeleton() {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar — 5 nav item lines matching real NAV groups */}
-      <aside className="w-56 flex-shrink-0 border-r border-slate-800 p-4 pt-8 hidden md:block">
+      <aside className="w-56 flex-shrink-0 border-r border-[#333849] p-4 pt-8 hidden md:block">
         <div className="mb-6">
-          <div className="h-[3px] w-8 rounded-full bg-slate-700 animate-skeleton mb-3" />
+          <div className="h-[3px] w-8 rounded-full bg-[#272b35] animate-skeleton mb-3" />
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 bg-slate-800 rounded-lg animate-skeleton" />
-            <div className="h-6 w-20 bg-slate-800 rounded animate-skeleton" />
+            <div className="h-7 w-7 bg-[#1d2028] rounded-lg animate-skeleton" />
+            <div className="h-6 w-20 bg-[#1d2028] rounded animate-skeleton" />
           </div>
         </div>
         {/* Group label + 1 item, group label + 3 items, group label + 1 item = 5 items */}
         <div className="space-y-4">
           {/* Team group */}
           <div>
-            <div className="h-2 w-10 bg-slate-700/50 rounded animate-skeleton mb-1.5 ml-2" />
-            <div className="h-9 bg-slate-800/60 rounded-xl animate-skeleton" style={{ animationDelay: '0ms' }} />
+            <div className="h-2 w-10 bg-[#272b35]/50 rounded animate-skeleton mb-1.5 ml-2" />
+            <div className="h-9 bg-[#1d2028]/60 rounded-xl animate-skeleton" style={{ animationDelay: '0ms' }} />
           </div>
           {/* Business group */}
           <div>
-            <div className="h-2 w-14 bg-slate-700/50 rounded animate-skeleton mb-1.5 ml-2" style={{ animationDelay: '50ms' }} />
+            <div className="h-2 w-14 bg-[#272b35]/50 rounded animate-skeleton mb-1.5 ml-2" style={{ animationDelay: '50ms' }} />
             <div className="space-y-1">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-9 bg-slate-800/60 rounded-xl animate-skeleton" style={{ animationDelay: `${i * 50}ms` }} />
+                <div key={i} className="h-9 bg-[#1d2028]/60 rounded-xl animate-skeleton" style={{ animationDelay: `${i * 50}ms` }} />
               ))}
             </div>
           </div>
           {/* System group */}
           <div>
-            <div className="h-2 w-12 bg-slate-700/50 rounded animate-skeleton mb-1.5 ml-2" style={{ animationDelay: '200ms' }} />
-            <div className="h-9 bg-slate-800/60 rounded-xl animate-skeleton" style={{ animationDelay: '250ms' }} />
+            <div className="h-2 w-12 bg-[#272b35]/50 rounded animate-skeleton mb-1.5 ml-2" style={{ animationDelay: '200ms' }} />
+            <div className="h-9 bg-[#1d2028]/60 rounded-xl animate-skeleton" style={{ animationDelay: '250ms' }} />
           </div>
         </div>
       </aside>
@@ -4580,35 +4580,35 @@ function SettingsSkeleton() {
       <main className="flex-1 p-8">
         <div className="max-w-xl">
           {/* Page heading */}
-          <div className="h-7 w-40 bg-slate-800 rounded animate-skeleton mb-1" />
-          <div className="h-4 w-64 bg-slate-800/70 rounded animate-skeleton mb-6" />
+          <div className="h-7 w-40 bg-[#1d2028] rounded animate-skeleton mb-1" />
+          <div className="h-4 w-64 bg-[#1d2028]/70 rounded animate-skeleton mb-6" />
 
           {/* Card 1 */}
           <div className="card-surface rounded-2xl p-5 mb-4">
-            <div className="h-5 w-32 bg-slate-800 rounded animate-skeleton mb-4" style={{ animationDelay: '50ms' }} />
+            <div className="h-5 w-32 bg-[#1d2028] rounded animate-skeleton mb-4" style={{ animationDelay: '50ms' }} />
             <div className="flex gap-3 mb-3">
-              <div className="flex-1 h-9 bg-slate-800 rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
-              <div className="w-10 h-9 bg-slate-800 rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
+              <div className="flex-1 h-9 bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
+              <div className="w-10 h-9 bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
             </div>
-            <div className="h-9 w-full bg-slate-800/60 rounded-xl animate-skeleton" style={{ animationDelay: '150ms' }} />
+            <div className="h-9 w-full bg-[#1d2028]/60 rounded-xl animate-skeleton" style={{ animationDelay: '150ms' }} />
           </div>
 
           {/* Card 2 */}
           <div className="card-surface rounded-2xl p-5 mb-4" style={{ animationDelay: '80ms' }}>
-            <div className="h-5 w-24 bg-slate-800 rounded animate-skeleton mb-4" style={{ animationDelay: '130ms' }} />
+            <div className="h-5 w-24 bg-[#1d2028] rounded animate-skeleton mb-4" style={{ animationDelay: '130ms' }} />
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-11 bg-slate-800/60 rounded-xl animate-skeleton" style={{ animationDelay: `${180 + i * 55}ms` }} />
+                <div key={i} className="h-11 bg-[#1d2028]/60 rounded-xl animate-skeleton" style={{ animationDelay: `${180 + i * 55}ms` }} />
               ))}
             </div>
           </div>
 
           {/* Card 3 */}
           <div className="card-surface rounded-2xl p-5" style={{ animationDelay: '160ms' }}>
-            <div className="h-5 w-28 bg-slate-800 rounded animate-skeleton mb-4" style={{ animationDelay: '210ms' }} />
+            <div className="h-5 w-28 bg-[#1d2028] rounded animate-skeleton mb-4" style={{ animationDelay: '210ms' }} />
             <div className="space-y-2">
               {[0, 1].map((i) => (
-                <div key={i} className="h-11 bg-slate-800/60 rounded-xl animate-skeleton" style={{ animationDelay: `${260 + i * 55}ms` }} />
+                <div key={i} className="h-11 bg-[#1d2028]/60 rounded-xl animate-skeleton" style={{ animationDelay: `${260 + i * 55}ms` }} />
               ))}
             </div>
           </div>

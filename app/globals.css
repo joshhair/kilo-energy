@@ -84,8 +84,8 @@ body {
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2563EB; }
+::-webkit-scrollbar-thumb { background: #272b35; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #00e07a; }
 
 /* Hidden scrollbar utility */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -142,21 +142,21 @@ body {
 
 /* Gradient text utilities */
 .text-gradient-brand {
-  background: linear-gradient(135deg, #3B82F6, #60A5FA);
+  background: linear-gradient(135deg, #00e07a, #00c4f0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-gradient-emerald {
-  background: linear-gradient(135deg, #10B981, #34D399);
+  background: linear-gradient(135deg, #00e07a, #00d4c8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-gradient-gold {
-  background: linear-gradient(135deg, #EAB308, #F59E0B);
+  background: linear-gradient(135deg, #ffb020, #f5a623);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

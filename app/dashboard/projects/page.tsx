@@ -294,11 +294,11 @@ function ProjectsPageInner() {
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <h1 className="text-2xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Projects</h1>
-          <p className="text-slate-400 text-sm font-medium mt-1 tracking-wide">{myProjects.length} total projects</p>
+          <p className="text-[#c2c8d8] text-sm font-medium mt-1 tracking-wide">{myProjects.length} total projects</p>
         </div>
         <Link
           href="/dashboard/new-deal"
-          className="btn-primary text-white font-medium px-4 py-2 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          className="btn-primary text-white font-medium px-4 py-2 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           style={{ backgroundColor: 'var(--brand)' }}
         >
           + New Deal
@@ -389,7 +389,7 @@ function ProjectsPageInner() {
               Status: {STATUS_LABELS[statusFilter]}
               <button
                 onClick={() => setStatusFilter('active')}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-[#c2c8d8] hover:text-white transition-colors"
                 aria-label="Clear status filter"
               >
                 <X className="w-3 h-3" />
@@ -401,7 +401,7 @@ function ProjectsPageInner() {
               Installer: {installerFilter}
               <button
                 onClick={() => setInstallerFilter('')}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-[#c2c8d8] hover:text-white transition-colors"
                 aria-label="Clear installer filter"
               >
                 <X className="w-3 h-3" />
@@ -413,7 +413,7 @@ function ProjectsPageInner() {
               Search: &ldquo;{searchInput}&rdquo;
               <button
                 onClick={() => { setSearchInput(''); setDebouncedSearch(''); }}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-[#c2c8d8] hover:text-white transition-colors"
                 aria-label="Clear search"
               >
                 <X className="w-3 h-3" />
@@ -422,7 +422,7 @@ function ProjectsPageInner() {
           )}
           <button
             onClick={clearAllFilters}
-            className="text-slate-400 hover:text-white text-xs transition-colors"
+            className="text-[#c2c8d8] hover:text-white text-xs transition-colors"
           >
             Clear all
           </button>
@@ -474,19 +474,19 @@ function ProjectsPageInner() {
       {cancelReasonModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setCancelReasonModal(null); }}>
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+          <div className="bg-[#161920] border border-[#272b35] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#333849]">
               <h2 className="text-white font-bold text-base">Cancel Project</h2>
-              <button onClick={() => setCancelReasonModal(null)} className="text-slate-400 hover:text-white transition-colors rounded-lg p-1 hover:bg-slate-800">
+              <button onClick={() => setCancelReasonModal(null)} className="text-[#c2c8d8] hover:text-white transition-colors rounded-lg p-1 hover:bg-[#1d2028]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-slate-400 text-sm">Why is <span className="text-white font-medium">{cancelReasonModal.projectName}</span> being cancelled?</p>
+              <p className="text-[#c2c8d8] text-sm">Why is <span className="text-white font-medium">{cancelReasonModal.projectName}</span> being cancelled?</p>
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Reason</label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
                 <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]">
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
                   <option value="Credit denied">Credit denied</option>
@@ -497,13 +497,13 @@ function ProjectsPageInner() {
                 </select>
               </div>
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[#525c72] font-normal normal-case">(optional)</span></label>
                 <textarea rows={2} value={cancelNotes} onChange={(e) => setCancelNotes(e.target.value)} placeholder="Additional details..."
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-slate-500" />
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] resize-none placeholder-slate-500" />
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setCancelReasonModal(null)}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">Go Back</button>
+                  className="flex-1 bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] text-[#c2c8d8] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">Go Back</button>
                 <button onClick={confirmCancelWithReason}
                   className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]">Cancel Project</button>
               </div>
@@ -608,7 +608,7 @@ function KanbanView({
   const kanbanSearchBar = (
     <div className="mb-4">
       <div className="relative max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8891a8] pointer-events-none" />
         <input
           ref={kanbanSearchRef}
           type="text"
@@ -621,7 +621,7 @@ function KanbanView({
         {kanbanSearchInput && (
           <button
             onClick={() => { setKanbanSearchInput(''); setKanbanDebouncedSearch(''); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#c2c8d8] hover:text-white transition-colors"
             aria-label="Clear kanban search"
           >
             <X className="w-4 h-4" />
@@ -629,7 +629,7 @@ function KanbanView({
         )}
       </div>
       {kanbanDebouncedSearch && (
-        <p className="text-slate-400 text-xs mt-2">
+        <p className="text-[#c2c8d8] text-xs mt-2">
           {kanbanResultCount} result{kanbanResultCount !== 1 ? 's' : ''} across {kanbanPhaseCount} phase{kanbanPhaseCount !== 1 ? 's' : ''}
         </p>
       )}
@@ -657,7 +657,7 @@ function KanbanView({
         <div className="flex justify-end mb-1">
           <button
             onClick={toggleAllPhases}
-            className="text-xs font-medium text-slate-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-slate-800"
+            className="text-xs font-medium text-[#c2c8d8] hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-[#1d2028]"
           >
             {allPhasesOpen ? 'Collapse All' : 'Expand All'}
           </button>
@@ -680,23 +680,23 @@ function KanbanView({
                 aria-expanded={isOpen}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s?.dot ?? 'bg-slate-400'}`} />
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s?.dot ?? 'bg-[#8891a8]'}`} />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${s?.text ?? 'text-slate-300'}`}>{phase}</span>
-                      <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                      <span className={`text-sm font-semibold ${s?.text ?? 'text-[#c2c8d8]'}`}>{phase}</span>
+                      <span className="bg-[#1d2028] text-[#c2c8d8] text-xs px-2 py-0.5 rounded-full font-medium">
                         {phaseProjects.length}
                       </span>
                     </div>
                     {!hideFinancials && (
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="text-xs text-[#8891a8] mt-0.5">
                         ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
                       </p>
                     )}
                   </div>
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform duration-200 ${
+                  className={`w-4 h-4 text-[#8891a8] flex-shrink-0 transition-transform duration-200 ${
                     isOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -704,11 +704,11 @@ function KanbanView({
 
               {/* Accordion body */}
               {isOpen && (
-                <div className="px-3 pb-3 space-y-2 border-t border-slate-800">
+                <div className="px-3 pb-3 space-y-2 border-t border-[#333849]">
                   {phaseProjects.length === 0 && (
                     <div className="py-6 flex flex-col items-center text-center">
-                      <FolderKanban className="w-6 h-6 text-slate-600 mb-1.5 opacity-60" />
-                      <p className="text-slate-600 text-xs">No projects in this phase</p>
+                      <FolderKanban className="w-6 h-6 text-[#525c72] mb-1.5 opacity-60" />
+                      <p className="text-[#525c72] text-xs">No projects in this phase</p>
                     </div>
                   )}
                   {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
@@ -720,18 +720,18 @@ function KanbanView({
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
-                        className={`relative overflow-hidden bg-slate-800/60 border rounded-xl flex items-center justify-between gap-2 transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity ${
+                        className={`relative overflow-hidden bg-[#1d2028]/60 border rounded-xl flex items-center justify-between gap-2 transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-[#00e07a]/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity ${
                           proj.flagged
-                            ? 'border-l-2 border-l-red-500 border-slate-700/60'
+                            ? 'border-l-2 border-l-red-500 border-[#272b35]/60'
                             : isMyCard && dealScope === 'all'
-                              ? 'border-slate-700/60 border-l-[3px] border-l-blue-500'
-                              : 'border-slate-700/60'
+                              ? 'border-[#272b35]/60 border-l-[3px] border-l-blue-500'
+                              : 'border-[#272b35]/60'
                         }`}
                       >
                         <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />
                         {/* Card content — py-3 ensures at least 44px total height with text */}
                         <div className="flex-1 px-4 py-3 min-h-[44px]">
-                          <p className="text-white text-sm font-medium leading-snug group-hover:text-blue-400 transition-colors flex items-center gap-1.5 flex-wrap">
+                          <p className="text-white text-sm font-medium leading-snug group-hover:text-[#00e07a] transition-colors flex items-center gap-1.5 flex-wrap">
                             {proj.customerName}
                             {proj.flagged && (
                               <Flag className="w-3 h-3 text-red-400 flex-shrink-0" />
@@ -741,23 +741,23 @@ function KanbanView({
                             {isMyCard && dealScope === 'all' && (
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                                 myRole === 'Closer'
-                                  ? 'bg-blue-900/60 text-blue-300 border border-blue-500/40'
-                                  : 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40'
+                                  ? 'bg-blue-900/60 text-[#00c4f0] border border-[#00e07a]/40'
+                                  : 'bg-emerald-900/60 text-emerald-300 border border-[#00e07a]/40'
                               }`}>
                                 You · {myRole}
                               </span>
                             )}
                           </p>
-                          <p className="text-slate-500 text-xs mt-0.5">
+                          <p className="text-[#8891a8] text-xs mt-0.5">
                             {proj.kWSize} kW · {proj.installer}
                           </p>
-                          <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-slate-400 font-semibold' : 'text-slate-600'}`}>
+                          <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-[#c2c8d8] font-semibold' : 'text-[#525c72]'}`}>
                             {proj.repName}
                           </p>
                           {/* Commission row */}
                           {!hideFinancials && (
                             <div className="flex items-center justify-end mt-1">
-                              <span className="text-emerald-500/70 text-[10px] font-medium tabular-nums">
+                              <span className="text-[#00e07a]/70 text-[10px] font-medium tabular-nums">
                                 ${commissionTotal.toLocaleString()}
                               </span>
                             </div>
@@ -780,7 +780,7 @@ function KanbanView({
                                     onClick: () => onPhaseChange(proj.id, originalPhase),
                                   });
                                 }}
-                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-slate-700 hover:bg-amber-600 text-slate-400 hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#272b35] hover:bg-amber-600 text-[#c2c8d8] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
                               >
                                 <ChevronLeft className="w-4 h-4" />
@@ -799,7 +799,7 @@ function KanbanView({
                                     onClick: () => onPhaseChange(proj.id, originalPhase),
                                   });
                                 }}
-                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-slate-700 hover:bg-blue-600 text-slate-400 hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#272b35] hover:bg-[#00e07a] text-[#c2c8d8] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}
                               >
                                 <ChevronRight className="w-4 h-4" />
@@ -815,7 +815,7 @@ function KanbanView({
                   {phaseProjects.length > KANBAN_CARD_LIMIT && (
                     <button
                       onClick={() => toggleExpand(phase)}
-                      className="w-full text-center py-2 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                      className="w-full text-center py-2 text-xs font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
                         ? 'Show less'
@@ -829,16 +829,16 @@ function KanbanView({
         })}
 
         {/* Off-Track group (Cancelled + On Hold) — collapsed by default */}
-        <div className="bg-slate-900/60 border border-slate-800/60 rounded-xl overflow-hidden">
+        <div className="bg-[#161920]/60 border border-[#333849]/60 rounded-xl overflow-hidden">
           <button
             onClick={() => setOffTrackOpen((v) => !v)}
             className="w-full flex items-center justify-between px-4 min-h-[52px] gap-3 text-left"
             aria-expanded={offTrackOpen}
           >
             <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-slate-600 flex-shrink-0" />
-              <span className="text-sm font-semibold text-slate-500">Off-Track</span>
-              <span className="bg-slate-800 text-slate-500 text-xs px-2 py-0.5 rounded-full font-medium">
+              <span className="w-2 h-2 rounded-full bg-[#525c72] flex-shrink-0" />
+              <span className="text-sm font-semibold text-[#8891a8]">Off-Track</span>
+              <span className="bg-[#1d2028] text-[#8891a8] text-xs px-2 py-0.5 rounded-full font-medium">
                 {cancelledAndHold.reduce(
                   (acc, ph) => acc + kanbanFiltered.filter((p) => p.phase === ph).length,
                   0
@@ -846,29 +846,29 @@ function KanbanView({
               </span>
             </div>
             <ChevronDown
-              className={`w-4 h-4 text-slate-600 flex-shrink-0 transition-transform duration-200 ${
+              className={`w-4 h-4 text-[#525c72] flex-shrink-0 transition-transform duration-200 ${
                 offTrackOpen ? 'rotate-180' : ''
               }`}
             />
           </button>
 
           {offTrackOpen && (
-            <div className="px-3 pb-3 border-t border-slate-800/60 space-y-3">
+            <div className="px-3 pb-3 border-t border-[#333849]/60 space-y-3">
               {cancelledAndHold.map((phase) => {
                 const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
                 if (phaseProjects.length === 0) return null;
                 return (
                   <div key={phase}>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1 pt-3 pb-1">
+                    <p className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider px-1 pt-3 pb-1">
                       {phase}
                     </p>
                     <div className="space-y-2">
                       {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
                         <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
-                          <div className="bg-slate-800/40 border border-slate-700/40 hover:border-slate-600 rounded-xl px-4 min-h-[44px] flex items-center opacity-70 hover:opacity-100 transition-all">
+                          <div className="bg-[#1d2028]/40 border border-[#272b35]/40 hover:border-[#272b35] rounded-xl px-4 min-h-[44px] flex items-center opacity-70 hover:opacity-100 transition-all">
                             <div className="py-3">
-                              <p className="text-slate-400 text-sm font-medium">{proj.customerName}</p>
-                              <p className="text-slate-600 text-xs">
+                              <p className="text-[#c2c8d8] text-sm font-medium">{proj.customerName}</p>
+                              <p className="text-[#525c72] text-xs">
                                 {proj.kWSize} kW · {proj.installer}
                               </p>
                             </div>
@@ -878,7 +878,7 @@ function KanbanView({
                       {phaseProjects.length > KANBAN_CARD_LIMIT && (
                         <button
                           onClick={() => toggleExpand(phase)}
-                          className="w-full text-center py-2 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                          className="w-full text-center py-2 text-xs font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                         >
                           {expandedColumns.has(phase)
                             ? 'Show less'
@@ -918,7 +918,7 @@ function KanbanView({
                   </span>
                 </div>
                 {!hideFinancials && (
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-[#8891a8] mt-0.5">
                     ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
                   </p>
                 )}
@@ -927,12 +927,12 @@ function KanbanView({
               <div className="relative">
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
                   {phaseProjects.length === 0 && (
-                    <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-xl p-4 flex flex-col items-center text-center">
-                      <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mb-2">
-                        <FolderKanban className="w-5 h-5 text-slate-600 opacity-60 animate-pulse" />
+                    <div className="bg-[#161920]/40 border border-dashed border-[#333849] rounded-xl p-4 flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mb-2">
+                        <FolderKanban className="w-5 h-5 text-[#525c72] opacity-60 animate-pulse" />
                       </div>
-                      <p className="text-slate-400 text-xs font-semibold">{phase}</p>
-                      <p className="text-slate-600 text-xs mt-0.5">No projects here</p>
+                      <p className="text-[#c2c8d8] text-xs font-semibold">{phase}</p>
+                      <p className="text-[#525c72] text-xs mt-0.5">No projects here</p>
                     </div>
                   )}
                   {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
@@ -959,7 +959,7 @@ function KanbanView({
                       >
                         <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />
                         <div className="flex items-start justify-between gap-1 mb-1">
-                          <p className="text-white text-xs font-medium leading-tight group-hover:text-blue-400 transition-colors">
+                          <p className="text-white text-xs font-medium leading-tight group-hover:text-[#00e07a] transition-colors">
                             {proj.customerName}
                           </p>
                           <div className="flex items-center gap-1 shrink-0 mt-0.5">
@@ -971,15 +971,15 @@ function KanbanView({
                         {isMyCard && dealScope === 'all' && (
                           <span className={`inline-flex items-center mb-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
-                              ? 'bg-blue-900/60 text-blue-300 border border-blue-500/40'
-                              : 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40'
+                              ? 'bg-blue-900/60 text-[#00c4f0] border border-[#00e07a]/40'
+                              : 'bg-emerald-900/60 text-emerald-300 border border-[#00e07a]/40'
                           }`}>
                             You · {myRole}
                           </span>
                         )}
-                        <p className="text-slate-500 text-xs">{proj.kWSize} kW</p>
-                        <p className="text-slate-500 text-xs">{proj.installer}</p>
-                        <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-slate-400 font-semibold' : 'text-slate-600'}`}>
+                        <p className="text-[#8891a8] text-xs">{proj.kWSize} kW</p>
+                        <p className="text-[#8891a8] text-xs">{proj.installer}</p>
+                        <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-[#c2c8d8] font-semibold' : 'text-[#525c72]'}`}>
                           {proj.repName}
                         </p>
                         {/* Mini commission preview + phase nav row */}
@@ -1007,7 +1007,7 @@ function KanbanView({
                                     onClick: () => onPhaseChange(proj.id, originalPhase),
                                   });
                                 }}
-                                className="p-1 rounded-md bg-slate-700 hover:bg-amber-600 text-slate-400 hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="p-1 rounded-md bg-[#272b35] hover:bg-amber-600 text-[#c2c8d8] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
                               >
                                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -1026,7 +1026,7 @@ function KanbanView({
                                     onClick: () => onPhaseChange(proj.id, originalPhase),
                                   });
                                 }}
-                                className="p-1 rounded-md bg-slate-700 hover:bg-blue-600 text-slate-400 hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="p-1 rounded-md bg-[#272b35] hover:bg-[#00e07a] text-[#c2c8d8] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}
                               >
                                 <ChevronRight className="w-3.5 h-3.5" />
@@ -1042,7 +1042,7 @@ function KanbanView({
                   {phaseProjects.length > KANBAN_CARD_LIMIT && (
                     <button
                       onClick={() => toggleExpand(phase)}
-                      className="w-full text-center py-1.5 text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                      className="w-full text-center py-1.5 text-[10px] font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
                         ? 'Show less'
@@ -1073,7 +1073,7 @@ function KanbanView({
                   </span>
                 </div>
                 {!hideFinancials && (
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-[#8891a8] mt-0.5">
                     ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
                   </p>
                 )}
@@ -1085,7 +1085,7 @@ function KanbanView({
                     <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div className="relative rounded-xl p-3 cursor-pointer opacity-70 hover:opacity-100 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] active:shadow-none" style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${PHASE_COLORS[phase] ?? '#525c72'}` }}>
                         <p className="text-xs font-medium" style={{ color: '#8891a8' }}>{proj.customerName}</p>
-                        <p className="text-slate-600 text-xs">{proj.kWSize} kW · {proj.installer}</p>
+                        <p className="text-[#525c72] text-xs">{proj.kWSize} kW · {proj.installer}</p>
                       </div>
                     </Link>
                   ))}
@@ -1093,7 +1093,7 @@ function KanbanView({
                   {phaseProjects.length > KANBAN_CARD_LIMIT && (
                     <button
                       onClick={() => toggleExpand(phase)}
-                      className="w-full text-center py-1.5 text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                      className="w-full text-center py-1.5 text-[10px] font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
                         ? 'Show less'
@@ -1123,24 +1123,24 @@ function ProjectsSkeleton() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-2">
-          <div className="h-8 w-32 bg-slate-800 rounded animate-skeleton" />
-          <div className="h-3 w-28 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+          <div className="h-8 w-32 bg-[#1d2028] rounded animate-skeleton" />
+          <div className="h-3 w-28 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
         </div>
-        <div className="h-9 w-24 bg-slate-800 rounded-xl animate-skeleton" />
+        <div className="h-9 w-24 bg-[#1d2028] rounded-xl animate-skeleton" />
       </div>
 
       {/* Tab + filter bar */}
       <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-4 md:flex-wrap">
-        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
-          <div className="h-8 w-20 bg-slate-800 rounded-lg animate-skeleton" />
-          <div className="h-8 w-24 bg-slate-700/50 rounded-lg animate-skeleton" style={{ animationDelay: '75ms' }} />
+        <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1">
+          <div className="h-8 w-20 bg-[#1d2028] rounded-lg animate-skeleton" />
+          <div className="h-8 w-24 bg-[#272b35]/50 rounded-lg animate-skeleton" style={{ animationDelay: '75ms' }} />
         </div>
-        <div className="flex gap-1 bg-slate-800 rounded-xl p-1">
+        <div className="flex gap-1 bg-[#1d2028] rounded-xl p-1">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-7 w-16 bg-slate-700/60 rounded-lg animate-skeleton" style={{ animationDelay: `${i * 50}ms` }} />
+            <div key={i} className="h-7 w-16 bg-[#272b35]/60 rounded-lg animate-skeleton" style={{ animationDelay: `${i * 50}ms` }} />
           ))}
         </div>
-        <div className="h-8 w-32 bg-slate-800 rounded-xl animate-skeleton" style={{ animationDelay: '150ms' }} />
+        <div className="h-8 w-32 bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: '150ms' }} />
       </div>
 
       {/* Kanban skeleton — 9 columns × 3 placeholder cards */}
@@ -1150,11 +1150,11 @@ function ProjectsSkeleton() {
             {/* Column header */}
             <div className="flex items-center justify-between pb-2 mb-1">
               <div
-                className="h-3 w-20 bg-slate-800 rounded animate-skeleton"
+                className="h-3 w-20 bg-[#1d2028] rounded animate-skeleton"
                 style={{ animationDelay: `${colIdx * 60}ms` }}
               />
               <div
-                className="h-5 w-6 bg-slate-800 rounded-full animate-skeleton"
+                className="h-5 w-6 bg-[#1d2028] rounded-full animate-skeleton"
                 style={{ animationDelay: `${colIdx * 60}ms` }}
               />
             </div>
@@ -1164,19 +1164,19 @@ function ProjectsSkeleton() {
               return (
                 <div key={cardIdx} className="card-surface rounded-xl p-3 space-y-2">
                   <div
-                    className="h-4 bg-slate-800 rounded animate-skeleton"
+                    className="h-4 bg-[#1d2028] rounded animate-skeleton"
                     style={{ width: cardIdx === 0 ? '80%' : cardIdx === 1 ? '65%' : '75%', animationDelay: `${delay}ms` }}
                   />
                   <div
-                    className="h-3 w-12 bg-slate-800/70 rounded animate-skeleton"
+                    className="h-3 w-12 bg-[#1d2028]/70 rounded animate-skeleton"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                   <div
-                    className="h-3 w-20 bg-slate-800/70 rounded animate-skeleton"
+                    className="h-3 w-20 bg-[#1d2028]/70 rounded animate-skeleton"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                   <div
-                    className="h-3 w-16 bg-slate-800/50 rounded animate-skeleton"
+                    className="h-3 w-16 bg-[#1d2028]/50 rounded animate-skeleton"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                 </div>
@@ -1291,7 +1291,7 @@ function SetterPopover({
       <button
         onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
         title={currentSetterId ? `Reassign setter for ${customerName}` : `Assign a setter to ${customerName}`}
-        className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-medium transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+        className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#272b35] hover:bg-indigo-600 text-[#c2c8d8] hover:text-white text-xs font-medium transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
         aria-label={currentSetterId ? 'Reassign setter' : 'Assign setter'}
         aria-expanded={open}
       >
@@ -1317,11 +1317,11 @@ function SetterPopover({
 
       {/* ── Dropdown popover ── */}
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel">
+        <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-[#1d2028] border border-[#272b35] rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel">
           {/* Search input */}
-          <div className="p-2 border-b border-slate-700/60">
+          <div className="p-2 border-b border-[#272b35]/60">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8] pointer-events-none" />
               <input
                 ref={searchRef}
                 type="text"
@@ -1329,7 +1329,7 @@ function SetterPopover({
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+                className="w-full bg-[#161920] border border-[#272b35] text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
               />
             </div>
           </div>
@@ -1338,7 +1338,7 @@ function SetterPopover({
             {/* ── Currently-assigned setter pinned at top ── */}
             {currentSetter && (
               <>
-                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[#8891a8] uppercase tracking-wider">
                   Currently assigned
                 </p>
                 <button
@@ -1353,14 +1353,14 @@ function SetterPopover({
                   {/* Role badge */}
                   {isTrainee(currentSetter.id)
                     ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
-                    : <span className="text-blue-400 text-[10px] font-medium flex-shrink-0">Setter</span>
+                    : <span className="text-[#00e07a] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                   {/* Green checkmark */}
                   <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
                 </button>
                 {/* Divider + "Reassign" label */}
-                <div className="mx-3 border-t border-slate-700/60" />
-                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                <div className="mx-3 border-t border-[#272b35]/60" />
+                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[#8891a8] uppercase tracking-wider">
                   Reassign
                 </p>
               </>
@@ -1368,14 +1368,14 @@ function SetterPopover({
 
             {/* Section header when no setter yet */}
             {!currentSetter && (
-              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[#8891a8] uppercase tracking-wider">
                 Select setter
               </p>
             )}
 
             {/* ── Rep list ── */}
             {otherReps.length === 0 ? (
-              <div className="px-3 py-4 text-center text-slate-500 text-xs">
+              <div className="px-3 py-4 text-center text-[#8891a8] text-xs">
                 No reps found
               </div>
             ) : (
@@ -1389,11 +1389,11 @@ function SetterPopover({
                   <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
                     {getInitials(rep.name)}
                   </span>
-                  <span className="flex-1 text-sm text-slate-300 hover:text-white truncate">{rep.name}</span>
+                  <span className="flex-1 text-sm text-[#c2c8d8] hover:text-white truncate">{rep.name}</span>
                   {/* Role badge */}
                   {isTrainee(rep.id)
                     ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
-                    : <span className="text-blue-400 text-[10px] font-medium flex-shrink-0">Setter</span>
+                    : <span className="text-[#00e07a] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                 </button>
               ))
@@ -1418,7 +1418,7 @@ type SortKey = 'customerName' | 'repName' | 'phase' | 'installer' | 'financer' |
 type SortDirection = 'asc' | 'desc';
 
 function SortIcon({ colKey, sortKey, sortDirection }: { colKey: SortKey; sortKey: SortKey; sortDirection: SortDirection }) {
-  if (sortKey !== colKey) return <ChevronsUpDown className="w-3.5 h-3.5 ml-1 inline-block text-slate-600" />;
+  if (sortKey !== colKey) return <ChevronsUpDown className="w-3.5 h-3.5 ml-1 inline-block text-[#525c72]" />;
   if (sortDirection === 'asc') return <ChevronUp className="w-3.5 h-3.5 ml-1 inline-block" />;
   return <ChevronDown className="w-3.5 h-3.5 ml-1 inline-block" />;
 }
@@ -1669,7 +1669,7 @@ function TableView({
   function thClass(colKey: SortKey) {
     const active = sortKey === colKey;
     return `text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white ${
-      active ? 'text-white' : 'text-slate-400'
+      active ? 'text-white' : 'text-[#c2c8d8]'
     }`;
   }
 
@@ -1677,7 +1677,7 @@ function TableView({
     <div>
       <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-2 md:gap-3 mb-4">
         <div className="relative flex-1 max-w-full md:max-w-xs min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8891a8]" />
           <input
             ref={searchRef}
             type="text"
@@ -1693,7 +1693,7 @@ function TableView({
           {searchInput ? (
             <button
               onClick={() => setSearchInput('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#c2c8d8] hover:text-white transition-colors"
               aria-label="Clear search input"
             >
               <X className="w-4 h-4" />
@@ -1702,7 +1702,7 @@ function TableView({
             /* '/' shortcut hint — shown when input is empty and not focused */
             !searchFocused && (
               <kbd
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-slate-600 bg-slate-700/60 text-slate-400 font-mono text-[11px] leading-none select-none"
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-[#272b35] bg-[#272b35]/60 text-[#c2c8d8] font-mono text-[11px] leading-none select-none"
                 aria-hidden="true"
               >
                 /
@@ -1712,9 +1712,9 @@ function TableView({
         </div>
         {/* Inline row-count summary — gives instant feedback on the current page slice */}
         {searchInput.trim() && (
-          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{totalResults} result{totalResults !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full">{totalResults} result{totalResults !== 1 ? 's' : ''}</span>
         )}
-        <span className="text-slate-500 text-sm">
+        <span className="text-[#8891a8] text-sm">
           {totalResults === 0
             ? 'No results'
             : `Showing ${startIdx + 1}–${endIdx} of ${totalResults}`}
@@ -1736,7 +1736,7 @@ function TableView({
               ]);
               downloadCSV(`projects-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
             }}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs text-[#c2c8d8] hover:text-white bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] px-3 py-1.5 rounded-lg transition-colors"
             title="Download filtered projects as CSV"
           >
             <Download className="w-3.5 h-3.5" /> CSV
@@ -1748,7 +1748,7 @@ function TableView({
       <div className="md:hidden space-y-3">
         {pagedProjects.length === 0 && (
           <div className="card-surface rounded-2xl px-5 py-12 text-center">
-            <p className="text-slate-400 text-sm">
+            <p className="text-[#c2c8d8] text-sm">
               {hasActiveFilters ? 'No projects match your filters.' : 'No projects yet.'}
             </p>
           </div>
@@ -1763,7 +1763,7 @@ function TableView({
                 </span>
                 <PhaseBadge phase={proj.phase} />
               </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#c2c8d8]">
                 <span>{proj.kWSize} kW</span>
                 <span>{proj.installer}</span>
                 <span>{relativeTime(proj.soldDate)}</span>
@@ -1794,7 +1794,7 @@ function TableView({
                       type="checkbox"
                       checked={allPageSelected}
                       onChange={toggleAllProjects}
-                      className="accent-blue-500 w-4 h-4 rounded cursor-pointer"
+                      className="accent-[#00e07a] w-4 h-4 rounded cursor-pointer"
                       aria-label="Select all projects on this page"
                     />
                   </th>
@@ -1828,7 +1828,7 @@ function TableView({
                   Sold Date<SortIcon colKey="soldDate" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
                 {isAdmin && (
-                  <th className="text-left px-5 py-3 font-medium text-slate-400 select-none whitespace-nowrap">
+                  <th className="text-left px-5 py-3 font-medium text-[#c2c8d8] select-none whitespace-nowrap">
                     Actions
                   </th>
                 )}
@@ -1866,7 +1866,7 @@ function TableView({
                         checked={selectedProjectIds.has(proj.id)}
                         onChange={() => toggleProject(proj.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="accent-blue-500 w-4 h-4 rounded cursor-pointer"
+                        className="accent-[#00e07a] w-4 h-4 rounded cursor-pointer"
                         aria-label={`Select ${proj.customerName}`}
                       />
                     </td>
@@ -1874,24 +1874,24 @@ function TableView({
                   <td className="px-5 py-3">
                     <Link
                       href={`/dashboard/projects/${proj.id}`}
-                      className="text-white hover:text-blue-400 transition-colors flex items-center gap-1.5"
+                      className="text-white hover:text-[#00e07a] transition-colors flex items-center gap-1.5"
                     >
                       {proj.customerName}
                       {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
                       <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
                     </Link>
                   </td>
-                  {isAdmin && <td className="px-5 py-3 text-slate-400">{proj.repName}</td>}
+                  {isAdmin && <td className="px-5 py-3 text-[#c2c8d8]">{proj.repName}</td>}
                   {/* Rep name cell for reps in All Deals mode — shows "You" pill + bold name on own rows */}
                   {!isAdmin && dealScope === 'all' && (
                     <td className="px-5 py-3">
-                      <span className={`flex items-center gap-1.5 ${isMyRow ? 'text-slate-200 font-semibold' : 'text-slate-400'}`}>
+                      <span className={`flex items-center gap-1.5 ${isMyRow ? 'text-[#c2c8d8] font-semibold' : 'text-[#c2c8d8]'}`}>
                         {proj.repName}
                         {isMyRow && (
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
-                              ? 'bg-blue-900/60 text-blue-300 border border-blue-500/40'
-                              : 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40'
+                              ? 'bg-blue-900/60 text-[#00c4f0] border border-[#00e07a]/40'
+                              : 'bg-emerald-900/60 text-emerald-300 border border-[#00e07a]/40'
                           }`}>
                             You · {myRole}
                           </span>
@@ -1905,7 +1905,7 @@ function TableView({
                         value={proj.phase}
                         onChange={(e) => onPhaseChange(proj.id, e.target.value as Phase)}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
                       >
                         {PHASES.map((ph) => (
                           <option key={ph} value={ph}>{ph}</option>
@@ -1915,13 +1915,13 @@ function TableView({
                       <PhaseBadge phase={proj.phase} />
                     )}
                   </td>
-                  <td className="px-5 py-3 text-slate-400">{proj.installer}</td>
-                  <td className="px-5 py-3 text-slate-400">{proj.financer}</td>
-                  <td className="px-5 py-3 text-slate-300">{proj.kWSize}</td>
+                  <td className="px-5 py-3 text-[#c2c8d8]">{proj.installer}</td>
+                  <td className="px-5 py-3 text-[#c2c8d8]">{proj.financer}</td>
+                  <td className="px-5 py-3 text-[#c2c8d8]">{proj.kWSize}</td>
                   {!hideFinancials && <td className="px-5 py-3" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW}</td>}
-                  <td className="px-5 py-3 text-slate-500">
+                  <td className="px-5 py-3 text-[#8891a8]">
                     <div>{formatDate(proj.soldDate)}</div>
-                    <div className="text-[10px] text-slate-600">{relativeTime(proj.soldDate)}</div>
+                    <div className="text-[10px] text-[#525c72]">{relativeTime(proj.soldDate)}</div>
                   </td>
                   {isAdmin && (() => {
                     const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
@@ -1934,7 +1934,7 @@ function TableView({
                             <button
                               onClick={(e) => { e.stopPropagation(); onPhaseChange(proj.id, nextPhase); }}
                               title={`Advance to ${nextPhase}`}
-                              className="opacity-40 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-700 hover:bg-blue-600 text-slate-400 hover:text-white active:scale-[0.97] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                              className="opacity-40 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-md bg-[#272b35] hover:bg-[#00e07a] text-[#c2c8d8] hover:text-white active:scale-[0.97] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                               aria-label={`Advance ${proj.customerName} to ${nextPhase}`}
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -1963,7 +1963,7 @@ function TableView({
                     <div className="flex justify-center">
                       {hasActiveFilters ? (
                         /* ── Filtered: no results ─────────────────────────────────── */
-                        <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                        <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
                           {/* Illustration — magnifying glass over empty grid */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             <rect x="8" y="18" width="46" height="44" rx="5" stroke="#475569" strokeWidth="2" fill="none"/>
@@ -1973,15 +1973,15 @@ function TableView({
                             <rect x="14" y="40" width="34" height="3" rx="1.5" fill="#1e293b"/>
                             <rect x="14" y="47" width="22" height="3" rx="1.5" fill="#1e293b"/>
                             {/* Magnifying glass */}
-                            <circle cx="56" cy="52" r="12" stroke="#3b82f6" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
-                            <circle cx="56" cy="52" r="7" stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
-                            <line x1="64.5" y1="61" x2="72" y2="69" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
+                            <circle cx="56" cy="52" r="12" stroke="#00c4f0" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
+                            <circle cx="56" cy="52" r="7" stroke="#00c4f0" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
+                            <line x1="64.5" y1="61" x2="72" y2="69" stroke="#00c4f0" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
                             {/* X inside lens */}
                             <line x1="53" y1="49" x2="59" y2="55" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
                             <line x1="59" y1="49" x2="53" y2="55" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
                           </svg>
-                          <p className="text-slate-200 text-sm font-semibold leading-snug">No projects match your filters</p>
-                          <p className="text-slate-500 text-xs leading-relaxed">Try adjusting your search query or active filters to find what you&apos;re looking for.</p>
+                          <p className="text-[#c2c8d8] text-sm font-semibold leading-snug">No projects match your filters</p>
+                          <p className="text-[#8891a8] text-xs leading-relaxed">Try adjusting your search query or active filters to find what you&apos;re looking for.</p>
                           <button
                             onClick={clearAllFilters}
                             className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
@@ -1992,7 +1992,7 @@ function TableView({
                         </div>
                       ) : (
                         /* ── No deals at all ──────────────────────────────────────── */
-                        <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                        <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
                           {/* Illustration — folder with solar panel motif */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Folder body */}
@@ -2000,19 +2000,19 @@ function TableView({
                             {/* Folder tab */}
                             <path d="M10 22 L30 22 L34 27 L10 27 Z" fill="#334155"/>
                             {/* Solar panel grid inside folder */}
-                            <rect x="22" y="36" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.5" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.6"/>
-                            <rect x="32" y="36" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.5" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.6"/>
-                            <rect x="42" y="36" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.5" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.6"/>
-                            <rect x="22" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.4"/>
-                            <rect x="32" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.4"/>
-                            <rect x="42" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="22" y="36" width="8" height="6" rx="1" fill="#00e07a" fillOpacity="0.5" stroke="#00c4f0" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="32" y="36" width="8" height="6" rx="1" fill="#00e07a" fillOpacity="0.5" stroke="#00c4f0" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="42" y="36" width="8" height="6" rx="1" fill="#00e07a" fillOpacity="0.5" stroke="#00c4f0" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="22" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#00c4f0" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="32" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#00c4f0" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="42" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="#00c4f0" strokeWidth="0.75" strokeOpacity="0.4"/>
                             {/* Sparkle / plus icon */}
-                            <circle cx="58" cy="22" r="8" fill="#1e3a5f"/>
+                            <circle cx="58" cy="22" r="8" fill="#1d2028"/>
                             <line x1="58" y1="17" x2="58" y2="27" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
                             <line x1="53" y1="22" x2="63" y2="22" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
                           </svg>
-                          <p className="text-slate-200 text-sm font-semibold leading-snug">Submit your first deal</p>
-                          <p className="text-slate-500 text-xs leading-relaxed">Your pipeline is empty. Create a new deal to start tracking projects and commissions.</p>
+                          <p className="text-[#c2c8d8] text-sm font-semibold leading-snug">Submit your first deal</p>
+                          <p className="text-[#8891a8] text-xs leading-relaxed">Your pipeline is empty. Create a new deal to start tracking projects and commissions.</p>
                           <a
                             href="/dashboard/new-deal"
                             className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
@@ -2047,31 +2047,31 @@ function TableView({
            selection.                                                          */}
       {showActionBar && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-slate-900/80 border border-slate-700/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-[#161920]/80 border border-[#272b35]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
           role="toolbar"
           aria-label="Batch actions for selected projects"
         >
           <div className="flex items-center gap-3">
 
             {/* Selection count badge — blue accent pill with total kW */}
-            <span className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+            <span className="flex items-center gap-1.5 bg-[#00e07a]/15 border border-[#00e07a]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
               <span className="text-white font-bold tabular-nums">{selectedProjectIds.size}</span>
-              <span className="text-blue-400 font-medium">selected</span>
+              <span className="text-[#00e07a] font-medium">selected</span>
               {selectedTotalKw > 0 && (
                 <>
-                  <span className="text-slate-600 mx-0.5">&middot;</span>
-                  <span className="text-emerald-400 font-semibold tabular-nums">{selectedTotalKw.toFixed(1)} kW</span>
+                  <span className="text-[#525c72] mx-0.5">&middot;</span>
+                  <span className="text-[#00e07a] font-semibold tabular-nums">{selectedTotalKw.toFixed(1)} kW</span>
                 </>
               )}
             </span>
 
             {/* Visual divider */}
-            <div className="h-5 w-px bg-slate-700/80 flex-shrink-0" />
+            <div className="h-5 w-px bg-[#272b35]/80 flex-shrink-0" />
 
             {/* Advance Phase — primary action */}
             <button
               onClick={handleBulkAdvance}
-              className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap inline-flex items-center gap-1.5"
+              className="btn-primary text-white font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap inline-flex items-center gap-1.5"
               style={{ backgroundColor: 'var(--brand)' }}
             >
               Advance Phase
@@ -2083,7 +2083,7 @@ function TableView({
               value={bulkPhaseTarget}
               onChange={(e) => { if (e.target.value) handleBulkChangePhase(e.target.value as Phase); }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-slate-700/60 border border-slate-600/40 text-slate-300 rounded-xl px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer hover:bg-slate-600/80 transition-colors"
+              className="bg-[#272b35]/60 border border-[#272b35]/40 text-[#c2c8d8] rounded-xl px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#00e07a] cursor-pointer hover:bg-[#525c72]/80 transition-colors"
             >
               <option value="">Change Phase...</option>
               {PHASES.map((ph) => (
@@ -2094,7 +2094,7 @@ function TableView({
             {/* Flag / Unflag toggle */}
             <button
               onClick={handleBulkFlag}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-slate-700/60 hover:bg-red-600/80 border border-slate-600/40 text-slate-300 hover:text-white transition-colors active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-[#272b35]/60 hover:bg-red-600/80 border border-[#272b35]/40 text-[#c2c8d8] hover:text-white transition-colors active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               <Flag className="w-3.5 h-3.5" />
               {bulkFlagLabel}
@@ -2104,7 +2104,7 @@ function TableView({
             <button
               onClick={() => setSelectedProjectIds(new Set())}
               aria-label="Deselect all and dismiss toolbar"
-              className="btn-secondary p-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/40 text-slate-400 hover:text-white transition-colors flex-shrink-0"
+              className="btn-secondary p-1.5 rounded-lg bg-[#272b35]/60 hover:bg-[#525c72]/80 border border-[#272b35]/40 text-[#c2c8d8] hover:text-white transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>

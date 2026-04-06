@@ -55,22 +55,22 @@ export default function ConfirmDialog({
       role="dialog"
       aria-modal="true"
     >
-      <div ref={panelRef} className="bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
+      <div ref={panelRef} className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
         <div className="flex items-center gap-3 mb-3">
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
             danger
               ? 'bg-red-500/15 border border-red-500/30'
-              : 'bg-blue-500/15 border border-blue-500/30'
+              : 'bg-[#00e07a]/15 border border-[#00e07a]/30'
           }`}>
-            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-red-400' : 'text-blue-400'}`} />
+            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-red-400' : 'text-[#00e07a]'}`} />
           </div>
           <h3 className="text-white font-bold">{title}</h3>
         </div>
-        <p className="text-slate-400 text-sm mb-5">{message}</p>
+        <p className="text-[#c2c8d8] text-sm mb-5">{message}</p>
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[#272b35] text-[#c2c8d8] hover:bg-[#525c72] transition-colors"
           >
             Cancel
           </button>
@@ -80,7 +80,7 @@ export default function ConfirmDialog({
             className={`flex-1 py-2.5 rounded-xl text-sm font-medium text-white transition-colors ${
               danger
                 ? 'bg-red-600 hover:bg-red-500'
-                : 'bg-blue-600 hover:bg-blue-500'
+                : 'bg-[#00e07a] hover:bg-[#00e07a]'
             }`}
           >
             {confirmLabel}

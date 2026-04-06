@@ -116,13 +116,13 @@ function FieldTooltip({ text }: { text: string }) {
       // stopPropagation prevents toggling a parent label's control (e.g. the setter switch)
       onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
     >
-      <HelpCircle className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 cursor-pointer transition-colors flex-shrink-0" />
+      <HelpCircle className="w-3.5 h-3.5 text-[#8891a8] group-hover:text-[#c2c8d8] cursor-pointer transition-colors flex-shrink-0" />
       {/* Tooltip bubble — hidden by default, revealed via group-hover (CSS) or open state (mobile tap) */}
       <span
         role="tooltip"
         className={[
           'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2',
-          'w-56 bg-slate-700 border border-slate-600 text-slate-200',
+          'w-56 bg-[#272b35] border border-[#272b35] text-[#c2c8d8]',
           'text-xs font-normal normal-case tracking-normal leading-relaxed',
           'rounded-lg px-3 py-2 shadow-xl z-50 transition-opacity duration-150',
           open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
@@ -164,15 +164,15 @@ function CommissionBar({
   const pct = (v: number) => `${(v / total) * 100}%`;
 
   const segments = [
-    { key: 'closer',  value: closer,  colorClass: 'bg-blue-500',    label: 'Closer'   },
-    { key: 'setter',  value: setter,  colorClass: 'bg-emerald-500', label: 'Setter'   },
+    { key: 'closer',  value: closer,  colorClass: 'bg-[#00e07a]',    label: 'Closer'   },
+    { key: 'setter',  value: setter,  colorClass: 'bg-[#00e07a]', label: 'Setter'   },
     { key: 'trainer', value: trainer, colorClass: 'bg-amber-500',   label: 'Trainer'  },
-    ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-slate-500', label: 'Kilo Rev' }] : []),
+    ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-[#8891a8]', label: 'Kilo Rev' }] : []),
   ].filter((s) => s.value > 0);
 
   return (
     <div className="mt-4 space-y-2">
-      <div className="h-3 rounded-full bg-slate-800 overflow-hidden flex">
+      <div className="h-3 rounded-full bg-[#1d2028] overflow-hidden flex">
         {segments.map((seg) => (
           <div
             key={seg.key}
@@ -185,7 +185,7 @@ function CommissionBar({
         {segments.map((seg) => (
           <div key={seg.key} className="flex items-center gap-1.5">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${seg.colorClass}`} />
-            <span className="text-slate-500 text-xs">{seg.label}</span>
+            <span className="text-[#8891a8] text-xs">{seg.label}</span>
           </div>
         ))}
       </div>
@@ -593,7 +593,7 @@ function CalculatorPage() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }
@@ -620,7 +620,7 @@ function CalculatorPage() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Calculator className="w-5 h-5 text-blue-400" />
+            <Calculator className="w-5 h-5 text-[#00e07a]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
         </div>
@@ -782,11 +782,11 @@ function CalculatorPage() {
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <div
                   onClick={() => { setHasSetter((v) => { if (v) setSelectedSetterId(''); return !v; }); }}
-                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-blue-600' : 'bg-slate-700'}`}
+                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[#00e07a]' : 'bg-[#272b35]'}`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hasSetter ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
-                <span className="text-slate-300 text-sm">Include setter</span>
+                <span className="text-[#c2c8d8] text-sm">Include setter</span>
               </label>
 
               {hasSetter && (
@@ -1079,19 +1079,19 @@ function CalculatorSkeleton() {
     <div className="p-4 md:p-8 max-w-2xl">
       {/* Page header shimmer */}
       <div className="mb-8">
-        <div className="h-[3px] w-12 rounded-full bg-slate-700 animate-skeleton mb-3" />
+        <div className="h-[3px] w-12 rounded-full bg-[#272b35] animate-skeleton mb-3" />
         <div className="flex items-center gap-3 mb-1">
           <div
-            className="h-9 w-9 bg-slate-800 rounded-lg animate-skeleton"
+            className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton"
             style={{ animationDelay: '50ms' }}
           />
           <div
-            className="h-8 w-56 bg-slate-800 rounded animate-skeleton"
+            className="h-8 w-56 bg-[#1d2028] rounded animate-skeleton"
             style={{ animationDelay: '100ms' }}
           />
         </div>
         <div
-          className="h-3 w-72 bg-slate-800/70 rounded animate-skeleton ml-12 mt-1"
+          className="h-3 w-72 bg-[#1d2028]/70 rounded animate-skeleton ml-12 mt-1"
           style={{ animationDelay: '150ms' }}
         />
       </div>
@@ -1106,11 +1106,11 @@ function CalculatorSkeleton() {
         ].map(({ labelW, delay }, i) => (
           <div key={i}>
             <div
-              className={`h-3 ${labelW} bg-slate-700/70 rounded animate-skeleton mb-2`}
+              className={`h-3 ${labelW} bg-[#272b35]/70 rounded animate-skeleton mb-2`}
               style={{ animationDelay: `${delay}ms` }}
             />
             <div
-              className="h-10 w-full bg-slate-800 rounded-xl animate-skeleton"
+              className="h-10 w-full bg-[#1d2028] rounded-xl animate-skeleton"
               style={{ animationDelay: `${delay + 30}ms` }}
             />
           </div>
@@ -1130,12 +1130,12 @@ function CalculatorSkeleton() {
           >
             {/* Card label row */}
             <div
-              className="h-3 w-28 bg-slate-700/50 rounded animate-skeleton mb-4"
+              className="h-3 w-28 bg-[#272b35]/50 rounded animate-skeleton mb-4"
               style={{ animationDelay: `${delay}ms` }}
             />
             {/* Card body shimmer */}
             <div
-              className={`${bodyH} w-full bg-slate-800/70 rounded-xl animate-skeleton`}
+              className={`${bodyH} w-full bg-[#1d2028]/70 rounded-xl animate-skeleton`}
               style={{ animationDelay: `${delay + 50}ms` }}
             />
           </div>

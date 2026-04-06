@@ -45,7 +45,7 @@ function roleLabel(repType: Rep['repType']): string {
 /** Tailwind colour class for the role badge. */
 function roleBadgeClass(repType: Rep['repType']): string {
   if (repType === 'closer') return 'text-purple-400';
-  if (repType === 'setter') return 'text-blue-400';
+  if (repType === 'setter') return 'text-[#00e07a]';
   return 'text-teal-400';
 }
 
@@ -152,7 +152,7 @@ export function SetterPickerPopover({
         onClick={() => (open ? closePopover() : setOpen(true))}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:border-indigo-500/60 hover:bg-slate-700/80 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 active:scale-[0.99]"
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#1d2028] border border-[#272b35] hover:border-indigo-500/60 hover:bg-[#272b35]/80 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 active:scale-[0.99]"
       >
         {currentSetter ? (
           <>
@@ -169,13 +169,13 @@ export function SetterPickerPopover({
           </>
         ) : (
           <>
-            <UserCircle2 className="w-5 h-5 text-slate-500 flex-shrink-0" />
-            <span className="flex-1 text-sm text-slate-400">Self gen (no setter)</span>
+            <UserCircle2 className="w-5 h-5 text-[#8891a8] flex-shrink-0" />
+            <span className="flex-1 text-sm text-[#c2c8d8]">Self gen (no setter)</span>
           </>
         )}
         {/* Chevron indicator */}
         <svg
-          className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-[#8891a8] flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -190,15 +190,15 @@ export function SetterPickerPopover({
       {open && typeof document !== 'undefined' && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[9999] min-w-[240px] bg-slate-800 border border-slate-700 rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel"
+          className="fixed z-[9999] min-w-[240px] bg-[#1d2028] border border-[#272b35] rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel"
           style={{ top: dropdownPos.top, left: dropdownPos.left, width: Math.max(dropdownPos.width, 240) }}
           role="listbox"
           aria-label="Select setter"
         >
           {/* Search input */}
-          <div className="p-2 border-b border-slate-700/60">
+          <div className="p-2 border-b border-[#272b35]/60">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8] pointer-events-none" />
               <input
                 ref={searchRef}
                 type="text"
@@ -206,7 +206,7 @@ export function SetterPickerPopover({
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+                className="w-full bg-[#161920] border border-[#272b35] text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
               />
             </div>
           </div>
@@ -221,23 +221,23 @@ export function SetterPickerPopover({
               className={`w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors min-h-[44px] ${
                 !setterId
                   ? 'bg-indigo-600/10 hover:bg-indigo-600/20'
-                  : 'hover:bg-slate-700/50'
+                  : 'hover:bg-[#272b35]/50'
               }`}
             >
-              <span className="w-7 h-7 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center flex-shrink-0">
-                <X className="w-3.5 h-3.5 text-slate-400" />
+              <span className="w-7 h-7 rounded-full bg-[#272b35] border border-[#272b35] flex items-center justify-center flex-shrink-0">
+                <X className="w-3.5 h-3.5 text-[#c2c8d8]" />
               </span>
-              <span className="flex-1 text-sm text-slate-300 truncate">Self gen (no setter)</span>
+              <span className="flex-1 text-sm text-[#c2c8d8] truncate">Self gen (no setter)</span>
               {!setterId && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
             </button>
 
             {/* Divider */}
-            <div className="mx-3 border-t border-slate-700/60" />
+            <div className="mx-3 border-t border-[#272b35]/60" />
 
             {/* ── Currently-selected setter pinned at top ── */}
             {currentSetter && (
               <>
-                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[#8891a8] uppercase tracking-wider">
                   Currently selected
                 </p>
                 <button
@@ -259,8 +259,8 @@ export function SetterPickerPopover({
                   )}
                   <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
                 </button>
-                <div className="mx-3 border-t border-slate-700/60" />
-                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                <div className="mx-3 border-t border-[#272b35]/60" />
+                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[#8891a8] uppercase tracking-wider">
                   Reassign
                 </p>
               </>
@@ -268,14 +268,14 @@ export function SetterPickerPopover({
 
             {/* Section header when no setter yet */}
             {!currentSetter && (
-              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[#8891a8] uppercase tracking-wider">
                 Select setter
               </p>
             )}
 
             {/* ── Rep list ── */}
             {filteredReps.length === 0 ? (
-              <div className="px-3 py-4 text-center text-slate-500 text-xs">
+              <div className="px-3 py-4 text-center text-[#8891a8] text-xs">
                 No reps found
               </div>
             ) : (
@@ -292,7 +292,7 @@ export function SetterPickerPopover({
                   <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
                     {getInitials(rep.name)}
                   </span>
-                  <span className="flex-1 text-sm text-slate-300 hover:text-white truncate">{rep.name}</span>
+                  <span className="flex-1 text-sm text-[#c2c8d8] hover:text-white truncate">{rep.name}</span>
                   {/* Role badge */}
                   <span className={`${roleBadgeClass(rep.repType)} text-[10px] font-medium flex-shrink-0`}>
                     {roleLabel(rep.repType)}

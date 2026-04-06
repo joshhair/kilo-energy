@@ -337,15 +337,15 @@ function RepsPageInner() {
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <Users className="w-5 h-5 text-blue-400" />
+              <Users className="w-5 h-5 text-[#00e07a]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Reps</h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[#00e07a]/10 text-[#00e07a] border border-[#00e07a]/20">
               {filtered.length !== reps.length ? `${filtered.length} / ${reps.length}` : reps.length} reps
             </span>
           </div>
         </div>
-        <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">{reps.length} sales representatives</p>
+        <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">{reps.length} sales representatives</p>
       </div>
 
       {/* Admin: add rep button */}
@@ -468,7 +468,7 @@ function RepsPageInner() {
         {search ? (
           <button
             onClick={() => setSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#c2c8d8] hover:text-white transition-colors"
             aria-label="Clear search input"
           >
             <X className="w-4 h-4" />
@@ -477,7 +477,7 @@ function RepsPageInner() {
           /* '/' shortcut hint — shown when input is empty and not focused */
           !searchFocused && (
             <kbd
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-slate-600 bg-slate-700/60 text-slate-400 font-mono text-[11px] leading-none select-none"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-[#272b35] bg-[#272b35]/60 text-[#c2c8d8] font-mono text-[11px] leading-none select-none"
               aria-hidden="true"
             >
               /
@@ -486,7 +486,7 @@ function RepsPageInner() {
         )}
       </div>
       {debouncedSearch && (
-        <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full mb-4 inline-block">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full mb-4 inline-block">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
       )}
 
       {/* ── Compare Reps ──────────────────────────────────────────────────── */}
@@ -494,12 +494,12 @@ function RepsPageInner() {
         <div className="mb-6">
           <button
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'}`}
+            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-[#00e07a] text-white' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white border border-[#272b35]'}`}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Click to exit` : 'Compare Reps'}
           </button>
           {compareMode && compareIds.size === 0 && (
-            <p className="text-xs text-slate-500 mt-2">Select 2-3 reps below to compare side by side.</p>
+            <p className="text-xs text-[#8891a8] mt-2">Select 2-3 reps below to compare side by side.</p>
           )}
         </div>
       )}
@@ -517,12 +517,12 @@ function RepsPageInner() {
             <div className="flex flex-col gap-3 mb-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold text-base">Rep Comparison</h3>
-                {ranges.prev && <span className="text-xs text-slate-500">vs {ranges.prev.label}</span>}
+                {ranges.prev && <span className="text-xs text-[#8891a8]">vs {ranges.prev.label}</span>}
               </div>
               <div className="flex flex-wrap gap-1">
                 {PERIOD_OPTIONS.map((opt) => (
                   <button key={opt.value} onClick={() => setComparePeriod(opt.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-[#00e07a] text-white' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white'}`}>
                     {opt.label}
                   </button>
                 ))}
@@ -530,10 +530,10 @@ function RepsPageInner() {
               {comparePeriod === 'custom' && (
                 <div className="flex items-center gap-2">
                   <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                  <span className="text-slate-500 text-xs">to</span>
+                    className="bg-[#1d2028] border border-[#272b35] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]" />
+                  <span className="text-[#8891a8] text-xs">to</span>
                   <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    className="bg-[#1d2028] border border-[#272b35] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]" />
                 </div>
               )}
             </div>
@@ -558,7 +558,7 @@ function RepsPageInner() {
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
 
                 return (
-                  <div key={rep.id} className="bg-slate-800/40 rounded-xl p-4 text-center">
+                  <div key={rep.id} className="bg-[#1d2028]/40 rounded-xl p-4 text-center">
                     <div className="flex justify-center mb-2">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 p-[2px]">
                         <div className="w-full h-full rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: 'var(--brand-dark)' }}>
@@ -567,23 +567,23 @@ function RepsPageInner() {
                       </div>
                     </div>
                     <p className="text-white font-semibold text-sm mb-1">{rep.name}</p>
-                    <p className="text-slate-500 text-[10px] mb-3">{ranges.current.label}</p>
+                    <p className="text-[#8891a8] text-[10px] mb-3">{ranges.current.label}</p>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Deals Closed</span>
+                        <span className="text-[#c2c8d8]">Deals Closed</span>
                         <span className="text-white font-semibold flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
-                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[#00e07a]' : 'text-red-400'}`}>
                               {deltaDeals > 0 ? '+' : ''}{deltaDeals}
                             </span>
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between"><span className="text-slate-400">kW Sold</span><span className="text-white font-semibold">{kwSold.toFixed(1)}</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">Earned</span><span className="text-emerald-400 font-semibold">${commissionEarned.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-slate-300'}`}>{cancelRate.toFixed(0)}%</span></div>
+                      <div className="flex justify-between"><span className="text-[#c2c8d8]">kW Sold</span><span className="text-white font-semibold">{kwSold.toFixed(1)}</span></div>
+                      <div className="flex justify-between"><span className="text-[#c2c8d8]">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
+                      <div className="flex justify-between"><span className="text-[#c2c8d8]">Earned</span><span className="text-[#00e07a] font-semibold">${commissionEarned.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-[#c2c8d8]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[#c2c8d8]'}`}>{cancelRate.toFixed(0)}%</span></div>
                     </div>
                   </div>
                 );
@@ -618,12 +618,12 @@ function RepsPageInner() {
                     checked={compareIds.has(rep.id)}
                     onChange={() => toggleCompareId(rep.id)}
                     disabled={!compareIds.has(rep.id) && compareIds.size >= 3}
-                    className="w-4 h-4 accent-blue-500 rounded cursor-pointer"
+                    className="w-4 h-4 accent-[#00e07a] rounded cursor-pointer"
                   />
                 </div>
               )}
             <Link href={`/dashboard/reps/${rep.id}`}>
-              <div className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)} ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-blue-500/40' : ''}`} style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? '#272b35'}` }}>
+              <div className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)} ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[#00e07a]/40' : ''}`} style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? '#272b35'}` }}>
                 <div className="flex items-center gap-4">
 
                   {/* ── Avatar with conic progress ring ───────────────────── */}
@@ -640,7 +640,7 @@ function RepsPageInner() {
                           id={`repRingGrad-${rep.id}`}
                           x1="0%" y1="0%" x2="100%" y2="0%"
                         >
-                          <stop offset="0%"   stopColor="#3b82f6" />
+                          <stop offset="0%"   stopColor="#00c4f0" />
                           <stop offset="100%" stopColor="#60a5fa" />
                         </linearGradient>
                       </defs>
@@ -689,7 +689,7 @@ function RepsPageInner() {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-semibold group-hover:text-blue-400 transition-colors">
+                      <p className="text-white font-semibold group-hover:text-[#00e07a] transition-colors">
                         {rep.name}
                       </p>
                       {canManageReps ? (
@@ -708,12 +708,12 @@ function RepsPageInner() {
                       )}
                       {/* Active deals badge */}
                       {(activeDealsByRep.get(rep.id) ?? 0) > 0 && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#00e07a]/10 text-[#00e07a] border border-[#00e07a]/20">
                           {activeDealsByRep.get(rep.id)} active
                         </span>
                       )}
                     </div>
-                    <p className="text-slate-500 text-xs">{rep.email}</p>
+                    <p className="text-[#8891a8] text-xs">{rep.email}</p>
                   </div>
                 </div>
 
@@ -759,7 +759,7 @@ function RepsPageInner() {
                     style={{ transitionDelay: '190ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="text-slate-300 bg-slate-500/10 rounded-lg px-2 py-0.5 text-xs">
+                      <span className="text-[#c2c8d8] bg-[#8891a8]/10 rounded-lg px-2 py-0.5 text-xs">
                         {(() => {
                           if (repProjects.length === 0) return 'No deals yet';
                           const latest = repProjects.reduce((a, b) => a.soldDate > b.soldDate ? a : b);
@@ -769,7 +769,7 @@ function RepsPageInner() {
                         })()}
                       </span>
                     </p>
-                    <p className="text-slate-500 text-xs mt-1">Last Deal</p>
+                    <p className="text-[#8891a8] text-xs mt-1">Last Deal</p>
                   </div>
 
                   {/* Paid */}
@@ -785,12 +785,12 @@ function RepsPageInner() {
                     </div>
                   )}
 
-                  <ChevronRight className="hidden md:block w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                  <ChevronRight className="hidden md:block w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
                   {canManageReps && (
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Remove ${rep.name}?`, message: 'Their existing deals will be unaffected.', onConfirm: () => { removeRep(rep.id); toast('Rep removed', 'info'); setConfirmAction(null); } }); }}
                       title="Remove rep"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[#525c72] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -804,24 +804,24 @@ function RepsPageInner() {
 
         {filtered.length === 0 && (debouncedSearch || filterTab !== 'all') && (
           <div className="flex justify-center py-4">
-            <div className="animate-fade-in w-60 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3 text-center">
+            <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3 text-center">
               {/* Illustration — magnifying glass with question mark */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Outer lens ring */}
-                <circle cx="34" cy="34" r="20" stroke="#3b82f6" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
+                <circle cx="34" cy="34" r="20" stroke="#00c4f0" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
                 {/* Inner lens ring */}
-                <circle cx="34" cy="34" r="13" stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
+                <circle cx="34" cy="34" r="13" stroke="#00c4f0" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
                 {/* Handle */}
-                <line x1="49" y1="49" x2="70" y2="70" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
+                <line x1="49" y1="49" x2="70" y2="70" stroke="#00c4f0" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
                 {/* Question mark stem */}
                 <path d="M31 38 Q31 35 34 35 Q37 35 37 32 Q37 29 34 29 Q31 29 31 32" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" strokeOpacity="0.7"/>
                 {/* Question mark dot */}
                 <circle cx="34" cy="40" r="1.2" fill="#94a3b8" fillOpacity="0.7"/>
               </svg>
-              <p className="text-slate-200 text-sm font-bold leading-snug">No reps match</p>
-              <p className="text-slate-500 text-xs leading-relaxed">
+              <p className="text-[#c2c8d8] text-sm font-bold leading-snug">No reps match</p>
+              <p className="text-[#8891a8] text-xs leading-relaxed">
                 {debouncedSearch
-                  ? <>No results for &ldquo;<span className="text-slate-400">{debouncedSearch}</span>&rdquo;. Try adjusting your query.</>
+                  ? <>No results for &ldquo;<span className="text-[#c2c8d8]">{debouncedSearch}</span>&rdquo;. Try adjusting your query.</>
                   : <>No reps match the selected filter. Try a different role.</>}
               </p>
               <button
@@ -846,7 +846,7 @@ function RepsPageInner() {
           <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md" style={{ background: '#1d2028', border: '1px solid #333849' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-white font-bold text-lg">Add New Rep</h3>
-              <button onClick={resetAddModal} className="text-slate-500 hover:text-white transition-colors">
+              <button onClick={resetAddModal} className="text-[#8891a8] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -912,7 +912,7 @@ function RepsPageInner() {
                     className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border ${
                       newRepType === rt
                         ? `${ROLE_BADGE_CLS[rt]} bg-opacity-100`
-                        : 'border-slate-700 text-slate-500 bg-slate-800 hover:border-slate-600 hover:text-slate-300'
+                        : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:border-[#272b35] hover:text-[#c2c8d8]'
                     }`}
                   >
                     {ROLE_LABELS[rt]}
@@ -976,15 +976,15 @@ function RepsSkeleton() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <div className="h-9 w-9 bg-slate-800 rounded-lg animate-skeleton" />
-          <div className="h-8 w-20 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+          <div className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton" />
+          <div className="h-8 w-20 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
         </div>
-        <div className="h-3 w-44 bg-slate-800/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
+        <div className="h-3 w-44 bg-[#1d2028]/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
       </div>
 
       {/* Search bar placeholder */}
       <div className="relative max-w-xs mb-6">
-        <div className="h-9 w-full bg-slate-800 rounded-xl animate-skeleton" style={{ animationDelay: '75ms' }} />
+        <div className="h-9 w-full bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: '75ms' }} />
       </div>
 
       {/* 6 rep card skeletons */}
@@ -999,16 +999,16 @@ function RepsSkeleton() {
               {/* Avatar + name/email */}
               <div className="flex items-center gap-4">
                 <div
-                  className="w-12 h-12 rounded-full bg-slate-800 flex-shrink-0 animate-skeleton"
+                  className="w-12 h-12 rounded-full bg-[#1d2028] flex-shrink-0 animate-skeleton"
                   style={{ animationDelay: `${delay}ms` }}
                 />
                 <div className="space-y-2">
                   <div
-                    className="h-4 w-32 bg-slate-800 rounded animate-skeleton"
+                    className="h-4 w-32 bg-[#1d2028] rounded animate-skeleton"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                   <div
-                    className="h-3 w-44 bg-slate-800/70 rounded animate-skeleton"
+                    className="h-3 w-44 bg-[#1d2028]/70 rounded animate-skeleton"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                 </div>
@@ -1019,11 +1019,11 @@ function RepsSkeleton() {
                 {[...Array(4)].map((_, si) => (
                   <div key={si} className="text-center space-y-1.5">
                     <div
-                      className="h-4 w-10 bg-slate-800 rounded animate-skeleton mx-auto"
+                      className="h-4 w-10 bg-[#1d2028] rounded animate-skeleton mx-auto"
                       style={{ animationDelay: `${delay + si * 30}ms` }}
                     />
                     <div
-                      className="h-3 w-14 bg-slate-800/70 rounded animate-skeleton mx-auto"
+                      className="h-3 w-14 bg-[#1d2028]/70 rounded animate-skeleton mx-auto"
                       style={{ animationDelay: `${delay + si * 30}ms` }}
                     />
                   </div>

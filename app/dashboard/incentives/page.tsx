@@ -225,7 +225,7 @@ export default function IncentivesPage() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }
@@ -508,7 +508,7 @@ export default function IncentivesPage() {
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Incentives</h1>
           </div>
-          <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">
+          <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">
             {isAdmin ? 'Create and manage team goals and rewards' : 'Track your active goals and milestone rewards'}
           </p>
         </div>
@@ -577,8 +577,8 @@ export default function IncentivesPage() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Active Incentives</span>
-            <Trophy className="w-4 h-4 text-blue-400 shrink-0" />
+            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Active Incentives</span>
+            <Trophy className="w-4 h-4 text-[#00e07a] shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#4d9fff' }}>
             {activeIncentives.length}
@@ -591,11 +591,11 @@ export default function IncentivesPage() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Milestones Achieved</span>
-            <Target className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Milestones Achieved</span>
+            <Target className="w-4 h-4 text-[#00e07a] shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>
-            {achievedMilestones} <span className="text-base font-medium text-slate-500">of {totalMilestones}</span>
+            {achievedMilestones} <span className="text-base font-medium text-[#8891a8]">of {totalMilestones}</span>
           </p>
         </div>
 
@@ -605,11 +605,11 @@ export default function IncentivesPage() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Next Deadline</span>
+            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Next Deadline</span>
             <Calendar className="w-4 h-4 text-yellow-400 shrink-0" />
           </div>
           <p className="stat-value text-2xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#ffb020' }}>
-            {nextDeadline ? formatDate(nextDeadline) : <span className="text-slate-500 text-lg">None</span>}
+            {nextDeadline ? formatDate(nextDeadline) : <span className="text-[#8891a8] text-lg">None</span>}
           </p>
         </div>
       </div>
@@ -696,13 +696,13 @@ export default function IncentivesPage() {
             className="flex items-center gap-2 mb-4 group"
           >
             <Gift className="w-4 h-4 text-amber-400" />
-            <h2 className="text-slate-400 text-xs font-semibold uppercase tracking-wider group-hover:text-slate-300 transition-colors">
+            <h2 className="text-[#c2c8d8] text-xs font-semibold uppercase tracking-wider group-hover:text-[#c2c8d8] transition-colors">
               Pending Rewards
             </h2>
             <span className="text-xs bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">
               {pendingRewards.length}
             </span>
-            {pendingRewardsOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+            {pendingRewardsOpen ? <ChevronUp className="w-3.5 h-3.5 text-[#8891a8]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#8891a8]" />}
           </button>
           {pendingRewardsOpen && (
             <div className="space-y-2">
@@ -717,14 +717,14 @@ export default function IncentivesPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-white text-sm font-semibold truncate">{incentive.title}</p>
-                      <p className="text-slate-400 text-xs">
+                      <p className="text-[#c2c8d8] text-xs">
                         At {formatIncentiveMetric(incentive.metric, milestone.threshold)} — <span className="text-amber-400">{milestone.reward}</span>
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleMilestoneAchieved(incentive.id, milestone.id, true)}
-                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-emerald-900/50 text-emerald-400 hover:bg-emerald-800/60 flex-shrink-0 ml-3"
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-emerald-900/50 text-[#00e07a] hover:bg-emerald-800/60 flex-shrink-0 ml-3"
                   >
                     Mark Fulfilled
                   </button>
@@ -742,14 +742,14 @@ export default function IncentivesPage() {
             onClick={() => setPastIncentivesOpen((v) => !v)}
             className="flex items-center gap-2 mb-4 group"
           >
-            <Archive className="w-4 h-4 text-slate-500" />
-            <h2 className="text-slate-400 text-xs font-semibold uppercase tracking-wider group-hover:text-slate-300 transition-colors">
+            <Archive className="w-4 h-4 text-[#8891a8]" />
+            <h2 className="text-[#c2c8d8] text-xs font-semibold uppercase tracking-wider group-hover:text-[#c2c8d8] transition-colors">
               Past Incentives
             </h2>
-            <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-[#272b35] text-[#c2c8d8] px-2 py-0.5 rounded-full font-medium">
               {expiredVisible.length}
             </span>
-            {pastIncentivesOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+            {pastIncentivesOpen ? <ChevronUp className="w-3.5 h-3.5 text-[#8891a8]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#8891a8]" />}
           </button>
           {pastIncentivesOpen && (
             <div className="grid gap-3">
@@ -760,32 +760,32 @@ export default function IncentivesPage() {
                 return (
                   <div
                     key={inc.id}
-                    className="relative rounded-2xl border border-slate-700/40 card-surface overflow-hidden opacity-70 hover:opacity-90 transition-opacity"
+                    className="relative rounded-2xl border border-[#272b35]/40 card-surface overflow-hidden opacity-70 hover:opacity-90 transition-opacity"
                   >
                     <div className="flex items-center justify-between px-5 py-4">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-2 h-2 rounded-full bg-slate-600 flex-shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-[#525c72] flex-shrink-0" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-slate-300 font-semibold">{inc.title}</p>
+                            <p className="text-[#c2c8d8] font-semibold">{inc.title}</p>
                             <span className="text-xs bg-red-900/40 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               Expired
                             </span>
                           </div>
-                          <p className="text-slate-500 text-xs mt-0.5">{inc.description}</p>
+                          <p className="text-[#8891a8] text-xs mt-0.5">{inc.description}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-4">
                         <div className="flex items-center gap-2.5">
-                          <span className={`text-sm font-bold tabular-nums ${pct >= 100 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                          <span className={`text-sm font-bold tabular-nums ${pct >= 100 ? 'text-[#00e07a]' : 'text-[#c2c8d8]'}`}>
                             {Math.round(pct)}% final
                           </span>
                         </div>
                         {isAdmin && (
                           <button
                             onClick={() => handleDelete(inc.id)}
-                            className="text-slate-600 hover:text-red-400 transition-colors p-1"
+                            className="text-[#525c72] hover:text-red-400 transition-colors p-1"
                             title="Delete from archive"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -840,16 +840,16 @@ export default function IncentivesPage() {
       {/* Floating bulk-action toolbar */}
       {selectMode && selectedIds.size > 0 && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-slate-900/80 border border-slate-700/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-[#161920]/80 border border-[#272b35]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
           role="toolbar"
           aria-label="Batch actions for selected incentives"
         >
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+            <span className="flex items-center gap-1.5 bg-[#00e07a]/15 border border-[#00e07a]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
               <span className="text-white font-bold tabular-nums">{selectedIds.size}</span>
-              <span className="text-blue-400 font-medium">selected</span>
+              <span className="text-[#00e07a] font-medium">selected</span>
             </span>
-            <div className="h-5 w-px bg-slate-700/80 flex-shrink-0" />
+            <div className="h-5 w-px bg-[#272b35]/80 flex-shrink-0" />
             <button
               onClick={handleBulkDeactivate}
               className="flex items-center gap-1.5 text-white font-semibold px-4 py-1.5 rounded-xl text-sm bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/20 active:scale-[0.97] transition-all whitespace-nowrap"
@@ -862,10 +862,10 @@ export default function IncentivesPage() {
             >
               <Trash2 className="w-3.5 h-3.5" /> Delete
             </button>
-            <div className="h-5 w-px bg-slate-700/80 flex-shrink-0" />
+            <div className="h-5 w-px bg-[#272b35]/80 flex-shrink-0" />
             <button
               onClick={clearSelection}
-              className="text-slate-400 hover:text-white text-sm font-medium transition-colors whitespace-nowrap"
+              className="text-[#c2c8d8] hover:text-white text-sm font-medium transition-colors whitespace-nowrap"
             >
               Cancel
             </button>
@@ -953,9 +953,9 @@ function IncentiveCard({
           {selectMode && isAdmin && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggleSelect(incentive.id); }}
-              className="flex-shrink-0 text-slate-500 hover:text-blue-400 transition-colors"
+              className="flex-shrink-0 text-[#8891a8] hover:text-[#00e07a] transition-colors"
             >
-              {selected ? <CheckSquare className="w-4 h-4 text-blue-400" /> : <Square className="w-4 h-4" />}
+              {selected ? <CheckSquare className="w-4 h-4 text-[#00e07a]" /> : <Square className="w-4 h-4" />}
             </button>
           )}
           <div
@@ -983,7 +983,7 @@ function IncentiveCard({
                 </span>
               )}
               {!incentive.active && (
-                <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded-full">Inactive</span>
+                <span className="text-xs bg-[#272b35] text-[#c2c8d8] px-2 py-0.5 rounded-full">Inactive</span>
               )}
               {rep && (
                 <span className="text-xs bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">
@@ -991,7 +991,7 @@ function IncentiveCard({
                 </span>
               )}
             </div>
-            <p className="text-slate-400 text-xs mt-0.5">{incentive.description}</p>
+            <p className="text-[#c2c8d8] text-xs mt-0.5">{incentive.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0 ml-4">
@@ -1018,33 +1018,33 @@ function IncentiveCard({
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(incentive.id); }}
-                className="text-slate-600 hover:text-blue-400 transition-colors p-1"
+                className="text-[#525c72] hover:text-[#00e07a] transition-colors p-1"
                 title="Edit incentive"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDuplicate(incentive.id); }}
-                className="text-slate-600 hover:text-blue-400 transition-colors p-1"
+                className="text-[#525c72] hover:text-[#00e07a] transition-colors p-1"
                 title="Duplicate incentive"
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onToggle(incentive.id); }}
-                className="text-xs text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg transition-colors"
+                className="text-xs text-[#8891a8] hover:text-white bg-[#1d2028] hover:bg-[#272b35] px-2.5 py-1 rounded-lg transition-colors"
               >
                 {incentive.active ? 'Deactivate' : 'Activate'}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(incentive.id); }}
-                className="text-slate-600 hover:text-red-400 transition-colors p-1"
+                className="text-[#525c72] hover:text-red-400 transition-colors p-1"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </>
           )}
-          {expanded ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+          {expanded ? <ChevronUp className="w-4 h-4 text-[#8891a8]" /> : <ChevronDown className="w-4 h-4 text-[#8891a8]" />}
         </div>
       </div>
 
@@ -1053,7 +1053,7 @@ function IncentiveCard({
           {/* Progress bar — prominent */}
           <div className="mb-5">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-slate-400">
+              <span className="text-[#c2c8d8]">
                 Progress: <span className="text-white font-semibold">{formatIncentiveMetric(incentive.metric, progress)}</span>
                 {' '}/ {formatIncentiveMetric(incentive.metric, maxThreshold)} {metricLabel[incentive.metric]}
               </span>
@@ -1152,18 +1152,18 @@ function IncentiveCard({
                       onClick={() => onMilestoneAchieved(incentive.id, milestone.id, !milestone.achieved)}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
                         milestone.achieved
-                          ? 'bg-slate-700 text-slate-400 hover:text-red-400'
-                          : 'bg-emerald-900/50 text-emerald-400 hover:bg-emerald-800/60'
+                          ? 'bg-[#272b35] text-[#c2c8d8] hover:text-red-400'
+                          : 'bg-emerald-900/50 text-[#00e07a] hover:bg-emerald-800/60'
                       }`}
                     >
                       {milestone.achieved ? 'Undo' : 'Mark Achieved'}
                     </button>
                   )}
                   {!isAdmin && milestone.achieved && (
-                    <span className="text-emerald-400 text-xs font-semibold">Achieved</span>
+                    <span className="text-[#00e07a] text-xs font-semibold">Achieved</span>
                   )}
                   {!isAdmin && !milestone.achieved && hit && (
-                    <span className="text-blue-400 text-xs font-semibold">Unlocked!</span>
+                    <span className="text-[#00e07a] text-xs font-semibold">Unlocked!</span>
                   )}
                 </div>
               );
@@ -1304,9 +1304,9 @@ function CreateIncentiveModal({
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  const inputCls = 'w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500';
-  const inputErrCls = 'w-full bg-slate-800 border border-red-500/60 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-slate-500';
-  const labelCls = 'block text-xs font-medium text-slate-400 mb-1.5';
+  const inputCls = 'w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-slate-500';
+  const inputErrCls = 'w-full bg-[#1d2028] border border-red-500/60 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-slate-500';
+  const labelCls = 'block text-xs font-medium text-[#c2c8d8] mb-1.5';
   const errTextCls = 'text-red-400 text-xs mt-1';
 
   // Year options: current year -1 to +3
@@ -1321,12 +1321,12 @@ function CreateIncentiveModal({
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div
-        className="w-full max-w-lg my-auto rounded-2xl border border-slate-700 overflow-visible"
+        className="w-full max-w-lg my-auto rounded-2xl border border-[#272b35] overflow-visible"
         style={{ backgroundColor: 'var(--navy-card)' }}
       >
-        <div className="flex items-center justify-between p-6 border-b border-slate-800" style={{ backgroundColor: 'var(--navy-card)' }}>
+        <div className="flex items-center justify-between p-6 border-b border-[#333849]" style={{ backgroundColor: 'var(--navy-card)' }}>
           <h2 className="text-white font-semibold text-lg">{isEdit ? 'Edit Incentive' : isDuplicate ? 'Duplicate Incentive' : 'New Incentive'}</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-[#8891a8] hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -1351,7 +1351,7 @@ function CreateIncentiveModal({
                       }));
                       setMilestones(tpl.milestones.map((m) => ({ threshold: m.threshold, reward: m.reward })));
                     }}
-                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/40 hover:text-blue-400 hover:bg-blue-900/20"
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] hover:border-[#00e07a]/40 hover:text-[#00e07a] hover:bg-blue-900/20"
                   >
                     {tpl.label}
                   </button>
@@ -1502,7 +1502,7 @@ function CreateIncentiveModal({
 
             {/* Show computed date range preview */}
             {form.period !== 'alltime' && computedDates.startDate && computedDates.endDate && (
-              <p className="text-slate-500 text-xs mt-1.5">
+              <p className="text-[#8891a8] text-xs mt-1.5">
                 {formatDate(computedDates.startDate)} — {formatDate(computedDates.endDate)}
               </p>
             )}
@@ -1512,7 +1512,7 @@ function CreateIncentiveModal({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className={labelCls + ' mb-0'}>Milestones</label>
-              <button type="button" onClick={addMilestone} className="text-blue-400 hover:text-blue-300 text-xs transition-colors flex items-center gap-1">
+              <button type="button" onClick={addMilestone} className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors flex items-center gap-1">
                 <Plus className="w-3 h-3" /> Add
               </button>
             </div>
@@ -1535,7 +1535,7 @@ function CreateIncentiveModal({
                     className={inputCls + ' flex-1 min-w-0'}
                   />
                   {milestones.length > 1 && (
-                    <button type="button" onClick={() => removeMilestone(i)} className="text-slate-600 hover:text-red-400 transition-colors flex-shrink-0">
+                    <button type="button" onClick={() => removeMilestone(i)} className="text-[#525c72] hover:text-red-400 transition-colors flex-shrink-0">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -1555,7 +1555,7 @@ function CreateIncentiveModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 rounded-xl text-sm transition-colors"
+              className="flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-3 rounded-xl text-sm transition-colors"
             >
               Cancel
             </button>
@@ -1587,26 +1587,26 @@ function IncentivesSkeleton() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-9 w-9 bg-slate-800 rounded-lg animate-skeleton" />
+            <div className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton" />
             <div
-              className="h-8 w-48 bg-slate-800 rounded animate-skeleton"
+              className="h-8 w-48 bg-[#1d2028] rounded animate-skeleton"
               style={{ animationDelay: '75ms' }}
             />
           </div>
           <div
-            className="h-3 w-64 bg-slate-800/70 rounded animate-skeleton ml-12"
+            className="h-3 w-64 bg-[#1d2028]/70 rounded animate-skeleton ml-12"
             style={{ animationDelay: '100ms' }}
           />
         </div>
         <div
-          className="h-9 w-32 bg-slate-800 rounded-xl animate-skeleton"
+          className="h-9 w-32 bg-[#1d2028] rounded-xl animate-skeleton"
           style={{ animationDelay: '50ms' }}
         />
       </div>
 
       {/* Section label */}
       <div
-        className="h-3 w-24 bg-slate-800/70 rounded animate-skeleton mb-4"
+        className="h-3 w-24 bg-[#1d2028]/70 rounded animate-skeleton mb-4"
         style={{ animationDelay: '75ms' }}
       />
 
@@ -1615,29 +1615,29 @@ function IncentivesSkeleton() {
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-slate-700/50 overflow-hidden"
+            className="rounded-2xl border border-[#272b35]/50 overflow-hidden"
             style={{ backgroundColor: 'var(--navy-card)' }}
           >
             {/* Card header row */}
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-2 h-2 rounded-full bg-slate-700 animate-skeleton flex-shrink-0"
+                  className="w-2 h-2 rounded-full bg-[#272b35] animate-skeleton flex-shrink-0"
                   style={{ animationDelay: `${i * 75}ms` }}
                 />
                 <div className="space-y-2">
                   <div
-                    className="h-4 w-40 bg-slate-800 rounded animate-skeleton"
+                    className="h-4 w-40 bg-[#1d2028] rounded animate-skeleton"
                     style={{ animationDelay: `${i * 75}ms` }}
                   />
                   <div
-                    className="h-3 w-56 bg-slate-800/70 rounded animate-skeleton"
+                    className="h-3 w-56 bg-[#1d2028]/70 rounded animate-skeleton"
                     style={{ animationDelay: `${i * 75 + 40}ms` }}
                   />
                 </div>
               </div>
               <div
-                className="h-4 w-4 bg-slate-800 rounded animate-skeleton flex-shrink-0 ml-4"
+                className="h-4 w-4 bg-[#1d2028] rounded animate-skeleton flex-shrink-0 ml-4"
                 style={{ animationDelay: `${i * 75}ms` }}
               />
             </div>
@@ -1647,32 +1647,32 @@ function IncentivesSkeleton() {
               {/* Progress label row */}
               <div className="flex justify-between mb-1.5">
                 <div
-                  className="h-3 w-40 bg-slate-800/70 rounded animate-skeleton"
+                  className="h-3 w-40 bg-[#1d2028]/70 rounded animate-skeleton"
                   style={{ animationDelay: `${i * 75 + 50}ms` }}
                 />
                 <div
-                  className="h-3 w-8 bg-slate-800/70 rounded animate-skeleton"
+                  className="h-3 w-8 bg-[#1d2028]/70 rounded animate-skeleton"
                   style={{ animationDelay: `${i * 75 + 50}ms` }}
                 />
               </div>
               {/* Progress bar placeholder */}
               <div
-                className="h-3.5 bg-slate-800 rounded-full animate-skeleton"
+                className="h-3.5 bg-[#1d2028] rounded-full animate-skeleton"
                 style={{ animationDelay: `${i * 75 + 75}ms` }}
               />
               {/* Milestone placeholder row */}
-              <div className="mt-3 flex items-center gap-3 rounded-xl px-4 py-3 border border-slate-700/50 bg-slate-800/30">
+              <div className="mt-3 flex items-center gap-3 rounded-xl px-4 py-3 border border-[#272b35]/50 bg-[#1d2028]/30">
                 <div
-                  className="w-8 h-8 rounded-full bg-slate-700/50 animate-skeleton flex-shrink-0"
+                  className="w-8 h-8 rounded-full bg-[#272b35]/50 animate-skeleton flex-shrink-0"
                   style={{ animationDelay: `${i * 75 + 100}ms` }}
                 />
                 <div className="space-y-1.5">
                   <div
-                    className="h-3 w-28 bg-slate-800 rounded animate-skeleton"
+                    className="h-3 w-28 bg-[#1d2028] rounded animate-skeleton"
                     style={{ animationDelay: `${i * 75 + 100}ms` }}
                   />
                   <div
-                    className="h-2.5 w-16 bg-slate-800/70 rounded animate-skeleton"
+                    className="h-2.5 w-16 bg-[#1d2028]/70 rounded animate-skeleton"
                     style={{ animationDelay: `${i * 75 + 120}ms` }}
                   />
                 </div>

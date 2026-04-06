@@ -61,9 +61,9 @@ interface PayPeriod {
 // ── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  Paid:    { bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400', dot: 'bg-emerald-400' },
+  Paid:    { bg: 'bg-[#00e07a]/10 border-[#00e07a]/20', text: 'text-[#00e07a]', dot: 'bg-emerald-400' },
   Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-yellow-400',  dot: 'bg-yellow-400'  },
-  Draft:   { bg: 'bg-slate-500/10 border-slate-500/20',     text: 'text-slate-400',   dot: 'bg-slate-400'   },
+  Draft:   { bg: 'bg-[#8891a8]/10 border-[#333849]/20',     text: 'text-[#c2c8d8]',   dot: 'bg-[#8891a8]'   },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -79,7 +79,7 @@ function StatusBadge({ status }: { status: string }) {
 // ── Stage badge ──────────────────────────────────────────────────────────────
 
 function StageBadge({ stage }: { stage: string }) {
-  const color = stage === 'M1' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+  const color = stage === 'M1' ? 'text-[#00e07a] bg-[#00e07a]/10 border-[#00e07a]/20'
     : stage === 'M2' ? 'text-violet-400 bg-violet-500/10 border-violet-500/20'
     : stage === 'M3' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20'
     : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
@@ -351,7 +351,7 @@ function VaultPageInner() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-slate-500 text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }
@@ -363,7 +363,7 @@ function VaultPageInner() {
   if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer') {
     return (
       <div className="p-8 text-center">
-        <p className="text-slate-500 text-sm">My Pay is only available in the rep view.</p>
+        <p className="text-[#8891a8] text-sm">My Pay is only available in the rep view.</p>
       </div>
     );
   }
@@ -390,25 +390,25 @@ function VaultPageInner() {
       />
 
       {/* ── Hero Banner — Next Payout + Page Title ── */}
-      <div className="card-surface rounded-2xl mb-4 animate-slide-in-scale border-b-2 border-blue-500/15">
+      <div className="card-surface rounded-2xl mb-4 animate-slide-in-scale border-b-2 border-[#00e07a]/15">
         <div className="px-4 py-4 md:px-8 md:py-8">
           <div className="flex items-center gap-3 mb-5">
             <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
-              <VaultIcon className="w-5 h-5 text-blue-400" />
+              <VaultIcon className="w-5 h-5 text-[#00e07a]" />
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Pay</h1>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
+              <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
               <p className="text-3xl md:text-5xl font-black tabular-nums tracking-tight leading-none"
                  style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 32px rgba(16,185,129,0.30)' }}>
                 ${nextPayoutTotal.toLocaleString()}
               </p>
-              <p className="text-slate-500 text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>
+              <p className="text-[#8891a8] text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-end">
+            <span className="inline-flex items-center gap-1.5 bg-[#00e07a]/10 border border-[#00e07a]/20 text-[#00e07a] text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-end">
               <Clock className="w-3 h-3 shrink-0" />
               {daysUntilFriday === 0 ? 'Today!' : daysUntilFriday === 1 ? 'Tomorrow' : `${daysUntilFriday} days away`}
             </span>
@@ -425,10 +425,10 @@ function VaultPageInner() {
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-1 border-l-2 border-l-emerald-500/40"
              style={{ '--card-accent': 'rgba(16,185,129,0.08)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
-            <DollarSign className="w-4 h-4 text-emerald-400/50" />
+            <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
+            <DollarSign className="w-4 h-4 text-[#00e07a]/50" />
           </div>
-          <p className="text-xl md:text-3xl font-black tabular-nums text-emerald-400 stat-value"
+          <p className="text-xl md:text-3xl font-black tabular-nums text-[#00e07a] stat-value"
              style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)' }}>${lifetimeEarned.toLocaleString()}</p>
           {chargebackTotal > 0 && (
             <p className="text-red-400/70 text-[10px] font-semibold mt-1.5 tabular-nums">- ${chargebackTotal.toLocaleString()} chargebacks</p>
@@ -438,14 +438,14 @@ function VaultPageInner() {
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-2 border-l-2 border-l-amber-500/40"
              style={{ '--card-accent': 'rgba(245,158,11,0.10)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest">On Pace For</p>
+            <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">On Pace For</p>
             <TrendingUp className="w-4 h-4 text-amber-400/50" />
           </div>
           <p className="text-xl md:text-3xl font-black tabular-nums text-amber-400 stat-value"
              style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)' }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
-          <p className="text-slate-600 text-[10px] mt-1.5">
+          <p className="text-[#525c72] text-[10px] mt-1.5">
             {annualProjection.basis === 'blended'
               ? `${new Date().getFullYear()} · ${fmt$(annualProjection.monthlyAvg)}/mo avg`
               : annualProjection.basis === 'pace'
@@ -457,12 +457,12 @@ function VaultPageInner() {
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-3 col-span-2 sm:col-span-1 border-l-2 border-l-blue-500/40"
              style={{ '--card-accent': 'rgba(59,130,246,0.08)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
-            <TrendingUp className="w-4 h-4 text-blue-400/50" />
+            <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
+            <TrendingUp className="w-4 h-4 text-[#00e07a]/50" />
           </div>
-          <p className="text-xl md:text-2xl font-black tabular-nums text-blue-400 stat-value"
+          <p className="text-xl md:text-2xl font-black tabular-nums text-[#00e07a] stat-value"
              style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)' }}>${(projectedM1 + projectedM2).toLocaleString()}</p>
-          <p className="text-slate-600 text-[10px] mt-1">Projected from {myProjects.length} deals</p>
+          <p className="text-[#525c72] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
       </div>
 
@@ -472,23 +472,23 @@ function VaultPageInner() {
         {(projectedM1 > 0 || projectedM2 > 0) && (
           <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-6">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-4 h-4 text-blue-400" />
-              <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Projected Pipeline</p>
+              <Calendar className="w-4 h-4 text-[#00e07a]" />
+              <p className="text-[#c2c8d8] text-xs font-semibold uppercase tracking-wider">Projected Pipeline</p>
             </div>
-            <p className="text-slate-500 text-xs mb-4">Expected if deals progress through milestones</p>
+            <p className="text-[#8891a8] text-xs mb-4">Expected if deals progress through milestones</p>
             <div className="space-y-3">
               {projectedM1 > 0 && (
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                      <span className="text-blue-400 text-xs font-bold">M1</span>
+                    <div className="w-8 h-8 rounded-lg bg-[#00e07a]/15 flex items-center justify-center">
+                      <span className="text-[#00e07a] text-xs font-bold">M1</span>
                     </div>
                     <div>
                       <p className="text-white text-sm font-semibold">Pending M1</p>
-                      <p className="text-slate-600 text-[10px]">Awaiting Acceptance</p>
+                      <p className="text-[#525c72] text-[10px]">Awaiting Acceptance</p>
                     </div>
                   </div>
-                  <p className="text-blue-400 font-bold tabular-nums" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
+                  <p className="text-[#00e07a] font-bold tabular-nums" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
                     ${projectedM1.toLocaleString()}
                   </p>
                 </div>
@@ -501,7 +501,7 @@ function VaultPageInner() {
                     </div>
                     <div>
                       <p className="text-white text-sm font-semibold">Pending M2</p>
-                      <p className="text-slate-600 text-[10px]">Awaiting Installation</p>
+                      <p className="text-[#525c72] text-[10px]">Awaiting Installation</p>
                     </div>
                   </div>
                   <p className="text-violet-400 font-bold tabular-nums" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
@@ -520,7 +520,7 @@ function VaultPageInner() {
           <Receipt className="w-4 h-4 text-violet-400" />
           <div>
             <p className="text-white text-sm font-medium">Reimbursements</p>
-            <p className="text-slate-500 text-xs">
+            <p className="text-[#8891a8] text-xs">
               {pendingReimbs.length > 0 || approvedReimbTotal > 0
                 ? `${pendingReimbs.length} pending${approvedReimbTotal > 0 ? ` · ${fmt$(approvedReimbTotal)} approved` : ''}`
                 : 'Submit expenses for reimbursement'}
@@ -535,7 +535,7 @@ function VaultPageInner() {
       {/* ── Filters ── */}
       <div className="flex flex-col md:flex-row flex-wrap items-stretch md:items-center gap-2 md:gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8891a8] pointer-events-none" />
           <input
             ref={searchRef}
             type="text"
@@ -544,11 +544,11 @@ function VaultPageInner() {
             onChange={(e) => { setSearchQuery(e.target.value); setPeriodPage(1); }}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl pl-10 pr-8 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
+            className="w-full bg-[#161920] border border-[#333849] text-white rounded-xl pl-10 pr-8 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
           />
           {!searchQuery && !searchFocused && (
             <kbd
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-slate-600 bg-slate-700/60 text-slate-400 font-mono text-[11px] leading-none select-none"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-[#272b35] bg-[#272b35]/60 text-[#c2c8d8] font-mono text-[11px] leading-none select-none"
               aria-hidden="true"
             >
               /
@@ -556,32 +556,32 @@ function VaultPageInner() {
           )}
         </div>
         {searchQuery && (
-          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{myEntries.length} result{myEntries.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full">{myEntries.length} result{myEntries.length !== 1 ? 's' : ''}</span>
         )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 font-medium uppercase tracking-wider whitespace-nowrap">Pay Period From</label>
+            <label className="text-xs text-[#8891a8] font-medium uppercase tracking-wider whitespace-nowrap">Pay Period From</label>
             <input
               type="date"
               value={payFilterFrom}
               onChange={(e) => { setPayFilterFrom(e.target.value); setPeriodPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="bg-[#161920] border border-[#333849] text-[#c2c8d8] rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 font-medium uppercase tracking-wider whitespace-nowrap">Pay Period To</label>
+            <label className="text-xs text-[#8891a8] font-medium uppercase tracking-wider whitespace-nowrap">Pay Period To</label>
             <input
               type="date"
               value={payFilterTo}
               onChange={(e) => { setPayFilterTo(e.target.value); setPeriodPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="bg-[#161920] border border-[#333849] text-[#c2c8d8] rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             />
           </div>
         </div>
         {(payFilterFrom || payFilterTo) && (
           <button
             onClick={() => { setPayFilterFrom(''); setPayFilterTo(''); setPeriodPage(1); }}
-            className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors whitespace-nowrap"
+            className="text-xs text-[#00e07a] hover:text-emerald-300 font-medium transition-colors whitespace-nowrap"
           >
             Clear
           </button>
@@ -589,7 +589,7 @@ function VaultPageInner() {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          className="bg-[#161920] border border-[#333849] text-[#c2c8d8] rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Types</option>
           {effectiveRole !== 'sub-dealer' && <option value="M1">M1 Only</option>}
@@ -601,7 +601,7 @@ function VaultPageInner() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          className="bg-[#161920] border border-[#333849] text-[#c2c8d8] rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Statuses</option>
           <option value="Draft">Draft</option>
@@ -614,22 +614,22 @@ function VaultPageInner() {
       <div className="space-y-3">
         {pagedPeriods.length === 0 && (
           <div className="card-surface rounded-2xl p-8 text-center">
-            <Banknote className="w-8 h-8 text-slate-700 mx-auto mb-3" />
+            <Banknote className="w-8 h-8 text-[#525c72] mx-auto mb-3" />
             {myProjects.length > 0 ? (
               <>
-                <p className="text-slate-400 text-sm font-medium">
-                  You have <span className="text-blue-400 font-semibold">{myProjects.length}</span> active deal{myProjects.length !== 1 ? 's' : ''} worth ~<span className="text-emerald-400 font-semibold">${(projectedM1 + projectedM2).toLocaleString()}</span> in projected commissions.
+                <p className="text-[#c2c8d8] text-sm font-medium">
+                  You have <span className="text-[#00e07a] font-semibold">{myProjects.length}</span> active deal{myProjects.length !== 1 ? 's' : ''} worth ~<span className="text-[#00e07a] font-semibold">${(projectedM1 + projectedM2).toLocaleString()}</span> in projected commissions.
                 </p>
-                <p className="text-slate-500 text-xs mt-1">
+                <p className="text-[#8891a8] text-xs mt-1">
                   Payroll entries will appear here as your deals hit milestones.
                 </p>
                 <div className="flex items-center justify-center gap-4 mt-4">
                   {(() => {
                     const preAccCount = myProjects.filter((p) => ['New'].includes(p.phase)).length;
                     return preAccCount > 0 ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                        <Clock className="w-3.5 h-3.5 text-blue-400" />
-                        <span className="text-blue-400 text-xs font-medium">{preAccCount} awaiting M1</span>
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00e07a]/10 border border-[#00e07a]/20">
+                        <Clock className="w-3.5 h-3.5 text-[#00e07a]" />
+                        <span className="text-[#00e07a] text-xs font-medium">{preAccCount} awaiting M1</span>
                       </div>
                     ) : null;
                   })()}
@@ -646,11 +646,11 @@ function VaultPageInner() {
               </>
             ) : (
               <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3">
-                  <Banknote className="w-6 h-6 text-slate-600 animate-pulse" />
+                <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
+                  <Banknote className="w-6 h-6 text-[#525c72] animate-pulse" />
                 </div>
                 <p className="text-white font-bold text-sm mb-1">No earnings yet</p>
-                <p className="text-slate-500 text-xs mb-4">Payroll entries will appear here as your deals hit milestones</p>
+                <p className="text-[#8891a8] text-xs mb-4">Payroll entries will appear here as your deals hit milestones</p>
                 <Link
                   href="/dashboard/new-deal"
                   className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
@@ -671,7 +671,7 @@ function VaultPageInner() {
               key={period.friday}
               className={`card-surface rounded-2xl overflow-hidden border-l-2 transition-colors ${
                 isOpen ? 'border-l-blue-500/40' : 'border-l-transparent'
-              } ${period.isUpcoming ? 'border border-emerald-500/20' : ''} ${
+              } ${period.isUpcoming ? 'border border-[#00e07a]/20' : ''} ${
                 isOpen ? 'bg-gradient-to-r from-blue-500/5 to-transparent' : ''
               }`}
             >
@@ -680,15 +680,15 @@ function VaultPageInner() {
                 type="button"
                 onClick={() => setExpandedPeriod(isOpen ? null : period.friday)}
                 aria-label={`${isOpen ? 'Collapse' : 'Expand'} pay period ${formatFridayLabel(period.friday)}`}
-                className="w-full flex items-center gap-3 md:gap-4 px-3 md:px-5 py-4 min-h-[44px] text-left hover:bg-slate-800/30 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:outline-none rounded-2xl"
+                className="w-full flex items-center gap-3 md:gap-4 px-3 md:px-5 py-4 min-h-[44px] text-left hover:bg-[#1d2028]/30 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:outline-none rounded-2xl"
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  period.isUpcoming ? 'bg-emerald-500/15' : period.isPast ? 'bg-slate-800' : 'bg-blue-500/10'
+                  period.isUpcoming ? 'bg-[#00e07a]/15' : period.isPast ? 'bg-[#1d2028]' : 'bg-[#00e07a]/10'
                 }`}>
                   {period.isUpcoming ? (
-                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <Clock className="w-4 h-4 text-[#00e07a]" />
                   ) : (
-                    <DollarSign className={`w-4 h-4 ${period.isPast ? 'text-slate-500' : 'text-blue-400'}`} />
+                    <DollarSign className={`w-4 h-4 ${period.isPast ? 'text-[#8891a8]' : 'text-[#00e07a]'}`} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -697,17 +697,17 @@ function VaultPageInner() {
                       {period.isUpcoming ? 'Upcoming Pay Period' : 'Pay Period'} — {formatFridayLabel(period.friday)}
                     </p>
                     {period.isUpcoming && (
-                      <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold text-[#00e07a] bg-[#00e07a]/10 border border-[#00e07a]/20 px-1.5 py-0.5 rounded-full">
                         Next
                       </span>
                     )}
                   </div>
-                  <p className="text-slate-500 text-xs mt-0.5">{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</p>
+                  <p className="text-[#8891a8] text-xs mt-0.5">{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</p>
                 </div>
-                <p className={`text-lg font-bold tabular-nums shrink-0 ${period.isUpcoming ? 'text-emerald-400' : period.isPast ? 'text-slate-400' : 'text-white'}`}>
+                <p className={`text-lg font-bold tabular-nums shrink-0 ${period.isUpcoming ? 'text-[#00e07a]' : period.isPast ? 'text-[#c2c8d8]' : 'text-white'}`}>
                   ${period.total.toLocaleString()}
                 </p>
-                <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 nav-chevron-spring ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
+                <ChevronDown className={`w-4 h-4 text-[#8891a8] shrink-0 nav-chevron-spring ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
               </button>
 
               {/* Expanded entries — always mounted for smooth grid-rows transition */}
@@ -716,40 +716,40 @@ function VaultPageInner() {
                 style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
               >
                 <div className="overflow-hidden">
-                  <div className="border-t border-slate-800/50">
+                  <div className="border-t border-[#333849]/50">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead className="table-header-frost">
-                          <tr className="border-b border-slate-800/50">
-                            <th className="text-left px-5 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Customer</th>
-                            <th className="text-left px-3 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Stage</th>
-                            <th className="text-left px-3 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Status</th>
-                            <th className="text-right px-5 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Amount</th>
-                            <th className="text-left px-3 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Date</th>
-                            <th className="text-left px-3 py-2.5 text-slate-500 font-medium text-xs uppercase tracking-wider">Notes</th>
+                          <tr className="border-b border-[#333849]/50">
+                            <th className="text-left px-5 py-2.5 text-[#8891a8] font-medium text-xs uppercase tracking-wider">Customer</th>
+                            <th className="text-left px-3 py-2.5 text-[#8891a8] font-medium text-xs uppercase tracking-wider">Stage</th>
+                            <th className="text-left px-3 py-2.5 text-[#8891a8] font-medium text-xs uppercase tracking-wider">Status</th>
+                            <th className="text-right px-5 py-2.5 text-[#8891a8] font-medium text-xs uppercase tracking-wider">Amount</th>
+                            <th className="text-left px-3 py-2.5 text-[#8891a8] font-medium text-xs uppercase tracking-wider">Date</th>
+                            <th className="text-left px-3 py-2.5 text-[#8891a8] font-medium text-xs uppercase tracking-wider">Notes</th>
                           </tr>
                         </thead>
                         <tbody>
                           {period.entries.map((entry) => (
-                            <tr key={entry.id} className="border-b border-slate-800/30 hover:bg-slate-800/20 transition-colors min-h-[44px]">
+                            <tr key={entry.id} className="border-b border-[#333849]/30 hover:bg-[#1d2028]/20 transition-colors min-h-[44px]">
                               <td className="px-5 py-3">
                                 {entry.projectId ? (
-                                  <Link href={`/dashboard/projects/${entry.projectId}`} className="text-white hover:text-emerald-400 transition-colors font-medium text-xs">
+                                  <Link href={`/dashboard/projects/${entry.projectId}`} className="text-white hover:text-[#00e07a] transition-colors font-medium text-xs">
                                     {entry.customerName || '—'}
                                   </Link>
                                 ) : (
-                                  <span className="text-slate-400 text-xs">{entry.customerName ? entry.customerName : (entry.type === 'Bonus' ? 'Bonus' : '—')}</span>
+                                  <span className="text-[#c2c8d8] text-xs">{entry.customerName ? entry.customerName : (entry.type === 'Bonus' ? 'Bonus' : '—')}</span>
                                 )}
                               </td>
                               <td className="px-3 py-3"><StageBadge stage={entry.paymentStage} /></td>
                               <td className="px-3 py-3"><StatusBadge status={entry.status} /></td>
                               <td className="px-5 py-3 text-right">
-                                <span className={`font-semibold tabular-nums ${entry.status === 'Paid' && entry.date <= todayStr ? 'text-emerald-400' : 'text-white'}`}>
+                                <span className={`font-semibold tabular-nums ${entry.status === 'Paid' && entry.date <= todayStr ? 'text-[#00e07a]' : 'text-white'}`}>
                                   {fmt$(entry.amount)}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-slate-500 text-xs whitespace-nowrap"><RelativeDate date={entry.date} /></td>
-                              <td className="px-3 py-3 text-slate-600 text-xs truncate max-w-[150px]">{entry.notes || '—'}</td>
+                              <td className="px-3 py-3 text-[#8891a8] text-xs whitespace-nowrap"><RelativeDate date={entry.date} /></td>
+                              <td className="px-3 py-3 text-[#525c72] text-xs truncate max-w-[150px]">{entry.notes || '—'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -769,19 +769,19 @@ function VaultPageInner() {
           <button
             onClick={() => setPeriodPage((p) => Math.max(1, p - 1))}
             disabled={safePeriodPage <= 1}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg text-[#c2c8d8] hover:text-white hover:bg-[#1d2028] disabled:opacity-30 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           {buildPageRange(safePeriodPage, totalPeriodPages).map((page, idx) =>
             page === '...' ? (
-              <span key={`e-${idx}`} className="px-2 text-slate-600 text-sm">...</span>
+              <span key={`e-${idx}`} className="px-2 text-[#525c72] text-sm">...</span>
             ) : (
               <button
                 key={page}
                 onClick={() => setPeriodPage(page)}
                 className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  page === safePeriodPage ? 'text-white bg-emerald-600' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  page === safePeriodPage ? 'text-white bg-[#00e07a]' : 'text-[#c2c8d8] hover:text-white hover:bg-[#1d2028]'
                 }`}
               >
                 {page}
@@ -791,7 +791,7 @@ function VaultPageInner() {
           <button
             onClick={() => setPeriodPage((p) => Math.min(totalPeriodPages, p + 1))}
             disabled={safePeriodPage >= totalPeriodPages}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg text-[#c2c8d8] hover:text-white hover:bg-[#1d2028] disabled:opacity-30 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -800,7 +800,7 @@ function VaultPageInner() {
 
       {/* ── Footer stat ── */}
       <div className="mt-6 text-center">
-        <p className="text-slate-600 text-xs">
+        <p className="text-[#525c72] text-xs">
           {myEntries.length} total {myEntries.length === 1 ? 'entry' : 'entries'} across {payPeriods.length} pay {payPeriods.length === 1 ? 'period' : 'periods'}
         </p>
       </div>
@@ -814,32 +814,32 @@ function VaultSkeleton() {
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-4xl">
       <div className="mb-8">
-        <div className="h-[3px] w-12 rounded-full bg-slate-800 mb-3 animate-skeleton" />
+        <div className="h-[3px] w-12 rounded-full bg-[#1d2028] mb-3 animate-skeleton" />
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg bg-slate-800/60 animate-skeleton"><div className="w-5 h-5" /></div>
+          <div className="p-2 rounded-lg bg-[#1d2028]/60 animate-skeleton"><div className="w-5 h-5" /></div>
           <div>
-            <div className="h-8 w-24 bg-slate-800 rounded animate-skeleton" />
-            <div className="h-3 w-48 bg-slate-800/70 rounded mt-1 animate-skeleton" style={{ animationDelay: '50ms' }} />
+            <div className="h-8 w-24 bg-[#1d2028] rounded animate-skeleton" />
+            <div className="h-3 w-48 bg-[#1d2028]/70 rounded mt-1 animate-skeleton" style={{ animationDelay: '50ms' }} />
           </div>
         </div>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="card-surface rounded-2xl p-4">
-            <div className="h-2 w-20 bg-slate-800 rounded animate-skeleton mb-2" style={{ animationDelay: `${i * 50}ms` }} />
-            <div className="h-7 w-28 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 50 + 25}ms` }} />
+            <div className="h-2 w-20 bg-[#1d2028] rounded animate-skeleton mb-2" style={{ animationDelay: `${i * 50}ms` }} />
+            <div className="h-7 w-28 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 50 + 25}ms` }} />
           </div>
         ))}
       </div>
       {[0, 1, 2].map((i) => (
         <div key={i} className="card-surface rounded-2xl p-5 mb-3">
           <div className="flex items-center gap-4">
-            <div className="w-9 h-9 rounded-xl bg-slate-800 animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+            <div className="w-9 h-9 rounded-xl bg-[#1d2028] animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
             <div className="flex-1">
-              <div className="h-4 w-48 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 25}ms` }} />
-              <div className="h-3 w-24 bg-slate-800/70 rounded mt-1 animate-skeleton" style={{ animationDelay: `${i * 75 + 50}ms` }} />
+              <div className="h-4 w-48 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 25}ms` }} />
+              <div className="h-3 w-24 bg-[#1d2028]/70 rounded mt-1 animate-skeleton" style={{ animationDelay: `${i * 75 + 50}ms` }} />
             </div>
-            <div className="h-6 w-20 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 25}ms` }} />
+            <div className="h-6 w-20 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 25}ms` }} />
           </div>
         </div>
       ))}

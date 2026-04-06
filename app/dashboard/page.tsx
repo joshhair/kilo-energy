@@ -87,7 +87,7 @@ const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: st
   'Permitting':      { bar: 'bg-amber-500',    text: 'text-amber-300',   dot: 'bg-amber-400',   chipBg: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      chipBorder: 'border-amber-700/30'    },
   'Pending Install': { bar: 'bg-orange-500',   text: 'text-orange-300',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
   'Installed':       { bar: 'bg-teal-500',     text: 'text-teal-300',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
-  'PTO':             { bar: 'bg-emerald-500',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
+  'PTO':             { bar: 'bg-[#00e07a]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
 };
 
 // ─── Needs Attention ──────────────────────────────────────────────────────────
@@ -231,11 +231,11 @@ function NeedsAttentionSection({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors rounded-2xl"
+        className="w-full px-6 py-4 flex items-center justify-between hover:bg-[#1d2028]/30 transition-colors rounded-2xl"
       >
         <div className="flex items-center gap-3">
           <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${items.length > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
-          <div className={`p-1.5 rounded-lg ${items.length > 0 ? 'bg-amber-500/15' : 'bg-emerald-500/15'}`}>
+          <div className={`p-1.5 rounded-lg ${items.length > 0 ? 'bg-amber-500/15' : 'bg-[#00e07a]/15'}`}>
             {items.length > 0
               ? <AlertCircle className="w-4 h-4 text-amber-400" />
               : <CheckCircle className="w-4 h-4" style={{ color: '#00e07a' }} />
@@ -251,8 +251,8 @@ function NeedsAttentionSection({
           )}
         </div>
         {open
-          ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
-          : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+          ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+          : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
         }
       </button>
 
@@ -266,14 +266,14 @@ function NeedsAttentionSection({
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
                 <CheckCircle className="w-4 h-4" style={{ color: '#00e07a' }} />
               </div>
-              <p className="text-slate-300 text-sm">All clear! No items need attention right now.</p>
+              <p className="text-[#c2c8d8] text-sm">All clear! No items need attention right now.</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-800/60">
               {capped.map((item) => (
                 <div
                   key={item.uid}
-                  className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-slate-800/40 transition-colors group"
+                  className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[#1d2028]/40 transition-colors group"
                 >
                   <Link
                     href={`/dashboard/projects/${item.projectId}`}
@@ -323,7 +323,7 @@ function NeedsAttentionSection({
                       <p className="text-white text-sm font-medium truncate">{item.customerName}</p>
                       <p className={`text-xs ${
                         (() => {
-                          if (item.kind !== 'stuck') return 'text-slate-500';
+                          if (item.kind !== 'stuck') return 'text-[#8891a8]';
                           const threshold = item.stuckPhase ? (PHASE_STUCK_THRESHOLDS[item.stuckPhase] ?? 14) : 14;
                           const ratio = (item.staleDays ?? 0) / threshold;
                           if (ratio >= 2) return 'text-red-400';
@@ -349,7 +349,7 @@ function NeedsAttentionSection({
                             e.stopPropagation();
                             onUnflag(item.projectId);
                           }}
-                          className="px-2 py-0.5 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[#1d2028] hover:bg-[#272b35] text-[#c2c8d8] hover:text-white transition-colors"
                         >
                           Unflag
                         </button>
@@ -357,7 +357,7 @@ function NeedsAttentionSection({
                       {item.kind === 'on-hold' && (
                         <Link
                           href={`/dashboard/projects/${item.projectId}?action=resume`}
-                          className="px-2 py-0.5 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[#1d2028] hover:bg-[#272b35] text-[#c2c8d8] hover:text-white transition-colors"
                         >
                           Resume
                         </Link>
@@ -366,7 +366,7 @@ function NeedsAttentionSection({
                   )}
 
                   <Link href={`/dashboard/projects/${item.projectId}`} className="flex-shrink-0">
-                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
                   </Link>
                 </div>
               ))}
@@ -374,10 +374,10 @@ function NeedsAttentionSection({
               {/* View all link when capped */}
               {hasMore && (
                 <div className="px-6 py-3 flex items-center justify-between">
-                  <span className="text-slate-500 text-xs">{items.length - 5} more item{items.length - 5 !== 1 ? 's' : ''} hidden</span>
+                  <span className="text-[#8891a8] text-xs">{items.length - 5} more item{items.length - 5 !== 1 ? 's' : ''} hidden</span>
                   <Link
                     href="/dashboard/projects"
-                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors"
+                    className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors"
                   >
                     View all projects →
                   </Link>
@@ -475,11 +475,11 @@ function MyTasksSection({
     <div className="card-surface rounded-2xl mb-6">
       <div className="px-6 py-4 flex items-center gap-3">
         <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-        <div className="p-1.5 rounded-lg bg-blue-500/15">
-          <CheckSquare className="w-4 h-4 text-blue-400" />
+        <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
+          <CheckSquare className="w-4 h-4 text-[#00e07a]" />
         </div>
         <h2 className="text-white font-bold tracking-tight text-base">My Tasks</h2>
-        <span className="bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">
+        <span className="bg-[#00e07a]/20 border border-[#00e07a]/30 text-[#00e07a] text-xs font-bold px-2 py-0.5 rounded-full">
           {tasks.length}
         </span>
       </div>
@@ -490,33 +490,33 @@ function MyTasksSection({
           return (
             <div
               key={task.checkItemId}
-              className="flex items-center gap-3 px-6 py-3 min-h-[44px] hover:bg-slate-800/40 transition-colors group"
+              className="flex items-center gap-3 px-6 py-3 min-h-[44px] hover:bg-[#1d2028]/40 transition-colors group"
             >
               <input
                 type="checkbox"
                 checked={false}
                 onChange={() => onToggleTask(task.projectId, task.messageId, task.checkItemId, true)}
-                className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-emerald-500 flex-shrink-0"
+                className="w-4 h-4 rounded border-[#272b35] bg-[#1d2028] text-[#00e07a] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[#00e07a] flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-slate-200'}`}>
+                <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-[#c2c8d8]'}`}>
                   {task.text}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <Link
                     href={`/dashboard/projects/${task.projectId}#chatter`}
-                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors truncate max-w-[140px]"
+                    className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors truncate max-w-[140px]"
                   >
                     {task.projectName}
                   </Link>
-                  <span className="text-slate-600 text-[10px]">from {task.authorName}</span>
-                  <span className="text-slate-600 text-[10px]">{relativeTimeShort(task.createdAt)}</span>
+                  <span className="text-[#525c72] text-[10px]">from {task.authorName}</span>
+                  <span className="text-[#525c72] text-[10px]">{relativeTimeShort(task.createdAt)}</span>
                   {task.dueDate && (
                     <span
                       className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                         overdue
                           ? 'bg-red-500/15 text-red-400 border border-red-500/20'
-                          : 'bg-slate-700/50 text-slate-400 border border-slate-600/30'
+                          : 'bg-[#272b35]/50 text-[#c2c8d8] border border-[#272b35]/30'
                       }`}
                     >
                       {overdue ? 'Overdue' : `Due ${formatDueDate(task.dueDate)}`}
@@ -525,7 +525,7 @@ function MyTasksSection({
                 </div>
               </div>
               <Link href={`/dashboard/projects/${task.projectId}#chatter`} className="flex-shrink-0">
-                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                <ChevronRight className="w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
               </Link>
             </div>
           );
@@ -558,10 +558,10 @@ function PipelineOverview({ activeProjects }: { activeProjects: Array<{ phase: s
 
   if (total === 0) {
     return (
-      <div className="border border-dashed border-slate-800 rounded-2xl px-5 py-12 text-center">
-        <FolderKanban className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+      <div className="border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
+        <FolderKanban className="w-8 h-8 text-[#525c72] mx-auto mb-3" />
         <p className="text-white font-bold text-sm mb-1">No active projects — submit your first deal</p>
-        <p className="text-slate-500 text-xs mt-1">Your pipeline will appear here once you close a deal.</p>
+        <p className="text-[#8891a8] text-xs mt-1">Your pipeline will appear here once you close a deal.</p>
       </div>
     );
   }
@@ -570,10 +570,10 @@ function PipelineOverview({ activeProjects }: { activeProjects: Array<{ phase: s
     <>
       {/* Stacked bar — overflow-hidden clips segment edges cleanly at the rounded corners */}
       <div className="relative mb-4" ref={barRef}>
-        <div className="flex h-10 md:h-8 rounded-xl bg-slate-800 overflow-hidden">
+        <div className="flex h-10 md:h-8 rounded-xl bg-[#1d2028] overflow-hidden">
           {nonEmpty.map((phase) => {
             const count = phaseCounts[phase];
-            const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-slate-500', text: '', dot: '', chipBg: '', chipBorder: '' };
+            const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-[#8891a8]', text: '', dot: '', chipBg: '', chipBorder: '' };
             return (
               <Link
                 key={phase}
@@ -596,7 +596,7 @@ function PipelineOverview({ activeProjects }: { activeProjects: Array<{ phase: s
         {/* Floating tooltip — rendered outside overflow-hidden bar, relative to wrapper */}
         {tooltip && (
           <div
-            className="pointer-events-none absolute -top-8 bg-slate-800 border border-slate-700 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
+            className="pointer-events-none absolute -top-8 bg-[#1d2028] border border-[#272b35] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
             style={{ left: tooltip.x }}
           >
             {tooltip.phase}: {phaseCounts[tooltip.phase]} project{phaseCounts[tooltip.phase] !== 1 ? 's' : ''}
@@ -608,7 +608,7 @@ function PipelineOverview({ activeProjects }: { activeProjects: Array<{ phase: s
       <div className="flex flex-wrap gap-2">
         {nonEmpty.map((phase) => {
           const count = phaseCounts[phase];
-          const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-slate-500', text: 'text-slate-300', dot: 'bg-slate-400', chipBg: '', chipBorder: '' };
+          const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-[#8891a8]', text: 'text-[#c2c8d8]', dot: 'bg-[#8891a8]', chipBg: '', chipBorder: '' };
           return (
             <Link
               key={phase}
@@ -637,7 +637,7 @@ function TrendBadge({ pctChange }: { pctChange: number | null | undefined }) {
 
   if (pctChange === null) {
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-500/15 text-slate-400">
+      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#8891a8]/15 text-[#c2c8d8]">
         —
       </span>
     );
@@ -645,7 +645,7 @@ function TrendBadge({ pctChange }: { pctChange: number | null | undefined }) {
 
   if (pctChange > 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#00e07a]/15 text-[#00e07a]">
         <TrendingUp className="w-2.5 h-2.5" />
         +{Math.round(pctChange)}%
       </span>
@@ -663,7 +663,7 @@ function TrendBadge({ pctChange }: { pctChange: number | null | undefined }) {
 
   // Exactly 0% — neutral dash
   return (
-    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-500/15 text-slate-400">
+    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#8891a8]/15 text-[#c2c8d8]">
       —
     </span>
   );
@@ -998,11 +998,11 @@ export default function DashboardPage() {
       value: fmt$(totalPaid),
       sub: 'Deposited to you',
       icon: CheckCircle,
-      color: 'text-emerald-400',
+      color: 'text-[#00e07a]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: paidSparkData,
-      sparkStroke: '#10b981',
+      sparkStroke: '#00e07a',
       pctChange: computePctChange(totalPaid, prevTotalPaid),
       href: '/dashboard/vault',
       tooltip: 'Total commission disbursed to you across all payment stages',
@@ -1012,11 +1012,11 @@ export default function DashboardPage() {
       value: fmt$(inPipeline),
       sub: `${activeProjects.length} active projects`,
       icon: TrendingUp,
-      color: 'text-blue-400',
+      color: 'text-[#00e07a]',
       accentGradient: 'from-blue-500 to-blue-400',
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
-      sparkStroke: '#3b82f6',
+      sparkStroke: '#00c4f0',
       pctChange: computePctChange(inPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
@@ -1040,11 +1040,11 @@ export default function DashboardPage() {
       value: `${totalKWInstalled.toFixed(1)} kW`,
       sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
       icon: Zap,
-      color: 'text-emerald-400',
+      color: 'text-[#00e07a]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: installedSparkData,
-      sparkStroke: '#10b981',
+      sparkStroke: '#00e07a',
       pctChange: computePctChange(totalKWInstalled, prevTotalKWInstalled),
       href: '/dashboard/projects',
       tooltip: 'Total kilowatts from projects that have been physically installed',
@@ -1072,13 +1072,13 @@ export default function DashboardPage() {
       <div className="card-surface rounded-xl md:rounded-2xl mb-6">
         <div className="px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {effectiveRepName}</p>
+            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">Welcome, {effectiveRepName}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
               <span style={{ color: '#f0f2f7' }}>Next Payout:</span> <span style={{ color: '#00e07a' }}>${pendingPayrollTotal.toLocaleString()}</span>
             </p>
-            <p className="text-slate-500 text-xs mt-1 flex items-center gap-2">
+            <p className="text-[#8891a8] text-xs mt-1 flex items-center gap-2">
               {nextFridayLabel}
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-slate-700/50 text-slate-400 border border-slate-600/30'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[#00e07a]/15 text-[#00e07a] border border-[#00e07a]/20' : 'bg-[#272b35]/50 text-[#c2c8d8] border border-[#272b35]/30'}`}>
                 {paydayCountdownLabel}
               </span>
             </p>
@@ -1099,7 +1099,7 @@ export default function DashboardPage() {
 
       {/* Period tabs — compact row, flush right */}
       <div className="flex justify-end mb-6">
-        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
+        <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 tab-bar-container">
           {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
           {PERIODS.map((p, i) => (
             <button
@@ -1109,7 +1109,7 @@ export default function DashboardPage() {
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
                 period === p.value
                   ? 'text-white'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-[#c2c8d8] hover:text-white'
               }`}
             >
               {p.label}
@@ -1133,7 +1133,7 @@ export default function DashboardPage() {
               aria-hidden="true"
             >
               {/* Panel body */}
-              <rect x="4" y="14" width="52" height="32" rx="3" fill="#1e3a5f" stroke="#334155" strokeWidth="1.5" />
+              <rect x="4" y="14" width="52" height="32" rx="3" fill="#1d2028" stroke="#334155" strokeWidth="1.5" />
               {/* Grid lines — horizontal */}
               <line x1="4" y1="25" x2="56" y2="25" stroke="#334155" strokeWidth="1" />
               <line x1="4" y1="36" x2="56" y2="36" stroke="#334155" strokeWidth="1" />
@@ -1142,13 +1142,13 @@ export default function DashboardPage() {
               <line x1="38" y1="14" x2="38" y2="46" stroke="#334155" strokeWidth="1" />
               {/* Cell shimmer fills */}
               <rect x="5" y="15" width="15" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="15" width="15" height="10" rx="1" fill="#2563eb" fillOpacity="0.5" />
+              <rect x="22" y="15" width="15" height="10" rx="1" fill="#00e07a" fillOpacity="0.5" />
               <rect x="39" y="15" width="16" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="5" y="26" width="15" height="10" rx="1" fill="#2563eb" fillOpacity="0.5" />
-              <rect x="22" y="26" width="15" height="10" rx="1" fill="#3b82f6" fillOpacity="0.45" />
-              <rect x="39" y="26" width="16" height="10" rx="1" fill="#2563eb" fillOpacity="0.5" />
+              <rect x="5" y="26" width="15" height="10" rx="1" fill="#00e07a" fillOpacity="0.5" />
+              <rect x="22" y="26" width="15" height="10" rx="1" fill="#00c4f0" fillOpacity="0.45" />
+              <rect x="39" y="26" width="16" height="10" rx="1" fill="#00e07a" fillOpacity="0.5" />
               <rect x="5" y="37" width="15" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="37" width="15" height="8" rx="1" fill="#2563eb" fillOpacity="0.5" />
+              <rect x="22" y="37" width="15" height="8" rx="1" fill="#00e07a" fillOpacity="0.5" />
               <rect x="39" y="37" width="16" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
               {/* Mount legs */}
               <line x1="20" y1="46" x2="16" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
@@ -1156,7 +1156,7 @@ export default function DashboardPage() {
               <line x1="13" y1="55" x2="47" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
               {/* Plus badge — top-right corner */}
               <circle cx="49" cy="15" r="9" fill="#0f172a" />
-              <circle cx="49" cy="15" r="8" fill="#2563eb" />
+              <circle cx="49" cy="15" r="8" fill="#00e07a" />
               <line x1="49" y1="10" x2="49" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <line x1="44" y1="15" x2="54" y2="15" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
@@ -1164,7 +1164,7 @@ export default function DashboardPage() {
 
           <div className="space-y-2 max-w-sm">
             <h2 className="text-2xl font-black text-white tracking-tight">Submit your first deal</h2>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <p className="text-[#c2c8d8] text-sm leading-relaxed">
               Once you close a deal, your pipeline, commissions, and earnings will appear here.
             </p>
           </div>
@@ -1179,7 +1179,7 @@ export default function DashboardPage() {
             </Link>
             <Link
               href="/dashboard/calculator"
-              className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-200 text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-1 text-[#c2c8d8] hover:text-[#c2c8d8] text-sm font-medium transition-colors"
             >
               Explore the calculator →
             </Link>
@@ -1197,15 +1197,15 @@ export default function DashboardPage() {
             {stats.map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
+                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-[#00e07a]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
                   <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
+                    <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider flex items-center gap-1">
                       {stat.label}
                       {'tooltip' in stat && stat.tooltip && (
                         <span className="relative group/tip">
-                          <HelpCircle className="w-3 h-3 text-slate-600 hover:text-slate-400 transition-colors cursor-help" />
-                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-slate-800 border border-slate-700/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-300 shadow-xl leading-snug">
+                          <HelpCircle className="w-3 h-3 text-[#525c72] hover:text-[#c2c8d8] transition-colors cursor-help" />
+                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-[#1d2028] border border-[#272b35]/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#c2c8d8] shadow-xl leading-snug">
                             {stat.tooltip}
                           </span>
                         </span>
@@ -1213,12 +1213,12 @@ export default function DashboardPage() {
                     </span>
                     <div className="flex items-center gap-1">
                       <Icon className={`w-4 h-4 ${stat.color}`} />
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ChevronRight className="w-3.5 h-3.5 text-[#525c72] opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                   <p className={`stat-value stat-value-glow ${stat.glowClass} text-3xl font-black tabular-nums tracking-tight animate-count-up ${'gradient' in stat && stat.gradient ? stat.gradient : stat.color}`}>{stat.value}</p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <p className="text-slate-500 text-xs">{stat.sub}</p>
+                    <p className="text-[#8891a8] text-xs">{stat.sub}</p>
                     <TrendBadge pctChange={stat.pctChange} />
                   </div>
                   <Sparkline data={stat.sparkData} stroke={stat.sparkStroke} />
@@ -1272,12 +1272,12 @@ export default function DashboardPage() {
             <div className="px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-                <div className="p-1.5 rounded-lg bg-blue-500/15">
-                  <FolderKanban className="w-4 h-4 text-blue-400" />
+                <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
+                  <FolderKanban className="w-4 h-4 text-[#00e07a]" />
                 </div>
                 <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
               </div>
-              <Link href="/dashboard/projects" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+              <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
                 View All →
               </Link>
             </div>
@@ -1290,7 +1290,7 @@ export default function DashboardPage() {
       )}
 
       {/* Keyboard shortcut hint bar — desktop only */}
-      <div className="hidden md:flex items-center gap-6 bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-2.5 mb-6 select-none">
+      <div className="hidden md:flex items-center gap-6 bg-[#161920]/60 border border-[#333849] rounded-xl px-4 py-2.5 mb-6 select-none">
         {[
           { key: 'N', label: 'New Deal' },
           { key: 'P', label: 'Projects' },
@@ -1298,10 +1298,10 @@ export default function DashboardPage() {
           { key: '⌘K', label: 'Search' },
         ].map(({ key, label }) => (
           <span key={key} className="inline-flex items-center gap-2">
-            <kbd className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-1.5 py-0.5 rounded font-mono">
+            <kbd className="bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] text-xs px-1.5 py-0.5 rounded font-mono">
               {key}
             </kbd>
-            <span className="text-slate-500 text-xs">{label}</span>
+            <span className="text-[#8891a8] text-xs">{label}</span>
           </span>
         ))}
       </div>
@@ -1315,12 +1315,12 @@ export default function DashboardPage() {
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-              <div className="p-1.5 rounded-lg bg-blue-500/15">
-                <Target className="w-4 h-4 text-blue-400" />
+              <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
+                <Target className="w-4 h-4 text-[#00e07a]" />
               </div>
               <h2 className="text-white font-bold tracking-tight text-base">Active Incentives</h2>
             </div>
-            <Link href="/dashboard/incentives" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+            <Link href="/dashboard/incentives" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1334,7 +1334,7 @@ export default function DashboardPage() {
                 .filter((m) => !m.achieved && m.threshold > progress)
                 .sort((a, b) => a.threshold - b.threshold)[0];
               return (
-                <div key={incentive.id} className="bg-slate-800/50 rounded-xl p-4">
+                <div key={incentive.id} className="bg-[#1d2028]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <p className="text-white text-sm font-medium">{incentive.title}</p>
@@ -1342,19 +1342,19 @@ export default function DashboardPage() {
                         <span className="text-xs text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">Personal</span>
                       )}
                     </div>
-                    <p className="text-blue-400 font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
+                    <p className="text-[#00e07a] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-1.5 mb-1.5">
+                  <div className="w-full bg-[#272b35] rounded-full h-1.5 mb-1.5">
                     <div
                       className="h-1.5 rounded-full transition-all"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 100 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#2563eb,#3b82f6)',
+                        background: pct >= 100 ? 'linear-gradient(90deg,#00e07a,#00c4f0)' : 'linear-gradient(90deg,#00e07a,#00c4f0)',
                       }}
                     />
                   </div>
                   {nextMilestone && (
-                    <p className="text-slate-500 text-xs">
+                    <p className="text-[#8891a8] text-xs">
                       Next: {nextMilestone.reward} at {formatIncentiveMetric(incentive.metric, nextMilestone.threshold)}
                     </p>
                   )}
@@ -1370,29 +1370,29 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
-            <div className="p-1.5 rounded-lg bg-emerald-500/15">
-              <DollarSign className="w-4 h-4 text-emerald-400" />
+            <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
+              <DollarSign className="w-4 h-4 text-[#00e07a]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">This Week&apos;s Pay</h2>
           </div>
           <div className="flex items-center gap-3">
             {thisWeekTotal > 0 && (
-              <span className="text-emerald-400 font-bold">${thisWeekTotal.toLocaleString()}</span>
+              <span className="text-[#00e07a] font-bold">${thisWeekTotal.toLocaleString()}</span>
             )}
-            <Link href="/dashboard/vault" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+            <Link href="/dashboard/vault" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
               View All →
             </Link>
           </div>
         </div>
         <div className="divider-gradient-animated" />
         {thisWeekPayroll.length === 0 ? (
-          <div className="mx-6 my-6 border border-dashed border-slate-800 rounded-2xl px-5 py-12 text-center">
+          <div className="mx-6 my-6 border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3">
-                <DollarSign className="w-6 h-6 text-slate-600 animate-pulse" />
+              <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
+                <DollarSign className="w-6 h-6 text-[#525c72] animate-pulse" />
               </div>
               <p className="text-white font-bold text-sm mb-1">No payments this week</p>
-              <p className="text-slate-500 text-xs mb-4">Payments will appear here once marked for payroll.</p>
+              <p className="text-[#8891a8] text-xs mb-4">Payments will appear here once marked for payroll.</p>
               <Link
                 href="/dashboard/vault"
                 className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
@@ -1406,24 +1406,24 @@ export default function DashboardPage() {
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-              <tr className="border-b border-slate-800">
-                <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Customer</th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Stage</th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Amount</th>
-                <th className="text-left px-6 py-3 text-slate-400 font-medium text-xs">Date</th>
+              <tr className="border-b border-[#333849]">
+                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Customer</th>
+                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Stage</th>
+                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Amount</th>
+                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Date</th>
               </tr>
             </thead>
             <tbody>
               {thisWeekPayroll.map((entry) => (
-                <tr key={entry.id} className="relative border-b border-slate-800/50 even:bg-slate-800/[0.15] hover:bg-blue-500/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-blue-500 before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                  <td className="px-6 py-3 text-slate-300">{entry.customerName || '—'}</td>
+                <tr key={entry.id} className="relative border-b border-[#333849]/50 even:bg-[#1d2028]/[0.15] hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                  <td className="px-6 py-3 text-[#c2c8d8]">{entry.customerName || '—'}</td>
                   <td className="px-6 py-3">
-                    <span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded font-medium">
+                    <span className="bg-[#272b35] text-[#c2c8d8] text-xs px-2 py-0.5 rounded font-medium">
                       {entry.paymentStage}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-emerald-400 font-semibold">${entry.amount.toLocaleString()}</td>
-                  <td className="px-6 py-3 text-slate-500 text-xs">{entry.date}</td>
+                  <td className="px-6 py-3 text-[#00e07a] font-semibold">${entry.amount.toLocaleString()}</td>
+                  <td className="px-6 py-3 text-[#8891a8] text-xs">{entry.date}</td>
                 </tr>
               ))}
             </tbody>
@@ -1437,24 +1437,24 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-            <div className="p-1.5 rounded-lg bg-blue-500/15">
-              <FolderKanban className="w-4 h-4 text-blue-400" />
+            <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
+              <FolderKanban className="w-4 h-4 text-[#00e07a]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
             View All →
           </Link>
         </div>
         <div className="divider-gradient-animated" />
         {myProjects.length === 0 ? (
-          <div className="mx-6 my-6 border border-dashed border-slate-800 rounded-2xl px-5 py-12 text-center">
+          <div className="mx-6 my-6 border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3">
-                <FolderKanban className="w-6 h-6 text-slate-600 animate-pulse" />
+              <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
+                <FolderKanban className="w-6 h-6 text-[#525c72] animate-pulse" />
               </div>
               <p className="text-white font-bold text-sm mb-1">No projects yet</p>
-              <p className="text-slate-500 text-xs mb-4">Submit your first deal to see it here</p>
+              <p className="text-[#8891a8] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
                 className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
@@ -1480,20 +1480,20 @@ export default function DashboardPage() {
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-blue-500/[0.03] transition-colors">
+                  <div className="px-5 py-3.5 hover:bg-[#00e07a]/[0.03] transition-colors">
                     {/* Row 1: Customer + Phase + Date */}
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-blue-300 transition-colors">{proj.customerName}</span>
+                        <span className="text-white font-medium text-sm truncate group-hover:text-[#00c4f0] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
-                      <span className="text-slate-500 text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
+                      <span className="text-[#8891a8] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
                     </div>
                     {/* Row 2: kW | Est Pay | Milestones */}
                     <div className="flex items-center gap-3 text-xs">
-                      <span className="text-slate-500">{proj.kWSize} kW</span>
-                      <span className="text-slate-600">·</span>
-                      <span className="text-blue-400 font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[#8891a8]">{proj.kWSize} kW</span>
+                      <span className="text-[#525c72]">·</span>
+                      <span className="text-[#00e07a] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
                         <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
@@ -1554,20 +1554,20 @@ function PMDashboard({
       {/* Period filter */}
       <div className="flex items-center gap-2">
         {PERIODS.map((p) => (
-          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>{p.label}</button>
+          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'bg-[#00e07a] text-white' : 'text-[#c2c8d8] hover:text-white hover:bg-[#1d2028]'}`}>{p.label}</button>
         ))}
       </div>
 
       {/* Summary cards — NO dollar amounts */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Active Projects', value: activeProjects.length, color: 'text-blue-400' },
-          { label: 'Total Projects', value: projects.length, color: 'text-slate-300' },
-          { label: 'Total kW', value: `${totalKW.toFixed(1)}`, color: 'text-emerald-400' },
-          { label: 'Flagged', value: flaggedCount, color: flaggedCount > 0 ? 'text-red-400' : 'text-slate-500' },
+          { label: 'Active Projects', value: activeProjects.length, color: 'text-[#00e07a]' },
+          { label: 'Total Projects', value: projects.length, color: 'text-[#c2c8d8]' },
+          { label: 'Total kW', value: `${totalKW.toFixed(1)}`, color: 'text-[#00e07a]' },
+          { label: 'Flagged', value: flaggedCount, color: flaggedCount > 0 ? 'text-red-400' : 'text-[#8891a8]' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card-surface rounded-2xl p-5">
-            <p className="text-xs text-slate-500 mb-1">{label}</p>
+            <p className="text-xs text-[#8891a8] mb-1">{label}</p>
             <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
           </div>
         ))}
@@ -1575,18 +1575,18 @@ function PMDashboard({
 
       {/* Pipeline breakdown */}
       <div className="card-surface rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-4 flex items-center gap-2"><FolderKanban className="w-4 h-4 text-blue-400" /> Pipeline</h2>
+        <h2 className="text-white font-semibold mb-4 flex items-center gap-2"><FolderKanban className="w-4 h-4 text-[#00e07a]" /> Pipeline</h2>
         <div className="space-y-2">
           {ACTIVE_PHASES.map((phase) => {
             const count = phaseCounts[phase] || 0;
             const pct = projects.length > 0 ? (count / projects.length) * 100 : 0;
             return (
               <div key={phase} className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 w-28 shrink-0">{phase}</span>
-                <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                <span className="text-xs text-[#c2c8d8] w-28 shrink-0">{phase}</span>
+                <div className="flex-1 h-2 bg-[#1d2028] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#00e07a]/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
-                <span className="text-xs text-slate-500 tabular-nums w-8 text-right">{count}</span>
+                <span className="text-xs text-[#8891a8] tabular-nums w-8 text-right">{count}</span>
               </div>
             );
           })}
@@ -1595,8 +1595,8 @@ function PMDashboard({
 
       {/* Team overview */}
       <div className="card-surface rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4 text-emerald-400" /> Team</h2>
-        <p className="text-slate-400 text-sm">{totalReps} active reps</p>
+        <h2 className="text-white font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4 text-[#00e07a]" /> Team</h2>
+        <p className="text-[#c2c8d8] text-sm">{totalReps} active reps</p>
       </div>
     </div>
   );
@@ -1651,10 +1651,10 @@ function AdminDashboard({
   };
 
   const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ChevronDown className="w-3 h-3 text-slate-600 inline ml-1" />;
+    if (sortKey !== col) return <ChevronDown className="w-3 h-3 text-[#525c72] inline ml-1" />;
     return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 text-blue-400 inline ml-1" />
-      : <ChevronDown className="w-3 h-3 text-blue-400 inline ml-1" />;
+      ? <ChevronUp className="w-3 h-3 text-[#00e07a] inline ml-1" />
+      : <ChevronDown className="w-3 h-3 text-[#00e07a] inline ml-1" />;
   };
 
   // Sliding pill for admin period tabs
@@ -1722,7 +1722,7 @@ function AdminDashboard({
   const PHASE_HEX: Record<string, string> = {
     'New': '#38bdf8', 'Acceptance': '#818cf8', 'Site Survey': '#a78bfa',
     'Design': '#e879f9', 'Permitting': '#fbbf24', 'Pending Install': '#fb923c',
-    'Installed': '#2dd4bf', 'PTO': '#34d399',
+    'Installed': '#2dd4bf', 'PTO': '#00c4f0',
   };
   const pipelineActive = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
   const pipelinePhaseCounts = ACTIVE_PHASES.reduce<Record<string, number>>((acc, phase) => {
@@ -1773,7 +1773,7 @@ function AdminDashboard({
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: '#f0f2f7', letterSpacing: '-0.03em' }}>Admin Dashboard</h1>
           <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>Overview of all reps and deals</p>
         </div>
-        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
+        <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 tab-bar-container">
           {adminPeriodIndicator && <div className="tab-indicator" style={adminPeriodIndicator} />}
           {PERIODS.map((p, i) => (
             <button
@@ -1783,7 +1783,7 @@ function AdminDashboard({
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
                 period === p.value
                   ? 'text-white'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-[#c2c8d8] hover:text-white'
               }`}
             >
               {p.label}
@@ -1841,21 +1841,21 @@ function AdminDashboard({
       {/* Pipeline stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {pipelineStats.map((s, i) => (
-          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${s.accentHex}14` } as CSSProperties}>
+          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-[#00e07a]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${s.accentHex}14` } as CSSProperties}>
             <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: s.accentHex }} />
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>
                 {s.label}
                 {'tooltip' in s && s.tooltip && (
                   <span className="relative group/tip">
-                    <HelpCircle className="w-3 h-3 text-slate-600 hover:text-slate-400 transition-colors cursor-help" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-slate-800 border border-slate-700/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-300 shadow-xl leading-snug">
+                    <HelpCircle className="w-3 h-3 text-[#525c72] hover:text-[#c2c8d8] transition-colors cursor-help" />
+                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-[#1d2028] border border-[#272b35]/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#c2c8d8] shadow-xl leading-snug">
                       {s.tooltip}
                     </span>
                   </span>
                 )}
               </p>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ChevronRight className="w-3.5 h-3.5 text-[#525c72] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <AnimatedStatValue raw={s.raw} format={s.format} className="stat-value text-3xl font-black tabular-nums animate-count-up" style={{ color: s.accentHex, fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: `0 0 20px ${s.accentHex}50` }} />
           </Link>
@@ -1949,8 +1949,8 @@ function AdminDashboard({
               </div>
               <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Installer Insights</h2>
               {insightsExpanded
-                ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
-                : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+                ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
               }
             </button>
             <div className={`collapsible-panel ${insightsExpanded ? 'open' : ''}`}>
@@ -1958,32 +1958,32 @@ function AdminDashboard({
                 <div className="overflow-x-auto mt-4">
                   <table className="w-full text-sm">
                     <thead className="table-header-frost">
-                      <tr className="border-b border-slate-800">
-                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Installer</th>
-                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Deals</th>
-                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Total kW</th>
-                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs">Cancelled</th>
-                        <th className="text-left px-4 py-2 text-slate-400 font-medium text-xs w-40">Volume</th>
+                      <tr className="border-b border-[#333849]">
+                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Installer</th>
+                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Deals</th>
+                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Total kW</th>
+                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Cancelled</th>
+                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs w-40">Volume</th>
                       </tr>
                     </thead>
                     <tbody>
                       {installerRanking.map((inst, i) => (
-                        <tr key={inst.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                        <tr key={inst.name} className="border-b border-[#333849]/50 hover:bg-[#1d2028]/30 transition-colors">
                           <td className="px-4 py-2.5 text-white font-medium flex items-center gap-2">
                             {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-white`}>#{i + 1}</span>}
                             {inst.name}
                           </td>
-                          <td className="px-4 py-2.5 text-slate-300 tabular-nums">{inst.deals}</td>
-                          <td className="px-4 py-2.5 text-slate-300 tabular-nums">{inst.kW.toFixed(1)}</td>
+                          <td className="px-4 py-2.5 text-[#c2c8d8] tabular-nums">{inst.deals}</td>
+                          <td className="px-4 py-2.5 text-[#c2c8d8] tabular-nums">{inst.kW.toFixed(1)}</td>
                           <td className="px-4 py-2.5">
                             {inst.cancelled > 0 ? (
                               <span className="text-red-400 text-xs font-medium">{inst.cancelled}</span>
                             ) : (
-                              <span className="text-slate-600 text-xs">0</span>
+                              <span className="text-[#525c72] text-xs">0</span>
                             )}
                           </td>
                           <td className="px-4 py-2.5">
-                            <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden">
+                            <div className="w-full h-3 rounded-full bg-[#1d2028] overflow-hidden">
                               <div className="h-full rounded-full bg-amber-500/70 transition-all duration-500" style={{ width: `${(inst.deals / maxDeals) * 100}%` }} />
                             </div>
                           </td>
@@ -2018,18 +2018,18 @@ function AdminDashboard({
                 <AlertCircle className="w-4 h-4 text-red-400" />
               </div>
               <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons</h2>
-              <span className="text-slate-500 text-xs mr-2">{cancelledProjects.length} cancelled</span>
+              <span className="text-[#8891a8] text-xs mr-2">{cancelledProjects.length} cancelled</span>
               {cancellationExpanded
-                ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
-                : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+                ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
               }
             </button>
             <div className={`collapsible-panel ${cancellationExpanded ? 'open' : ''}`}>
               <div className="collapsible-inner">
                 <div className="space-y-2 mt-4">
                   {reasonList.map(([reason, count]) => (
-                    <div key={reason} className="flex items-center justify-between bg-slate-800/40 rounded-lg px-4 py-2">
-                      <span className="text-slate-300 text-sm">{reason}</span>
+                    <div key={reason} className="flex items-center justify-between bg-[#1d2028]/40 rounded-lg px-4 py-2">
+                      <span className="text-[#c2c8d8] text-sm">{reason}</span>
                       <span className="text-red-400 text-sm font-semibold tabular-nums">{count}</span>
                     </div>
                   ))}
@@ -2065,7 +2065,7 @@ function AdminDashboard({
         const endIdx = Math.min(startIdx + recentRowsPerPage, sorted.length);
         const paginated = sorted.slice(startIdx, endIdx);
         const showM3 = allProjects.some((p) => (p.m3Amount ?? 0) > 0);
-        const thCls = 'text-left px-6 py-3 text-slate-400 font-medium select-none cursor-pointer hover:text-white transition-colors';
+        const thCls = 'text-left px-6 py-3 text-[#c2c8d8] font-medium select-none cursor-pointer hover:text-white transition-colors';
 
         return (
       <div className="card-surface rounded-2xl">
@@ -2076,8 +2076,8 @@ function AdminDashboard({
           >
             <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Projects</h2>
             {recentExpanded
-              ? <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
-              : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+              ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+              : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
             }
           </button>
           <div className="flex items-center gap-2">
@@ -2086,49 +2086,49 @@ function AdminDashboard({
               placeholder="Search customer or rep..."
               value={recentSearch}
               onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-              className="bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              className="bg-[#1d2028] border border-[#272b35] text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-[#00e07a] transition-colors"
             />
             {recentSearch.trim() && (
-              <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
             )}
           </div>
         </div>
         <div className={`collapsible-panel ${recentExpanded ? 'open' : ''}`}>
           <div className="collapsible-inner">
-            <div className="border-t border-slate-800">
+            <div className="border-t border-[#333849]">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                    <tr className="border-b border-slate-800">
+                    <tr className="border-b border-[#333849]">
                       {/* 1 */}<th className={thCls} onClick={() => toggleSort('customerName')}>Customer<SortIcon col="customerName" /></th>
-                      {/* 2 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">Rep</th>
+                      {/* 2 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">Rep</th>
                       {/* 3 */}<th className={thCls} onClick={() => toggleSort('installer')}>Installer<SortIcon col="installer" /></th>
                       {/* 4 */}<th className={thCls} onClick={() => toggleSort('soldDate')}>Sold<SortIcon col="soldDate" /></th>
                       {/* 5 */}<th className={thCls} onClick={() => toggleSort('phase')}>Phase<SortIcon col="phase" /></th>
                       {/* 6 */}<th className={thCls} onClick={() => toggleSort('kWSize')}>kW<SortIcon col="kWSize" /></th>
                       {/* 7 */}<th className={thCls} onClick={() => toggleSort('netPPW')}>$/W<SortIcon col="netPPW" /></th>
-                      {/* 8 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">Est. Pay</th>
-                      {/* 9 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">M1</th>
-                      {/* 10 */}<th className="text-left px-6 py-3 text-slate-400 font-medium">M2</th>
-                      {/* 11 */}{showM3 && <th className="text-left px-6 py-3 text-slate-400 font-medium">M3</th>}
+                      {/* 8 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">Est. Pay</th>
+                      {/* 9 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M1</th>
+                      {/* 10 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M2</th>
+                      {/* 11 */}{showM3 && <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M3</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
                       const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                       return (
-                      <tr key={proj.id} className="border-b border-slate-800/50 even:bg-slate-800/20 hover:bg-blue-500/[0.03] transition-colors duration-150">
+                      <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
-                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-blue-400 transition-colors">{proj.customerName}</Link>
+                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[#00e07a] transition-colors">{proj.customerName}</Link>
                           {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Sub-Dealer</span>}
                         </td>
-                        {/* 2 */}<td className="px-6 py-3 text-slate-400 text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-slate-600"> / {proj.setterName}</span> : ''}</td>
-                        {/* 3 */}<td className="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{proj.installer}</td>
-                        {/* 4 */}<td className="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{formatDate(proj.soldDate)}</td>
+                        {/* 2 */}<td className="px-6 py-3 text-[#c2c8d8] text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-[#525c72]"> / {proj.setterName}</span> : ''}</td>
+                        {/* 3 */}<td className="px-6 py-3 text-[#c2c8d8] text-xs whitespace-nowrap">{proj.installer}</td>
+                        {/* 4 */}<td className="px-6 py-3 text-[#c2c8d8] text-xs whitespace-nowrap">{formatDate(proj.soldDate)}</td>
                         {/* 5 */}<td className="px-6 py-3"><PhaseBadge phase={proj.phase} /></td>
-                        {/* 6 */}<td className="px-6 py-3 text-slate-300">{proj.kWSize}</td>
-                        {/* 7 */}<td className="px-6 py-3 text-slate-400">${(proj.netPPW ?? 0).toFixed(2)}</td>
-                        {/* 8 */}<td className="px-6 py-3 text-blue-400 font-medium">${estPay.toLocaleString()}</td>
+                        {/* 6 */}<td className="px-6 py-3 text-[#c2c8d8]">{proj.kWSize}</td>
+                        {/* 7 */}<td className="px-6 py-3 text-[#c2c8d8]">${(proj.netPPW ?? 0).toFixed(2)}</td>
+                        {/* 8 */}<td className="px-6 py-3 text-[#00e07a] font-medium">${estPay.toLocaleString()}</td>
                         {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount ?? 0} /></td>
                         {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount ?? 0} /></td>
                         {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} /></td>}
@@ -2137,7 +2137,7 @@ function AdminDashboard({
                     })}
                     {sorted.length === 0 && (
                       <tr>
-                        <td colSpan={showM3 ? 11 : 10} className="px-6 py-10 text-center text-slate-500">
+                        <td colSpan={showM3 ? 11 : 10} className="px-6 py-10 text-center text-[#8891a8]">
                           No projects found for this period.
                         </td>
                       </tr>
@@ -2183,7 +2183,7 @@ const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: str
 };
 
 function PhaseBadge({ phase }: { phase: string }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-slate-600/30', shadow: '', text: 'text-slate-300', dot: 'bg-slate-400' };
+  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[#272b35]/30', shadow: '', text: 'text-[#c2c8d8]', dot: 'bg-[#8891a8]' };
   return (
     <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
@@ -2193,10 +2193,10 @@ function PhaseBadge({ phase }: { phase: string }) {
 }
 
 function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
-  if (amount === 0) return <span className="text-slate-600 text-xs">—</span>;
+  if (amount === 0) return <span className="text-[#525c72] text-xs">—</span>;
   return (
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-      paid ? 'bg-emerald-900/50 text-emerald-400' : 'bg-yellow-900/50 text-yellow-400'
+      paid ? 'bg-emerald-900/50 text-[#00e07a]' : 'bg-yellow-900/50 text-yellow-400'
     }`}>
       {paid ? fmt$(amount) : 'Unpaid'}
     </span>
@@ -2204,8 +2204,8 @@ function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
 }
 
 function MilestoneDot({ label, paid, amount }: { label: string; paid: boolean; amount: number }) {
-  if (amount === 0) return <span className="text-slate-600">{label}</span>;
-  const color = paid ? 'text-emerald-400' : 'text-yellow-400';
+  if (amount === 0) return <span className="text-[#525c72]">{label}</span>;
+  const color = paid ? 'text-[#00e07a]' : 'text-yellow-400';
   const dotColor = paid ? 'bg-emerald-400' : 'bg-yellow-400';
   return (
     <span className="flex items-center gap-1">
@@ -2265,10 +2265,10 @@ function SubDealerDashboard({
     .reduce((sum, e) => sum + e.amount, 0);
 
   const stats = [
-    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-blue-400', accentGradient: 'from-blue-500 to-blue-400' },
+    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[#00e07a]', accentGradient: 'from-blue-500 to-blue-400' },
     { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400' },
     { label: 'Total kW', value: `${totalKW.toFixed(1)} kW`, icon: Zap, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
-    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-emerald-400', accentGradient: 'from-emerald-500 to-emerald-400' },
+    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[#00e07a]', accentGradient: 'from-emerald-500 to-emerald-400' },
   ];
 
   return (
@@ -2277,11 +2277,11 @@ function SubDealerDashboard({
       <div className="card-surface rounded-2xl mb-6">
         <div className="px-6 py-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {currentRepName}</p>
+            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">Welcome, {currentRepName}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
               <span style={{ color: '#f0f2f7' }}>Sub-Dealer Dashboard</span>
             </p>
-            <p className="text-slate-500 text-xs mt-1">Submit deals, track your pipeline and pay</p>
+            <p className="text-[#8891a8] text-xs mt-1">Submit deals, track your pipeline and pay</p>
           </div>
           <div className="relative inline-flex shrink-0">
             <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 opacity-[0.06] blur-[2px] animate-pulse" />
@@ -2298,7 +2298,7 @@ function SubDealerDashboard({
 
       {/* Period tabs */}
       <div className="flex justify-end mb-6">
-        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
+        <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 tab-bar-container">
           {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
           {PERIODS.map((p, i) => (
             <button
@@ -2306,7 +2306,7 @@ function SubDealerDashboard({
               ref={(el) => { periodTabRefs.current[i] = el; }}
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-                period === p.value ? 'text-white' : 'text-slate-400 hover:text-white'
+                period === p.value ? 'text-white' : 'text-[#c2c8d8] hover:text-white'
               }`}
             >
               {p.label}
@@ -2327,7 +2327,7 @@ function SubDealerDashboard({
             >
               <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
               <div className="flex items-center justify-between mb-3">
-                <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">{stat.label}</span>
+                <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">{stat.label}</span>
                 <Icon className={`w-4 h-4 ${stat.color}`} />
               </div>
               <p className={`stat-value text-3xl font-black tabular-nums tracking-tight ${stat.color}`}>{stat.value}</p>
@@ -2362,12 +2362,12 @@ function SubDealerDashboard({
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-              <div className="p-1.5 rounded-lg bg-blue-500/15">
-                <FolderKanban className="w-4 h-4 text-blue-400" />
+              <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
+                <FolderKanban className="w-4 h-4 text-[#00e07a]" />
               </div>
               <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
             </div>
-            <Link href="/dashboard/projects" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+            <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
               View All &rarr;
             </Link>
           </div>
@@ -2383,24 +2383,24 @@ function SubDealerDashboard({
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-            <div className="p-1.5 rounded-lg bg-blue-500/15">
-              <FolderKanban className="w-4 h-4 text-blue-400" />
+            <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
+              <FolderKanban className="w-4 h-4 text-[#00e07a]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
             View All &rarr;
           </Link>
         </div>
         <div className="divider-gradient-animated" />
         {myProjects.length === 0 ? (
-          <div className="mx-6 my-6 border border-dashed border-slate-800 rounded-2xl px-5 py-12 text-center">
+          <div className="mx-6 my-6 border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3">
-                <FolderKanban className="w-6 h-6 text-slate-600 animate-pulse" />
+              <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
+                <FolderKanban className="w-6 h-6 text-[#525c72] animate-pulse" />
               </div>
               <p className="text-white font-bold text-sm mb-1">No projects yet</p>
-              <p className="text-slate-500 text-xs mb-4">Submit your first deal to see it here</p>
+              <p className="text-[#8891a8] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
                 className="btn-primary inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
@@ -2426,18 +2426,18 @@ function SubDealerDashboard({
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-blue-500/[0.03] transition-colors">
+                  <div className="px-5 py-3.5 hover:bg-[#00e07a]/[0.03] transition-colors">
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-blue-300 transition-colors">{proj.customerName}</span>
+                        <span className="text-white font-medium text-sm truncate group-hover:text-[#00c4f0] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
-                      <span className="text-slate-500 text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
+                      <span className="text-[#8891a8] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs">
-                      <span className="text-slate-500">{proj.kWSize} kW</span>
-                      <span className="text-slate-600">&middot;</span>
-                      <span className="text-blue-400 font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[#8891a8]">{proj.kWSize} kW</span>
+                      <span className="text-[#525c72]">&middot;</span>
+                      <span className="text-[#00e07a] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
                         {(proj.m3Amount ?? 0) > 0 && (
@@ -2465,7 +2465,7 @@ function SkeletonCell({ width, delay }: { width: string; delay: number }) {
   return (
     <td className="px-6 py-3">
       <div
-        className={`h-4 ${width} bg-slate-800 rounded animate-skeleton`}
+        className={`h-4 ${width} bg-[#1d2028] rounded animate-skeleton`}
         style={{ animationDelay: `${delay}ms` }}
       />
     </td>
@@ -2475,7 +2475,7 @@ function SkeletonCell({ width, delay }: { width: string; delay: number }) {
 function SkeletonRow({ index, cols }: { index: number; cols: readonly string[] }) {
   const delay = index * 75;
   return (
-    <tr className="border-b border-slate-800/50">
+    <tr className="border-b border-[#333849]/50">
       {cols.map((w, ci) => (
         <SkeletonCell key={ci} width={w} delay={delay} />
       ))}
@@ -2487,13 +2487,13 @@ function SkeletonCard({ index }: { index: number }) {
   const delay = index * 75;
   return (
     <div className="card-surface rounded-2xl p-5 h-full space-y-3">
-      <div className="h-[2px] w-12 bg-slate-700 rounded-full animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+      <div className="h-[2px] w-12 bg-[#272b35] rounded-full animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
       <div className="flex items-center justify-between">
-        <div className="h-3 w-20 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
-        <div className="h-4 w-4 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+        <div className="h-3 w-20 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+        <div className="h-4 w-4 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
       </div>
-      <div className="h-8 w-24 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
-      <div className="h-3 w-20 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+      <div className="h-8 w-24 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+      <div className="h-3 w-20 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
     </div>
   );
 }
@@ -2504,14 +2504,14 @@ function DashboardSkeleton() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-2">
-          <div className="h-8 w-48 bg-slate-800 rounded animate-skeleton" />
-          <div className="h-3 w-64 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+          <div className="h-8 w-48 bg-[#1d2028] rounded animate-skeleton" />
+          <div className="h-3 w-64 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
         </div>
         <div className="flex gap-2">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="h-8 w-20 bg-slate-800 rounded-lg animate-skeleton"
+              className="h-8 w-20 bg-[#1d2028] rounded-lg animate-skeleton"
               style={{ animationDelay: `${i * 75}ms` }}
             />
           ))}
@@ -2521,14 +2521,14 @@ function DashboardSkeleton() {
       {/* MTD mini-card */}
       <div className="card-surface rounded-2xl p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="h-4 w-4 bg-slate-800 rounded animate-skeleton" />
-          <div className="h-4 w-40 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+          <div className="h-4 w-4 bg-[#1d2028] rounded animate-skeleton" />
+          <div className="h-4 w-40 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <div className="h-8 w-12 bg-slate-800 rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
-              <div className="h-3 w-20 bg-slate-800/70 rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+              <div className="h-8 w-12 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+              <div className="h-3 w-20 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
             </div>
           ))}
         </div>
@@ -2543,16 +2543,16 @@ function DashboardSkeleton() {
 
       {/* Recent Projects table */}
       <div className="card-surface rounded-2xl">
-        <div className="px-6 py-4 border-b border-slate-800">
-          <div className="h-5 w-36 bg-slate-800 rounded animate-skeleton" />
+        <div className="px-6 py-4 border-b border-[#333849]">
+          <div className="h-5 w-36 bg-[#1d2028] rounded animate-skeleton" />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="table-header-frost">
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-[#333849]">
                 {DASH_TABLE_WIDTHS.map((_, i) => (
                   <th key={i} className="text-left px-6 py-3">
-                    <div className="h-3 w-10 bg-slate-800/60 rounded animate-skeleton" style={{ animationDelay: `${i * 40}ms` }} />
+                    <div className="h-3 w-10 bg-[#1d2028]/60 rounded animate-skeleton" style={{ animationDelay: `${i * 40}ms` }} />
                   </th>
                 ))}
               </tr>
