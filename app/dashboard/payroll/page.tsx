@@ -404,7 +404,7 @@ function PayrollPageInner() {
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">My Payroll</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Payroll</h1>
             <p className="text-slate-400 text-sm font-medium tracking-wide">Your commission and bonus payment history</p>
           </div>
         </div>
@@ -498,7 +498,7 @@ function PayrollPageInner() {
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-            <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Financials</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Financials</h1>
             <p className="text-slate-400 text-sm font-medium tracking-wide">Payroll and reimbursement management</p>
           </div>
         </div>

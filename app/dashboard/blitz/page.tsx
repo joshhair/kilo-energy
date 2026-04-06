@@ -665,7 +665,7 @@ function BlitzPageInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2.5" style={{ color: '#f0f2f7' }}>
+          <h1 className="text-2xl font-black tracking-tight flex items-center gap-2.5" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>
             <Tent className="w-7 h-7" style={{ color: '#00c4f0' }} /> Blitz
           </h1>
           <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Manage blitzes, track participation and profitability</p>
@@ -692,7 +692,7 @@ function BlitzPageInner() {
             <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Active</span>
             <CheckCircle className="w-4 h-4 text-emerald-400" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-emerald-400">{activeBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>{activeBlitzes}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': '#3b82f6' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -700,7 +700,7 @@ function BlitzPageInner() {
             <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Upcoming</span>
             <Clock className="w-4 h-4 text-blue-400" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-blue-400">{upcomingBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#4d9fff' }}>{upcomingBlitzes}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': '#a855f7' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
@@ -708,7 +708,7 @@ function BlitzPageInner() {
             <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Deals</span>
             <TrendingUp className="w-4 h-4 text-purple-400" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-white">{totalDeals}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{totalDeals}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': '#06b6d4' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
@@ -716,7 +716,7 @@ function BlitzPageInner() {
             <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Total kW</span>
             <Zap className="w-4 h-4 text-cyan-400" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-white">{totalKW.toFixed(1)}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{totalKW.toFixed(1)}</p>
         </div>
         {isAdmin && (
           <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
@@ -725,7 +725,7 @@ function BlitzPageInner() {
               <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Costs</span>
               <DollarSign className="w-4 h-4 text-amber-400" />
             </div>
-            <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-amber-400">{formatCurrency(totalCosts)}</p>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#ffb020' }}>{formatCurrency(totalCosts)}</p>
           </div>
         )}
       </div>

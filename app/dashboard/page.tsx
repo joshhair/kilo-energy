@@ -1073,8 +1073,8 @@ export default function DashboardPage() {
         <div className="px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {effectiveRepName}</p>
-            <p className="text-2xl md:text-3xl font-black tracking-tight">
-              <span className="text-gradient-brand">Next Payout:</span> <span className="text-gradient-emerald">${pendingPayrollTotal.toLocaleString()}</span>
+            <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
+              <span style={{ color: '#f0f2f7' }}>Next Payout:</span> <span style={{ color: '#00e07a' }}>${pendingPayrollTotal.toLocaleString()}</span>
             </p>
             <p className="text-slate-500 text-xs mt-1 flex items-center gap-2">
               {nextFridayLabel}
@@ -2190,8 +2190,8 @@ function SubDealerDashboard({
         <div className="px-6 py-6 flex items-center justify-between gap-4">
           <div>
             <p className="text-slate-400 text-sm font-medium tracking-wide mb-1">Welcome, {currentRepName}</p>
-            <p className="text-2xl md:text-3xl font-black tracking-tight">
-              <span className="text-gradient-brand">Sub-Dealer Dashboard</span>
+            <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
+              <span style={{ color: '#f0f2f7' }}>Sub-Dealer Dashboard</span>
             </p>
             <p className="text-slate-500 text-xs mt-1">Submit deals, track your pipeline and pay</p>
           </div>

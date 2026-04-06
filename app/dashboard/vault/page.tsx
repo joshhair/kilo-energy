@@ -396,14 +396,14 @@ function VaultPageInner() {
             <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
               <VaultIcon className="w-5 h-5 text-blue-400" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-gradient-brand tracking-tight">My Pay</h1>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Pay</h1>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
-              <p className="text-3xl md:text-5xl font-black tabular-nums tracking-tight text-gradient-emerald leading-none"
-                 style={{ textShadow: '0 0 32px rgba(16,185,129,0.30)' }}>
+              <p className="text-3xl md:text-5xl font-black tabular-nums tracking-tight leading-none"
+                 style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 32px rgba(16,185,129,0.30)' }}>
                 ${nextPayoutTotal.toLocaleString()}
               </p>
               <p className="text-slate-500 text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>

@@ -505,7 +505,7 @@ function RepEarningsView() {
               <DollarSign className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Earnings</h1>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Earnings</h1>
               <p className="text-slate-400 text-sm font-medium mt-0.5 tracking-wide">Your commission, bonus, and reimbursement history</p>
             </div>
           </div>
@@ -553,7 +553,7 @@ function RepEarningsView() {
             {/* Left — amount + labels */}
             <div>
               <p className="text-slate-400 text-xs font-medium uppercase tracking-widest mb-2">Next Payout</p>
-              <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight text-gradient-emerald animate-count-up">
+              <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>
                 ${totalPending.toLocaleString()}
               </p>
               <p className="text-slate-400 text-sm mt-2.5">
@@ -1182,7 +1182,7 @@ function AdminFinancialsView() {
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
             <Building2 className="w-5 h-5 text-blue-400" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Financials</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Financials</h1>
         </div>
         <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">Company payroll, reimbursements, and rep summaries</p>
       </div>

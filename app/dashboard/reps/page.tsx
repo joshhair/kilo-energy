@@ -339,7 +339,7 @@ function RepsPageInner() {
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
               <Users className="w-5 h-5 text-blue-400" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Reps</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Reps</h1>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
               {filtered.length !== reps.length ? `${filtered.length} / ${reps.length}` : reps.length} reps
             </span>

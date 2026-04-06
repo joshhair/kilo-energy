@@ -609,7 +609,7 @@ function CalculatorPage() {
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
             <Calculator className="w-5 h-5 text-blue-400" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">Commission Calculator</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
         </div>
         <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">Run numbers before you close — know your earning before you pitch.</p>
       </div>

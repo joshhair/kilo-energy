@@ -506,7 +506,7 @@ export default function IncentivesPage() {
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(0,224,122,0.15)' }}>
               <Trophy className="w-5 h-5" style={{ color: '#00e07a' }} />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-gradient-gold tracking-tight">Incentives</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Incentives</h1>
           </div>
           <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">
             {isAdmin ? 'Create and manage team goals and rewards' : 'Track your active goals and milestone rewards'}
@@ -580,7 +580,7 @@ export default function IncentivesPage() {
             <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Active Incentives</span>
             <Trophy className="w-4 h-4 text-blue-400 shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-blue-400 animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#4d9fff' }}>
             {activeIncentives.length}
           </p>
         </div>
@@ -594,7 +594,7 @@ export default function IncentivesPage() {
             <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Milestones Achieved</span>
             <Target className="w-4 h-4 text-emerald-400 shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-emerald-400 animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>
             {achievedMilestones} <span className="text-base font-medium text-slate-500">of {totalMilestones}</span>
           </p>
         </div>
@@ -608,7 +608,7 @@ export default function IncentivesPage() {
             <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Next Deadline</span>
             <Calendar className="w-4 h-4 text-yellow-400 shrink-0" />
           </div>
-          <p className="stat-value text-2xl font-black tabular-nums tracking-tight text-yellow-400 animate-count-up">
+          <p className="stat-value text-2xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#ffb020' }}>
             {nextDeadline ? formatDate(nextDeadline) : <span className="text-slate-500 text-lg">None</span>}
           </p>
         </div>

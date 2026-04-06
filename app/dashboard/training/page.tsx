@@ -336,7 +336,7 @@ function TrainingPageInner() {
           <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
             <GraduationCap className="w-5 h-5 text-amber-400" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>
             Trainer Hub
           </h1>
         </div>
