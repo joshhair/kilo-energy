@@ -11,6 +11,7 @@ import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   calculateCommission,
+  INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
 import { Flag, FlagOff, AlertTriangle, X, Check, Clock, ArrowRight, Pencil, ChevronLeft, ChevronRight, Copy, Plus, RefreshCw, MessageSquare, Zap, User, Trash2 } from 'lucide-react';
@@ -561,7 +562,7 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions } = useApp();
+  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
@@ -833,7 +834,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const saveM2 = () => {
     const val = parseFloat(m2Val);
-    if (!isNaN(val)) { updateProject({ m2Amount: val }); toast('M2 amount updated', 'success'); }
+    if (!isNaN(val)) {
+      const installPayPct = installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      const newM3 = installPayPct < 100 && !project.subDealerId
+        ? Math.round(val * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0;
+      updateProject({ m2Amount: val, m3Amount: newM3 });
+      toast('M2 amount updated', 'success');
+    }
     setEditM2(false);
   };
 
@@ -884,6 +892,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       productType: editVals.productType,
       kWSize: kw,
       netPPW: ppw,
+      m1Amount: kw >= 5 ? 1000 : 500,
       setterId: editVals.setterId || undefined,
       setterName: setterRep?.name ?? (editVals.setterId ? project.setterName : undefined),
       soldDate: editVals.soldDate,

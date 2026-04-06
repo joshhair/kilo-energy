@@ -136,6 +136,21 @@ function ProfileDrawer({
 }) {
   const [viewAsSearch, setViewAsSearch] = useState('');
   const [viewAsOpen, setViewAsOpen] = useState(false);
+
+  const [shouldRender, setShouldRender] = useState(open);
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true);
+      setIsExiting(false);
+    } else {
+      setIsExiting(true);
+      const t = setTimeout(() => { setShouldRender(false); setIsExiting(false); }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -151,7 +166,7 @@ function ProfileDrawer({
     }
   }, [open]);
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   const initials = userName
     .split(' ')
@@ -165,7 +180,7 @@ function ProfileDrawer({
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-[60] md:hidden"
-        style={{ background: 'rgba(0,0,0,0.6)', animation: 'fadeIn 0.2s ease' }}
+        style={{ background: 'rgba(0,0,0,0.6)', animation: isExiting ? 'fadeOut 0.22s ease forwards' : 'fadeIn 0.2s ease' }}
         onClick={onClose}
       />
       {/* Drawer */}
@@ -176,7 +191,7 @@ function ProfileDrawer({
           borderTop: '1px solid #1a2840',
           borderRadius: '20px 20px 0 0',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
-          animation: 'slideUp 0.25s ease both',
+          animation: isExiting ? 'slideDown 0.28s cubic-bezier(0.4, 0, 1, 1) forwards' : 'slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both',
           maxHeight: '80vh',
           overflowY: 'auto',
         }}
@@ -419,7 +434,26 @@ export default function BottomNav({
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
         style={{ background: 'linear-gradient(to top, #080c14 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex items-end justify-around px-2 pt-3 pb-6">
+        <div className="relative">
+          {(() => {
+            const activeIdx = navItems.findIndex(item => isActive(item.href));
+            if (activeIdx < 0) return null;
+            return (
+              <span
+                aria-hidden
+                className="nav-pill absolute top-0 h-[2px] rounded-full pointer-events-none"
+                style={{
+                  width: `${100 / navItems.length}%`,
+                  left: 0,
+                  background: 'linear-gradient(90deg, #00e5a0, #00b4d8)',
+                  transform: `translateX(${activeIdx * 100}%)`,
+                  transition: 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  boxShadow: '0 0 8px rgba(0,229,160,0.6)',
+                }}
+              />
+            );
+          })()}
+          <div className="flex items-end justify-around px-2 pt-3 pb-6">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -458,12 +492,6 @@ export default function BottomNav({
                     <Icon className="w-[18px] h-[18px]" />
                   </span>
                   <span className="text-[10px] tracking-wide transition-colors duration-200" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
-                  {/* Active indicator dot */}
-                  <span
-                    aria-hidden
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full transition-all duration-250 ease-out"
-                    style={{ background: '#00e5a0', opacity: active ? 1 : 0, transform: `translateX(-50%) scale(${active ? 1 : 0.3})` }}
-                  />
                 </button>
               );
             }
@@ -483,15 +511,10 @@ export default function BottomNav({
                   <Icon className="w-[18px] h-[18px]" />
                 </span>
                 <span className="text-[10px] tracking-wide transition-colors duration-200" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
-                {/* Active indicator dot */}
-                <span
-                  aria-hidden
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full transition-all duration-250 ease-out"
-                  style={{ background: '#00e5a0', opacity: active ? 1 : 0, transform: `translateX(-50%) scale(${active ? 1 : 0.3})` }}
-                />
               </Link>
             );
           })}
+          </div>
         </div>
       </nav>
     </>

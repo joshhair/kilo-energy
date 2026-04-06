@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { Phase } from '../../../lib/data';
@@ -54,6 +54,8 @@ export default function MobileProjects() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [phaseFilter, setPhaseFilter] = useState<Phase | 'All'>('All');
+  const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
     const delay = search === '' ? 0 : 300;
@@ -61,11 +63,25 @@ export default function MobileProjects() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    const activeIndex = PHASE_FILTERS.indexOf(phaseFilter);
+    const el = pillRefs.current[activeIndex];
+    if (el) {
+      setSpotlight({ left: el.offsetLeft, width: el.offsetWidth });
+    }
+  }, [phaseFilter]);
+
   const visibleProjects = useMemo(() => {
     if (effectiveRole === 'admin' || effectiveRole === 'project_manager') return projects;
     if (isSubDealer) return projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId);
     return projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
   }, [effectiveRole, effectiveRepId, projects, isSubDealer]);
+
+  const phaseCounts = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const p of visibleProjects) acc[p.phase] = (acc[p.phase] ?? 0) + 1;
+    return acc;
+  }, [visibleProjects]);
 
   const filtered = useMemo(() => {
     let result = visibleProjects;
@@ -126,22 +142,51 @@ export default function MobileProjects() {
       </div>
 
       {/* Phase filter pills */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
-        {PHASE_FILTERS.map((phase) => {
+      <div className="relative flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
+        {spotlight && (
+          <div
+            className="absolute top-0 rounded-xl pointer-events-none phase-spotlight"
+            style={{
+              height: 36,
+              background: '#00e5a0',
+              transform: `translateX(${spotlight.left}px)`,
+              width: spotlight.width,
+              transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), width 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              willChange: 'transform, width',
+            }}
+          />
+        )}
+        {PHASE_FILTERS.map((phase, i) => {
           const isActive = phaseFilter === phase;
           return (
             <button
               key={phase}
+              ref={el => { pillRefs.current[i] = el; }}
               onClick={() => setPhaseFilter(phase)}
-              className="shrink-0 min-h-[36px] px-4 rounded-xl text-base font-medium transition-colors"
+              className="relative z-10 shrink-0 min-h-[44px] px-4 rounded-xl text-sm font-medium active:scale-[0.92]"
               style={{
-                background: isActive ? '#00e5a0' : 'var(--m-card, #0d1525)',
+                background: 'transparent',
                 color: isActive ? '#000' : 'var(--m-text-muted, #8899aa)',
                 border: isActive ? 'none' : '1px solid var(--m-border, #1a2840)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                transition: 'color 200ms ease, transform 75ms cubic-bezier(0.34,1.56,0.64,1)',
               }}
             >
               {phase}
+              {phase !== 'All' && (phaseCounts[phase] ?? 0) > 0 && (
+                <span style={{
+                  background: isActive ? 'rgba(0,0,0,0.2)' : 'var(--m-border, #1a2840)',
+                  color: isActive ? '#000' : 'var(--m-text-muted, #8899aa)',
+                  borderRadius: 999,
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  padding: '1px 5px',
+                  marginLeft: 5,
+                  lineHeight: 1.5,
+                  display: 'inline-block',
+                  animation: 'scalePop 200ms cubic-bezier(0.34,1.56,0.64,1) both',
+                }}>{phaseCounts[phase]}</span>
+              )}
             </button>
           );
         })}

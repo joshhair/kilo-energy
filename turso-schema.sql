@@ -202,6 +202,8 @@ CREATE TABLE "Project" (
     "m3Paid" BOOLEAN NOT NULL DEFAULT false,
     "setterM2Amount" REAL NOT NULL DEFAULT 0,
     "setterM3Amount" REAL,
+    "cancellationReason" TEXT,
+    "cancellationNotes" TEXT,
     "notes" TEXT NOT NULL DEFAULT '',
     "flagged" BOOLEAN NOT NULL DEFAULT false,
     "installerPricingVersionId" TEXT,

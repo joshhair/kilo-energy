@@ -27,9 +27,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       });
     }
 
-    // If approving a create request, create the blitz
-    if (body.status === 'approved' && updated.type === 'create') {
-      await tx.blitz.create({
+    // If approving a create request, create the blitz (idempotency: skip if already linked)
+    if (body.status === 'approved' && updated.type === 'create' && !updated.blitzId) {
+      const newBlitz = await tx.blitz.create({
         data: {
           name: updated.name,
           location: updated.location,
@@ -44,6 +44,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           },
         },
       });
+      const updatedWithBlitz = await tx.blitzRequest.update({
+        where: { id },
+        data: { blitzId: newBlitz.id },
+        include: { requestedBy: true, blitz: true },
+      });
+      return updatedWithBlitz;
     }
 
     return updated;

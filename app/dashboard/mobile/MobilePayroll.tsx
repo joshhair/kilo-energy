@@ -17,6 +17,7 @@ export default function MobilePayroll() {
     setPayrollEntries,
     reps,
     currentRole,
+    currentRepId,
   } = useApp();
   const { toast } = useToast();
 
@@ -35,8 +36,11 @@ export default function MobilePayroll() {
   // ── Filtered entries ──────────────────────────────────────────────────────
 
   const filtered = useMemo(
-    () => payrollEntries.filter((e) => e.status === statusTab),
-    [payrollEntries, statusTab],
+    () => payrollEntries.filter((e) =>
+      e.status === statusTab &&
+      (currentRole === 'admin' || e.repId === currentRepId)
+    ),
+    [payrollEntries, statusTab, currentRole, currentRepId],
   );
 
   // ── Group by rep ──────────────────────────────────────────────────────────
@@ -136,6 +140,11 @@ export default function MobilePayroll() {
       e.preventDefault();
       if (!paymentForm.repId) {
         toast('Please select a rep', 'error');
+        return;
+      }
+      const parsedAmount = parseFloat(paymentForm.amount);
+      if (!paymentForm.amount || isNaN(parsedAmount) || parsedAmount <= 0) {
+        toast('Enter a valid amount greater than $0', 'error');
         return;
       }
       const rep = reps.find((r) => r.id === paymentForm.repId);

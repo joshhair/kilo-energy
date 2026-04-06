@@ -111,6 +111,7 @@ function getBlitzProgress(blitz: BlitzData): { dayNum: number; totalDays: number
 
 function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz: BlitzData; currentUserId: string | null; isAdmin: boolean; onJoin: (blitzId: string) => Promise<void>; index?: number }) {
   const [joining, setJoining] = useState(false);
+  const router = useRouter();
   const style = STATUS_INLINE[blitz.status] ?? STATUS_INLINE.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
@@ -201,7 +202,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         {/* Owner tag + join action */}
         <div className="mt-3 flex items-center justify-between">
           <div className="text-xs" style={{ color: '#8891a8' }}>
-            Led by <Link href={`/dashboard/reps/${blitz.owner.id}`} onClick={(e) => e.stopPropagation()} className="hover:text-[#00c4f0] transition-colors" style={{ color: '#c2c8d8' }}>{blitz.owner.firstName} {blitz.owner.lastName}</Link>
+            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/reps/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/reps/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[#00c4f0] transition-colors" style={{ color: '#c2c8d8' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
           {isOwner && (
             <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[#00e07a] border border-[#00e07a]/20">
@@ -572,11 +573,11 @@ function BlitzPageInner() {
   // For reps: separate "My Blitzes" (participating/leading) from browseable ones
   const myBlitzes = useMemo(() => {
     if (isAdmin || !effectiveRepId) return [];
-    return blitzes.filter((b) =>
+    return sortedBlitzes.filter((b) =>
       b.owner.id === effectiveRepId ||
       b.participants.some((p) => p.user.id === effectiveRepId)
     );
-  }, [blitzes, isAdmin, effectiveRepId]);
+  }, [sortedBlitzes, isAdmin, effectiveRepId]);
 
   const browseBlitzes = useMemo(() => {
     if (isAdmin) return sortedBlitzes;
@@ -664,8 +665,8 @@ function BlitzPageInner() {
   // Summary stats
   const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;
   const upcomingBlitzes = blitzes.filter((b) => b.status === 'upcoming').length;
-  const totalDeals = blitzes.reduce((s, b) => s + b.projects.length, 0);
-  const totalKW = blitzes.reduce((s, b) => s + b.projects.reduce((ps, p) => ps + p.kWSize, 0), 0);
+  const totalDeals = blitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, 0);
+  const totalKW = blitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((ps, p) => ps + p.kWSize, 0), 0);
   const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (

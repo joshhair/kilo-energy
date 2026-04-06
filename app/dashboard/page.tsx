@@ -176,6 +176,7 @@ function NeedsAttentionSection({
   }
 
   for (const proj of activeProjects) {
+    if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
     const [y, m, d] = proj.soldDate.split('-').map(Number);
@@ -435,6 +436,8 @@ function MyTasksSection({
   mentions: MentionItem[];
   onToggleTask: (projectId: string, messageId: string, checkItemId: string, completed: boolean) => void;
 }) {
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+
   // Extract all uncompleted check items across all mentions
   const tasks: TaskItem[] = [];
   for (const mention of mentions) {
@@ -495,8 +498,11 @@ function MyTasksSection({
             >
               <input
                 type="checkbox"
-                checked={false}
-                onChange={() => onToggleTask(task.projectId, task.messageId, task.checkItemId, true)}
+                checked={checkedIds.has(task.checkItemId)}
+                onChange={() => {
+                  setCheckedIds((prev) => new Set([...prev, task.checkItemId]));
+                  onToggleTask(task.projectId, task.messageId, task.checkItemId, true);
+                }}
                 className="w-4 h-4 rounded border-[#272b35] bg-[#1d2028] text-[#00e07a] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[#00e07a] flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
@@ -803,7 +809,7 @@ export default function DashboardPage() {
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
+      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
     }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
 
@@ -896,9 +902,9 @@ export default function DashboardPage() {
   const inPipeline = activeProjects.reduce((sum, p) => {
     const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
     const totalExpected = p.repId === effectiveRepId
-      ? closerM1 + (p.m2Amount ?? 0)
+      ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
-        ? (p.m1Amount ?? 0)
+        ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
         : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
@@ -907,21 +913,29 @@ export default function DashboardPage() {
   // "Total Estimated Pay" = unpaid payroll + expected amounts from projects not yet in payroll
   // (payrollProjectIds is hoisted above the isHydrated guard — already in scope)
   const unpaidPayroll = myPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
+  // Build a per-project total of ALL payroll entries (any status) so we can subtract
+  // what's already accounted for rather than skipping the whole project.
+  // This prevents a project with only M1 drafted from losing its expected M2.
+  const allPayrollByProject = myPayroll.reduce((map, p) => {
+    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
+    return map;
+  }, new Map<string, number>());
   const unmatchedProjectPay = myProjects
-    .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
+    .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      return sum + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
+      return sum + Math.max(0, totalExpected - (allPayrollByProject.get(p.id) ?? 0));
     }, 0);
   // M3: build a set of project IDs that already have an M3 payroll entry (paid or unpaid).
   // If unpaid, the amount is already in unpaidPayroll. If paid, it belongs in totalPaid.
   // Only add m3Amount for projects with no M3 entry yet, regardless of phase.
   const m3PayrollProjectIds = new Set(myPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
   const pendingM3Pay = myProjects
-    .filter((p) => !m3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (p.m3Amount ?? 0) > 0)
+    .filter((p) => !m3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && ((p.m3Amount ?? 0) > 0 || (p.setterM3Amount ?? 0) > 0))
     .reduce((sum, p) => {
-      const closerM3 = p.setterId ? 0 : (p.m3Amount ?? 0);
-      return sum + (p.repId === effectiveRepId ? closerM3 : 0);
+      const m3 = p.repId === effectiveRepId ? (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM3Amount ?? 0) : 0;
+      return sum + m3;
     }, 0);
   const totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
 
@@ -943,28 +957,47 @@ export default function DashboardPage() {
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
     const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
     const totalExpected = p.repId === effectiveRepId
-      ? closerM1 + (p.m2Amount ?? 0)
+      ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
-        ? (p.m1Amount ?? 0)
+        ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
         : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0);
-  const prevPayrollProjectIds = new Set(myPrevPayroll.map((p) => p.projectId).filter(Boolean));
+  const prevAllPayrollByProject = myPrevPayroll.reduce((map, p) => {
+    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
+    return map;
+  }, new Map<string, number>());
   const prevUnpaidPayroll = myPrevPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   const prevUnmatchedPay = myPrevProjects
-    .filter((p) => !prevPayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
+    .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      return sum + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
+      return sum + Math.max(0, totalExpected - (prevAllPayrollByProject.get(p.id) ?? 0));
     }, 0);
-  const prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay;
+  const prevM3PayrollProjectIds = new Set(myPrevPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
+  const prevPendingM3Pay = myPrevProjects
+    .filter((p) => !prevM3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && ((p.m3Amount ?? 0) > 0 || (p.setterM3Amount ?? 0) > 0))
+    .reduce((sum, p) => {
+      const m3 = p.repId === effectiveRepId ? (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM3Amount ?? 0) : 0;
+      return sum + m3;
+    }, 0);
+  const prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay + prevPendingM3Pay;
   const prevTotalPaid = myPrevPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
   const prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWInstalled = myPrevProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // Sparkline data for the five stat cards — last 7 unique dates, summed per day
-  const pipelineSparkData   = computeSparklineData(activeProjects.map((p) => ({ date: p.soldDate, amount: (p.m1Amount ?? 0) + (p.m2Amount ?? 0) })));
+  const pipelineSparkData   = computeSparklineData(activeProjects.map((p) => {
+    const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+    const amount = p.repId === effectiveRepId
+      ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
+      : p.setterId === effectiveRepId
+        ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        : 0;
+    return { date: p.soldDate, amount };
+  }));
   const chargebackSparkData: number[] = []; // flat / empty — no chargeback data yet
   const estPaySparkData     = computeSparklineData(myPayroll.filter((p) => p.status !== 'Paid').map((p) => ({ date: p.date, amount: p.amount })));
   const paidSparkData       = computeSparklineData(myPayroll.filter((p) => p.status === 'Paid').map((p) => ({ date: p.date, amount: p.amount })));
@@ -991,7 +1024,7 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) : 0);
+      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
     }, 0);
 
   // Circumference for the 48×48 SVG ring (r=20): 2π×20 ≈ 125.66
@@ -1004,10 +1037,13 @@ export default function DashboardPage() {
     const d = (5 - today.getDay() + 7) % 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
-    return nf.toISOString().split('T')[0];
+    const yyyy = nf.getFullYear();
+    const mm = String(nf.getMonth() + 1).padStart(2, '0');
+    const dd = String(nf.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   })();
   const pendingPayrollTotal = payrollEntries
-    .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Pending' || p.status === 'Paid'))
+    .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Draft' || p.status === 'Pending' || p.status === 'Paid'))
     .reduce((sum, p) => sum + p.amount, 0);
 
   // Calculate days until next payday (Friday). Returns 0 if today is Friday.
@@ -1506,7 +1542,12 @@ export default function DashboardPage() {
             {[...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8).map((proj) => {
               const installPayPct = installerPayConfigs[proj.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const m2DisplayAmount = Math.round((proj.m2Amount ?? 0) * (installPayPct / 100) * 100) / 100;
-              const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+              const closerM1 = proj.setterId ? 0 : (proj.m1Amount ?? 0);
+              const estPay = proj.repId === effectiveRepId
+                ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
+                : proj.setterId === effectiveRepId
+                  ? (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                  : 0;
               const soldLabel = (() => {
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
                 const sold = new Date(y, m - 1, d);

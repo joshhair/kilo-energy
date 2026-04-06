@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
@@ -694,7 +695,7 @@ function KanbanView({
                     </div>
                     {!hideFinancials && (
                       <p className="text-xs text-[#8891a8] mt-0.5">
-                        ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                        ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0), 0).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -720,7 +721,7 @@ function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0);
+                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -923,7 +924,7 @@ function KanbanView({
                 </div>
                 {!hideFinancials && (
                   <p className="text-xs text-[#8891a8] mt-0.5">
-                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0), 0).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -944,7 +945,7 @@ function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0);
+                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -1078,7 +1079,7 @@ function KanbanView({
                 </div>
                 {!hideFinancials && (
                   <p className="text-xs text-[#8891a8] mt-0.5">
-                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0).toLocaleString()}
+                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0), 0).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -1217,9 +1218,11 @@ function SetterPopover({
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [searchRaw, setSearchRaw] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
 
   // 150 ms debounce for the rep search input
   useEffect(() => {
@@ -1242,13 +1245,33 @@ function SetterPopover({
     setSearchQuery('');
   };
 
+  // Compute portal dropdown position aligned to the right edge of the trigger
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    const onScrollOrResize = () => updatePosition();
+    window.addEventListener('scroll', onScrollOrResize, { capture: true });
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', onScrollOrResize, { capture: true } as EventListenerOptions);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [open, updatePosition]);
+
   // Dismiss on outside click or Escape
   useEffect(() => {
     if (!open) return;
     const handlePointerDown = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        closePopover();
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      closePopover();
     };
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closePopover();
@@ -1282,9 +1305,10 @@ function SetterPopover({
   // Currently-assigned rep object (may be undefined if rep was removed)
   const currentSetter = currentSetterId ? reps.find((r) => r.id === currentSetterId) ?? null : null;
 
-  // Apply search filter; exclude the current setter (shown pinned at top)
+  // Apply search filter; exclude closers and the current setter (shown pinned at top)
   const otherReps = reps
     .filter((r) => r.id !== currentSetterId)
+    .filter((r) => r.repType !== 'closer')
     .filter((r) => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
@@ -1317,9 +1341,13 @@ function SetterPopover({
         )}
       </button>
 
-      {/* ── Dropdown popover ── */}
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-[#1d2028] border border-[#272b35] rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel">
+      {/* ── Dropdown popover (portaled to escape overflow-auto table container) ── */}
+      {open && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed z-[9999] w-64 bg-[#1d2028] border border-[#272b35] rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel"
+          style={{ top: dropdownPos.top, right: dropdownPos.right }}
+        >
           {/* Search input */}
           <div className="p-2 border-b border-[#272b35]/60">
             <div className="relative">
@@ -1404,7 +1432,8 @@ function SetterPopover({
             {/* Spacer at bottom for breathing room */}
             <div className="h-1" />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

@@ -11,7 +11,7 @@ import {
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
-import { Check, Loader2, ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, RotateCcw } from 'lucide-react';
+import { Check, Loader2, ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, RotateCcw, Pencil } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import MobileCard from './shared/MobileCard';
 
@@ -64,11 +64,17 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
         {DEAL_STEPS.map((_, idx) => (
           <div
             key={idx}
-            className="rounded-full transition-all"
+            className="step-dot rounded-full"
             style={{
-              width: 8,
-              height: 8,
-              background: idx <= currentStep ? '#1de9b6' : 'rgba(255,255,255,0.2)',
+              width:  idx === currentStep ? 10 : 8,
+              height: idx === currentStep ? 10 : 8,
+              background: idx === currentStep
+                ? '#1de9b6'
+                : idx < currentStep
+                ? 'rgba(29,233,182,0.35)'
+                : 'rgba(255,255,255,0.18)',
+              transition: 'all 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              flexShrink: 0,
             }}
           />
         ))}
@@ -104,16 +110,18 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
   return (
     <div className="px-4 pt-3 pb-24 space-y-4">
       <div className="flex flex-col items-center text-center pt-4 mb-4">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}>
+        <div className="success-icon-spring w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}>
           <CheckCircle2 className="w-7 h-7 text-green-400" strokeWidth={1.5} />
         </div>
-        <h2 className="text-xl font-black text-white mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
-        <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
-          <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
-        </p>
+        <div className="success-up-1">
+          <h2 className="text-xl font-black text-white mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
+          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
+            <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
+          </p>
+        </div>
       </div>
 
-      <MobileCard>
+      <MobileCard className="success-up-2">
         <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
         <div className="space-y-2 text-base">
           <div className="flex justify-between">
@@ -135,7 +143,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
         </div>
       </MobileCard>
 
-      <MobileCard>
+      <MobileCard className="success-up-3">
         <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission</p>
         {deal.closerTotal > 0 ? (
           <div className="flex items-center justify-between">
@@ -159,7 +167,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
         )}
       </MobileCard>
 
-      <div className="space-y-2 pt-2">
+      <div className="success-up-4 space-y-2 pt-2">
         <button
           onClick={() => router.push('/dashboard/projects')}
           className="w-full min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
@@ -193,6 +201,7 @@ export default function MobileNewDeal() {
     installerPricingVersions, productCatalogInstallerConfigs,
     productCatalogProducts, productCatalogPricingVersions,
     getInstallerPrepaidOptions, installerBaselines,
+    installerPayConfigs,
   } = useApp();
   const { toast } = useToast();
   const router = useRouter();
@@ -230,6 +239,9 @@ export default function MobileNewDeal() {
   const submittingRef = useRef(false);
   const [submitted, setSubmitted] = useState<SubmittedDeal | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const stepDirectionRef = useRef<'fwd' | 'back'>('fwd');
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
 
   const formRef = useRef<HTMLFormElement>(null);
   const fieldWrapperRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -354,12 +366,12 @@ export default function MobileNewDeal() {
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
   const closerM1 = isSelfGen ? m1Flat : 0;
   const closerM2Full = Math.max(0, closerTotal - closerM1);
-  const setterM1 = isSelfGen ? 0 : m1Flat;
+  const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
   const setterM2Full = Math.max(0, setterTotal - setterM1);
   const trainerM1 = 0;
   const trainerM2 = trainerTotal;
 
-  const installPayPct = INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
   const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
   const closerM3 = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
@@ -429,10 +441,12 @@ export default function MobileNewDeal() {
       }
       return;
     }
+    stepDirectionRef.current = 'fwd';
     setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
   };
 
   const handlePrev = () => {
+    stepDirectionRef.current = 'back';
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
@@ -493,10 +507,13 @@ export default function MobileNewDeal() {
       netPPW: soldPPW,
       phase: 'New',
       m1Paid: false,
-      m1Amount: isSubDealer ? 0 : m1Flat,
+      m1Amount: isSubDealer ? 0 : isSelfGen ? closerM1 : setterM1,
       m2Paid: false,
-      m2Amount: isSubDealer ? subDealerCommission : closerM2Full,
+      m2Amount: isSubDealer ? subDealerCommission : closerM2,
+      m3Amount: isSubDealer ? 0 : closerM3,
       m3Paid: false,
+      setterM2Amount: isSubDealer ? 0 : setterM2,
+      setterM3Amount: isSubDealer ? 0 : setterM3,
       notes: form.notes,
       flagged: false,
       solarTechProductId: form.installer === 'SolarTech' && hasSolarTechProducts ? form.solarTechProductId : undefined,
@@ -583,20 +600,36 @@ export default function MobileNewDeal() {
   }
 
   return (
-    <div className="px-6 pt-3 pb-24 flex flex-col min-h-[calc(100vh-120px)]">
+    <div
+      className="px-6 pt-3 pb-24 flex flex-col min-h-[calc(100vh-120px)]"
+      style={{ touchAction: 'pan-y' }}
+      onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; touchStartYRef.current = e.touches[0].clientY; }}
+      onTouchEnd={(e) => {
+        if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+        const dy = Math.abs(e.changedTouches[0].clientY - (touchStartYRef.current ?? 0));
+        touchStartXRef.current = null;
+        touchStartYRef.current = null;
+        if (Math.abs(dx) < 50 || dy > Math.abs(dx) * 0.75) return;
+        if (dx < -50 && currentStep < DEAL_STEPS.length - 1) handleNext();
+        else if (dx > 50 && currentStep > 0) handlePrev();
+      }}
+    >
       <StepIndicator currentStep={currentStep} />
 
       {/* Page header */}
       <div className="mb-6">
         <p style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>NEW DEAL</p>
-        <h1 style={{ fontSize: '26px', fontWeight: 500, color: '#fff', lineHeight: 1.2, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{DEAL_STEPS[currentStep]}</h1>
+        <span key={currentStep} style={{ display: 'block', animation: 'deal-title-enter 200ms cubic-bezier(0.16,1,0.3,1) both' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 500, color: '#fff', lineHeight: 1.2, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{DEAL_STEPS[currentStep]}</h1>
+        </span>
       </div>
 
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col">
 
         {/* ── Step 1: People ── */}
         {currentStep === 0 && (
-          <div className="space-y-7 flex-1 flex flex-col">
+          <div key={0} className={`space-y-7 flex-1 flex flex-col ${stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back'}`}>
             {/* Customer Name */}
             <div ref={(el) => { fieldWrapperRefs.current['customerName'] = el; }}>
               <label className={labelCls} style={labelStyle}>Customer Name</label>
@@ -684,7 +717,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 2: Deal Details ── */}
         {currentStep === 1 && (
-          <div className="space-y-7 flex-1 flex flex-col">
+          <div key={1} className={`space-y-7 flex-1 flex flex-col ${stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back'}`}>
             {/* Installer */}
             <div>
               <label className={labelCls} style={labelStyle}>Installer</label>
@@ -702,7 +735,7 @@ export default function MobileNewDeal() {
 
             {/* Product Type */}
             {form.installer && (
-              <div>
+              <div key={form.installer || 'none'} className="field-slide-in">
                 <label className={labelCls} style={labelStyle}>Product Type</label>
                 <div className="grid grid-cols-4 gap-2">
                   {PRODUCT_TYPES.map((pt) => (
@@ -720,12 +753,14 @@ export default function MobileNewDeal() {
                         setErrors((prev) => ({ ...prev, productType: '', financer: isCash ? '' : prev.financer }));
                         setTouched((prev) => { const next = new Set(prev); next.add('productType'); return next; });
                       }}
-                      className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                      className="min-h-[44px] rounded-xl text-base font-medium transition-transform active:scale-[0.97]"
                       style={{
                         background: form.productType === pt ? '#00e5a0' : 'var(--m-card, #0d1525)',
                         color: form.productType === pt ? '#000' : 'var(--m-text-muted, #8899aa)',
                         border: form.productType === pt ? 'none' : '1px solid var(--m-border, #1a2840)',
                         fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                        transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        transform: form.productType === pt ? 'scale(1.04)' : 'scale(1)',
                       }}
                     >
                       {pt}
@@ -763,13 +798,15 @@ export default function MobileNewDeal() {
                             type="button"
                             disabled={disabled}
                             onClick={() => !disabled && handleSolarTechFamilyChange(family)}
-                            className={`min-h-[44px] px-3 rounded-xl text-base font-medium transition-all text-left ${
+                            className={`min-h-[44px] px-3 rounded-xl text-base font-medium transition-transform text-left active:scale-[0.97] ${
                               disabled ? 'opacity-50' : ''
                             }`}
                             style={{
                               background: disabled ? 'rgba(13,21,37,0.4)' : selected ? 'rgba(37,99,235,0.2)' : 'rgba(13,21,37,0.6)',
                               border: `1px solid ${disabled ? 'rgba(26,40,64,0.4)' : selected ? 'rgba(59,130,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
                               color: disabled ? 'var(--m-text-muted, #8899aa)' : selected ? '#93c5fd' : 'var(--m-text-muted, #8899aa)',
+                              transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                              transform: selected ? 'scale(1.04)' : 'scale(1)',
                             }}
                           >
                             {isPrepaid ? 'Prepaid' : family}
@@ -795,11 +832,13 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                            className="min-h-[44px] rounded-xl text-base font-medium transition-transform active:scale-[0.97]"
                             style={{
                               background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
                               border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
                               color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--m-text-muted, #8899aa)',
+                              transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                              transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
                             }}
                           >
                             {opt}
@@ -811,7 +850,7 @@ export default function MobileNewDeal() {
 
                   {/* SolarTech financer (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
-                    <div>
+                    <div key={'financer-' + form.productType} className="field-slide-in">
                       <label className={labelCls} style={labelStyle}>Financer</label>
                       <select
                         value={form.financer}
@@ -828,7 +867,7 @@ export default function MobileNewDeal() {
 
                   {/* SolarTech equipment package */}
                   {hasSolarTechProducts && (
-                    <div>
+                    <div key={'equip-' + form.solarTechFamily} className="field-slide-in">
                       <label className={labelCls} style={labelStyle}>Equipment Package</label>
                       <select
                         value={form.solarTechProductId}
@@ -864,13 +903,15 @@ export default function MobileNewDeal() {
                               type="button"
                               disabled={disabled}
                               onClick={() => !disabled && handlePcFamilyChange(family)}
-                              className={`min-h-[44px] px-3 rounded-xl text-base font-medium transition-all text-left ${
+                              className={`min-h-[44px] px-3 rounded-xl text-base font-medium transition-transform text-left active:scale-[0.97] ${
                                 disabled ? 'opacity-50' : ''
                               }`}
                               style={{
                                 background: disabled ? 'rgba(13,21,37,0.4)' : selected ? 'rgba(37,99,235,0.2)' : 'rgba(13,21,37,0.6)',
                                 border: `1px solid ${disabled ? 'rgba(26,40,64,0.4)' : selected ? 'rgba(59,130,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
                                 color: disabled ? 'var(--m-text-muted, #8899aa)' : selected ? '#93c5fd' : 'var(--m-text-muted, #8899aa)',
+                                transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                transform: selected ? 'scale(1.04)' : 'scale(1)',
                               }}
                             >
                               {family}
@@ -898,11 +939,13 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                            className="min-h-[44px] rounded-xl text-base font-medium transition-transform active:scale-[0.97]"
                             style={{
                               background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
                               border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
                               color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--m-text-muted, #8899aa)',
+                              transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                              transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
                             }}
                           >
                             {opt}
@@ -914,7 +957,7 @@ export default function MobileNewDeal() {
 
                   {/* PC financer (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
-                    <div>
+                    <div key={'financer-' + form.productType} className="field-slide-in">
                       <label className={labelCls} style={labelStyle}>Financer</label>
                       <select
                         value={form.financer}
@@ -952,7 +995,7 @@ export default function MobileNewDeal() {
                 <>
                   {/* Standard installer financer (hidden for Cash) */}
                   {form.productType !== 'Cash' && (
-                    <div>
+                    <div key={'financer-' + form.productType} className="field-slide-in">
                       <label className={labelCls} style={labelStyle}>Financer</label>
                       <select
                         value={form.financer}
@@ -977,11 +1020,13 @@ export default function MobileNewDeal() {
                             key={opt}
                             type="button"
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
-                            className="min-h-[44px] rounded-xl text-base font-medium transition-all"
+                            className="min-h-[44px] rounded-xl text-base font-medium transition-transform active:scale-[0.97]"
                             style={{
                               background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
                               border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
                               color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--m-text-muted, #8899aa)',
+                              transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                              transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
                             }}
                           >
                             {opt}
@@ -1138,57 +1183,82 @@ export default function MobileNewDeal() {
 
         {/* ── Step 3: Review & Notes ── */}
         {currentStep === 2 && (
-          <div className="space-y-7 flex-1 flex flex-col">
+          <div key={2} className={`space-y-7 flex-1 flex flex-col ${stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back'}`}>
             {/* Summary card */}
             <MobileCard>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
-              <div className="space-y-2 text-base">
-                <div className="flex justify-between">
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Customer</span>
-                  <span className="text-white font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
+              {/* People section — tap to jump back to Step 1 */}
+              <button
+                type="button"
+                onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(0); }}
+                className="w-full text-left -mx-1 px-1 pb-2 rounded-xl active:bg-white/[0.04] transition-colors duration-100 group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>People</span>
+                  <span className="flex items-center gap-1 opacity-0 group-active:opacity-100 transition-opacity duration-100" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Sold Date</span>
-                  <span className="text-white font-medium">{form.soldDate || '---'}</span>
-                </div>
-                {currentRole === 'admin' && (
+                <div className="space-y-2 text-base">
                   <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Closer</span>
-                    <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Customer</span>
+                    <span className="text-white font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
                   </div>
-                )}
-                {form.setterId && (
                   <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Setter</span>
-                    <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Sold Date</span>
+                    <span className="text-white font-medium">{form.soldDate || '---'}</span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Installer</span>
-                  <span className="text-white font-medium">{form.installer || '---'}</span>
+                  {currentRole === 'admin' && (
+                    <div className="flex justify-between">
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Closer</span>
+                      <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
+                    </div>
+                  )}
+                  {form.setterId && (
+                    <div className="flex justify-between">
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Setter</span>
+                      <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Financer</span>
-                  <span className="text-white font-medium">{form.financer || '---'}</span>
+              </button>
+              {/* Deal Details section — tap to jump back to Step 2 */}
+              <button
+                type="button"
+                onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(1); }}
+                className="w-full text-left -mx-1 px-1 pt-2 mt-2 rounded-xl active:bg-white/[0.04] transition-colors duration-100 group"
+                style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>
+                  <span className="flex items-center gap-1 opacity-0 group-active:opacity-100 transition-opacity duration-100" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Product Type</span>
-                  <span className="text-white font-medium">{form.productType || '---'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>System</span>
-                  <span className="text-white font-medium">
-                    {kW > 0 ? `${kW.toFixed(1)} kW` : '---'}
-                    {kW > 0 && soldPPW > 0 && ` @ $${soldPPW.toFixed(2)}/W`}
-                  </span>
-                </div>
-                {form.prepaidSubType && (
+                <div className="space-y-2 text-base">
                   <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Prepaid Type</span>
-                    <span className="text-white font-medium">{form.prepaidSubType}</span>
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Installer</span>
+                    <span className="text-white font-medium">{form.installer || '---'}</span>
                   </div>
-                )}
-              </div>
+                  <div className="flex justify-between">
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Financer</span>
+                    <span className="text-white font-medium">{form.financer || '---'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Product Type</span>
+                    <span className="text-white font-medium">{form.productType || '---'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>System</span>
+                    <span className="text-white font-medium">
+                      {kW > 0 ? `${kW.toFixed(1)} kW` : '---'}
+                      {kW > 0 && soldPPW > 0 && ` @ $${soldPPW.toFixed(2)}/W`}
+                    </span>
+                  </div>
+                  {form.prepaidSubType && (
+                    <div className="flex justify-between">
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Prepaid Type</span>
+                      <span className="text-white font-medium">{form.prepaidSubType}</span>
+                    </div>
+                  )}
+                </div>
+              </button>
             </MobileCard>
 
             {/* Commission breakdown */}
@@ -1283,7 +1353,7 @@ export default function MobileNewDeal() {
 
             {/* Blitz selector */}
             {form.leadSource === 'blitz' && (
-              <div>
+              <div key={'blitz-sel'} className="field-slide-in">
                 <label className={labelCls} style={labelStyle}>Blitz</label>
                 <select
                   value={form.blitzId}

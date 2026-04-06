@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$ } from '../../../lib/utils';
@@ -81,6 +81,31 @@ function stalledDays(dateStr: string | null | undefined): number | null {
   return Math.floor((Date.now() - then.getTime()) / 86_400_000);
 }
 
+function useCountUp(target: number, duration = 350): number {
+  const [displayed, setDisplayed] = useState(target);
+  const prev = useRef(target);
+  const raf = useRef<number | null>(null);
+  const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    if (prefersReduced || prev.current === target) { setDisplayed(target); prev.current = target; return; }
+    const start = prev.current;
+    const startTime = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      // cubic-bezier(0.16, 1, 0.3, 1) approximated as ease-out cubic
+      const ease = 1 - Math.pow(1 - t, 3);
+      setDisplayed(Math.round(start + (target - start) * ease));
+      if (t < 1) raf.current = requestAnimationFrame(tick);
+      else { prev.current = target; }
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [target, duration, prefersReduced]);
+
+  return displayed;
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function MobileDashboard() {
@@ -94,6 +119,20 @@ export default function MobileDashboard() {
   } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
+  const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
+  const [pillReady, setPillReady] = useState(false);
+
+  useEffect(() => {
+    const idx = PERIODS.findIndex(p => p.value === period);
+    const el = pillRefs.current[idx];
+    if (!el) return;
+    const parent = el.parentElement!;
+    const parentRect = parent.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
+    setPillReady(true);
+  }, [period]);
 
   if (effectiveRole === 'admin') return <MobileAdminDashboard />;
 
@@ -178,10 +217,10 @@ export default function MobileDashboard() {
                 <button
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${
+                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
                     i < flaggedProjects.length - 1 ? 'border-b' : ''
                   }`}
-                  style={{ borderColor: 'var(--m-border, #1a2840)' }}
+                  style={{ borderColor: 'var(--m-border, #1a2840)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
@@ -208,10 +247,10 @@ export default function MobileDashboard() {
                   <button
                     key={p.id}
                     onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                    className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${
+                    className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
                       i < arr.length - 1 ? 'border-b' : ''
                     }`}
-                    style={{ borderColor: 'var(--m-border, #1a2840)' }}
+                    style={{ borderColor: 'var(--m-border, #1a2840)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
                     <div className="min-w-0 flex items-center gap-2">
                       <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
@@ -334,10 +373,10 @@ export default function MobileDashboard() {
                 <button
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${
+                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
                     i < recentProjects.length - 1 ? 'border-b' : ''
                   }`}
-                  style={{ borderColor: 'var(--m-border, #1a2840)' }}
+                  style={{ borderColor: 'var(--m-border, #1a2840)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                 >
                   <div className="min-w-0 flex items-center gap-2">
                     <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
@@ -437,6 +476,13 @@ export default function MobileDashboard() {
     return { onPaceAnnual: annual, dealsPerMonth };
   }, [myProjects, myPayroll, activeProjects]);
 
+  // ── Animated counters (rep layout) ───────────────────────────────────────
+
+  const animatedOnPace = useCountUp(onPaceAnnual, 350);
+  const animatedPayout = useCountUp(pendingPayrollTotal, 300);
+  const animatedPaid = useCountUp(periodPaid, 300);
+  const animatedPipeline = useCountUp(pipelineValue, 300);
+
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
@@ -446,17 +492,31 @@ export default function MobileDashboard() {
 
       {/* Period filter */}
       <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar px-5">
-          {PERIODS.map((p) => (
+        <div className="relative flex gap-2 overflow-x-auto no-scrollbar px-5">
+          {pillReady && (
+            <span
+              className="absolute top-0 h-full rounded-full pointer-events-none"
+              style={{
+                left: pillStyle.left,
+                width: pillStyle.width,
+                background: ACCENT,
+                transition: 'left 200ms cubic-bezier(0.34, 1.56, 0.64, 1), width 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              }}
+            />
+          )}
+          {PERIODS.map((p, idx) => (
             <button
               key={p.value}
+              ref={(el) => { pillRefs.current[idx] = el; }}
               onClick={() => setPeriod(p.value)}
               className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[40px]"
               style={{
                 fontFamily: FONT_BODY,
-                background: period === p.value ? ACCENT : 'var(--m-card, #0d1525)',
                 color: period === p.value ? '#000' : MUTED,
+                fontWeight: period === p.value ? 700 : undefined,
                 border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
+                position: 'relative',
+                zIndex: 1,
               }}
             >
               {p.label}
@@ -470,7 +530,7 @@ export default function MobileDashboard() {
         {onPaceAnnual > 0 ? (
           <>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
               {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
             </p>
@@ -480,13 +540,13 @@ export default function MobileDashboard() {
                 <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
                 <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></p>
               </div>
-              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(pendingPayrollTotal)}</p>
+              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
             </div>
           </>
         ) : (
           <>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
           </>
         )}
@@ -494,11 +554,11 @@ export default function MobileDashboard() {
         {/* Stats inside hero card */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
           <div className="min-w-0">
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(periodPaid)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
           </div>
           <div className="min-w-0">
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(pipelineValue)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(animatedPipeline)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
           </div>
           <div className="min-w-0">
@@ -524,8 +584,8 @@ export default function MobileDashboard() {
             <button
               key={p.id}
               onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-              className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
-              style={{ borderColor: 'var(--m-border, #1a2840)' }}
+              className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
+              style={{ borderColor: 'var(--m-border, #1a2840)', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
@@ -545,8 +605,8 @@ export default function MobileDashboard() {
               <button
                 key={p.id}
                 onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:opacity-70 transition-opacity ${i < recentProjects.length - 1 ? 'border-b' : ''}`}
-                style={{ borderColor: 'var(--m-border, #1a2840)' }}
+                className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < recentProjects.length - 1 ? 'border-b' : ''}`}
+                style={{ borderColor: 'var(--m-border, #1a2840)', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
               >
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>

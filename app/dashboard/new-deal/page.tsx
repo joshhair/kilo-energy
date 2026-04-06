@@ -7,7 +7,7 @@ import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import {
   PRODUCT_TYPES, Project,
-  getTrainerOverrideRate, calculateCommission,
+  getTrainerOverrideRate, calculateCommission, splitCloserSetterPay,
   SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER,
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
@@ -34,11 +34,11 @@ function validateField(field: string, value: string): string {
     case 'installerProductId': return value ? '' : 'Product is required';
     case 'kWSize':
       if (!value) return 'kW size is required';
-      if (parseFloat(value) <= 0) return 'Must be greater than 0';
+      if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) return 'Must be greater than 0';
       return '';
     case 'netPPW':
       if (!value) return 'Net PPW is required';
-      if (parseFloat(value) <= 0) return 'Must be greater than 0';
+      if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) return 'Must be greater than 0';
       return '';
     default: return '';
   }
@@ -555,9 +555,14 @@ function NewDealPage() {
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((data) => {
-      setAvailableBlitzes((data ?? []).filter((b: any) => b.status === 'upcoming' || b.status === 'active' || b.status === 'completed'));
+      setAvailableBlitzes((data ?? []).filter((b: any) => {
+        const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
+        if (!statusOk) return false;
+        if (currentRole === 'admin') return true;
+        return b.participants?.some((p: any) => p.userId === currentRepId && p.joinStatus === 'approved');
+      }));
     }).catch(() => {});
-  }, []);
+  }, [currentRole, currentRepId]);
 
   // ── Duplicate deal pre-fill from query params ─────────────────────────────
   const searchParams = useSearchParams();
@@ -697,6 +702,13 @@ function NewDealPage() {
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
 
+  const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
+  const closerCompletedDeals = closerId
+    ? projects.filter((p) => (p.repId === closerId || p.setterId === closerId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length
+    : 0;
+  const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
+  const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
+
   const kW = parseFloat(form.kWSize) || 0;
   const soldPPW = parseFloat(form.netPPW) || 0;
 
@@ -718,12 +730,14 @@ function NewDealPage() {
 
   const trainerTotal = setterAssignment && trainerOverrideRate > 0
     ? Math.round(trainerOverrideRate * kW * 1000 * 100) / 100 : 0;
+  const closerTrainerTotal = closerAssignment && closerTrainerOverrideRate > 0
+    ? Math.round(closerTrainerOverrideRate * kW * 1000 * 100) / 100 : 0;
 
   const { closerTotal, setterTotal } = (() => {
     if (!form.setterId || setterBaselinePerW === 0) {
       return { closerTotal: calculateCommission(soldPPW, closerPerW, kW), setterTotal: 0 };
     }
-    const closerDifferential = soldPPW > closerPerW ? Math.round((setterBaselinePerW - closerPerW) * kW * 1000 * 100) / 100 : 0;
+    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW) * kW * 1000 * 100) / 100 : 0;
     const splitPoint = setterBaselinePerW + trainerOverrideRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
     const half = Math.round(aboveSplit / 2);
@@ -766,7 +780,7 @@ function NewDealPage() {
   const subDealerRate = (() => {
     if (!isSubDealer || !form.installer) return 0;
     const baseline = installerBaselines[form.installer];
-    return baseline?.subDealerPerW ?? kiloPerW;
+    return baseline?.subDealerPerW ?? 0;
   })();
   const subDealerCommission = isSubDealer && kW > 0 && soldPPW > 0 && subDealerRate > 0
     ? calculateCommission(soldPPW, subDealerRate, kW)
@@ -830,7 +844,7 @@ function NewDealPage() {
       }, 500);
       return () => { clearTimeout(advanceTimer); clearTimeout(pulseClear); };
     }
-  }, [stepsComplete, currentStep]);
+  }, [stepsComplete[currentStep], currentStep]);
 
   // ── Step navigation handlers ───────────────────────────────────────────────
 
@@ -945,12 +959,19 @@ function NewDealPage() {
     };
 
     isDirty.current = false;
+    let dealAccepted: boolean;
     if (isSubDealer) {
       // Sub-dealer deals: no M1, M2 = sub-dealer commission, no setter/trainer entries
-      addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
+      dealAccepted = addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
     } else {
-      addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
+      dealAccepted = addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
         trainerTotal > 0 ? setterAssignment?.trainerId : undefined);
+    }
+
+    if (!dealAccepted) {
+      setSubmitting(false);
+      submittingRef.current = false;
+      return;
     }
 
     // Remember installer for next deal
@@ -1552,6 +1573,7 @@ function NewDealPage() {
                   <p className="font-medium text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Commission Preview</p>
                   {isSubDealer ? (
                     <>
+                      <div className="flex justify-between text-xs text-[#8891a8] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
                       {subDealerRate > 0 && (
                         <div className="flex justify-between text-xs text-[#8891a8] mb-1">
                           <span>Sub-dealer rate</span>
@@ -1571,6 +1593,7 @@ function NewDealPage() {
                     </>
                   ) : (
                     <>
+                      <div className="flex justify-between text-xs text-[#8891a8] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
                       <div className="flex justify-between text-xs text-[#8891a8] mb-1">
                         <span>Your redline</span>
                         <span>${closerPerW.toFixed(2)}/W</span>
@@ -1590,6 +1613,11 @@ function NewDealPage() {
                           </span>
                         </span>
                       </div>
+                      {form.setterId && setterBaselinePerW === 0 && closerPerW > 0 && (
+                        <div className="flex justify-between items-center rounded-lg px-3 py-2" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)' }}>
+                          <span className="text-amber-400 text-xs">Setter baseline unavailable — verify system size and product selection. Setter commission cannot be calculated.</span>
+                        </div>
+                      )}
                       {form.setterId && setterTotal > 0 && (
                         <div className="flex justify-between">
                           <span className="text-[#c2c8d8]">Setter commission</span>
@@ -1607,6 +1635,15 @@ function NewDealPage() {
                           <span className="text-amber-400 font-semibold">
                             <TickerAmount amount={trainerTotal} />
                             <span className="text-[#8891a8] font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
+                          </span>
+                        </div>
+                      )}
+                      {closerTrainerRep && closerTrainerTotal > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[#c2c8d8]">Trainer override ({closerTrainerRep.name})</span>
+                          <span className="text-amber-400 font-semibold">
+                            <TickerAmount amount={closerTrainerTotal} />
+                            <span className="text-[#8891a8] font-normal"> (${closerTrainerOverrideRate.toFixed(2)}/W)</span>
                           </span>
                         </div>
                       )}
@@ -1715,33 +1752,42 @@ function NewDealPage() {
 
             {/* Lead Source + Blitz Attribution */}
             <div className="transition-all duration-200 pt-2 border-t border-[#333849]/60">
-              <label htmlFor="field-leadSource" className={labelCls} style={labelStyle}>
+              <label className={labelCls} style={labelStyle}>
                 Lead Source <span className="text-[#525c72] font-normal normal-case">(optional)</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select
-                  id="field-leadSource"
-                  value={form.leadSource}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    update('leadSource', val);
-                    if (val !== 'blitz') {
-                      update('blitzId', '');
-                      update('soldDate', new Date().toISOString().split('T')[0]);
-                    }
-                  }}
-                  className={inputCls('')} style={inputFieldStyle('')}
-                >
-                  <option value="">— Select —</option>
-                  <option value="organic">Organic</option>
-                  <option value="referral">Referral</option>
-                  <option value="blitz">Blitz</option>
-                  <option value="door_knock">Door Knock</option>
-                  <option value="web">Web Lead</option>
-                  <option value="other">Other</option>
-                </select>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'organic', label: 'Organic' },
+                  { value: 'referral', label: 'Referral' },
+                  { value: 'blitz', label: 'Blitz' },
+                  { value: 'door_knock', label: 'Door Knock' },
+                  { value: 'web', label: 'Web Lead' },
+                  { value: 'other', label: 'Other' },
+                ] as { value: string; label: string }[]).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      update('leadSource', form.leadSource === value ? '' : value);
+                      if (value !== 'blitz' || form.leadSource === 'blitz') {
+                        update('blitzId', '');
+                      }
+                      if (form.leadSource === 'blitz' && value !== 'blitz') {
+                        update('soldDate', new Date().toISOString().split('T')[0]);
+                      }
+                    }}
+                    className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                      form.leadSource === value
+                        ? 'bg-[#00e07a] border-[#00e07a] text-black shadow-[0_0_10px_rgba(0,224,122,0.25)]'
+                        : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-                {form.leadSource === 'blitz' && (
+              {form.leadSource === 'blitz' && (
                   <select
                     id="field-blitzId"
                     value={form.blitzId}
@@ -1777,7 +1823,6 @@ function NewDealPage() {
                     ))}
                   </select>
                 )}
-              </div>
             </div>
           </div>
         </div>

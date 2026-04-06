@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
 import { requireAuth, requireAdmin } from '../../../lib/api-auth';
 
@@ -15,12 +16,17 @@ export async function GET() {
 // POST /api/blitz-requests — Submit a blitz request (create or cancel)
 export async function POST(req: NextRequest) {
   try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await prisma.user.findFirst({ where: { email } });
+  if (!user?.canRequestBlitz) return NextResponse.json({ error: 'Forbidden — blitz request permission required' }, { status: 403 });
   const body = await req.json();
   const type = body.type || 'create';
 
   const request = await prisma.blitzRequest.create({
     data: {
-      requestedById: body.requestedById,
+      requestedById: user.id,
       type,
       blitzId: type === 'cancel' ? body.blitzId : null,
       name: body.name || '',

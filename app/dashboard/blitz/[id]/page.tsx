@@ -119,6 +119,8 @@ export default function BlitzDetailPage() {
   // Rep permissions (canRequestBlitz)
   const [canRequestBlitz, setCanRequestBlitz] = useState(false);
   const [cancelRequesting, setCancelRequesting] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   useEffect(() => {
     if (isAdmin || !effectiveRepId) return;
     fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
@@ -136,7 +138,7 @@ export default function BlitzDetailPage() {
   const visibleProjects = useMemo(() => {
     if (!blitz?.projects) return [];
     if (isAdmin || isOwner) return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-    return blitz.projects.filter((p: any) => p.closer?.id === effectiveRepId && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+    return blitz.projects.filter((p: any) => (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const totalDeals = visibleProjects.length;
@@ -150,7 +152,7 @@ export default function BlitzDetailPage() {
   const allProjectsKW = blitz?.projects?.reduce((s: number, p: any) => s + p.kWSize, 0) ?? 0;
 
   const getBlitzProjectBaselines = (p: any): { closerPerW: number; kiloPerW: number } => {
-    if (p.baselineOverride) return p.baselineOverride;
+    if (p.baselineOverrideJson) return JSON.parse(p.baselineOverrideJson);
     if (p.installer?.name === 'SolarTech' && p.productId) {
       return getSolarTechBaseline(p.productId, p.kWSize);
     }
@@ -202,17 +204,19 @@ export default function BlitzDetailPage() {
       if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
         const existingParticipant = blitz?.participants?.find((p: any) => p.user.id === editForm.ownerId);
         if (!existingParticipant) {
-          await fetch(`/api/blitzes/${blitzId}/participants`, {
+          const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
+          if (!pr.ok) { toast('Failed to add owner as participant', 'error'); return; }
         } else if (existingParticipant.joinStatus !== 'approved') {
-          await fetch(`/api/blitzes/${blitzId}/participants`, {
+          const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
+          if (!pr.ok) { toast('Failed to approve owner as participant', 'error'); return; }
         }
       }
       toast('Blitz updated');
@@ -292,24 +296,29 @@ export default function BlitzDetailPage() {
 
   const handleRequestCancellation = async (reason: string) => {
     setCancelRequesting(true);
-    const res = await fetch('/api/blitz-requests', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'cancel',
-        requestedById: effectiveRepId,
-        blitzId,
-        name: blitz?.name ?? '',
-        notes: reason,
-        startDate: blitz?.startDate ?? '',
-        endDate: blitz?.endDate ?? '',
-      }),
-    });
-    setCancelRequesting(false);
-    if (res.ok) {
-      toast('Cancellation request submitted for admin approval');
-    } else {
-      toast('Failed to submit cancellation request');
+    try {
+      const res = await fetch('/api/blitz-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'cancel',
+          requestedById: effectiveRepId,
+          blitzId,
+          name: blitz?.name ?? '',
+          notes: reason,
+          startDate: blitz?.startDate ?? '',
+          endDate: blitz?.endDate ?? '',
+        }),
+      });
+      if (res.ok) {
+        toast('Cancellation request submitted for admin approval');
+      } else {
+        toast('Failed to submit cancellation request', 'error');
+      }
+    } catch {
+      toast('Failed to submit cancellation request', 'error');
+    } finally {
+      setCancelRequesting(false);
     }
   };
 
@@ -435,11 +444,7 @@ export default function BlitzDetailPage() {
             ) : canRequestBlitz && blitz.status !== 'cancelled' && (
               <button
                 disabled={cancelRequesting}
-                onClick={() => setConfirmAction({
-                  title: 'Request Blitz Cancellation?',
-                  message: `This will send a cancellation request for "${blitz.name}" to an admin for approval. The blitz will remain active until approved.`,
-                  onConfirm: () => { handleRequestCancellation('Requested by rep'); setConfirmAction(null); },
-                })}
+                onClick={() => { setCancelReason(''); setShowCancelDialog(true); }}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors shrink-0 disabled:opacity-50"
               >
                 <XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}
@@ -492,7 +497,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[#8891a8] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</p>
+                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
               </div>
             )}
           </div>
@@ -511,7 +516,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[#8891a8] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</p>
+                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">Projected Pay</p>
                 </div>
               </div>
@@ -759,8 +764,8 @@ export default function BlitzDetailPage() {
                         <td className="px-4 py-3 text-right">
                           {p.joinStatus === 'pending' ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'approved' }) }).then(() => { toast('Approved'); loadBlitz(); }); }} className="px-2 py-1 text-[11px] font-semibold bg-[#00e07a] text-black rounded hover:bg-[#00e07a] transition-colors">Approve</button>
-                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'declined' }) }).then(() => { toast('Declined'); loadBlitz(); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 transition-colors">Decline</button>
+                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }); }} className="px-2 py-1 text-[11px] font-semibold bg-[#00e07a] text-black rounded hover:bg-[#00e07a] transition-colors">Approve</button>
+                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 transition-colors">Decline</button>
                             </div>
                           ) : (
                             <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will remove them from the blitz. They can be re-added later.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-[#525c72] hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
@@ -828,7 +833,7 @@ export default function BlitzDetailPage() {
                       </td>
                       <td className="px-4 py-3 text-right text-[#c2c8d8]">{p.kWSize.toFixed(1)}</td>
                       <td className="px-4 py-3 text-right text-[#c2c8d8]">${p.netPPW.toFixed(2)}</td>
-                      {isAdmin && <td className="px-4 py-3 text-right text-[#c2c8d8]">{formatCurrency(p.m1Amount + p.m2Amount)}</td>}
+                      {isAdmin && <td className="px-4 py-3 text-right text-[#c2c8d8]">{formatCurrency((p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0))}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -837,7 +842,7 @@ export default function BlitzDetailPage() {
                     <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-[#c2c8d8]">{visibleProjects.length} deal{visibleProjects.length !== 1 ? 's' : ''}</td>
                     <td className="px-4 py-3 text-right text-sm font-bold text-white">{totalKW.toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[#8891a8]">—</td>
-                    {isAdmin && <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</td>}
+                    {isAdmin && <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0), 0))}</td>}
                   </tr>
                 </tfoot>
               </table>
@@ -970,7 +975,11 @@ export default function BlitzDetailPage() {
             const repStats = approvedParticipants.map((p: any) => {
               const repDeals = blitz.projects.filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
               const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
-              const repPayout = repDeals.reduce((s: number, proj: any) => s + (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0), 0);
+              const repPayout = repDeals.reduce((s: number, proj: any) => {
+                const isSetter = proj.setter?.id === p.user.id && proj.closer?.id !== p.user.id;
+                const m1 = isSetter ? 0 : (proj.m1Amount ?? 0);
+                return s + m1 + (isSetter ? (proj.setterM2Amount ?? 0) : (proj.m2Amount ?? 0)) + (isSetter ? (proj.setterM3Amount ?? 0) : (proj.m3Amount ?? 0));
+              }, 0);
               return { user: p.user, deals: repDeals.length, kw: repKW, payout: repPayout };
             }).sort((a: { deals: number; kw: number }, b: { deals: number; kw: number }) => b.deals - a.deals || b.kw - a.kw);
             const maxKW = Math.max(...repStats.map((r: { kw: number }) => r.kw), 1);
@@ -1006,6 +1015,43 @@ export default function BlitzDetailPage() {
             </div>
             );
           })()}
+        </div>
+      )}
+
+      {/* Cancellation request dialog with reason input */}
+      {showCancelDialog && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCancelDialog(false); }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-white font-bold mb-1">Request Blitz Cancellation?</h3>
+            <p className="text-[#c2c8d8] text-sm mb-4">This will send a cancellation request for &quot;{blitz.name}&quot; to an admin for approval. The blitz will remain active until approved.</p>
+            <label className="block text-xs font-medium text-[#8891a8] mb-1.5">Reason <span className="text-[#525c72]">(optional)</span></label>
+            <textarea
+              className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white placeholder-[#525c72] resize-none focus:outline-none focus:border-[#525c72] mb-4"
+              rows={3}
+              placeholder="Let the admin know why you're requesting cancellation…"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelDialog(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[#272b35] text-[#c2c8d8] hover:bg-[#525c72] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowCancelDialog(false); handleRequestCancellation(cancelReason.trim() || 'No reason provided'); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors"
+              >
+                Submit Request
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

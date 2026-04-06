@@ -335,9 +335,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               <div
                 className={`rounded-full${isCurrent ? ' mobile-stepper-current' : ''}`}
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: isCurrent ? 14 : 10,
+                  height: isCurrent ? 14 : 10,
                   background: isCompleted ? '#00e5a0' : isCurrent ? '#00b4d8' : 'var(--m-border, #1a2840)',
+                  willChange: 'transform',
+                  animation: `dotPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 40}ms both`,
+                  transition: 'width 300ms cubic-bezier(0.34, 1.56, 0.64, 1), height 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
                 title={step}
               />

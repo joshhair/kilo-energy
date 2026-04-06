@@ -19,6 +19,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const { toast } = useToast();
 
   // Pagination state — payment history
   const [payPage, setPayPage] = useState(1);
@@ -75,10 +76,10 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   const pagedProjects = repProjects.slice(projStart, projEnd);
 
   const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
-  const totalEst = repProjects.reduce((s, p) => s + p.m1Amount + p.m2Amount, 0);
+  const totalEst = repProjects.reduce((s, p) => s + p.m1Amount + p.m2Amount + (p.m3Amount ?? 0), 0);
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
   const totalPending = repPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-  const activeProjects = repProjects.filter((p) => !['Cancelled', 'Completed'].includes(p.phase));
+  const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
 
   // ── 6-month earnings sparkline data ───────────────────────────────────────
   const monthlyEarnings = (() => {
@@ -210,11 +211,17 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
               </div>
               <button
                 onClick={() => {
-                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
+                  const snapshot = assignment;
+                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
                   fetch('/api/trainer-assignments', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: assignment.id }),
+                    body: JSON.stringify({ id: snapshot.id }),
+                  }).then((res) => {
+                    if (!res.ok) throw new Error();
+                  }).catch(() => {
+                    setTrainerAssignments((prev) => [...prev, snapshot]);
+                    toast('Failed to remove trainer assignment', 'error');
                   });
                 }}
                 className="text-[#8891a8] hover:text-red-400 transition-colors text-xs font-medium flex items-center gap-1"
@@ -453,7 +460,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
                 <td className="px-5 py-3 text-[#c2c8d8]">{proj.kWSize}</td>
                 {!isPM && (
                   <td className="px-5 py-3 text-[#00e07a] font-semibold">
-                    ${(proj.m1Amount + proj.m2Amount).toLocaleString()}
+                    ${((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)).toLocaleString()}
                   </td>
                 )}
               </tr>
@@ -540,7 +547,17 @@ function TrainerOverrideCard({
     });
   };
 
-  const save = () => { onUpdate(draftTiers); setEditing(false); toast('Trainer override updated', 'success'); };
+  const save = async () => {
+    const res = await fetch('/api/trainer-assignments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: assignment.id, tiers: draftTiers }),
+    });
+    if (!res.ok) { toast('Failed to save trainer override', 'error'); return; }
+    onUpdate(draftTiers);
+    setEditing(false);
+    toast('Trainer override updated', 'success');
+  };
   const cancel = () => { setDraftTiers([...assignment.tiers]); setEditing(false); };
 
   const activeTierIndex = assignment.tiers.findIndex(

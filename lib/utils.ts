@@ -63,6 +63,14 @@ export function isInDateRange(dateStr: string, startDate: string, endDate: strin
   return date >= start && date <= end;
 }
 
+/** Format a Date as YYYY-MM-DD using local time (avoids UTC off-by-one). */
+function localDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /**
  * M1 payroll date: project reaches Acceptance phase.
  * Cutoff is Sunday 11:59 PM. M1 is paid on the following Friday.
@@ -80,7 +88,7 @@ export function getM1PayDate(milestoneDate?: Date): string {
   // Pay date is the Friday after that Sunday = Sunday + 5 days
   const friday = new Date(sunday);
   friday.setDate(sunday.getDate() + 5);
-  return friday.toISOString().split('T')[0];
+  return localDateString(friday);
 }
 
 /**
@@ -98,5 +106,5 @@ export function getM2PayDate(milestoneDate?: Date): string {
   // Pay date is the Friday after that Saturday = Saturday + 6 days
   const friday = new Date(saturday);
   friday.setDate(saturday.getDate() + 6);
-  return friday.toISOString().split('T')[0];
+  return localDateString(friday);
 }

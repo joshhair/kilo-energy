@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import {
@@ -126,8 +126,8 @@ export default function MobileCalculator() {
     border: '1px solid var(--m-border, #1a2840)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
-  const selectCls = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 appearance-none';
-  const inputCls = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1';
+  const selectCls = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 appearance-none transition-transform duration-75 active:scale-[0.985]';
+  const inputCls  = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 transition-transform duration-75 active:scale-[0.985]';
   const labelStyle: React.CSSProperties = {
     color: 'var(--m-text-dim, #445577)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
@@ -147,7 +147,7 @@ export default function MobileCalculator() {
       <MobilePageHeader title="Calculator" />
 
       {/* ── Form inputs ───────────────────────────────────────────────────── */}
-      <div className="space-y-4">
+      <div className="space-y-4" style={{ touchAction: 'manipulation' }}>
         {/* Installer */}
         <div>
           <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Installer</label>
@@ -173,7 +173,7 @@ export default function MobileCalculator() {
         {/* SolarTech: Family + Product */}
         {isSolarTech && (
           <>
-            <div>
+            <div key={installer + '-family'} className="field-appear">
               <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Financing Family</label>
               <select
                 value={solarTechFamily}
@@ -188,7 +188,7 @@ export default function MobileCalculator() {
               </select>
             </div>
             {solarTechFamily && solarTechFamilyProducts.length > 0 && (
-              <div>
+              <div key={solarTechFamily + '-product'} className="field-appear-delayed">
                 <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Equipment Package</label>
                 <select
                   value={solarTechProductId}
@@ -209,7 +209,7 @@ export default function MobileCalculator() {
         {/* ProductCatalog installer: Family + Product */}
         {isPcInstaller && pcConfig && (
           <>
-            <div>
+            <div key={installer + '-family'} className="field-appear">
               <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Financing Family</label>
               <select
                 value={pcSelectedFamily}
@@ -224,7 +224,7 @@ export default function MobileCalculator() {
               </select>
             </div>
             {pcSelectedFamily && pcFamilyProducts.length > 0 && (
-              <div>
+              <div key={pcSelectedFamily + '-product'} className="field-appear-delayed">
                 <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Equipment Package</label>
                 <select
                   value={pcProductId}
@@ -248,6 +248,9 @@ export default function MobileCalculator() {
             <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>System Size (kW)</label>
             <input
               type="number"
+              inputMode="decimal"
+              pattern="[0-9]*\.?[0-9]*"
+              autoComplete="off"
               step="0.1"
               min="0"
               placeholder="e.g. 8.4"
@@ -261,6 +264,9 @@ export default function MobileCalculator() {
             <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Net PPW ($)</label>
             <input
               type="number"
+              inputMode="decimal"
+              pattern="[0-9]*\.?[0-9]*"
+              autoComplete="off"
               step="0.01"
               min="0"
               placeholder="e.g. 3.85"
@@ -275,10 +281,10 @@ export default function MobileCalculator() {
 
       {/* ── Result card ─────────────────────────────────────────────────── */}
       {hasInput && soldPPW > 0 && (
-        <MobileCard hero>
+        <MobileCard key="result" hero className="slide-up-fade">
           <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
           <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
-            {fmt$(closerTotal)}
+            {fmt$(grandTotal)}
           </p>
 
           <div className="mt-5 space-y-2.5">
@@ -311,7 +317,7 @@ export default function MobileCalculator() {
 
       {/* Empty state */}
       {(!hasInput || soldPPW <= 0) && (
-        <MobileCard>
+        <MobileCard key="empty">
           <div className="py-6 text-center">
             <p className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
           </div>

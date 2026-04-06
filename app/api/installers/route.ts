@@ -14,6 +14,18 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Auto-create a ProductCatalogConfig row for new PC installers
+  if (body.usesProductCatalog) {
+    await prisma.productCatalogConfig.create({
+      data: {
+        installerId: installer.id,
+        families: (body.families as string[] ?? []).join(','),
+        familyFinancerMap: JSON.stringify(body.familyFinancerMap ?? {}),
+        prepaidFamily: body.prepaidFamily ?? null,
+      },
+    });
+  }
+
   // Auto-create a baseline pricing version for new standard installers
   let pricingVersionId: string | null = null;
   if (!body.usesProductCatalog) {

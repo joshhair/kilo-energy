@@ -119,7 +119,9 @@ function RepsPageInner() {
     const repId = `rep_${ts}`;
     const trainerIdSnapshot = newTrainerId;
     const repPromise = addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId);
-    repPromise?.then((rep) => { if (rep) toast('Rep added', 'success'); });
+    repPromise
+      ?.then((rep) => { if (rep) toast('Rep added', 'success'); resetAddModal(); })
+      .catch(() => { toast('Failed to add rep', 'error'); setIsAddingRep(false); });
     // If a trainer was selected, persist assignment after real rep ID is known
     if (trainerIdSnapshot) {
       repPromise?.then((rep) => {
@@ -150,9 +152,8 @@ function RepsPageInner() {
             toast('Trainer assigned', 'success');
           })
           .catch(() => toast('Failed to assign trainer', 'error'));
-      });
+      }).catch(() => {});
     }
-    resetAddModal();
   };
 
   // ── Filter tab indicator ─────────────────────────────────────────────────
@@ -214,6 +215,10 @@ function RepsPageInner() {
   // ── Compare mode ───────────────────────────────────────────────────────
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+
+  // ── Sort ────────────────────────────────────────────────────────────────
+  type SortBy = 'paid' | 'active' | 'deals' | 'name' | 'kw';
+  const [sortBy, setSortBy] = useState<SortBy>('paid');
 
   type ComparePeriod = 'this-week' | 'this-month' | 'last-month' | 'this-quarter' | 'last-quarter' | 'this-year' | 'custom';
   const PERIOD_OPTIONS: { value: ComparePeriod; label: string }[] = [
@@ -344,6 +349,17 @@ function RepsPageInner() {
         ]
       : [];
 
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    switch (sortBy) {
+      case 'paid':   return arr.sort((a, b) => (repPaidAmounts.get(b.id) ?? 0) - (repPaidAmounts.get(a.id) ?? 0));
+      case 'active': return arr.sort((a, b) => (activeDealsByRep.get(b.id) ?? 0) - (activeDealsByRep.get(a.id) ?? 0));
+      case 'deals':  return arr.sort((a, b) => projects.filter(p => p.repId === b.id || p.setterId === b.id).length - projects.filter(p => p.repId === a.id || p.setterId === a.id).length);
+      case 'kw':     return arr.sort((a, b) => projects.filter(p => p.repId === b.id || p.setterId === b.id).reduce((s, p) => s + p.kWSize, 0) - projects.filter(p => p.repId === a.id || p.setterId === a.id).reduce((s, p) => s + p.kWSize, 0));
+      case 'name':   return arr.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }, [filtered, sortBy, repPaidAmounts, activeDealsByRep, projects]);
+
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   if (!isHydrated) {
@@ -367,7 +383,7 @@ function RepsPageInner() {
             </span>
           </div>
         </div>
-        <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">{reps.length} sales representatives</p>
+        <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">{filtered.length} sales representatives</p>
       </div>
 
       {/* Admin: add rep button */}
@@ -445,7 +461,7 @@ function RepsPageInner() {
         {[
           { label: 'Total Reps', value: reps.length.toString(), gradient: 'linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))', borderColor: 'rgba(77,159,255,0.3)', valueColor: '#4d9fff' },
           { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), gradient: 'linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))', borderColor: 'rgba(0,196,240,0.3)', valueColor: '#00c4f0' },
-          { label: 'kW Sold', value: `${projects.reduce((s, p) => s + p.kWSize, 0).toFixed(1)}`, gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
+          { label: 'kW Sold', value: `${projects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0).toFixed(1)}`, gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
           ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, gradient: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))', borderColor: 'rgba(0,224,122,0.3)', valueColor: '#00e07a' }] : []),
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: stat.gradient, border: `1px solid ${stat.borderColor}` }}>
@@ -526,6 +542,22 @@ function RepsPageInner() {
         </div>
       )}
 
+      {/* ── Sort Controls ────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs text-[#525c72] font-medium">Sort:</span>
+        {([['paid','Top Paid'],['active','Most Active'],['deals','Most Deals'],['kw','Most kW'],['name','Name']] as [SortBy, string][]).map(([val, label]) => (
+          <button
+            key={val}
+            onClick={() => setSortBy(val)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              sortBy === val ? 'bg-[#00e07a]/15 text-[#00e07a] border border-[#00e07a]/30' : 'bg-[#161920] text-[#8891a8] border border-[#272b35] hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Comparison Cards ─────────────────────────────────────────────── */}
       {compareMode && compareIds.size >= 2 && (() => {
         const ranges = getCompareDateRanges();
@@ -571,7 +603,10 @@ function RepsPageInner() {
                 const commissionEarned = ranges.current.from && ranges.current.to
                   ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to)).reduce((s, e) => s + e.amount, 0)
                   : 0;
-                const cancelRate = rpAll.length > 0 ? (rpAll.filter((p) => p.phase === 'Cancelled').length / rpAll.length * 100) : 0;
+                const rpForCancel = ranges.current.from && ranges.current.to
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  : rpAll;
+                const cancelRate = rpForCancel.length > 0 ? (rpForCancel.filter((p) => p.phase === 'Cancelled').length / rpForCancel.length * 100) : 0;
 
                 // Previous period stats
                 const prevDeals = ranges.prev
@@ -616,7 +651,7 @@ function RepsPageInner() {
       })()}
 
       <div className="space-y-3">
-        {filtered.map((rep, i) => {
+        {sorted.map((rep, i) => {
           const repProjects = projects.filter((p) => p.repId === rep.id || p.setterId === rep.id);
           const repPaid = repPaidAmounts.get(rep.id) ?? 0;
           const activeCount = repProjects.filter(
@@ -717,7 +752,7 @@ function RepsPageInner() {
                       </p>
                       {canManageReps ? (
                         <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); const nextRole = ROLE_NEXT[rep.repType]; updateRepType(rep.id, nextRole); toast(`${rep.name} role changed to ${ROLE_LABELS[nextRole]}`, 'success'); }}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); const nextRole = ROLE_NEXT[rep.repType]; updateRepType(rep.id, nextRole); }}
                           title="Click to cycle role"
                           className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${ROLE_BADGE_CLS[rep.repType]} ${ROLE_BADGE_HOVER[rep.repType]}`}
                           style={ROLE_BADGE_STYLES[rep.repType]}
@@ -937,6 +972,7 @@ function RepsPageInner() {
                         ? `${ROLE_BADGE_CLS[rt]} bg-opacity-100`
                         : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:border-[#272b35] hover:text-[#c2c8d8]'
                     }`}
+                    style={newRepType === rt ? ROLE_BADGE_STYLES[rt] : undefined}
                   >
                     {ROLE_LABELS[rt]}
                   </button>

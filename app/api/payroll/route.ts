@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireAdmin } from '../../../lib/api-auth';
+import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
 
-// POST /api/payroll — Create a payroll entry (admin only)
+// POST /api/payroll — Create a payroll entry (admin or project manager)
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  try { await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
   const entry = await prisma.payrollEntry.create({
     data: {

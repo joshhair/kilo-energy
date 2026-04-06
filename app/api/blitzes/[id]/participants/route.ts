@@ -7,13 +7,26 @@ import { requireAuth } from '../../../../../lib/api-auth';
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
+
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const caller = await prisma.user.findFirst({ where: { email } });
+  if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const body = await req.json();
+
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true } });
+  if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
+  if (caller.role !== 'admin' && caller.id !== blitz.ownerId && caller.id !== body.userId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   const participant = await prisma.blitzParticipant.create({
     data: {
       blitzId,
       userId: body.userId,
-      joinStatus: body.joinStatus ?? 'pending',
+      joinStatus: (caller.role !== 'admin' && caller.id !== blitz.ownerId) ? 'pending' : (body.joinStatus ?? 'pending'),
     },
     include: { user: true },
   });

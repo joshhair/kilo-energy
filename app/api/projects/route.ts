@@ -17,6 +17,17 @@ export async function POST(req: NextRequest) {
     }
   }
   const body = await req.json();
+
+  // Validate blitz participation before writing
+  if (body.blitzId && body.closerId) {
+    const participation = await prisma.blitzParticipant.findFirst({
+      where: { blitzId: body.blitzId, userId: body.closerId, joinStatus: 'approved' },
+    });
+    if (!participation) {
+      return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
+    }
+  }
+
   const project = await prisma.project.create({
     data: {
       customerName: body.customerName,

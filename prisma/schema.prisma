@@ -277,8 +277,10 @@ model Project {
   setterM2Amount Float   @default(0)
   setterM3Amount Float?
 
-  notes   String  @default("")
-  flagged Boolean @default(false)
+  notes              String  @default("")
+  flagged            Boolean @default(false)
+  cancellationReason String?
+  cancellationNotes  String?
 
   // --- Pricing snapshot references ---
   installerPricingVersionId String?

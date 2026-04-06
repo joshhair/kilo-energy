@@ -90,6 +90,7 @@ function PayrollPageInner() {
   // Reimbursements date filter
   const [reimFilterFrom, setReimFilterFrom] = useState('');
   const [reimFilterTo, setReimFilterTo] = useState('');
+  const [processingReimIds, setProcessingReimIds] = useState<Set<string>>(new Set());
 
   // Payroll entries date filter
   const [payFilterFrom, setPayFilterFrom] = useState('');
@@ -198,7 +199,6 @@ function PayrollPageInner() {
   }, [statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
-  if (isMobile) return <MobilePayroll />;
 
   if (effectiveRole === 'project_manager') {
     return (
@@ -207,6 +207,8 @@ function PayrollPageInner() {
       </div>
     );
   }
+
+  if (isMobile) return <MobilePayroll />;
 
   const filtered = payrollEntries.filter((p) => {
     if (p.status !== statusTab || p.type !== typeTab) return false;
@@ -307,7 +309,7 @@ function PayrollPageInner() {
   const handleAddBonus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bonusForm.repId) { toast('Please select a rep', 'error'); return; }
-    if (!bonusForm.amount || isNaN(parseFloat(bonusForm.amount))) { toast('Enter a valid amount', 'error'); return; }
+    if (!bonusForm.amount || isNaN(parseFloat(bonusForm.amount)) || parseFloat(bonusForm.amount) <= 0) { toast('Enter a valid amount greater than $0', 'error'); return; }
     const rep = reps.find((r) => r.id === bonusForm.repId);
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}`,
@@ -376,7 +378,7 @@ function PayrollPageInner() {
     fetch('/api/payroll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repId: newEntry.repId, projectId: newEntry.projectId, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
+      body: JSON.stringify({ repId: newEntry.repId, projectId: newEntry.projectId, customerName: newEntry.customerName, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
     }).then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const saved = await res.json();
@@ -535,7 +537,7 @@ function PayrollPageInner() {
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
             >
-              Publish Payroll
+              Publish {typeTab} Payroll
             </button>
             <button
               onClick={() => {
@@ -664,26 +666,34 @@ function PayrollPageInner() {
                       {r.status === 'Pending' ? (
                         <div className="flex gap-2">
                           <button
+                            disabled={processingReimIds.has(r.id)}
                             onClick={() => {
+                              if (processingReimIds.has(r.id)) return;
+                              setProcessingReimIds((prev) => new Set(prev).add(r.id));
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Approved' } : x));
                               fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
                                 .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-                                .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); });
+                                .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
+                                .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
                               toast(`Reimbursement approved for ${r.repName}`, 'success');
                             }}
-                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[#00e07a] px-2 py-1 rounded transition-colors"
+                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[#00e07a] px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Check className="w-3 h-3" /> Approve
                           </button>
                           <button
+                            disabled={processingReimIds.has(r.id)}
                             onClick={() => {
+                              if (processingReimIds.has(r.id)) return;
+                              setProcessingReimIds((prev) => new Set(prev).add(r.id));
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Denied' } : x));
                               fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
                                 .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-                                .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); });
+                                .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
+                                .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
                               toast(`Reimbursement denied for ${r.repName}`, 'error');
                             }}
-                            className="flex items-center gap-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-400 px-2 py-1 rounded transition-colors"
+                            className="flex items-center gap-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-400 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <X className="w-3 h-3" /> Deny
                           </button>
@@ -874,7 +884,7 @@ function PayrollPageInner() {
                     </td>
                   )}
                   <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#f0f2f7', fontWeight: 600 }}>{entry.repName}</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#c2c8d8' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes === 'Trainer override') ? ` (${entry.notes})` : ''}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#c2c8d8' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#8891a8' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: '#00e07a', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#8891a8' }}><RelativeDate date={entry.date} /></span></td>
@@ -925,7 +935,7 @@ function PayrollPageInner() {
             return map;
           }, new Map<string, { name: string; total: number; count: number }>())
         )
-          .map(([, v]) => v)
+          .map(([id, v]) => ({ ...v, id }))
           .sort((a, b) => b.total - a.total);
 
         return (
@@ -952,6 +962,15 @@ function PayrollPageInner() {
                 );
               })()}
 
+              {(payFilterFrom || payFilterTo) && (
+                <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
+                  <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                  <p className="text-yellow-300 text-xs leading-relaxed">
+                    <span className="font-semibold">Date filter is active.</span> Only entries{payFilterFrom && <> from <span className="font-semibold">{payFilterFrom}</span></>}{payFilterTo && <> to <span className="font-semibold">{payFilterTo}</span></>} will be published. Pending entries outside this date range will not be affected.
+                  </p>
+                </div>
+              )}
+
               {/* Per-rep breakdown */}
               {repSummary.length > 0 && (
                 <div className="bg-[#1d2028]/60 border border-[#272b35]/60 rounded-xl mb-5 overflow-hidden">
@@ -961,7 +980,7 @@ function PayrollPageInner() {
                   </div>
                   <div className="divide-y divide-slate-800/60 max-h-48 overflow-y-auto">
                     {repSummary.map((rep) => (
-                      <div key={rep.name} className="flex items-center justify-between px-4 py-2.5">
+                      <div key={rep.id} className="flex items-center justify-between px-4 py-2.5">
                         <div>
                           <p className="text-white text-sm font-medium">{rep.name}</p>
                           <p className="text-[#8891a8] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
@@ -1004,7 +1023,7 @@ function PayrollPageInner() {
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Bonus Payment</h2>
               <button
-                onClick={() => setShowBonusModal(false)}
+                onClick={() => { setShowBonusModal(false); setBonusForm({ repId: '', amount: '', notes: '', date: '' }); }}
                 className="text-[#8891a8] hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -1062,7 +1081,7 @@ function PayrollPageInner() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowBonusModal(false)}
+                  onClick={() => { setShowBonusModal(false); setBonusForm({ repId: '', amount: '', notes: '', date: '' }); }}
                   className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Cancel
@@ -1082,7 +1101,7 @@ function PayrollPageInner() {
           <div ref={paymentPanelRef} className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Deal Payment</h2>
-              <button onClick={() => setShowPaymentModal(false)} className="text-[#8891a8] hover:text-white transition-colors">
+              <button onClick={() => { setShowPaymentModal(false); setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' }); }} className="text-[#8891a8] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1150,7 +1169,7 @@ function PayrollPageInner() {
                   style={{ backgroundColor: 'var(--brand)' }}>
                   Add Payment
                 </button>
-                <button type="button" onClick={() => setShowPaymentModal(false)}
+                <button type="button" onClick={() => { setShowPaymentModal(false); setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' }); }}
                   className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>

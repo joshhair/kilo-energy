@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileCalculator from '../mobile/MobileCalculator';
-import { getSolarTechBaseline, calculateCommission, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { getSolarTechBaseline, calculateCommission, splitCloserSetterPay, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2, Link2 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { RepSelector } from '../components/RepSelector';
@@ -429,36 +429,11 @@ function CalculatorPage() {
     ? Math.round(trainerRate * kW * 1000 * 100) / 100
     : 0;
 
-  // Correct split: closer + setter share 50/50 from above (setterBaseline + trainerOverride).
-  // No setter: closer keeps everything above their own baseline.
-  const { closerTotal, setterTotal } = (() => {
-    if (!hasSetter || !selectedSetterId || setterBaselinePerW === 0 || soldPPW <= 0) {
-      return { closerTotal: soldPPW > 0 ? calculateCommission(soldPPW, closerPerW, kW) : 0, setterTotal: 0 };
-    }
-    // Closer always keeps the $0.10/W spread between their redline and the setter redline
-    // Only apply differential if soldPPW is above the closer's own baseline
-    const closerDifferential = soldPPW > closerPerW
-      ? Math.round((setterBaselinePerW - closerPerW) * kW * 1000 * 100) / 100
-      : 0;
-    // Remaining pool above setter baseline (adjusted up by trainer override if any)
-    const splitPoint = setterBaselinePerW + trainerRate;
-    const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.round(aboveSplit / 2);
-    return { closerTotal: closerDifferential + half, setterTotal: aboveSplit - half };
-  })();
-
-  const m1Flat = kW >= 5 ? 1000 : 500;
   const isSelfGen = !hasSetter || !selectedSetterId || setterBaselinePerW === 0;
-  const installPayPct = (installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT);
+  const installPayPct = installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
-  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
-  const closerM2Raw = Math.max(0, closerTotal - closerM1);
-  const closerM2 = hasM3Split ? Math.round(closerM2Raw * (installPayPct / 100)) : closerM2Raw;
-  const closerM3 = hasM3Split ? closerM2Raw - closerM2 : 0;
-  const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
-  const setterM2Raw = Math.max(0, setterTotal - setterM1);
-  const setterM2 = hasM3Split ? Math.round(setterM2Raw * (installPayPct / 100)) : setterM2Raw;
-  const setterM3 = hasM3Split ? setterM2Raw - setterM2 : 0;
+  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } =
+    splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct);
 
   /** Copies a formatted deal summary to the clipboard with a toast confirmation. */
   const handleCopyResult = () => {
@@ -612,8 +587,6 @@ function CalculatorPage() {
   const animatedGrandTotal   = useCountUp(closerTotal + setterTotal + trainerTotal);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
-  if (isMobile) return <MobileCalculator />;
-
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -621,6 +594,8 @@ function CalculatorPage() {
       </div>
     );
   }
+
+  if (isMobile) return <MobileCalculator />;
 
   if (!isHydrated) return <CalculatorSkeleton />;
 
@@ -999,7 +974,22 @@ function CalculatorPage() {
                       {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((closerTotal / breakdownTotal) * 100)}%</span>}
                     </div>
                   </div>
-                  <p style={{ fontSize: 11, color: '#525c72', marginLeft: 16, marginTop: -8 }}>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3Split ? ` · M3: $${closerM3.toLocaleString()}` : ''}</p>
+                  <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
+                    <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00e07a', borderRadius: 7, padding: '5px 8px' }}>
+                      <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerM1.toLocaleString()}</p>
+                    </div>
+                    <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00e07a', borderRadius: 7, padding: '5px 8px' }}>
+                      <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerM2.toLocaleString()}</p>
+                    </div>
+                    {hasM3Split && (
+                      <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #8891a8', borderRadius: 7, padding: '5px 8px' }}>
+                        <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerM3.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Setter */}
                   {hasSetter && setterTotal > 0 && (
@@ -1014,7 +1004,22 @@ function CalculatorPage() {
                           {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((setterTotal / breakdownTotal) * 100)}%</span>}
                         </div>
                       </div>
-                      <p style={{ fontSize: 11, color: '#525c72', marginLeft: 16, marginTop: -8 }}>M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3Split ? ` · M3: $${setterM3.toLocaleString()}` : ''}</p>
+                      <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
+                        <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00c4f0', borderRadius: 7, padding: '5px 8px' }}>
+                          <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterM1.toLocaleString()}</p>
+                        </div>
+                        <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00c4f0', borderRadius: 7, padding: '5px 8px' }}>
+                          <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterM2.toLocaleString()}</p>
+                        </div>
+                        {hasM3Split && (
+                          <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #8891a8', borderRadius: 7, padding: '5px 8px' }}>
+                            <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterM3.toLocaleString()}</p>
+                          </div>
+                        )}
+                      </div>
                     </>
                   )}
 
@@ -1059,7 +1064,7 @@ function CalculatorPage() {
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #00e07a, transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
                   <p style={{ fontSize: 44, fontWeight: 700, color: '#00e07a', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
-                    ${animatedCloserTotal.toLocaleString()}
+                    ${(currentRole === 'rep' && reps.find(r => r.id === currentRepId)?.repType === 'setter' ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>
 

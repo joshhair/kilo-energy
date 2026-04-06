@@ -1265,7 +1265,9 @@ export function getProductCatalogBaselineVersioned(
     ? version.tiers
     : products.find((p) => p.id === productId)?.tiers;
   if (!tiers) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: null };
-  const tier = tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW));
+  const tier =
+    tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)) ??
+    tiers.reduce((best, t) => (t.minKW > best.minKW ? t : best), tiers[0]);
   if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: version?.id ?? null };
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW, pcPricingVersionId: version?.id ?? null };
 }
@@ -1353,6 +1355,63 @@ export function getInstallerRatesForDeal(
 // Returns total commission amount in dollars.
 export function calculateCommission(soldPPW: number, baselinePerW: number, kW: number): number {
   return Math.max(0, Math.round((soldPPW - baselinePerW) * kW * 1000 * 100) / 100);
+}
+
+export interface CommissionSplit {
+  closerTotal: number;
+  setterTotal: number;
+  closerM1: number;
+  closerM2: number;
+  closerM3: number;
+  setterM1: number;
+  setterM2: number;
+  setterM3: number;
+}
+
+/**
+ * Calculates the full closer/setter commission split and M1/M2/M3 milestone breakdown.
+ * Pass setterBaselinePerW=0 for self-gen deals (no setter).
+ * trainerRate is added on top of setterBaselinePerW before the 50/50 split point.
+ */
+export function splitCloserSetterPay(
+  soldPPW: number,
+  closerPerW: number,
+  setterBaselinePerW: number,
+  trainerRate: number,
+  kW: number,
+  installPayPct: number,
+): CommissionSplit {
+  const isSelfGen = setterBaselinePerW === 0;
+
+  let closerTotal: number;
+  let setterTotal: number;
+  if (isSelfGen) {
+    closerTotal = calculateCommission(soldPPW, closerPerW, kW);
+    setterTotal = 0;
+  } else {
+    const closerDifferential = soldPPW > closerPerW
+      ? Math.round(Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW) * kW * 1000 * 100) / 100
+      : 0;
+    const splitPoint = setterBaselinePerW + trainerRate;
+    const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
+    const half = Math.round(aboveSplit / 2);
+    closerTotal = closerDifferential + half;
+    setterTotal = aboveSplit - half;
+  }
+
+  const m1Flat = kW >= 5 ? 1000 : 500;
+  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
+  const closerM2Full = Math.max(0, closerTotal - closerM1);
+  const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
+  const setterM2Full = Math.max(0, setterTotal - setterM1);
+
+  const hasM3 = installPayPct < 100;
+  const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
+  const closerM3 = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+  const setterM2 = Math.round(setterM2Full * (installPayPct / 100) * 100) / 100;
+  const setterM3 = hasM3 ? Math.round(setterM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+
+  return { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 };
 }
 
 // ─── Incentives ──────────────────────────────────────────────────────────────
@@ -1461,7 +1520,7 @@ export function computeIncentiveProgress(
     case 'commission': {
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
       return payrollEntries
-        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal')
+        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal' && (incentive.targetRepId === null || e.repId === incentive.targetRepId))
         .reduce((s, e) => s + e.amount, 0);
     }
     default:

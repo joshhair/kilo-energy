@@ -144,10 +144,12 @@ export async function GET() {
     m2Amount: p.m2Amount,
     m3Paid: p.m3Paid ?? false,
     m3Amount: p.m3Amount ?? undefined,
+    setterM2Amount: p.setterM2Amount ?? undefined,
+    setterM3Amount: p.setterM3Amount ?? undefined,
     notes: p.notes,
     flagged: p.flagged,
-    solarTechProductId: p.productId ?? undefined,
-    installerProductId: p.productId ?? undefined,
+    solarTechProductId: p.installer.name === 'SolarTech' ? (p.productId ?? undefined) : undefined,
+    installerProductId: p.installer.name !== 'SolarTech' ? (p.productId ?? undefined) : undefined,
     pricingVersionId: p.installerPricingVersionId ?? undefined,
     pcPricingVersionId: p.productPricingVersionId ?? undefined,
     baselineOverride: p.baselineOverrideJson ? JSON.parse(p.baselineOverrideJson) : undefined,
@@ -156,6 +158,8 @@ export async function GET() {
     blitzId: p.blitzId ?? undefined,
     subDealerId: p.subDealerId ?? undefined,
     subDealerName: p.subDealer ? `${p.subDealer.firstName} ${p.subDealer.lastName}` : undefined,
+    cancellationReason: p.cancellationReason ?? undefined,
+    cancellationNotes: p.cancellationNotes ?? undefined,
   }));
 
   // Payroll entries: transform FKs to name strings

@@ -70,7 +70,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const visibleProjects = useMemo(() => {
     if (!blitz?.projects) return [];
     if (isAdmin || isOwner) return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-    return blitz.projects.filter((p: any) => p.closer?.id === effectiveRepId && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+    return blitz.projects.filter((p: any) => (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const totalDeals = visibleProjects.length;
@@ -179,7 +179,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       <div>
         <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{blitz.name}</h1>
         <div className="mt-1.5">
-          <MobileBadge value={badgeVariantValue} variant="status" />
+          <MobileBadge value={statusLabel} variant="status" />
         </div>
         <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
           {blitz.location && <>{blitz.location} &middot; </>}

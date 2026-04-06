@@ -28,7 +28,7 @@ interface AppContextType {
   incentives: Incentive[];
   setIncentives: React.Dispatch<React.SetStateAction<Incentive[]>>;
   // Adds a project and auto-creates Draft payroll entries for all involved reps
-  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => void;
+  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => boolean;
   // Marks individual payroll entries as Pending
   markForPayroll: (entryIds: string[]) => void;
   // Installer / financer management
@@ -38,7 +38,7 @@ interface AppContextType {
   activeFinancers: string[];
   setInstallerActive: (name: string, active: boolean) => void;
   setFinancerActive: (name: string, active: boolean) => void;
-  addInstaller: (name: string) => void;
+  addInstaller: (name: string, initialRates?: { closerPerW: number; kiloPerW: number }) => void;
   addFinancer: (name: string) => void;
   // Rep management
   reps: Rep[];
@@ -294,18 +294,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }, 'Failed to update financer status').catch(() => {});
     }
   };
-  const addInstaller = (name: string) => {
+  const addInstaller = (name: string, initialRates?: { closerPerW: number; kiloPerW: number }) => {
     setInstallers((prev) => prev.find((i) => i.name === name) ? prev : [...prev, { name, active: true }]);
     // Ensure a baseline pricing version exists for the new installer
     setInstallerPricingVersions((prev) => {
       if (prev.some((v) => v.installer === name)) return prev;
+      const closerPerW = initialRates?.closerPerW ?? 2.90;
+      const kiloPerW = initialRates?.kiloPerW ?? 2.35;
       return [...prev, {
         id: `ipv_${name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
         installer: name,
         label: 'v1',
         effectiveFrom: '2020-01-01',
         effectiveTo: null,
-        rates: { type: 'flat' as const, closerPerW: 2.90, kiloPerW: 2.35 },
+        rates: { type: 'flat' as const, closerPerW, kiloPerW },
       }];
     });
     // Persist to DB
@@ -327,6 +329,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
             : v,
           ),
         );
+        // Patch the auto-created pricing version with custom rates if provided
+        if (initialRates) {
+          fetch(`/api/installer-pricing/${created.pricingVersionId as string}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tiers: [{ minKW: 0, closerPerW: initialRates.closerPerW, setterPerW: null, kiloPerW: initialRates.kiloPerW, subDealerPerW: null }] }),
+          }).catch(console.error);
+        }
       }
     }).catch(console.error);
   };
@@ -454,6 +464,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (updates.m2Amount !== undefined) dbUpdates.m2Amount = updates.m2Amount;
     if (updates.m3Paid !== undefined) dbUpdates.m3Paid = updates.m3Paid;
     if (updates.m3Amount !== undefined) dbUpdates.m3Amount = updates.m3Amount;
+    if (updates.setterM2Amount !== undefined) dbUpdates.setterM2Amount = updates.setterM2Amount;
+    if (updates.setterM3Amount !== undefined) dbUpdates.setterM3Amount = updates.setterM3Amount;
+    if (updates.cancellationReason !== undefined) dbUpdates.cancellationReason = updates.cancellationReason;
+    if (updates.cancellationNotes !== undefined) dbUpdates.cancellationNotes = updates.cancellationNotes;
     if (updates.installer !== undefined) dbUpdates.installer = updates.installer;
     if (updates.financer !== undefined) dbUpdates.financer = updates.financer;
     if (updates.productType !== undefined) dbUpdates.productType = updates.productType;
@@ -462,6 +476,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (updates.setterId !== undefined) dbUpdates.setterId = updates.setterId;
     if (updates.soldDate !== undefined) dbUpdates.soldDate = updates.soldDate;
     if (updates.baselineOverride !== undefined) dbUpdates.baselineOverrideJson = updates.baselineOverride ? JSON.stringify(updates.baselineOverride) : null;
+    // Bundle m3Amount into the same PATCH as the Installed phase transition so both
+    // land atomically — prevents phase=Installed / m3Amount=null DB inconsistency.
+    let computedM3Amount: number | null = null;
+    if (old && updates.phase === 'Installed' && old.phase !== 'Installed' && !old.subDealerId) {
+      const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      if (installPayPct < 100) {
+        const fullAmount = old.m2Amount ?? 0;
+        computedM3Amount = (old.m3Amount ?? 0) > 0
+          ? old.m3Amount!
+          : installPayPct > 0
+            ? Math.round(fullAmount * ((100 - installPayPct) / installPayPct) * 100) / 100
+            : 0;
+        dbUpdates.m3Amount = computedM3Amount;
+      }
+    }
+    // Repair m3Amount at PTO in the same PATCH as the phase change — if the Installed-time
+    // persist failed and left m3Amount null in DB, this restores it atomically so the
+    // DB record stays consistent with phase=PTO and the payroll entries that will be created.
+    if (old && updates.phase === 'PTO' && old.phase !== 'PTO' && !old.subDealerId) {
+      const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      if (installPayPct < 100) {
+        const repairedM3 = (old.m3Amount ?? 0) > 0
+          ? old.m3Amount!
+          : installPayPct > 0
+            ? Math.round((old.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+            : 0;
+        if (repairedM3 > 0) dbUpdates.m3Amount = repairedM3;
+      }
+    }
     if (Object.keys(dbUpdates).length > 0) {
       persistFetch(`/api/projects/${id}`, {
         method: 'PATCH',
@@ -574,19 +617,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             : 100;
           const amount = fullAmount;
 
-          // If installer doesn't pay 100% at install, store M3 remainder on the project
-          // m3 = closerM2Full * (100-pct)/100 = m2Amount * (100-pct)/pct
-          if (isInstalled && installPayPct < 100) {
-            const m3 = installPayPct > 0
-              ? Math.round(fullAmount * ((100 - installPayPct) / installPayPct) * 100) / 100
-              : 0;
-            updated = updated.map((p) => p.id === id ? { ...p, m3Amount: m3 } : p);
-            // Persist m3Amount to DB
-            persistFetch(`/api/projects/${id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ m3Amount: m3 }),
-            }, 'Failed to save M3 amount').catch(() => {});
+          // If installer doesn't pay 100% at install, store M3 remainder on the project.
+          // computedM3Amount was calculated outside setProjects and included in the same
+          // PATCH as the phase update — no separate persist needed here.
+          if (isInstalled && computedM3Amount !== null) {
+            updated = updated.map((p) => p.id === id ? { ...p, m3Amount: computedM3Amount! } : p);
           }
 
           const ts = Date.now();
@@ -602,10 +637,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const closerRep = reps.find((r) => r.id === old.repId);
 
             // Closer entry
-            // NOTE: For M2, only the closer's m2Amount is stored on the project.
-            // Setter M2 and Trainer M2 amounts are NOT stored — this is a data model
-            // limitation. Setter/trainer M2 payroll entries cannot be auto-drafted
-            // until the project schema carries those amounts (setterM2Amount, trainerM2Amount).
             if (amount > 0) {
               newEntries.push({
                 id: `pay_${ts}_${stage.toLowerCase()}_c`,
@@ -642,6 +673,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
               });
             }
 
+            // Setter entry (M2 at Installed — setterM2Amount is already post-installPayPct)
+            if (old.setterId && isInstalled && (old.setterM2Amount ?? 0) > 0) {
+              const setterRep = reps.find((r) => r.id === old.setterId);
+              newEntries.push({
+                id: `pay_${ts}_m2_s`,
+                repId: old.setterId,
+                repName: setterRep?.name ?? old.setterName ?? '',
+                projectId: id,
+                customerName: old.customerName,
+                amount: old.setterM2Amount!,
+                type: 'Deal',
+                paymentStage: 'M2',
+                status: 'Draft',
+                date: payDate,
+                notes: 'Setter',
+              });
+            }
+
             // ── Trainer override M2 entries (installPayPct% of override at Installed) ──
             if (isInstalled) {
               // Closer's trainer
@@ -650,7 +699,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
                 const traineeDeals = updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
-                const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100));
+                const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
                 if (m2TrainerAmount > 0) {
                   newEntries.push({
                     id: `pay_${ts}_m2_trainer_c`,
@@ -675,7 +724,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
                   const setterTraineeDeals = updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
-                  const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100));
+                  const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
                   if (m2SetterTrainerAmount > 0) {
                     const setterRep = reps.find(r => r.id === old.setterId);
                     newEntries.push({
@@ -712,7 +761,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const m3 = (proj?.m3Amount ?? 0) > 0
             ? proj!.m3Amount!
             : installPayPct < 100 && !old.subDealerId
-              ? Math.round(old.m2Amount * ((100 - installPayPct) / installPayPct) * 100) / 100
+              ? Math.round((old.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
               : 0;
           const ts = Date.now();
           const payDate = getM2PayDate(); // M3 follows the same Saturday cutoff as M2
@@ -748,14 +797,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 notes: '',
               });
 
+              // Setter M3 entry
+              if (old.setterId) {
+                const setterM3 = (old.setterM3Amount ?? 0) > 0
+                  ? old.setterM3Amount!
+                  : installPayPct < 100 && !old.subDealerId
+                    ? Math.round((old.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+                    : 0;
+                if (setterM3 > 0) {
+                  const setterRep = reps.find((r) => r.id === old.setterId);
+                  newEntries.push({
+                    id: `pay_${ts}_m3_s`,
+                    repId: old.setterId,
+                    repName: setterRep?.name ?? old.setterName ?? '',
+                    projectId: id,
+                    customerName: old.customerName,
+                    amount: setterM3,
+                    type: 'Deal',
+                    paymentStage: 'M3',
+                    status: 'Draft',
+                    date: payDate,
+                    notes: '',
+                  });
+                }
+              }
+
               // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
               // Closer's trainer
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment && m3 > 0) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
-                const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
-                const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100));
+                // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
+                const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId);
+                const m2CloserRateMatch = m2CloserTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
+                const overrideRate = m2CloserRateMatch
+                  ? parseFloat(m2CloserRateMatch[1])
+                  : getTrainerOverrideRate(closerTrainerAssignment, updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
+                const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                 if (m3TrainerAmount > 0) {
                   newEntries.push({
                     id: `pay_${ts}_m3_trainer_c`,
@@ -776,11 +854,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // Setter's trainer
               if (old.setterId) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
-                if (setterTrainerAssignment && m3 > 0) {
+                if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
-                  const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
-                  const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100));
+                  // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
+                  const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId);
+                  const m2SetterRateMatch = m2SetterTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
+                  const setterOverrideRate = m2SetterRateMatch
+                    ? parseFloat(m2SetterRateMatch[1])
+                    : getTrainerOverrideRate(setterTrainerAssignment, updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
+                  const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                   if (m3SetterTrainerAmount > 0) {
                     const setterRep = reps.find(r => r.id === old.setterId);
                     newEntries.push({
@@ -896,43 +978,73 @@ export function AppProvider({ children }: { children: ReactNode }) {
     prevDate.setDate(prevDate.getDate() - 1);
     const effectiveTo = prevDate.toISOString().split('T')[0];
 
-    // Persist to DB
+    const tempId = `ipv_${installer.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+
+    setInstallerPricingVersions((prev) => [
+      ...prev.map((v) =>
+        v.installer === installer && v.effectiveTo === null
+          ? { ...v, effectiveTo }
+          : v,
+      ),
+      { id: tempId, installer, label, effectiveFrom, effectiveTo: null, rates },
+    ]);
+
+    // Persist to DB and replace temp ID with the real DB-assigned ID
     const instId = idMaps.installerNameToId[installer];
     if (instId) {
       const tiers = rates.type === 'tiered'
-        ? rates.bands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW, closerPerW: b.closerPerW, setterPerW: b.setterPerW, kiloPerW: b.kiloPerW }))
-        : [{ minKW: 0, closerPerW: rates.closerPerW, setterPerW: rates.setterPerW, kiloPerW: rates.kiloPerW }];
+        ? rates.bands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW, closerPerW: b.closerPerW, setterPerW: b.setterPerW, kiloPerW: b.kiloPerW, subDealerPerW: b.subDealerPerW }))
+        : [{ minKW: 0, closerPerW: rates.closerPerW, setterPerW: rates.setterPerW, kiloPerW: rates.kiloPerW, subDealerPerW: rates.subDealerPerW }];
       fetch('/api/installer-pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ installerId: instId, label, effectiveFrom, rateType: rates.type, tiers, closePreviousForInstaller: true, closePreviousEffectiveTo: effectiveTo }),
+      })
+        .then((res) => res.json())
+        .then((data: { id?: string }) => {
+          if (data?.id && data.id !== tempId) {
+            setInstallerPricingVersions((prev) =>
+              prev.map((v) => v.id === tempId ? { ...v, id: data.id as string } : v),
+            );
+          }
+        })
+        .catch(console.error);
+    }
+  };
+  const updateSolarTechProduct = (id: string, updates: Partial<SolarTechProduct>) => {
+    setSolarTechProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...updates } : p));
+    const patchBody: Record<string, unknown> = {};
+    if (updates.name !== undefined) patchBody.name = updates.name;
+    if (updates.family !== undefined) patchBody.family = updates.family;
+    if (Object.keys(patchBody).length > 0) {
+      fetch(`/api/products/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patchBody),
       }).catch(console.error);
     }
-
-    setInstallerPricingVersions((prev) => {
-      const newId = `ipv_${installer.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
-      return [
-        ...prev.map((v) =>
-          v.installer === installer && v.effectiveTo === null
-            ? { ...v, effectiveTo }
-            : v,
-        ),
-        { id: newId, installer, label, effectiveFrom, effectiveTo: null, rates },
-      ];
-    });
   };
-  const updateSolarTechProduct = (id: string, updates: Partial<SolarTechProduct>) =>
-    setSolarTechProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...updates } : p));
   const updateSolarTechTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) =>
-    setSolarTechProducts((prev) => prev.map((p) => p.id !== productId ? p : {
-      ...p,
-      tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
-        ...t,
-        ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
-        ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
-        ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
-      }),
-    }));
+    setSolarTechProducts((prev) => {
+      const newProducts = prev.map((p) => p.id !== productId ? p : {
+        ...p,
+        tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
+          ...t,
+          ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
+          ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
+          ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
+        }),
+      });
+      const updatedProduct = newProducts.find((p) => p.id === productId);
+      if (updatedProduct) {
+        fetch(`/api/products/${productId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tiers: updatedProduct.tiers }),
+        }).catch(console.error);
+      }
+      return newProducts;
+    });
 
   const addProductCatalogInstaller = (name: string, config: ProductCatalogInstallerConfig) => {
     setInstallers((prev) => prev.find((i) => i.name === name) ? prev : [...prev, { name, active: true }]);
@@ -941,7 +1053,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetch('/api/installers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, usesProductCatalog: true }),
+      body: JSON.stringify({ name, usesProductCatalog: true, families: config.families, familyFinancerMap: config.familyFinancerMap ?? {}, prepaidFamily: config.prepaidFamily ?? null }),
     }).then((res) => res.json()).then((created) => {
       if (created.id) {
         setIdMaps((prev) => ({
@@ -951,22 +1063,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }).catch(console.error);
   };
-  const updateProductCatalogInstallerConfig = (name: string, config: Partial<ProductCatalogInstallerConfig>) =>
+  const updateProductCatalogInstallerConfig = (name: string, config: Partial<ProductCatalogInstallerConfig>) => {
     setProductCatalogInstallerConfigs((prev) => ({ ...prev, [name]: { ...prev[name], ...config } }));
-  const addProductCatalogProduct = (product: ProductCatalogProduct) =>
+    const installerId = idMaps.installerNameToId[name];
+    if (installerId) {
+      const body: Record<string, unknown> = {};
+      if (config.families !== undefined) body.families = config.families;
+      if (config.familyFinancerMap !== undefined) body.familyFinancerMap = JSON.stringify(config.familyFinancerMap);
+      if (config.prepaidFamily !== undefined) body.prepaidFamily = config.prepaidFamily;
+      fetch(`/api/installers/${installerId}/config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }).catch(console.error);
+    }
+  };
+  const addProductCatalogProduct = (product: ProductCatalogProduct) => {
     setProductCatalogProducts((prev) => [...prev, product]);
-  const updateProductCatalogProduct = (id: string, updates: Partial<ProductCatalogProduct>) =>
+    const installerId = idMaps.installerNameToId[product.installer];
+    if (installerId) {
+      fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ installerId, family: product.family, name: product.name, tiers: product.tiers }),
+      }).then((res) => res.json()).then((data: { id?: string }) => {
+        if (data?.id && data.id !== product.id) {
+          setProductCatalogProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, id: data.id as string } : p));
+        }
+      }).catch(console.error);
+    }
+  };
+  const updateProductCatalogProduct = (id: string, updates: Partial<ProductCatalogProduct>) => {
     setProductCatalogProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...updates } : p));
+    const patchBody: Record<string, unknown> = {};
+    if (updates.name !== undefined) patchBody.name = updates.name;
+    if (updates.family !== undefined) patchBody.family = updates.family;
+    if (Object.keys(patchBody).length > 0) {
+      fetch(`/api/products/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patchBody),
+      }).catch(console.error);
+    }
+  };
   const updateProductCatalogTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) =>
-    setProductCatalogProducts((prev) => prev.map((p) => p.id !== productId ? p : {
-      ...p,
-      tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
-        ...t,
-        ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
-        ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
-        ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
-      }),
-    }));
+    setProductCatalogProducts((prev) => {
+      const newProducts = prev.map((p) => p.id !== productId ? p : {
+        ...p,
+        tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
+          ...t,
+          ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
+          ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
+          ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
+        }),
+      });
+      const updatedProduct = newProducts.find((p) => p.id === productId);
+      if (updatedProduct) {
+        fetch(`/api/products/${productId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tiers: updatedProduct.tiers }),
+        }).catch(console.error);
+      }
+      return newProducts;
+    });
   const removeProductCatalogProduct = (id: string) =>
     setProductCatalogProducts((prev) => prev.filter((p) => p.id !== id));
 
@@ -977,21 +1137,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProductCatalogPricingVersions((prev) => prev.map((v) => v.id === id ? { ...v, ...updates } : v));
 
   const createNewProductCatalogVersion = (productId: string, label: string, effectiveFrom: string, tiers: ProductCatalogTier[]) => {
-    setProductCatalogPricingVersions((prev) => {
-      // Close any currently active version for this product by setting effectiveTo to the day before effectiveFrom
-      const prevDate = new Date(effectiveFrom);
-      prevDate.setDate(prevDate.getDate() - 1);
-      const effectiveTo = prevDate.toISOString().split('T')[0];
-      const newId = `pcpv_${productId}_${Date.now()}`;
-      return [
-        ...prev.map((v) =>
-          v.productId === productId && v.effectiveTo === null
-            ? { ...v, effectiveTo }
-            : v,
-        ),
-        { id: newId, productId, label, effectiveFrom, effectiveTo: null, tiers },
-      ];
-    });
+    const prevDate = new Date(effectiveFrom);
+    prevDate.setDate(prevDate.getDate() - 1);
+    const effectiveTo = prevDate.toISOString().split('T')[0];
+    const tempId = `pcpv_${productId}_${Date.now()}`;
+
+    setProductCatalogPricingVersions((prev) => [
+      ...prev.map((v) =>
+        v.productId === productId && v.effectiveTo === null
+          ? { ...v, effectiveTo }
+          : v,
+      ),
+      { id: tempId, productId, label, effectiveFrom, effectiveTo: null, tiers },
+    ]);
+
+    // Persist to DB and replace temp ID with the real DB-assigned ID
+    fetch('/api/product-pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, label, effectiveFrom, closePreviousEffectiveTo: effectiveTo, tiers }),
+    })
+      .then((res) => res.json())
+      .then((data: { id?: string }) => {
+        if (data?.id && data.id !== tempId) {
+          setProductCatalogPricingVersions((prev) =>
+            prev.map((v) => v.id === tempId ? { ...v, id: data.id as string } : v),
+          );
+        }
+      })
+      .catch(console.error);
   };
 
   const deleteProductCatalogPricingVersions = (versionIds: string[]) => {
@@ -1142,7 +1316,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — installer not yet saved. Please refresh and try again.' }));
       }
-      return;
+      return false;
+    }
+
+    // Validate financer mapping before mutating local state to avoid split-brain
+    const financerId = idMaps.financerNameToId[project.financer];
+    if (!financerId && project.productType !== 'Cash' && project.financer !== 'Cash') {
+      console.error('[addDeal] Cannot persist: missing financer ID mapping', { financer: project.financer });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer not found. Please refresh and try again.' }));
+      }
+      return false;
     }
 
     // Only add the project. Payroll entries are now auto-drafted when
@@ -1154,8 +1338,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logProjectActivity(project.id, 'created', 'Project created');
 
     // Persist to DB
-    const financerId = idMaps.financerNameToId[project.financer];
-
     const persistProject = (fId: string) => {
       fetch('/api/projects', {
         method: 'POST',
@@ -1195,6 +1377,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }).catch((err) => {
         console.error('[addDeal] persist failed:', err);
+        setProjects((prev) => prev.filter((p) => p.id !== project.id));
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save new deal' }));
         }
@@ -1225,13 +1408,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer creation error' }));
           }
         });
-    } else {
-      console.error('[addDeal] Cannot persist: missing financer ID mapping', { financer: project.financer });
-      setProjects((prev) => prev.filter((p) => p.id !== project.id));
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer not found. Please refresh and try again.' }));
-      }
     }
+    return true;
   };
 
   const markForPayroll = (entryIds: string[]) => {

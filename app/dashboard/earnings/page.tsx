@@ -368,24 +368,30 @@ function RepEarningsView() {
 
   const myPayroll     = payrollEntries.filter((p) => p.repId === effectiveRepId);
   const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus');
-  const pendingItems  = myPayroll.filter((p) => p.status === 'Pending');
-  const totalPaid     = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
-  const totalPending  = pendingItems.reduce((s, p) => s + p.amount, 0);
-  const pendingCount  = pendingItems.length;
-  const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === effectiveRepId), [reimbursements, effectiveRepId]);
 
   // Next-payout countdown (next Friday on or after today)
   const today          = new Date();
+  const nextFriday     = getNextFriday(today);
+  const nextFridayDate = nextFriday.toISOString().split('T')[0];
+
+  const pendingItems      = myPayroll.filter((p) => p.status === 'Pending' || p.status === 'Draft');
+  const totalPaid         = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const totalPending      = pendingItems.reduce((s, p) => s + p.amount, 0);
+  const pendingCount      = pendingItems.length;
+  const nextPayoutItems   = pendingItems.filter((p) => p.date === nextFridayDate);
+  const nextPayoutTotal   = nextPayoutItems.reduce((s, p) => s + p.amount, 0);
+  const nextPayoutCount   = nextPayoutItems.length;
+  const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === effectiveRepId), [reimbursements, effectiveRepId]);
+
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
   const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
-  const nextFriday     = getNextFriday(today);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);
 
   // Monthly sparkline data: last 6 calendar months per summary-card category
   const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid')),    [payrollEntries, effectiveRepId]);
-  const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')), [payrollEntries, effectiveRepId]);
+  const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && (p.status === 'Pending' || p.status === 'Draft'))), [payrollEntries, effectiveRepId]);
   const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved')), [reimbursements, effectiveRepId]);
 
   // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
@@ -399,6 +405,7 @@ function RepEarningsView() {
   const [dealSortDir, setDealSortDir]   = useState<SortDir>('desc');
   const [dealPage, setDealPage]         = useState(1);
   const [dealPageSize, setDealPageSize] = useState(10);
+  const [dealRoleFilter, setDealRoleFilter] = useState<string | null>(null);
 
   const handleDealSort = (key: DealSortKey) => {
     setDealPage(1);
@@ -408,10 +415,12 @@ function RepEarningsView() {
 
   type DealRow = | { kind: 'payroll'; entry: (typeof payrollEntries)[0] } | { kind: 'reimb'; entry: (typeof myReimbs)[0] };
 
-  const sortedDeals = useMemo((): DealRow[] => {
+  const sortedDealsBase = useMemo((): DealRow[] => {
     const allPayrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
     const payrollRows = monthFilter ? allPayrollRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allPayrollRows;
-    return [...payrollRows].sort((a, b) => {
+    const allReimbRows: DealRow[] = myReimbs.map((r) => ({ kind: 'reimb' as const, entry: r }));
+    const reimbRows = monthFilter ? allReimbRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allReimbRows;
+    return [...payrollRows, ...reimbRows].sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
       const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
       const aName = a.kind === 'payroll' ? (a.entry.customerName ?? '') : a.entry.description;
@@ -433,6 +442,22 @@ function RepEarningsView() {
       return dealSortDir === 'asc' ? cmp : -cmp;
     });
   }, [payrollEntries, myReimbs, effectiveRepId, dealSortKey, dealSortDir, monthFilter]);
+
+  const sortedDeals = useMemo(() =>
+    sortedDealsBase.filter((row) => {
+      if (!dealRoleFilter) return true;
+      if (dealRoleFilter === 'Reimb.')  return row.kind === 'reimb';
+      const role = row.kind === 'payroll' ? (row.entry.notes ?? '') : '';
+      if (dealRoleFilter === 'Setter')  return role === 'Setter';
+      if (dealRoleFilter === 'Trainer') return role === 'Trainer override';
+      return role !== 'Setter' && role !== 'Trainer override' && row.kind !== 'reimb'; // Closer
+    }),
+  [sortedDealsBase, dealRoleFilter]);
+
+  const closerCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes !== 'Setter' && r.entry.notes !== 'Trainer override').length;
+  const setterCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes === 'Setter').length;
+  const trainerCount = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes === 'Trainer override').length;
+  const reimbCount   = sortedDealsBase.filter(r => r.kind === 'reimb').length;
 
   const dealTotal      = sortedDeals.length;
   const dealTotalPages = Math.max(1, Math.ceil(dealTotal / dealPageSize));
@@ -486,6 +511,7 @@ function RepEarningsView() {
   }, [tab, isHydrated]);
 
   useEffect(() => { setDealPage(1); setBonusPage(1); }, [monthFilter]);
+  useEffect(() => { setDealPage(1); }, [dealRoleFilter]);
 
   if (!isHydrated) return <EarningsSkeleton />;
 
@@ -554,7 +580,7 @@ function RepEarningsView() {
       </div>
 
       {/* ── Next Payout Hero Card ─────────────────────────────────────────── */}
-      {totalPending > 0 ? (
+      {nextPayoutTotal > 0 ? (
         <div
           className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
           style={{ '--card-accent': 'rgba(16,185,129,0.18)' } as React.CSSProperties}
@@ -567,14 +593,14 @@ function RepEarningsView() {
             <div>
               <p className="text-[#c2c8d8] text-xs font-medium uppercase tracking-widest mb-2">Next Payout</p>
               <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>
-                ${totalPending.toLocaleString()}
+                ${nextPayoutTotal.toLocaleString()}
               </p>
               <p className="text-[#c2c8d8] text-sm mt-2.5">
                 Expected Friday,{' '}
                 <span className="text-[#c2c8d8] font-medium">{nextFridayStr}</span>
               </p>
               <p className="text-[#8891a8] text-xs mt-1">
-                {pendingCount} pending {pendingCount === 1 ? 'entry' : 'entries'}
+                {nextPayoutCount} pending {nextPayoutCount === 1 ? 'entry' : 'entries'}
               </p>
             </div>
 
@@ -689,10 +715,28 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[#c2c8d8] hover:text-white'}`}>
-            {t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${bonusPayments.length})` : `Reimb. History (${myReimbs.length})`}
+            {t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${myReimbs.length})`}
           </button>
         ))}
       </div>
+
+      {/* Active month filter chip */}
+      {monthFilter && (
+        <div className="flex items-center gap-2 mb-3 animate-fade-in">
+          <span className="inline-flex items-center gap-1.5 text-xs bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] px-3 py-1.5 rounded-full font-medium">
+            Showing
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs bg-blue-500/10 border border-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full font-medium">
+            {monthFilterLabel}
+            <button onClick={() => setMonthFilter(null)} className="ml-0.5 hover:text-white transition-colors" aria-label="Clear month filter">
+              <X className="w-3 h-3" />
+            </button>
+          </span>
+          <span className="text-xs text-[#525c72]">
+            {tab === 'deal' ? `${sortedDeals.length} entries` : `${sortedBonuses.length} entries`}
+          </span>
+        </div>
+      )}
 
       {/* Tab content */}
       <div className="overflow-hidden">
@@ -701,6 +745,25 @@ function RepEarningsView() {
         {tab === 'deal' && (
           <div key="deal" className="animate-tab-enter relative card-surface rounded-2xl overflow-hidden">
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
+            <div className="flex items-center gap-1.5 px-5 py-3 border-b border-[#333849]/50 flex-wrap">
+              {[
+                { key: null,       label: 'All' },
+                { key: 'Closer',   label: `Closer (${closerCount})` },
+                { key: 'Setter',   label: `Setter (${setterCount})` },
+                { key: 'Trainer',  label: `Trainer (${trainerCount})` },
+                { key: 'Reimb.',   label: `Reimb. (${reimbCount})` },
+              ].filter(p => p.key === null || (p.key === 'Closer' ? closerCount > 0 : p.key === 'Setter' ? setterCount > 0 : p.key === 'Trainer' ? trainerCount > 0 : reimbCount > 0))
+              .map(({ key, label }) => (
+                <button key={key ?? 'all'} onClick={() => { setDealRoleFilter(key); setDealPage(1); }}
+                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
+                    dealRoleFilter === key
+                      ? 'bg-[#272b35] text-white border border-[#333849]'
+                      : 'text-[#8891a8] hover:text-[#c2c8d8] border border-transparent'
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
                 <thead className="table-header-frost">
@@ -1549,13 +1612,13 @@ function SubDealerEarningsView() {
         <div className="card-surface rounded-2xl p-5">
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <p className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider mb-1">Total Earned</p>
-          <p className="text-3xl font-black text-[#00e07a] tabular-nums">${totalEarned.toLocaleString()}</p>
+          <p className="text-3xl font-black text-[#00e07a] tabular-nums">{fmt$(totalEarned)}</p>
           <p className="text-[#8891a8] text-xs mt-1">{myPayroll.filter((p) => p.status === 'Paid').length} paid entries</p>
         </div>
         <div className="card-surface rounded-2xl p-5">
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <p className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider mb-1">Pending</p>
-          <p className="text-3xl font-black text-yellow-400 tabular-nums">${totalPending.toLocaleString()}</p>
+          <p className="text-3xl font-black text-yellow-400 tabular-nums">{fmt$(totalPending)}</p>
           <p className="text-[#8891a8] text-xs mt-1">{myPayroll.filter((p) => p.status !== 'Paid').length} pending entries</p>
         </div>
       </div>
@@ -1590,11 +1653,11 @@ function SubDealerEarningsView() {
                     <td className="px-6 py-3">
                       <span className="bg-[#272b35] text-[#c2c8d8] text-xs px-2 py-0.5 rounded font-medium">{entry.paymentStage}</span>
                     </td>
-                    <td className="px-6 py-3 text-[#00e07a] font-semibold">${entry.amount.toLocaleString()}</td>
+                    <td className="px-6 py-3 text-[#00e07a] font-semibold">{fmt$(entry.amount)}</td>
                     <td className="px-6 py-3">
                       <PayrollStatusBadge status={entry.status} />
                     </td>
-                    <td className="px-6 py-3 text-[#8891a8] text-xs">{entry.date}</td>
+                    <td className="px-6 py-3 text-[#8891a8] text-xs">{formatDate(entry.date)}</td>
                   </tr>
                 ))}
               </tbody>

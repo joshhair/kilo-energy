@@ -588,7 +588,7 @@ function SettingsPageInner() {
   const {
     currentRole,
     reps,
-    installers, financers, setInstallerActive, setFinancerActive, addInstaller, addFinancer, deleteInstaller,
+    installers, financers, setInstallerActive, setFinancerActive, addInstaller, addFinancer, deleteInstaller, deleteFinancer,
     projects, trainerAssignments, setTrainerAssignments,
     installerBaselines, updateInstallerBaseline, addInstallerBaseline,
     installerPricingVersions, createNewInstallerVersion,
@@ -697,7 +697,7 @@ function SettingsPageInner() {
   } | null>(null);
   // Generic confirm dialog state (replaces window.confirm for product/admin deletes)
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
-  // Tracks financers hidden from the UI after "deletion" (context has no deleteFinancer)
+  // Tracks financers hidden from the UI after deletion
   const [hiddenFinancers, setHiddenFinancers] = useState<Set<string>>(new Set());
   // Stores the last deleted entity so the undo toast callback can restore it
   const deletedEntityRef = useRef<
@@ -1068,17 +1068,8 @@ function SettingsPageInner() {
         },
       });
     } else if (type === 'financer') {
-      deletedEntityRef.current = { type: 'financer', name };
-      setFinancerActive(name, false);
-      toast(`"${name}" deleted`, 'info', {
-        label: 'Undo',
-        onClick: () => {
-          const saved = deletedEntityRef.current;
-          if (saved?.type === 'financer') {
-            setFinancerActive(saved.name, true);
-          }
-        },
-      });
+      deleteFinancer(name);
+      toast(`"${name}" deleted`, 'info');
     } else if (type === 'trainer') {
       const assignment = trainerAssignments.find((a) => a.id === id);
       if (assignment) {
@@ -1733,9 +1724,7 @@ function SettingsPageInner() {
                   if (newInstallerStructure === 'standard') {
                     const closerRate = parseFloat(newInstallerCloser) || 2.90;
                     const kiloRate = parseFloat(newInstallerKilo) || 2.35;
-                    const rates: InstallerRates = { type: 'flat', closerPerW: closerRate, kiloPerW: kiloRate };
-                    addInstaller(name);
-                    createNewInstallerVersion(name, 'v1', '2020-01-01', rates);
+                    addInstaller(name, { closerPerW: closerRate, kiloPerW: kiloRate });
                     const usedCustom = newInstallerCloser.trim() || newInstallerKilo.trim();
                     toast(usedCustom ? `Added ${name} with rates $${closerRate.toFixed(2)}/$${kiloRate.toFixed(2)}` : `Added ${name} with default rates`, 'success');
                   } else {

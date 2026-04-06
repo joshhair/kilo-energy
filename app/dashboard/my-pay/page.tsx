@@ -265,8 +265,8 @@ function MyPayPageInner() {
     const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
     return myProjects
       .filter((p) => preInstalled.includes(p.phase))
-      .reduce((s, p) => s + (p.m2Amount ?? 0), 0);
-  }, [myProjects]);
+      .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
+  }, [myProjects, effectiveRepId]);
 
   // ── Annual Projection ──
   // Uses multiple signals: deal closing pace, average commission per deal, paid history, and pipeline.
@@ -286,7 +286,7 @@ function MyPayPageInner() {
     }
 
     // Average commission per deal (M1 + M2)
-    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0) / totalDeals;
+    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => s + (p.m1Amount ?? 0) + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0) / totalDeals;
 
     // --- Signal 2: Deals per month pace ---
     const firstDealDate = new Date(sortedByDate[0].soldDate + 'T12:00:00');

@@ -66,6 +66,18 @@ export default function MobileSettings() {
   const { currentRole } = useApp();
 
   const [activeSection, setActiveSection] = useState<SettingsSection | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const [navReturning, setNavReturning] = useState(false);
+
+  function handleBack() {
+    setLeaving(true);
+    setTimeout(() => {
+      setActiveSection(null);
+      setLeaving(false);
+      setNavReturning(true);
+      setTimeout(() => setNavReturning(false), 300);
+    }, 255);
+  }
 
   // Admin guard (uses currentRole, not effectiveRole)
   if (currentRole !== 'admin') {
@@ -83,10 +95,21 @@ export default function MobileSettings() {
 
   if (activeSection) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-6">
+      <div className={`px-5 pt-4 pb-24 space-y-6 ${leaving ? 'ms-slide-out' : 'ms-slide-in'}`}>
+        <style>{`
+          @keyframes ms-slide-in   { from { transform: translateX(28px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+          @keyframes ms-slide-out  { from { transform: translateX(0); opacity: 1; } to { transform: translateX(28px); opacity: 0; } }
+          @keyframes ms-slide-back { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+          @media (prefers-reduced-motion: reduce) {
+            .ms-slide-in, .ms-slide-out, .ms-slide-back { animation: none !important; }
+          }
+          .ms-slide-in   { animation: ms-slide-in   320ms cubic-bezier(0.16,1,0.3,1) both; }
+          .ms-slide-out  { animation: ms-slide-out  240ms cubic-bezier(0.55,0,1,0.45) both; }
+          .ms-slide-back { animation: ms-slide-back 280ms cubic-bezier(0.16,1,0.3,1) both; }
+        `}</style>
         {/* Back button */}
         <button
-          onClick={() => setActiveSection(null)}
+          onClick={handleBack}
           className="flex items-center gap-1.5 min-h-[48px] text-base font-medium active:opacity-70 transition-colors"
           style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
@@ -107,7 +130,7 @@ export default function MobileSettings() {
 
   // Navigation list
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className={`px-5 pt-4 pb-24 space-y-4 ${navReturning ? 'ms-slide-back' : ''}`}>
       <MobilePageHeader title="Settings" />
 
       {NAV.map(({ group, items }) => (

@@ -101,6 +101,30 @@ body {
 .scrollbar-hide::-webkit-scrollbar,
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
+/* ── Mobile list stagger entrance ──────────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mobile-list-item {
+  animation: fadeSlideUp 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-list-item { animation: none; }
+}
+
+/* ── Hero card ambient glow pulse ───────────────────────────────────────── */
+@keyframes hero-glow-pulse {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%       { opacity: 0.32; transform: scale(1.12); }
+}
+.hero-glow-orb {
+  animation: hero-glow-pulse 3.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow-orb { animation: none; opacity: 0.20; }
+}
+
 /* ── Mobile premium design system ──────────────────────────────────────────
    All rules scoped to max-width: 767px so desktop is completely unaffected. */
 
@@ -997,6 +1021,12 @@ select {
     box-shadow: 0 0 0 3px rgba(0,180,216,0.35) !important;
   }
 }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes dotPop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+}
 
 /* ── Animated conic-gradient glow border for stat cards ─────────────────────── */
 
@@ -1455,6 +1485,21 @@ select {
   animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ─── ProfileDrawer exit animations ───────────────────────────────────── */
+@keyframes slideDown {
+  from { transform: translateY(0); }
+  to   { transform: translateY(105%); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*='slideDown'], [style*='slideUp'], [style*='fadeIn'], [style*='fadeOut'] {
+    animation-duration: 1ms !important;
+  }
+}
+
 /* ─── Milestone progress track animations ─────────────────────────────── */
 @keyframes nodePop {
   0%   { transform: scale(0.5); opacity: 0; }
@@ -1472,4 +1517,93 @@ select {
   .milestone-node { animation: none !important; }
   .milestone-track-fill { animation: none !important; }
   .milestone-amount { animation: none !important; }
+}
+
+/* ── Deal wizard step transitions ───────────────────────────────────────────── */
+
+@keyframes deal-step-enter-fwd {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes deal-step-enter-back {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes deal-title-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deal-step-enter-fwd,
+  .deal-step-enter-back { animation: none !important; opacity: 1 !important; }
+}
+.deal-step-enter-fwd  { animation: deal-step-enter-fwd  280ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; }
+.deal-step-enter-back { animation: deal-step-enter-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; }
+@media (prefers-reduced-motion: reduce) { .step-dot { transition: none !important; } }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes field-slide-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .field-slide-in { animation: field-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes success-icon-spring {
+    0%   { opacity: 0; transform: scale(0.25); }
+    55%  { opacity: 1; transform: scale(1.2); }
+    75%  { transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes success-fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes success-glow-ring {
+    0%   { box-shadow: 0 0 0 0   rgba(0,229,160,0.35); }
+    70%  { box-shadow: 0 0 0 10px rgba(0,229,160,0); }
+    100% { box-shadow: 0 0 0 0   rgba(0,229,160,0); }
+  }
+  .success-icon-spring { animation: success-icon-spring 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both, success-glow-ring 600ms 480ms ease-out both; }
+  .success-up-1 { animation: success-fade-up 340ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .success-up-2 { animation: success-fade-up 340ms 190ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .success-up-3 { animation: success-fade-up 340ms 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .success-up-4 { animation: success-fade-up 340ms 360ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+
+@keyframes scalePop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phase-spotlight { transition: none !important; }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+.slide-up-fade { animation: slideUpFade 350ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) { .slide-up-fade { animation: none; } }
+@keyframes fieldAppear {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.field-appear         { animation: fieldAppear 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.field-appear-delayed { animation: fieldAppear 240ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .field-appear, .field-appear-delayed { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-pill { transition-duration: 1ms !important; }
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUpIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
