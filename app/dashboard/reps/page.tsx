@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileReps from '../mobile/MobileReps';
 import { useApp } from '../../../lib/context';
-import { Search, ChevronRight, Users, Plus, Trash2, Trophy, Award, X } from 'lucide-react';
+import { Search, ChevronRight, Users, Plus, Trash2, Trophy, Award, X, Mail, Clock } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
@@ -97,10 +97,55 @@ function RepsPageInner() {
   const [newRepType, setNewRepType] = useState<'closer' | 'setter' | 'both'>('both');
   const [newTrainerId, setNewTrainerId] = useState('');
   const [isAddingRep, setIsAddingRep] = useState(false);
+  // When true, creating the rep also sends a Clerk invitation email.
+  // Defaults to off so existing workflows (data import, pre-populating
+  // reps without giving them app access) still work.
+  const [sendInvite, setSendInvite] = useState(false);
+
+  // ── Pending Clerk invitations (admin view) ────────────────────────────
+  type PendingInvitation = {
+    id: string;
+    emailAddress: string;
+    status: string;
+    createdAt: number;
+  };
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
+
+  const fetchPendingInvitations = useCallback(async () => {
+    if (currentRole !== 'admin') return;
+    try {
+      const res = await fetch('/api/users/invitations');
+      if (!res.ok) return;
+      const data = await res.json();
+      setPendingInvitations(data.invitations ?? []);
+    } catch {
+      // Silent fail — pending invites is a nice-to-have, not critical
+    }
+  }, [currentRole]);
+
+  useEffect(() => { fetchPendingInvitations(); }, [fetchPendingInvitations]);
+
+  const handleRevokeInvitation = async (invitationId: string, email: string) => {
+    if (revokingInvitationId) return;
+    if (!confirm(`Revoke invitation for ${email}?`)) return;
+    setRevokingInvitationId(invitationId);
+    try {
+      const res = await fetch(`/api/users/invitations/${invitationId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Revoke failed');
+      toast(`Invitation for ${email} revoked`, 'success');
+      setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+    } catch {
+      toast('Failed to revoke invitation', 'error');
+    } finally {
+      setRevokingInvitationId(null);
+    }
+  };
 
   const resetAddModal = () => {
     setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewPhone('');
-    setNewRepType('both'); setNewTrainerId(''); setShowAddModal(false); setIsAddingRep(false);
+    setNewRepType('both'); setNewTrainerId(''); setSendInvite(false);
+    setShowAddModal(false); setIsAddingRep(false);
   };
 
   // Escape key closes add-rep modal
@@ -114,14 +159,53 @@ function RepsPageInner() {
 
   const handleAddRep = () => {
     if (!newFirstName.trim() || !newLastName.trim() || isAddingRep) return;
+    if (sendInvite && !newEmail.trim()) {
+      toast('Email is required when sending an invitation', 'error');
+      return;
+    }
     setIsAddingRep(true);
     const ts = Date.now();
     const repId = `rep_${ts}`;
     const trainerIdSnapshot = newTrainerId;
-    const repPromise = addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId);
+
+    // Branch: inviting via Clerk goes through /api/users/invite, which
+    // creates the internal user AND sends the sign-up email atomically.
+    // Non-invite flow uses the existing addRep helper (no email sent).
+    const repPromise: Promise<{ id: string } | null> = sendInvite
+      ? fetch('/api/users/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: newFirstName,
+            lastName: newLastName,
+            email: newEmail,
+            phone: newPhone,
+            role: 'rep',
+            repType: newRepType,
+          }),
+        })
+          .then(async (r) => {
+            if (!r.ok) {
+              const body = await r.json().catch(() => ({}));
+              throw new Error(body.error ?? 'Failed to send invitation');
+            }
+            const json = await r.json();
+            // Also add to local state so the rep list updates immediately.
+            // Uses the real server-assigned id.
+            return { id: json.user.id as string };
+          })
+      : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId) as Promise<{ id: string } | null>);
+
     repPromise
-      ?.then((rep) => { if (rep) toast('Rep added', 'success'); resetAddModal(); })
-      .catch(() => { toast('Failed to add rep', 'error'); setIsAddingRep(false); });
+      ?.then((rep) => {
+        if (rep) toast(sendInvite ? `Invitation sent to ${newEmail}` : 'Rep added', 'success');
+        if (sendInvite) fetchPendingInvitations();
+        resetAddModal();
+      })
+      .catch((err) => {
+        toast(err?.message ?? 'Failed to add rep', 'error');
+        setIsAddingRep(false);
+      });
     // If a trainer was selected, persist assignment after real rep ID is known
     if (trainerIdSnapshot) {
       repPromise?.then((rep) => {
@@ -396,6 +480,51 @@ function RepsPageInner() {
           >
             <Plus className="w-4 h-4" /> Add Rep
           </button>
+        </div>
+      )}
+
+      {/* Admin: pending invitations panel (only shown when there are any) */}
+      {canManageReps && currentRole === 'admin' && pendingInvitations.length > 0 && (
+        <div className="card-surface rounded-2xl p-5 mb-6" style={{ background: '#1d2028', border: '1px solid #333849' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,176,32,0.15)' }}>
+              <Mail className="w-4 h-4 text-amber-400" />
+            </div>
+            <h2 className="text-white font-bold text-base tracking-tight">Pending Invitations</h2>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">
+              {pendingInvitations.length}
+            </span>
+          </div>
+          <p className="text-xs mb-4" style={{ color: '#8891a8' }}>
+            These users have been invited but haven&apos;t completed sign-up yet.
+          </p>
+          <div className="space-y-2">
+            {pendingInvitations.map((inv) => (
+              <div
+                key={inv.id}
+                className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg"
+                style={{ background: '#0f1117', border: '1px solid #272b35' }}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Clock className="w-4 h-4 text-amber-400/60 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-white font-medium truncate">{inv.emailAddress}</p>
+                    <p className="text-[11px]" style={{ color: '#525c72' }}>
+                      Invited {new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRevokeInvitation(inv.id, inv.emailAddress)}
+                  disabled={revokingInvitationId === inv.id}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                  style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                >
+                  {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -981,7 +1110,7 @@ function RepsPageInner() {
             </div>
 
             {/* Optional Trainer Assignment */}
-            <div className="mb-5">
+            <div className="mb-4">
               <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Trainer (optional)</label>
               <RepSelector
                 value={newTrainerId}
@@ -990,6 +1119,24 @@ function RepsPageInner() {
                 placeholder="-- Select trainer --"
                 clearLabel="None"
               />
+            </div>
+
+            {/* Send Clerk invitation toggle */}
+            <div className="mb-5">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={sendInvite}
+                  onChange={(e) => setSendInvite(e.target.checked)}
+                  className="w-4 h-4 rounded border-[#333849] accent-[#00e07a] cursor-pointer"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-white">Send invitation email</div>
+                  <div className="text-[11px]" style={{ color: '#8891a8' }}>
+                    Emails the rep a sign-up link. Leave off to add them without giving app access yet.
+                  </div>
+                </div>
+              </label>
             </div>
 
             {/* Submit */}
