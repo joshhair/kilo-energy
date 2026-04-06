@@ -275,13 +275,14 @@ function ProjectsPageInner() {
     setCancelReasonModal(null);
   };
 
-  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '';
+  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '';
 
   const clearAllFilters = () => {
     setStatusFilter('active');
     setInstallerFilter('');
     setSearchInput('');
     setDebouncedSearch('');
+    setPhaseFilter('');
     toast('Filters cleared', 'info');
   };
 
@@ -297,7 +298,7 @@ function ProjectsPageInner() {
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <h1 className="text-2xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Projects</h1>
-          <p className="text-[#c2c8d8] text-sm font-medium mt-1 tracking-wide">{myProjects.length} total projects</p>
+          <p className="text-[#c2c8d8] text-sm font-medium mt-1 tracking-wide">{visibleProjects.length} total projects</p>
         </div>
         <Link
           href="/dashboard/new-deal"

@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { fmt$, formatDate } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatDate } from '../../../lib/utils';
 import { PayrollEntry } from '../../../lib/data';
 import { Banknote } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -227,9 +227,9 @@ export default function MobileMyPay() {
 
       {/* ── Stat grid — 3 cards ── */}
       <div className="grid grid-cols-3 gap-3">
-        <MobileStatCard label="Lifetime" value={fmt$(lifetimeEarned)} color={ACCENT} />
-        <MobileStatCard label="Pipeline" value={fmt$(pipelineTotal)} color={ACCENT2} />
-        <MobileStatCard label="Pending" value={fmt$(pendingTotal)} color={WARNING} />
+        <MobileStatCard label="Lifetime" value={fmtCompact$(lifetimeEarned)} color={ACCENT} />
+        <MobileStatCard label="Pipeline" value={fmtCompact$(pipelineTotal)} color={ACCENT2} />
+        <MobileStatCard label="Pending" value={fmtCompact$(pendingTotal)} color={WARNING} />
       </div>
 
       {/* ── Active reimbursements (only if any) ── */}

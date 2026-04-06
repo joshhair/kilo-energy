@@ -80,6 +80,7 @@ interface AppContextType {
   createNewProductCatalogVersion: (productId: string, label: string, effectiveFrom: string, tiers: ProductCatalogTier[]) => void;
   deleteProductCatalogPricingVersions: (versionIds: string[]) => void;
   deleteInstaller: (name: string) => void;
+  deleteFinancer: (name: string) => void;
   // Per-installer prepaid options management
   installerPrepaidOptions: Record<string, string[]>;
   getInstallerPrepaidOptions: (installer: string) => string[];
@@ -223,7 +224,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         notes: entry.notes,
       }),
     })
-      .then((res) => res.json())
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
       .then((saved) => {
         if (saved?.id && saved.id !== clientId) {
           setPayrollEntries((prev) =>
@@ -318,6 +319,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...prev,
           installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
         }));
+      }
+      if (created.pricingVersionId) {
+        setInstallerPricingVersions((prev) =>
+          prev.map((v) => v.installer === name && v.id.startsWith('ipv_')
+            ? { ...v, id: created.pricingVersionId as string }
+            : v,
+          ),
+        );
       }
     }).catch(console.error);
   };
@@ -518,6 +527,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         }
 
+        // ── ROLLBACK: When phase moves backward past a milestone, delete orphaned Draft entries ──
+        const PIPELINE = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
+        const oldIdx = PIPELINE.indexOf(old.phase);
+        const newIdx = PIPELINE.indexOf(newPhase);
+        if (oldIdx >= 0 && newIdx >= 0 && newIdx < oldIdx) {
+          const rollBackM1 = oldIdx >= PIPELINE.indexOf('Acceptance') && newIdx < PIPELINE.indexOf('Acceptance');
+          const rollBackM2 = oldIdx >= PIPELINE.indexOf('Installed') && newIdx < PIPELINE.indexOf('Installed');
+          const rollBackM3 = oldIdx >= PIPELINE.indexOf('PTO') && newIdx < PIPELINE.indexOf('PTO');
+          if (rollBackM1 || rollBackM2 || rollBackM3) {
+            setPayrollEntries((prevEntries) => {
+              const toDelete = prevEntries.filter((e) => {
+                if (e.projectId !== id || e.status !== 'Draft') return false;
+                if (rollBackM1 && e.paymentStage === 'M1') return true;
+                if (rollBackM2 && (e.paymentStage === 'M2' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))) return true;
+                if (rollBackM3 && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))) return true;
+                return false;
+              });
+              if (toDelete.length > 0) {
+                deletePayrollEntriesFromDb(toDelete.map((e) => e.id));
+                return prevEntries.filter((e) => !toDelete.includes(e));
+              }
+              return prevEntries;
+            });
+          }
+        }
+
         const isSubDealerDeal = !!old.subDealerId;
         const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance';
         const isInstalled = newPhase === 'Installed' && old.phase !== 'Installed';
@@ -604,13 +639,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
               });
             }
 
-            // ── Trainer override M2 entries (80% of override at Installed) ──
+            // ── Trainer override M2 entries (installPayPct% of override at Installed) ──
             if (isInstalled) {
               // Closer's trainer
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = updated.filter(p => p.id !== id && p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                const traineeDeals = updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100));
                 if (m2TrainerAmount > 0) {
@@ -635,7 +670,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = updated.filter(p => p.id !== id && p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                  const setterTraineeDeals = updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
                   const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100));
                   if (m2SetterTrainerAmount > 0) {
@@ -702,12 +737,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 notes: '',
               });
 
-              // ── Trainer override M3 entries (20% of override at PTO) ──
+              // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
               // Closer's trainer
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment && m3 > 0) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = updated.filter(p => p.id !== id && p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                const traineeDeals = updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100));
                 if (m3TrainerAmount > 0) {
@@ -733,7 +768,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment && m3 > 0) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = updated.filter(p => p.id !== id && p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                  const setterTraineeDeals = updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
                   const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100));
                   if (m3SetterTrainerAmount > 0) {
@@ -799,16 +834,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       const existing = prev[activeIdx];
       if (!existing) return prev;
-      // Persist tier update to DB
+      // Build updated rates, preserving tiered structure if the existing version is tiered.
+      // The settings UI displays band[0] for tiered versions, so only band[0] is updated.
+      let updatedRates: InstallerRates;
+      let patchTiers: { minKW: number; maxKW?: number | null; closerPerW: number; setterPerW: number | null; kiloPerW: number; subDealerPerW: number | null }[];
+      if (existing.rates.type === 'tiered') {
+        const updatedBands = existing.rates.bands.map((band, idx) =>
+          idx === 0
+            ? { ...band, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) }
+            : band,
+        );
+        updatedRates = { type: 'tiered', bands: updatedBands };
+        patchTiers = updatedBands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW ?? null, closerPerW: b.closerPerW, setterPerW: b.setterPerW ?? null, kiloPerW: b.kiloPerW, subDealerPerW: b.subDealerPerW ?? null }));
+      } else {
+        updatedRates = { type: 'flat' as const, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) };
+        patchTiers = [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW ?? null, kiloPerW: baseline.kiloPerW, subDealerPerW: baseline.subDealerPerW ?? null }];
+      }
+      // Persist update to DB
       fetch(`/api/installer-pricing/${existing.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW ?? null, kiloPerW: baseline.kiloPerW, subDealerPerW: baseline.subDealerPerW ?? null }] }),
+        body: JSON.stringify({ tiers: patchTiers }),
       }).catch(console.error);
       return prev.map((v, i) =>
-        i === activeIdx
-          ? { ...v, rates: { type: 'flat' as const, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) } }
-          : v,
+        i === activeIdx ? { ...v, rates: updatedRates } : v,
       );
     });
   };
@@ -1035,6 +1084,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const deleteFinancer = (name: string) => {
+    const finId = idMaps.financerNameToId[name];
+    if (finId) {
+      fetch(`/api/financers/${finId}`, { method: 'DELETE' }).catch(console.error);
+    }
+    setFinancers((prev) => prev.filter((f) => f.name !== name));
+  };
+
   const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }) => {
     setCurrentRole(role);
     setCurrentRepId(repId ?? null);
@@ -1106,6 +1163,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           phase: project.phase || 'New',
           m1Amount: project.m1Amount || 0,
           m2Amount: project.m2Amount || 0,
+          m3Amount: project.m3Amount || 0,
           notes: project.notes || '',
           installerPricingVersionId: project.pricingVersionId || null,
           productId: project.solarTechProductId || project.installerProductId || null,
@@ -1115,7 +1173,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           blitzId: project.blitzId || null,
           subDealerId: project.subDealerId || null,
         }),
-      }).then((res) => res.json()).then((created) => {
+      }).then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      }).then((created) => {
         // Update local state with the DB-assigned id
         if (created.id && created.id !== project.id) {
           setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, id: created.id } : p));
@@ -1236,6 +1297,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createNewProductCatalogVersion,
         deleteProductCatalogPricingVersions,
         deleteInstaller,
+        deleteFinancer,
         installerPrepaidOptions,
         getInstallerPrepaidOptions,
         addInstallerPrepaidOption,

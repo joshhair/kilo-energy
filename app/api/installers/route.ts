@@ -15,8 +15,9 @@ export async function POST(req: NextRequest) {
   });
 
   // Auto-create a baseline pricing version for new standard installers
+  let pricingVersionId: string | null = null;
   if (!body.usesProductCatalog) {
-    await prisma.installerPricingVersion.create({
+    const pricingVersion = await prisma.installerPricingVersion.create({
       data: {
         installerId: installer.id,
         label: 'v1',
@@ -33,7 +34,8 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+    pricingVersionId = pricingVersion.id;
   }
 
-  return NextResponse.json(installer, { status: 201 });
+  return NextResponse.json({ ...installer, pricingVersionId }, { status: 201 });
 }

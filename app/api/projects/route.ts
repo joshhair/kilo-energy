@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
       phase: body.phase || 'New',
       m1Amount: body.m1Amount || 0,
       m2Amount: body.m2Amount || 0,
+      m3Amount: body.m3Amount || 0,
       notes: body.notes || '',
       installerPricingVersionId: body.installerPricingVersionId || null,
       productId: body.productId || null,

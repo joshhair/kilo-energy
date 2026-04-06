@@ -371,7 +371,7 @@ export default function MobileNewDeal() {
   const subDealerRate = (() => {
     if (!isSubDealer || !form.installer) return 0;
     const baseline = installerBaselines[form.installer];
-    return baseline?.subDealerPerW ?? closerPerW;
+    return baseline?.subDealerPerW ?? kiloPerW;
   })();
   const subDealerCommission = isSubDealer && kW > 0 && soldPPW > 0 && subDealerRate > 0
     ? calculateCommission(soldPPW, subDealerRate, kW)

@@ -798,7 +798,7 @@ export default function DashboardPage() {
     .reduce((s, p) => s + p.amount, 0);
   const mtdUnmatchedCommission = mtdProjects
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((s, p) => s + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
+    .reduce((s, p) => s + (p.repId === effectiveRepId ? (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) : 0), 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
 
   // Animated count-up for the MTD commission hero — always called (hook rules)
@@ -888,7 +888,12 @@ export default function DashboardPage() {
 
   // "In Pipeline" = expected commission from active projects minus what's actually been disbursed
   const inPipeline = activeProjects.reduce((sum, p) => {
-    const totalExpected = p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0;
+    const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+    const totalExpected = p.repId === effectiveRepId
+      ? closerM1 + (p.m2Amount ?? 0)
+      : p.setterId === effectiveRepId
+        ? (p.m1Amount ?? 0)
+        : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0);
@@ -898,11 +903,20 @@ export default function DashboardPage() {
   const unpaidPayroll = myPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   const unmatchedProjectPay = myProjects
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((sum, p) => sum + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
-  // M3 has no payroll entry until PTO, so projects in Installed phase with m3Amount are missed by both buckets above
+    .reduce((sum, p) => {
+      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      return sum + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : 0);
+    }, 0);
+  // M3: build a set of project IDs that already have an M3 payroll entry (paid or unpaid).
+  // If unpaid, the amount is already in unpaidPayroll. If paid, it belongs in totalPaid.
+  // Only add m3Amount for projects with no M3 entry yet, regardless of phase.
+  const m3PayrollProjectIds = new Set(myPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
   const pendingM3Pay = myProjects
-    .filter((p) => payrollProjectIds.has(p.id) && p.phase === 'Installed' && (p.m3Amount ?? 0) > 0)
-    .reduce((sum, p) => sum + (p.repId === effectiveRepId ? (p.m3Amount ?? 0) : 0), 0);
+    .filter((p) => !m3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (p.m3Amount ?? 0) > 0)
+    .reduce((sum, p) => {
+      const closerM3 = p.setterId ? 0 : (p.m3Amount ?? 0);
+      return sum + (p.repId === effectiveRepId ? closerM3 : 0);
+    }, 0);
   const totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
 
   // Only count as "paid" once the pay date has actually passed
@@ -921,7 +935,8 @@ export default function DashboardPage() {
     return map;
   }, new Map<string, number>());
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
-    const totalExpected = p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0;
+    const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+    const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0);
@@ -970,7 +985,7 @@ export default function DashboardPage() {
   // "Paid" here means admin published the payroll — money hits on the date.
   const nextFridayDate = (() => {
     const today = new Date();
-    const d = ((5 - today.getDay() + 7) % 7) || 7;
+    const d = (5 - today.getDay() + 7) % 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
     return nf.toISOString().split('T')[0];
@@ -979,10 +994,10 @@ export default function DashboardPage() {
     .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Pending' || p.status === 'Paid'))
     .reduce((sum, p) => sum + p.amount, 0);
 
-  // Calculate days until next payday (Friday). Returns 7 if today is Friday.
+  // Calculate days until next payday (Friday). Returns 0 if today is Friday.
   const daysUntilPayday = (() => {
     const today = new Date();
-    return ((5 - today.getDay() + 7) % 7) || 7;
+    return (5 - today.getDay() + 7) % 7;
   })();
   const nextFridayLabel = (() => {
     const today = new Date();
@@ -1238,7 +1253,7 @@ export default function DashboardPage() {
             activeProjects={projects.filter(
               (p) =>
                 (p.repId === effectiveRepId || p.setterId === effectiveRepId) &&
-                ACTIVE_PHASES.includes(p.phase)
+                (ACTIVE_PHASES.includes(p.phase) || p.phase === 'On Hold')
             )}
             mentions={dashMentions}
           />

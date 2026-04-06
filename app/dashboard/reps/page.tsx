@@ -560,7 +560,7 @@ function RepsPageInner() {
             <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${compareReps.length}, 1fr)` }}>
               {compareReps.map((rep) => {
                 const rp = ranges.current.from && ranges.current.to
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && !PIPELINE_EXCLUDED.has(p.phase) && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const rpAll = projects.filter((p) => p.repId === rep.id || p.setterId === rep.id);
                 const dealsClosed = rp.length;
@@ -573,7 +573,7 @@ function RepsPageInner() {
 
                 // Previous period stats
                 const prevDeals = ranges.prev
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && !PIPELINE_EXCLUDED.has(p.phase) && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
                   : null;
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
 

@@ -2271,7 +2271,7 @@ function SettingsPageInner() {
                             name: fin.name,
                             message: 'This will not affect existing projects but will prevent new deals with this financer.',
                           })}
-                          title="Permanently delete financer"
+                          title="Archive financer"
                           className="text-[#525c72] hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -2358,7 +2358,7 @@ function SettingsPageInner() {
                             name: fin.name,
                             message: 'This will not affect existing projects but will prevent new deals with this financer.',
                           })}
-                          title="Permanently delete financer"
+                          title="Archive financer"
                           className="text-[#525c72] hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

@@ -249,7 +249,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () =>
     if (!name.trim() || !startDate || !endDate) return;
     setSaving(true);
     try {
-      await fetch('/api/blitzes', {
+      const res = await fetch('/api/blitzes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -263,6 +263,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () =>
           ownerId,
         }),
       });
+      if (!res.ok) throw new Error('Request failed');
       toast('Blitz created');
       onCreated();
       onClose();

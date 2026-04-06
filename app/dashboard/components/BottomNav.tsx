@@ -448,11 +448,22 @@ export default function BottomNav({
                 <button
                   key="more"
                   onClick={() => setMoreOpen((v) => !v)}
-                  className="flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[44px] transition-opacity"
-                  style={{ opacity: active ? 1 : 0.4 }}
+                  className="relative flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[48px] transition-all duration-200 active:scale-95"
+                  style={{ opacity: active ? 1 : 0.55 }}
                 >
-                  <span style={{ color: active ? '#00e5a0' : '#fff' }}><Icon className="w-[18px] h-[18px]" /></span>
-                  <span className="text-[10px] tracking-wide" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                  <span
+                    className="transition-transform duration-200"
+                    style={{ color: active ? '#00e5a0' : '#fff', transform: active ? 'scale(1.08)' : 'scale(1)' }}
+                  >
+                    <Icon className="w-[18px] h-[18px]" />
+                  </span>
+                  <span className="text-[10px] tracking-wide transition-colors duration-200" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                  {/* Active indicator dot */}
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full transition-all duration-250 ease-out"
+                    style={{ background: '#00e5a0', opacity: active ? 1 : 0, transform: `translateX(-50%) scale(${active ? 1 : 0.3})` }}
+                  />
                 </button>
               );
             }
@@ -462,11 +473,22 @@ export default function BottomNav({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[44px] transition-opacity"
-                style={{ opacity: active ? 1 : 0.4 }}
+                className="relative flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[48px] transition-all duration-200 active:scale-95"
+                style={{ opacity: active ? 1 : 0.55 }}
               >
-                <span style={{ color: active ? '#00e5a0' : '#fff' }}><Icon className="w-[18px] h-[18px]" /></span>
-                <span className="text-[10px] tracking-wide" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                <span
+                  className="transition-transform duration-200"
+                  style={{ color: active ? '#00e5a0' : '#fff', transform: active ? 'scale(1.08)' : 'scale(1)' }}
+                >
+                  <Icon className="w-[18px] h-[18px]" />
+                </span>
+                <span className="text-[10px] tracking-wide transition-colors duration-200" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                {/* Active indicator dot */}
+                <span
+                  aria-hidden
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full transition-all duration-250 ease-out"
+                  style={{ background: '#00e5a0', opacity: active ? 1 : 0, transform: `translateX(-50%) scale(${active ? 1 : 0.3})` }}
+                />
               </Link>
             );
           })}

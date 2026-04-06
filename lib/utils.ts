@@ -40,6 +40,18 @@ export function fmt$(amount: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount || 0);
 }
 
+/**
+ * Compact currency formatter for tight spaces like mobile stat cards.
+ * Below $10k: full format ($1,234). $10k–$999k: $12.3K. $1M+: $1.23M.
+ * Prevents card overflow on 3-column mobile grids.
+ */
+export function fmtCompact$(amount: number): string {
+  const n = amount || 0;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 10_000) return `$${(n / 1_000).toFixed(1)}K`;
+  return fmt$(n);
+}
+
 export function formatKW(kw: number): string {
   return `${kw.toFixed(1)} kW`;
 }

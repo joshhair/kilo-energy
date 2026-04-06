@@ -693,7 +693,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
         )}
-        <div>
+        {/* key={pathname} forces unmount/remount on route change so the
+            animate-page-enter animation fires every time. The CSS class maps
+            to mobileTabEnter (0.25s fade + 20px upward slide) at mobile widths
+            and a subtler pageEnter on desktop. prefers-reduced-motion is
+            honored via the @media rule in globals.css. */}
+        <div key={pathname} className="animate-page-enter">
           {children}
         </div>
 

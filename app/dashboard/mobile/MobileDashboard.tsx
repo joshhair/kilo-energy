@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$ } from '../../../lib/utils';
+import { fmt$, fmtCompact$ } from '../../../lib/utils';
 import { ACTIVE_PHASES } from '../../../lib/data';
 import { CheckCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -480,7 +480,7 @@ export default function MobileDashboard() {
                 <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
                 <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></p>
               </div>
-              <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: ACCENT, lineHeight: 1.3 }}>{fmt$(pendingPayrollTotal)}</p>
+              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.1rem, 5.5vw, 1.5rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(pendingPayrollTotal)}</p>
             </div>
           </>
         ) : (
@@ -493,20 +493,20 @@ export default function MobileDashboard() {
 
         {/* Stats inside hero card */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
-          <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: ACCENT }}>{fmt$(periodPaid)}</p>
+          <div className="min-w-0">
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.05rem, 5.5vw, 1.4rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(periodPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
           </div>
-          <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: ACCENT2 }}>{fmt$(pipelineValue)}</p>
+          <div className="min-w-0">
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.05rem, 5.5vw, 1.4rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(pipelineValue)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
           </div>
-          <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: '#fff' }}>{periodKW.toFixed(1)} <span style={{ fontSize: '0.9rem', color: MUTED }}>kW</span></p>
+          <div className="min-w-0">
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.05rem, 5.5vw, 1.4rem)', color: '#fff', lineHeight: 1.15 }}>{periodKW.toFixed(1)} <span style={{ fontSize: '0.9rem', color: MUTED }}>kW</span></p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Sold</p>
           </div>
-          <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.4rem', color: '#fff' }}>{periodActive.length}</p>
+          <div className="min-w-0">
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.05rem, 5.5vw, 1.4rem)', color: '#fff', lineHeight: 1.15 }}>{periodActive.length}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Active Deals</p>
           </div>
         </div>

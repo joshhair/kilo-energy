@@ -914,7 +914,7 @@ function PayrollPageInner() {
 
       {/* Publish Confirm Modal */}
       {showPublishConfirm && (() => {
-        const pendingEntries = payrollEntries.filter((p) => p.status === 'Pending');
+        const pendingEntries = filteredByDateRep.filter((p) => p.status === 'Pending');
         // Build a per-rep summary sorted descending by total payout
         const repSummary = Array.from(
           pendingEntries.reduce((map, e) => {

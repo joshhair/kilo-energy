@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAuth } from '../../../../../lib/api-auth';
 
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: {
       blitzId,
       userId: body.userId,
-      joinStatus: body.joinStatus || 'pending',
+      joinStatus: 'pending',
     },
     include: { user: true },
   });
@@ -25,6 +26,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id: blitzId } = await params;
   const body = await req.json();
   // body: { userId, joinStatus?, attendanceStatus? }
+
+  // Resolve caller's internal user record
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const caller = await prisma.user.findFirst({ where: { email } });
+  if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Only the blitz owner or an admin may approve/decline participants
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true } });
+  if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
+  if (caller.role !== 'admin' && caller.id !== blitz.ownerId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   const existing = await prisma.blitzParticipant.findUnique({
     where: { blitzId_userId: { blitzId, userId: body.userId } },

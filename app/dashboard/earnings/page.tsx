@@ -400,8 +400,7 @@ function RepEarningsView() {
 
   const sortedDeals = useMemo((): DealRow[] => {
     const payrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
-    const reimbRows: DealRow[] = myReimbs.map((r) => ({ kind: 'reimb' as const, entry: r }));
-    return [...payrollRows, ...reimbRows].sort((a, b) => {
+    return [...payrollRows].sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
       const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
       const aName = a.kind === 'payroll' ? (a.entry.customerName ?? '') : a.entry.description;
@@ -483,16 +482,15 @@ function RepEarningsView() {
         repId={effectiveRepId ?? ''}
         repName={effectiveRepName ?? ''}
         onSubmit={(data) => {
-          const newReimb: Reimbursement = { id: `reimb_${Date.now()}`, ...data, status: 'Pending' };
+          const tempId = `reimb_${Date.now()}`;
+          const newReimb: Reimbursement = { id: tempId, ...data, status: 'Pending' };
           setReimbursements((prev) => [...prev, newReimb]);
           fetch('/api/reimbursements', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ repId: data.repId, amount: data.amount, description: data.description, date: data.date, receiptName: data.receiptName }),
-          }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-            .catch((err) => { console.error(err); toast('Failed to save reimbursement', 'error'); });
-          toast('Reimbursement request submitted', 'success');
-          setShowReimbModal(false);
+          }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement request submitted', 'success'); setShowReimbModal(false); })
+            .catch((err) => { console.error(err); setReimbursements((prev) => prev.filter((r) => r.id !== tempId)); toast('Failed to save reimbursement', 'error'); });
         }}
       />
 
@@ -1120,38 +1118,44 @@ function AdminFinancialsView() {
   const markPaid = (id: string) => {
     setPayrollEntries((prev) => prev.map((e) => e.id === id && e.status === 'Pending' ? { ...e, status: 'Paid' } : e));
     fetch(`/api/payroll/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Paid' }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-      .catch((err) => { console.error(err); toast('Failed to mark as paid', 'error'); });
-    toast('Marked as paid', 'success');
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Marked as paid', 'success'); })
+      .catch((err) => { console.error(err); setPayrollEntries((prev) => prev.map((e) => e.id === id && e.status === 'Paid' ? { ...e, status: 'Pending' } : e)); toast('Failed to mark as paid', 'error'); });
   };
 
-  const markAllPendingPaid = () => {
+  const markAllPendingPaid = async () => {
     const pending = filteredPayroll.filter((e) => e.status === 'Pending').map((e) => e.id);
     if (!pending.length) return;
     const idSet = new Set(pending);
     setPayrollEntries((prev) => prev.map((e) => idSet.has(e.id) ? { ...e, status: 'Paid' } : e));
-    pending.forEach((id) => {
-      fetch(`/api/payroll/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Paid' }) })
-        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-        .catch((err) => { console.error(err); toast('Failed to mark entry as paid', 'error'); });
-    });
-    toast(`Marked ${pending.length} entries as paid`, 'success');
+    const results = await Promise.allSettled(
+      pending.map((id) =>
+        fetch(`/api/payroll/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Paid' }) })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return id; })
+      )
+    );
+    const failedIds = new Set(
+      results.flatMap((r, i) => r.status === 'rejected' ? [pending[i]] : [])
+    );
+    if (failedIds.size > 0) {
+      setPayrollEntries((prev) => prev.map((e) => failedIds.has(e.id) ? { ...e, status: 'Pending' } : e));
+      toast(`${failedIds.size} entr${failedIds.size === 1 ? 'y' : 'ies'} failed to update`, 'error');
+    }
+    const successCount = pending.length - failedIds.size;
+    if (successCount > 0) toast(`Marked ${successCount} entr${successCount === 1 ? 'y' : 'ies'} as paid`, 'success');
   };
 
   const approveReim = (id: string) => {
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Approved' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-      .catch((err) => { console.error(err); toast('Failed to approve reimbursement', 'error'); });
-    toast('Reimbursement approved', 'success');
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement approved', 'success'); })
+      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Pending' } : r)); toast('Failed to approve reimbursement', 'error'); });
   };
 
   const rejectReim = (id: string) => {
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Denied' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-      .catch((err) => { console.error(err); toast('Failed to reject reimbursement', 'error'); });
-    toast('Reimbursement rejected', 'info');
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement rejected', 'info'); })
+      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Pending' } : r)); toast('Failed to reject reimbursement', 'error'); });
   };
 
   // By Rep summary
