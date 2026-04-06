@@ -389,18 +389,48 @@ export default function MobileDashboard() {
     [activeProjects],
   );
 
-  // On Pace: annual projection based on deal closing rate
+  // On Pace: annual projection — matches desktop vault calculation exactly
   const onPaceAnnual = useMemo(() => {
+    const now = new Date();
+    const todayISO = now.toISOString().split('T')[0];
     const allMyProjects = myProjects.filter((p) => p.phase !== 'Cancelled');
     const totalDeals = allMyProjects.length;
     if (totalDeals === 0) return 0;
-    const avgCommission = allMyProjects.reduce((s, p) => s + (p.m1Amount || 0) + (p.m2Amount || 0), 0) / totalDeals;
+
+    // Average commission per deal (M1 + M2)
+    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0) / totalDeals;
+
+    // Deal closing pace
     const sorted = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
-    const firstDate = new Date(sorted[0].soldDate + 'T12:00:00');
-    const daysSince = Math.max((Date.now() - firstDate.getTime()) / 86400000, 30);
-    const dealsPerMonth = (totalDeals / daysSince) * 30.44;
-    return Math.round(dealsPerMonth * avgCommission * 12);
-  }, [myProjects]);
+    const firstDealDate = new Date(sorted[0].soldDate + 'T12:00:00');
+    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / 86400000, 1);
+    const effectiveDays = Math.max(daysSinceFirst, 30);
+    const dealsPerMonth = (totalDeals / effectiveDays) * 30.44;
+    const paceBasedAnnual = dealsPerMonth * avgCommissionPerDeal * 12;
+
+    // Actual paid history
+    const totalPaidPositive = myPayroll
+      .filter((p) => p.status === 'Paid' && p.amount > 0 && p.date <= todayISO)
+      .reduce((s, p) => s + p.amount, 0);
+
+    let annual: number;
+    if (daysSinceFirst >= 60 && totalPaidPositive > 0) {
+      // Blended: 60% pace-based + 40% actual paid rate
+      const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
+      const monthlyAvg = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
+      annual = monthlyAvg * 12;
+    } else {
+      // Pure pace-based
+      annual = Math.round(paceBasedAnnual);
+    }
+
+    // Pipeline boost: 15% of projected M1 + M2
+    const projM1 = activeProjects.filter((p) => !p.m1Paid).reduce((s, p) => s + (p.m1Amount || 0), 0);
+    const projM2 = activeProjects.filter((p) => !p.m2Paid).reduce((s, p) => s + (p.m2Amount || 0), 0);
+    annual += Math.round((projM1 + projM2) * 0.15);
+
+    return annual;
+  }, [myProjects, myPayroll, activeProjects]);
 
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
