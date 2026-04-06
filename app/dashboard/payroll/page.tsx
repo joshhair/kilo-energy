@@ -238,8 +238,8 @@ function PayrollPageInner() {
   const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
 
   const handlePublish = async () => {
-    // Only publish entries that match current filters (what the admin sees on screen)
-    const pendingVisible = filtered.filter((e) => e.status === 'Pending');
+    // Publish all Pending entries regardless of which tab the admin is on
+    const pendingVisible = payrollEntries.filter((e) => e.status === 'Pending');
     const ids = pendingVisible.map((e) => e.id);
     const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
     // Save snapshot for rollback
@@ -943,7 +943,7 @@ function PayrollPageInner() {
                   </div>
                   <div className="px-4 py-2.5 border-t border-[#272b35]/60 flex items-center justify-between bg-[#1d2028]/40">
                     <span className="text-[#c2c8d8] text-xs font-semibold uppercase tracking-wider">Total</span>
-                    <span className="text-white font-black tabular-nums">${totalPending.toLocaleString()}</span>
+                    <span className="text-white font-black tabular-nums">${pendingEntries.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
                   </div>
                 </div>
               )}

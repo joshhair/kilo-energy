@@ -438,7 +438,7 @@ function VaultPageInner() {
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-2 border-l-2 border-l-amber-500/40"
              style={{ '--card-accent': 'rgba(245,158,11,0.10)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">On Pace For</p>
+            <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">On Pace For {new Date().getFullYear()}</p>
             <TrendingUp className="w-4 h-4 text-amber-400/50" />
           </div>
           <p className="text-xl md:text-3xl font-black tabular-nums text-amber-400 stat-value"

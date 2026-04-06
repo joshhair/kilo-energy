@@ -385,7 +385,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const isTrainer = trainerAssignments.some((a) => a.trainerId === currentRepId);
+  const isTrainer = trainerAssignments.some((a) => a.trainerId === effectiveRepId);
   const repNav = isTrainer ? REP_NAV : REP_NAV.filter((item) => !('href' in item && item.href === '/dashboard/training'));
 
   // Build PM nav with conditional items
@@ -428,10 +428,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           borderBottom: '1px solid rgba(255,255,255,0.04)',
         }}
       >
-        <div className="flex items-baseline gap-0.5">
-          <span className="text-white font-black tracking-tighter text-xl leading-none" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kilo</span>
-          <span style={{ color: 'var(--m-accent, #00e5a0)', fontSize: '6px', lineHeight: 1, alignSelf: 'flex-end', marginBottom: '3px', marginLeft: '1px', marginRight: '1px' }}>&bull;</span>
-          <span className="tracking-[0.2em] uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '10px', fontWeight: 400 }}>energy</span>
+        <div className="flex items-center gap-1.5">
+          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#00e5a0', boxShadow: '0 0 10px #00e5a0', flexShrink: 0 }} />
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-white font-black tracking-tighter text-xl leading-none" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kilo</span>
+            <span className="tracking-[0.2em] uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '10px', fontWeight: 400 }}>energy</span>
+          </div>
         </div>
       </div>
 
@@ -474,10 +476,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between px-4 py-4 h-[60px]" style={{ borderBottom: '1px solid var(--d-border, #272b35)' }}>
           {!showCollapsed && (
             <div className="flex items-center gap-2 overflow-hidden min-w-0">
-              <div className="flex items-baseline gap-0.5 overflow-hidden min-w-0">
-                <span className="text-white font-bold tracking-tighter text-xl leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
-                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#00e07a', boxShadow: '0 0 10px #00e07a', marginLeft: 2, marginRight: 2, alignSelf: 'center', flexShrink: 0 }} />
-                <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--d-muted, #8891a8)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
+              <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#00e07a', boxShadow: '0 0 10px #00e07a', flexShrink: 0 }} />
+                <div className="flex items-baseline gap-0.5">
+                  <span className="text-white font-bold tracking-tighter text-xl leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
+                  <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--d-muted, #8891a8)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
+                </div>
               </div>
               {/* ⌘K hint badge — opens command palette on click */}
               <button

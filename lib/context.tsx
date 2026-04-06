@@ -559,7 +559,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId).length;
+                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * 0.80);
                 if (m2TrainerAmount > 0) {
@@ -584,7 +584,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId).length;
+                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
                   const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * 0.80);
                   if (m2SetterTrainerAmount > 0) {
@@ -650,7 +650,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId).length;
+                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * 0.20);
                 if (m3TrainerAmount > 0) {
@@ -676,7 +676,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId).length;
+                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
                   const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * 0.20);
                   if (m3SetterTrainerAmount > 0) {

@@ -466,8 +466,8 @@ export default function MobileDashboard() {
       <MobileCard hero>
         {onPaceAnnual > 0 ? (
           <>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For</p>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}<span style={{ fontSize: '1.1rem', color: MUTED }}> /yr</span></p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
               {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
             </p>

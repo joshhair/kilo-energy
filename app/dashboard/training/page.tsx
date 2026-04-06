@@ -95,7 +95,7 @@ function TrainingPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const {
-    currentRepId,
+    effectiveRepId,
     effectiveRole,
     trainerAssignments,
     payrollEntries,
@@ -141,16 +141,16 @@ function TrainingPageInner() {
   // ── Derived data ───────────────────────────────────────────────────────────
 
   const myAssignments = useMemo(
-    () => trainerAssignments.filter((a) => a.trainerId === currentRepId),
-    [trainerAssignments, currentRepId]
+    () => trainerAssignments.filter((a) => a.trainerId === effectiveRepId),
+    [trainerAssignments, effectiveRepId]
   );
 
   const isTrainer = myAssignments.length > 0;
 
   // Trainer payroll entries for this rep
   const trainerEntries = useMemo(
-    () => payrollEntries.filter((e) => e.repId === currentRepId && e.paymentStage === 'Trainer'),
-    [payrollEntries, currentRepId]
+    () => payrollEntries.filter((e) => e.repId === effectiveRepId && e.paymentStage === 'Trainer'),
+    [payrollEntries, effectiveRepId]
   );
 
   // Build trainee info
