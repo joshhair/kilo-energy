@@ -389,6 +389,19 @@ export default function MobileDashboard() {
     [activeProjects],
   );
 
+  // On Pace: annual projection based on deal closing rate
+  const onPaceAnnual = useMemo(() => {
+    const allMyProjects = myProjects.filter((p) => p.phase !== 'Cancelled');
+    const totalDeals = allMyProjects.length;
+    if (totalDeals === 0) return 0;
+    const avgCommission = allMyProjects.reduce((s, p) => s + (p.m1Amount || 0) + (p.m2Amount || 0), 0) / totalDeals;
+    const sorted = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
+    const firstDate = new Date(sorted[0].soldDate + 'T12:00:00');
+    const daysSince = Math.max((Date.now() - firstDate.getTime()) / 86400000, 30);
+    const dealsPerMonth = (totalDeals / daysSince) * 30.44;
+    return Math.round(dealsPerMonth * avgCommission * 12);
+  }, [myProjects]);
+
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
@@ -440,6 +453,14 @@ export default function MobileDashboard() {
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Active Deals</p>
           </div>
         </div>
+
+        {/* On Pace — annual projection */}
+        {onPaceAnnual > 0 && (
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, marginBottom: 4 }}>On Pace For</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.8rem', color: ACCENT2 }}>{fmt$(onPaceAnnual)}<span style={{ fontSize: '0.9rem', color: MUTED }}> /yr</span></p>
+          </div>
+        )}
       </MobileCard>
 
       {/* Needs Attention — hidden if 0 */}
