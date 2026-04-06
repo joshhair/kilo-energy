@@ -1008,36 +1008,62 @@ function NewDealPage() {
     return <DealEntryPage onStart={() => setView('form')} projects={projects} />;
   }
 
-  return (
-    <div>
-      {/* ── Sticky multi-step progress tracker ── */}
-      <FormStepper
-        currentStep={currentStep}
-        stepsComplete={stepsComplete}
-        progressPct={progressPct}
-        onStepClick={(step) => setCurrentStep(step)}
-        pulseStep={pulseStep}
-      />
+  // Compute month count for the left panel
+  const _today = new Date().toISOString().split('T')[0];
+  const _monthPrefix = _today.slice(0, 7);
+  const monthCount = projects.filter((p) => p.soldDate.startsWith(_monthPrefix) && (p.repId === (currentRepId ?? ''))).length;
 
-      <div className="p-4 md:p-8 max-w-2xl">
-      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'New Deal' }]} />
-      <div className="mb-8">
-        <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <PlusCircle className="w-5 h-5 text-blue-400" />
+  return (
+    <div className="p-4 md:p-8" style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+
+        {/* ── Left panel — 220px ── */}
+        <div style={{ flex: '0 0 220px' }}>
+          {/* Your Deals card */}
+          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 24, marginBottom: 16 }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Your Deals</p>
+            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: '#f0f2f7', letterSpacing: '-0.04em', lineHeight: 1 }}>0</p>
+            <p style={{ color: '#8891a8', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>Today</p>
+            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: monthCount > 0 ? '#00e07a' : '#f0f2f7', letterSpacing: '-0.04em', lineHeight: 1, marginTop: 16, textShadow: monthCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{monthCount}</p>
+            <p style={{ color: '#8891a8', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>This Month</p>
           </div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-3xl md:text-4xl font-black text-gradient-brand tracking-tight">New Deal</h1>
-            {isFormDirty && (
-              <div
-                className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"
-                title="Unsaved changes — ⌘Enter to submit"
-              />
-            )}
+
+          {/* Step guide card */}
+          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 20 }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Steps</p>
+            {DEAL_STEPS.map((step, i) => {
+              const n = i + 1;
+              const done = !!submitted || currentStep > i;
+              const active = !submitted && currentStep === i;
+              return (
+                <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < 2 ? 14 : 0 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                    background: done ? '#00e07a' : active ? 'rgba(0,224,122,0.1)' : '#1d2028',
+                    border: `1.5px solid ${done || active ? '#00e07a' : '#333849'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? '#00e07a' : '#8891a8',
+                    boxShadow: active ? '0 0 20px rgba(0,224,122,0.25)' : 'none',
+                  }}>
+                    {done ? '\u2713' : n}
+                  </div>
+                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? '#f0f2f7' : done ? '#00e07a' : '#8891a8', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+
+        {/* ── Right panel — form ── */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Page header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#1d2028', border: '1px solid #333849', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{'\u2295'}</div>
+            <div>
+              <h1 style={{ fontFamily: "'DM Serif Display',serif", fontSize: '2rem', color: '#f0f2f7', letterSpacing: '-0.03em', lineHeight: 1.1 }}>New Deal</h1>
+              <p style={{ color: '#c2c8d8', fontSize: 13, fontFamily: "'DM Sans',sans-serif", fontWeight: 500, marginTop: 5 }}>Log a closed solar deal and track commissions in seconds.</p>
+            </div>
+          </div>
 
       {/* Duplicate info badge */}
       {duplicateCustomerName && (
@@ -1047,6 +1073,26 @@ function NewDealPage() {
         </div>
       )}
 
+      {/* Form card */}
+      <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 20, padding: 32 }}>
+
+        {/* Step indicator (bar style) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 }}>
+          {DEAL_STEPS.map((s, i) => {
+            const done = currentStep > i;
+            const active = currentStep === i;
+            return (
+              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? '#00e07a' : '#272b35', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
+                  <span style={{ fontSize: 12, color: active ? '#f0f2f7' : done ? '#00e07a' : '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
+                </div>
+                {i < DEAL_STEPS.length - 1 && <span style={{ color: '#525c72', fontSize: 11 }}>{'\u203A'}</span>}
+              </div>
+            );
+          })}
+        </div>
+
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
 
         {/* ── Animated step content wrapper ── */}
@@ -1054,8 +1100,8 @@ function NewDealPage() {
 
         {/* ── Section 1: People ── */}
         {currentStep === 0 && (
-        <div id="section-people" className="card-surface rounded-2xl p-6 overflow-visible relative z-10">
-          <SectionHeader step={1} label={isSubDealer ? 'Deal Info' : 'People'} />
+        <div id="section-people" className="overflow-visible relative z-10">
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>Who&apos;s the customer?</p>
 
           <div className="space-y-4">
             {/* Closer / Setter card — hidden for sub-dealers */}
@@ -1126,8 +1172,8 @@ function NewDealPage() {
 
         {/* ── Section 2: Deal Details ── */}
         {currentStep === 1 && (
-        <div id="section-deal" className="card-surface rounded-2xl p-6 overflow-visible">
-          <SectionHeader step={2} label="Deal Details" />
+        <div id="section-deal" className="overflow-visible">
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: '#00c4f0', fontWeight: 500 }}>for {form.customerName}</span>}</p>
 
           <div className="space-y-4">
             {/* ── Card 1: Installer / Financer / Product selects ── */}
@@ -1565,8 +1611,8 @@ function NewDealPage() {
 
         {/* ── Section 3: Review & Notes ── */}
         {currentStep === 2 && (
-        <div id="section-review" className="card-surface rounded-2xl p-6">
-          <SectionHeader step={3} label="Review & Notes" />
+        <div id="section-review">
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>Review &amp; submit</p>
 
           <div className="space-y-4">
 
@@ -1716,42 +1762,40 @@ function NewDealPage() {
 
         </div> {/* end animated step wrapper */}
 
-        {/* ── Actions ── */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Previous — shown on steps 1 and 2 */}
+        {/* ── Navigation buttons ── */}
+        <div style={{ display: 'flex', justifyContent: currentStep > 0 ? 'space-between' : 'flex-end', alignItems: 'center', marginTop: 24 }}>
+          {/* Back */}
           {currentStep > 0 && (
             <button
               type="button"
               onClick={handlePrev}
               disabled={submitting}
-              className="font-medium px-6 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 text-sm transition-colors hover:brightness-125"
-              style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
+              style={{ background: 'transparent', border: '1px solid #272b35', borderRadius: 10, padding: '9px 20px', color: '#8891a8', fontSize: 13, cursor: 'pointer' }}
             >
               Previous
             </button>
           )}
 
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Next — shown on steps 0 and 1 */}
           {currentStep < DEAL_STEPS.length - 1 && (
             <button
               type="button"
               onClick={handleNext}
-              className="inline-flex items-center gap-2 font-bold px-8 py-3 rounded-xl active:scale-[0.97] text-sm transition-all hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
+              className="inline-flex items-center gap-2 active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', borderRadius: 10, padding: '9px 20px', color: '#000', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Next
             </button>
           )}
 
-          {/* Submit — shown on the last step only, with pulsing glow */}
+          {/* Submit — shown on the last step only */}
           {currentStep === DEAL_STEPS.length - 1 && (
-            <div className="relative inline-flex">
-              {!submitting && <div className="absolute -inset-0.5 rounded-xl opacity-[0.15] blur-[3px] animate-pulse" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)' }} />}
             <button
               type="submit"
               disabled={submitting}
-              className="relative inline-flex items-center gap-2 font-bold px-8 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 text-sm transition-all hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
+              className="inline-flex items-center gap-2 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', borderRadius: 10, padding: '9px 20px', color: '#000', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>
@@ -1762,33 +1806,24 @@ function NewDealPage() {
                 </>
               )}
             </button>
-            </div>
           )}
-
-          {/* Cancel — always visible */}
-          <button
-            type="button"
-            onClick={() => router.push('/dashboard')}
-            disabled={submitting}
-            className="font-medium px-6 py-3 rounded-xl active:scale-[0.97] disabled:opacity-60 text-sm transition-colors hover:brightness-125"
-            style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
-          >
-            Cancel
-          </button>
 
           {currentStep === DEAL_STEPS.length - 1 && !submitting && (
             <kbd
-              className="ml-auto font-mono text-[9px] text-slate-500 bg-slate-800/80 border border-slate-700/60 rounded px-1.5 py-0.5 leading-none select-none"
+              className="font-mono text-[9px] text-slate-500 bg-slate-800/80 border border-slate-700/60 rounded px-1.5 py-0.5 leading-none select-none"
               aria-hidden="true"
               title="Press ⌘Enter (or Ctrl+Enter) to submit"
             >
               ⌘↵ submit
             </kbd>
           )}
+          </div>
         </div>
 
       </form>
-      </div>
+      </div> {/* end form card */}
+      </div> {/* end right panel */}
+      </div> {/* end split layout */}
 
       {/* ── Sticky mobile commission preview bar (step 2 only) ── */}
       {currentStep === 1 && showPreview && (

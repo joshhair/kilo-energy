@@ -600,8 +600,21 @@ function CalculatorPage() {
 
   if (!isHydrated) return <CalculatorSkeleton />;
 
+  // Compute hasData for the right panel
+  const hasData = hasInput && soldPPW > 0 && closerTotal > 0;
+  const systemValue = kW * soldPPW * 1000;
+
+  // Bar segment data for the stacked breakdown bar
+  const breakdownSegments = [
+    { key: 'closer', label: 'Closer', value: closerTotal, color: '#00e07a' },
+    ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: '#00c4f0' }] : []),
+    ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
+    ...(currentRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: kiloTotal, color: '#ffb020' }] : []),
+  ].filter(s => s.value > 0);
+  const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
+
   return (
-    <div className="p-4 md:p-8 max-w-2xl animate-fade-in-up">
+    <div className="p-4 md:p-8 animate-fade-in-up" style={{ maxWidth: 1200 }}>
       <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Calculator' }]} />
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -611,379 +624,245 @@ function CalculatorPage() {
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
         </div>
-        <p className="text-slate-400 text-sm font-medium ml-12 tracking-wide">Run numbers before you close — know your earning before you pitch.</p>
+        <p className="text-sm font-medium ml-12 tracking-wide" style={{ color: '#8891a8' }}>Run numbers before you close — know your earning before you pitch.</p>
       </div>
 
-      <div className="card-surface rounded-2xl p-6 space-y-5 mb-6 overflow-visible relative z-20" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
-        {/* ── Quick Fill ──────────────────────────────────────────────────── */}
-        {recentDeals.length > 0 && (
-          <div className="rounded-xl p-3" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#00c4f0' }} />
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#00c4f0' }}>Quick Fill</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <SearchableSelect
-                value={quickFillValue}
-                onChange={handleQuickFill}
-                options={recentDeals.map((proj) => ({
-                  value: proj.id,
-                  label: `${proj.customerName} · ${proj.kWSize.toFixed(1)} kW · $${proj.netPPW.toFixed(2)} PPW`,
-                }))}
-                placeholder="— Quick fill from recent deal —"
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={handleReset}
-                title="Clear all fields"
-                className="flex-shrink-0 p-2 rounded-lg hover:text-white transition-colors"
-                style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div>
-          <label className={labelCls} style={labelStyle}>
-            Installer
-            <FieldTooltip text="The installation company handling this project. Rates vary by installer." />
-          </label>
-          <div ref={installerRef}>
-            <SearchableSelect
-              value={installer}
-              onChange={(val) => {
-                setInstaller(val);
-                setSolarTechFamily('');
-                setSolarTechProductId('');
-                setPcProductId('');
-                setPcSelectedFamily('');
-              }}
-              options={activeInstallers.map((i) => ({ value: i, label: i }))}
-              placeholder="— Select installer —"
-            />
-          </div>
-        </div>
-
-        {isSolarTech && (
-          <div className="space-y-4">
-            <div>
-              <label className={labelCls} style={labelStyle}>Financing Family</label>
-              <div ref={stFamilyRef}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        {/* Left: form — 420px */}
+        <div style={{ flex: '0 0 420px' }}>
+          {/* Quick Fill card */}
+          {recentDeals.length > 0 && (
+            <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#00c4f0' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#00c4f0', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <SearchableSelect
-                  value={solarTechFamily}
-                  onChange={(val) => { setSolarTechFamily(val); setSolarTechProductId(''); }}
-                  options={SOLARTECH_FAMILIES.map((f) => ({
-                    value: f,
-                    label: `${f} (${SOLARTECH_FAMILY_FINANCER[f]})`,
+                  value={quickFillValue}
+                  onChange={handleQuickFill}
+                  options={recentDeals.map((proj) => ({
+                    value: proj.id,
+                    label: `${proj.customerName} · ${proj.kWSize.toFixed(1)} kW · $${proj.netPPW.toFixed(2)} PPW`,
                   }))}
-                  placeholder="— Select family —"
+                  placeholder="-- Quick fill from recent deal --"
+                  className="flex-1"
                 />
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  title="Clear all fields"
+                  className="flex-shrink-0 p-2 rounded-lg hover:text-white transition-colors"
+                  style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
               </div>
             </div>
-            {solarTechFamily && hasSolarTechProducts && (
-              <div>
-                <label className={labelCls} style={labelStyle}>Equipment Package</label>
-                <div ref={stProductRef}>
-                  <SearchableSelect
-                    value={solarTechProductId}
-                    onChange={setSolarTechProductId}
-                    options={solarTechFamilyProducts.map((p) => ({
-                      value: p.id,
-                      label: p.name,
-                    }))}
-                    placeholder="— Select package —"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {isPcInstaller && pcConfig && (
-          <div className="space-y-4">
-            <div>
-              <label className={labelCls} style={labelStyle}>Financing Family</label>
-              <div ref={pcFamilyRef}>
-                <SearchableSelect
-                  value={pcSelectedFamily}
-                  onChange={(val) => { setPcSelectedFamily(val); setPcProductId(''); }}
-                  options={pcConfig.families.map((f) => ({ value: f, label: f }))}
-                  placeholder="— Select family —"
-                />
-              </div>
-            </div>
-            {pcSelectedFamily && pcFamilyProducts.length > 0 && (
-              <div>
-                <label className={labelCls} style={labelStyle}>Equipment Package</label>
-                <div ref={pcProductRef}>
-                  <SearchableSelect
-                    value={pcProductId}
-                    onChange={setPcProductId}
-                    options={pcFamilyProducts.map((p) => ({
-                      value: p.id,
-                      label: p.name,
-                    }))}
-                    placeholder="— Select package —"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls} style={labelStyle}>
-              System Size (kW)
-              <FieldTooltip text="Total system size in kilowatts. Larger systems = higher commission." />
-            </label>
-            <input
-              ref={kWSizeRef}
-              type="number" step="0.1" min="0" placeholder="e.g. 8.4"
-              value={kWSize} onChange={(e) => setKWSize(e.target.value)}
-              className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
-            />
-          </div>
-          <div>
-            <label className={labelCls} style={labelStyle}>
-              Sold PPW ($/W)
-              <FieldTooltip text="Price Per Watt — the rate you sold the system at. Must be above baseline to earn commission." />
-            </label>
-            <input
-              ref={netPPWRef}
-              type="number" step="0.01" min="0" placeholder="e.g. 3.45"
-              value={netPPW} onChange={(e) => setNetPPW(e.target.value)}
-              className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3 overflow-visible relative z-10">
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <div
-              onClick={() => { setHasSetter((v) => { if (v) setSelectedSetterId(''); return !v; }); }}
-              className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-blue-600' : 'bg-slate-700'}`}
-            >
-              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hasSetter ? 'translate-x-5' : 'translate-x-0.5'}`} />
-            </div>
-            <span className="text-slate-300 text-sm">Include setter</span>
-          </label>
-
-          {hasSetter && (
+          {/* Main form card */}
+          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 24, marginBottom: 12 }} className="space-y-5 overflow-visible relative z-20">
             <div>
               <label className={labelCls} style={labelStyle}>
-                Setter
-                <FieldTooltip text="Select a setter to factor in their trainer assignment and baseline split." />
+                Installer
+                <FieldTooltip text="The installation company handling this project. Rates vary by installer." />
               </label>
-              <RepSelector
-                value={selectedSetterId}
-                onChange={setSelectedSetterId}
-                reps={reps}
-                placeholder="— Select setter —"
-                clearLabel="No setter"
-                filterFn={(r) => r.repType === 'setter' || r.repType === 'both'}
-                renderExtra={(r) => {
-                  const ta = trainerAssignments.find((a) => a.traineeId === r.id);
-                  const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
-                  return trainerName ? (
-                    <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ {trainerName}</span>
-                  ) : null;
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Results */}
-      {hasInput && (
-        <div key={resultHash} className="animate-slide-in-scale relative z-0">
-          <div className='h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3' />
-          <div className="space-y-4">
-
-          {/* Baseline info */}
-          <div className="card-surface rounded-xl p-4 animate-slide-in-scale" style={{ animationDelay: '0ms', background: '#1d2028', border: '1px solid #272b35' }}>
-            <p className="text-xs uppercase tracking-wider mb-3" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Baseline Rates</p>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p className="font-bold text-lg" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerPerW.toFixed(2)}<span className="text-xs font-normal" style={{ color: '#525c72' }}>/W</span></p>
-                <p className="text-xs" style={{ color: '#8891a8' }}>Closer Baseline</p>
-              </div>
-              <div>
-                <p className="font-bold text-lg" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterBaselinePerW.toFixed(2)}<span className="text-xs font-normal" style={{ color: '#525c72' }}>/W</span></p>
-                <p className="text-xs" style={{ color: '#8891a8' }}>Setter Baseline</p>
-              </div>
-              <div>
-                <p className="font-bold text-lg" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${breakEvenPPW.toFixed(2)}<span className="text-xs font-normal" style={{ color: '#525c72' }}>/W</span></p>
-                <p className="text-xs" style={{ color: '#8891a8' }}>Break-Even PPW</p>
-              </div>
-            </div>
-          </div>
-
-          <div className='h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent my-4' />
-
-          {/* Commission breakdown — individual stat cards with staggered entrance */}
-          {soldPPW > 0 ? (
-            <div className="space-y-3">
-              {soldPPW <= closerPerW && (
-                <div className="bg-red-900/20 border border-red-500/30 border-l-2 border-l-red-500 rounded-lg px-3 py-2 text-red-400 text-xs">
-                  PPW is at or below baseline — no commission earned at this price.
-                </div>
-              )}
-
-              {/* Card 1 — Closer Pay (blue) */}
-              <div
-                className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-1"
-                style={{ '--card-accent': 'rgba(59,130,246,0.15)', background: '#1d2028', border: '1px solid #272b35' } as CSSProperties}
-              >
-                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</p>
-                <div className="flex justify-between items-end">
-                  <div>
-                    <p className="stat-value font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 20px #00e07a50' }}>${animatedCloserTotal.toLocaleString()}</p>
-                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3Split ? ` · M3: $${closerM3.toLocaleString()}` : ''}</p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 mb-1">
-                    <button
-                      type="button"
-                      onClick={handleCopyResult}
-                      title="Copy deal summary to clipboard"
-                      className="text-slate-500 hover:text-blue-400 transition-colors"
-                    >
-                      <ClipboardCopy className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleShareResult}
-                      title="Copy full share summary to clipboard"
-                      className="text-slate-500 hover:text-blue-400 transition-colors"
-                    >
-                      <Share2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleShareURL}
-                      title="Copy shareable URL to clipboard"
-                      className="text-slate-500 hover:text-blue-400 transition-colors"
-                    >
-                      <Link2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2 — Setter Pay (violet) */}
-              {hasSetter && (
-                <div
-                  className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-2"
-                  style={{ '--card-accent': 'rgba(139,92,246,0.15)', background: '#1d2028', border: '1px solid #272b35' } as CSSProperties}
-                >
-                  <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>
-                    Setter Pay{selectedSetterRep ? ` — ${selectedSetterRep.name}` : ''}
-                  </p>
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="stat-value font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#b47dff', textShadow: '0 0 20px #b47dff50' }}>${animatedSetterTotal.toLocaleString()}</p>
-                      <p className="text-xs mt-1" style={{ color: '#525c72' }}>M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3Split ? ` · M3: $${setterM3.toLocaleString()}` : ''}</p>
-                    </div>
-                    {trainerRep && trainerTotal > 0 && (
-                      <div className="text-right">
-                        <p className="font-semibold text-sm" style={{ color: '#ffb020' }}>${animatedTrainerTotal.toLocaleString()}</p>
-                        <p className="text-xs" style={{ color: '#525c72' }}>Trainer: {trainerRep.name}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Card 3 — Kilo Margin (emerald, admin-only) */}
-              {currentRole === 'admin' && (
-                <div
-                  className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-3"
-                  style={{ '--card-accent': 'rgba(0,224,122,0.15)', background: 'linear-gradient(135deg, rgba(0,224,122,0.12), rgba(0,196,240,0.08))', border: '1px solid rgba(0,224,122,0.25)' } as CSSProperties}
-                >
-                  <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</p>
-                  <p className="stat-value font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 20px #00e07a50' }}>${animatedKiloTotal.toLocaleString()}</p>
-                </div>
-              )}
-
-              {/* Card 4 — Total Commission (yellow) */}
-              <div
-                className="card-surface card-surface-stat rounded-xl p-4 animate-slide-in-scale stagger-4"
-                style={{ '--card-accent': 'rgba(255,176,32,0.15)', background: '#1d2028', border: '1px solid #272b35' } as CSSProperties}
-              >
-                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Total Commission</p>
-                <p className="stat-value stat-value-glow stat-glow-blue font-bold text-2xl" style={{ fontFamily: "'DM Serif Display', serif", color: '#ffb020', textShadow: '0 0 20px #ffb02050' }}>${animatedGrandTotal.toLocaleString()}</p>
-              </div>
-
-              {/* Animated stacked bar chart — stagger-5 entrance; keyed so grow-on-mount re-triggers on every recalculation */}
-              <div className="animate-slide-in-scale stagger-5">
-                <CommissionBar
-                  key={resultHash}
-                  closer={closerTotal}
-                  setter={setterTotal}
-                  trainer={trainerTotal}
-                  kilo={kiloTotal}
-                  showKilo={currentRole === 'admin'}
+              <div ref={installerRef}>
+                <SearchableSelect
+                  value={installer}
+                  onChange={(val) => {
+                    setInstaller(val);
+                    setSolarTechFamily('');
+                    setSolarTechProductId('');
+                    setPcProductId('');
+                    setPcSelectedFamily('');
+                  }}
+                  options={activeInstallers.map((i) => ({ value: i, label: i }))}
+                  placeholder="-- Select installer --"
                 />
               </div>
             </div>
-          ) : (
-            <div className="card-surface border-dashed rounded-xl p-6 text-center text-slate-500 text-sm animate-slide-in-scale" style={{ animationDelay: '100ms' }}>
-              <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3">
-                <Zap className="w-6 h-6 text-slate-600 animate-pulse" />
+
+            {isSolarTech && (
+              <div className="space-y-4">
+                <div>
+                  <label className={labelCls} style={labelStyle}>Financing Family</label>
+                  <div ref={stFamilyRef}>
+                    <SearchableSelect
+                      value={solarTechFamily}
+                      onChange={(val) => { setSolarTechFamily(val); setSolarTechProductId(''); }}
+                      options={SOLARTECH_FAMILIES.map((f) => ({
+                        value: f,
+                        label: `${f} (${SOLARTECH_FAMILY_FINANCER[f]})`,
+                      }))}
+                      placeholder="-- Select family --"
+                    />
+                  </div>
+                </div>
+                {solarTechFamily && hasSolarTechProducts && (
+                  <div>
+                    <label className={labelCls} style={labelStyle}>Equipment Package</label>
+                    <div ref={stProductRef}>
+                      <SearchableSelect
+                        value={solarTechProductId}
+                        onChange={setSolarTechProductId}
+                        options={solarTechFamilyProducts.map((p) => ({
+                          value: p.id,
+                          label: p.name,
+                        }))}
+                        placeholder="-- Select package --"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              Enter a sold PPW to see your commission breakdown
-            </div>
-          )}
+            )}
 
-          <div className='h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent my-4' />
+            {isPcInstaller && pcConfig && (
+              <div className="space-y-4">
+                <div>
+                  <label className={labelCls} style={labelStyle}>Financing Family</label>
+                  <div ref={pcFamilyRef}>
+                    <SearchableSelect
+                      value={pcSelectedFamily}
+                      onChange={(val) => { setPcSelectedFamily(val); setPcProductId(''); }}
+                      options={pcConfig.families.map((f) => ({ value: f, label: f }))}
+                      placeholder="-- Select family --"
+                    />
+                  </div>
+                </div>
+                {pcSelectedFamily && pcFamilyProducts.length > 0 && (
+                  <div>
+                    <label className={labelCls} style={labelStyle}>Equipment Package</label>
+                    <div ref={pcProductRef}>
+                      <SearchableSelect
+                        value={pcProductId}
+                        onChange={setPcProductId}
+                        options={pcFamilyProducts.map((p) => ({
+                          value: p.id,
+                          label: p.name,
+                        }))}
+                        placeholder="-- Select package --"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Target earnings tool */}
-          <div className="card-surface rounded-xl p-4 animate-slide-in-scale" style={{ animationDelay: '200ms', background: '#1d2028', border: '1px solid #272b35' }}>
-            <p className="text-xs uppercase tracking-wider mb-3" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>PPW Needed for Target Earning</p>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls} style={labelStyle}>
+                  System Size (kW)
+                  <FieldTooltip text="Total system size in kilowatts. Larger systems = higher commission." />
+                </label>
                 <input
-                  type="number"
-                  placeholder="Target $ (e.g. 2000)"
-                  value={targetEarning}
-                  onChange={(e) => setTargetEarning(e.target.value)}
+                  ref={kWSizeRef}
+                  type="number" step="0.1" min="0" placeholder="e.g. 8.4"
+                  value={kWSize} onChange={(e) => setKWSize(e.target.value)}
                   className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
                 />
               </div>
-              <div className="text-right min-w-[100px]">
-                {requiredPPW > 0 ? (
-                  <>
-                    <p className="text-blue-400 font-bold text-xl">${requiredPPW.toFixed(2)}<span className="text-slate-500 text-xs font-normal">/W</span></p>
-                    <p className="text-slate-500 text-xs">required PPW</p>
-                  </>
-                ) : (
-                  <p className="text-slate-600 text-sm">—</p>
-                )}
+              <div>
+                <label className={labelCls} style={labelStyle}>
+                  Sold PPW ($/W)
+                  <FieldTooltip text="Price Per Watt -- the rate you sold the system at. Must be above baseline to earn commission." />
+                </label>
+                <input
+                  ref={netPPWRef}
+                  type="number" step="0.01" min="0" placeholder="e.g. 3.45"
+                  value={netPPW} onChange={(e) => setNetPPW(e.target.value)}
+                  className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
+                />
               </div>
             </div>
+
+            <div className="space-y-3 overflow-visible relative z-10">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => { setHasSetter((v) => { if (v) setSelectedSetterId(''); return !v; }); }}
+                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-blue-600' : 'bg-slate-700'}`}
+                >
+                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hasSetter ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </div>
+                <span className="text-slate-300 text-sm">Include setter</span>
+              </label>
+
+              {hasSetter && (
+                <div>
+                  <label className={labelCls} style={labelStyle}>
+                    Setter
+                    <FieldTooltip text="Select a setter to factor in their trainer assignment and baseline split." />
+                  </label>
+                  <RepSelector
+                    value={selectedSetterId}
+                    onChange={setSelectedSetterId}
+                    reps={reps}
+                    placeholder="-- Select setter --"
+                    clearLabel="No setter"
+                    filterFn={(r) => r.repType === 'setter' || r.repType === 'both'}
+                    renderExtra={(r) => {
+                      const ta = trainerAssignments.find((a) => a.traineeId === r.id);
+                      const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
+                      return trainerName ? (
+                        <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">* {trainerName}</span>
+                      ) : null;
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Target earnings tool */}
+            {hasInput && (
+              <>
+                <div style={{ height: 1, background: 'linear-gradient(to right, transparent, #333849, transparent)' }} />
+                <div>
+                  <p className="text-xs uppercase tracking-wider mb-3" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>PPW Needed for Target Earning</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <input
+                        type="number"
+                        placeholder="Target $ (e.g. 2000)"
+                        value={targetEarning}
+                        onChange={(e) => setTargetEarning(e.target.value)}
+                        className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
+                      />
+                    </div>
+                    <div className="text-right min-w-[100px]">
+                      {requiredPPW > 0 ? (
+                        <>
+                          <p style={{ color: '#4d9fff', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: '#525c72', fontSize: 12, fontWeight: 400 }}>/W</span></p>
+                          <p style={{ color: '#525c72', fontSize: 12 }}>required PPW</p>
+                        </>
+                      ) : (
+                        <p style={{ color: '#525c72', fontSize: 14 }}>--</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* ── Recent Calcs (localStorage history) ─────────────────────── */}
+          {/* Recent Calcs card */}
           {calcHistory.length > 0 && (
-            <div className="card-surface rounded-xl animate-slide-in-scale" style={{ animationDelay: '250ms', background: '#1d2028', border: '1px solid #272b35' }}>
+            <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16 }}>
               <button
                 type="button"
                 onClick={() => setHistoryOpen((v) => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 text-left"
               >
                 <div className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="text-slate-500 text-xs uppercase tracking-wider font-medium">Recent Calcs</span>
-                  <span className="text-slate-600 text-xs">({calcHistory.length})</span>
+                  <Clock className="w-3.5 h-3.5" style={{ color: '#525c72' }} />
+                  <span style={{ color: '#525c72', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>Recent Calcs</span>
+                  <span style={{ color: '#525c72', fontSize: 12 }}>({calcHistory.length})</span>
                 </div>
                 {historyOpen ? (
-                  <ChevronUp className="w-4 h-4 text-slate-500" />
+                  <ChevronUp className="w-4 h-4" style={{ color: '#525c72' }} />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-slate-500" />
+                  <ChevronDown className="w-4 h-4" style={{ color: '#525c72' }} />
                 )}
               </button>
               {historyOpen && (
@@ -991,13 +870,14 @@ function CalculatorPage() {
                   {calcHistory.map((entry, i) => (
                     <div
                       key={`${entry.timestamp}-${i}`}
-                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: '#1d2028', border: '1px solid #272b35' }}
+                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
+                      style={{ background: '#1d2028', border: '1px solid #272b35' }}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-white text-sm font-medium truncate">
-                          {entry.installer} — {entry.kW.toFixed(1)} kW @ ${entry.ppw.toFixed(2)}/W
+                        <p style={{ color: '#f0f2f7', fontSize: 14, fontWeight: 500 }} className="truncate">
+                          {entry.installer} -- {entry.kW.toFixed(1)} kW @ ${entry.ppw.toFixed(2)}/W
                         </p>
-                        <p className="text-slate-500 text-xs">
+                        <p style={{ color: '#525c72', fontSize: 12 }}>
                           Closer: ${entry.closerTotal.toLocaleString()}
                           {entry.hasSetter && entry.setterTotal > 0 ? ` · Setter: $${entry.setterTotal.toLocaleString()}` : ''}
                           {entry.trainerTotal > 0 ? ` · Trainer: $${entry.trainerTotal.toLocaleString()}` : ''}
@@ -1006,7 +886,8 @@ function CalculatorPage() {
                       <button
                         type="button"
                         onClick={() => handleLoadHistory(entry)}
-                        className="flex-shrink-0 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-md px-2.5 py-1 transition-colors"
+                        className="flex-shrink-0 text-xs font-medium rounded-md px-2.5 py-1 transition-colors"
+                        style={{ color: '#4d9fff', background: 'rgba(77,159,255,0.1)' }}
                       >
                         Load
                       </button>
@@ -1015,7 +896,8 @@ function CalculatorPage() {
                   <button
                     type="button"
                     onClick={handleClearHistory}
-                    className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-400 transition-colors mt-1"
+                    className="flex items-center gap-1.5 text-xs transition-colors mt-1"
+                    style={{ color: '#525c72' }}
                   >
                     <Trash2 className="w-3 h-3" />
                     Clear History
@@ -1024,128 +906,168 @@ function CalculatorPage() {
               )}
             </div>
           )}
-
-          </div>
         </div>
-      )}
 
-      {/* Recent Calcs — shown even when no active calc inputs */}
-      {!hasInput && calcHistory.length > 0 && (
-        <div className="card-surface rounded-xl mb-6 animate-fade-in" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
-          <button
-            type="button"
-            onClick={() => setHistoryOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 text-left"
-          >
-            <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <span className="text-slate-500 text-xs uppercase tracking-wider font-medium">Recent Calcs</span>
-              <span className="text-slate-600 text-xs">({calcHistory.length})</span>
-            </div>
-            {historyOpen ? (
-              <ChevronUp className="w-4 h-4 text-slate-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-slate-500" />
-            )}
-          </button>
-          {historyOpen && (
-            <div className="px-4 pb-3 space-y-2">
-              {calcHistory.map((entry, i) => (
-                <div
-                  key={`${entry.timestamp}-${i}`}
-                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: '#1d2028', border: '1px solid #272b35' }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-medium truncate">
-                      {entry.installer} — {entry.kW.toFixed(1)} kW @ ${entry.ppw.toFixed(2)}/W
-                    </p>
-                    <p className="text-slate-500 text-xs">
-                      Closer: ${entry.closerTotal.toLocaleString()}
-                      {entry.hasSetter && entry.setterTotal > 0 ? ` · Setter: $${entry.setterTotal.toLocaleString()}` : ''}
-                      {entry.trainerTotal > 0 ? ` · Trainer: $${entry.trainerTotal.toLocaleString()}` : ''}
-                    </p>
+        {/* Right: live breakdown — flex:1, sticky */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 24, position: 'sticky', top: 16 }}>
+            <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 20 }}>Live Breakdown</p>
+
+            {hasData ? (
+              <div key={resultHash}>
+                {/* System Value */}
+                <p style={{ fontSize: 32, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4 }}>
+                  ${Math.round(systemValue).toLocaleString()}
+                </p>
+                <p style={{ fontSize: 11, color: '#525c72', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
+                  {kW.toFixed(1)} kW x ${soldPPW.toFixed(2)} PPW x 1,000
+                </p>
+
+                {/* Below-baseline warning */}
+                {soldPPW <= closerPerW && (
+                  <div style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', borderLeft: '3px solid #ff5252', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#ff5252' }}>
+                    PPW is at or below baseline -- no commission earned at this price.
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleLoadHistory(entry)}
-                    className="flex-shrink-0 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-md px-2.5 py-1 transition-colors"
-                  >
-                    Load
+                )}
+
+                {/* Stacked bar */}
+                {breakdownTotal > 0 && (
+                  <div style={{ display: 'flex', height: 8, borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}>
+                    {breakdownSegments.map((seg) => (
+                      <div key={seg.key} style={{ width: `${(seg.value / breakdownTotal) * 100}%`, background: seg.color, transition: 'width 0.5s ease-out' }} />
+                    ))}
+                  </div>
+                )}
+
+                {/* Baseline rates row */}
+                <div style={{ display: 'flex', gap: 16, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #272b35' }}>
+                  <div>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerPerW.toFixed(2)}<span style={{ fontSize: 11, color: '#525c72', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 11, color: '#8891a8' }}>Closer Baseline</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterBaselinePerW.toFixed(2)}<span style={{ fontSize: 11, color: '#525c72', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 11, color: '#8891a8' }}>Setter Baseline</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${breakEvenPPW.toFixed(2)}<span style={{ fontSize: 11, color: '#525c72', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 11, color: '#8891a8' }}>Break-Even</p>
+                  </div>
+                </div>
+
+                {/* Line items */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                  {/* Closer */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00e07a', flexShrink: 0 }} />
+                      <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedCloserTotal.toLocaleString()}</span>
+                      {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((closerTotal / breakdownTotal) * 100)}%</span>}
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 11, color: '#525c72', marginLeft: 16, marginTop: -8 }}>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3Split ? ` · M3: $${closerM3.toLocaleString()}` : ''}</p>
+
+                  {/* Setter */}
+                  {hasSetter && setterTotal > 0 && (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c4f0', flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Setter Pay{selectedSetterRep ? ` -- ${selectedSetterRep.name}` : ''}</span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedSetterTotal.toLocaleString()}</span>
+                          {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((setterTotal / breakdownTotal) * 100)}%</span>}
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 11, color: '#525c72', marginLeft: 16, marginTop: -8 }}>M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3Split ? ` · M3: $${setterM3.toLocaleString()}` : ''}</p>
+                    </>
+                  )}
+
+                  {/* Trainer */}
+                  {trainerRep && trainerTotal > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {trainerRep.name}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedTrainerTotal.toLocaleString()}</span>
+                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((trainerTotal / breakdownTotal) * 100)}%</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Kilo Margin (admin) */}
+                  {currentRole === 'admin' && kiloTotal > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffb020', flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedKiloTotal.toLocaleString()}</span>
+                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((kiloTotal / breakdownTotal) * 100)}%</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Your Commission highlight */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #00160d, #001c10)',
+                  border: '1px solid #00e07a35',
+                  borderRadius: 14,
+                  padding: '18px 20px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #00e07a, transparent 70%)' }} />
+                  <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
+                  <p style={{ fontSize: 44, fontWeight: 700, color: '#00e07a', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
+                    ${animatedGrandTotal.toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Share actions */}
+                <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <button type="button" onClick={handleCopyResult} title="Copy deal summary" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#1d2028', border: '1px solid #333849', color: '#8891a8', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
+                    <ClipboardCopy className="w-3.5 h-3.5" /> Copy
+                  </button>
+                  <button type="button" onClick={handleShareResult} title="Copy share summary" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#1d2028', border: '1px solid #333849', color: '#8891a8', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
+                    <Share2 className="w-3.5 h-3.5" /> Share
+                  </button>
+                  <button type="button" onClick={handleShareURL} title="Copy shareable URL" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#1d2028', border: '1px solid #333849', color: '#8891a8', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
+                    <Link2 className="w-3.5 h-3.5" /> Link
                   </button>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleClearHistory}
-                className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-400 transition-colors mt-1"
-              >
-                <Trash2 className="w-3 h-3" />
-                Clear History
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!hasInput && (
-        <div className="animate-fade-in flex justify-center py-4">
-          <div className="w-72 border border-dashed border-slate-800 rounded-2xl px-6 py-10 flex flex-col items-center gap-4 text-center">
-            {/* Illustration — solar panel with calculator overlay */}
-            <svg width="96" height="96" viewBox="0 0 96 96" fill="none" aria-hidden="true" className="opacity-50">
-              {/* Sun glow halo */}
-              <circle cx="28" cy="22" r="10" fill="#1e3a5f" stroke="#eab308" strokeWidth="1.5" strokeOpacity="0.5"/>
-              {/* Sun rays */}
-              <line x1="28" y1="8"  x2="28" y2="13" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
-              <line x1="28" y1="31" x2="28" y2="36" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
-              <line x1="14" y1="22" x2="18" y2="22" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
-              <line x1="38" y1="22" x2="42" y2="22" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
-              <line x1="18" y1="12" x2="21" y2="15" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
-              <line x1="35" y1="29" x2="38" y2="32" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
-              <line x1="38" y1="12" x2="35" y2="15" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
-              <line x1="18" y1="32" x2="21" y2="29" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
-              {/* Solar panel frame */}
-              <rect x="8" y="40" width="54" height="36" rx="3" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-              {/* Panel cells — 3 columns × 3 rows */}
-              <rect x="11" y="43" width="14" height="9"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.55"/>
-              <rect x="27" y="43" width="14" height="9"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.55"/>
-              <rect x="43" y="43" width="16" height="9"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.55"/>
-              <rect x="11" y="54" width="14" height="9"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.45"/>
-              <rect x="27" y="54" width="14" height="9"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.45"/>
-              <rect x="43" y="54" width="16" height="9"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.45"/>
-              <rect x="11" y="65" width="14" height="8"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.35"/>
-              <rect x="27" y="65" width="14" height="8"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.35"/>
-              <rect x="43" y="65" width="16" height="8"  rx="1.5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.35"/>
-              {/* Panel mount pole + base */}
-              <line x1="35" y1="76" x2="35" y2="86" stroke="#334155" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="24" y1="86" x2="46" y2="86" stroke="#334155" strokeWidth="2.5" strokeLinecap="round"/>
-              {/* Calculator body — overlapping bottom-right */}
-              <rect x="56" y="52" width="32" height="40" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="1.5"/>
-              {/* Calculator screen */}
-              <rect x="59" y="56" width="26" height="11" rx="2" fill="#0f172a" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5"/>
-              <text x="83" y="64" textAnchor="end" fill="#60a5fa" fontSize="7" fontFamily="monospace" fontWeight="bold">$—</text>
-              {/* Calculator button grid 3×4 */}
-              <rect x="59" y="70" width="7" height="5" rx="1.5" fill="#334155"/>
-              <rect x="68" y="70" width="7" height="5" rx="1.5" fill="#334155"/>
-              <rect x="77" y="70" width="7" height="5" rx="1.5" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.5"/>
-              <rect x="59" y="77" width="7" height="5" rx="1.5" fill="#334155"/>
-              <rect x="68" y="77" width="7" height="5" rx="1.5" fill="#334155"/>
-              <rect x="77" y="77" width="7" height="5" rx="1.5" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.5"/>
-              <rect x="59" y="84" width="7" height="5" rx="1.5" fill="#334155"/>
-              <rect x="68" y="84" width="16" height="5" rx="1.5" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="0.75" strokeOpacity="0.6"/>
-            </svg>
-            <div className="space-y-1">
-              <p className="text-slate-200 text-sm font-semibold leading-snug">Configure a deal above</p>
-              <p className="text-slate-500 text-xs leading-relaxed">to see your commission breakdown</p>
-            </div>
-            {/* Pulsing up arrow */}
-            <div className="animate-bounce opacity-40 -mt-1">
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                <path d="M11 17V5M11 5L6 10M11 5L16 10" stroke="#94a3b8" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+              </div>
+            ) : hasInput && soldPPW <= 0 ? (
+              /* Has inputs but no PPW */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0', gap: 12, textAlign: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#1d2028', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap className="w-6 h-6 animate-pulse" style={{ color: '#525c72' }} />
+                </div>
+                <p style={{ color: '#8891a8', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Enter a sold PPW to see your commission breakdown</p>
+              </div>
+            ) : (
+              /* Empty state */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0', gap: 12, textAlign: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#1d2028', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Calculator className="w-6 h-6" style={{ color: '#525c72' }} />
+                </div>
+                <div>
+                  <p style={{ color: '#c2c8d8', fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>Enter system size and PPW</p>
+                  <p style={{ color: '#525c72', fontSize: 12, fontFamily: "'DM Sans', sans-serif", marginTop: 4 }}>Your live commission breakdown will appear here</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -226,14 +226,7 @@ function PayrollPageInner() {
   const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
   const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
 
-  const repGroups = Array.from(
-    paginatedFiltered.reduce((map, entry) => {
-      const key = entry.repId;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(entry);
-      return map;
-    }, new Map<string, PayrollEntry[]>())
-  );
+  // repGroups removed — flat table rendering uses paginatedFiltered directly
 
   // Derived selection state — used by the floating action bar
   const selectedTotal = filtered
@@ -702,11 +695,26 @@ function PayrollPageInner() {
 
       {pageView === 'payroll' && <div key={pageView} className="animate-tab-enter">
 
-      {/* Big Numbers */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard label="Total Draft" value={totalDraft} color="text-slate-300" border="border-slate-700" accentGradient="from-blue-500 to-blue-400" entryCount={payrollEntries.filter((p) => p.status === 'Draft').length} className="animate-slide-in-scale stagger-1" />
-        <StatCard label="Total Pending" value={totalPending} color="text-yellow-400" border="border-yellow-800/40" accentGradient="from-yellow-500 to-yellow-400" entryCount={payrollEntries.filter((p) => p.status === 'Pending').length} className="animate-slide-in-scale stagger-2" />
-        <StatCard label="Total Paid" value={totalPaid} color="text-emerald-400" border="border-emerald-800/40" accentGradient="from-emerald-500 to-emerald-400" entryCount={payrollEntries.filter((p) => p.status === 'Paid').length} className="animate-slide-in-scale stagger-3" />
+      {/* GradCards */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        {/* Draft */}
+        <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#4d9fff', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
+          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{payrollEntries.filter((p) => p.status === 'Draft').length} entries</p>
+        </div>
+        {/* Pending */}
+        <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#ffb020', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
+          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{payrollEntries.filter((p) => p.status === 'Pending').length} entries</p>
+        </div>
+        {/* Total */}
+        <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#00e07a', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
+          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{payrollEntries.filter((p) => p.status === 'Paid').length} entries</p>
+        </div>
       </div>
 
       {/* Status tabs */}
@@ -731,13 +739,6 @@ function PayrollPageInner() {
         ))}
       </div>
 
-      {/* Keyboard shortcut hints */}
-      <p className="text-slate-600 text-[11px] mb-4 flex items-center gap-3">
-        <span><kbd className="px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-400 font-mono text-[10px]">Enter</kbd> Mark for Payroll</span>
-        <span><kbd className="px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-400 font-mono text-[10px]">Shift+A</kbd> Select / Deselect All</span>
-        <span><kbd className="px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-400 font-mono text-[10px]">Esc</kbd> Clear Selection</span>
-      </p>
-
       {/* Type tabs */}
       <div className="flex gap-1 mb-6 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
         {typeIndicator && <div className="tab-indicator" style={typeIndicator} />}
@@ -757,278 +758,137 @@ function PayrollPageInner() {
         ))}
       </div>
 
-      {/* Rep filter + Payroll date filter */}
-      <div className="flex flex-wrap items-center gap-3 mb-5 overflow-visible">
-        <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
-        <div className="w-44 flex-shrink-0">
-          <RepSelector
-            value={filterRepId}
-            onChange={(id) => changeFilterRepId(id)}
-            reps={reps}
-            placeholder="All Reps"
-            clearLabel="All Reps"
+      {/* ── Filter bar — top of table card ── */}
+      <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: '14px 14px 0 0', padding: '14px 18px', borderBottom: 'none' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Rep filter */}
+          <div style={{ flex: '0 0 180px' }}>
+            <RepSelector
+              value={filterRepId}
+              onChange={(id) => changeFilterRepId(id)}
+              reps={reps}
+              placeholder="All Reps"
+              clearLabel="All Reps"
+            />
+          </div>
+          {/* Date filter */}
+          <DateRangeFilter
+            from={payFilterFrom}
+            to={payFilterTo}
+            onFromChange={setPayFilterFrom}
+            onToChange={setPayFilterTo}
+            onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); }}
           />
+          {/* Bulk actions (when selected) */}
+          {statusTab === 'Draft' && selectedIds.size > 0 && (
+            <button
+              onClick={selectAll}
+              className="text-xs hover:text-white underline transition-colors"
+              style={{ color: '#8891a8' }}
+            >
+              {allFilteredSelected ? 'Deselect All' : 'Select All'}
+            </button>
+          )}
+          {/* Entry count */}
+          <span style={{ color: '#525c72', fontSize: 12, fontFamily: "'DM Sans',sans-serif", marginLeft: 'auto' }}>{filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}</span>
         </div>
-        <DateRangeFilter
-          from={payFilterFrom}
-          to={payFilterTo}
-          onFromChange={setPayFilterFrom}
-          onToChange={setPayFilterTo}
-          onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); }}
-        />
-        <span className="text-slate-600 text-xs ml-auto">{filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}</span>
+        {/* Keyboard hints */}
+        <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+          {([['Enter','Mark for Payroll'],['Shift+A','Select All'],['Esc','Clear']] as [string,string][]).map(([k,d]) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ background: '#1d2028', border: '1px solid #333849', borderRadius: 5, padding: '2px 6px', fontSize: 10, fontFamily: 'monospace', color: '#c2c8d8' }}>{k}</span>
+              <span style={{ color: '#525c72', fontSize: 11, fontFamily: "'DM Sans',sans-serif" }}>{d}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Selection controls bar (Draft only) — batch actions moved to floating toolbar */}
-      {statusTab === 'Draft' && filtered.length > 0 && (
-        <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={selectAll}
-            className="text-xs text-slate-400 hover:text-white underline transition-colors"
-          >
-            {filtered.every((e) => selectedIds.has(e.id)) ? 'Deselect All' : 'Select All'}
-          </button>
-          <span className="text-slate-600 text-sm ml-auto">
-            {filtered.length} entries · ${filtered.reduce((s, e) => s + e.amount, 0).toLocaleString()} total
-          </span>
-        </div>
-      )}
-
+      {/* ── Data table ── */}
       <div key={statusTab} className="animate-tab-enter">
       {filtered.length === 0 ? (
-        <div className="flex justify-center py-10">
-
-          {/* ── Draft × Deal ─────────────────────────────────────────────────── */}
-          {statusTab === 'Draft' && typeTab === 'Deal' && (
-            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
-              {/* Illustration — wallet with coins */}
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
-                {/* Wallet body */}
-                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-                <rect x="10" y="30" width="52" height="4" fill="#334155"/>
-                {/* Coin pocket */}
-                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                <circle cx="53" cy="42" r="4" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.5"/>
-                {/* Dashed lines — empty content indicator */}
-                <line x1="16" y1="40" x2="36" y2="40" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                <line x1="16" y1="46" x2="28" y2="46" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                {/* Dollar sign badge */}
-                <circle cx="60" cy="22" r="9" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" strokeOpacity="0.5"/>
-                <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
-                {/* Plus indicator — top-left sparkle */}
-                <line x1="18" y1="14" x2="18" y2="20" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
-                <line x1="15" y1="17" x2="21" y2="17" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.4"/>
-              </svg>
-              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">No draft deal payments yet</p>
-              <p className="text-slate-500 text-xs leading-relaxed text-center">Draft entries are auto-created when projects hit Acceptance (M1) or Installed (M2) — or add one manually above</p>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ backgroundColor: 'var(--brand)' }}
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-                Add Payment
+        <div style={{ background: '#161920', border: '1px solid #272b35', borderTop: 'none', borderRadius: '0 0 14px 14px', padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#f0f2f7', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No {statusTab.toLowerCase()} {typeTab.toLowerCase()} payments</p>
+            <p style={{ color: '#525c72', fontSize: 12 }}>
+              {statusTab === 'Draft' ? (typeTab === 'Deal' ? 'Draft entries are auto-created when projects hit milestones' : 'Create a bonus entry for any rep') : statusTab === 'Pending' ? 'Select Draft entries and mark them for payroll' : 'Publish pending payroll to move entries here'}
+            </p>
+            {statusTab === 'Draft' && typeTab === 'Deal' && (
+              <button onClick={() => setShowPaymentModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
+                <ArrowRight className="w-3.5 h-3.5" /> Add Payment
               </button>
-            </div>
-          )}
-
-          {/* ── Draft × Bonus ────────────────────────────────────────────────── */}
-          {statusTab === 'Draft' && typeTab === 'Bonus' && (
-            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
-              {/* Illustration — wallet with coins (bonus variant: emerald accent) */}
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
-                {/* Wallet body */}
-                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-                <rect x="10" y="30" width="52" height="4" fill="#334155"/>
-                {/* Coin pocket */}
-                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                <circle cx="53" cy="42" r="4" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.5"/>
-                {/* Dashed lines — empty content indicator */}
-                <line x1="16" y1="40" x2="36" y2="40" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                <line x1="16" y1="46" x2="28" y2="46" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                {/* Star / sparkle — bonus feel */}
-                <path d="M22 14 L23.2 17.4 L26.8 17.4 L24 19.4 L25.2 22.8 L22 20.8 L18.8 22.8 L20 19.4 L17.2 17.4 L20.8 17.4 Z" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5"/>
-                {/* Dollar sign badge (emerald) */}
-                <circle cx="60" cy="22" r="9" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.5"/>
-                <text x="60" y="26.5" textAnchor="middle" fill="#34d399" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
-              </svg>
-              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">No draft bonus payments yet</p>
-              <p className="text-slate-500 text-xs leading-relaxed text-center">Create a bonus entry for any rep — add one above</p>
-              <button
-                onClick={() => setShowBonusModal(true)}
-                className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ backgroundColor: 'var(--brand)' }}
-              >
+            )}
+            {statusTab === 'Draft' && typeTab === 'Bonus' && (
+              <button onClick={() => setShowBonusModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
                 Add Bonus
               </button>
-            </div>
-          )}
-
-          {/* ── Pending (Deal or Bonus) ───────────────────────────────────────── */}
-          {statusTab === 'Pending' && (
-            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
-              {/* Illustration — wallet with hourglass overlay */}
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
-                {/* Wallet body */}
-                <rect x="8" y="26" width="46" height="32" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-                <rect x="8" y="32" width="46" height="4" fill="#334155"/>
-                {/* Coin pocket */}
-                <rect x="36" y="36" width="18" height="14" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                <circle cx="45" cy="43" r="4" fill="#7c6010" stroke="#eab308" strokeWidth="1.5" strokeOpacity="0.5"/>
-                {/* Dashed lines */}
-                <line x1="12" y1="41" x2="30" y2="41" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                <line x1="12" y1="47" x2="24" y2="47" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                {/* Hourglass — top right */}
-                <rect x="54" y="10" width="20" height="5" rx="2" fill="#334155"/>
-                <rect x="54" y="43" width="20" height="5" rx="2" fill="#334155"/>
-                <path d="M56 15 L72 15 L67 27 L67 31 L72 43 L56 43 L61 31 L61 27 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.2"/>
-                <path d="M58 15 L70 15 L66 25 L62 25 Z" fill="#1e3a5f" fillOpacity="0.6"/>
-                <path d="M63 35 L65 35 L67 43 L61 43 Z" fill="#1e3a5f" fillOpacity="0.6"/>
-                <circle cx="64" cy="28" r="2" fill="#7c6010" stroke="#eab308" strokeWidth="1" strokeOpacity="0.6"/>
-              </svg>
-              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">
-                No {typeTab === 'Deal' ? 'deal' : 'bonus'} payments pending
-              </p>
-              <p className="text-slate-500 text-xs leading-relaxed text-center">Select Draft entries and mark them for payroll to move them here</p>
-            </div>
-          )}
-
-          {/* ── Paid (Deal or Bonus) ─────────────────────────────────────────── */}
-          {statusTab === 'Paid' && (
-            <div className="animate-fade-in w-64 border border-dashed border-slate-800 rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
-              {/* Illustration — wallet with checkmark badge */}
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
-                {/* Confetti dots */}
-                <circle cx="12" cy="16" r="2.5" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.6"/>
-                <circle cx="68" cy="14" r="2"   fill="#14532d" stroke="#10b981" strokeWidth="1" strokeOpacity="0.6"/>
-                <rect x="64" y="26" width="4" height="4" rx="1" fill="#334155" transform="rotate(20 64 26)"/>
-                <rect x="10" y="34" width="4" height="4" rx="1" fill="#334155" transform="rotate(-15 10 34)"/>
-                {/* Wallet body */}
-                <rect x="10" y="28" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-                <rect x="10" y="34" width="52" height="4" fill="#334155"/>
-                {/* Coin pocket */}
-                <rect x="44" y="38" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                <circle cx="53" cy="46" r="4" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.5"/>
-                {/* Content lines */}
-                <line x1="16" y1="44" x2="36" y2="44" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="16" y1="50" x2="28" y2="50" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
-                {/* Check badge — top-right corner */}
-                <circle cx="62" cy="24" r="10" fill="#14532d" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.6"/>
-                <path d="M57 24 L61 28 L67 20" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              </svg>
-              <p className="text-slate-200 text-sm font-semibold leading-snug text-center">
-                No paid {typeTab === 'Deal' ? 'deal' : 'bonus'} payments yet
-              </p>
-              <p className="text-slate-500 text-xs leading-relaxed text-center">Publish pending payroll to move entries here once they&apos;re finalised</p>
-            </div>
-          )}
-
+            )}
+          </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {repGroups.map(([repId, entries], groupIndex) => {
-            const repTotal = entries.reduce((s, e) => s + e.amount, 0);
-            const allRepSelected = entries.every((e) => selectedIds.has(e.id));
-            const accentBar = STATUS_ACCENT[statusTab];
-            const staggerCls = `stagger-${Math.min(groupIndex + 1, 6)}`;
-            const initials = entries[0].repName
-              .split(' ')
-              .map((n: string) => n[0] ?? '')
-              .join('')
-              .slice(0, 2)
-              .toUpperCase();
-            return (
-              <div key={repId} className={`rounded-2xl overflow-hidden animate-slide-in-scale ${staggerCls}`} style={{ background: '#1d2028', border: '1px solid #272b35' }}>
-                {/* Gradient accent bar — colour keyed to active status tab */}
-                <div className="h-[3px]" style={{ background: statusTab === 'Draft' ? '#4d9fff' : statusTab === 'Pending' ? '#ffb020' : '#00e07a' }} />
-                <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid #272b35' }}>
-                  <div className="flex items-center gap-3">
-                    {statusTab === 'Draft' && (
-                      <input
-                        type="checkbox"
-                        checked={allRepSelected}
-                        onChange={() => toggleRepGroup(entries)}
-                        className="w-4 h-4 rounded border-slate-600 bg-slate-700 cursor-pointer" style={{ accentColor: '#00e07a' }}
-                      />
-                    )}
-                    {/* Avatar circle showing rep initials */}
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/40 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-slate-300">{initials}</span>
-                    </div>
-                    <span className="text-white font-black text-lg leading-tight">{entries[0].repName}</span>
-                    <span className="text-slate-500 text-xs">{entries.length} payment{entries.length !== 1 ? 's' : ''}</span>
-                  </div>
-                  <span className="font-black text-xl tabular-nums tracking-tight animate-count-up" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${repTotal.toLocaleString()}</span>
-                </div>
-                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ background: '#1d2028', borderBottom: '1px solid #333849' }}>
-                      {statusTab === 'Draft' && <th className="pl-5 pr-2 py-3 w-8" />}
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Customer / Note</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Stage</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Amount</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.map((entry, ei) => (
-                      <tr
-                        key={entry.id}
-                        className={`table-row-enter row-stagger-${Math.min(ei, 24)} relative transition-colors duration-150`}
-                        style={{
-                          borderBottom: '1px solid #272b35',
-                          background: selectedIds.has(entry.id) ? 'rgba(255,176,32,0.06)' : ei % 2 === 0 ? '#161920' : '#191c24',
-                        }}
-                      >
-                        {statusTab === 'Draft' && (
-                          <td className="pl-5 pr-2 py-3 w-8">
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.has(entry.id)}
-                              onChange={() => toggleEntry(entry.id)}
-                              className="w-4 h-4 rounded border-slate-600 bg-slate-700 cursor-pointer" style={{ accentColor: '#00e07a' }}
-                            />
-                          </td>
-                        )}
-                        <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>
-                          {typeTab === 'Deal' ? entry.customerName : (entry.notes || '—')}
-                        </td>
-                        <td className="px-5 py-3">
-                          <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: '#1d2028', color: '#c2c8d8' }}>
-                            {entry.paymentStage}
-                          </span>
-                          {entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes === 'Trainer override') && (
-                            <span className="ml-2 text-xs" style={{ color: '#525c72' }}>{entry.notes}</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>
-                          {fmt$(entry.amount)}
-                        </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs"><RelativeDate date={entry.date} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
-              </div>
-            );
-          })}
-          {filtered.length > adminRowsPerPage && (
-            <div className="card-surface rounded-2xl overflow-hidden mt-4">
-              <PaginationBar
-                totalResults={filtered.length}
-                startIdx={adminStartIdx}
-                endIdx={adminEndIdx}
-                currentPage={adminPage}
-                totalPages={adminTotalPages}
-                rowsPerPage={adminRowsPerPage}
-                onPageChange={setAdminPage}
-                onRowsPerPageChange={(n) => { setAdminRowsPerPage(n); setAdminPage(1); }}
-              />
-            </div>
-          )}
+        <>
+        <div style={{ background: '#161920', border: '1px solid #272b35', borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {statusTab === 'Draft' && (
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const, width: 40 }}>
+                    <input type="checkbox" checked={allFilteredSelected} onChange={selectAll} style={{ accentColor: '#00e07a', cursor: 'pointer' }} />
+                  </th>
+                )}
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Rep</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Type</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Customer</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Amount</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Date</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedFiltered.map((entry, i) => (
+                <tr key={entry.id} style={{
+                  background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? '#161920' : '#191c24',
+                  borderBottom: '1px solid #272b35',
+                  cursor: 'pointer',
+                }} onClick={() => statusTab === 'Draft' && toggleEntry(entry.id)}>
+                  {statusTab === 'Draft' && (
+                    <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
+                      <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleEntry(entry.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: '#00e07a', cursor: 'pointer' }} />
+                    </td>
+                  )}
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#f0f2f7', fontWeight: 600 }}>{entry.repName}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#c2c8d8' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes === 'Trainer override') ? ` (${entry.notes})` : ''}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#8891a8' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: '#00e07a', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#8891a8' }}><RelativeDate date={entry.date} /></span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
+                    <span style={
+                      entry.status === 'Paid'
+                        ? { background: 'rgba(0,224,122,0.12)', color: '#00e07a', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                        : entry.status === 'Pending'
+                        ? { background: 'rgba(255,176,32,0.12)', color: '#ffb020', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                        : { background: 'rgba(77,159,255,0.12)', color: '#4d9fff', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                    }>{entry.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+        {filtered.length > adminRowsPerPage && (
+          <div className="card-surface rounded-2xl overflow-hidden mt-4">
+            <PaginationBar
+              totalResults={filtered.length}
+              startIdx={adminStartIdx}
+              endIdx={adminEndIdx}
+              currentPage={adminPage}
+              totalPages={adminTotalPages}
+              rowsPerPage={adminRowsPerPage}
+              onPageChange={setAdminPage}
+              onRowsPerPageChange={(n) => { setAdminRowsPerPage(n); setAdminPage(1); }}
+            />
+          </div>
+        )}
+        </>
       )}
       </div> {/* end key={statusTab} */}
 

@@ -1718,12 +1718,59 @@ function AdminDashboard({
     { label: 'Completed Projects', value: completedCount, raw: completedCount, format: (n: number) => n.toString(), accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
+  // Inline pipeline phase hex colors for the segmented bar
+  const PHASE_HEX: Record<string, string> = {
+    'New': '#38bdf8', 'Acceptance': '#818cf8', 'Site Survey': '#a78bfa',
+    'Design': '#e879f9', 'Permitting': '#fbbf24', 'Pending Install': '#fb923c',
+    'Installed': '#2dd4bf', 'PTO': '#34d399',
+  };
+  const pipelineActive = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  const pipelinePhaseCounts = ACTIVE_PHASES.reduce<Record<string, number>>((acc, phase) => {
+    acc[phase] = pipelineActive.filter((p) => p.phase === phase).length;
+    return acc;
+  }, {});
+  const pipelineNonEmpty = ACTIVE_PHASES.filter((ph) => pipelinePhaseCounts[ph] > 0);
+  const pipelineTotal = pipelineActive.length;
+
+  // Attention items count (used for All Clear vs Needs Attention)
+  const attentionActiveProjects = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  const PHASE_STUCK_THRESHOLDS_ADMIN = getPhaseStuckThresholds();
+  const todayAdmin = new Date(); todayAdmin.setHours(0, 0, 0, 0);
+  const attentionItemCount = (() => {
+    let count = 0;
+    for (const proj of attentionActiveProjects) {
+      if (proj.flagged) count++;
+    }
+    for (const proj of attentionActiveProjects) {
+      const threshold = PHASE_STUCK_THRESHOLDS_ADMIN[proj.phase];
+      if (threshold == null) continue;
+      const [y, m, d] = proj.soldDate.split('-').map(Number);
+      const sold = new Date(y, m - 1, d);
+      const diffDays = Math.floor((todayAdmin.getTime() - sold.getTime()) / 86_400_000);
+      if (diffDays > threshold) count++;
+    }
+    for (const proj of attentionActiveProjects) {
+      if (proj.phase === 'On Hold') count++;
+    }
+    return count;
+  })();
+
+  // GradCard color config for the 6 stat cards
+  const gradCardConfig: Record<string, { color: string; grad: string }> = {
+    'Kilo Revenue':      { color: '#00e07a', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
+    'Gross Profit':      { color: '#00c4f0', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
+    'Total Paid Out':    { color: '#ffb020', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
+    'Total Users':       { color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a 0%, #0e0820 100%)' },
+    'Total kW Sold':     { color: '#00d4c8', grad: 'linear-gradient(135deg, #001210 0%, #001614 100%)' },
+    'Total kW Installed': { color: '#8891a8', grad: 'linear-gradient(135deg, #101012 0%, #141416 100%)' },
+  };
+
   return (
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, #00e07a, #00c4f0)' }} />
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard</h1>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: '#f0f2f7', letterSpacing: '-0.03em' }}>Admin Dashboard</h1>
           <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>Overview of all reps and deals</p>
         </div>
         <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 tab-bar-container">
@@ -1765,31 +1812,27 @@ function AdminDashboard({
         ))}
       </div>
 
-      {/* Top 6 stats */}
+      {/* Top 6 GradCard stats */}
       <div className="grid grid-cols-2 xl:grid-cols-6 gap-4 mb-4">
-        {topStats.map((stat, i) => {
-          const Icon = stat.icon;
+        {topStats.map((stat) => {
+          const gc = gradCardConfig[stat.label] ?? { color: stat.accentHex, grad: 'linear-gradient(135deg, #101012, #141416)' };
           return (
-            <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-blue-500/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${stat.accentHex}14` } as CSSProperties}>
-              <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: stat.accentHex }} />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium uppercase tracking-wider leading-tight flex items-center gap-1" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>
-                  {stat.label}
-                  {'tooltip' in stat && stat.tooltip && (
-                    <span className="relative group/tip">
-                      <HelpCircle className="w-3 h-3 text-slate-600 hover:text-slate-400 transition-colors cursor-help" />
-                      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-slate-800 border border-slate-700/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-300 shadow-xl leading-snug">
-                        {stat.tooltip}
-                      </span>
-                    </span>
-                  )}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Icon className="w-4 h-4 shrink-0" style={{ color: stat.accentHex }} />
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
+            <Link key={stat.label} href={stat.href} className="group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px]" style={{ textDecoration: 'none' }}>
+              <div style={{
+                background: gc.grad,
+                border: `1px solid ${gc.color}40`,
+                borderRadius: 16,
+                padding: '18px 18px 16px',
+                position: 'relative',
+                overflow: 'hidden',
+                flex: 1,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${gc.color}, transparent 70%)` }} />
+                <div style={{ position: 'absolute', top: -24, right: -24, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${gc.color}15 0%, transparent 70%)` }} />
+                <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 14 }}>{stat.label}</p>
+                <AnimatedStatValue raw={stat.raw} format={stat.format} style={{ fontSize: 36, fontWeight: 700, color: gc.color, fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: `0 0 20px ${gc.color}50` }} />
               </div>
-              <AnimatedStatValue raw={stat.raw} format={stat.format} className="stat-value text-3xl font-black tabular-nums animate-count-up" style={{ color: stat.accentHex, fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: `0 0 20px ${stat.accentHex}50` }} />
             </Link>
           );
         })}
@@ -1819,21 +1862,66 @@ function AdminDashboard({
         ))}
       </div>
 
-      {/* Pipeline Overview — stacked bar + phase chips */}
-      <div className="card-surface rounded-2xl p-5 mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#00e07a', boxShadow: '0 0 6px #00e07a80' }} />
-          <h2 className="text-white font-bold text-base tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>Pipeline Overview</h2>
+      {/* Pipeline Overview — inline segmented bar */}
+      <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: '22px 26px', marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00e07a', boxShadow: '0 0 8px #00e07a', flexShrink: 0 }} />
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>Pipeline Overview</h2>
+          <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{pipelineTotal} active deal{pipelineTotal !== 1 ? 's' : ''}</span>
         </div>
-        <PipelineOverview activeProjects={allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase))} />
+        {pipelineTotal > 0 ? (
+          <>
+            <div style={{ display: 'flex', height: 10, borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
+              {pipelineNonEmpty.map((phase) => (
+                <div
+                  key={phase}
+                  style={{
+                    width: `${(pipelinePhaseCounts[phase] / pipelineTotal) * 100}%`,
+                    background: PHASE_HEX[phase] ?? '#525c72',
+                    transition: 'width 0.7s ease-out',
+                  }}
+                />
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+              {pipelineNonEmpty.map((phase) => (
+                <Link key={phase} href={`/dashboard/projects?phase=${encodeURIComponent(phase)}`} style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: PHASE_HEX[phase] ?? '#525c72', flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>{phase}</span>
+                  <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{pipelinePhaseCounts[phase]}</span>
+                </Link>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 0', gap: 8 }}>
+            <FolderKanban style={{ width: 32, height: 32, color: '#525c72' }} />
+            <p style={{ color: '#f0f2f7', fontWeight: 700, fontSize: 14 }}>No active projects</p>
+            <p style={{ color: '#525c72', fontSize: 12 }}>Your pipeline will appear here once you close a deal.</p>
+          </div>
+        )}
       </div>
 
-      {/* Needs Attention — all active projects across every rep */}
-      <NeedsAttentionSection
-        activeProjects={allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase))}
-        isAdmin
-        onUnflag={(projectId) => updateProject(projectId, { flagged: false })}
-      />
+      {/* Needs Attention / All Clear */}
+      {attentionItemCount === 0 ? (
+        <div style={{ background: '#161920', border: '1px solid #272b35', borderLeft: '3px solid #00e07a', borderRadius: 16, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,224,122,0.13)', border: '1px solid rgba(0,224,122,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckCircle style={{ width: 16, height: 16, color: '#00e07a' }} />
+          </div>
+          <div>
+            <p style={{ color: '#00e07a', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
+            <p style={{ color: '#8891a8', fontSize: 12, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>No items need attention right now.</p>
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 32 }}>
+          <NeedsAttentionSection
+            activeProjects={attentionActiveProjects}
+            isAdmin
+            onUnflag={(projectId) => updateProject(projectId, { flagged: false })}
+          />
+        </div>
+      )}
 
       {/* ── Installer Insights ────────────────────────────────────────────── */}
       {(() => {
