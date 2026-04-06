@@ -23,9 +23,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json(blitz);
 }
 
-// PATCH /api/blitzes/[id] — Update blitz
+// PATCH /api/blitzes/[id] — Update blitz (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const body = await req.json();
 

@@ -243,6 +243,19 @@ body {
   animation: mobileSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Mobile card list entrance — staggered per-card via --card-index CSS var */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-card-enter {
+  animation: cardEnter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 35ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-enter { animation: none; }
+}
+
 /* Splash logo fade-in with scale */
 @keyframes splashIn {
   from {
@@ -961,6 +974,20 @@ select {
   animation: stepperPulse 1.6s ease-out infinite;
 }
 
+@keyframes mobileDotPulse {
+  0%, 100% { box-shadow: 0 0 0 0px rgba(0,180,216,0.55), 0 0 0 0px rgba(0,180,216,0.2); }
+  50%       { box-shadow: 0 0 0 4px rgba(0,180,216,0.2),  0 0 0 7px rgba(0,180,216,0.06); }
+}
+.mobile-stepper-current {
+  animation: mobileDotPulse 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-stepper-current {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(0,180,216,0.35) !important;
+  }
+}
+
 /* ── Animated conic-gradient glow border for stat cards ─────────────────────── */
 
 /* Registers --glow-angle as an animatable <angle> property so the browser can
@@ -1408,4 +1435,23 @@ select {
 
 .animate-slide-up-sheet {
   animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Milestone progress track animations ─────────────────────────────── */
+@keyframes nodePop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  65%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes trackFill {
+  from { width: 0%; }
+}
+@keyframes amountFadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .milestone-node { animation: none !important; }
+  .milestone-track-fill { animation: none !important; }
+  .milestone-amount { animation: none !important; }
 }

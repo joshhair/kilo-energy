@@ -402,9 +402,9 @@ function VaultPageInner() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
-              <p className="text-3xl md:text-5xl font-black tabular-nums tracking-tight leading-none"
-                 style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 32px rgba(16,185,129,0.30)' }}>
-                ${nextPayoutTotal.toLocaleString()}
+              <p className="font-black tabular-nums tracking-tight leading-none break-words"
+                 style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 32px rgba(16,185,129,0.30)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
+                {fmt$(nextPayoutTotal)}
               </p>
               <p className="text-[#8891a8] text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>
             </div>
@@ -428,10 +428,10 @@ function VaultPageInner() {
             <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
             <DollarSign className="w-4 h-4 text-[#00e07a]/50" />
           </div>
-          <p className="text-xl md:text-3xl font-black tabular-nums text-[#00e07a] stat-value"
-             style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)' }}>${lifetimeEarned.toLocaleString()}</p>
+          <p className="font-black tabular-nums text-[#00e07a] stat-value break-words"
+             style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.1rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
           {chargebackTotal > 0 && (
-            <p className="text-red-400/70 text-[10px] font-semibold mt-1.5 tabular-nums">- ${chargebackTotal.toLocaleString()} chargebacks</p>
+            <p className="text-red-400/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">- {fmt$(chargebackTotal)} chargebacks</p>
           )}
         </div>
         {/* On Pace For — standout card with amber left border + larger number */}
@@ -441,8 +441,8 @@ function VaultPageInner() {
             <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">On Pace For {new Date().getFullYear()}</p>
             <TrendingUp className="w-4 h-4 text-amber-400/50" />
           </div>
-          <p className="text-xl md:text-3xl font-black tabular-nums text-amber-400 stat-value"
-             style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)' }}>
+          <p className="font-black tabular-nums text-amber-400 stat-value break-words"
+             style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)', fontSize: 'clamp(1.1rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
           <p className="text-[#525c72] text-[10px] mt-1.5">
@@ -460,8 +460,8 @@ function VaultPageInner() {
             <p className="text-[#8891a8] text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
             <TrendingUp className="w-4 h-4 text-[#00e07a]/50" />
           </div>
-          <p className="text-xl md:text-2xl font-black tabular-nums text-[#00e07a] stat-value"
-             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)' }}>${(projectedM1 + projectedM2).toLocaleString()}</p>
+          <p className="font-black tabular-nums text-[#00e07a] stat-value break-words"
+             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.05rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2)}</p>
           <p className="text-[#525c72] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
       </div>
@@ -488,8 +488,8 @@ function VaultPageInner() {
                       <p className="text-[#525c72] text-[10px]">Awaiting Acceptance</p>
                     </div>
                   </div>
-                  <p className="text-[#00e07a] font-bold tabular-nums" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
-                    ${projectedM1.toLocaleString()}
+                  <p className="text-[#00e07a] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
+                    {fmt$(projectedM1)}
                   </p>
                 </div>
               )}
@@ -504,8 +504,8 @@ function VaultPageInner() {
                       <p className="text-[#525c72] text-[10px]">Awaiting Installation</p>
                     </div>
                   </div>
-                  <p className="text-violet-400 font-bold tabular-nums" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
-                    ${projectedM2.toLocaleString()}
+                  <p className="text-violet-400 font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
+                    {fmt$(projectedM2)}
                   </p>
                 </div>
               )}
@@ -704,8 +704,8 @@ function VaultPageInner() {
                   </div>
                   <p className="text-[#8891a8] text-xs mt-0.5">{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</p>
                 </div>
-                <p className={`text-lg font-bold tabular-nums shrink-0 ${period.isUpcoming ? 'text-[#00e07a]' : period.isPast ? 'text-[#c2c8d8]' : 'text-white'}`}>
-                  ${period.total.toLocaleString()}
+                <p className={`text-lg font-bold tabular-nums shrink-0 break-words ${period.isUpcoming ? 'text-[#00e07a]' : period.isPast ? 'text-[#c2c8d8]' : 'text-white'}`}>
+                  {fmt$(period.total)}
                 </p>
                 <ChevronDown className={`w-4 h-4 text-[#8891a8] shrink-0 nav-chevron-spring ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
               </button>

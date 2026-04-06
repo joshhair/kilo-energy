@@ -115,20 +115,40 @@ function RepsPageInner() {
     if (!newFirstName.trim() || !newLastName.trim()) return;
     const ts = Date.now();
     const repId = `rep_${ts}`;
-    addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId);
+    const trainerIdSnapshot = newTrainerId;
+    const repPromise = addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId);
     toast('Rep added', 'success');
-    // If a trainer was selected, create a trainer assignment
-    if (newTrainerId) {
-      setTrainerAssignments((prev) => [
-        ...prev,
-        {
-          id: `ta_${ts}`,
-          trainerId: newTrainerId,
-          traineeId: repId,
-          tiers: [{ upToDeal: null, ratePerW: 0.05 }],
-        },
-      ]);
-      toast('Trainer assigned', 'success');
+    // If a trainer was selected, persist assignment after real rep ID is known
+    if (trainerIdSnapshot) {
+      repPromise?.then((rep) => {
+        if (!rep?.id) return;
+        fetch('/api/trainer-assignments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            trainerId: trainerIdSnapshot,
+            traineeId: rep.id,
+            tiers: [{ upToDeal: null, ratePerW: 0.05 }],
+          }),
+        })
+          .then((r) => r.json())
+          .then((assignment) => {
+            setTrainerAssignments((prev) => [
+              ...prev,
+              {
+                id: assignment.id,
+                trainerId: assignment.trainerId,
+                traineeId: assignment.traineeId,
+                tiers: (assignment.tiers ?? []).map((t: { upToDeal: number | null; ratePerW: number }) => ({
+                  upToDeal: t.upToDeal,
+                  ratePerW: t.ratePerW,
+                })),
+              },
+            ]);
+            toast('Trainer assigned', 'success');
+          })
+          .catch(() => toast('Failed to assign trainer', 'error'));
+      });
     }
     resetAddModal();
   };
@@ -605,8 +625,9 @@ function RepsPageInner() {
           const rank = rankMap.get(rep.id) ?? 999;
 
           // ── Progress ring ─────────────────────────────────────────────────
+          const completedCount = repProjects.filter((p) => p.phase === 'Completed').length;
           const completionRate =
-            repProjects.length > 0 ? activeCount / repProjects.length : 0;
+            repProjects.length > 0 ? completedCount / repProjects.length : 0;
           const dashOffset = REP_RING_CIRCUMFERENCE * (1 - completionRate);
 
           return (

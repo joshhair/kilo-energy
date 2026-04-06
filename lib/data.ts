@@ -188,6 +188,7 @@ export interface Project {
   prepaidSubType?: string;
   // M3: remaining commission paid at PTO for installers that don't pay 100% at install
   m3Amount?: number;
+  m3Paid: boolean;
   // Lead source + blitz attribution
   leadSource?: string;
   blitzId?: string;
@@ -258,6 +259,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 1890,
     notes: 'Smooth install, customer very happy.',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj2',
@@ -278,6 +280,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 700,
     notes: 'PTO application submitted.',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj3',
@@ -298,6 +301,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 1100,
     notes: '',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj4',
@@ -318,6 +322,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 850,
     notes: 'Great customer, referral sent.',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj5',
@@ -338,6 +343,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 975,
     notes: 'Waiting on HOA approval.',
     flagged: true,
+    m3Paid: false,
   },
   {
     id: 'proj6',
@@ -358,6 +364,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 600,
     notes: '',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj7',
@@ -378,6 +385,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 1260,
     notes: 'Large system, commercial adjacent.',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj8',
@@ -398,6 +406,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 765,
     notes: '',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj9',
@@ -418,6 +427,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 630,
     notes: 'Cash deal, fast close expected.',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj10',
@@ -438,6 +448,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 0,
     notes: 'Customer backed out, financing fell through.',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj11',
@@ -458,6 +469,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 1008,
     notes: 'Install scheduled for March.',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj12',
@@ -478,6 +490,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 650,
     notes: '',
     flagged: false,
+    m3Paid: false,
   },
   {
     id: 'proj13',
@@ -496,6 +509,7 @@ export const PROJECTS: Project[] = [
     m1Amount: 1596,
     m2Paid: true,
     m2Amount: 1197,
+    m3Paid: false,
     notes: '',
     flagged: false,
   },
@@ -516,6 +530,7 @@ export const PROJECTS: Project[] = [
     m1Amount: 1050,
     m2Paid: false,
     m2Amount: 790,
+    m3Paid: false,
     notes: 'Permitting taking longer than expected.',
     flagged: false,
   },
@@ -538,6 +553,7 @@ export const PROJECTS: Project[] = [
     m2Amount: 924,
     notes: 'HOA dispute, on hold until resolved.',
     flagged: true,
+    m3Paid: false,
   },
 ];
 
@@ -1427,7 +1443,7 @@ export function computeIncentiveProgress(
     return d >= start && d <= end;
   };
 
-  let relevantProjects = projects.filter((p) => inRange(p.soldDate));
+  let relevantProjects = projects.filter((p) => inRange(p.soldDate) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   if (incentive.type === 'personal' && incentive.targetRepId) {
     relevantProjects = relevantProjects.filter((p) => p.repId === incentive.targetRepId);
   }
@@ -1444,7 +1460,7 @@ export function computeIncentiveProgress(
         ? [incentive.targetRepId]
         : null;
       return payrollEntries
-        .filter((e) => inRange(e.date) && e.status === 'Paid' && (!repIds || repIds.includes(e.repId)))
+        .filter((e) => inRange(e.date) && e.status === 'Paid' && e.type === 'Deal' && (!repIds || repIds.includes(e.repId)))
         .reduce((s, e) => s + e.amount, 0);
     }
     default:

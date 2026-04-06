@@ -669,7 +669,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
 
           <div className="flex items-center gap-2">
             <span className="text-[#525c72] text-[10px] hidden sm:inline">
-              {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
+              {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
             </span>
             <button
               onClick={handleSend}

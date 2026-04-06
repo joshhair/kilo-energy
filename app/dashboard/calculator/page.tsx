@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileCalculator from '../mobile/MobileCalculator';
-import { getSolarTechBaseline, calculateCommission, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, SOLARTECH_PRODUCTS, getInstallerRatesForDeal, getProductCatalogBaseline, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { getSolarTechBaseline, calculateCommission, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2, Link2 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { RepSelector } from '../components/RepSelector';
@@ -165,7 +165,7 @@ function CommissionBar({
 
   const segments = [
     { key: 'closer',  value: closer,  colorClass: 'bg-[#00e07a]',    label: 'Closer'   },
-    { key: 'setter',  value: setter,  colorClass: 'bg-[#00e07a]', label: 'Setter'   },
+    { key: 'setter',  value: setter,  colorClass: 'bg-[#00c4f0]', label: 'Setter'   },
     { key: 'trainer', value: trainer, colorClass: 'bg-amber-500',   label: 'Trainer'  },
     ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-[#8891a8]', label: 'Kilo Rev' }] : []),
   ].filter((s) => s.value > 0);
@@ -200,7 +200,7 @@ export default function CalculatorPageWrapper() {
 function CalculatorPage() {
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
-  const { currentRepId, currentRole, effectiveRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs } = useApp();
+  const { currentRepId, currentRole, effectiveRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
   const [installer, setInstaller] = useState('');
   const [solarTechFamily, setSolarTechFamily] = useState('');
@@ -213,6 +213,7 @@ function CalculatorPage() {
   const [selectedSetterId, setSelectedSetterId] = useState('');
   const [targetEarning, setTargetEarning] = useState('');
   const [quickFillValue, setQuickFillValue] = useState('');
+  const [quickFillSoldDate, setQuickFillSoldDate] = useState('');
 
   const { toast } = useToast();
 
@@ -269,9 +270,10 @@ function CalculatorPage() {
 
   const handleQuickFill = (projectId: string) => {
     setQuickFillValue(projectId);
-    if (!projectId) return;
+    if (!projectId) { setQuickFillSoldDate(''); return; }
     const proj = recentDeals.find((p) => p.id === projectId);
     if (!proj) return;
+    setQuickFillSoldDate(proj.soldDate);
     setInstaller(proj.installer);
     setKWSize(String(proj.kWSize));
     setNetPPW(String(proj.netPPW));
@@ -280,7 +282,7 @@ function CalculatorPage() {
     const isPC = !isST && !!proj.installerProductId;
 
     if (isST) {
-      const product = SOLARTECH_PRODUCTS.find((p) => p.id === proj.solarTechProductId);
+      const product = solarTechProducts.find((p) => p.id === proj.solarTechProductId);
       if (product) {
         setSolarTechFamily(product.family);
         setSolarTechProductId(proj.solarTechProductId!);
@@ -324,6 +326,7 @@ function CalculatorPage() {
     // Snapshot current values so the Undo action can restore them
     const snapshot = {
       quickFillValue,
+      quickFillSoldDate,
       installer,
       solarTechFamily,
       solarTechProductId,
@@ -337,6 +340,7 @@ function CalculatorPage() {
     };
 
     setQuickFillValue('');
+    setQuickFillSoldDate('');
     setInstaller('');
     setSolarTechFamily('');
     setSolarTechProductId('');
@@ -352,6 +356,7 @@ function CalculatorPage() {
       label: 'Undo',
       onClick: () => {
         setQuickFillValue(snapshot.quickFillValue);
+        setQuickFillSoldDate(snapshot.quickFillSoldDate);
         setInstaller(snapshot.installer);
         setSolarTechFamily(snapshot.solarTechFamily);
         setSolarTechProductId(snapshot.solarTechProductId);
@@ -375,7 +380,7 @@ function CalculatorPage() {
 
   // Products for the selected SolarTech family
   const solarTechFamilyProducts = solarTechFamily
-    ? SOLARTECH_PRODUCTS.filter((p) => p.family === solarTechFamily)
+    ? solarTechProducts.filter((p) => p.family === solarTechFamily)
     : [];
   const hasSolarTechProducts = solarTechFamilyProducts.length > 0;
 
@@ -397,11 +402,12 @@ function CalculatorPage() {
       return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
     }
     if (isPcInstaller) {
-      const b = getProductCatalogBaseline(productCatalogProducts, pcProductId, kW);
+      const pricingDate = quickFillSoldDate || new Date().toISOString().split('T')[0];
+      const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, pricingDate, productCatalogPricingVersions);
       return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
     }
-    const today = new Date().toISOString().split('T')[0];
-    const r = getInstallerRatesForDeal(installer, today, kW, installerPricingVersions);
+    const pricingDate = quickFillSoldDate || new Date().toISOString().split('T')[0];
+    const r = getInstallerRatesForDeal(installer, pricingDate, kW, installerPricingVersions);
     return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
   })();
 
@@ -413,7 +419,7 @@ function CalculatorPage() {
     ? trainerAssignments.find((a) => a.traineeId === effectiveSetterId)
     : null;
   const setterDealCount = effectiveSetterId
-    ? projects.filter((p) => p.repId === effectiveSetterId || p.setterId === effectiveSetterId).length
+    ? projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (p.repId === effectiveSetterId || p.setterId === effectiveSetterId)).length
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -429,7 +435,10 @@ function CalculatorPage() {
       return { closerTotal: soldPPW > 0 ? calculateCommission(soldPPW, closerPerW, kW) : 0, setterTotal: 0 };
     }
     // Closer always keeps the $0.10/W spread between their redline and the setter redline
-    const closerDifferential = Math.round((setterBaselinePerW - closerPerW) * kW * 1000 * 100) / 100;
+    // Only apply differential if soldPPW is above the closer's own baseline
+    const closerDifferential = soldPPW > closerPerW
+      ? Math.round((setterBaselinePerW - closerPerW) * kW * 1000 * 100) / 100
+      : 0;
     // Remaining pool above setter baseline (adjusted up by trainer override if any)
     const splitPoint = setterBaselinePerW + trainerRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
@@ -442,7 +451,7 @@ function CalculatorPage() {
   const installPayPct = (installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT);
   const hasM3Split = installPayPct < 100;
   const closerM1 = isSelfGen ? m1Flat : 0;
-  const closerM2Raw = closerTotal - closerM1;
+  const closerM2Raw = Math.max(0, closerTotal - closerM1);
   const closerM2 = hasM3Split ? Math.round(closerM2Raw * (installPayPct / 100)) : closerM2Raw;
   const closerM3 = hasM3Split ? closerM2Raw - closerM2 : 0;
   const setterM1 = isSelfGen ? 0 : m1Flat;
@@ -601,7 +610,7 @@ function CalculatorPage() {
   if (!isHydrated) return <CalculatorSkeleton />;
 
   // Compute hasData for the right panel
-  const hasData = hasInput && soldPPW > 0 && closerTotal > 0;
+  const hasData = hasInput && soldPPW > 0;
   const systemValue = kW * soldPPW * 1000;
 
   // Bar segment data for the stacked breakdown bar
@@ -930,6 +939,13 @@ function CalculatorPage() {
                   </div>
                 )}
 
+                {/* Tier gap warning — baselines couldn't be resolved for this kW size */}
+                {hasSetter && setterBaselinePerW === 0 && closerPerW === 0 && soldPPW > 0 && (
+                  <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid #ffb020', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#ffb020' }}>
+                    No pricing tier found for {kW.toFixed(1)} kW — baselines could not be resolved. Results below are unreliable. Select a product or check that a tier covers this system size.
+                  </div>
+                )}
+
                 {/* Stacked bar */}
                 {breakdownTotal > 0 && (
                   <div style={{ display: 'flex', height: 8, borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}>
@@ -1028,7 +1044,7 @@ function CalculatorPage() {
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #00e07a, transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
                   <p style={{ fontSize: 44, fontWeight: 700, color: '#00e07a', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
-                    ${animatedGrandTotal.toLocaleString()}
+                    ${animatedCloserTotal.toLocaleString()}
                   </p>
                 </div>
 

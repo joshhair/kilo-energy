@@ -348,7 +348,7 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
     if (!name.trim() || !startDate || !endDate) return;
     setSaving(true);
     try {
-      await fetch('/api/blitz-requests', {
+      const res = await fetch('/api/blitz-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -362,6 +362,7 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
           expectedHeadcount: parseInt(headcount) || 0,
         }),
       });
+      if (!res.ok) throw new Error('Request failed');
       toast('Blitz request submitted for approval');
       onSubmitted();
       onClose();
@@ -526,8 +527,8 @@ function BlitzPageInner() {
       fetch('/api/blitzes').then((r) => r.json()),
       isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
     ]).then(([b, r]) => {
-      setBlitzes(b);
-      setRequests(r);
+      setBlitzes(Array.isArray(b) ? b : []);
+      setRequests(Array.isArray(r) ? r : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   };
@@ -632,14 +633,17 @@ function BlitzPageInner() {
 
   const handleJoinBlitz = async (blitzId: string) => {
     if (!effectiveRepId) return;
-    // Optimistic: show toast immediately, then refresh in background
-    toast('Join request sent!', 'success');
     try {
-      await fetch(`/api/blitzes/${blitzId}/participants`, {
+      const res = await fetch(`/api/blitzes/${blitzId}/participants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: effectiveRepId, joinStatus: 'pending' }),
       });
+      if (!res.ok) {
+        toast('Failed to join blitz — please try again', 'error');
+      } else {
+        toast('Join request sent!', 'success');
+      }
       loadData();
     } catch {
       toast('Failed to join blitz — please try again', 'error');
@@ -972,11 +976,11 @@ function BlitzPageInner() {
       )}
 
       {/* Create modal */}
-      {showCreate && (
+      {showCreate && !!(effectiveRepId ?? currentRepId) && (
         <CreateBlitzModal
           onClose={() => setShowCreate(false)}
           onCreated={loadData}
-          userId={effectiveRepId ?? 'admin2'}
+          userId={effectiveRepId ?? currentRepId ?? ''}
           reps={reps}
         />
       )}

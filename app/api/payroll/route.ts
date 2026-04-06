@@ -28,11 +28,11 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
   // body.ids: string[], body.status: string
   if (body.ids && body.status) {
-    await prisma.payrollEntry.updateMany({
+    const result = await prisma.payrollEntry.updateMany({
       where: { id: { in: body.ids } },
       data: { status: body.status },
     });
-    return NextResponse.json({ success: true, updated: body.ids.length });
+    return NextResponse.json({ success: true, updated: result.count });
   }
   return NextResponse.json({ error: 'ids and status required' }, { status: 400 });
 }

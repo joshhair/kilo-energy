@@ -4,7 +4,7 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 
 // Financial fields that project managers must NOT be able to modify
-const PM_BLOCKED_FIELDS = ['m1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'netPPW', 'baselineOverrideJson'];
+const PM_BLOCKED_FIELDS = ['m1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid', 'netPPW', 'baselineOverrideJson'];
 
 // PATCH /api/projects/[id] — Update a project (phase change, notes, flag, etc.)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -35,6 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.m2Paid !== undefined) data.m2Paid = body.m2Paid;
   if (body.m2Amount !== undefined) data.m2Amount = body.m2Amount;
   if (body.m3Amount !== undefined) data.m3Amount = body.m3Amount;
+  if (body.m3Paid !== undefined) data.m3Paid = body.m3Paid;
   if (body.baselineOverrideJson !== undefined) data.baselineOverrideJson = body.baselineOverrideJson;
   if (body.leadSource !== undefined) data.leadSource = body.leadSource;
   if (body.blitzId !== undefined) data.blitzId = body.blitzId;

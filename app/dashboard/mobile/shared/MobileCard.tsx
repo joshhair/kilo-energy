@@ -28,7 +28,7 @@ export default function MobileCard({
 
   if (onTap) {
     return (
-      <button onClick={onTap} className={`${base} w-full text-left active:opacity-80 transition-opacity`} style={{ ...heroStyle, ...style }}>
+      <button onClick={onTap} className={`${base} w-full text-left transition-[transform,opacity] duration-150 active:scale-[0.97] active:opacity-90`} style={{ ...heroStyle, ...style, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
         {hero && <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #00e5a0 0%, transparent 70%)' }} />}
         {children}
       </button>

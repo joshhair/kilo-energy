@@ -42,7 +42,7 @@ interface AppContextType {
   addFinancer: (name: string) => void;
   // Rep management
   reps: Rep[];
-  addRep: (firstName: string, lastName: string, email: string, phone: string, repType?: 'closer' | 'setter' | 'both', id?: string) => void;
+  addRep: (firstName: string, lastName: string, email: string, phone: string, repType?: 'closer' | 'setter' | 'both', id?: string) => Promise<{ id: string } | undefined>;
   removeRep: (id: string) => void;
   updateRepType: (id: string, repType: 'closer' | 'setter' | 'both') => void;
   // Sub-dealer management
@@ -166,8 +166,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setReps(data.reps ?? []);
         setSubDealers(data.subDealers ?? []);
-        setInstallers((data.installers ?? []).map((name: string) => ({ name, active: true })));
-        setFinancers((data.financers ?? []).map((name: string) => ({ name, active: true })));
+        setInstallers((data.installers ?? []).map((i: string) => ({ name: i, active: true })));
+        setFinancers((data.financers ?? []).map((f: string) => ({ name: f, active: true })));
         setProjects(data.projects ?? []);
         setPayrollEntries(data.payrollEntries ?? []);
         setReimbursements(data.reimbursements ?? []);
@@ -206,9 +206,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (dbReady && currentRepId) refreshMentionCount();
   }, [dbReady, currentRepId, refreshMentionCount]);
 
-  // Helper: persist a payroll entry to the DB (fire and forget)
+  // Helper: persist a payroll entry to the DB and sync the DB-assigned id back to local state
   const persistPayrollEntry = useCallback((entry: PayrollEntry) => {
-    persistFetch('/api/payroll', {
+    const clientId = entry.id;
+    fetch('/api/payroll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -221,8 +222,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         date: entry.date,
         notes: entry.notes,
       }),
-    }, 'Failed to save payroll entry').catch(() => {});
-  }, []);
+    })
+      .then((res) => res.json())
+      .then((saved) => {
+        if (saved?.id && saved.id !== clientId) {
+          setPayrollEntries((prev) =>
+            prev.map((e) => (e.id === clientId ? { ...e, id: saved.id } : e))
+          );
+        }
+      })
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save payroll entry' }));
+      });
+  }, [setPayrollEntries]);
 
   // Helper: delete payroll entries from DB by filter
   const deletePayrollEntriesFromDb = useCallback((ids: string[]) => {
@@ -300,6 +312,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
+    }).then((res) => res.json()).then((created) => {
+      if (created.id) {
+        setIdMaps((prev) => ({
+          ...prev,
+          installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
+        }));
+      }
     }).catch(console.error);
   };
   const addFinancer = (name: string) => {
@@ -308,13 +327,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
+    }).then((res) => res.json()).then((created) => {
+      if (created.id) {
+        setIdMaps((prev) => ({
+          ...prev,
+          financerNameToId: { ...prev.financerNameToId, [name]: created.id as string },
+        }));
+      }
     }).catch(console.error);
   };
   const addRep = (firstName: string, lastName: string, email: string, phone: string, repType: 'closer' | 'setter' | 'both' = 'both', id?: string) => {
     const tempId = id ?? `rep_${Date.now()}`;
     setReps((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim(), phone: phone.trim(), role: 'rep' as const, repType }]);
     // Persist and update with real DB id
-    persistFetch('/api/reps', {
+    return persistFetch('/api/reps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ firstName, lastName, email, phone, repType }),
@@ -322,7 +348,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (rep.id && rep.id !== tempId) {
         setReps((prev) => prev.map((r) => r.id === tempId ? { ...r, id: rep.id } : r));
       }
-    }).catch(() => {});
+      return rep as { id: string };
+    }).catch(() => undefined);
   };
   const removeRep = (id: string) => {
     setReps((prev) => prev.filter((r) => r.id !== id));
@@ -342,9 +369,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const tempId = id ?? `sd_${Date.now()}`;
     const name = `${firstName.trim()} ${lastName.trim()}`;
     setSubDealers((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name, email: email.trim(), phone: phone.trim(), role: 'sub-dealer' as const }]);
+    persistFetch('/api/reps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, lastName, email, phone, role: 'sub-dealer' }),
+    }, 'Failed to save new sub-dealer').then((res) => res.json()).then((sd) => {
+      if (sd.id && sd.id !== tempId) {
+        setSubDealers((prev) => prev.map((s) => s.id === tempId ? { ...s, id: sd.id } : s));
+      }
+    }).catch(() => undefined);
   };
   const removeSubDealer = (id: string) => {
     setSubDealers((prev) => prev.filter((sd) => sd.id !== id));
+    persistFetch(`/api/reps/${id}`, { method: 'DELETE' }, 'Failed to remove sub-dealer').catch(() => {});
   };
 
   // ── Activity logging helper (fire-and-forget) ──
@@ -403,6 +440,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (updates.m1Amount !== undefined) dbUpdates.m1Amount = updates.m1Amount;
     if (updates.m2Paid !== undefined) dbUpdates.m2Paid = updates.m2Paid;
     if (updates.m2Amount !== undefined) dbUpdates.m2Amount = updates.m2Amount;
+    if (updates.m3Paid !== undefined) dbUpdates.m3Paid = updates.m3Paid;
     if (updates.m3Amount !== undefined) dbUpdates.m3Amount = updates.m3Amount;
     if (updates.installer !== undefined) dbUpdates.installer = updates.installer;
     if (updates.financer !== undefined) dbUpdates.financer = updates.financer;
@@ -437,20 +475,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        // ── CHARGEBACK: When cancelled, create negative entries for any M1 already in payroll ──
+        // ── CHARGEBACK: When cancelled, create negative entries for any M1/M2/M3 already in payroll ──
         if (newPhase === 'Cancelled' && old.phase !== 'Cancelled') {
           setPayrollEntries((prevEntries) => {
-            const m1Entries = prevEntries.filter(
-              (e) => e.projectId === id && e.paymentStage === 'M1' && e.amount > 0
+            // Remove Draft/Pending entries immediately — they must never be published for a cancelled deal
+            const draftOrPendingEntries = prevEntries.filter(
+              (e) => e.projectId === id && e.amount > 0 && e.type === 'Deal' && (e.status === 'Draft' || e.status === 'Pending')
+            );
+            if (draftOrPendingEntries.length > 0) {
+              deletePayrollEntriesFromDb(draftOrPendingEntries.map((e) => e.id));
+            }
+            const remaining = draftOrPendingEntries.length > 0
+              ? prevEntries.filter((e) => !draftOrPendingEntries.includes(e))
+              : prevEntries;
+
+            const paidEntries = remaining.filter(
+              (e) => e.projectId === id && e.amount > 0 && e.type === 'Deal' && e.status === 'Paid'
             );
             // Already has a chargeback? Don't double-charge
-            const hasChargeback = prevEntries.some(
+            const hasChargeback = remaining.some(
               (e) => e.projectId === id && e.type === 'Deal' && e.amount < 0
             );
-            if (m1Entries.length === 0 || hasChargeback) return prevEntries;
+            if (paidEntries.length === 0 || hasChargeback) return remaining;
 
             const ts = Date.now();
-            const chargebacks: PayrollEntry[] = m1Entries.map((e, i) => ({
+            const chargebacks: PayrollEntry[] = paidEntries.map((e, i) => ({
               id: `pay_${ts}_chargeback_${i}`,
               repId: e.repId,
               repName: e.repName,
@@ -458,14 +507,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               customerName: old.customerName,
               amount: -e.amount,
               type: 'Deal' as const,
-              paymentStage: 'M1' as const,
+              paymentStage: e.paymentStage,
               status: 'Draft' as const,
-              date: getM1PayDate(),
+              date: e.date,
               notes: 'Chargeback — project cancelled',
             }));
             // Persist chargebacks to DB
             chargebacks.forEach((cb) => persistPayrollEntry(cb));
-            return [...prevEntries, ...chargebacks];
+            return [...remaining, ...chargebacks];
           });
         }
 
@@ -480,17 +529,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const payDate = isAcceptance ? getM1PayDate() : getM2PayDate();
           const fullAmount = isAcceptance ? old.m1Amount : old.m2Amount;
 
-          // For M2, apply installer pay percentage (e.g. 80% at install, 20% at PTO)
+          // For M2, m2Amount is already stored as the post-split value
+          // (closerM2Full * installPayPct/100) — use it directly, no re-apply needed
           const installPayPct = isInstalled
             ? (installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT)
             : 100;
-          const amount = isInstalled
-            ? Math.round(fullAmount * (installPayPct / 100) * 100) / 100
-            : fullAmount;
+          const amount = fullAmount;
 
           // If installer doesn't pay 100% at install, store M3 remainder on the project
+          // m3 = closerM2Full * (100-pct)/100 = m2Amount * (100-pct)/pct
           if (isInstalled && installPayPct < 100) {
-            const m3 = Math.round(fullAmount * ((100 - installPayPct) / 100) * 100) / 100;
+            const m3 = installPayPct > 0
+              ? Math.round(fullAmount * ((100 - installPayPct) / installPayPct) * 100) / 100
+              : 0;
             updated = updated.map((p) => p.id === id ? { ...p, m3Amount: m3 } : p);
             // Persist m3Amount to DB
             persistFetch(`/api/projects/${id}`, {
@@ -559,9 +610,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                const traineeDeals = updated.filter(p => p.id !== id && p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
-                const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * 0.80);
+                const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100));
                 if (m2TrainerAmount > 0) {
                   newEntries.push({
                     id: `pay_${ts}_m2_trainer_c`,
@@ -584,9 +635,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                  const setterTraineeDeals = updated.filter(p => p.id !== id && p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
-                  const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * 0.80);
+                  const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100));
                   if (m2SetterTrainerAmount > 0) {
                     const setterRep = reps.find(r => r.id === old.setterId);
                     newEntries.push({
@@ -617,13 +668,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // ── M3: Auto-draft at PTO for installers that don't pay 100% at install ──
         if (isPTO) {
           const proj = updated.find((p) => p.id === id);
-          const m3 = proj?.m3Amount ?? 0;
-          if (m3 > 0) {
-            const ts = Date.now();
-            const payDate = getM2PayDate(); // M3 follows the same Saturday cutoff as M2
-            setPayrollEntries((prevEntries) => {
+          // Guard against m3Amount being null in DB due to a failed persist at Installed time.
+          // If missing, recalculate from the same formula used at the Installed transition.
+          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+          const m3 = (proj?.m3Amount ?? 0) > 0
+            ? proj!.m3Amount!
+            : installPayPct < 100
+              ? Math.round(old.m2Amount * ((100 - installPayPct) / installPayPct) * 100) / 100
+              : 0;
+          const ts = Date.now();
+          const payDate = getM2PayDate(); // M3 follows the same Saturday cutoff as M2
+          setPayrollEntries((prevEntries) => {
               const alreadyExists = prevEntries.some(
-                (e) => e.projectId === id && e.paymentStage === 'M3'
+                (e) => e.projectId === id && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))
               );
               if (alreadyExists) return prevEntries;
 
@@ -648,11 +705,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // ── Trainer override M3 entries (20% of override at PTO) ──
               // Closer's trainer
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
-              if (closerTrainerAssignment) {
+              if (closerTrainerAssignment && m3 > 0) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = projects.filter(p => p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                const traineeDeals = updated.filter(p => p.id !== id && p.repId === closerTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
-                const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * 0.20);
+                const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100));
                 if (m3TrainerAmount > 0) {
                   const closerRep = reps.find(r => r.id === old.repId);
                   newEntries.push({
@@ -666,7 +723,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     paymentStage: 'Trainer',
                     status: 'Draft',
                     date: payDate,
-                    notes: `Trainer override M3 — ${closerRep?.name ?? old.repName}`,
+                    notes: `Trainer override M3 — ${trainerRep?.name ?? ''}`,
                   });
                 }
               }
@@ -674,11 +731,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // Setter's trainer
               if (old.setterId) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
-                if (setterTrainerAssignment) {
+                if (setterTrainerAssignment && m3 > 0) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = projects.filter(p => p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                  const setterTraineeDeals = updated.filter(p => p.id !== id && p.repId === setterTrainerAssignment.traineeId && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
-                  const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * 0.20);
+                  const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100));
                   if (m3SetterTrainerAmount > 0) {
                     const setterRep = reps.find(r => r.id === old.setterId);
                     newEntries.push({
@@ -692,7 +749,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       paymentStage: 'Trainer',
                       status: 'Draft',
                       date: payDate,
-                      notes: `Trainer override M3 — ${setterRep?.name ?? old.setterName ?? ''}`,
+                      notes: `Trainer override M3 — ${setterTrainerRep?.name ?? ''}`,
                     });
                   }
                 }
@@ -703,7 +760,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
               validM3.forEach((entry) => persistPayrollEntry(entry));
               return [...prevEntries, ...validM3];
             });
-          }
         }
       }
 
@@ -822,6 +878,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addProductCatalogInstaller = (name: string, config: ProductCatalogInstallerConfig) => {
     setInstallers((prev) => prev.find((i) => i.name === name) ? prev : [...prev, { name, active: true }]);
     setProductCatalogInstallerConfigs((prev) => ({ ...prev, [name]: config }));
+    // Persist to DB
+    fetch('/api/installers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, usesProductCatalog: true }),
+    }).then((res) => res.json()).then((created) => {
+      if (created.id) {
+        setIdMaps((prev) => ({
+          ...prev,
+          installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
+        }));
+      }
+    }).catch(console.error);
   };
   const updateProductCatalogInstallerConfig = (name: string, config: Partial<ProductCatalogInstallerConfig>) =>
     setProductCatalogInstallerConfigs((prev) => ({ ...prev, [name]: { ...prev[name], ...config } }));
@@ -958,6 +1027,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       delete next[name];
       return next;
     });
+    // Clean up prepaid options for deleted installer
+    setInstallerPrepaidOptions((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
   };
 
   const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }) => {
@@ -977,6 +1052,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentRole(null);
     setCurrentRepId(null);
     setCurrentRepName(null);
+    setViewAsUserState(null);
     localStorage.removeItem('kilo-role');
     localStorage.removeItem('kilo-rep-id');
     localStorage.removeItem('kilo-rep-name');
@@ -992,6 +1068,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     _trainerM2 = 0,
     _trainerId?: string,
   ) => {
+    // Validate installer mapping before mutating local state to avoid split-brain
+    const installerId = idMaps.installerNameToId[project.installer];
+    if (!installerId) {
+      console.error('[addDeal] Cannot persist: missing installer ID mapping', { installer: project.installer });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — installer not yet saved. Please refresh and try again.' }));
+      }
+      return;
+    }
+
     // Only add the project. Payroll entries are now auto-drafted when
     // milestone phases are reached (Acceptance → M1, Installed → M2).
     // Trainer override entries are auto-drafted at M2 (80%) and M3 (20%).
@@ -1001,7 +1087,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logProjectActivity(project.id, 'created', 'Project created');
 
     // Persist to DB
-    const installerId = idMaps.installerNameToId[project.installer];
     const financerId = idMaps.financerNameToId[project.financer];
 
     const persistProject = (fId: string) => {
@@ -1043,11 +1128,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    if (!installerId) {
-      console.error('[addDeal] Cannot persist: missing installer ID mapping', { installer: project.installer });
-      return;
-    }
-
     if (financerId) {
       persistProject(financerId);
     } else if (project.productType === 'Cash' || project.financer === 'Cash') {
@@ -1079,15 +1159,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const markForPayroll = (entryIds: string[]) => {
     const idSet = new Set(entryIds);
-    setPayrollEntries((prev) =>
-      prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e))
-    );
-    // Persist bulk status update
+    // Snapshot before optimistic update so we can rollback on failure
+    let snapshot: typeof payrollEntries | null = null;
+    setPayrollEntries((prev) => {
+      snapshot = prev;
+      return prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e));
+    });
+    // Persist bulk status update — rollback on any failure
     persistFetch('/api/payroll', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: entryIds, status: 'Pending' }),
-    }, 'Failed to update payroll status').catch(() => {});
+    }, 'Failed to update payroll status').then((res) => {
+      if (!res.ok && snapshot !== null) setPayrollEntries(snapshot);
+    }).catch(() => {
+      if (snapshot !== null) setPayrollEntries(snapshot);
+    });
   };
 
   return (

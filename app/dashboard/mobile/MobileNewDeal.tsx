@@ -352,7 +352,7 @@ export default function MobileNewDeal() {
   const m1Flat = kW >= 5 ? 1000 : 500;
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
   const closerM1 = isSelfGen ? m1Flat : 0;
-  const closerM2Full = closerTotal - closerM1;
+  const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : m1Flat;
   const setterM2Full = Math.max(0, setterTotal - setterM1);
   const trainerM1 = 0;
@@ -482,6 +482,7 @@ export default function MobileNewDeal() {
       m1Amount: isSubDealer ? 0 : m1Flat,
       m2Paid: false,
       m2Amount: isSubDealer ? subDealerCommission : closerM2Full,
+      m3Paid: false,
       notes: form.notes,
       flagged: false,
       solarTechProductId: form.installer === 'SolarTech' && hasSolarTechProducts ? form.solarTechProductId : undefined,

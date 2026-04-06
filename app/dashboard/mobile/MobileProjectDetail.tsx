@@ -315,12 +315,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           return (
             <div key={step} className="flex items-center gap-1.5">
               <div
-                className="rounded-full"
+                className={`rounded-full${isCurrent ? ' mobile-stepper-current' : ''}`}
                 style={{
                   width: 10,
                   height: 10,
                   background: isCompleted ? '#00e5a0' : isCurrent ? '#00b4d8' : 'var(--m-border, #1a2840)',
-                  boxShadow: isCurrent ? '0 0 0 3px rgba(0,180,216,0.3)' : 'none',
                 }}
                 title={step}
               />
@@ -331,6 +330,21 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           );
         })}
       </div>
+
+      <p
+        className="text-[11px] font-semibold tracking-wide mt-1"
+        style={{
+          color: isOffTrack
+            ? (project.phase === 'Cancelled' ? '#ef4444' : '#f59e0b')
+            : 'var(--m-accent2, #00b4d8)',
+          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          letterSpacing: '0.04em',
+        }}
+      >
+        {isOffTrack
+          ? project.phase
+          : `Step ${currentStepIndex + 1} of ${PIPELINE_STEPS.length} — ${project.phase}`}
+      </p>
 
       {/* Info rows — no card wrapper, thin separators */}
       <div className="space-y-0">
@@ -359,48 +373,46 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* M1 */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M1</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m1Amount.toLocaleString()}</span>
-                    <MobileBadge value={project.m1Paid ? 'Paid' : 'Pending'} variant="status" />
+            /* Milestone progress track */
+            <div className="relative flex items-start justify-between pt-2 pb-4">
+              {/* Background track */}
+              <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--m-border, #1a2840)' }} />
+              {/* Filled track segment: width = 0% if none paid, 50% if M1 paid, 100% if M2 paid */}
+              <div
+                className="absolute top-[18px] left-[14px] h-0.5 milestone-track-fill"
+                style={{
+                  width: project.m2Paid ? 'calc(100% - 28px)' : project.m1Paid ? 'calc(50% - 14px)' : '0%',
+                  background: 'linear-gradient(90deg, #00e5a0, #00b4d8)',
+                  animation: 'trackFill 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
+                }}
+              />
+              {(['M1', 'M2', 'M3'] as const).map((stage, i) => {
+                const isPaid = stage === 'M1' ? project.m1Paid : stage === 'M2' ? project.m2Paid : false;
+                const amount = stage === 'M1' ? project.m1Amount : stage === 'M2' ? project.m2Amount : (project.m3Amount ?? 0);
+                if (stage === 'M3' && amount === 0) return null;
+                return (
+                  <div key={stage} className="flex flex-col items-center gap-1.5 relative z-10">
+                    <div
+                      className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
+                      style={{
+                        background: isPaid ? 'linear-gradient(135deg, #00e5a0, #00b4d8)' : 'var(--m-card, #0d1525)',
+                        border: `2px solid ${isPaid ? '#00e5a0' : 'var(--m-border, #1a2840)'}`,
+                        color: isPaid ? '#000' : 'var(--m-text-muted, #8899aa)',
+                        animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
+                      }}
+                    >{stage}</div>
+                    <span
+                      className="milestone-amount text-sm font-bold"
+                      style={{
+                        color: isPaid ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                        fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                        animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
+                      }}
+                    >${amount.toLocaleString()}</span>
+                    <MobileBadge value={isPaid ? 'Paid' : 'Pending'} variant="status" />
                   </div>
-                </div>
-                <p className="text-right" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
-                  {project.m1Paid && getEntryDate('M1') ? `Paid ${formatShortDate(getEntryDate('M1')!)}` : `Est. ${estimateFriday(project.soldDate, 30)}`}
-                </p>
-              </div>
-              {/* M2 */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M2</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m2Amount.toLocaleString()}</span>
-                    <MobileBadge value={project.m2Paid ? 'Paid' : 'Pending'} variant="status" />
-                  </div>
-                </div>
-                <p className="text-right" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
-                  {project.m2Paid && getEntryDate('M2') ? `Paid ${formatShortDate(getEntryDate('M2')!)}` : `Est. ${estimateFriday(project.soldDate, 90)}`}
-                </p>
-              </div>
-              {/* M3 */}
-              {(project.m3Amount ?? 0) > 0 && (
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M3</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${(project.m3Amount ?? 0).toLocaleString()}</span>
-                      <MobileBadge value="Pending" variant="status" />
-                    </div>
-                  </div>
-                  <p className="text-right" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
-                    {getEntryDate('M3') ? `Est. ${formatShortDate(getEntryDate('M3')!)}` : `Est. ${estimateFriday(project.soldDate, 180)}`}
-                  </p>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
         </MobileCard>

@@ -8,7 +8,7 @@ import { useToast } from '../../../lib/toast';
 import {
   PRODUCT_TYPES, Project,
   getTrainerOverrideRate, calculateCommission,
-  SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, SOLARTECH_PRODUCTS,
+  SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER,
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
@@ -508,7 +508,7 @@ export default function NewDealPageWrapper() {
 }
 
 function NewDealPage() {
-  const { dbReady, currentRole, currentRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines } = useApp();
+  const { dbReady, currentRole, currentRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
   const { toast } = useToast();
   const router = useRouter();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
@@ -688,7 +688,7 @@ function NewDealPage() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => p.repId === form.setterId || p.setterId === form.setterId).length
+    ? projects.filter((p) => (p.repId === form.setterId || p.setterId === form.setterId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -719,7 +719,7 @@ function NewDealPage() {
     if (!form.setterId || setterBaselinePerW === 0) {
       return { closerTotal: calculateCommission(soldPPW, closerPerW, kW), setterTotal: 0 };
     }
-    const closerDifferential = Math.round((setterBaselinePerW - closerPerW) * kW * 1000 * 100) / 100;
+    const closerDifferential = soldPPW > closerPerW ? Math.round((setterBaselinePerW - closerPerW) * kW * 1000 * 100) / 100 : 0;
     const splitPoint = setterBaselinePerW + trainerOverrideRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
     const half = Math.round(aboveSplit / 2);
@@ -734,14 +734,14 @@ function NewDealPage() {
   const m1Flat = kW >= 5 ? 1000 : 500;
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
   const closerM1 = isSelfGen ? m1Flat : 0;
-  const closerM2Full = closerTotal - closerM1;
+  const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : m1Flat;
   const setterM2Full = Math.max(0, setterTotal - setterM1);
   const trainerM1 = 0;
   const trainerM2 = trainerTotal;
 
   // M2/M3 split based on installer pay config
-  const installPayPct = INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
   const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
   const closerM3 = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
@@ -917,7 +917,8 @@ function NewDealPage() {
       m1Paid: false,
       m1Amount: isSubDealer ? 0 : m1Flat,
       m2Paid: false,
-      m2Amount: isSubDealer ? subDealerCommission : closerM2Full,
+      m2Amount: isSubDealer ? subDealerCommission : closerM2,
+      m3Paid: false,
       notes: form.notes,
       flagged: false,
       solarTechProductId: form.installer === 'SolarTech' && hasSolarTechProducts ? form.solarTechProductId : undefined,
@@ -999,6 +1000,8 @@ function NewDealPage() {
           setForm(blankForm());
           setErrors({});
           setTouched(new Set());
+          setCurrentStep(0);
+          autoAdvancedSteps.current = new Set();
         }}
       />
     );
@@ -1012,6 +1015,7 @@ function NewDealPage() {
   const _today = new Date().toISOString().split('T')[0];
   const _monthPrefix = _today.slice(0, 7);
   const monthCount = projects.filter((p) => p.soldDate.startsWith(_monthPrefix) && (p.repId === (currentRepId ?? ''))).length;
+  const todayCount = projects.filter((p) => p.soldDate.startsWith(_today) && (p.repId === (currentRepId ?? ''))).length;
 
   return (
     <div className="p-4 md:p-8" style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -1022,7 +1026,7 @@ function NewDealPage() {
           {/* Your Deals card */}
           <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 24, marginBottom: 16 }}>
             <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Your Deals</p>
-            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: '#f0f2f7', letterSpacing: '-0.04em', lineHeight: 1 }}>0</p>
+            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: todayCount > 0 ? '#00e07a' : '#f0f2f7', letterSpacing: '-0.04em', lineHeight: 1, textShadow: todayCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{todayCount}</p>
             <p style={{ color: '#8891a8', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>Today</p>
             <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: monthCount > 0 ? '#00e07a' : '#f0f2f7', letterSpacing: '-0.04em', lineHeight: 1, marginTop: 16, textShadow: monthCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{monthCount}</p>
             <p style={{ color: '#8891a8', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>This Month</p>
@@ -1115,7 +1119,7 @@ function NewDealPage() {
                   <select id="field-repId" value={form.repId} onChange={(e) => update('repId', e.target.value)}
                     onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
-                    {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    {reps.filter((r) => r.repType !== 'setter').map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
                   <FieldError errors={errors} field="repId" />
                 </div>
@@ -1333,7 +1337,7 @@ function NewDealPage() {
                       <SearchableSelect
                         value={form.solarTechProductId}
                         onChange={(val) => update('solarTechProductId', val)}
-                        options={SOLARTECH_PRODUCTS.filter((p) => p.family === solarTechFamily).map((p) => ({ value: p.id, label: p.name }))}
+                        options={solarTechProducts.filter((p) => p.family === solarTechFamily).map((p) => ({ value: p.id, label: p.name }))}
                         placeholder="— Select package —"
                         error={!!errors.solarTechProductId}
                       />

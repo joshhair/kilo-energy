@@ -216,9 +216,16 @@ function PayrollPageInner() {
     return true;
   });
 
-  const totalDraft = payrollEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-  const totalPending = payrollEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-  const totalPaid = payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const filteredByDateRep = payrollEntries.filter((p) => {
+    if (p.type !== typeTab) return false;
+    if (payFilterFrom && p.date < payFilterFrom) return false;
+    if (payFilterTo && p.date > payFilterTo) return false;
+    if (filterRepId && p.repId !== filterRepId) return false;
+    return true;
+  });
+  const totalDraft = filteredByDateRep.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+  const totalPending = filteredByDateRep.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+  const totalPaid = filteredByDateRep.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
 
   // Paginate the flat filtered list, then re-group by rep for display
   const adminTotalPages = Math.max(1, Math.ceil(filtered.length / adminRowsPerPage));
@@ -238,8 +245,8 @@ function PayrollPageInner() {
   const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
 
   const handlePublish = async () => {
-    // Publish all Pending entries regardless of which tab the admin is on
-    const pendingVisible = payrollEntries.filter((e) => e.status === 'Pending');
+    // Publish only Pending entries matching the active filters (same set the button's disabled state reflects)
+    const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending');
     const ids = pendingVisible.map((e) => e.id);
     const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
     // Save snapshot for rollback
@@ -249,19 +256,16 @@ function PayrollPageInner() {
     );
     setShowPublishConfirm(false);
     toast(`Payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
-    // Persist to DB
-    const results = await Promise.allSettled(ids.map((id) =>
-      fetch(`/api/payroll/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Paid' }),
-      }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res; })
-    ));
-    const failures = results.filter((r) => r.status === 'rejected');
-    if (failures.length > 0) {
-      console.error('[handlePublish] Some entries failed to persist:', failures);
+    // Persist to DB via bulk endpoint for atomicity
+    const res = await fetch('/api/payroll', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, status: 'Paid' }),
+    });
+    if (!res.ok) {
+      console.error('[handlePublish] Bulk PATCH failed:', res.status);
       setPayrollEntries(snapshot);
-      toast(`${failures.length} payroll entries failed to save — rolled back`, 'error');
+      toast(`Payroll failed to save — rolled back`, 'error');
     }
   };
 
@@ -303,6 +307,7 @@ function PayrollPageInner() {
   const handleAddBonus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bonusForm.repId) { toast('Please select a rep', 'error'); return; }
+    if (!bonusForm.amount || isNaN(parseFloat(bonusForm.amount))) { toast('Enter a valid amount', 'error'); return; }
     const rep = reps.find((r) => r.id === bonusForm.repId);
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}`,
@@ -328,7 +333,13 @@ function PayrollPageInner() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repId: newEntry.repId, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
-    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+    }).then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const saved = await res.json();
+        if (saved?.id) {
+          setPayrollEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: saved.id } : e));
+        }
+      })
       .catch((err) => {
         console.error(err);
         setPayrollEntries((prev) => prev.filter((e) => e.id !== newEntry.id));
@@ -339,6 +350,7 @@ function PayrollPageInner() {
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentForm.repId) { toast('Please select a rep', 'error'); return; }
+    if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount))) { toast('Enter a valid amount', 'error'); return; }
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const project = projects.find((p) => p.id === paymentForm.projectId);
     const newEntry: PayrollEntry = {
@@ -365,7 +377,13 @@ function PayrollPageInner() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repId: newEntry.repId, projectId: newEntry.projectId, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
-    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+    }).then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const saved = await res.json();
+        if (saved?.id) {
+          setPayrollEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: saved.id } : e));
+        }
+      })
       .catch((err) => {
         console.error(err);
         setPayrollEntries((prev) => prev.filter((e) => e.id !== newEntry.id));
@@ -701,19 +719,19 @@ function PayrollPageInner() {
         <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#4d9fff', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
-          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{payrollEntries.filter((p) => p.status === 'Draft').length} entries</p>
+          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft').length} entries</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#ffb020', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
-          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{payrollEntries.filter((p) => p.status === 'Pending').length} entries</p>
+          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending').length} entries</p>
         </div>
         {/* Total */}
         <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#00e07a', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
-          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{payrollEntries.filter((p) => p.status === 'Paid').length} entries</p>
+          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Paid').length} entries</p>
         </div>
       </div>
 
@@ -733,7 +751,7 @@ function PayrollPageInner() {
           >
             {s}
             <span className="ml-1.5 text-xs opacity-70">
-              ({payrollEntries.filter((p) => p.status === s).length})
+              ({payrollEntries.filter((p) => p.status === s && p.type === typeTab).length})
             </span>
           </button>
         ))}
@@ -896,7 +914,7 @@ function PayrollPageInner() {
 
       {/* Publish Confirm Modal */}
       {showPublishConfirm && (() => {
-        const pendingEntries = filtered.filter((p) => p.status === 'Pending');
+        const pendingEntries = payrollEntries.filter((p) => p.status === 'Pending');
         // Build a per-rep summary sorted descending by total payout
         const repSummary = Array.from(
           pendingEntries.reduce((map, e) => {

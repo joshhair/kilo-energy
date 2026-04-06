@@ -34,6 +34,14 @@ export async function GET() {
 // POST /api/blitzes — Create a new blitz
 export async function POST(req: NextRequest) {
   try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  const clerkU = await currentUser();
+  const email = clerkU?.emailAddresses?.[0]?.emailAddress;
+  if (email) {
+    const u = await prisma.user.findFirst({ where: { email, active: true } });
+    if (u && u.role !== 'admin' && !u.canCreateBlitz) {
+      return NextResponse.json({ error: 'Forbidden — blitz creation not enabled' }, { status: 403 });
+    }
+  }
   const body = await req.json();
   const blitz = await prisma.blitz.create({
     data: {

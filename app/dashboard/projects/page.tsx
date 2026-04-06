@@ -153,6 +153,7 @@ function ProjectsPageInner() {
     return v && ['active', 'all', 'completed', 'cancelled', 'on-hold'].includes(v) ? v : 'active';
   });
   const [installerFilter, setInstallerFilter] = useState(() => searchParams.get('installer') ?? '');
+  const [phaseFilter, setPhaseFilter] = useState(() => searchParams.get('phase') ?? '');
   const isHydrated = useIsHydrated();
 
   // Sync filters to URL searchParams
@@ -161,10 +162,11 @@ function ProjectsPageInner() {
     if (tab !== 'phase') params.set('view', tab); else params.delete('view');
     if (statusFilter !== 'active') params.set('status', statusFilter); else params.delete('status');
     if (installerFilter) params.set('installer', installerFilter); else params.delete('installer');
+    if (phaseFilter) params.set('phase', phaseFilter); else params.delete('phase');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, statusFilter, installerFilter]);
+  }, [tab, statusFilter, installerFilter, phaseFilter]);
 
   // Sliding tab indicators
   const viewTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -221,7 +223,8 @@ function ProjectsPageInner() {
       p.phase.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       p.installer.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchInstaller = !installerFilter || p.installer === installerFilter;
-    return matchSearch && matchInstaller;
+    const matchPhase = !phaseFilter || p.phase === phaseFilter;
+    return matchSearch && matchInstaller && matchPhase;
   });
 
   // Destructive phase change confirmation
@@ -431,7 +434,7 @@ function ProjectsPageInner() {
 
       {tab === 'phase' ? (
         <KanbanView
-          projects={statusFiltered.filter((p) => !installerFilter || p.installer === installerFilter)}
+          projects={filtered}
           isAdmin={effectiveRole === 'admin'}
           currentRepId={effectiveRepId}
           dealScope={dealScope}

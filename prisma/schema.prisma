@@ -273,6 +273,7 @@ model Project {
   m2Paid   Boolean @default(false)
   m2Amount Float   @default(0)
   m3Amount Float?
+  m3Paid   Boolean @default(false)
 
   notes   String  @default("")
   flagged Boolean @default(false)

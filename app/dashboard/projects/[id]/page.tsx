@@ -9,7 +9,7 @@ import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileProjectDetail from '../../mobile/MobileProjectDetail';
 import {
   PHASES, Phase, InstallerBaseline,
-  getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
+  getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   calculateCommission,
 } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
@@ -561,7 +561,7 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts } = useApp();
+  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
@@ -913,12 +913,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       return getSolarTechBaseline(project.solarTechProductId, project.kWSize);
     }
     if (project.installerProductId) {
-      return getProductCatalogBaseline(productCatalogProducts, project.installerProductId, project.kWSize);
+      return getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, project.kWSize, project.soldDate, productCatalogPricingVersions);
     }
     return getInstallerRatesForDeal(project.installer, project.soldDate, project.kWSize, installerPricingVersions);
   })();
 
-  const closerExpectedM2 = Math.max(0, Math.round((project.netPPW - projectBaselines.closerPerW) * project.kWSize * 1000 * 100) / 100);
+  const closerExpectedM2 = project.m2Amount ?? 0;
   const setterPerW = 'setterPerW' in projectBaselines && projectBaselines.setterPerW != null
     ? projectBaselines.setterPerW
     : Math.round((projectBaselines.closerPerW + 0.10) * 100) / 100;

@@ -146,16 +146,64 @@ function SectionContent({ section }: { section: SettingsSection }) {
   }
 }
 
+// ─── Settings Skeleton ──────────────────────────────────────────────────────
+
+function SettingsSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <>
+      <style>{`
+        @keyframes sk-shimmer {
+          0%   { background-position: -200% 0; }
+          100% { background-position:  200% 0; }
+        }
+        .sk { background: linear-gradient(90deg,
+          var(--m-border,#1a2840) 25%,
+          rgba(255,255,255,0.04) 50%,
+          var(--m-border,#1a2840) 75%);
+          background-size: 200% 100%;
+          animation: sk-shimmer 1.4s linear infinite;
+          border-radius: 6px;
+        }
+        @media(prefers-reduced-motion:reduce){.sk{animation:none;}}
+      `}</style>
+      <MobileCard>
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i}>
+            {i > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border,#1a2840)' }} />}
+            <div className="flex items-center gap-3 min-h-[56px] py-3 px-1">
+              <div className="flex-1 space-y-2">
+                <div className="sk h-3.5 w-32" />
+                <div className="sk h-3 w-44" />
+              </div>
+              <div className="sk h-8 w-8 rounded-lg shrink-0" />
+            </div>
+          </div>
+        ))}
+      </MobileCard>
+    </>
+  );
+}
+
 // ─── Toggle Switch ──────────────────────────────────────────────────────────
 
 function Toggle({ value, onChange, color }: { value: boolean; onChange: (v: boolean) => void; color?: string }) {
   return (
     <button
       onClick={() => onChange(!value)}
-      className="w-11 h-6 rounded-full transition-colors relative"
-      style={{ background: value ? (color ?? '#00e5a0') : 'var(--m-border, #1a2840)' }}
+      className="w-11 h-6 rounded-full relative active:scale-[0.88] transition-transform duration-100 ease-out p-1 -m-1"
+      style={{
+        background: value ? (color ?? '#00e5a0') : 'var(--m-border, #1a2840)',
+        transition: 'background-color 200ms ease',
+      }}
     >
-      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${value ? 'translate-x-5' : 'translate-x-0.5'}`} />
+      <div
+        className={`absolute top-0.5 w-5 h-5 bg-white rounded-full ${value ? 'translate-x-5' : 'translate-x-0.5'}`}
+        style={{
+          transition: typeof window !== 'undefined' && window?.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+            ? 'transform 150ms ease'
+            : 'transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}
+      />
     </button>
   );
 }
@@ -300,7 +348,7 @@ function AdminUsersSection() {
     }
   };
 
-  if (loading) return <p className="text-base py-8 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Loading...</p>;
+  if (loading) return <SettingsSkeleton rows={3} />;
 
   return (
     <div className="space-y-4">
@@ -413,7 +461,7 @@ function ProjectManagersSection() {
     if (res.ok) { toast('PM removed'); loadPMs(); }
   };
 
-  if (loading) return <p className="text-base py-8 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Loading...</p>;
+  if (loading) return <SettingsSkeleton rows={4} />;
 
   return (
     <div className="space-y-3">
@@ -445,7 +493,7 @@ function ProjectManagersSection() {
                 <button
                   key={field}
                   onClick={() => togglePerm(pm.id, field, pm[field])}
-                  className="flex items-center gap-1.5 text-base px-2.5 py-1.5 rounded-lg border transition-colors min-h-[36px]"
+                  className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-colors min-h-[44px] active:scale-[0.95] transition-transform duration-100"
                   style={{
                     background: pm[field] ? 'rgba(0,229,160,0.15)' : 'var(--m-card, #0d1525)',
                     color: pm[field] ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
@@ -453,7 +501,7 @@ function ProjectManagersSection() {
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
-                  {pm[field] ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                  {pm[field] ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                   {label}
                 </button>
               ))}
@@ -563,8 +611,10 @@ function SubDealersSection() {
 
 function ExportSection() {
   const { toast } = useToast();
+  const [loadingType, setLoadingType] = useState<string | null>(null);
 
   const handleExport = async (type: string) => {
+    setLoadingType(type);
     try {
       const res = await fetch(`/api/export?type=${type}`);
       if (!res.ok) throw new Error('Export failed');
@@ -578,23 +628,38 @@ function ExportSection() {
       toast(`${type} exported`);
     } catch {
       toast('Export failed', 'error');
+    } finally {
+      setLoadingType(null);
     }
   };
 
   return (
     <div className="space-y-3">
+      <style>{`
+        @keyframes exportSpin { to { transform: rotate(360deg); } }
+        @media(prefers-reduced-motion:reduce){ .export-spin{ animation: none; } }
+      `}</style>
       <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button
           key={type}
           onClick={() => handleExport(type)}
-          className="w-full min-h-[52px] rounded-2xl px-5 text-left flex items-center gap-3 active:opacity-80 transition-colors"
+          disabled={!!loadingType}
+          className="w-full min-h-[52px] rounded-2xl px-5 text-left flex items-center gap-3 active:scale-[0.97] transition-transform duration-150 disabled:opacity-50"
           style={{
             background: 'var(--m-card, #0d1525)',
             border: '1px solid var(--m-border, #1a2840)',
           }}
         >
-          <Download className="w-5 h-5 shrink-0" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
+          <div
+            className="w-5 h-5 shrink-0"
+            style={{
+              color: 'var(--m-text-muted, #8899aa)',
+              animation: loadingType === type ? 'exportSpin 600ms linear infinite' : 'none',
+            }}
+          >
+            <Download className="w-5 h-5" />
+          </div>
           <span className="text-base font-semibold text-white capitalize" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{type}</span>
         </button>
       ))}

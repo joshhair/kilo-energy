@@ -26,5 +26,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
+  // If approving a create request, create the blitz
+  if (body.status === 'approved' && request.type === 'create') {
+    await prisma.blitz.create({
+      data: {
+        name: request.name,
+        location: request.location,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        housing: request.housing,
+        notes: request.notes,
+        createdById: request.requestedById,
+        ownerId: request.requestedById,
+        participants: {
+          create: { userId: request.requestedById, joinStatus: 'approved' },
+        },
+      },
+    });
+  }
+
   return NextResponse.json(request);
 }

@@ -12,6 +12,7 @@ import {
   getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
   getTrainerOverrideRate,
   Project, InstallerPricingVersion, ProductCatalogProduct, ACTIVE_PHASES,
+  DEFAULT_INSTALL_PAY_PCT,
 } from '../../lib/data';
 import { formatDate, fmt$, getCustomConfig } from '../../lib/utils';
 import { TrendingUp, TrendingDown, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Users, BarChart2, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, PauseCircle, HelpCircle, MessageSquare } from 'lucide-react';
@@ -708,7 +709,7 @@ function useCountUp(target: number, duration = 800): number {
 }
 
 export default function DashboardPage() {
-  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId, effectiveRepName } = useApp();
+  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -797,7 +798,7 @@ export default function DashboardPage() {
     .reduce((s, p) => s + p.amount, 0);
   const mtdUnmatchedCommission = mtdProjects
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((s, p) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0);
+    .reduce((s, p) => s + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
 
   // Animated count-up for the MTD commission hero — always called (hook rules)
@@ -887,7 +888,7 @@ export default function DashboardPage() {
 
   // "In Pipeline" = expected commission from active projects minus what's actually been disbursed
   const inPipeline = activeProjects.reduce((sum, p) => {
-    const totalExpected = (p.m1Amount ?? 0) + (p.m2Amount ?? 0);
+    const totalExpected = p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0);
@@ -897,14 +898,18 @@ export default function DashboardPage() {
   const unpaidPayroll = myPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   const unmatchedProjectPay = myProjects
     .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0);
-  const totalEstimatedPay = unpaidPayroll + unmatchedProjectPay;
+    .reduce((sum, p) => sum + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
+  // M3 has no payroll entry until PTO, so projects in Installed phase with m3Amount are missed by both buckets above
+  const pendingM3Pay = myProjects
+    .filter((p) => payrollProjectIds.has(p.id) && p.phase === 'Installed' && (p.m3Amount ?? 0) > 0)
+    .reduce((sum, p) => sum + (p.repId === effectiveRepId ? (p.m3Amount ?? 0) : 0), 0);
+  const totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
 
   // Only count as "paid" once the pay date has actually passed
   const totalPaid = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.amount > 0).reduce((sum, p) => sum + p.amount, 0);
   const totalChargebacks = Math.abs(myPayroll.filter((p) => p.amount < 0).reduce((sum, p) => sum + p.amount, 0));
   const chargebackCount = myPayroll.filter((p) => p.amount < 0).length;
-  const totalKW = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
   const totalKWSold = totalKW;
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
@@ -916,7 +921,7 @@ export default function DashboardPage() {
     return map;
   }, new Map<string, number>());
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
-    const totalExpected = (p.m1Amount ?? 0) + (p.m2Amount ?? 0);
+    const totalExpected = p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0);
@@ -924,10 +929,10 @@ export default function DashboardPage() {
   const prevUnpaidPayroll = myPrevPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   const prevUnmatchedPay = myPrevProjects
     .filter((p) => !prevPayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0);
+    .reduce((sum, p) => sum + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
   const prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay;
   const prevTotalPaid = myPrevPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
-  const prevTotalKW = myPrevProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWInstalled = myPrevProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // Sparkline data for the five stat cards — last 7 unique dates, summed per day
@@ -935,7 +940,7 @@ export default function DashboardPage() {
   const chargebackSparkData: number[] = []; // flat / empty — no chargeback data yet
   const estPaySparkData     = computeSparklineData(myPayroll.filter((p) => p.status !== 'Paid').map((p) => ({ date: p.date, amount: p.amount })));
   const paidSparkData       = computeSparklineData(myPayroll.filter((p) => p.status === 'Paid').map((p) => ({ date: p.date, amount: p.amount })));
-  const systemSizeSparkData = computeSparklineData(myProjects.map((p) => ({ date: p.soldDate, amount: p.kWSize })));
+  const systemSizeSparkData = computeSparklineData(activeProjects.map((p) => ({ date: p.soldDate, amount: p.kWSize })));
   const installedSparkData = computeSparklineData(myProjects.filter((p) => installedPhases.includes(p.phase)).map((p) => ({ date: p.soldDate, amount: p.kWSize })));
 
   const thisWeekPayroll = payrollEntries.filter(
@@ -956,7 +961,7 @@ export default function DashboardPage() {
     .reduce((s, p) => s + p.kWSize, 0);
   const allTimeEstPay = myProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((s, p) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0);
+    .reduce((s, p) => s + (p.repId === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) : 0), 0);
 
   // Circumference for the 48×48 SVG ring (r=20): 2π×20 ≈ 125.66
   const RING_CIRC = 125.66;
@@ -974,7 +979,7 @@ export default function DashboardPage() {
     .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Pending' || p.status === 'Paid'))
     .reduce((sum, p) => sum + p.amount, 0);
 
-  // Calculate label for next Friday (if today is Friday, show next week's Friday)
+  // Calculate days until next payday (Friday). Returns 7 if today is Friday.
   const daysUntilPayday = (() => {
     const today = new Date();
     return ((5 - today.getDay() + 7) % 7) || 7;
@@ -1024,7 +1029,7 @@ export default function DashboardPage() {
     {
       label: 'kW Sold',
       value: `${totalKWSold.toFixed(1)} kW`,
-      sub: `${myProjects.length} projects`,
+      sub: `${activeProjects.length} active projects`,
       icon: Zap,
       color: 'text-yellow-400',
       accentGradient: 'from-yellow-500 to-yellow-400',
@@ -1246,7 +1251,8 @@ export default function DashboardPage() {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ checkItemId, completed, completedBy: effectiveRepId }),
-              }).then(() => {
+              }).then((res) => {
+                if (!res.ok) return;
                 // Update local state to remove the completed task
                 setDashMentions((prev) =>
                   prev.map((m) =>
@@ -1260,7 +1266,7 @@ export default function DashboardPage() {
                       : m
                   )
                 );
-              });
+              }).catch(() => {});
             }}
           />
 
@@ -1467,6 +1473,8 @@ export default function DashboardPage() {
         ) : (
           <div className="divide-y divide-slate-800/60">
             {[...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8).map((proj) => {
+              const installPayPct = installerPayConfigs[proj.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+              const m2DisplayAmount = Math.round((proj.m2Amount ?? 0) * (installPayPct / 100) * 100) / 100;
               const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
               const soldLabel = (() => {
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
@@ -2344,7 +2352,8 @@ function SubDealerDashboard({
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ checkItemId, completed, completedBy: currentRepId }),
-          }).then(() => {
+          }).then((res) => {
+            if (!res.ok) return;
             setMentions((prev) =>
               prev.map((m) =>
                 m.messageId === messageId
@@ -2352,7 +2361,7 @@ function SubDealerDashboard({
                   : m
               )
             );
-          });
+          }).catch(() => {});
         }}
       />
 

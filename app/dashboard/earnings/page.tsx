@@ -1119,6 +1119,9 @@ function AdminFinancialsView() {
 
   const markPaid = (id: string) => {
     setPayrollEntries((prev) => prev.map((e) => e.id === id && e.status === 'Pending' ? { ...e, status: 'Paid' } : e));
+    fetch(`/api/payroll/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Paid' }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+      .catch((err) => { console.error(err); toast('Failed to mark as paid', 'error'); });
     toast('Marked as paid', 'success');
   };
 
@@ -1127,6 +1130,11 @@ function AdminFinancialsView() {
     if (!pending.length) return;
     const idSet = new Set(pending);
     setPayrollEntries((prev) => prev.map((e) => idSet.has(e.id) ? { ...e, status: 'Paid' } : e));
+    pending.forEach((id) => {
+      fetch(`/api/payroll/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Paid' }) })
+        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+        .catch((err) => { console.error(err); toast('Failed to mark entry as paid', 'error'); });
+    });
     toast(`Marked ${pending.length} entries as paid`, 'success');
   };
 

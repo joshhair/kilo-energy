@@ -142,6 +142,7 @@ export async function GET() {
     m1Amount: p.m1Amount,
     m2Paid: p.m2Paid,
     m2Amount: p.m2Amount,
+    m3Paid: p.m3Paid ?? false,
     m3Amount: p.m3Amount ?? undefined,
     notes: p.notes,
     flagged: p.flagged,

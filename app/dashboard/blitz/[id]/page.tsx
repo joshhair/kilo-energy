@@ -135,8 +135,8 @@ export default function BlitzDetailPage() {
   // For reps (non-admin, non-owner), filter deals to only their own
   const visibleProjects = useMemo(() => {
     if (!blitz?.projects) return [];
-    if (isAdmin || isOwner) return blitz.projects;
-    return blitz.projects.filter((p: any) => p.closer?.id === effectiveRepId);
+    if (isAdmin || isOwner) return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+    return blitz.projects.filter((p: any) => p.closer?.id === effectiveRepId && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const totalDeals = visibleProjects.length;
@@ -163,7 +163,7 @@ export default function BlitzDetailPage() {
 
   const kiloMargin = useMemo(() => {
     if (!blitz?.projects) return 0;
-    return blitz.projects.reduce((s: number, p: any) => {
+    return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s: number, p: any) => {
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000;
     }, 0);
@@ -197,6 +197,23 @@ export default function BlitzDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
+      // If the owner changed, ensure they are an approved participant
+      if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
+        const existingParticipant = blitz?.participants?.find((p: any) => p.user.id === editForm.ownerId);
+        if (!existingParticipant) {
+          await fetch(`/api/blitzes/${blitzId}/participants`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
+          });
+        } else if (existingParticipant.joinStatus !== 'approved') {
+          await fetch(`/api/blitzes/${blitzId}/participants`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
+          });
+        }
+      }
       toast('Blitz updated');
       setEditing(false);
       loadBlitz();
@@ -525,7 +542,7 @@ export default function BlitzDetailPage() {
             const lb = (blitz.participants ?? [])
               .filter((p: any) => p.joinStatus === 'approved')
               .map((p: any) => {
-                const deals = (blitz.projects ?? []).filter((proj: any) => proj.closer?.id === p.user.id);
+                const deals = (blitz.projects ?? []).filter((proj: any) => proj.closer?.id === p.user.id && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
                 return { userId: p.user.id, name: `${p.user.firstName} ${p.user.lastName}`, initials: `${(p.user.firstName?.[0] ?? '').toUpperCase()}${(p.user.lastName?.[0] ?? '').toUpperCase()}`, deals: deals.length, kW: deals.reduce((s: number, proj: any) => s + proj.kWSize, 0) };
               })
               .sort((a: any, b: any) => b.deals - a.deals || b.kW - a.kW);
@@ -636,7 +653,7 @@ export default function BlitzDetailPage() {
             const leaderboard = (blitz.participants ?? [])
               .filter((p: any) => p.joinStatus === 'approved')
               .map((p: any) => {
-                const deals = (blitz.projects ?? []).filter((proj: any) => proj.closer?.id === p.user.id);
+                const deals = (blitz.projects ?? []).filter((proj: any) => proj.closer?.id === p.user.id && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
                 return {
                   userId: p.user.id,
                   name: `${p.user.firstName} ${p.user.lastName}`,
@@ -814,7 +831,7 @@ export default function BlitzDetailPage() {
                     <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-[#c2c8d8]">{visibleProjects.length} deal{visibleProjects.length !== 1 ? 's' : ''}</td>
                     <td className="px-4 py-3 text-right text-sm font-bold text-white">{totalKW.toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[#8891a8]">—</td>
-                    {isAdmin && <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatCurrency(Math.round(kiloMargin))}</td>}
+                    {isAdmin && <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</td>}
                   </tr>
                 </tfoot>
               </table>
@@ -945,7 +962,7 @@ export default function BlitzDetailPage() {
           {/* Per-rep performance */}
           {approvedParticipants.length > 0 && blitz.projects?.length > 0 && (() => {
             const repStats = approvedParticipants.map((p: any) => {
-              const repDeals = blitz.projects.filter((proj: any) => proj.closer?.id === p.user.id);
+              const repDeals = blitz.projects.filter((proj: any) => proj.closer?.id === p.user.id && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
               const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
               const repPayout = repDeals.reduce((s: number, proj: any) => s + (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0), 0);
               return { user: p.user, deals: repDeals.length, kw: repKW, payout: repPayout };

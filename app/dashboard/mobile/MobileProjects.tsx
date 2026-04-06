@@ -145,10 +145,12 @@ export default function MobileProjects() {
             <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No projects found</p>
           </div>
         ) : (
-          filtered.map((project) => (
+          filtered.map((project, index) => (
             <MobileCard
               key={project.id}
               onTap={() => router.push(`/dashboard/projects/${project.id}`)}
+              className="animate-card-enter"
+              style={{ '--card-index': Math.min(index, 10) } as React.CSSProperties}
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
