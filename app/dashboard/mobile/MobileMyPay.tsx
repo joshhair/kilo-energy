@@ -4,13 +4,12 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { fmt$, fmtCompact$, formatDate } from '../../../lib/utils';
+import { fmt$, formatDate } from '../../../lib/utils';
 import { PayrollEntry } from '../../../lib/data';
 import { Banknote } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
-import MobileStatCard from './shared/MobileStatCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
@@ -216,21 +215,38 @@ export default function MobileMyPay() {
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <MobilePageHeader title="My Pay" />
 
-      {/* ── Hero — next payout ── */}
+      {/* ── Consolidated hero — Next Payout (primary) + Pending/Pipeline
+           (secondary) + Lifetime (footnote). Tells the story future → past
+           in one dominant card so the rep sees the whole money picture at
+           a glance without scattered sibling cards. ── */}
       <MobileCard hero>
-        <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(nextPayoutTotal)}</p>
-        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.5rem' }}>
+        {/* ─ Primary: Next Payout ─ */}
+        <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
+        <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.05 }}>{fmt$(nextPayoutTotal)}</p>
+        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.4rem' }}>
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
         </p>
-      </MobileCard>
 
-      {/* ── Stat grid — 3 cards ── */}
-      <div className="grid grid-cols-3 gap-3">
-        <MobileStatCard label="Lifetime" value={fmtCompact$(lifetimeEarned)} color={ACCENT} />
-        <MobileStatCard label="Pipeline" value={fmtCompact$(pipelineTotal)} color={ACCENT2} />
-        <MobileStatCard label="Pending" value={fmtCompact$(pendingTotal)} color={WARNING} />
-      </div>
+        {/* ─ Secondary: Pending + Pipeline (money in motion) ─ */}
+        <div className="mt-5 pt-4 space-y-2.5" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pending</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING, lineHeight: 1.1 }}>{fmt$(pendingTotal)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pipeline</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(pipelineTotal)}</span>
+          </div>
+        </div>
+
+        {/* ─ Footnote: Lifetime earned (cumulative context) ─ */}
+        <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem', fontWeight: 500 }}>Lifetime Earned</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 5.5vw, 1.5rem)', color: '#e5e7eb', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</span>
+          </div>
+        </div>
+      </MobileCard>
 
       {/* ── Active reimbursements (only if any) ── */}
       {activeReimbs.length > 0 && (
