@@ -320,13 +320,13 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
               const setterDeals = projects.filter((p) => p.setterId === id);
               const trainerDeals = trainerAssignments.filter((a) => a.trainerId === id);
               const closerPay = repPayroll
-                .filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.notes !== 'Trainer override')
+                .filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer')
                 .reduce((s, e) => s + e.amount, 0);
               const setterPay = repPayroll
                 .filter((e) => e.notes === 'Setter')
                 .reduce((s, e) => s + e.amount, 0);
               const trainerPay = repPayroll
-                .filter((e) => e.notes === 'Trainer override')
+                .filter((e) => e.paymentStage === 'Trainer')
                 .reduce((s, e) => s + e.amount, 0);
               return (
                 <>

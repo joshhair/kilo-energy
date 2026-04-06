@@ -1203,6 +1203,7 @@ function SetterPopover({
   reps,
   trainerAssignments,
   setProjects,
+  updateProject,
 }: {
   projectId: string;
   customerName: string;
@@ -1211,6 +1212,7 @@ function SetterPopover({
   reps: Rep[];
   trainerAssignments: TrainerAssignment[];
   setProjects: React.Dispatch<React.SetStateAction<ReturnType<typeof useApp>['projects']>>;
+  updateProject: ReturnType<typeof useApp>['updateProject'];
 }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -1261,11 +1263,7 @@ function SetterPopover({
   }, [open]);
 
   const handleAssign = (rep: Rep) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId ? { ...p, setterId: rep.id, setterName: rep.name } : p,
-      ),
-    );
+    updateProject(projectId, { setterId: rep.id, setterName: rep.name });
     toast(`Setter assigned: ${rep.name}`, 'success');
     closePopover();
   };

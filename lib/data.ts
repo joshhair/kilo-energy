@@ -208,7 +208,7 @@ export interface PayrollEntry {
   customerName: string;
   amount: number;
   type: 'Deal' | 'Bonus';
-  paymentStage: 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer';
+  paymentStage: 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer' | 'Setter';
   status: 'Draft' | 'Pending' | 'Paid';
   date: string;
   notes: string;
@@ -1445,7 +1445,7 @@ export function computeIncentiveProgress(
 
   let relevantProjects = projects.filter((p) => inRange(p.soldDate) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   if (incentive.type === 'personal' && incentive.targetRepId) {
-    relevantProjects = relevantProjects.filter((p) => p.repId === incentive.targetRepId);
+    relevantProjects = relevantProjects.filter((p) => p.repId === incentive.targetRepId || p.setterId === incentive.targetRepId);
   }
 
   switch (incentive.metric) {
@@ -1456,11 +1456,9 @@ export function computeIncentiveProgress(
     case 'revenue':
       return relevantProjects.reduce((s, p) => s + Math.round(p.netPPW * p.kWSize * 1000), 0);
     case 'commission': {
-      const repIds = incentive.type === 'personal' && incentive.targetRepId
-        ? [incentive.targetRepId]
-        : null;
+      const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
       return payrollEntries
-        .filter((e) => inRange(e.date) && e.status === 'Paid' && e.type === 'Deal' && (!repIds || repIds.includes(e.repId)))
+        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal')
         .reduce((s, e) => s + e.amount, 0);
     }
     default:

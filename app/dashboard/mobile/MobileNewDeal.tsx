@@ -232,6 +232,7 @@ export default function MobileNewDeal() {
   const [currentStep, setCurrentStep] = useState(0);
 
   const formRef = useRef<HTMLFormElement>(null);
+  const fieldWrapperRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Scroll to top when step changes
   useEffect(() => {
@@ -414,7 +415,20 @@ export default function MobileNewDeal() {
       return next;
     });
     setErrors((prev) => ({ ...prev, ...stepErrors }));
-    if (hasStepErrors) return;
+    if (hasStepErrors) {
+      const firstErrorField = stepFields.find((f) => stepErrors[f]);
+      if (firstErrorField) {
+        const el = fieldWrapperRefs.current[firstErrorField];
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.remove('field-error-pulse');
+          void el.offsetWidth;
+          el.classList.add('field-error-pulse');
+          el.addEventListener('animationend', () => el.classList.remove('field-error-pulse'), { once: true });
+        }
+      }
+      return;
+    }
     setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
   };
 
@@ -584,7 +598,7 @@ export default function MobileNewDeal() {
         {currentStep === 0 && (
           <div className="space-y-7 flex-1 flex flex-col">
             {/* Customer Name */}
-            <div>
+            <div ref={(el) => { fieldWrapperRefs.current['customerName'] = el; }}>
               <label className={labelCls} style={labelStyle}>Customer Name</label>
               <input
                 type="text"
@@ -598,7 +612,7 @@ export default function MobileNewDeal() {
             </div>
 
             {/* Sold Date */}
-            <div>
+            <div ref={(el) => { fieldWrapperRefs.current['soldDate'] = el; }}>
               <label className={labelCls} style={labelStyle}>Sold Date</label>
               <input
                 type="date"
@@ -612,7 +626,7 @@ export default function MobileNewDeal() {
 
             {/* Closer (admin/PM only) */}
             {!isSubDealer && currentRole === 'admin' && (
-              <div>
+              <div ref={(el) => { fieldWrapperRefs.current['repId'] = el; }}>
                 <label className={labelCls} style={labelStyle}>Closer (Rep)</label>
                 <select
                   value={form.repId}

@@ -192,11 +192,12 @@ export default function BlitzDetailPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch(`/api/blitzes/${blitzId}`, {
+      const r = await fetch(`/api/blitzes/${blitzId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
+      if (!r.ok) { toast('Failed to update blitz', 'error'); return; }
       // If the owner changed, ensure they are an approved participant
       if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
         const existingParticipant = blitz?.participants?.find((p: any) => p.user.id === editForm.ownerId);
@@ -486,7 +487,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[#8891a8] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</p>
+                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0), 0))}</p>
               </div>
             )}
           </div>
@@ -505,7 +506,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[#8891a8] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0))}</p>
+                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0), 0))}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">Projected Pay</p>
                 </div>
               </div>
@@ -725,7 +726,7 @@ export default function BlitzDetailPage() {
                 </tr></thead>
                 <tbody>
                   {blitz.participants.map((p: any, idx: number) => {
-                    const repDeals = blitz.projects?.filter((proj: any) => proj.closer?.id === p.user.id) ?? [];
+                    const repDeals = blitz.projects?.filter((proj: any) => proj.closer?.id === p.user.id && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold') ?? [];
                     const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
                     return (
                     <tr key={p.id} className={`border-b border-[#333849]/50 last:border-0 hover:bg-[#1d2028]/40 transition-colors ${idx % 2 === 0 ? 'bg-[#161920]/20' : ''}`}>
@@ -966,7 +967,7 @@ export default function BlitzDetailPage() {
               const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
               const repPayout = repDeals.reduce((s: number, proj: any) => s + (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0), 0);
               return { user: p.user, deals: repDeals.length, kw: repKW, payout: repPayout };
-            }).sort((a: { kw: number }, b: { kw: number }) => b.kw - a.kw);
+            }).sort((a: { deals: number; kw: number }, b: { deals: number; kw: number }) => b.deals - a.deals || b.kw - a.kw);
             const maxKW = Math.max(...repStats.map((r: { kw: number }) => r.kw), 1);
 
             return (

@@ -1205,6 +1205,14 @@ select {
   animation: fieldFlash 300ms ease-out forwards;
 }
 
+@keyframes errorPulse {
+  0%   { box-shadow: none; }
+  40%  { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.30); }
+  100% { box-shadow: none; }
+}
+.field-error-pulse { animation: errorPulse 480ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .field-error-pulse { animation: none; } }
+
 /* ── Payroll floating batch-action bar ──────────────────────────────────────── */
 
 /* Frosted-glass surface for the fixed bottom selection bar.

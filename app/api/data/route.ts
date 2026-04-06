@@ -107,8 +107,8 @@ export async function GET() {
     }));
 
   // Installers: just the name list (for backward compat)
-  const installerNames = installers.filter((i) => i.active).map((i) => i.name);
-  const financerNames = financers.filter((f) => f.active).map((f) => f.name);
+  const installerNames = installers.map((i) => ({ name: i.name, active: i.active }));
+  const financerNames = financers.map((f) => ({ name: f.name, active: f.active }));
 
   // Installer pay configs
   const installerPayConfigs: Record<string, { installPayPct: number }> = {};

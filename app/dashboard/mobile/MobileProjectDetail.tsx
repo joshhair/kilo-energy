@@ -8,7 +8,8 @@ import {
   PHASES, Phase,
   getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
 } from '../../../lib/data';
-import { formatDate } from '../../../lib/utils';
+import { formatDate, fmt$ } from '../../../lib/utils';
+import { myCommissionOnProject } from '../../../lib/commissionHelpers';
 import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Clock, RefreshCw } from 'lucide-react';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
@@ -253,9 +254,10 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   // ── Commission data ──
 
-  const myEntries = currentRole === 'rep'
-    ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === currentRepId)
-    : [];
+  // Shared helper computes total + per-stage applicability + status for
+  // both reps and sub-dealers. SDs don't get an M1, and M3 only applies
+  // when the installer has an M2/M3 structure (project.m3Amount > 0).
+  const myCommission = myCommissionOnProject(project, currentRepId, currentRole, payrollEntries);
 
   // Find payroll entry dates for milestones
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
@@ -373,6 +375,55 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {PHASE_EXPECTED_TIME[project.phase] ?? '—'}
       </p>
 
+      {/* YOUR COMMISSION — dominant total header (reps + sub-dealers only).
+          The M1/M2/M3 breakdown card below this shows the stage split. */}
+      {!isPM && !isAdmin && myCommission.total > 0 && (
+        <MobileCard hero>
+          <p
+            className="tracking-widest uppercase"
+            style={{
+              color: 'var(--m-text-dim, #445577)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              marginBottom: '0.25rem',
+            }}
+          >
+            Your Commission
+          </p>
+          <p
+            className="tabular-nums break-words"
+            style={{
+              fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+              fontSize: 'clamp(2.5rem, 13vw, 3.5rem)',
+              color:
+                myCommission.status === 'paid'
+                  ? '#00e5a0'
+                  : myCommission.status === 'partial'
+                  ? '#ffb020'
+                  : 'var(--m-accent, #00e5a0)',
+              lineHeight: 1.05,
+            }}
+          >
+            {fmt$(myCommission.total)}
+          </p>
+          <p
+            style={{
+              color: 'var(--m-text-muted, #8899aa)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              fontSize: '0.85rem',
+              marginTop: '0.35rem',
+            }}
+          >
+            {myCommission.status === 'paid'
+              ? 'Fully paid'
+              : myCommission.status === 'partial'
+              ? 'Partially paid · see breakdown below'
+              : 'Projected earnings on this deal'}
+          </p>
+        </MobileCard>
+      )}
+
       {/* Info rows — no card wrapper, thin separators */}
       <div className="space-y-0">
         {infoRows.map(([label, value]) => (
@@ -383,67 +434,90 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         ))}
       </div>
 
-      {/* Commission card — hide for PM */}
-      {!isPM && (
-        <MobileCard>
-          <h2 className="text-base font-semibold text-white mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</h2>
-          {myEntries.length > 0 && currentRole === 'rep' ? (
-            <div className="space-y-3">
-              {myEntries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between">
-                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.paymentStage}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${entry.amount.toLocaleString()}</span>
-                    <MobileBadge value={entry.status} variant="status" />
-                  </div>
+      {/* Commission breakdown card — hide for PM.
+          Rep/SD: pull per-stage amounts + paid status from myCommission.stages
+            so setters see setter amounts, SDs skip M1, and M3 only shows if
+            the installer structure produces an M3 (m3Amount > 0).
+          Admin: show the deal's own amounts from project fields (viewing the
+            deal, not "their" stake). */}
+      {!isPM && (() => {
+        const isMeView = currentRole === 'rep' || currentRole === 'sub-dealer';
+        type Stage = { key: 'M1' | 'M2' | 'M3'; amount: number; paid: boolean };
+        const allStages: Stage[] = isMeView
+          ? [
+              { key: 'M1', amount: myCommission.stages.m1.amount, paid: myCommission.stages.m1.paid },
+              { key: 'M2', amount: myCommission.stages.m2.amount, paid: myCommission.stages.m2.paid },
+              { key: 'M3', amount: myCommission.stages.m3.amount, paid: myCommission.stages.m3.paid },
+            ]
+          : [
+              { key: 'M1', amount: project.m1Amount ?? 0, paid: project.m1Paid ?? false },
+              { key: 'M2', amount: project.m2Amount ?? 0, paid: project.m2Paid ?? false },
+              { key: 'M3', amount: project.m3Amount ?? 0, paid: project.m3Paid ?? false },
+            ];
+        // Decide which stages to render: for rep/SD use the applicable flag,
+        // for admin include M1/M2 always and M3 only if it has an amount.
+        const visibleStages: Stage[] = isMeView
+          ? allStages.filter((s) =>
+              s.key === 'M1'
+                ? myCommission.stages.m1.applicable
+                : s.key === 'M2'
+                ? myCommission.stages.m2.applicable
+                : myCommission.stages.m3.applicable,
+            )
+          : allStages.filter((s) => s.key === 'M1' || s.key === 'M2' || s.amount > 0);
+
+        // Track-fill percentage across the visible stages.
+        const paidCount = visibleStages.filter((s) => s.paid).length;
+        const fillPct =
+          visibleStages.length <= 1
+            ? paidCount > 0
+              ? 100
+              : 0
+            : (paidCount / (visibleStages.length - 1)) * 100;
+
+        return (
+          <MobileCard>
+            <h2 className="text-base font-semibold text-white mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission Breakdown</h2>
+            <div className="relative flex items-start justify-between pt-2 pb-4">
+              {visibleStages.length > 1 && (
+                <>
+                  <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--m-border, #1a2840)' }} />
+                  <div
+                    className="absolute top-[18px] left-[14px] h-0.5 milestone-track-fill"
+                    style={{
+                      width: `calc(${Math.min(100, Math.max(0, fillPct))}% - 28px)`,
+                      background: 'linear-gradient(90deg, #00e5a0, #00b4d8)',
+                      animation: 'trackFill 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
+                    }}
+                  />
+                </>
+              )}
+              {visibleStages.map((stage, i) => (
+                <div key={stage.key} className="flex flex-col items-center gap-1.5 relative z-10">
+                  <div
+                    className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{
+                      background: stage.paid ? 'linear-gradient(135deg, #00e5a0, #00b4d8)' : 'var(--m-card, #0d1525)',
+                      border: `2px solid ${stage.paid ? '#00e5a0' : 'var(--m-border, #1a2840)'}`,
+                      color: stage.paid ? '#000' : 'var(--m-text-muted, #8899aa)',
+                      animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
+                    }}
+                  >{stage.key}</div>
+                  <span
+                    className="milestone-amount text-sm font-bold tabular-nums"
+                    style={{
+                      color: stage.paid ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                      fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                      animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
+                    }}
+                  >{fmt$(stage.amount)}</span>
+                  <MobileBadge value={stage.paid ? 'Paid' : 'Pending'} variant="status" />
                 </div>
               ))}
             </div>
-          ) : (
-            /* Milestone progress track */
-            <div className="relative flex items-start justify-between pt-2 pb-4">
-              {/* Background track */}
-              <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--m-border, #1a2840)' }} />
-              {/* Filled track segment: width = 0% if none paid, 50% if M1 paid, 100% if M2 paid */}
-              <div
-                className="absolute top-[18px] left-[14px] h-0.5 milestone-track-fill"
-                style={{
-                  width: project.m2Paid ? 'calc(100% - 28px)' : project.m1Paid ? 'calc(50% - 14px)' : '0%',
-                  background: 'linear-gradient(90deg, #00e5a0, #00b4d8)',
-                  animation: 'trackFill 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
-                }}
-              />
-              {(['M1', 'M2', 'M3'] as const).map((stage, i) => {
-                const isPaid = stage === 'M1' ? project.m1Paid : stage === 'M2' ? project.m2Paid : false;
-                const amount = stage === 'M1' ? project.m1Amount : stage === 'M2' ? project.m2Amount : (project.m3Amount ?? 0);
-                if (stage === 'M3' && amount === 0) return null;
-                return (
-                  <div key={stage} className="flex flex-col items-center gap-1.5 relative z-10">
-                    <div
-                      className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{
-                        background: isPaid ? 'linear-gradient(135deg, #00e5a0, #00b4d8)' : 'var(--m-card, #0d1525)',
-                        border: `2px solid ${isPaid ? '#00e5a0' : 'var(--m-border, #1a2840)'}`,
-                        color: isPaid ? '#000' : 'var(--m-text-muted, #8899aa)',
-                        animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
-                      }}
-                    >{stage}</div>
-                    <span
-                      className="milestone-amount text-sm font-bold"
-                      style={{
-                        color: isPaid ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
-                        fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
-                        animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
-                      }}
-                    >${amount.toLocaleString()}</span>
-                    <MobileBadge value={isPaid ? 'Paid' : 'Pending'} variant="status" />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </MobileCard>
-      )}
+          </MobileCard>
+        );
+      })()}
 
       {/* Notes — collapsible */}
       <MobileSection title="Notes" collapsible defaultOpen={false}>

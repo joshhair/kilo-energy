@@ -69,8 +69,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   const visibleProjects = useMemo(() => {
     if (!blitz?.projects) return [];
-    if (isAdmin || isOwner) return blitz.projects;
-    return blitz.projects.filter((p: any) => p.closer?.id === effectiveRepId);
+    if (isAdmin || isOwner) return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+    return blitz.projects.filter((p: any) => p.closer?.id === effectiveRepId && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const totalDeals = visibleProjects.length;

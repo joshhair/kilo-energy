@@ -8,6 +8,15 @@ import { Search } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
+import { fmtCompact$ } from '../../../lib/utils';
+import { myCommissionOnProject, type CommissionStatus } from '../../../lib/commissionHelpers';
+
+// Color per commission status — aligns with hero colors used elsewhere.
+const COMMISSION_COLORS: Record<CommissionStatus, { fg: string; bg: string; label: string }> = {
+  paid:      { fg: '#00e5a0', bg: 'rgba(0,229,160,0.12)',  label: 'Paid' },
+  partial:   { fg: '#ffb020', bg: 'rgba(255,176,32,0.12)', label: 'Partial' },
+  projected: { fg: '#c2c8d8', bg: 'rgba(194,200,216,0.08)', label: 'Projected' },
+};
 
 const PHASE_FILTERS: (Phase | 'All')[] = [
   'All',
@@ -37,7 +46,7 @@ function relativeTime(dateStr: string): string {
 }
 
 export default function MobileProjects() {
-  const { effectiveRole, effectiveRepId, projects } = useApp();
+  const { effectiveRole, effectiveRepId, projects, payrollEntries } = useApp();
   const router = useRouter();
 
   const isSubDealer = effectiveRole === 'sub-dealer';
@@ -145,30 +154,55 @@ export default function MobileProjects() {
             <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No projects found</p>
           </div>
         ) : (
-          filtered.map((project, index) => (
-            <MobileCard
-              key={project.id}
-              onTap={() => router.push(`/dashboard/projects/${project.id}`)}
-              className="animate-card-enter"
-              style={{ '--card-index': Math.min(index, 10) } as React.CSSProperties}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
-                  {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
+          filtered.map((project, index) => {
+            const showCommission = effectiveRole === 'rep' || effectiveRole === 'sub-dealer';
+            const commission = showCommission
+              ? myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries)
+              : null;
+            const pill = commission && commission.total > 0 ? COMMISSION_COLORS[commission.status] : null;
+
+            return (
+              <MobileCard
+                key={project.id}
+                onTap={() => router.push(`/dashboard/projects/${project.id}`)}
+                className="animate-card-enter"
+                style={{ '--card-index': Math.min(index, 10) } as React.CSSProperties}
+              >
+                <div className="flex items-start justify-between gap-3 mb-1">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
+                    {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
+                  </div>
+                  <MobileBadge value={project.phase} />
                 </div>
-                <MobileBadge value={project.phase} />
-              </div>
-              <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                {project.installer} &middot; {project.kWSize} kW &middot; {relativeTime(project.soldDate)}
-              </p>
-              {phaseAvgDays[project.phase] !== undefined && (
-                <p style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
-                  Avg {phaseAvgDays[project.phase]}d in {project.phase}
-                </p>
-              )}
-            </MobileCard>
-          ))
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-base min-w-0 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    {project.installer} &middot; {project.kWSize} kW &middot; {relativeTime(project.soldDate)}
+                  </p>
+                  {pill && (
+                    <span
+                      className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg tabular-nums font-bold"
+                      style={{
+                        background: pill.bg,
+                        color: pill.fg,
+                        fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                        fontSize: '0.875rem',
+                        lineHeight: 1,
+                      }}
+                      title={`${pill.label} · ${commission!.total.toLocaleString()}`}
+                    >
+                      {fmtCompact$(commission!.total)}
+                    </span>
+                  )}
+                </div>
+                {phaseAvgDays[project.phase] !== undefined && (
+                  <p style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
+                    Phase avg: {phaseAvgDays[project.phase]}d
+                  </p>
+                )}
+              </MobileCard>
+            );
+          })
         )}
       </div>
     </div>

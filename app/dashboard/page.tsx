@@ -1735,9 +1735,9 @@ function AdminDashboard({
   const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
   const totalUsers = totalReps;
 
-  const activeCount = projects.filter((p) => ['New','Acceptance','Site Survey','Design','Permitting','Pending Install','Installed','PTO'].includes(p.phase)).length;
-  const inactiveCount = projects.filter((p) => ['Cancelled','On Hold'].includes(p.phase)).length;
-  const completedCount = projects.filter((p) => p.phase === 'Completed').length;
+  const activeCount = allProjects.filter((p) => ['New','Acceptance','Site Survey','Design','Permitting','Pending Install','Installed','PTO'].includes(p.phase)).length;
+  const inactiveCount = allProjects.filter((p) => ['Cancelled','On Hold'].includes(p.phase)).length;
+  const completedCount = allProjects.filter((p) => p.phase === 'Completed').length;
 
   const topStats = [
     { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },

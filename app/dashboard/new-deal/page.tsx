@@ -554,7 +554,7 @@ function NewDealPage() {
   // Blitz list for lead source attribution
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
-    fetch('/api/blitzes').then((r) => r.json()).then((data) => {
+    fetch('/api/blitzes').then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((data) => {
       setAvailableBlitzes((data ?? []).filter((b: any) => b.status === 'upcoming' || b.status === 'active' || b.status === 'completed'));
     }).catch(() => {});
   }, []);
@@ -692,7 +692,7 @@ function NewDealPage() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => (p.repId === form.setterId || p.setterId === form.setterId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length
+    ? projects.filter((p) => (p.repId === form.setterId || p.setterId === form.setterId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -739,7 +739,7 @@ function NewDealPage() {
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
   const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
   const closerM2Full = Math.max(0, closerTotal - closerM1);
-  const setterM1 = isSelfGen ? 0 : m1Flat;
+  const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
   const setterM2Full = Math.max(0, setterTotal - setterM1);
   const trainerM1 = 0;
   const trainerM2 = trainerTotal;
@@ -924,7 +924,7 @@ function NewDealPage() {
       netPPW: soldPPW,
       phase: 'New',
       m1Paid: false,
-      m1Amount: isSubDealer ? 0 : m1Flat,
+      m1Amount: isSubDealer ? 0 : isSelfGen ? closerM1 : setterM1,
       m2Paid: false,
       m2Amount: isSubDealer ? subDealerCommission : closerM2,
       m3Amount: isSubDealer ? 0 : closerM3,
@@ -1299,7 +1299,7 @@ function NewDealPage() {
 
                   {/* Prepaid sub-type — shown when prepaid family is selected OR Cash/Loan with prepaid options */}
                   {getInstallerPrepaidOptions(form.installer).length > 0 && (
-                    form.solarTechFamily === 'Cash/HDM/PE' || (form.productType === 'Cash' || form.productType === 'Loan')
+                    form.solarTechFamily === 'Cash/HDM/PE'
                   ) && (
                     <div className="transition-all duration-200">
                       <label className={labelCls} style={labelStyle}>
@@ -1723,7 +1723,10 @@ function NewDealPage() {
                   onChange={(e) => {
                     const val = e.target.value;
                     update('leadSource', val);
-                    if (val !== 'blitz') update('blitzId', '');
+                    if (val !== 'blitz') {
+                      update('blitzId', '');
+                      update('soldDate', new Date().toISOString().split('T')[0]);
+                    }
                   }}
                   className={inputCls('')} style={inputFieldStyle('')}
                 >
@@ -1759,6 +1762,9 @@ function NewDealPage() {
                             update('soldDate', blitz.endDate);
                           }
                         }
+                      } else {
+                        // Blitz deselected — reset soldDate to today
+                        update('soldDate', new Date().toISOString().split('T')[0]);
                       }
                     }}
                     className={inputCls('')} style={inputFieldStyle('')}

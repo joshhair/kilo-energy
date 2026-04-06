@@ -167,8 +167,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setReps(data.reps ?? []);
         setSubDealers(data.subDealers ?? []);
-        setInstallers((data.installers ?? []).map((i: string) => ({ name: i, active: true })));
-        setFinancers((data.financers ?? []).map((f: string) => ({ name: f, active: true })));
+        setInstallers((data.installers ?? []).map((i: { name: string; active: boolean }) => ({ name: i.name, active: i.active })));
+        setFinancers((data.financers ?? []).map((f: { name: string; active: boolean }) => ({ name: f.name, active: f.active })));
         setProjects(data.projects ?? []);
         setPayrollEntries(data.payrollEntries ?? []);
         setReimbursements(data.reimbursements ?? []);
@@ -594,7 +594,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Check if entries already exist for this project + stage to avoid duplicates
           setPayrollEntries((prevEntries) => {
             const alreadyExists = prevEntries.some(
-              (e) => e.projectId === id && (e.paymentStage === stage || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))
+              (e) => e.projectId === id && (e.paymentStage === stage || (stage === 'M2' && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))
             );
             if (alreadyExists) return prevEntries;
 
@@ -711,7 +711,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
           const m3 = (proj?.m3Amount ?? 0) > 0
             ? proj!.m3Amount!
-            : installPayPct < 100
+            : installPayPct < 100 && !old.subDealerId
               ? Math.round(old.m2Amount * ((100 - installPayPct) / installPayPct) * 100) / 100
               : 0;
           const ts = Date.now();
@@ -721,6 +721,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 (e) => e.projectId === id && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))
               );
               if (alreadyExists) return prevEntries;
+
+              // Guard: only draft M3 if M2 was previously created for this project.
+              // Without this, a project moved directly to PTO (skipping Installed) would
+              // produce an orphaned M3 entry with no corresponding M2.
+              const hasM2Entry = prevEntries.some(
+                (e) => e.projectId === id && e.paymentStage === 'M2'
+              );
+              if (!hasM2Entry) return prevEntries;
 
               const newEntries: PayrollEntry[] = [];
               const closerRep = reps.find((r) => r.id === old.repId);
@@ -749,7 +757,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100));
                 if (m3TrainerAmount > 0) {
-                  const closerRep = reps.find(r => r.id === old.repId);
                   newEntries.push({
                     id: `pay_${ts}_m3_trainer_c`,
                     repId: closerTrainerAssignment.trainerId,
@@ -761,7 +768,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     paymentStage: 'Trainer',
                     status: 'Draft',
                     date: payDate,
-                    notes: `Trainer override M3 — ${trainerRep?.name ?? ''}`,
+                    notes: `Trainer override M3 — ${closerRep?.name ?? old.repName} ($${overrideRate.toFixed(2)}/W)`,
                   });
                 }
               }
@@ -787,7 +794,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       paymentStage: 'Trainer',
                       status: 'Draft',
                       date: payDate,
-                      notes: `Trainer override M3 — ${setterTrainerRep?.name ?? ''}`,
+                      notes: `Trainer override M3 — ${setterRep?.name ?? old.setterName ?? ''} ($${setterOverrideRate.toFixed(2)}/W)`,
                     });
                   }
                 }
@@ -1218,6 +1225,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
     } else {
       console.error('[addDeal] Cannot persist: missing financer ID mapping', { financer: project.financer });
+      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer not found. Please refresh and try again.' }));
+      }
     }
   };
 

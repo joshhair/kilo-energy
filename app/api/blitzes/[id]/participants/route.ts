@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: {
       blitzId,
       userId: body.userId,
-      joinStatus: 'pending',
+      joinStatus: body.joinStatus ?? 'pending',
     },
     include: { user: true },
   });

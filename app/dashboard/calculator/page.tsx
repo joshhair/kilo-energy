@@ -25,6 +25,7 @@ interface CalcHistoryEntry {
   kW: number;
   ppw: number;
   hasSetter: boolean;
+  selectedSetterId?: string;
   closerTotal: number;
   setterTotal: number;
   trainerTotal: number;
@@ -419,7 +420,7 @@ function CalculatorPage() {
     ? trainerAssignments.find((a) => a.traineeId === effectiveSetterId)
     : null;
   const setterDealCount = effectiveSetterId
-    ? projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (p.repId === effectiveSetterId || p.setterId === effectiveSetterId)).length
+    ? projects.filter((p) => (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed') && (p.repId === effectiveSetterId || p.setterId === effectiveSetterId)).length
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -431,7 +432,7 @@ function CalculatorPage() {
   // Correct split: closer + setter share 50/50 from above (setterBaseline + trainerOverride).
   // No setter: closer keeps everything above their own baseline.
   const { closerTotal, setterTotal } = (() => {
-    if (!hasSetter || setterBaselinePerW === 0 || soldPPW <= 0) {
+    if (!hasSetter || !selectedSetterId || setterBaselinePerW === 0 || soldPPW <= 0) {
       return { closerTotal: soldPPW > 0 ? calculateCommission(soldPPW, closerPerW, kW) : 0, setterTotal: 0 };
     }
     // Closer always keeps the $0.10/W spread between their redline and the setter redline
@@ -447,14 +448,14 @@ function CalculatorPage() {
   })();
 
   const m1Flat = kW >= 5 ? 1000 : 500;
-  const isSelfGen = !hasSetter || setterBaselinePerW === 0;
+  const isSelfGen = !hasSetter || !selectedSetterId || setterBaselinePerW === 0;
   const installPayPct = (installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT);
   const hasM3Split = installPayPct < 100;
   const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
   const closerM2Raw = Math.max(0, closerTotal - closerM1);
   const closerM2 = hasM3Split ? Math.round(closerM2Raw * (installPayPct / 100)) : closerM2Raw;
   const closerM3 = hasM3Split ? closerM2Raw - closerM2 : 0;
-  const setterM1 = isSelfGen ? 0 : m1Flat;
+  const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
   const setterM2Raw = Math.max(0, setterTotal - setterM1);
   const setterM2 = hasM3Split ? Math.round(setterM2Raw * (installPayPct / 100)) : setterM2Raw;
   const setterM3 = hasM3Split ? setterM2Raw - setterM2 : 0;
@@ -515,6 +516,7 @@ function CalculatorPage() {
     setKWSize(String(entry.kW));
     setNetPPW(String(entry.ppw));
     setHasSetter(entry.hasSetter);
+    setSelectedSetterId(entry.selectedSetterId ?? '');
     if (entry.solarTechFamily) {
       setSolarTechFamily(entry.solarTechFamily);
       setSolarTechProductId(entry.solarTechProductId ?? '');
@@ -579,6 +581,7 @@ function CalculatorPage() {
       kW,
       ppw: soldPPW,
       hasSetter,
+      selectedSetterId: selectedSetterId || undefined,
       closerTotal,
       setterTotal,
       trainerTotal,
