@@ -1951,6 +1951,7 @@ function TableView({
                             reps={reps}
                             trainerAssignments={trainerAssignments}
                             setProjects={setProjects}
+                            updateProject={updateProject}
                           />
                         </div>
                       </td>

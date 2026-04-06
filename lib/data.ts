@@ -189,6 +189,9 @@ export interface Project {
   // M3: remaining commission paid at PTO for installers that don't pay 100% at install
   m3Amount?: number;
   m3Paid: boolean;
+  // Setter-specific M2/M3 amounts (closer's values live in m2Amount/m3Amount)
+  setterM2Amount?: number;
+  setterM3Amount?: number;
   // Lead source + blitz attribution
   leadSource?: string;
   blitzId?: string;

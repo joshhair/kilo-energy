@@ -789,7 +789,10 @@ export default function DashboardPage() {
   // Hoist payrollProjectIds + MTD derivations above the isHydrated guard so that
   // useCountUp (a React hook) is always called unconditionally — hooks rules require
   // every hook to be called in the same order on every render.
-  const payrollProjectIds = new Set(myPayroll.map((p) => p.projectId).filter(Boolean));
+  // Use all payroll entries (not period-filtered) so MTD unmatched detection is
+  // correct regardless of which period tab is selected.
+  const allMyPayroll = payrollEntries.filter((p) => p.repId === effectiveRepId);
+  const payrollProjectIds = new Set(allMyPayroll.map((p) => p.projectId).filter(Boolean));
   const mtdProjects = projects.filter(
     (p) => (p.repId === effectiveRepId || p.setterId === effectiveRepId) && isThisMonth(p.soldDate)
   );

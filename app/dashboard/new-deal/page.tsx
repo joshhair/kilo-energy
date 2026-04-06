@@ -929,6 +929,8 @@ function NewDealPage() {
       m2Amount: isSubDealer ? subDealerCommission : closerM2,
       m3Amount: isSubDealer ? 0 : closerM3,
       m3Paid: false,
+      setterM2Amount: isSubDealer ? 0 : setterM2,
+      setterM3Amount: isSubDealer ? 0 : setterM3,
       notes: form.notes,
       flagged: false,
       solarTechProductId: form.installer === 'SolarTech' && hasSolarTechProducts ? form.solarTechProductId : undefined,

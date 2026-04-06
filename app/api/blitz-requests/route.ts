@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireAuth } from '../../../lib/api-auth';
+import { requireAuth, requireAdmin } from '../../../lib/api-auth';
 
 // GET /api/blitz-requests — List all blitz requests
 export async function GET() {
-  try { await requireAuth(); } catch (r) { return r as NextResponse; }
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const requests = await prisma.blitzRequest.findMany({
     include: { requestedBy: true, blitz: true },
     orderBy: { createdAt: 'desc' },

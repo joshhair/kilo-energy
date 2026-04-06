@@ -252,7 +252,7 @@ export default function MobileDashboard() {
   // Next payout calculation
   const nextFridayDate = useMemo(() => {
     const today = new Date();
-    const d = ((5 - today.getDay() + 7) % 7) || 7;
+    const d = (5 - today.getDay() + 7) % 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
     return nf.toISOString().split('T')[0];

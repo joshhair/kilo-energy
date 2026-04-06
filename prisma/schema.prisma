@@ -268,12 +268,14 @@ model Project {
   /// "Pending Install" | "Installed" | "PTO" | "Completed" | "Cancelled" | "On Hold"
   phase String @default("New")
 
-  m1Paid   Boolean @default(false)
-  m1Amount Float   @default(0)
-  m2Paid   Boolean @default(false)
-  m2Amount Float   @default(0)
-  m3Amount Float?
-  m3Paid   Boolean @default(false)
+  m1Paid         Boolean @default(false)
+  m1Amount       Float   @default(0)
+  m2Paid         Boolean @default(false)
+  m2Amount       Float   @default(0)
+  m3Amount       Float?
+  m3Paid         Boolean @default(false)
+  setterM2Amount Float   @default(0)
+  setterM3Amount Float?
 
   notes   String  @default("")
   flagged Boolean @default(false)

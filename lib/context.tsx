@@ -1174,6 +1174,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           m1Amount: project.m1Amount || 0,
           m2Amount: project.m2Amount || 0,
           m3Amount: project.m3Amount || 0,
+          setterM2Amount: project.setterM2Amount || 0,
+          setterM3Amount: project.setterM3Amount || 0,
           notes: project.notes || '',
           installerPricingVersionId: project.pricingVersionId || null,
           productId: project.solarTechProductId || project.installerProductId || null,

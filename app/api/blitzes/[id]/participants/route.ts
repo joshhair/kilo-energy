@@ -66,6 +66,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const userId = searchParams.get('userId');
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
 
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const caller = await prisma.user.findFirst({ where: { email } });
+  if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true } });
+  if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
+  if (caller.role !== 'admin' && caller.id !== blitz.ownerId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   await prisma.blitzParticipant.deleteMany({ where: { blitzId, userId } });
   return NextResponse.json({ success: true });
 }

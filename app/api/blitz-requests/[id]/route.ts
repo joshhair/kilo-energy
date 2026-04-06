@@ -12,38 +12,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.status !== undefined) data.status = body.status;
   if (body.adminNotes !== undefined) data.adminNotes = body.adminNotes;
 
-  const request = await prisma.blitzRequest.update({
-    where: { id },
-    data,
-    include: { requestedBy: true, blitz: true },
-  });
-
-  // If approving a cancellation request, also cancel the blitz
-  if (body.status === 'approved' && request.type === 'cancel' && request.blitzId) {
-    await prisma.blitz.update({
-      where: { id: request.blitzId },
-      data: { status: 'cancelled' },
+  const request = await prisma.$transaction(async (tx) => {
+    const updated = await tx.blitzRequest.update({
+      where: { id },
+      data,
+      include: { requestedBy: true, blitz: true },
     });
-  }
 
-  // If approving a create request, create the blitz
-  if (body.status === 'approved' && request.type === 'create') {
-    await prisma.blitz.create({
-      data: {
-        name: request.name,
-        location: request.location,
-        startDate: request.startDate,
-        endDate: request.endDate,
-        housing: request.housing,
-        notes: request.notes,
-        createdById: request.requestedById,
-        ownerId: request.requestedById,
-        participants: {
-          create: { userId: request.requestedById, joinStatus: 'approved' },
+    // If approving a cancellation request, also cancel the blitz
+    if (body.status === 'approved' && updated.type === 'cancel' && updated.blitzId) {
+      await tx.blitz.update({
+        where: { id: updated.blitzId },
+        data: { status: 'cancelled' },
+      });
+    }
+
+    // If approving a create request, create the blitz
+    if (body.status === 'approved' && updated.type === 'create') {
+      await tx.blitz.create({
+        data: {
+          name: updated.name,
+          location: updated.location,
+          startDate: updated.startDate,
+          endDate: updated.endDate,
+          housing: updated.housing,
+          notes: updated.notes,
+          createdById: updated.requestedById,
+          ownerId: updated.requestedById,
+          participants: {
+            create: { userId: updated.requestedById, joinStatus: 'approved' },
+          },
         },
-      },
-    });
-  }
+      });
+    }
+
+    return updated;
+  });
 
   return NextResponse.json(request);
 }

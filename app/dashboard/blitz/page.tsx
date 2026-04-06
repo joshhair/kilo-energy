@@ -610,11 +610,12 @@ function BlitzPageInner() {
   const handleApproveRequest = async (reqId: string) => {
     setProcessingRequest(reqId);
     try {
-      await fetch(`/api/blitz-requests/${reqId}`, {
+      const r = await fetch(`/api/blitz-requests/${reqId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'approved' }),
       });
+      if (!r.ok) { toast('Failed to approve request', 'error'); return; }
       toast('Request approved');
       loadData();
     } finally { setProcessingRequest(null); }
@@ -623,11 +624,12 @@ function BlitzPageInner() {
   const handleDenyRequest = async (reqId: string) => {
     setProcessingRequest(reqId);
     try {
-      await fetch(`/api/blitz-requests/${reqId}`, {
+      const r = await fetch(`/api/blitz-requests/${reqId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'denied' }),
       });
+      if (!r.ok) { toast('Failed to deny request', 'error'); return; }
       toast('Request denied');
       loadData();
     } finally { setProcessingRequest(null); }
