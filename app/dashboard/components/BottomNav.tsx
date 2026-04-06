@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useApp } from '../../../lib/context';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -18,6 +19,11 @@ import {
   Settings,
   X,
   LogOut,
+  Mail,
+  Phone,
+  Eye,
+  XCircle,
+  Search,
 } from 'lucide-react';
 
 type BottomNavItem = {
@@ -86,19 +92,50 @@ const PM_BOTTOM_NAV: BottomNavItem[] = [
   { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 
-// ─── More Popover (floating menu above More button) ──────────────────────
+// ─── Profile Drawer (slide-up bottom sheet) ─────────────────────────────
 
-function MorePopover({
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  rep: 'Sales Rep',
+  'sub-dealer': 'Sub-Dealer',
+  project_manager: 'Project Manager',
+};
+
+function ProfileDrawer({
   open,
   onClose,
   items,
   onLogout,
+  userName,
+  userRole,
+  userEmail,
+  userPhone,
+  isAdmin,
+  allReps,
+  allSubDealers,
+  onViewAs,
+  isViewingAs,
+  viewAsName,
+  onClearViewAs,
 }: {
   open: boolean;
   onClose: () => void;
   items: MoreSheetItem[];
   onLogout?: () => void;
+  userName: string;
+  userRole: string;
+  userEmail: string;
+  userPhone: string;
+  isAdmin?: boolean;
+  allReps?: Array<{ id: string; name: string }>;
+  allSubDealers?: Array<{ id: string; name: string }>;
+  onViewAs?: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+  isViewingAs?: boolean;
+  viewAsName?: string;
+  onClearViewAs?: () => void;
 }) {
+  const [viewAsSearch, setViewAsSearch] = useState('');
+  const [viewAsOpen, setViewAsOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -106,59 +143,200 @@ function MorePopover({
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <>
-      {/* Invisible backdrop to catch taps outside */}
-      <div className="fixed inset-0 z-[60] md:hidden" onClick={onClose} />
-      {/* Popover card anchored above More button */}
+      {/* Backdrop */}
       <div
-        className="fixed z-[70] md:hidden"
+        className="fixed inset-0 z-[60] md:hidden"
+        style={{ background: 'rgba(0,0,0,0.6)', animation: 'fadeIn 0.2s ease' }}
+        onClick={onClose}
+      />
+      {/* Drawer */}
+      <div
+        className="fixed left-0 right-0 bottom-0 z-[70] md:hidden"
         style={{
-          bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
-          right: '12px',
-          minWidth: '180px',
           background: '#0d1525',
-          border: '1px solid #1a2840',
-          borderRadius: '16px',
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.4)',
-          overflow: 'hidden',
-          animation: 'mobileTabEnter 0.15s ease both',
+          borderTop: '1px solid #1a2840',
+          borderRadius: '20px 20px 0 0',
+          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          animation: 'slideUp 0.25s ease both',
+          maxHeight: '80vh',
+          overflowY: 'auto',
         }}
       >
-        {items.map(({ href, label, icon: Icon }, i) => (
-          <Link
-            key={href}
-            href={href}
-            onClick={onClose}
-            className="flex items-center gap-3 min-h-[48px] px-5 py-3 active:opacity-70 transition-opacity"
-            style={{
-              color: '#fff',
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: '1rem',
-              borderBottom: i < items.length - 1 ? '1px solid #1a2840' : 'none',
-            }}
-          >
-            <Icon className="w-5 h-5" />
-            <span>{label}</span>
-          </Link>
-        ))}
-        {/* Logout */}
+        {/* Handle bar */}
+        <div className="flex justify-center py-3">
+          <div className="w-10 h-1 rounded-full" style={{ background: '#1a2840' }} />
+        </div>
+
+        {/* Profile header */}
+        <div className="px-6 pb-4" style={{ borderBottom: '1px solid #1a2840' }}>
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #00e5a0 0%, #00b4d8 100%)',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '1.2rem',
+                fontWeight: 700,
+                color: '#000',
+              }}
+            >
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-lg font-bold text-white truncate" style={{ fontFamily: "'DM Sans', sans-serif" }}>{userName}</p>
+              <span
+                className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold mt-1"
+                style={{
+                  background: 'rgba(0,229,160,0.15)',
+                  color: '#00e5a0',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                {ROLE_LABELS[userRole] || userRole}
+              </span>
+            </div>
+          </div>
+          {/* Contact info */}
+          {(userEmail || userPhone) && (
+            <div className="mt-3 space-y-1.5">
+              {userEmail && (
+                <div className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5" style={{ color: '#8899aa' }} />
+                  <span className="text-sm truncate" style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{userEmail}</span>
+                </div>
+              )}
+              {userPhone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5" style={{ color: '#8899aa' }} />
+                  <span className="text-sm" style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{userPhone}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Nav items */}
+        {items.length > 0 && (
+          <div className="px-2 py-2">
+            {items.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={onClose}
+                className="flex items-center gap-3 min-h-[48px] px-4 py-3 rounded-xl active:opacity-70 transition-opacity"
+                style={{
+                  color: '#fff',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: '1rem',
+                }}
+              >
+                <span style={{ color: '#8899aa' }}><Icon className="w-5 h-5" /></span>
+                <span>{label}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* View As (admin only) */}
+        {isAdmin && onViewAs && (
+          <div className="px-2 py-2" style={{ borderTop: '1px solid #1a2840' }}>
+            {isViewingAs && viewAsName && onClearViewAs ? (
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" style={{ color: '#f5a623' }} />
+                  <span className="text-sm" style={{ color: '#f5a623', fontFamily: "'DM Sans', sans-serif" }}>
+                    Viewing as <span className="text-white font-semibold">{viewAsName}</span>
+                  </span>
+                </div>
+                <button
+                  onClick={() => { onClearViewAs(); onClose(); }}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg active:opacity-70"
+                  style={{ color: '#f5a623' }}
+                >
+                  <XCircle className="w-3.5 h-3.5" /> Exit
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setViewAsOpen(!viewAsOpen)}
+                  className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:opacity-70 transition-opacity"
+                  style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem' }}
+                >
+                  <Eye className="w-5 h-5" />
+                  <span>View As Rep...</span>
+                </button>
+                {viewAsOpen && (
+                  <div className="mx-2 mb-2 rounded-xl overflow-hidden" style={{ background: '#161920', border: '1px solid #1a2840' }}>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#8899aa' }} />
+                      <input
+                        autoFocus
+                        value={viewAsSearch}
+                        onChange={(e) => setViewAsSearch(e.target.value)}
+                        placeholder="Search reps..."
+                        className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-white outline-none"
+                        style={{ borderBottom: '1px solid #1a2840', fontFamily: "'DM Sans', sans-serif" }}
+                      />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {[...(allReps || []).map(r => ({ ...r, role: 'rep' as const })), ...(allSubDealers || []).map(sd => ({ ...sd, role: 'sub-dealer' as const }))]
+                        .filter(u => !viewAsSearch.trim() || u.name.toLowerCase().includes(viewAsSearch.toLowerCase()))
+                        .map(u => (
+                          <button
+                            key={u.id}
+                            onClick={() => { onViewAs(u); setViewAsOpen(false); setViewAsSearch(''); onClose(); }}
+                            className="w-full text-left px-4 py-3 text-sm text-white active:opacity-70 flex items-center justify-between"
+                            style={{ borderBottom: '1px solid #1a2840', fontFamily: "'DM Sans', sans-serif" }}
+                          >
+                            <span>{u.name}</span>
+                            <span className="text-xs capitalize" style={{ color: '#8899aa' }}>{u.role}</span>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Sign Out */}
         {onLogout && (
-          <button
-            onClick={() => { onClose(); onLogout(); }}
-            className="flex items-center gap-3 w-full min-h-[48px] px-5 py-3 active:opacity-70 transition-opacity"
-            style={{
-              color: '#ff6b6b',
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: '1rem',
-              borderTop: items.length > 0 ? '1px solid #1a2840' : 'none',
-            }}
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
-          </button>
+          <div className="px-2 pt-1" style={{ borderTop: '1px solid #1a2840' }}>
+            <button
+              onClick={() => { onClose(); onLogout(); }}
+              className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:opacity-70 transition-opacity"
+              style={{
+                color: '#ff6b6b',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '1rem',
+              }}
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         )}
       </div>
     </>
@@ -178,6 +356,7 @@ export default function BottomNav({
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { currentRepName, currentRepId, currentRole, reps, subDealers, isViewingAs, viewAsUser, setViewAsUser, clearViewAs } = useApp();
 
   // Close more sheet on route change
   const [prevPathname, setPrevPathname] = useState(pathname);
@@ -204,6 +383,13 @@ export default function BottomNav({
     moreItems = isTrainer ? REP_MORE_ITEMS_TRAINER : REP_MORE_ITEMS;
   }
 
+  // Resolve user profile info
+  const matchedRep = reps.find((r) => r.id === currentRepId);
+  const matchedSD = !matchedRep ? subDealers.find((sd) => sd.id === currentRepId) : null;
+  const userName = currentRepName || 'User';
+  const userEmail = matchedRep?.email || matchedSD?.email || '';
+  const userPhone = matchedRep?.phone || matchedSD?.phone || '';
+
   const isActive = (href: string) => {
     if (href === '___more___') return moreOpen;
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -212,7 +398,23 @@ export default function BottomNav({
 
   return (
     <>
-      <MorePopover open={moreOpen} onClose={() => setMoreOpen(false)} items={moreItems} onLogout={onLogout} />
+      <ProfileDrawer
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        items={moreItems}
+        onLogout={onLogout}
+        userName={userName}
+        userRole={role}
+        userEmail={userEmail}
+        userPhone={userPhone}
+        isAdmin={currentRole === 'admin'}
+        allReps={reps}
+        allSubDealers={subDealers}
+        onViewAs={setViewAsUser}
+        isViewingAs={isViewingAs}
+        viewAsName={viewAsUser?.name}
+        onClearViewAs={clearViewAs}
+      />
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
         style={{ background: 'linear-gradient(to top, #080c14 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}

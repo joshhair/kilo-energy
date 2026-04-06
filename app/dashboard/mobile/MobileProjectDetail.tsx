@@ -241,6 +241,26 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === currentRepId)
     : [];
 
+  // Find payroll entry dates for milestones
+  const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
+  const getEntryDate = (stage: 'M1' | 'M2' | 'M3'): string | null => {
+    const entry = projectEntries.find((e) => e.paymentStage === stage && e.status !== 'Draft');
+    return entry ? entry.date : null;
+  };
+  const formatShortDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+  // Estimate next Friday after a target date
+  const estimateFriday = (baseDate: string, addDays: number): string => {
+    const d = new Date(baseDate + 'T12:00:00');
+    d.setDate(d.getDate() + addDays);
+    const day = d.getDay();
+    const diff = ((5 - day + 7) % 7) || 7;
+    if (day !== 5) d.setDate(d.getDate() + diff);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   // ── Phase stepper ──
 
   const currentStepIndex = PIPELINE_STEPS.indexOf(project.phase);
@@ -341,29 +361,44 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           ) : (
             <div className="space-y-3">
               {/* M1 */}
-              <div className="flex items-center justify-between">
-                <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M1</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m1Amount.toLocaleString()}</span>
-                  <MobileBadge value={project.m1Paid ? 'Paid' : 'Pending'} variant="status" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M1</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m1Amount.toLocaleString()}</span>
+                    <MobileBadge value={project.m1Paid ? 'Paid' : 'Pending'} variant="status" />
+                  </div>
                 </div>
+                <p className="text-right" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
+                  {project.m1Paid && getEntryDate('M1') ? `Paid ${formatShortDate(getEntryDate('M1')!)}` : `Est. ${estimateFriday(project.soldDate, 30)}`}
+                </p>
               </div>
               {/* M2 */}
-              <div className="flex items-center justify-between">
-                <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M2</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m2Amount.toLocaleString()}</span>
-                  <MobileBadge value={project.m2Paid ? 'Paid' : 'Pending'} variant="status" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M2</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${project.m2Amount.toLocaleString()}</span>
+                    <MobileBadge value={project.m2Paid ? 'Paid' : 'Pending'} variant="status" />
+                  </div>
                 </div>
+                <p className="text-right" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
+                  {project.m2Paid && getEntryDate('M2') ? `Paid ${formatShortDate(getEntryDate('M2')!)}` : `Est. ${estimateFriday(project.soldDate, 90)}`}
+                </p>
               </div>
               {/* M3 */}
               {(project.m3Amount ?? 0) > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M3</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${(project.m3Amount ?? 0).toLocaleString()}</span>
-                    <MobileBadge value="Pending" variant="status" />
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>M3</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${(project.m3Amount ?? 0).toLocaleString()}</span>
+                      <MobileBadge value="Pending" variant="status" />
+                    </div>
                   </div>
+                  <p className="text-right" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
+                    {getEntryDate('M3') ? `Est. ${formatShortDate(getEntryDate('M3')!)}` : `Est. ${estimateFriday(project.soldDate, 180)}`}
+                  </p>
                 </div>
               )}
             </div>

@@ -390,12 +390,12 @@ export default function MobileDashboard() {
   );
 
   // On Pace: annual projection — matches desktop vault calculation exactly
-  const onPaceAnnual = useMemo(() => {
+  const { onPaceAnnual, dealsPerMonth: paceDPM } = useMemo(() => {
     const now = new Date();
     const todayISO = now.toISOString().split('T')[0];
     const allMyProjects = myProjects.filter((p) => p.phase !== 'Cancelled');
     const totalDeals = allMyProjects.length;
-    if (totalDeals === 0) return 0;
+    if (totalDeals === 0) return { onPaceAnnual: 0, dealsPerMonth: 0 };
 
     // Average commission per deal (M1 + M2)
     const avgCommissionPerDeal = allMyProjects.reduce((s, p) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0) / totalDeals;
@@ -431,7 +431,7 @@ export default function MobileDashboard() {
     const projM2 = allMyProjects.filter((p) => preInstalled.includes(p.phase)).reduce((s, p) => s + (p.m2Amount ?? 0), 0);
     annual += Math.round((projM1 + projM2) * 0.15);
 
-    return annual;
+    return { onPaceAnnual: annual, dealsPerMonth };
   }, [myProjects, myPayroll, activeProjects]);
 
   // ── Rep layout (full) ─────────────────────────────────────────────────────
@@ -442,29 +442,51 @@ export default function MobileDashboard() {
       <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '2rem', color: '#fff' }}>{getGreeting(effectiveRepName ?? '')}</h1>
 
       {/* Period filter */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
-        {PERIODS.map((p) => (
-          <button
-            key={p.value}
-            onClick={() => setPeriod(p.value)}
-            className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[40px]"
-            style={{
-              fontFamily: FONT_BODY,
-              background: period === p.value ? ACCENT : 'var(--m-card, #0d1525)',
-              color: period === p.value ? '#000' : MUTED,
-              border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
+      <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar px-5">
+          {PERIODS.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => setPeriod(p.value)}
+              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[40px]"
+              style={{
+                fontFamily: FONT_BODY,
+                background: period === p.value ? ACCENT : 'var(--m-card, #0d1525)',
+                color: period === p.value ? '#000' : MUTED,
+                border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Hero card — next payout + stats combined */}
+      {/* Hero card — On Pace is the headline, Next Payout secondary */}
       <MobileCard hero>
-        <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
-        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
+        {onPaceAnnual > 0 ? (
+          <>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(onPaceAnnual)}<span style={{ fontSize: '1.1rem', color: MUTED }}> /yr</span></p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
+              {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
+            </p>
+            {/* Next Payout — secondary */}
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+              <div className="flex items-baseline justify-between">
+                <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
+                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></p>
+              </div>
+              <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: ACCENT, lineHeight: 1.3 }}>{fmt$(pendingPayrollTotal)}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.8rem', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
+          </>
+        )}
 
         {/* Stats inside hero card */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
@@ -485,14 +507,6 @@ export default function MobileDashboard() {
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Active Deals</p>
           </div>
         </div>
-
-        {/* On Pace — annual projection */}
-        {onPaceAnnual > 0 && (
-          <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, marginBottom: 4 }}>On Pace For</p>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.8rem', color: ACCENT2 }}>{fmt$(onPaceAnnual)}<span style={{ fontSize: '0.9rem', color: MUTED }}> /yr</span></p>
-          </div>
-        )}
       </MobileCard>
 
       {/* Needs Attention — hidden if 0 */}

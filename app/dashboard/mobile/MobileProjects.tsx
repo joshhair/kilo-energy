@@ -73,6 +73,28 @@ export default function MobileProjects() {
     return [...result].sort((a, b) => b.soldDate.localeCompare(a.soldDate));
   }, [visibleProjects, phaseFilter, debouncedSearch]);
 
+  // Average days in each phase (based on days since sold for all projects in that phase)
+  const phaseAvgDays = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const acc: Record<string, { total: number; count: number }> = {};
+    const terminalPhases = ['Cancelled', 'Completed', 'PTO'];
+    for (const p of visibleProjects) {
+      if (terminalPhases.includes(p.phase)) continue;
+      const [y, m, d] = p.soldDate.split('-').map(Number);
+      const sold = new Date(y, m - 1, d);
+      const days = Math.max(0, Math.floor((now.getTime() - sold.getTime()) / 86400000));
+      if (!acc[p.phase]) acc[p.phase] = { total: 0, count: 0 };
+      acc[p.phase].total += days;
+      acc[p.phase].count += 1;
+    }
+    const result: Record<string, number> = {};
+    for (const [phase, { total, count }] of Object.entries(acc)) {
+      result[phase] = Math.round(total / count);
+    }
+    return result;
+  }, [visibleProjects]);
+
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Projects" />
@@ -138,6 +160,11 @@ export default function MobileProjects() {
               <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {project.installer} &middot; {project.kWSize} kW &middot; {relativeTime(project.soldDate)}
               </p>
+              {phaseAvgDays[project.phase] !== undefined && (
+                <p style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
+                  Avg {phaseAvgDays[project.phase]}d in {project.phase}
+                </p>
+              )}
             </MobileCard>
           ))
         )}

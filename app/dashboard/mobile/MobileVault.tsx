@@ -225,12 +225,11 @@ export default function MobileVault() {
         </p>
       </MobileCard>
 
-      {/* ── Stat grid — 2x2 ── */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* ── Stat grid — 3 cards ── */}
+      <div className="grid grid-cols-3 gap-3">
         <MobileStatCard label="Lifetime" value={fmt$(lifetimeEarned)} color={ACCENT} />
         <MobileStatCard label="Pipeline" value={fmt$(pipelineTotal)} color={ACCENT2} />
         <MobileStatCard label="Pending" value={fmt$(pendingTotal)} color={WARNING} />
-        <MobileStatCard label="Draft" value={fmt$(draftTotal)} color={MUTED} />
       </div>
 
       {/* ── Active reimbursements (only if any) ── */}
