@@ -217,7 +217,7 @@ function RepsPageInner() {
             const json = await r.json();
             return { id: json.user.id as string };
           })
-      : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId, newUserRole as 'rep' | 'sub-dealer') as Promise<{ id: string } | null>);
+      : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId) as Promise<{ id: string } | null>);
 
     const roleLabel = ROLE_LABELS_BY_ROLE[newUserRole];
     repPromise
