@@ -841,7 +841,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         : 0;
       const scale = (project.m2Amount ?? 0) > 0 ? val / project.m2Amount! : 1;
       const newSetterM2 = Math.round((project.setterM2Amount ?? 0) * scale * 100) / 100;
-      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2 });
+      const newSetterM3 = Math.round((project.setterM3Amount ?? 0) * scale * 100) / 100;
+      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
       toast('M2 amount updated', 'success');
     }
     setEditM2(false);

@@ -817,7 +817,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                const traineeDeals = updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
                 if (m2TrainerAmount > 0) {
@@ -842,7 +842,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                  const setterTraineeDeals = updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
                   const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
                   if (m2SetterTrainerAmount > 0) {
@@ -953,7 +953,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const m2CloserParsed = m2CloserRateMatch ? parseFloat(m2CloserRateMatch[1]) : NaN;
                 const overrideRate = !isNaN(m2CloserParsed)
                   ? m2CloserParsed
-                  : getTrainerOverrideRate(closerTrainerAssignment, updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
+                  : getTrainerOverrideRate(closerTrainerAssignment, updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
                 const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                 if (m3TrainerAmount > 0) {
                   newEntries.push({
@@ -984,7 +984,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   const m2SetterParsed = m2SetterRateMatch ? parseFloat(m2SetterRateMatch[1]) : NaN;
                   const setterOverrideRate = !isNaN(m2SetterParsed)
                     ? m2SetterParsed
-                    : getTrainerOverrideRate(setterTrainerAssignment, updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
+                    : getTrainerOverrideRate(setterTrainerAssignment, updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
                   const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                   if (m3SetterTrainerAmount > 0) {
                     const setterRep = reps.find(r => r.id === old.setterId);

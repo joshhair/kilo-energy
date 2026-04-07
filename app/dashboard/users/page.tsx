@@ -532,6 +532,7 @@ function UsersPageInner() {
 
   // ── Top 3 performers for podium section ─────────────────────────────────
   const topPerformers = [...reps]
+    .filter((r) => r.active !== false)
     .map((rep) => ({ rep, paid: repPaidAmounts.get(rep.id) ?? 0 }))
     .filter(({ paid }) => paid > 0)
     .sort((a, b) => b.paid - a.paid)
@@ -810,7 +811,7 @@ function UsersPageInner() {
         {[
           { label: 'Total Reps', value: reps.length.toString(), gradient: 'linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))', borderColor: 'rgba(77,159,255,0.3)', valueColor: '#4d9fff' },
           { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), gradient: 'linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))', borderColor: 'rgba(0,196,240,0.3)', valueColor: '#00c4f0' },
-          { label: 'kW Sold', value: `${projects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0).toFixed(1)}`, gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
+          { label: 'kW Sold', value: `${projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0).toFixed(1)}`, gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
           ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, gradient: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))', borderColor: 'rgba(0,224,122,0.3)', valueColor: '#00e07a' }] : []),
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: stat.gradient, border: `1px solid ${stat.borderColor}` }}>
