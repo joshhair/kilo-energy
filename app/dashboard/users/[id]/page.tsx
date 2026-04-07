@@ -13,7 +13,7 @@ import { ChevronRight, ChevronLeft, Pencil, Check, X, Plus, Trash2, FolderKanban
 import { RepSelector } from '../../components/RepSelector';
 import { Sparkline } from '../../../../lib/sparkline';
 
-export default function RepDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps } = useApp();
   const isPM = effectiveRole === 'project_manager';
@@ -31,7 +31,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
 
   const rep = reps.find((r) => r.id === id);
-  useEffect(() => { document.title = rep ? `${rep.name} | Kilo Energy` : 'Rep Detail | Kilo Energy'; }, [rep?.name]);
+  useEffect(() => { document.title = rep ? `${rep.name} | Kilo Energy` : 'User Detail | Kilo Energy'; }, [rep?.name]);
 
   if (!hydrated) return <RepDetailSkeleton />;
 
@@ -48,9 +48,9 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
   if (!rep) {
     return (
       <div className="p-8 text-[#8891a8] text-center">
-        Rep not found.{' '}
-        <Link href="/dashboard/reps" className="text-[#00e07a] hover:underline">
-          Back to Reps
+        User not found.{' '}
+        <Link href="/dashboard/users" className="text-[#00e07a] hover:underline">
+          Back to Users
         </Link>
       </div>
     );
@@ -121,7 +121,7 @@ export default function RepDetailPage({ params }: { params: Promise<{ id: string
       <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[#8891a8] mb-6">
         <Link href="/dashboard" className="hover:text-[#c2c8d8] transition-colors">Dashboard</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <Link href="/dashboard/reps" className="hover:text-[#c2c8d8] transition-colors">Reps</Link>
+        <Link href="/dashboard/users" className="hover:text-[#c2c8d8] transition-colors">Users</Link>
         <ChevronRight className="w-3.5 h-3.5" />
         <span className="text-[#c2c8d8]">{rep.name}</span>
       </nav>

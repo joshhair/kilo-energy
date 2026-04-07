@@ -570,7 +570,7 @@ export default function BlitzDetailPage() {
                       <div key={rep.userId} className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${isTop3 ? RANK_BG_OV[rank - 1] : 'bg-[#161920]/40 border-[#333849]/40'}`}>
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS_OV[rank - 1]} text-white` : 'bg-[#1d2028] text-[#c2c8d8]'}`}>{rank}</span>
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS_OV[rank - 1]} text-white` : 'bg-[#272b35] text-[#c2c8d8]'}`}>{rep.initials}</div>
-                        <Link href={`/dashboard/reps/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[#00c4f0] transition-colors ${isTop3 ? RANK_TEXT_OV[rank - 1] : 'text-[#c2c8d8]'}`}>{rep.name}</Link>
+                        <Link href={`/dashboard/users/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[#00c4f0] transition-colors ${isTop3 ? RANK_TEXT_OV[rank - 1] : 'text-[#c2c8d8]'}`}>{rep.name}</Link>
                         <span className="text-xs text-[#c2c8d8] tabular-nums">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
                         <span className="text-xs text-[#8891a8] tabular-nums">{rep.kW.toFixed(1)} kW</span>
                       </div>
@@ -588,7 +588,7 @@ export default function BlitzDetailPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-[#8891a8]">Leader</span>
-                  <Link href={`/dashboard/reps/${blitz.owner.id}`} className="text-white font-medium hover:text-[#00c4f0] transition-colors">{blitz.owner.firstName} {blitz.owner.lastName}</Link>
+                  <Link href={`/dashboard/users/${blitz.owner.id}`} className="text-white font-medium hover:text-[#00c4f0] transition-colors">{blitz.owner.firstName} {blitz.owner.lastName}</Link>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#8891a8]">Duration</span>
@@ -620,7 +620,7 @@ export default function BlitzDetailPage() {
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {approvedParticipants.slice(0, 8).map((p: any) => (
-                    <Link key={p.user.id} href={`/dashboard/reps/${p.user.id}`} className="flex items-center gap-1.5 bg-[#1d2028]/60 border border-[#272b35]/50 rounded-full px-2.5 py-1 hover:border-[#00e07a]/40 hover:bg-[#1d2028] transition-colors">
+                    <Link key={p.user.id} href={`/dashboard/users/${p.user.id}`} className="flex items-center gap-1.5 bg-[#1d2028]/60 border border-[#272b35]/50 rounded-full px-2.5 py-1 hover:border-[#00e07a]/40 hover:bg-[#1d2028] transition-colors">
                       <div className="w-5 h-5 rounded-full bg-[#00e07a]/30 border border-[#00e07a]/30 flex items-center justify-center text-[10px] font-bold text-[#00c4f0]">
                         {p.user.firstName[0]}{p.user.lastName[0]}
                       </div>
@@ -695,7 +695,7 @@ export default function BlitzDetailPage() {
                         }`}>
                           {rep.initials}
                         </div>
-                        <Link href={`/dashboard/reps/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[#00c4f0] transition-colors ${isTop3 ? RANK_TEXT[rank - 1] : 'text-[#c2c8d8]'}`}>{rep.name}</Link>
+                        <Link href={`/dashboard/users/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[#00c4f0] transition-colors ${isTop3 ? RANK_TEXT[rank - 1] : 'text-[#c2c8d8]'}`}>{rep.name}</Link>
                         <span className="text-xs text-[#c2c8d8] tabular-nums whitespace-nowrap">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
                         <span className="text-xs text-[#8891a8] tabular-nums whitespace-nowrap">{rep.kW.toFixed(1)} kW</span>
                       </div>
@@ -741,7 +741,7 @@ export default function BlitzDetailPage() {
                     const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
                     return (
                     <tr key={p.id} className={`border-b border-[#333849]/50 last:border-0 hover:bg-[#1d2028]/40 transition-colors ${idx % 2 === 0 ? 'bg-[#161920]/20' : ''}`}>
-                      <td className="px-4 py-3 text-white font-medium"><Link href={`/dashboard/reps/${p.user.id}`} className="hover:text-[#00c4f0] transition-colors">{p.user.firstName} {p.user.lastName}</Link></td>
+                      <td className="px-4 py-3 text-white font-medium"><Link href={`/dashboard/users/${p.user.id}`} className="hover:text-[#00c4f0] transition-colors">{p.user.firstName} {p.user.lastName}</Link></td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.joinStatus === 'approved' ? 'bg-emerald-900/30 text-emerald-300' : p.joinStatus === 'pending' ? 'bg-amber-900/30 text-amber-300' : 'bg-red-900/30 text-red-300'}`}>
                           {p.joinStatus}
@@ -828,7 +828,7 @@ export default function BlitzDetailPage() {
                       <td className="px-4 py-3">
                         <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-[#00c4f0] transition-colors">{p.customerName}</Link>
                       </td>
-                      <td className="px-4 py-3 text-[#c2c8d8]">{p.closer?.id ? <Link href={`/dashboard/reps/${p.closer.id}`} className="hover:text-[#00c4f0] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
+                      <td className="px-4 py-3 text-[#c2c8d8]">{p.closer?.id ? <Link href={`/dashboard/users/${p.closer.id}`} className="hover:text-[#00c4f0] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
                       <td className="px-4 py-3">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-[#1d2028]/40 text-[#c2c8d8] border-[#272b35]/30'}`}>{p.phase}</span>
                       </td>
@@ -996,7 +996,7 @@ export default function BlitzDetailPage() {
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : idx === 1 ? 'bg-[#8891a8]/20 text-[#c2c8d8] border border-[#333849]/30' : idx === 2 ? 'bg-orange-800/30 text-orange-300 border border-orange-700/30' : 'bg-[#1d2028] text-[#8891a8] border border-[#272b35]'}`}>
                           {idx + 1}
                         </div>
-                        <Link href={`/dashboard/reps/${rep.user.id}`} className="text-sm text-white font-medium hover:text-[#00c4f0] transition-colors">{rep.user.firstName} {rep.user.lastName}</Link>
+                        <Link href={`/dashboard/users/${rep.user.id}`} className="text-sm text-white font-medium hover:text-[#00c4f0] transition-colors">{rep.user.firstName} {rep.user.lastName}</Link>
                       </div>
                       <div className="flex items-center gap-4 text-xs">
                         <span className="text-[#c2c8d8]">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>

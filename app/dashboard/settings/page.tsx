@@ -1459,14 +1459,14 @@ function SettingsPageInner() {
                             <div className="w-7 h-7 rounded-full bg-[#00e07a]/20 text-[#00e07a] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                               {getInitials(trainee?.name ?? '??')}
                             </div>
-                            <Link href={`/dashboard/reps/${a.traineeId}`} className="text-white truncate hover:text-[#00c4f0] transition-colors">{trainee?.name ?? 'Unknown'}</Link>
+                            <Link href={`/dashboard/users/${a.traineeId}`} className="text-white truncate hover:text-[#00c4f0] transition-colors">{trainee?.name ?? 'Unknown'}</Link>
                           </div>
                           {/* Trainer */}
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                               {getInitials(trainer?.name ?? '??')}
                             </div>
-                            <Link href={`/dashboard/reps/${a.trainerId}`} className="text-[#c2c8d8] truncate hover:text-[#00c4f0] transition-colors">{trainer?.name ?? 'Unknown'}</Link>
+                            <Link href={`/dashboard/users/${a.trainerId}`} className="text-[#c2c8d8] truncate hover:text-[#00c4f0] transition-colors">{trainer?.name ?? 'Unknown'}</Link>
                           </div>
                           {/* Deals */}
                           <span className="text-center text-[#c2c8d8]">{completedDeals}</span>

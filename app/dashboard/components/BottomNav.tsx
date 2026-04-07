@@ -73,7 +73,7 @@ const ADMIN_BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
   { href: '/dashboard/payroll', label: 'Payroll', icon: CreditCard },
-  { href: '/dashboard/reps', label: 'Reps', icon: Users },
+  { href: '/dashboard/users', label: 'Users', icon: Users },
   { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 
@@ -88,7 +88,7 @@ const ADMIN_MORE_ITEMS: MoreSheetItem[] = [
 const PM_BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
-  { href: '/dashboard/reps', label: 'Reps', icon: Users },
+  { href: '/dashboard/users', label: 'Users', icon: Users },
   { href: '___more___', label: 'More', icon: MoreHorizontal },
 ];
 

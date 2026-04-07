@@ -293,7 +293,7 @@ export default function MobileAdminDashboard() {
 
       {/* ── Top Reps ── */}
       {topReps.length > 0 && (
-        <MobileCard onTap={() => router.push('/dashboard/reps')}>
+        <MobileCard onTap={() => router.push('/dashboard/users')}>
           <div className="flex items-center justify-between mb-4">
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Top Reps</p>
             <ChevronRight className="w-4 h-4" style={{ color: DIM }} />

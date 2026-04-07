@@ -48,7 +48,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
         <button
-          onClick={() => router.push('/dashboard/reps')}
+          onClick={() => router.push('/dashboard/users')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
           style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
@@ -72,7 +72,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
       {/* Back button */}
       <button
-        onClick={() => router.push('/dashboard/reps')}
+        onClick={() => router.push('/dashboard/users')}
         className="flex items-center gap-1.5 text-base min-h-[48px]"
         style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >

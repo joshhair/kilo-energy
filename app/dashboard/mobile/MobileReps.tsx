@@ -135,7 +135,7 @@ export default function MobileReps() {
             const paid = paidByRep.get(rep.id) ?? 0;
 
             return (
-              <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/reps/${rep.id}`)}>
+              <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/users/${rep.id}`)}>
                 <div className="flex items-center gap-3">
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-black text-base font-bold shrink-0"

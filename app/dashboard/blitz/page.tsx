@@ -202,7 +202,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         {/* Owner tag + join action */}
         <div className="mt-3 flex items-center justify-between">
           <div className="text-xs" style={{ color: '#8891a8' }}>
-            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/reps/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/reps/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[#00c4f0] transition-colors" style={{ color: '#c2c8d8' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
+            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[#00c4f0] transition-colors" style={{ color: '#c2c8d8' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
           {isOwner && (
             <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[#00e07a] border border-[#00e07a]/20">

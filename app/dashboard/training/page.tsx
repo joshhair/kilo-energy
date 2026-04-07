@@ -548,7 +548,7 @@ function TrainingPageInner() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Link href={`/dashboard/reps/${t.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[#00c4f0] transition-colors">{t.traineeName}</Link>
+                          <Link href={`/dashboard/users/${t.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[#00c4f0] transition-colors">{t.traineeName}</Link>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${roleBadgeColor}`}>
                             {t.traineeRole === 'both' ? 'Closer/Setter' : t.traineeRole.charAt(0).toUpperCase() + t.traineeRole.slice(1)}
                           </span>
@@ -652,7 +652,7 @@ function TrainingPageInner() {
                     {filteredPayments.map((entry) => (
                       <tr key={entry.id} className="hover:bg-[#1d2028]/30 transition-colors">
                         <td className="px-4 py-3 text-white text-sm">{entry.customerName || '—'}</td>
-                        <td className="px-4 py-3 text-[#c2c8d8] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/reps/${t.id}`} className="hover:text-[#00c4f0] transition-colors">{t.name}</Link> : '—'; })()}</td>
+                        <td className="px-4 py-3 text-[#c2c8d8] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[#00c4f0] transition-colors">{t.name}</Link> : '—'; })()}</td>
                         <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">{fmt$(entry.amount)}</td>
                         <td className="px-4 py-3 text-center"><StatusBadge status={entry.status} /></td>
                         <td className="px-4 py-3 text-[#c2c8d8] text-sm">{new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
@@ -683,7 +683,7 @@ function TrainingPageInner() {
                     {getInitials(t.traineeName)}
                   </div>
                 </div>
-                <Link href={`/dashboard/reps/${t.traineeId}`} className="text-white font-bold text-sm hover:text-[#00c4f0] transition-colors">{t.traineeName}</Link>
+                <Link href={`/dashboard/users/${t.traineeId}`} className="text-white font-bold text-sm hover:text-[#00c4f0] transition-colors">{t.traineeName}</Link>
               </div>
 
               {/* Tier table */}

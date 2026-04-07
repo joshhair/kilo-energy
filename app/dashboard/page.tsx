@@ -1787,7 +1787,7 @@ function AdminDashboard({
     { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
     { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, accentHex: '#00c4f0', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
     { label: 'Total Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Total commission disbursed to all reps via payroll' },
-    { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/reps', tooltip: 'Number of active sales reps in the system' },
+    { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/users', tooltip: 'Number of active sales reps in the system' },
     { label: 'Total kW Sold', value: `${totalKWSold.toFixed(1)} kW`, raw: Math.round(totalKWSold * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
     { label: 'Total kW Installed', value: `${totalKWInstalled.toFixed(1)} kW`, raw: Math.round(totalKWInstalled * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, accentHex: '#ff5252', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status (Chargebacks row)' },
   ];
@@ -1876,7 +1876,7 @@ function AdminDashboard({
       <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
         {[
           { label: 'Run Payroll', color: '#00e07a', grad: 'linear-gradient(135deg, #00160d, #001c10)', icon: '\u25C8', href: '/dashboard/payroll' },
-          { label: 'Add Rep', color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a, #0e0820)', icon: '\u25CE', href: '/dashboard/reps' },
+          { label: 'Add User', color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a, #0e0820)', icon: '\u25CE', href: '/dashboard/users' },
           { label: 'New Deal', color: '#00c4f0', grad: 'linear-gradient(135deg, #000e16, #001218)', icon: '\u2295', href: '/dashboard/new-deal' },
           { label: 'Settings', color: '#ffb020', grad: 'linear-gradient(135deg, #120b00, #180e00)', icon: '\u2699', href: '/dashboard/settings' },
         ].map(a => (

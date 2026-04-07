@@ -65,7 +65,7 @@ export const SUB_DEALER_NAV: AnyNavItem[] = [
 export const PM_NAV: AnyNavItem[] = [
   { href: '/dashboard',            label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/dashboard/projects',   label: 'Projects',   icon: FolderKanban },
-  { href: '/dashboard/reps',       label: 'Reps',       icon: Users },
+  { href: '/dashboard/users',      label: 'Users',      icon: Users },
 ];
 
 // ─── Admin navigation ────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export const ADMIN_NAV: AnyNavItem[] = [
   { href: '/dashboard/projects',     label: 'Projects',   icon: FolderKanban },
   { href: '/dashboard/payroll',      label: 'Payroll',    icon: CreditCard },
   { href: '/dashboard/calculator',   label: 'Calculator', icon: Calculator },
-  { href: '/dashboard/reps',         label: 'Reps',       icon: Users },
+  { href: '/dashboard/users',        label: 'Users',      icon: Users },
   { href: '/dashboard/blitz',          label: 'Blitz',      icon: Tent },
   { href: '/dashboard/incentives',   label: 'Incentives', icon: Trophy },
   { href: '/dashboard/settings',     label: 'Settings',   icon: Settings },

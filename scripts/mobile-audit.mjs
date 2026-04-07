@@ -18,7 +18,7 @@ const PAGES = [
   { path: '/dashboard/new-deal', name: 'new-deal' },
   { path: '/dashboard/my-pay', name: 'my-pay' },
   { path: '/dashboard/payroll', name: 'payroll' },
-  { path: '/dashboard/reps', name: 'reps' },
+  { path: '/dashboard/users', name: 'users' },
   { path: '/dashboard/blitz', name: 'blitz' },
   { path: '/dashboard/calculator', name: 'calculator' },
   { path: '/dashboard/incentives', name: 'incentives' },

@@ -63,20 +63,20 @@ const PODIUM_BREATH_CLS: Record<number, string> = {
   3: 'animate-podium-breath-bronze',
 };
 
-export default function RepsPage() {
+export default function UsersPage() {
   return (
     <Suspense>
-      <RepsPageInner />
+      <UsersPageInner />
     </Suspense>
   );
 }
 
-function RepsPageInner() {
+function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { currentRole, effectiveRole, projects, payrollEntries, reps, addRep, removeRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
   const { toast } = useToast();
-  useEffect(() => { document.title = 'Reps | Kilo Energy'; }, []);
+  useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -841,7 +841,7 @@ function RepsPageInner() {
                   />
                 </div>
               )}
-            <Link href={`/dashboard/reps/${rep.id}`}>
+            <Link href={`/dashboard/users/${rep.id}`}>
               <div className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)} ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[#00e07a]/40' : ''}`} style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? '#272b35'}` }}>
                 <div className="flex items-center gap-4">
 
