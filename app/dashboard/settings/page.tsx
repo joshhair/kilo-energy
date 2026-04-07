@@ -323,7 +323,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
 // ─── Sub-Dealers Section ─────────────────────────────────────────────────────
 
 function SubDealersSection() {
-  const { subDealers, addSubDealer, removeSubDealer, projects } = useApp();
+  const { subDealers, addSubDealer, deactivateSubDealer, projects } = useApp();
   const { toast } = useToast();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -417,7 +417,7 @@ function SubDealersSection() {
                     <button
                       onClick={() => setConfirmRemove(sd.id)}
                       className="text-[#525c72] hover:text-red-400 transition-colors p-1"
-                      title="Remove sub-dealer"
+                      title="Deactivate sub-dealer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -432,17 +432,17 @@ function SubDealersSection() {
       <ConfirmDialog
         open={!!confirmRemove}
         onClose={() => setConfirmRemove(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (confirmRemove) {
             const sd = subDealers.find((s) => s.id === confirmRemove);
-            removeSubDealer(confirmRemove);
-            toast(`Removed sub-dealer ${sd?.name ?? ''}`, 'success');
+            await deactivateSubDealer(confirmRemove);
+            toast(`Deactivated sub-dealer ${sd?.name ?? ''}`, 'success');
           }
           setConfirmRemove(null);
         }}
-        title="Remove Sub-Dealer"
-        message="Are you sure you want to remove this sub-dealer? Their deals will remain in the system."
-        confirmLabel="Remove"
+        title="Deactivate Sub-Dealer"
+        message="They will lose app access immediately. Their existing deals and history are preserved. You can reactivate them later from their profile."
+        confirmLabel="Deactivate"
         danger
       />
     </div>
@@ -1041,14 +1041,19 @@ function SettingsPageInner() {
   }, [editingInstaller, editInstallerVals, editingAssignmentId, editingTiers, editingPrepaid, editPrepaidVal, updateInstallerBaseline, setTrainerAssignments, updateInstallerPrepaidOption, installerSelectMode, financerSelectMode]);
 
   // ── Confirm-delete handler ───────────────────────────────────────────────────
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteConfirm) return;
     const { type, id, name } = deleteConfirm;
     setDeleteConfirm(null);
 
     if (type === 'installer') {
       deletedEntityRef.current = { type: 'installer', name };
-      deleteInstaller(name);
+      try {
+        await deleteInstaller(name);
+      } catch {
+        toast(`Failed to delete "${name}"`, 'error');
+        return;
+      }
       if (baselineTab === name) setBaselineTab('standard');
       toast(`"${name}" deleted`, 'info', {
         label: 'Undo',
@@ -1058,7 +1063,12 @@ function SettingsPageInner() {
         },
       });
     } else if (type === 'financer') {
-      deleteFinancer(name);
+      try {
+        await deleteFinancer(name);
+      } catch {
+        toast(`Failed to delete "${name}"`, 'error');
+        return;
+      }
       toast(`"${name}" deleted`, 'info');
     } else if (type === 'trainer') {
       const assignment = trainerAssignments.find((a) => a.id === id);

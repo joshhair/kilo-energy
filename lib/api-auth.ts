@@ -9,6 +9,7 @@ export interface InternalUser {
   email: string;
   role: string; // 'admin' | 'rep' | 'sub-dealer' | 'project_manager'
   repType: string;
+  clerkUserId: string | null;
 }
 
 /**
@@ -30,6 +31,20 @@ export async function getInternalUser(): Promise<InternalUser | null> {
     where: { email, active: true },
   });
   if (!user) return null;
+
+  // Lazy-populate clerkUserId on first sign-in (or after a Clerk identity
+  // is recreated). The internal User row is the source of truth for our
+  // own data, but Clerk owns the auth identity — we need the link to
+  // perform lifecycle ops (lockUser, unlockUser, deleteUser) when an admin
+  // deactivates or hard-deletes the user.
+  if (user.clerkUserId !== userId) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { clerkUserId: userId },
+    });
+    user.clerkUserId = userId;
+  }
+
   return {
     id: user.id,
     firstName: user.firstName,
@@ -37,6 +52,7 @@ export async function getInternalUser(): Promise<InternalUser | null> {
     email: user.email,
     role: user.role,
     repType: user.repType,
+    clerkUserId: user.clerkUserId,
   };
 }
 
@@ -120,7 +136,7 @@ export async function requireAdmin() {
     throw NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const email = clerkUser.emailAddresses[0].emailAddress;
-  const user = await prisma.user.findFirst({ where: { email, role: 'admin' } });
+  const user = await prisma.user.findFirst({ where: { email, role: 'admin', active: true } });
   if (!user) {
     throw NextResponse.json({ error: 'Forbidden — admin access required' }, { status: 403 });
   }
@@ -142,7 +158,7 @@ export async function requireAdminOrPM() {
     throw NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const email = clerkUser.emailAddresses[0].emailAddress;
-  const user = await prisma.user.findFirst({ where: { email, role: { in: ['admin', 'project_manager'] } } });
+  const user = await prisma.user.findFirst({ where: { email, role: { in: ['admin', 'project_manager'] }, active: true } });
   if (!user) {
     throw NextResponse.json({ error: 'Forbidden — admin or project manager access required' }, { status: 403 });
   }

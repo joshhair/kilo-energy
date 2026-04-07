@@ -96,7 +96,7 @@ export default function UsersPage() {
 function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, removeRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
@@ -147,7 +147,7 @@ function UsersPageInner() {
   const isAdmin = currentRole === 'admin';
   const isPM = effectiveRole === 'project_manager';
   const canManageReps = isAdmin; // PM cannot manage, only view
-  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; confirmLabel?: string; onConfirm: () => void } | null>(null);
 
   // ── Add Rep modal state ────────────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
@@ -168,6 +168,10 @@ function UsersPageInner() {
   // Defaults to off so existing workflows (data import, pre-populating
   // reps without giving them app access) still work.
   const [sendInvite, setSendInvite] = useState(false);
+
+  // Inactive (deactivated) reps live in a collapsible expander below the
+  // main list. Default collapsed so the active roster stays clean.
+  const [showInactive, setShowInactive] = useState(false);
 
   // ── Pending Clerk invitations (admin view) ────────────────────────────
   type PendingInvitation = {
@@ -193,20 +197,27 @@ function UsersPageInner() {
 
   useEffect(() => { fetchPendingInvitations(); }, [fetchPendingInvitations]);
 
-  const handleRevokeInvitation = async (invitationId: string, email: string) => {
+  const handleRevokeInvitation = (invitationId: string, email: string) => {
     if (revokingInvitationId) return;
-    if (!confirm(`Revoke invitation for ${email}?`)) return;
-    setRevokingInvitationId(invitationId);
-    try {
-      const res = await fetch(`/api/users/invitations/${invitationId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Revoke failed');
-      toast(`Invitation for ${email} revoked`, 'success');
-      setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId));
-    } catch {
-      toast('Failed to revoke invitation', 'error');
-    } finally {
-      setRevokingInvitationId(null);
-    }
+    setConfirmAction({
+      title: 'Revoke Invitation',
+      message: `Revoke invitation for ${email}?`,
+      confirmLabel: 'Revoke',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setRevokingInvitationId(invitationId);
+        try {
+          const res = await fetch(`/api/users/invitations/${invitationId}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('Revoke failed');
+          toast(`Invitation for ${email} revoked`, 'success');
+          setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+        } catch {
+          toast('Failed to revoke invitation', 'error');
+        } finally {
+          setRevokingInvitationId(null);
+        }
+      },
+    });
   };
 
   const resetAddModal = () => {
@@ -272,7 +283,9 @@ function UsersPageInner() {
             const json = await r.json();
             return { id: json.user.id as string };
           })
-      : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId) as Promise<{ id: string } | null>);
+      : newUserRole === 'sub-dealer'
+        ? (addSubDealer(newFirstName, newLastName, newEmail, newPhone, repId), Promise.resolve({ id: repId }))
+        : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId) as Promise<{ id: string } | null>);
 
     const roleLabel = ROLE_LABELS_BY_ROLE[newUserRole];
     repPromise
@@ -478,6 +491,10 @@ function UsersPageInner() {
   };
 
   const filtered = reps.filter((r) => {
+    // Hide deactivated reps from the main list — they live in the "Show
+    // inactive" expander below so admins can find and reactivate them
+    // without polluting the active roster.
+    if (r.active === false) return false;
     // Search filter
     if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
     // Role filter
@@ -485,6 +502,16 @@ function UsersPageInner() {
     if (filterTab === 'both') return r.repType === 'both';
     // 'closer' tab shows closer + both; 'setter' tab shows setter + both
     return r.repType === filterTab || r.repType === 'both';
+  });
+
+  // Inactive reps live below the main list in a collapsible expander.
+  // Same search filter applies, but the role filter does NOT — admins
+  // searching for a fired employee shouldn't have to remember which type
+  // they were.
+  const inactiveReps = reps.filter((r) => {
+    if (r.active !== false) return false;
+    if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
   });
 
   // ── Pre-compute paid totals & rank order across ALL reps ──────────────────
@@ -638,7 +665,7 @@ function UsersPageInner() {
         const pool: SimpleUser[] =
           roleFilter === 'all'
             ? [
-                ...reps.map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
+                ...reps.filter((r) => r.active !== false).map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
                 ...subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
                 ...pmUsers,
                 ...adminUsers,
@@ -1168,8 +1195,8 @@ function UsersPageInner() {
                   <ChevronRight className="hidden md:block w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
                   {canManageReps && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Remove ${rep.name}?`, message: 'Their existing deals will be unaffected.', onConfirm: () => { removeRep(rep.id); toast('Rep removed', 'info'); setConfirmAction(null); } }); }}
-                      title="Remove rep"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); setConfirmAction(null); } }); }}
+                      title="Deactivate rep"
                       className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[#525c72] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1214,17 +1241,87 @@ function UsersPageInner() {
             </div>
           </div>
         )}
+
+        {/* ── Inactive reps expander ──────────────────────────────────── */}
+        {/* Admins only — non-admins never see deactivated users at all.  */}
+        {canManageReps && inactiveReps.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-dashed border-[#272b35]">
+            <button
+              type="button"
+              onClick={() => setShowInactive((v) => !v)}
+              className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[#1d2028]/60"
+              style={{ background: '#161920', border: '1px solid #272b35' }}
+            >
+              <div className="flex items-center gap-3">
+                <ChevronRight
+                  className={`w-4 h-4 transition-transform ${showInactive ? 'rotate-90' : ''}`}
+                  style={{ color: '#525c72' }}
+                />
+                <span className="text-sm font-semibold" style={{ color: '#c2c8d8' }}>
+                  Show inactive ({inactiveReps.length})
+                </span>
+              </div>
+              <span className="text-[11px]" style={{ color: '#525c72' }}>
+                Deactivated reps — click to {showInactive ? 'hide' : 'view'}
+              </span>
+            </button>
+            {showInactive && (
+              <div className="mt-3 space-y-2">
+                {inactiveReps.map((rep) => (
+                  <div
+                    key={rep.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                    style={{ background: '#161920', border: '1px solid #272b35', opacity: 0.7 }}
+                  >
+                    <Link
+                      href={`/dashboard/users/${rep.id}`}
+                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                    >
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                        style={{ background: '#272b35', color: '#8891a8' }}
+                      >
+                        {rep.firstName[0]}{rep.lastName[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
+                          {rep.name}
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: '#525c72' }}>
+                            (inactive)
+                          </span>
+                        </div>
+                        <div className="text-[11px]" style={{ color: '#525c72' }}>
+                          {ROLE_LABELS[rep.repType]}
+                        </div>
+                      </div>
+                    </Link>
+                    <button
+                      onClick={async () => {
+                        await reactivateRep(rep.id);
+                        toast(`${rep.name} reactivated`, 'success');
+                      }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110"
+                      style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+                    >
+                      Reactivate
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       </>)}
       {/* ── Add Rep Modal ────────────────────────────────────────────────── */}
       {showAddModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={(e) => { if (e.target === e.currentTarget) resetAddModal(); }}
           role="dialog"
           aria-modal="true"
         >
-          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md" style={{ background: '#1d2028', border: '1px solid #333849' }}>
+          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" style={{ background: '#1d2028', border: '1px solid #333849' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-white font-bold text-lg">Add New User</h3>
               <button onClick={resetAddModal} className="text-[#8891a8] hover:text-white transition-colors">
@@ -1338,7 +1435,10 @@ function UsersPageInner() {
                   <RepSelector
                     value={newTrainerId}
                     onChange={setNewTrainerId}
-                    reps={reps}
+                    // Trainer rule: keep historical, block new. Deactivated
+                    // trainers cannot be assigned to new trainees, so they
+                    // are filtered out of this picker.
+                    reps={reps.filter((r) => r.active !== false)}
                     placeholder="-- Select trainer --"
                     clearLabel="None"
                   />
@@ -1392,7 +1492,7 @@ function UsersPageInner() {
         onConfirm={() => confirmAction?.onConfirm()}
         title={confirmAction?.title ?? ''}
         message={confirmAction?.message ?? ''}
-        confirmLabel="Remove"
+        confirmLabel={confirmAction?.confirmLabel ?? 'Remove'}
         danger
       />
     </div>

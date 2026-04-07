@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect, type CSSProperties } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileRepDetail from '../../mobile/MobileRepDetail';
@@ -23,18 +24,29 @@ type FetchedUser = {
   role: string;
   repType: string;
   active: boolean;
+  hasClerkAccount?: boolean;
   canCreateDeals?: boolean;
   canAccessBlitz?: boolean;
   canExport?: boolean;
 };
 
+// Admin-only metadata about a user — fetched separately from /api/users/[id]
+// to power the action footer (deactivate, send/resend invite, hard delete).
+type UserMeta = {
+  relationCount: number;
+  pendingInvitation: { id: string; createdAt: number } | null;
+  hasClerkAccount: boolean;
+  active: boolean;
+};
+
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps, subDealers } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const { toast } = useToast();
+  const router = useRouter();
 
   // Pagination state — payment history
   const [payPage, setPayPage] = useState(1);
@@ -44,6 +56,40 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [projPageSize, setProjPageSize] = useState(10);
   // Trainer assignment picker state
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
+
+  // ── Admin-only metadata for the action footer ─────────────────────────
+  // The /api/users/[id] route exposes relationCount + pendingInvitation
+  // which the deactivate / send-invite / hard-delete buttons need to know
+  // about. Only fetched when the viewer is an admin.
+  const [userMeta, setUserMeta] = useState<UserMeta | null>(null);
+  const [metaRefreshKey, setMetaRefreshKey] = useState(0);
+  useEffect(() => {
+    if (currentRole !== 'admin') return;
+    fetch(`/api/users/${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setUserMeta({
+            relationCount: data.relationCount ?? 0,
+            pendingInvitation: data.pendingInvitation ?? null,
+            hasClerkAccount: !!data.hasClerkAccount,
+            active: data.active ?? true,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [id, currentRole, metaRefreshKey]);
+
+  // ── Edit-in-place state for contact info ───────────────────────────────
+  // Admins can edit firstName/lastName/email/phone on any user. Editing
+  // is gated to one field at a time to keep the UI compact. Saves PATCH
+  // /api/users/[id] then refetches meta + shows a toast.
+  const [editingField, setEditingField] = useState<'name' | 'email' | 'phone' | null>(null);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // First try the app context — reps + sub-dealers are already hydrated there.
   // `rep` is `let` so we can reassign to a sub-dealer/fetched user before
@@ -103,15 +149,178 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  // ─── Early branch: admin / project_manager → simple detail shell ───
+  const isAdminViewer = currentRole === 'admin';
+  const isInactive = userMeta ? !userMeta.active : (resolvedUser as { active?: boolean }).active === false;
+
+  // ── Save handler for contact edits ────────────────────────────────────
+  const startEdit = (field: 'name' | 'email' | 'phone') => {
+    setEditFirstName(resolvedUser.firstName);
+    setEditLastName(resolvedUser.lastName);
+    setEditEmail(resolvedUser.email);
+    setEditPhone(resolvedUser.phone);
+    setEditingField(field);
+  };
+  const cancelEdit = () => setEditingField(null);
+  const saveEdit = async () => {
+    if (savingEdit || !editingField) return;
+    setSavingEdit(true);
+    const body: Record<string, string> = {};
+    if (editingField === 'name') {
+      if (!editFirstName.trim() || !editLastName.trim()) {
+        toast('First and last name are required', 'error');
+        setSavingEdit(false);
+        return;
+      }
+      body.firstName = editFirstName.trim();
+      body.lastName = editLastName.trim();
+    } else if (editingField === 'email') {
+      if (!editEmail.trim()) {
+        toast('Email is required', 'error');
+        setSavingEdit(false);
+        return;
+      }
+      body.email = editEmail.trim();
+    } else if (editingField === 'phone') {
+      body.phone = editPhone.trim();
+    }
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Failed to save');
+      }
+      // Reflect the change locally — fetchedUser is the source for non-rep
+      // profiles, and we trigger a meta refetch for everyone.
+      if (fetchedUser) {
+        setFetchedUser({ ...fetchedUser, ...body, name: `${body.firstName ?? fetchedUser.firstName} ${body.lastName ?? fetchedUser.lastName}` });
+      }
+      setMetaRefreshKey((k) => k + 1);
+      toast('Saved', 'success');
+      setEditingField(null);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save', 'error');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  // ── Action footer handlers (deactivate / reactivate / invite / delete) ──
+  const isRep = resolvedUser.role === 'rep';
+  const isSubDealerRole = resolvedUser.role === 'sub-dealer';
+
+  const handleDeactivate = async () => {
+    if (!confirm(`Deactivate ${resolvedUser.firstName} ${resolvedUser.lastName}? They will lose app access immediately. History is preserved.`)) return;
+    try {
+      if (isRep) {
+        await deactivateRep(id);
+      } else if (isSubDealerRole) {
+        await deactivateSubDealer(id);
+      } else {
+        // Admin / PM — go directly to the API (not in context)
+        const res = await fetch(`/api/users/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: false }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? 'Failed to deactivate');
+        }
+      }
+      setMetaRefreshKey((k) => k + 1);
+      toast(`${resolvedUser.firstName} deactivated`, 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to deactivate', 'error');
+    }
+  };
+  const handleReactivate = async () => {
+    try {
+      if (isRep) {
+        await reactivateRep(id);
+      } else if (isSubDealerRole) {
+        await reactivateSubDealer(id);
+      } else {
+        const res = await fetch(`/api/users/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: true }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? 'Failed to reactivate');
+        }
+      }
+      setMetaRefreshKey((k) => k + 1);
+      toast(`${resolvedUser.firstName} reactivated`, 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to reactivate', 'error');
+    }
+  };
+  const handleSendInvite = async () => {
+    try {
+      const res = await fetch(`/api/users/${id}/invite`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Failed to send invite');
+      }
+      const data = await res.json();
+      const wasResend = data.revokedCount > 0;
+      toast(wasResend ? `Invitation resent to ${resolvedUser.email}` : `Invitation sent to ${resolvedUser.email}`, 'success');
+      setMetaRefreshKey((k) => k + 1);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to send invite', 'error');
+    }
+  };
+  const handleDeletePermanently = async () => {
+    if (!confirm(`PERMANENTLY delete ${resolvedUser.firstName} ${resolvedUser.lastName}? This cannot be undone. Their Clerk account will also be removed.`)) return;
+    let result: { success: boolean; error?: string };
+    if (isRep) {
+      result = await deleteRepPermanently(id);
+    } else if (isSubDealerRole) {
+      result = await deleteSubDealerPermanently(id);
+    } else {
+      try {
+        const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          result = { success: false, error: err.error ?? 'Failed to delete' };
+        } else {
+          result = { success: true };
+        }
+      } catch (err) {
+        result = { success: false, error: err instanceof Error ? err.message : 'Failed to delete' };
+      }
+    }
+    if (result.success) {
+      toast(`${resolvedUser.firstName} ${resolvedUser.lastName} permanently deleted`, 'success');
+      router.push('/dashboard/users');
+    } else {
+      toast(result.error ?? 'Failed to delete', 'error');
+    }
+  };
+
+  // ─── Early branch: admin / project_manager / sub-dealer → simple shell ───
   // These roles don't have commission, projects, payroll, or trainer data,
   // so rendering the rep-specific UI below would show empty sections. The
   // shell here has just the essentials: avatar, contact info, role badge,
   // and (for PMs) the permission flags.
-  if (resolvedUser.role === 'admin' || resolvedUser.role === 'project_manager') {
-    const roleLabel = resolvedUser.role === 'admin' ? 'Admin' : 'Project Manager';
-    const badgeColor = resolvedUser.role === 'admin' ? '#ffb020' : '#00c4f0';
-    const badgeBg = resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)' : 'rgba(0,196,240,0.12)';
+  if (resolvedUser.role === 'admin' || resolvedUser.role === 'project_manager' || resolvedUser.role === 'sub-dealer') {
+    const roleLabel =
+      resolvedUser.role === 'admin' ? 'Admin'
+      : resolvedUser.role === 'project_manager' ? 'Project Manager'
+      : 'Sub-Dealer';
+    const badgeColor =
+      resolvedUser.role === 'admin' ? '#ffb020'
+      : resolvedUser.role === 'project_manager' ? '#00c4f0'
+      : '#b47dff'; // sub-dealer purple
+    const badgeBg =
+      resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)'
+      : resolvedUser.role === 'project_manager' ? 'rgba(0,196,240,0.12)'
+      : 'rgba(180,125,255,0.12)';
     const initials = `${resolvedUser.firstName[0] ?? ''}${resolvedUser.lastName[0] ?? ''}`.toUpperCase();
 
     return (
@@ -126,23 +335,119 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         </nav>
 
         {/* Header card */}
-        <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badgeColor}` }}>
+        <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badgeColor}`, opacity: isInactive ? 0.75 : 1 }}>
           <div className="flex items-start gap-5">
             <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black shrink-0" style={{ background: badgeBg, color: badgeColor }}>
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap mb-2">
-                <h1 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                  {resolvedUser.firstName} {resolvedUser.lastName}
-                </h1>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold" style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeColor}40` }}>
-                  {roleLabel}
-                </span>
+              {/* Name (editable) */}
+              {editingField === 'name' ? (
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <input
+                    type="text"
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
+                    style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', maxWidth: 180 }}
+                    autoFocus
+                  />
+                  <input
+                    type="text"
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
+                    style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', maxWidth: 180 }}
+                  />
+                  <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50">
+                    <Check className="w-4 h-4" /> Save
+                  </button>
+                  <button onClick={cancelEdit} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
+                    <X className="w-4 h-4" /> Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 flex-wrap mb-2">
+                  <h1 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                    {resolvedUser.firstName} {resolvedUser.lastName}
+                  </h1>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold" style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeColor}40` }}>
+                    {roleLabel}
+                  </span>
+                  {isInactive && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide" style={{ background: '#272b35', color: '#8891a8', border: '1px solid #525c72' }}>
+                      Inactive
+                    </span>
+                  )}
+                  {isAdminViewer && (
+                    <button onClick={() => startEdit('name')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit name">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Email (editable) */}
+              <div className="text-sm mb-1" style={{ color: '#c2c8d8' }}>
+                {editingField === 'email' ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
+                      style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', minWidth: 280 }}
+                      autoFocus
+                    />
+                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50">
+                      <Check className="w-3.5 h-3.5" /> Save
+                    </button>
+                    <button onClick={cancelEdit} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>{resolvedUser.email || <span style={{ color: '#525c72' }}>No email</span>}</span>
+                    {isAdminViewer && (
+                      <button onClick={() => startEdit('email')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit email">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="space-y-1 text-sm" style={{ color: '#c2c8d8' }}>
-                {resolvedUser.email && <div>{resolvedUser.email}</div>}
-                {resolvedUser.phone && <div>{resolvedUser.phone}</div>}
+
+              {/* Phone (editable) */}
+              <div className="text-sm" style={{ color: '#c2c8d8' }}>
+                {editingField === 'phone' ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="tel"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="(555) 000-0000"
+                      className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 placeholder-slate-500"
+                      style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', minWidth: 200 }}
+                      autoFocus
+                    />
+                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50">
+                      <Check className="w-3.5 h-3.5" /> Save
+                    </button>
+                    <button onClick={cancelEdit} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>{resolvedUser.phone || <span style={{ color: '#525c72' }}>No phone</span>}</span>
+                    {isAdminViewer && (
+                      <button onClick={() => startEdit('phone')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit phone">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -178,9 +483,70 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
 
+        {/* ── Action footer ────────────────────────────────────────── */}
+        {/* Three buttons: Deactivate/Reactivate, Send/Resend invite,
+            Delete permanently. Visible only to admins. */}
+        {isAdminViewer && (
+          <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35' }}>
+            <h2 className="text-white font-bold text-base mb-4">Account actions</h2>
+            <div className="flex flex-wrap gap-3">
+              {/* Deactivate / Reactivate */}
+              {isInactive ? (
+                <button
+                  onClick={handleReactivate}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+                >
+                  Reactivate
+                </button>
+              ) : (
+                <button
+                  onClick={handleDeactivate}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,176,32,0.12)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }}
+                >
+                  Deactivate
+                </button>
+              )}
+
+              {/* Send / Resend invite — hidden once they have a Clerk account */}
+              {userMeta && !userMeta.hasClerkAccount && !isInactive && (
+                <button
+                  onClick={handleSendInvite}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(0,196,240,0.12)', color: '#00c4f0', border: '1px solid rgba(0,196,240,0.3)' }}
+                >
+                  {userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
+                </button>
+              )}
+
+              {/* Delete permanently — gated to zero relations */}
+              {(() => {
+                const hasRelations = (userMeta?.relationCount ?? 0) > 0;
+                return (
+                  <button
+                    onClick={handleDeletePermanently}
+                    disabled={hasRelations}
+                    title={hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
+                    className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                  >
+                    Delete permanently
+                  </button>
+                );
+              })()}
+            </div>
+            <p className="text-[11px] mt-4" style={{ color: '#525c72' }}>
+              Deactivation locks the user out of Clerk and revokes any pending invitation. Their history is preserved. Hard delete is only allowed when the user has zero related records.
+            </p>
+          </div>
+        )}
+
         <div className="card-surface rounded-2xl p-5" style={{ background: '#161920', border: '1px solid #272b35' }}>
           <p className="text-xs" style={{ color: '#8891a8' }}>
-            Admin and project manager accounts don&apos;t have commission, projects, or payroll data. Use Settings for permission management.
+            {resolvedUser.role === 'sub-dealer'
+              ? 'Sub-dealer accounts route deals through their own pricing. Project history lives on the projects they sourced.'
+              : 'Admin and project manager accounts don\u2019t have commission, projects, or payroll data. Use Settings for permission management.'}
           </p>
         </div>
       </div>
@@ -341,16 +707,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Already assigned — show trainer name + remove */}
-          {assignment && trainerRep && (
+          {assignment && (
             <div className="flex items-center justify-between mt-3 bg-[#1d2028]/50 rounded-xl px-4 py-3">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                  {trainerRep.name.split(' ').map((n: string) => n[0]).join('')}
-                </span>
-                <div>
-                  <p className="text-white text-sm font-medium">{trainerRep.name}</p>
-                  <p className="text-[#8891a8] text-xs">Trainer &middot; ${currentOverrideRate.toFixed(2)}/W</p>
-                </div>
+                {trainerRep ? (
+                  <>
+                    <span className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {trainerRep.name.split(' ').map((n: string) => n[0]).join('')}
+                    </span>
+                    <div>
+                      <p className="text-white text-sm font-medium">{trainerRep.name}</p>
+                      <p className="text-[#8891a8] text-xs">Trainer &middot; ${currentOverrideRate.toFixed(2)}/W</p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[#8891a8] text-sm italic">Trainer no longer exists — remove stale assignment</p>
+                )}
               </div>
               <button
                 onClick={() => {
@@ -629,6 +1001,59 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             onPageChange={setProjPage} onRowsPerPageChange={(n) => { setProjPageSize(n); setProjPage(1); }} />
         )}
       </div>
+
+      {/* ── Action footer ────────────────────────────────────────── */}
+      {/* Same three-button footer as the admin/PM/SD shell — admin only. */}
+      {isAdminViewer && (
+        <div className="card-surface rounded-2xl p-6 mt-6" style={{ background: '#161920', border: '1px solid #272b35' }}>
+          <h2 className="text-white font-bold text-base mb-4">Account actions</h2>
+          <div className="flex flex-wrap gap-3">
+            {isInactive ? (
+              <button
+                onClick={handleReactivate}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+              >
+                Reactivate
+              </button>
+            ) : (
+              <button
+                onClick={handleDeactivate}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                style={{ background: 'rgba(255,176,32,0.12)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }}
+              >
+                Deactivate
+              </button>
+            )}
+            {userMeta && !userMeta.hasClerkAccount && !isInactive && (
+              <button
+                onClick={handleSendInvite}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                style={{ background: 'rgba(0,196,240,0.12)', color: '#00c4f0', border: '1px solid rgba(0,196,240,0.3)' }}
+              >
+                {userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
+              </button>
+            )}
+            {(() => {
+              const hasRelations = (userMeta?.relationCount ?? 0) > 0;
+              return (
+                <button
+                  onClick={handleDeletePermanently}
+                  disabled={hasRelations}
+                  title={hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                >
+                  Delete permanently
+                </button>
+              );
+            })()}
+          </div>
+          <p className="text-[11px] mt-4" style={{ color: '#525c72' }}>
+            Deactivation locks the user out of Clerk and revokes any pending invitation. Their history is preserved. Hard delete is only allowed when the user has zero related records.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

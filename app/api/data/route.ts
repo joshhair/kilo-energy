@@ -64,7 +64,12 @@ export async function GET() {
     productCatalogConfigs,
     prepaidOptions,
   ] = await Promise.all([
-    prisma.user.findMany({ where: { active: true }, orderBy: { lastName: 'asc' } }),
+    // Admins see all users (including deactivated) so historical contexts
+    // can render greyed-out names. Non-admins only see active users.
+    prisma.user.findMany({
+      where: isAdmin ? {} : { active: true },
+      orderBy: { lastName: 'asc' },
+    }),
     prisma.installer.findMany({ orderBy: { name: 'asc' } }),
     prisma.financer.findMany({ orderBy: { name: 'asc' } }),
     prisma.project.findMany({
@@ -136,6 +141,8 @@ export async function GET() {
       phone: isAdmin ? u.phone : '',
       role: 'rep' as const,
       repType: u.repType as 'closer' | 'setter' | 'both',
+      active: u.active,
+      hasClerkAccount: !!u.clerkUserId,
       canRequestBlitz: u.canRequestBlitz ?? false,
       canCreateBlitz: u.canCreateBlitz ?? false,
     }));
@@ -150,6 +157,8 @@ export async function GET() {
       email: isAdmin ? u.email : '',
       phone: isAdmin ? u.phone : '',
       role: 'sub-dealer' as const,
+      active: u.active,
+      hasClerkAccount: !!u.clerkUserId,
     }));
 
   const installerNames = installers.map((i) => ({ name: i.name, active: i.active }));
@@ -265,10 +274,16 @@ export async function GET() {
 
   // Installer pricing versions — non-sensitive reference data, all users need
   // these to render deal forms and commission calculations.
-  const transformedIPV = installerPricingVersions.map((v) => {
+  const transformedIPV = installerPricingVersions.flatMap((v) => {
     const installerName = instIdToName[v.installerId] ?? v.installerId;
     const isTiered = v.rateType === 'tiered' || v.tiers.length > 1;
-    return {
+    if (!isTiered && v.tiers.length === 0) {
+      console.warn(
+        `[api/data] InstallerPricingVersion id=${v.id} (${installerName} "${v.label}") is flat-rate but has no tier rows — skipping to avoid wrong baseline`,
+      );
+      return [];
+    }
+    return [{
       id: v.id,
       installer: installerName,
       label: v.label,
@@ -288,12 +303,12 @@ export async function GET() {
           }
         : {
             type: 'flat' as const,
-            closerPerW: v.tiers[0]?.closerPerW ?? 2.90,
-            setterPerW: v.tiers[0]?.setterPerW ?? undefined,
-            kiloPerW: v.tiers[0]?.kiloPerW ?? 2.35,
-            subDealerPerW: v.tiers[0]?.subDealerPerW ?? undefined,
+            closerPerW: v.tiers[0].closerPerW,
+            setterPerW: v.tiers[0].setterPerW ?? undefined,
+            kiloPerW: v.tiers[0].kiloPerW,
+            subDealerPerW: v.tiers[0].subDealerPerW ?? undefined,
           },
-    };
+    }];
   });
 
   const solarTechInstaller = installers.find((i) => i.name === 'SolarTech');

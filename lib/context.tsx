@@ -43,12 +43,23 @@ interface AppContextType {
   // Rep management
   reps: Rep[];
   addRep: (firstName: string, lastName: string, email: string, phone: string, repType?: 'closer' | 'setter' | 'both', id?: string) => Promise<{ id: string } | undefined>;
+  /** @deprecated Use `deactivateRep` (preserves entry, marks inactive) or `deleteRepPermanently` (hard delete). */
   removeRep: (id: string) => void;
+  /** Soft-deactivate: marks active=false, keeps the entry in `reps` array so historical views can render greyed-out. Calls Clerk lock + invitation revoke server-side. */
+  deactivateRep: (id: string) => Promise<void>;
+  /** Re-enable a previously deactivated rep. Calls Clerk unlock server-side. */
+  reactivateRep: (id: string) => Promise<void>;
+  /** Hard delete — removes the row entirely. Server enforces zero-relations gate (returns 409 if user has any history). */
+  deleteRepPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
   updateRepType: (id: string, repType: 'closer' | 'setter' | 'both') => void;
   // Sub-dealer management
   subDealers: SubDealer[];
-  addSubDealer: (firstName: string, lastName: string, email: string, phone: string, id?: string) => void;
+  addSubDealer: (firstName: string, lastName: string, email: string, phone: string, id?: string) => Promise<{ id: string } | undefined>;
+  /** @deprecated Use `deactivateSubDealer` or `deleteSubDealerPermanently`. */
   removeSubDealer: (id: string) => void;
+  deactivateSubDealer: (id: string) => Promise<void>;
+  reactivateSubDealer: (id: string) => Promise<void>;
+  deleteSubDealerPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
   // Project editing
   updateProject: (id: string, updates: Partial<Project>) => void;
   // Editable baselines (derived from active pricing versions for backward compat)
@@ -79,8 +90,8 @@ interface AppContextType {
   updateProductCatalogPricingVersion: (id: string, updates: Partial<ProductCatalogPricingVersion>) => void;
   createNewProductCatalogVersion: (productId: string, label: string, effectiveFrom: string, tiers: ProductCatalogTier[]) => void;
   deleteProductCatalogPricingVersions: (versionIds: string[]) => void;
-  deleteInstaller: (name: string) => void;
-  deleteFinancer: (name: string) => void;
+  deleteInstaller: (name: string) => Promise<void>;
+  deleteFinancer: (name: string) => Promise<void>;
   // Per-installer prepaid options management
   installerPrepaidOptions: Record<string, string[]>;
   getInstallerPrepaidOptions: (installer: string) => string[];
@@ -233,6 +244,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {
+        setPayrollEntries((prev) => prev.filter((e) => e.id !== clientId));
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save payroll entry' }));
       });
   }, [setPayrollEntries]);
@@ -258,9 +270,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         best === null || v.effectiveFrom >= best.effectiveFrom ? v : best, null);
       if (!active) continue;
       const { rates } = active;
-      // For tiered installers, use the first band for backward-compat display
-      const flatRates = rates.type === 'tiered' ? rates.bands[0] : rates;
-      if (!flatRates) continue;
+      // Tiered installers cannot be collapsed to a single baseline without knowing kW.
+      // Callers needing tiered rates must use getInstallerRatesForDeal() with the deal's kW.
+      if (rates.type === 'tiered') continue;
+      const flatRates = rates;
       result[name] = { closerPerW: flatRates.closerPerW, kiloPerW: flatRates.kiloPerW, ...(flatRates.setterPerW != null ? { setterPerW: flatRates.setterPerW } : {}), ...(flatRates.subDealerPerW != null ? { subDealerPerW: flatRates.subDealerPerW } : {}) };
     }
     // Also include any NON_SOLARTECH_BASELINES entries without a pricing version
@@ -355,14 +368,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }).catch(console.error);
   };
-  const addRep = (firstName: string, lastName: string, email: string, phone: string, repType: 'closer' | 'setter' | 'both' = 'both', id?: string) => {
+  const addRep = (firstName: string, lastName: string, email: string, phone: string, repType: 'closer' | 'setter' | 'both' = 'both', id?: string, role: 'rep' | 'admin' | 'sub-dealer' = 'rep') => {
     const tempId = id ?? `rep_${Date.now()}`;
-    setReps((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim(), phone: phone.trim(), role: 'rep' as const, repType }]);
+    setReps((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim(), phone: phone.trim(), role: role as Rep['role'], repType, active: true, hasClerkAccount: false }]);
     // Persist and update with real DB id
     return persistFetch('/api/reps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, email, phone, repType }),
+      body: JSON.stringify({ firstName, lastName, email, phone, repType, role }),
     }, 'Failed to save new rep').then((res) => res.json()).then((rep) => {
       if (rep.id && rep.id !== tempId) {
         setReps((prev) => prev.map((r) => r.id === tempId ? { ...r, id: rep.id } : r));
@@ -373,9 +386,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return undefined;
     });
   };
+  // ── Rep deactivation / reactivation / hard delete ──
+  // Three distinct operations:
+  //   deactivateRep: soft, reversible. Marks active=false but keeps the
+  //     entry in `reps` so historical contexts can render greyed-out names.
+  //     Server-side: Clerk user is locked, any pending invitation revoked.
+  //   reactivateRep: re-enable. Server-side unlocks the Clerk user.
+  //   deleteRepPermanently: hard delete. Only succeeds if the user has zero
+  //     FK relations (server returns 409 otherwise). Used for cleaning up
+  //     typos or test accounts.
+  const deactivateRep = async (id: string): Promise<void> => {
+    setReps((prev) => prev.map((r) => r.id === id ? { ...r, active: false } : r));
+    try {
+      await persistFetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: false }),
+      }, 'Failed to deactivate rep');
+    } catch {
+      // Roll back the optimistic update on failure
+      setReps((prev) => prev.map((r) => r.id === id ? { ...r, active: true } : r));
+    }
+  };
+  const reactivateRep = async (id: string): Promise<void> => {
+    setReps((prev) => prev.map((r) => r.id === id ? { ...r, active: true } : r));
+    try {
+      await persistFetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: true }),
+      }, 'Failed to reactivate rep');
+    } catch {
+      setReps((prev) => prev.map((r) => r.id === id ? { ...r, active: false } : r));
+    }
+  };
+  const deleteRepPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    const snapshot = reps.find((r) => r.id === id);
+    setReps((prev) => prev.filter((r) => r.id !== id));
+    try {
+      await persistFetch(`/api/users/${id}`, { method: 'DELETE' }, 'Failed to delete rep');
+      return { success: true };
+    } catch (err: unknown) {
+      // Roll back — the server probably rejected with 409 (has relations)
+      if (snapshot) setReps((prev) => [...prev, snapshot]);
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to delete rep' };
+    }
+  };
+  // Legacy alias: existing call sites still call removeRep. Mid-migration
+  // keep the old "remove from list immediately" UI behavior, but route to
+  // the new deactivation endpoint server-side. Phase 4 migrates call sites.
   const removeRep = (id: string) => {
     setReps((prev) => prev.filter((r) => r.id !== id));
-    persistFetch(`/api/reps/${id}`, { method: 'DELETE' }, 'Failed to remove rep').catch(() => {});
+    persistFetch(`/api/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: false }),
+    }, 'Failed to remove rep').catch(() => {});
   };
   const updateRepType = (id: string, repType: 'closer' | 'setter' | 'both') => {
     setReps((prev) => prev.map((r) => r.id === id ? { ...r, repType } : r));
@@ -390,8 +456,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addSubDealer = (firstName: string, lastName: string, email: string, phone: string, id?: string) => {
     const tempId = id ?? `sd_${Date.now()}`;
     const name = `${firstName.trim()} ${lastName.trim()}`;
-    setSubDealers((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name, email: email.trim(), phone: phone.trim(), role: 'sub-dealer' as const }]);
-    persistFetch('/api/reps', {
+    setSubDealers((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name, email: email.trim(), phone: phone.trim(), role: 'sub-dealer' as const, active: true, hasClerkAccount: false }]);
+    return persistFetch('/api/reps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ firstName, lastName, email, phone, role: 'sub-dealer' }),
@@ -399,11 +465,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (sd.id && sd.id !== tempId) {
         setSubDealers((prev) => prev.map((s) => s.id === tempId ? { ...s, id: sd.id } : s));
       }
-    }).catch(() => undefined);
+      return sd as { id: string };
+    }).catch(() => {
+      setSubDealers((prev) => prev.filter((s) => s.id !== tempId));
+      return undefined;
+    });
   };
+  const deactivateSubDealer = async (id: string): Promise<void> => {
+    setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, active: false } : s));
+    try {
+      await persistFetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: false }),
+      }, 'Failed to deactivate sub-dealer');
+    } catch {
+      setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, active: true } : s));
+    }
+  };
+  const reactivateSubDealer = async (id: string): Promise<void> => {
+    setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, active: true } : s));
+    try {
+      await persistFetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: true }),
+      }, 'Failed to reactivate sub-dealer');
+    } catch {
+      setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, active: false } : s));
+    }
+  };
+  const deleteSubDealerPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    const snapshot = subDealers.find((s) => s.id === id);
+    setSubDealers((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await persistFetch(`/api/users/${id}`, { method: 'DELETE' }, 'Failed to delete sub-dealer');
+      return { success: true };
+    } catch (err: unknown) {
+      if (snapshot) setSubDealers((prev) => [...prev, snapshot]);
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to delete sub-dealer' };
+    }
+  };
+  // Legacy alias — same migration story as removeRep above.
   const removeSubDealer = (id: string) => {
     setSubDealers((prev) => prev.filter((sd) => sd.id !== id));
-    persistFetch(`/api/reps/${id}`, { method: 'DELETE' }, 'Failed to remove sub-dealer').catch(() => {});
+    persistFetch(`/api/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: false }),
+    }, 'Failed to remove sub-dealer').catch(() => {});
   };
 
   // ── Activity logging helper (fire-and-forget) ──
@@ -577,7 +687,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const PIPELINE = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
         const oldIdx = PIPELINE.indexOf(old.phase);
         const newIdx = PIPELINE.indexOf(newPhase);
-        if (oldIdx >= 0 && newIdx >= 0 && newIdx < oldIdx) {
+        if (oldIdx >= 0 && (newPhase === 'On Hold' || (newIdx >= 0 && newIdx < oldIdx))) {
           const rollBackM1 = oldIdx >= PIPELINE.indexOf('Acceptance') && newIdx < PIPELINE.indexOf('Acceptance');
           const rollBackM2 = oldIdx >= PIPELINE.indexOf('Installed') && newIdx < PIPELINE.indexOf('Installed');
           const rollBackM3 = oldIdx >= PIPELINE.indexOf('PTO') && newIdx < PIPELINE.indexOf('PTO');
@@ -608,7 +718,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if ((isAcceptance && !isSubDealerDeal) || isInstalled) {
           const stage: 'M1' | 'M2' = isAcceptance ? 'M1' : 'M2';
           const payDate = isAcceptance ? getM1PayDate() : getM2PayDate();
-          const fullAmount = isAcceptance ? old.m1Amount : old.m2Amount;
+          const freshProject = updated.find((p) => p.id === id)!;
+          const fullAmount = isAcceptance ? old.m1Amount : freshProject.m2Amount;
 
           // For M2, m2Amount is already stored as the post-split value
           // (closerM2Full * installPayPct/100) — use it directly, no re-apply needed
@@ -628,6 +739,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
           // Check if entries already exist for this project + stage to avoid duplicates
           setPayrollEntries((prevEntries) => {
+            if (!dbReady) return prevEntries;
             const alreadyExists = prevEntries.some(
               (e) => e.projectId === id && (e.paymentStage === stage || (stage === 'M2' && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))
             );
@@ -760,8 +872,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
           const m3 = (proj?.m3Amount ?? 0) > 0
             ? proj!.m3Amount!
-            : installPayPct < 100 && !old.subDealerId
-              ? Math.round((old.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+            : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
+              ? Math.round((proj?.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
               : 0;
           const ts = Date.now();
           const payDate = getM2PayDate(); // M3 follows the same Saturday cutoff as M2
@@ -801,8 +913,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (old.setterId) {
                 const setterM3 = (old.setterM3Amount ?? 0) > 0
                   ? old.setterM3Amount!
-                  : installPayPct < 100 && !old.subDealerId
-                    ? Math.round((old.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+                  : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
+                    ? Math.round((proj?.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
                     : 0;
                 if (setterM3 > 0) {
                   const setterRep = reps.find((r) => r.id === old.setterId);
@@ -830,8 +942,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
                 const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId);
                 const m2CloserRateMatch = m2CloserTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
-                const overrideRate = m2CloserRateMatch
-                  ? parseFloat(m2CloserRateMatch[1])
+                const m2CloserParsed = m2CloserRateMatch ? parseFloat(m2CloserRateMatch[1]) : NaN;
+                const overrideRate = !isNaN(m2CloserParsed)
+                  ? m2CloserParsed
                   : getTrainerOverrideRate(closerTrainerAssignment, updated.filter(p => p.id !== id && (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
                 const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                 if (m3TrainerAmount > 0) {
@@ -859,8 +972,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
                   const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId);
                   const m2SetterRateMatch = m2SetterTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
-                  const setterOverrideRate = m2SetterRateMatch
-                    ? parseFloat(m2SetterRateMatch[1])
+                  const m2SetterParsed = m2SetterRateMatch ? parseFloat(m2SetterRateMatch[1]) : NaN;
+                  const setterOverrideRate = !isNaN(m2SetterParsed)
+                    ? m2SetterParsed
                     : getTrainerOverrideRate(setterTrainerAssignment, updated.filter(p => p.id !== id && (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
                   const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                   if (m3SetterTrainerAmount > 0) {
@@ -1232,11 +1346,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteInstaller = (name: string) => {
-    // Persist deletion to DB (cascading deletes handle pricing/products)
+  const deleteInstaller = async (name: string) => {
+    // Persist deletion to DB first; only mutate local state on success
     const instId = idMaps.installerNameToId[name];
     if (instId) {
-      fetch(`/api/installers/${instId}`, { method: 'DELETE' }).catch(console.error);
+      const res = await fetch(`/api/installers/${instId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Failed to delete installer: ${res.status}`);
     }
 
     setInstallers((prev) => prev.filter((i) => i.name !== name));
@@ -1268,10 +1383,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const deleteFinancer = (name: string) => {
+  const deleteFinancer = async (name: string) => {
     const finId = idMaps.financerNameToId[name];
     if (finId) {
-      fetch(`/api/financers/${finId}`, { method: 'DELETE' }).catch(console.error);
+      const res = await fetch(`/api/financers/${finId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Failed to delete financer: ${res.status}`);
     }
     setFinancers((prev) => prev.filter((f) => f.name !== name));
   };
@@ -1465,6 +1581,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         reps,
         addRep,
         removeRep,
+        deactivateRep,
+        reactivateRep,
+        deleteRepPermanently,
         updateRepType,
         updateProject,
         installerBaselines,
@@ -1503,6 +1622,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         subDealers,
         addSubDealer,
         removeSubDealer,
+        deactivateSubDealer,
+        reactivateSubDealer,
+        deleteSubDealerPermanently,
         unreadMentionCount,
         refreshMentionCount,
         viewAsUser,

@@ -11,8 +11,10 @@ export async function GET(req: NextRequest) {
   let viewer;
   try { viewer = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const role = req.nextUrl.searchParams.get('role') || 'rep';
+
+  // Admins see all users (active + inactive). Non-admins only see active.
   const users = await prisma.user.findMany({
-    where: { role, active: true },
+    where: viewer.role === 'admin' ? { role } : { role, active: true },
     orderBy: { lastName: 'asc' },
   });
 

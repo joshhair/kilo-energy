@@ -93,6 +93,11 @@ export interface Rep {
   phone: string;
   role: 'rep' | 'sub-dealer';
   repType: 'closer' | 'setter' | 'both';
+  active: boolean;
+  /// True when a clerkUserId is present on the User row — i.e. they have
+  /// signed in at least once. False for silently-bulk-created users who
+  /// haven't accepted an invitation yet.
+  hasClerkAccount?: boolean;
   canRequestBlitz?: boolean;
   canCreateBlitz?: boolean;
 }
@@ -105,6 +110,8 @@ export interface SubDealer {
   email: string;
   phone: string;
   role: 'sub-dealer';
+  active: boolean;
+  hasClerkAccount?: boolean;
 }
 
 export interface TrainerOverrideTier {
@@ -229,17 +236,17 @@ export interface Reimbursement {
 }
 
 export const REPS: Rep[] = [
-  { id: 'rep1', firstName: 'Alex',   lastName: 'Rivera', name: 'Alex Rivera',   email: 'alex@kiloenergy.com',   phone: '(555) 100-0001', role: 'rep', repType: 'both' },
-  { id: 'rep2', firstName: 'Maria',  lastName: 'Santos', name: 'Maria Santos',  email: 'maria@kiloenergy.com',  phone: '(555) 100-0002', role: 'rep', repType: 'both' },
-  { id: 'rep3', firstName: 'James',  lastName: 'Park',   name: 'James Park',    email: 'james@kiloenergy.com',  phone: '(555) 100-0003', role: 'rep', repType: 'closer' },
-  { id: 'rep4', firstName: 'Taylor', lastName: 'Brooks', name: 'Taylor Brooks', email: 'taylor@kiloenergy.com', phone: '(555) 100-0004', role: 'rep', repType: 'setter' },
-  { id: 'rep5', firstName: 'Jordan', lastName: 'Lee',    name: 'Jordan Lee',    email: 'jordan@kiloenergy.com', phone: '(555) 100-0005', role: 'rep', repType: 'both' },
+  { id: 'rep1', firstName: 'Alex',   lastName: 'Rivera', name: 'Alex Rivera',   email: 'alex@kiloenergy.com',   phone: '(555) 100-0001', role: 'rep', repType: 'both',   active: true },
+  { id: 'rep2', firstName: 'Maria',  lastName: 'Santos', name: 'Maria Santos',  email: 'maria@kiloenergy.com',  phone: '(555) 100-0002', role: 'rep', repType: 'both',   active: true },
+  { id: 'rep3', firstName: 'James',  lastName: 'Park',   name: 'James Park',    email: 'james@kiloenergy.com',  phone: '(555) 100-0003', role: 'rep', repType: 'closer', active: true },
+  { id: 'rep4', firstName: 'Taylor', lastName: 'Brooks', name: 'Taylor Brooks', email: 'taylor@kiloenergy.com', phone: '(555) 100-0004', role: 'rep', repType: 'setter', active: true },
+  { id: 'rep5', firstName: 'Jordan', lastName: 'Lee',    name: 'Jordan Lee',    email: 'jordan@kiloenergy.com', phone: '(555) 100-0005', role: 'rep', repType: 'both',   active: true },
 ];
 
 export const SUB_DEALERS: SubDealer[] = [
-  { id: 'sd1', firstName: 'Chris', lastName: 'Nguyen',  name: 'Chris Nguyen',  email: 'chris@solardealers.com',  phone: '(555) 200-0001', role: 'sub-dealer' },
-  { id: 'sd2', firstName: 'Dana',  lastName: 'Morales', name: 'Dana Morales',  email: 'dana@greendealers.com',   phone: '(555) 200-0002', role: 'sub-dealer' },
-  { id: 'sd3', firstName: 'Pat',   lastName: 'Kim',     name: 'Pat Kim',       email: 'pat@sunstardealers.com',  phone: '(555) 200-0003', role: 'sub-dealer' },
+  { id: 'sd1', firstName: 'Chris', lastName: 'Nguyen',  name: 'Chris Nguyen',  email: 'chris@solardealers.com',  phone: '(555) 200-0001', role: 'sub-dealer', active: true },
+  { id: 'sd2', firstName: 'Dana',  lastName: 'Morales', name: 'Dana Morales',  email: 'dana@greendealers.com',   phone: '(555) 200-0002', role: 'sub-dealer', active: true },
+  { id: 'sd3', firstName: 'Pat',   lastName: 'Kim',     name: 'Pat Kim',       email: 'pat@sunstardealers.com',  phone: '(555) 200-0003', role: 'sub-dealer', active: true },
 ];
 
 export const PROJECTS: Project[] = [
@@ -1267,7 +1274,7 @@ export function getProductCatalogBaselineVersioned(
   if (!tiers) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: null };
   const tier =
     tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)) ??
-    tiers.reduce((best, t) => (t.minKW > best.minKW ? t : best), tiers[0]);
+    tiers.reduce((best, t) => (t.minKW < best.minKW ? t : best), tiers[0]);
   if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: version?.id ?? null };
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW, pcPricingVersionId: version?.id ?? null };
 }
@@ -1333,22 +1340,22 @@ export function getInstallerRatesForDeal(
   date: string,
   kW: number,
   versions: InstallerPricingVersion[],
-): { closerPerW: number; setterPerW: number; kiloPerW: number; versionId: string | null } {
+): { closerPerW: number; setterPerW: number; kiloPerW: number; subDealerPerW?: number; versionId: string | null } {
   const version = getActiveInstallerVersion(installer, date, versions);
   if (!version) {
     const b = NON_SOLARTECH_BASELINES[installer] ?? { closerPerW: 2.90, kiloPerW: 2.35 };
     const setter = b.setterPerW != null ? b.setterPerW : Math.round((b.closerPerW + 0.10) * 100) / 100;
-    return { closerPerW: b.closerPerW, setterPerW: setter, kiloPerW: b.kiloPerW, versionId: null };
+    return { closerPerW: b.closerPerW, setterPerW: setter, kiloPerW: b.kiloPerW, subDealerPerW: b.subDealerPerW, versionId: null };
   }
   const { rates } = version;
   if (rates.type === 'tiered') {
     const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW)) ?? rates.bands[rates.bands.length - 1];
     if (!band) return { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35, versionId: version.id };
     const setter = band.setterPerW != null ? band.setterPerW : Math.round((band.closerPerW + 0.10) * 100) / 100;
-    return { closerPerW: band.closerPerW, setterPerW: setter, kiloPerW: band.kiloPerW, versionId: version.id };
+    return { closerPerW: band.closerPerW, setterPerW: setter, kiloPerW: band.kiloPerW, subDealerPerW: band.subDealerPerW, versionId: version.id };
   }
   const setter = rates.setterPerW != null ? rates.setterPerW : Math.round((rates.closerPerW + 0.10) * 100) / 100;
-  return { closerPerW: rates.closerPerW, setterPerW: setter, kiloPerW: rates.kiloPerW, versionId: version.id };
+  return { closerPerW: rates.closerPerW, setterPerW: setter, kiloPerW: rates.kiloPerW, subDealerPerW: rates.subDealerPerW, versionId: version.id };
 }
 
 // Commission = (soldPPW - baseline) × kW × 1000

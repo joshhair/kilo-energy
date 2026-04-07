@@ -12,9 +12,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   try { viewer = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   const user = await prisma.user.findUnique({ where: { id } });
-  if (!user || !user.active) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const isAdmin = viewer.role === 'admin';
+  // Non-admin viewers cannot see inactive users — preserves the prior
+  // behavior (deactivated reps disappear from rep-side views).
+  if (!isAdmin && !user.active) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   return NextResponse.json({
     id: user.id,
     firstName: user.firstName,
@@ -25,6 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     role: user.role,
     repType: user.repType,
     active: user.active,
+    hasClerkAccount: !!user.clerkUserId,
     // PM permission flags — admin viewers only
     canCreateDeals: isAdmin ? (user.canCreateDeals ?? false) : undefined,
     canAccessBlitz: isAdmin ? (user.canAccessBlitz ?? false) : undefined,
@@ -59,11 +66,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
 }
 
-// DELETE /api/reps/[id] (admin only)
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
-  const { id } = await params;
-  // Soft-delete: set active=false instead of deleting (preserves referential integrity)
-  await prisma.user.update({ where: { id }, data: { active: false } });
-  return NextResponse.json({ success: true });
-}
+// DELETE removed — use PATCH /api/users/[id] {active: false} for deactivation
+// or DELETE /api/users/[id] for hard delete (gated to zero relations).
+// Both routes handle Clerk lifecycle (lock/unlock/delete + invitation revoke).

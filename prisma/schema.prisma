@@ -30,6 +30,12 @@ model User {
 
   active    Boolean  @default(true)
 
+  /// Clerk user id, populated lazily on first sign-in by getInternalUser().
+  /// Null for users created via silent bulk-import who have not yet accepted
+  /// an invitation. Used for Clerk lifecycle ops (lock/unlock/delete) when
+  /// deactivating or hard-deleting a user.
+  clerkUserId String? @unique
+
   /// Whether this user can request blitzes for admin approval
   canRequestBlitz Boolean @default(false)
   /// Whether this user can create/manage blitzes directly
@@ -61,6 +67,7 @@ model User {
 
   @@index([role])
   @@index([active])
+  @@index([clerkUserId])
 }
 
 // ============================================================================
