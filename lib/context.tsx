@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
 import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTIVES, INSTALLERS, FINANCERS, Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, REPS, Rep, SubDealer, SUB_DEALERS, NON_SOLARTECH_BASELINES, SOLARTECH_PRODUCTS, InstallerBaseline, SolarTechProduct, INSTALLER_PRICING_VERSIONS, InstallerPricingVersion, InstallerRates, PRODUCT_CATALOG_INSTALLER_CONFIGS, PRODUCT_CATALOG_PRODUCTS, ProductCatalogInstallerConfig, ProductCatalogProduct, PREPAID_OPTIONS, Phase, PRODUCT_CATALOG_PRICING_VERSIONS, ProductCatalogPricingVersion, ProductCatalogTier, INSTALLER_PAY_CONFIGS, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
 import { getM1PayDate, getM2PayDate, localDateString } from './utils';
-import { persistFetch } from './persist';
+import { persistFetch, emitPersistError } from './persist';
 
 type Role = 'rep' | 'admin' | 'sub-dealer' | 'project_manager' | null;
 
@@ -353,7 +353,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }).catch(console.error);
         }
       }
-    }).catch(console.error);
+    }).catch((err) => {
+      console.error('[addInstaller] Failed to create installer:', err);
+      setInstallers((prev) => prev.filter((i) => i.name !== name));
+      setInstallerPricingVersions((prev) => prev.filter((v) => v.installer !== name));
+      emitPersistError('Failed to add installer — please try again');
+    });
   };
   const addFinancer = (name: string) => {
     setFinancers((prev) => prev.find((f) => f.name === name) ? prev : [...prev, { name, active: true }]);

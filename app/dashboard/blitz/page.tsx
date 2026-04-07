@@ -528,7 +528,7 @@ function BlitzPageInner() {
   const loadData = () => {
     Promise.all([
       fetch('/api/blitzes').then((r) => r.json()),
-      isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
+      fetch('/api/blitz-requests').then((r) => r.json()),
     ]).then(([b, r]) => {
       setBlitzes(Array.isArray(b) ? b : []);
       setRequests(Array.isArray(r) ? r : []);
@@ -747,8 +747,8 @@ function BlitzPageInner() {
         )}
       </div>
 
-      {/* Admin Tabs — Blitzes / Requests with sliding pill */}
-      {isAdmin && (
+      {/* Tabs — Blitzes / Requests with sliding pill */}
+      {(isAdmin || userPerms.canRequestBlitz) && (
         <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: '#161920', border: '1px solid #272b35' }}>
           {(['blitzes', 'requests'] as TabKey[]).map((t, i) => (
             <button
@@ -758,7 +758,7 @@ function BlitzPageInner() {
               className="relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
               style={tab === t ? { background: '#00e07a', color: '#000' } : { color: '#c2c8d8' }}
             >
-              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: '#ff5252', color: '#fff' }}>{pendingRequests.length}</span>}</>}
+              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: '#ff5252', color: '#fff' }}>{pendingRequests.length}</span>}</>}
             </button>
           ))}
         </div>
@@ -928,6 +928,46 @@ function BlitzPageInner() {
             </div>
           )}
         </>
+      )}
+
+      {tab === 'requests' && !isAdmin && userPerms.canRequestBlitz && (
+        <div className="space-y-3">
+          {requests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
+              <Inbox className="w-14 h-14" style={{ color: '#525c72' }} />
+              <div className="text-center">
+                <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No requests submitted</p>
+                <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Your blitz requests will appear here after submission</p>
+              </div>
+            </div>
+          ) : (
+            requests.map((req) => (
+              <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: '#161920', border: '1px solid #272b35' }}>
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      {req.type === 'cancel' ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[#00c4f0] border border-[#00e07a]/20">New Blitz</span>
+                      )}
+                      <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[#c2c8d8]">
+                      {req.type !== 'cancel' && req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
+                      {req.type !== 'cancel' && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>}
+                    </div>
+                    {req.notes && <p className="text-sm text-[#8891a8] mt-2 line-clamp-2">{req.notes}</p>}
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[#00e07a]/20' : req.status === 'denied' ? 'bg-red-900/30 text-red-300 border border-red-500/20' : 'bg-amber-900/30 text-amber-300 border border-amber-500/20'}`}>
+                    {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : req.status === 'denied' ? <XCircle className="w-3 h-3" /> : <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+                    {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       )}
 
       {tab === 'requests' && isAdmin && (

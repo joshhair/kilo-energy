@@ -12,7 +12,7 @@
  */
 
 /** Dispatch a persist-error event (picked up by ToastProvider) */
-function emitPersistError(msg: string) {
+export function emitPersistError(msg: string) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: msg }));
   }
