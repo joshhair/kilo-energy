@@ -1876,14 +1876,31 @@ function SettingsPageInner() {
                               <EyeOff className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => setDeleteConfirm({
-                                type: 'installer',
-                                id: inst.name,
-                                name: inst.name,
-                                message: productCatalogInstallerConfigs[inst.name]
-                                  ? 'This will also remove all associated product catalog products and pricing data. Existing deals are unaffected.'
-                                  : 'This will not affect existing projects but will prevent new deals with this installer.',
-                              })}
+                              onClick={() => {
+                                // Count exactly what cascades out when this
+                                // installer is deleted. The schema's
+                                // onDelete: Cascade on Product/InstallerPricing
+                                // means ALL rows pointing at this installer
+                                // go with it — we want the admin to see the
+                                // real blast radius, not a vague warning.
+                                const isSolarTech = inst.name === 'SolarTech';
+                                const productCount = isSolarTech
+                                  ? solarTechProducts.length
+                                  : productCatalogProducts.filter((p) => p.installer === inst.name).length;
+                                const versionCount = installerPricingVersions.filter((v) => v.installer === inst.name).length;
+                                const parts: string[] = [];
+                                if (productCount > 0) parts.push(`${productCount} product${productCount === 1 ? '' : 's'}`);
+                                if (versionCount > 0) parts.push(`${versionCount} pricing version${versionCount === 1 ? '' : 's'}`);
+                                const cascadeDetail = parts.length > 0
+                                  ? `This will PERMANENTLY delete ${parts.join(' and ')} along with every baseline tier underneath them. This cannot be undone from the UI.\n\nExisting deals that reference this installer will remain but will no longer have a pricing source.`
+                                  : 'This installer has no products or pricing configured yet. Existing deals referencing it (if any) will remain, but you will not be able to create new deals with this installer.';
+                                setDeleteConfirm({
+                                  type: 'installer',
+                                  id: inst.name,
+                                  name: inst.name,
+                                  message: cascadeDetail,
+                                });
+                              }}
                               title="Permanently delete installer"
                               className="text-[#525c72] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                             >
@@ -4354,12 +4371,21 @@ function ConfirmDeleteDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  // Installer deletes with cascade require typing the name to confirm.
+  // The message contains "PERMANENTLY delete" when there's a non-trivial
+  // cascade (products and/or pricing versions about to be wiped).
+  // For no-cascade installer deletes and all other types (financer,
+  // trainer), a simple click-to-confirm is still fine.
+  const requiresTypeToConfirm = confirm.type === 'installer' && confirm.message.includes('PERMANENTLY delete');
+  const [typed, setTyped] = useState('');
+  const canConfirm = !requiresTypeToConfirm || typed === confirm.name;
+
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
+      <div className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-red-400" />
@@ -4368,7 +4394,24 @@ function ConfirmDeleteDialog({
             Delete {confirm.type === 'trainer' ? `Assignment: ${confirm.name}` : confirm.name}?
           </h3>
         </div>
-        <p className="text-[#c2c8d8] text-sm mb-5">{confirm.message}</p>
+        {/* whitespace-pre-line so embedded \n in the message survive rendering */}
+        <p className="text-[#c2c8d8] text-sm mb-5 whitespace-pre-line">{confirm.message}</p>
+        {requiresTypeToConfirm && (
+          <div className="mb-5">
+            <label className="text-xs font-medium mb-2 block" style={{ color: '#8891a8' }}>
+              Type <span className="text-white font-bold">{confirm.name}</span> to confirm:
+            </label>
+            <input
+              type="text"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              autoFocus
+              className="w-full rounded-xl px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-red-500/50"
+              style={{ background: '#1d2028', border: '1px solid #333849' }}
+              placeholder={confirm.name}
+            />
+          </div>
+        )}
         <div className="flex gap-3">
           <button
             onClick={onCancel}
@@ -4378,7 +4421,8 @@ function ConfirmDeleteDialog({
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors"
+            disabled={!canConfirm}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Delete
           </button>
