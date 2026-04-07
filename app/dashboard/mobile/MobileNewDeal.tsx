@@ -263,6 +263,7 @@ export default function MobileNewDeal() {
 
   // Pre-fill last-used installer
   const lastInstallerApplied = useRef(false);
+  const netPPWRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (lastInstallerApplied.current) return;
     lastInstallerApplied.current = true;
@@ -1049,12 +1050,15 @@ export default function MobileNewDeal() {
               <label className={labelCls} style={labelStyle}>System Size (kW)</label>
               <input
                 type="number"
+                inputMode="decimal"
+                enterKeyHint="next"
                 step="0.1"
                 min="0.1"
                 placeholder="8.4"
                 value={form.kWSize}
                 onChange={(e) => update('kWSize', e.target.value)}
                 onBlur={() => handleBlur('kWSize')}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); netPPWRef.current?.focus(); } }}
                 className={inputCls('kWSize')} style={v0InputStyle('kWSize')}
               />
               <FieldError errors={errors} field="kWSize" />
@@ -1064,7 +1068,10 @@ export default function MobileNewDeal() {
             <div>
               <label className={labelCls} style={labelStyle}>Net PPW ($/W)</label>
               <input
+                ref={netPPWRef}
                 type="number"
+                inputMode="decimal"
+                enterKeyHint="done"
                 step="0.01"
                 min="0.01"
                 placeholder="3.45"

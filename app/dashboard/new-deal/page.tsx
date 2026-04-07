@@ -725,7 +725,7 @@ function NewDealPage() {
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
   const closerCompletedDeals = closerId
-    ? projects.filter((p) => (p.repId === closerId || p.setterId === closerId) && isFullyPaidOut(p)).length
+    ? projects.filter((p) => p.repId === closerId && isFullyPaidOut(p)).length
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
@@ -1183,7 +1183,7 @@ function NewDealPage() {
                   <select id="field-repId" value={form.repId} onChange={(e) => update('repId', e.target.value)}
                     onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
-                    {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
                   <FieldError errors={errors} field="repId" />
                 </div>

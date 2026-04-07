@@ -134,7 +134,7 @@ export function SetterPickerPopover({
 
   // Rep list: exclude the closer and the currently-selected setter (pinned separately)
   const filteredReps = reps
-    .filter((r) => r.id !== excludeRepId && r.id !== setterId && r.repType !== 'closer')
+    .filter((r) => r.id !== excludeRepId && r.id !== setterId && r.repType !== 'closer' && r.active)
     .filter((r) =>
       searchQuery === '' || r.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
