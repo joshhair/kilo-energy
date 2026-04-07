@@ -1,0 +1,248 @@
+{
+  "takenAt": "2026-04-07T17:16:40.112Z",
+  "installers": [
+    {
+      "id": "inst_bryton",
+      "name": "Bryton",
+      "active": false,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_complete_solar",
+      "name": "Complete Solar",
+      "active": false,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_esp",
+      "name": "ESP",
+      "active": true,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 5
+    },
+    {
+      "id": "inst_exo",
+      "name": "EXO",
+      "active": false,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_geg",
+      "name": "GEG",
+      "active": false,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_one_source",
+      "name": "One Source",
+      "active": false,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_pacific_coast",
+      "name": "Pacific Coast",
+      "active": false,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_solartech",
+      "name": "SolarTech",
+      "active": true,
+      "usesProductCatalog": true,
+      "installPayPct": 100,
+      "productCount": 29,
+      "versionCount": 0,
+      "activeVCount": 0,
+      "prepaidCount": 2,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_solnova",
+      "name": "Solnova",
+      "active": false,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_solrite",
+      "name": "Solrite",
+      "active": true,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    },
+    {
+      "id": "inst_sunpower",
+      "name": "SunPower",
+      "active": true,
+      "usesProductCatalog": false,
+      "installPayPct": 80,
+      "productCount": 0,
+      "versionCount": 1,
+      "activeVCount": 1,
+      "prepaidCount": 0,
+      "projectCount": 0
+    }
+  ],
+  "financers": [
+    {
+      "id": "cmnjpjmnb00010al84tq1ez84",
+      "name": "Cash",
+      "active": true,
+      "projectCount": 3
+    },
+    {
+      "id": "fin_credit_human",
+      "name": "Credit Human",
+      "active": true,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_dividend",
+      "name": "Dividend",
+      "active": false,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_enfin",
+      "name": "Enfin",
+      "active": true,
+      "projectCount": 1
+    },
+    {
+      "id": "fin_everbright",
+      "name": "Everbright",
+      "active": false,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_goodleap",
+      "name": "Goodleap",
+      "active": true,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_lightreach",
+      "name": "LightReach",
+      "active": true,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_mosaic",
+      "name": "Mosaic",
+      "active": false,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_participate",
+      "name": "Participate",
+      "active": true,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_solrite",
+      "name": "Solrite",
+      "active": true,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_sungage",
+      "name": "Sungage",
+      "active": true,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_sunnova",
+      "name": "Sunnova",
+      "active": false,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_sunrun",
+      "name": "Sunrun",
+      "active": true,
+      "projectCount": 0
+    },
+    {
+      "id": "fin_wheelhouse",
+      "name": "Wheelhouse",
+      "active": true,
+      "projectCount": 1
+    }
+  ],
+  "productCatalog": [
+    {
+      "installerId": "inst_solartech",
+      "installerName": "SolarTech",
+      "families": "Goodleap,Enfin,Lightreach,Cash/HDM/PE",
+      "prepaidFamily": "Cash/HDM/PE"
+    }
+  ],
+  "summary": {
+    "installerCount": 11,
+    "activeInstallers": 4,
+    "financerCount": 14,
+    "activeFinancers": 10,
+    "catalogConfigs": 1,
+    "productCount": 29,
+    "installerVersionCount": 10,
+    "prepaidOptionCount": 2,
+    "findings": {
+      "critical": 0,
+      "high": 0,
+      "info": 0,
+      "total": 0
+    }
+  },
+  "findings": []
+}

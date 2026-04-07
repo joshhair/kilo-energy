@@ -60,3 +60,10 @@ next-env.d.ts
 qa-screenshots/
 screenshots/
 mobile-audit-screenshots/
+
+# Turso backups: ignore routine dumps but keep any explicit anchor
+# snapshots that have been committed as point-in-time safety nets.
+# Anchor dumps live at state/backups/anchor-*.json — the * prefix is
+# negated below so they're checked in.
+state/backups/*.json
+!state/backups/anchor-*.json
