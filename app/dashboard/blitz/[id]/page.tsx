@@ -118,6 +118,7 @@ export default function BlitzDetailPage() {
 
   // Rep permissions (canRequestBlitz)
   const [canRequestBlitz, setCanRequestBlitz] = useState(false);
+  const [processingParticipants, setProcessingParticipants] = useState<Set<string>>(new Set());
   const [cancelRequesting, setCancelRequesting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -441,7 +442,7 @@ export default function BlitzDetailPage() {
                 <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#c2c8d8] border border-[#272b35] rounded-lg hover:text-white hover:border-[#272b35] transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
                 <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); } })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
-            ) : canRequestBlitz && blitz.status !== 'cancelled' && (
+            ) : canRequestBlitz && blitz.status !== 'cancelled' && (blitz.ownerId === effectiveRepId || blitz.createdById === effectiveRepId) && (
               <button
                 disabled={cancelRequesting}
                 onClick={() => { setCancelReason(''); setShowCancelDialog(true); }}
@@ -764,8 +765,8 @@ export default function BlitzDetailPage() {
                         <td className="px-4 py-3 text-right">
                           {p.joinStatus === 'pending' ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }); }} className="px-2 py-1 text-[11px] font-semibold bg-[#00e07a] text-black rounded hover:bg-[#00e07a] transition-colors">Approve</button>
-                              <button onClick={() => { fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.user.id, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 transition-colors">Decline</button>
+                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-[#00e07a] text-black rounded hover:bg-[#00e07a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Approve</button>
+                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Decline</button>
                             </div>
                           ) : (
                             <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will remove them from the blitz. They can be re-added later.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-[#525c72] hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>

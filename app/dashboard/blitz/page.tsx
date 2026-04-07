@@ -575,18 +575,26 @@ function BlitzPageInner() {
     if (isAdmin || !effectiveRepId) return [];
     return sortedBlitzes.filter((b) =>
       b.owner.id === effectiveRepId ||
-      b.participants.some((p) => p.user.id === effectiveRepId)
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'approved')
+    );
+  }, [sortedBlitzes, isAdmin, effectiveRepId]);
+
+  const pendingBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [];
+    return sortedBlitzes.filter((b) =>
+      b.owner.id !== effectiveRepId &&
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'pending')
     );
   }, [sortedBlitzes, isAdmin, effectiveRepId]);
 
   const browseBlitzes = useMemo(() => {
     if (isAdmin) return sortedBlitzes;
     if (!effectiveRepId) return sortedBlitzes;
-    const myIds = new Set(myBlitzes.map((b) => b.id));
+    const myIds = new Set([...myBlitzes, ...pendingBlitzes].map((b) => b.id));
     return sortedBlitzes.filter((b) =>
       !myIds.has(b.id) && (b.status === 'upcoming' || b.status === 'active')
     );
-  }, [sortedBlitzes, isAdmin, effectiveRepId, myBlitzes]);
+  }, [sortedBlitzes, isAdmin, effectiveRepId, myBlitzes, pendingBlitzes]);
 
   // Reset pages when filters change
   useEffect(() => { setBlitzPage(1); }, [statusFilter, search, sortBy]);
@@ -884,6 +892,18 @@ function BlitzPageInner() {
                 </div>
               )}
 
+              {/* Pending join requests */}
+              {pendingBlitzes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-[#c2c8d8] uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-400" /> Pending Approval
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pendingBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
+                  </div>
+                </div>
+              )}
+
               {/* Browse available */}
               {browseBlitzes.length > 0 && (
                 <div>
@@ -896,7 +916,7 @@ function BlitzPageInner() {
                 </div>
               )}
 
-              {myBlitzes.length === 0 && browseBlitzes.length === 0 && (
+              {myBlitzes.length === 0 && pendingBlitzes.length === 0 && browseBlitzes.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
                   <Tent className="w-16 h-16" style={{ color: '#525c72' }} />
                   <div className="text-center">
@@ -981,7 +1001,7 @@ function BlitzPageInner() {
       )}
 
       {/* Create modal */}
-      {showCreate && !!(effectiveRepId ?? currentRepId) && (
+      {showCreate && (isAdmin || !!(effectiveRepId ?? currentRepId)) && (
         <CreateBlitzModal
           onClose={() => setShowCreate(false)}
           onCreated={loadData}

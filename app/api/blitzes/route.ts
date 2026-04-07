@@ -24,7 +24,7 @@ export async function GET() {
           OR: [
             { ownerId: user.id },
             { createdById: user.id },
-            { participants: { some: { userId: user.id, joinStatus: 'approved' } } },
+            { participants: { some: { userId: user.id, joinStatus: { in: ['approved', 'pending'] } } } },
           ],
         };
 

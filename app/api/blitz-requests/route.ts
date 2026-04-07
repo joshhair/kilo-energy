@@ -32,6 +32,13 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const type = body.type || 'create';
 
+  if (type === 'cancel' && body.blitzId) {
+    const blitz = await prisma.blitz.findUnique({ where: { id: body.blitzId }, select: { ownerId: true, createdById: true } });
+    if (!blitz || (blitz.ownerId !== user.id && blitz.createdById !== user.id)) {
+      return NextResponse.json({ error: 'Forbidden — you can only request cancellation of blitzes you own' }, { status: 403 });
+    }
+  }
+
   const request = await prisma.blitzRequest.create({
     data: {
       requestedById: user.id,
