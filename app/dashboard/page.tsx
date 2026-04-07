@@ -1594,7 +1594,7 @@ export default function DashboardPage() {
                         <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
                         <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
                         {(proj.m3Amount ?? 0) > 0 && (
-                          <MilestoneDot label="M3" paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} />
+                          <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
                         )}
                       </div>
                     </div>
@@ -2540,7 +2540,7 @@ function SubDealerDashboard({
                       <div className="flex items-center gap-2.5 ml-auto">
                         <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
                         {(proj.m3Amount ?? 0) > 0 && (
-                          <MilestoneDot label="M3" paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} />
+                          <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
                         )}
                       </div>
                     </div>

@@ -1024,9 +1024,9 @@ function EarningsSkeleton() {
         </div>
       </div>
 
-      {/* Summary stat cards — 3-column grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {[0, 1, 2].map((cardIdx) => {
+      {/* Summary stat cards — 4-column grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        {[0, 1, 2, 3].map((cardIdx) => {
           const base = 250 + cardIdx * 50;
           return (
             <div key={cardIdx} className="card-surface rounded-2xl p-5">
