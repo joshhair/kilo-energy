@@ -714,6 +714,15 @@ function useCountUp(target: number, duration = 800): number {
   return display;
 }
 
+// Time-of-day greeting using the user's first name. Mirrors the helper
+// in MobileDashboard so desktop + mobile produce identical strings.
+function getGreeting(name: string | null | undefined): string {
+  const h = new Date().getHours();
+  const prefix = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = (name ?? '').split(' ')[0] || '';
+  return firstName ? `${prefix}, ${firstName}` : prefix;
+}
+
 export default function DashboardPage() {
   const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
@@ -870,6 +879,7 @@ export default function DashboardPage() {
       totalReps={reps.length}
       installerPricingVersions={installerPricingVersions}
       productCatalogProducts={productCatalogProducts}
+      currentRepName={currentRepName}
     />;
   }
 
@@ -1144,7 +1154,7 @@ export default function DashboardPage() {
       <div className="card-surface rounded-xl md:rounded-2xl mb-6">
         <div className="px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">Welcome, {effectiveRepName}</p>
+            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">{getGreeting(effectiveRepName)}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
               <span style={{ color: '#f0f2f7' }}>Next Payout:</span> <span style={{ color: '#00e07a' }}>${pendingPayrollTotal.toLocaleString()}</span>
             </p>
@@ -1694,6 +1704,7 @@ function AdminDashboard({
   totalReps,
   installerPricingVersions,
   productCatalogProducts,
+  currentRepName,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
   allProjects: ReturnType<typeof useApp>['projects'];
@@ -1704,6 +1715,7 @@ function AdminDashboard({
   totalReps: number;
   installerPricingVersions: InstallerPricingVersion[];
   productCatalogProducts: ProductCatalogProduct[];
+  currentRepName: string | null;
 }) {
   const { updateProject } = useApp();
 
@@ -1850,8 +1862,8 @@ function AdminDashboard({
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, #00e07a, #00c4f0)' }} />
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: '#f0f2f7', letterSpacing: '-0.03em' }}>Admin Dashboard</h1>
-          <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>Overview of all reps and deals</p>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: '#f0f2f7', letterSpacing: '-0.03em' }}>{getGreeting(currentRepName)}</h1>
+          <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard · Overview of all reps and deals</p>
         </div>
         <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 tab-bar-container">
           {adminPeriodIndicator && <div className="tab-indicator" style={adminPeriodIndicator} />}
@@ -2357,7 +2369,7 @@ function SubDealerDashboard({
       <div className="card-surface rounded-2xl mb-6">
         <div className="px-6 py-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">Welcome, {currentRepName}</p>
+            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">{getGreeting(currentRepName)}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
               <span style={{ color: '#f0f2f7' }}>Sub-Dealer Dashboard</span>
             </p>
