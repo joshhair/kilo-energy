@@ -15,6 +15,20 @@ const nextConfig: NextConfig = {
         destination: "/dashboard/my-pay/:path*",
         permanent: true,
       },
+      // /dashboard/reps → /dashboard/users rename. The Reps page has been
+      // promoted to a unified Users directory that covers reps, sub-dealers,
+      // project managers, and admins. Keep these redirects permanently so
+      // old bookmarks, external links, and in-flight sessions keep working.
+      {
+        source: "/dashboard/reps",
+        destination: "/dashboard/users",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/reps/:path*",
+        destination: "/dashboard/users/:path*",
+        permanent: true,
+      },
     ];
   },
   async headers() {

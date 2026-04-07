@@ -32,6 +32,7 @@ function validateField(field: string, value: string): string {
     case 'solarTechProductId': return value ? '' : 'Product is required';
     case 'pcFamily':           return value ? '' : 'Product family is required';
     case 'installerProductId': return value ? '' : 'Product is required';
+    case 'blitzId':            return value ? '' : 'Blitz is required';
     case 'kWSize':
       if (!value) return 'kW size is required';
       if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) return 'Must be greater than 0';
@@ -900,6 +901,7 @@ function NewDealPage() {
       ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
+      ...(form.leadSource === 'blitz' ? ['blitzId'] : []),
     ];
 
     const newErrors: Record<string, string> = {};

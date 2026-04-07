@@ -74,6 +74,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+  await prisma.project.updateMany({ where: { blitzId: id }, data: { blitzId: null } });
   await prisma.blitz.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

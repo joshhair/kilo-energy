@@ -1064,7 +1064,7 @@ function CalculatorPage() {
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #00e07a, transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
                   <p style={{ fontSize: 44, fontWeight: 700, color: '#00e07a', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
-                    ${(currentRole === 'rep' && reps.find(r => r.id === currentRepId)?.repType === 'setter' ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
+                    ${(currentRole === 'rep' && hasSetter && reps.find(r => r.id === currentRepId)?.repType === 'setter' ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>
 
