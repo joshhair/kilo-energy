@@ -814,11 +814,18 @@ export default function DashboardPage() {
   const mtdPayrollCommission = payrollEntries
     .filter((p) => p.repId === effectiveRepId && isThisMonth(p.date))
     .reduce((s, p) => s + p.amount, 0);
+  // Build a per-project sum of ALL payroll entries so we subtract only what's already
+  // accounted for, rather than skipping the entire project when only M1 has been drafted.
+  const allMtdPayrollByProject = allMyPayroll.reduce((map, p) => {
+    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
+    return map;
+  }, new Map<string, number>());
   const mtdUnmatchedCommission = mtdProjects
-    .filter((p) => !payrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold')
+    .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0;
+      return s + Math.max(0, totalExpected - (allMtdPayrollByProject.get(p.id) ?? 0));
     }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
 
@@ -1040,8 +1047,7 @@ export default function DashboardPage() {
   // Circumference for the 48×48 SVG ring (r=20): 2π×20 ≈ 125.66
   const RING_CIRC = 125.66;
 
-  // Next Payout: all Pending + Paid entries dated for the upcoming Friday.
-  // "Paid" here means admin published the payroll — money hits on the date.
+  // Next Payout: Draft + Pending entries dated for the upcoming Friday (matches Earnings page).
   const nextFridayDate = (() => {
     const today = new Date();
     const d = (5 - today.getDay() + 7) % 7;
@@ -1053,7 +1059,7 @@ export default function DashboardPage() {
     return `${yyyy}-${mm}-${dd}`;
   })();
   const pendingPayrollTotal = payrollEntries
-    .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Draft' || p.status === 'Pending' || p.status === 'Paid'))
+    .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Draft' || p.status === 'Pending'))
     .reduce((sum, p) => sum + p.amount, 0);
 
   // Calculate days until next payday (Friday). Returns 0 if today is Friday.

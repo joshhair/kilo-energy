@@ -25,12 +25,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   });
   if (!blitz) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  // ─── PM canAccessBlitz gate (mirrors GET /api/blitzes) ───
+  if (user.role === 'project_manager') {
+    const pm = await prisma.user.findUnique({ where: { id: user.id }, select: { canAccessBlitz: true } });
+    if (!pm?.canAccessBlitz) {
+      return NextResponse.json({ error: 'Forbidden — blitz access not enabled' }, { status: 403 });
+    }
+  }
+
   // ─── Visibility check ───
   if (user.role !== 'admin' && user.role !== 'project_manager') {
     const isOwner = blitz.ownerId === user.id;
     const isCreator = blitz.createdById === user.id;
     const isParticipant = blitz.participants.some(
-      (p) => p.userId === user.id && p.joinStatus === 'approved',
+      (p) => p.userId === user.id && (p.joinStatus === 'approved' || p.joinStatus === 'pending'),
     );
     if (!isOwner && !isCreator && !isParticipant) {
       return NextResponse.json({ error: 'Forbidden — not a participant' }, { status: 403 });

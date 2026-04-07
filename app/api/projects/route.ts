@@ -36,13 +36,37 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Validate blitz participation before writing
+  // Validate blitz window and participation before writing
+  if (body.blitzId && body.soldDate) {
+    const blitz = await prisma.blitz.findUnique({
+      where: { id: body.blitzId },
+      select: { startDate: true, endDate: true },
+    });
+    if (!blitz) {
+      return NextResponse.json({ error: 'Blitz not found' }, { status: 400 });
+    }
+    const sold = new Date(body.soldDate);
+    const start = new Date(blitz.startDate);
+    const end = new Date(blitz.endDate);
+    if (sold < start || sold > end) {
+      return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
+    }
+  }
+
   if (body.blitzId && body.closerId) {
     const participation = await prisma.blitzParticipant.findFirst({
       where: { blitzId: body.blitzId, userId: body.closerId, joinStatus: 'approved' },
     });
     if (!participation) {
       return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
+    }
+  }
+  if (body.blitzId && body.setterId) {
+    const setterParticipation = await prisma.blitzParticipant.findFirst({
+      where: { blitzId: body.blitzId, userId: body.setterId, joinStatus: 'approved' },
+    });
+    if (!setterParticipation) {
+      return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
     }
   }
 

@@ -352,7 +352,7 @@ function PayrollPageInner() {
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentForm.repId) { toast('Please select a rep', 'error'); return; }
-    if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount))) { toast('Enter a valid amount', 'error'); return; }
+    if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount)) || parseFloat(paymentForm.amount) <= 0) { toast('Enter a valid amount greater than $0', 'error'); return; }
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const project = projects.find((p) => p.id === paymentForm.projectId);
     const newEntry: PayrollEntry = {

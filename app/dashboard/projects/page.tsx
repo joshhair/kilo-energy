@@ -695,7 +695,14 @@ function KanbanView({
                     </div>
                     {!hideFinancials && (
                       <p className="text-xs text-[#8891a8] mt-0.5">
-                        ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0), 0).toLocaleString()}
+                        ${phaseProjects.reduce((sum, p) => {
+                          if (!isAdmin && dealScope === 'mine') {
+                            if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                            if (p.setterId === currentRepId) return sum + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                            return sum;
+                          }
+                          return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        }, 0).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -721,7 +728,7 @@ function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -924,7 +931,14 @@ function KanbanView({
                 </div>
                 {!hideFinancials && (
                   <p className="text-xs text-[#8891a8] mt-0.5">
-                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0), 0).toLocaleString()}
+                    ${phaseProjects.reduce((sum, p) => {
+                      if (!isAdmin && dealScope === 'mine') {
+                        if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                        if (p.setterId === currentRepId) return sum + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        return sum;
+                      }
+                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                    }, 0).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -945,7 +959,7 @@ function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                    const commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -1079,7 +1093,14 @@ function KanbanView({
                 </div>
                 {!hideFinancials && (
                   <p className="text-xs text-[#8891a8] mt-0.5">
-                    ${phaseProjects.reduce((sum, p) => sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0), 0).toLocaleString()}
+                    ${phaseProjects.reduce((sum, p) => {
+                      if (!isAdmin && dealScope === 'mine') {
+                        if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                        if (p.setterId === currentRepId) return sum + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        return sum;
+                      }
+                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                    }, 0).toLocaleString()}
                   </p>
                 )}
               </div>

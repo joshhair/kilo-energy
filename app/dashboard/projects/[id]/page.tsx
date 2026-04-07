@@ -839,7 +839,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const newM3 = installPayPct < 100 && !project.subDealerId
         ? Math.round(val * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0;
-      updateProject({ m2Amount: val, m3Amount: newM3 });
+      const scale = (project.m2Amount ?? 0) > 0 ? val / project.m2Amount! : 1;
+      const newSetterM2 = Math.round((project.setterM2Amount ?? 0) * scale * 100) / 100;
+      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2 });
       toast('M2 amount updated', 'success');
     }
     setEditM2(false);

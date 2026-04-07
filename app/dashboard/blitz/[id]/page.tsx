@@ -498,7 +498,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[#8891a8] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
+                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.setter ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
               </div>
             )}
           </div>
@@ -517,7 +517,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[#8891a8] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
+                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.setter ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">Projected Pay</p>
                 </div>
               </div>
@@ -737,7 +737,7 @@ export default function BlitzDetailPage() {
                 </tr></thead>
                 <tbody>
                   {blitz.participants.map((p: any, idx: number) => {
-                    const repDeals = blitz.projects?.filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold') ?? [];
+                    const repDeals = p.joinStatus === 'approved' ? (blitz.projects?.filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold') ?? []) : [];
                     const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
                     return (
                     <tr key={p.id} className={`border-b border-[#333849]/50 last:border-0 hover:bg-[#1d2028]/40 transition-colors ${idx % 2 === 0 ? 'bg-[#161920]/20' : ''}`}>
@@ -978,7 +978,7 @@ export default function BlitzDetailPage() {
               const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
               const repPayout = repDeals.reduce((s: number, proj: any) => {
                 const isSetter = proj.setter?.id === p.user.id && proj.closer?.id !== p.user.id;
-                const m1 = isSetter ? 0 : (proj.m1Amount ?? 0);
+                const m1 = (isSetter || !proj.setter) ? (proj.m1Amount ?? 0) : 0;
                 return s + m1 + (isSetter ? (proj.setterM2Amount ?? 0) : (proj.m2Amount ?? 0)) + (isSetter ? (proj.setterM3Amount ?? 0) : (proj.m3Amount ?? 0));
               }, 0);
               return { user: p.user, deals: repDeals.length, kw: repKW, payout: repPayout };

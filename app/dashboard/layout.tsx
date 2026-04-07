@@ -372,7 +372,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!currentRole) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6"
-           style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}>
+           style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
              style={{ background: 'linear-gradient(135deg, #00e07a, #00e07a)' }}>
           <span className="text-white font-black text-3xl" style={{ letterSpacing: '-2px' }}>K</span>
@@ -420,12 +420,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Mobile top bar (hidden on md+) — minimal: logo only ────────── */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-center px-4 h-[48px]"
+        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-center px-4"
         style={{
           background: 'rgba(6,11,19,0.9)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(255,255,255,0.04)',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: '0px',
+          minHeight: 'calc(48px + env(safe-area-inset-top, 0px))',
         }}
       >
         <div className="flex items-center gap-1.5">
@@ -674,7 +677,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main
         ref={mainRef}
         className="flex-1 overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
-        style={{ backgroundColor: 'var(--navy-base)' }}
+        style={{ backgroundColor: 'var(--navy-base)', paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}
       >
         {dataError && (
           <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">

@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import {
   PRODUCT_TYPES, Project,
   getTrainerOverrideRate, calculateCommission,
-  SOLARTECH_FAMILIES, SOLARTECH_PRODUCTS,
+  SOLARTECH_FAMILIES,
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
@@ -201,7 +201,7 @@ export default function MobileNewDeal() {
     installerPricingVersions, productCatalogInstallerConfigs,
     productCatalogProducts, productCatalogPricingVersions,
     getInstallerPrepaidOptions, installerBaselines,
-    installerPayConfigs,
+    installerPayConfigs, solarTechProducts,
   } = useApp();
   const { toast } = useToast();
   const router = useRouter();
@@ -353,7 +353,7 @@ export default function MobileNewDeal() {
     if (!form.setterId || setterBaselinePerW === 0) {
       return { closerTotal: calculateCommission(soldPPW, closerPerW, kW), setterTotal: 0 };
     }
-    const closerDifferential = Math.round((setterBaselinePerW - closerPerW) * kW * 1000 * 100) / 100;
+    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW) * kW * 1000 * 100) / 100 : 0;
     const splitPoint = setterBaselinePerW + trainerOverrideRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
     const half = Math.round(aboveSplit / 2);
@@ -364,7 +364,7 @@ export default function MobileNewDeal() {
 
   const m1Flat = kW >= 5 ? 1000 : 500;
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
-  const closerM1 = isSelfGen ? m1Flat : 0;
+  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
   const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
   const setterM2Full = Math.max(0, setterTotal - setterM1);
@@ -384,7 +384,12 @@ export default function MobileNewDeal() {
   const subDealerRate = (() => {
     if (!isSubDealer || !form.installer) return 0;
     const baseline = installerBaselines[form.installer];
-    return baseline?.subDealerPerW ?? kiloPerW;
+    if (baseline) return baseline.subDealerPerW ?? 0;
+    // Tiered installer: resolve the correct band using the deal's kW
+    if (kW <= 0) return 0;
+    const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+    const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
+    return r.subDealerPerW ?? 0;
   })();
   const subDealerCommission = isSubDealer && kW > 0 && soldPPW > 0 && subDealerRate > 0
     ? calculateCommission(soldPPW, subDealerRate, kW)
@@ -876,7 +881,7 @@ export default function MobileNewDeal() {
                         className={selectCls('solarTechProductId')} style={v0InputStyle('solarTechProductId')}
                       >
                         <option value="">-- Select package --</option>
-                        {SOLARTECH_PRODUCTS.filter((p) => p.family === solarTechFamily).map((p) => (
+                        {solarTechProducts.filter((p) => p.family === solarTechFamily).map((p) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                       </select>

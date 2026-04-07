@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Validate blitz participation before writing (mirrors POST /api/projects validation)
   if (body.blitzId) {
-    const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true } });
+    const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true, setterId: true } });
     const closerId = body.closerId ?? existing?.closerId;
     if (closerId) {
       const participation = await prisma.blitzParticipant.findFirst({
@@ -45,6 +45,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       });
       if (!participation) {
         return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
+      }
+    }
+    const setterId = body.setterId ?? existing?.setterId;
+    if (setterId) {
+      const setterParticipation = await prisma.blitzParticipant.findFirst({
+        where: { blitzId: body.blitzId, userId: setterId, joinStatus: 'approved' },
+      });
+      if (!setterParticipation) {
+        return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
       }
     }
   }
