@@ -1761,6 +1761,7 @@ function NewDealPage() {
                 ref={notesRef}
                 placeholder="Add any notes about this deal (roof type, special conditions, follow-ups...)"
                 value={form.notes}
+                maxLength={500}
                 onChange={(e) => update('notes', e.target.value)}
                 onInput={(e) => {
                   const el = e.currentTarget;

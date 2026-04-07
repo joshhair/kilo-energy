@@ -16,10 +16,10 @@ import { useToast } from '../../../lib/toast';
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
 
 const STATUS_BADGE_MAP: Record<string, string> = {
-  upcoming: 'Draft',
-  active: 'Approved',
-  completed: 'Paid',
-  cancelled: 'Denied',
+  upcoming: 'Upcoming',
+  active: 'Active',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
 };
 
 type TabKey = 'overview' | 'participants' | 'deals' | 'costs';

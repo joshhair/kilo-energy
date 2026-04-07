@@ -101,5 +101,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   await prisma.blitzParticipant.deleteMany({ where: { blitzId, userId } });
   await prisma.project.updateMany({ where: { blitzId, closerId: userId }, data: { blitzId: null } });
+  await prisma.project.updateMany({ where: { blitzId, setterId: userId }, data: { blitzId: null } });
   return NextResponse.json({ success: true });
 }
