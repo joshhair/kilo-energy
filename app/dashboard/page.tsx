@@ -14,7 +14,7 @@ import {
   Project, InstallerPricingVersion, ProductCatalogProduct, ACTIVE_PHASES,
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../lib/data';
-import { formatDate, fmt$, getCustomConfig } from '../../lib/utils';
+import { formatDate, fmt$, formatCompactKW, getCustomConfig } from '../../lib/utils';
 import { TrendingUp, TrendingDown, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Users, BarChart2, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, PauseCircle, HelpCircle, MessageSquare } from 'lucide-react';
 import { PaginationBar } from './components/PaginationBar';
 
@@ -1878,8 +1878,8 @@ function AdminDashboard({
     { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, accentHex: '#00c4f0', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
     { label: 'Total Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Total commission disbursed to all reps via payroll' },
     { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/users', tooltip: 'Number of active sales reps in the system' },
-    { label: 'Total kW Sold', value: `${totalKWSold.toFixed(1)} kW`, raw: Math.round(totalKWSold * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
-    { label: 'Total kW Installed', value: `${totalKWInstalled.toFixed(1)} kW`, raw: Math.round(totalKWInstalled * 10), format: (n: number) => `${(n / 10).toFixed(1)} kW`, icon: Zap, accentHex: '#ff5252', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status (Chargebacks row)' },
+    { label: 'Total kW Sold', value: formatCompactKW(totalKWSold), raw: Math.round(totalKWSold * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
+    { label: 'Total kW Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#ff5252', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status (Chargebacks row)' },
   ];
 
   const pipelineStats = [

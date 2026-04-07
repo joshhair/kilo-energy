@@ -56,6 +56,19 @@ export function formatKW(kw: number): string {
   return `${kw.toFixed(1)} kW`;
 }
 
+/**
+ * Compact kW formatter for stat cards and tight spaces.
+ * Below 1,000 kW: one decimal (`987.5 kW`).
+ * 1,000–9,999 kW: one decimal K (`1.2K kW` → avoids `1000.0 kW`).
+ * 10,000+ kW: integer K (`16K kW` → avoids `16093.0 kW` overflowing cards).
+ */
+export function formatCompactKW(kw: number): string {
+  const n = kw || 0;
+  if (n >= 10_000) return `${Math.round(n / 1_000)}K kW`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K kW`;
+  return `${n.toFixed(1)} kW`;
+}
+
 export function isInDateRange(dateStr: string, startDate: string, endDate: string | null): boolean {
   const date = new Date(dateStr);
   const start = new Date(startDate);
