@@ -385,6 +385,20 @@ export default function MobileNewDeal() {
 
   const showPreview = closerPerW > 0 && kW > 0 && soldPPW > 0;
 
+  const [commFlash, setCommFlash] = useState(false);
+  const prevCloserTotalRef = useRef<number>(0);
+  useEffect(() => {
+    if (closerTotal !== prevCloserTotalRef.current && (closerTotal > 0 || prevCloserTotalRef.current > 0)) {
+      prevCloserTotalRef.current = closerTotal;
+      setCommFlash(false);
+      // Force re-trigger by resetting then setting in rAF
+      requestAnimationFrame(() => setCommFlash(true));
+      const t = setTimeout(() => setCommFlash(false), 560);
+      return () => clearTimeout(t);
+    }
+    prevCloserTotalRef.current = closerTotal;
+  }, [closerTotal]);
+
   // Sub-dealer commission
   const subDealerRate = (() => {
     if (!isSubDealer || !form.installer) return 0;
@@ -1101,7 +1115,7 @@ export default function MobileNewDeal() {
 
             {/* Commission preview card */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <MobileCard className="">
+              <MobileCard key={showPreview ? 'shown' : 'hidden'} className="field-slide-in">
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Preview</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-base">
@@ -1113,7 +1127,11 @@ export default function MobileNewDeal() {
                     )}
                     <div className="flex justify-between">
                       <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>M2 commission</span>
-                      <span className="font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${subDealerCommission.toLocaleString()}</span>
+                      <span
+                        key={commFlash ? 'flash' : 'idle'}
+                        className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
+                        style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                      >${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
@@ -1130,7 +1148,11 @@ export default function MobileNewDeal() {
                     )}
                     <div className="flex justify-between">
                       <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Closer</span>
-                      <span className="font-black" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${closerTotal.toLocaleString()}</span>
+                      <span
+                        key={commFlash ? 'flash' : 'idle'}
+                        className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
+                        style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                      >${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
@@ -1207,11 +1229,12 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(0); }}
-                className="w-full text-left -mx-1 px-1 pb-2 rounded-xl active:bg-white/[0.04] transition-colors duration-100 group"
+                className="w-full text-left -mx-1 px-1 pb-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
+                style={{ borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', marginLeft: '-12px' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>People</span>
-                  <span className="flex items-center gap-1 opacity-0 group-active:opacity-100 transition-opacity duration-100" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
+                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
@@ -1240,12 +1263,12 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(1); }}
-                className="w-full text-left -mx-1 px-1 pt-2 mt-2 rounded-xl active:bg-white/[0.04] transition-colors duration-100 group"
-                style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}
+                className="w-full text-left -mx-1 px-1 pt-2 mt-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
+                style={{ borderTop: '1px solid rgba(26,40,64,0.5)', borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', marginLeft: '-12px', paddingTop: '8px', marginTop: '8px' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>
-                  <span className="flex items-center gap-1 opacity-0 group-active:opacity-100 transition-opacity duration-100" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
+                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
@@ -1279,20 +1302,28 @@ export default function MobileNewDeal() {
 
             {/* Commission breakdown */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <MobileCard className="">
+              <MobileCard className="field-slide-in" key={closerTotal + '-' + setterTotal}>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Commission Breakdown</p>
                 {isSubDealer ? (
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between">
                       <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>M2 commission</span>
-                      <span className="font-black text-lg" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${subDealerCommission.toLocaleString()}</span>
+                      <span
+                        key={commFlash ? 'flash' : 'idle'}
+                        className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
+                        style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                      >${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between items-center">
                       <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Closer total</span>
-                      <span className="font-black text-lg" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${closerTotal.toLocaleString()}</span>
+                      <span
+                        key={commFlash ? 'flash' : 'idle'}
+                        className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
+                        style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                      >${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                       M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}
