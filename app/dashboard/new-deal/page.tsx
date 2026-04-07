@@ -1804,7 +1804,7 @@ function NewDealPage() {
                         update('blitzId', '');
                       }
                       if (form.leadSource === 'blitz') {
-                        update('soldDate', new Date().toISOString().split('T')[0]);
+                        update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
                     }}
                     className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
