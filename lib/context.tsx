@@ -85,7 +85,7 @@ interface AppContextType {
   addProductCatalogProduct: (product: ProductCatalogProduct) => void;
   updateProductCatalogProduct: (id: string, updates: Partial<ProductCatalogProduct>) => void;
   updateProductCatalogTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => void;
-  removeProductCatalogProduct: (id: string) => void;
+  removeProductCatalogProduct: (id: string) => Promise<void>;
   // Product Catalog pricing versions
   productCatalogPricingVersions: ProductCatalogPricingVersion[];
   addProductCatalogPricingVersion: (version: ProductCatalogPricingVersion) => void;
@@ -715,7 +715,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (rollBackM1 || rollBackM2 || rollBackM3) {
             setPayrollEntries((prevEntries) => {
               const toDelete = prevEntries.filter((e) => {
-                if (e.projectId !== id || e.status !== 'Draft') return false;
+                if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending')) return false;
                 if (rollBackM1 && e.paymentStage === 'M1') return true;
                 if (rollBackM2 && (e.paymentStage === 'M2' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))) return true;
                 if (rollBackM3 && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))) return true;
@@ -1262,8 +1262,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return newProducts;
     });
-  const removeProductCatalogProduct = (id: string) =>
+  const removeProductCatalogProduct = async (id: string) => {
+    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Failed to delete product: ${res.status}`);
+    setProductCatalogPricingVersions((prev) => prev.filter((v) => v.productId !== id));
     setProductCatalogProducts((prev) => prev.filter((p) => p.id !== id));
+  };
 
   const addProductCatalogPricingVersion = (version: ProductCatalogPricingVersion) =>
     setProductCatalogPricingVersions((prev) => [...prev, version]);
@@ -1542,6 +1546,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         })
         .catch((err) => {
           console.error('[addDeal] Cash financer creation failed:', err);
+          setProjects((prev) => prev.filter((p) => p.id !== project.id));
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer creation error' }));
           }

@@ -3465,9 +3465,13 @@ function SettingsPageInner() {
                                               setConfirmAction({
                                                 title: `Delete ${product.name}?`,
                                                 message: 'Existing deals are unaffected.',
-                                                onConfirm: () => {
-                                                  removeProductCatalogProduct(product.id);
-                                                  toast('Product removed', 'info');
+                                                onConfirm: async () => {
+                                                  try {
+                                                    await removeProductCatalogProduct(product.id);
+                                                    toast('Product removed', 'info');
+                                                  } catch {
+                                                    toast('Failed to delete product', 'error');
+                                                  }
                                                   setConfirmAction(null);
                                                 },
                                               });

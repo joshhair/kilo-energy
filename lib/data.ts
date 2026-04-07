@@ -1275,7 +1275,7 @@ export function getProductCatalogBaselineVersioned(
   if (!tiers) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: null };
   const tier =
     tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)) ??
-    tiers.reduce((best, t) => (t.minKW < best.minKW ? t : best), tiers[0]);
+    tiers.reduce((best, t) => (t.minKW > best.minKW ? t : best), tiers[0]);
   if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: version?.id ?? null };
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW, pcPricingVersionId: version?.id ?? null };
 }
