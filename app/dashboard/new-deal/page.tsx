@@ -519,7 +519,7 @@ function NewDealPage() {
 
   const blankForm = () => ({
     customerName: '',
-    soldDate: new Date().toISOString().split('T')[0],
+    soldDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
     installer: '',
     financer: '',
     productType: '',
@@ -899,6 +899,7 @@ function NewDealPage() {
     if (hasStepErrors) return;
 
     userNavigatedBack.current = false;
+    autoAdvancedSteps.current.add(currentStep + 1);
     setSlideDirection('forward');
     setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
   };
@@ -1828,7 +1829,7 @@ function NewDealPage() {
                       if (blitzId) {
                         const blitz = availableBlitzes.find((b) => b.id === blitzId);
                         if (blitz?.startDate && blitz?.endDate) {
-                          const today = new Date().toISOString().split('T')[0];
+                          const today = new Date().toLocaleDateString('en-CA');
                           if (today >= blitz.startDate && today <= blitz.endDate) {
                             // Today is within the blitz range — keep today
                             update('soldDate', today);
@@ -1842,7 +1843,7 @@ function NewDealPage() {
                         }
                       } else {
                         // Blitz deselected — reset soldDate to today
-                        update('soldDate', new Date().toISOString().split('T')[0]);
+                        update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
                     }}
                     className={inputCls('')} style={inputFieldStyle('')}

@@ -420,7 +420,11 @@ function CalculatorPage() {
     ? trainerAssignments.find((a) => a.traineeId === effectiveSetterId)
     : null;
   const setterDealCount = effectiveSetterId
-    ? projects.filter((p) => (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed') && (p.repId === effectiveSetterId || p.setterId === effectiveSetterId)).length
+    ? projects.filter((p) => {
+        const pct = installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+        const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
+        return p.setterId === effectiveSetterId && fullyPaid;
+      }).length
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
