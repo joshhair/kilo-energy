@@ -98,6 +98,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (caller.role !== 'admin' && caller.id !== blitz.ownerId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+  if (userId === blitz.ownerId) {
+    return NextResponse.json({ error: 'Cannot remove the blitz owner as a participant' }, { status: 400 });
+  }
 
   await prisma.blitzParticipant.deleteMany({ where: { blitzId, userId } });
   await prisma.project.updateMany({ where: { blitzId, closerId: userId }, data: { blitzId: null } });

@@ -549,6 +549,13 @@ function BlitzPageInner() {
     }).catch(() => {});
   }, [isAdmin, effectiveRepId]);
 
+  // If a rep lands on ?tab=requests without canRequestBlitz (e.g. via shared link), redirect to blitzes
+  useEffect(() => {
+    if (!isAdmin && !userPerms.canRequestBlitz && tab === 'requests') {
+      setTab('blitzes');
+    }
+  }, [isAdmin, userPerms.canRequestBlitz]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
     if (statusFilter !== 'all') list = list.filter((b) => b.status === statusFilter);
