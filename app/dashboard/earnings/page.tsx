@@ -418,7 +418,9 @@ function RepEarningsView() {
   const sortedDealsBase = useMemo((): DealRow[] => {
     const allPayrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
     const payrollRows = monthFilter ? allPayrollRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allPayrollRows;
-    return [...payrollRows].sort((a, b) => {
+    const allReimbRows: DealRow[] = myReimbs.map((e) => ({ kind: 'reimb' as const, entry: e }));
+    const reimbRows = monthFilter ? allReimbRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allReimbRows;
+    return [...payrollRows, ...reimbRows].sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
       const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
       const aName = a.kind === 'payroll' ? (a.entry.customerName ?? '') : a.entry.description;

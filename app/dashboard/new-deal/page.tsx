@@ -1281,7 +1281,7 @@ function NewDealPage() {
                           ...prev,
                           productType: pt,
                           // Auto-set financer for Cash (no financing needed)
-                          financer: isCash ? 'Cash' : (prev.productType === 'Cash' ? '' : prev.financer),
+                          financer: isCash ? 'Cash' : '',
                           // Reset family/product selections when product type changes
                           solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '',
                         }));

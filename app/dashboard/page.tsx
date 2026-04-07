@@ -1055,7 +1055,7 @@ export default function DashboardPage() {
     return `${yyyy}-${mm}-${dd}`;
   })();
   const pendingPayrollTotal = payrollEntries
-    .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && (p.status === 'Draft' || p.status === 'Pending'))
+    .filter((p) => p.repId === effectiveRepId && p.date === nextFridayDate && p.status === 'Pending')
     .reduce((sum, p) => sum + p.amount, 0);
 
   // Calculate days until next payday (Friday). Returns 0 if today is Friday.

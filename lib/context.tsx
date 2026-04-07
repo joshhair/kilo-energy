@@ -949,7 +949,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     paymentStage: 'M3',
                     status: 'Draft',
                     date: payDate,
-                    notes: '',
+                    notes: 'Setter',
                   });
                 }
               }
