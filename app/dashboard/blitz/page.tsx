@@ -682,7 +682,7 @@ function BlitzPageInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight flex items-center gap-2.5" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-2.5" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>
             <Tent className="w-7 h-7" style={{ color: '#00c4f0' }} /> Blitz
           </h1>
           <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Manage blitzes, track participation and profitability</p>

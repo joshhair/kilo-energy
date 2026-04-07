@@ -1110,7 +1110,7 @@ function SettingsPageInner() {
             <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,196,240,0.15)' }}>
               <Settings className="w-4 h-4" style={{ color: '#00c4f0' }} />
             </div>
-            <h1 className="text-xl font-black text-white tracking-tight">Settings</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Settings</h1>
           </div>
           <p className="text-[#8891a8] text-xs ml-8">App configuration</p>
         </div>

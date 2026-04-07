@@ -396,7 +396,7 @@ function MyPayPageInner() {
             <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
               <PayIcon className="w-5 h-5 text-[#00e07a]" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Pay</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Pay</h1>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">

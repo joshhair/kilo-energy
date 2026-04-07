@@ -313,7 +313,7 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
             <PlusCircle className="w-5 h-5 text-[#00e07a]" />
           </div>
-          <h1 className="text-3xl font-black text-gradient-brand tracking-tight">New Deal</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>New Deal</h1>
         </div>
       </div>
 
@@ -453,7 +453,7 @@ function DealEntryPage({ onStart, projects }: { onStart: () => void; projects: {
             <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
               <PlusCircle className="w-6 h-6 text-[#00e07a]" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-gradient-brand tracking-tight leading-none">
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>
               New Deal
             </h1>
           </div>
@@ -1100,7 +1100,7 @@ function NewDealPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: '#1d2028', border: '1px solid #333849', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{'\u2295'}</div>
             <div>
-              <h1 style={{ fontFamily: "'DM Serif Display',serif", fontSize: '2rem', color: '#f0f2f7', letterSpacing: '-0.03em', lineHeight: 1.1 }}>New Deal</h1>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>New Deal</h1>
               <p style={{ color: '#c2c8d8', fontSize: 13, fontFamily: "'DM Sans',sans-serif", fontWeight: 500, marginTop: 5 }}>Log a closed solar deal and track commissions in seconds.</p>
             </div>
           </div>

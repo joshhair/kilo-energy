@@ -18,7 +18,7 @@ export default function ReimbursementRedirectPage() {
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
             <Receipt className="w-5 h-5 text-[#00e07a]" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Reimbursements</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Reimbursements</h1>
         </div>
         <p className="text-[#c2c8d8]/80 text-sm font-medium ml-12">This page has moved</p>
       </div>
