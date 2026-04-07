@@ -43,6 +43,22 @@
   }
 }
 
+/* ── Hero stat fade-through — period switch entrance ────────────────────────
+   Unmount/remount via key={period} triggers this on every period change,
+   layering a subtle fade+lift under the count-up tweens.                    */
+@keyframes heroStatFade {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-stat-enter {
+  animation: heroStatFade 210ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stat-enter { animation: none; }
+}
+
 /* ── Scrollbar-gutter: prevents layout shift ────────────────────────────────
    Reserving space for the scrollbar before it appears stops the content
    area from reflowing when the page grows tall enough to need one.          */
@@ -114,15 +130,24 @@ body {
 }
 
 /* ── Hero card ambient glow pulse ───────────────────────────────────────── */
-@keyframes hero-glow-pulse {
-  0%, 100% { opacity: 0.15; transform: scale(1); }
-  50%       { opacity: 0.32; transform: scale(1.12); }
+@keyframes glowBreathe {
+  0%, 100% { opacity: 0.25; transform: scale(0.82); }
+  50%       { opacity: 0.6;  transform: scale(1.12); }
 }
 .hero-glow-orb {
-  animation: hero-glow-pulse 3.5s ease-in-out infinite;
+  animation: glowBreathe 5s ease-in-out infinite;
+  will-change: transform, opacity;
 }
+
+/* ── Hero card entrance slide-up ────────────────────────────────────────── */
+@keyframes heroCardEnter {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-glow-orb { animation: none; opacity: 0.20; }
+  [data-hero-card] { animation: none; }
 }
 
 /* ── Mobile premium design system ──────────────────────────────────────────

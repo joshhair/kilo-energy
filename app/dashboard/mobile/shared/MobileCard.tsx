@@ -18,6 +18,11 @@ export default function MobileCard({
         background: 'linear-gradient(135deg, #0a1628 0%, #0d2040 100%)',
         border: '1px solid rgba(0,229,160,0.12)',
         boxShadow: '0 0 40px rgba(0,229,160,0.06)',
+        animationName: 'heroCardEnter',
+        animationDuration: '420ms',
+        animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        animationFillMode: 'both',
+        animationDelay: '60ms',
       }
     : {
         background: 'var(--m-card, #0d1525)',
@@ -28,7 +33,7 @@ export default function MobileCard({
 
   if (onTap) {
     return (
-      <button onClick={onTap} className={`${base} w-full text-left transition-[transform,opacity] duration-150 active:scale-[0.97] active:opacity-90`} style={{ ...heroStyle, ...style, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+      <button onClick={onTap} className={`${base} w-full text-left transition-[transform,opacity] duration-150 active:scale-[0.97] active:opacity-90`} style={{ ...heroStyle, ...style, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }} {...(hero ? { 'data-hero-card': '' } : {})}>
         {hero && <div className="hero-glow-orb absolute -top-8 -right-8 h-32 w-32 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #00e5a0 0%, transparent 70%)' }} />}
         {children}
       </button>
@@ -36,7 +41,7 @@ export default function MobileCard({
   }
 
   return (
-    <div className={base} style={{ ...heroStyle, ...style }}>
+    <div className={base} style={{ ...heroStyle, ...style }} {...(hero ? { 'data-hero-card': '' } : {})}>
       {hero && <div className="hero-glow-orb absolute -top-8 -right-8 h-32 w-32 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #00e5a0 0%, transparent 70%)' }} />}
       {children}
     </div>

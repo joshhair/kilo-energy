@@ -518,8 +518,8 @@ export default function MobileDashboard() {
             <button
               key={p.value}
               ref={(el) => { pillRefs.current[idx] = el; }}
-              onClick={() => setPeriod(p.value)}
-              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[40px]"
+              onClick={() => { setPeriod(p.value); requestAnimationFrame(() => { pillRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }); }}
+              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[44px] touch-manipulation"
               style={{
                 fontFamily: FONT_BODY,
                 color: period === p.value ? '#000' : MUTED,
@@ -538,7 +538,7 @@ export default function MobileDashboard() {
       {/* Hero card — On Pace is the headline, Next Payout secondary */}
       <MobileCard hero>
         {onPaceAnnual > 0 ? (
-          <>
+          <div key={period} className="hero-stat-enter">
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
@@ -552,17 +552,17 @@ export default function MobileDashboard() {
               </div>
               <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
             </div>
-          </>
+          </div>
         ) : (
-          <>
+          <div key={period} className="hero-stat-enter">
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
-          </>
+          </div>
         )}
 
         {/* Stats inside hero card */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+        <div key={period} className="hero-stat-enter grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)', animationDelay: '40ms' }}>
           <div className="min-w-0">
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
