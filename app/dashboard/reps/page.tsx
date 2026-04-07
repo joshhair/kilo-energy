@@ -22,6 +22,14 @@ type FilterTab = typeof FILTER_TABS[number]['value'];
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
 
 const ROLE_LABELS = { closer: 'Closer', setter: 'Setter', both: 'Both' } as const;
+
+// User account role labels (for the Add User modal role picker).
+const ROLE_LABELS_BY_ROLE: Record<'rep' | 'admin' | 'sub-dealer' | 'project_manager', string> = {
+  rep: 'Rep',
+  admin: 'Admin',
+  'sub-dealer': 'Sub-Dealer',
+  project_manager: 'Project Manager',
+};
 const ROLE_BADGE_CLS = {
   closer: 'border',
   setter: 'border',
@@ -97,6 +105,10 @@ function RepsPageInner() {
   const [newRepType, setNewRepType] = useState<'closer' | 'setter' | 'both'>('both');
   const [newTrainerId, setNewTrainerId] = useState('');
   const [isAddingRep, setIsAddingRep] = useState(false);
+  // The user account role — rep, admin, sub-dealer, or project_manager.
+  // Only reps use newRepType + trainer assignment; for other roles those
+  // UI fields are hidden.
+  const [newUserRole, setNewUserRole] = useState<'rep' | 'admin' | 'sub-dealer' | 'project_manager'>('rep');
   // When true, creating the rep also sends a Clerk invitation email.
   // Defaults to off so existing workflows (data import, pre-populating
   // reps without giving them app access) still work.
@@ -145,6 +157,7 @@ function RepsPageInner() {
   const resetAddModal = () => {
     setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewPhone('');
     setNewRepType('both'); setNewTrainerId(''); setSendInvite(false);
+    setNewUserRole('rep');
     setShowAddModal(false); setIsAddingRep(false);
   };
 
@@ -163,15 +176,26 @@ function RepsPageInner() {
       toast('Email is required when sending an invitation', 'error');
       return;
     }
+    // Admin + project_manager accounts only make sense with an invite —
+    // they need to log in to do anything useful. Force the invite path
+    // for those roles so we don't silently create dormant accounts.
+    const effectiveSendInvite = sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager';
+    if (effectiveSendInvite && !newEmail.trim()) {
+      toast('Email is required for this role', 'error');
+      return;
+    }
+
     setIsAddingRep(true);
     const ts = Date.now();
     const repId = `rep_${ts}`;
-    const trainerIdSnapshot = newTrainerId;
+    // Trainer assignment only applies to rep-role accounts.
+    const trainerIdSnapshot = newUserRole === 'rep' ? newTrainerId : '';
+    const isRepRole = newUserRole === 'rep';
 
     // Branch: inviting via Clerk goes through /api/users/invite, which
     // creates the internal user AND sends the sign-up email atomically.
-    // Non-invite flow uses the existing addRep helper (no email sent).
-    const repPromise: Promise<{ id: string } | null> = sendInvite
+    // Non-invite flow uses the existing addRep helper (rep-only, no email).
+    const repPromise: Promise<{ id: string } | null> = effectiveSendInvite
       ? fetch('/api/users/invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -180,8 +204,9 @@ function RepsPageInner() {
             lastName: newLastName,
             email: newEmail,
             phone: newPhone,
-            role: 'rep',
-            repType: newRepType,
+            role: newUserRole,
+            // repType is only meaningful for rep accounts
+            repType: isRepRole ? newRepType : 'both',
           }),
         })
           .then(async (r) => {
@@ -190,23 +215,30 @@ function RepsPageInner() {
               throw new Error(body.error ?? 'Failed to send invitation');
             }
             const json = await r.json();
-            // Also add to local state so the rep list updates immediately.
-            // Uses the real server-assigned id.
             return { id: json.user.id as string };
           })
-      : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId) as Promise<{ id: string } | null>);
+      : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId, newUserRole as 'rep' | 'sub-dealer') as Promise<{ id: string } | null>);
 
+    const roleLabel = ROLE_LABELS_BY_ROLE[newUserRole];
     repPromise
       ?.then((rep) => {
-        if (rep) toast(sendInvite ? `Invitation sent to ${newEmail}` : 'Rep added', 'success');
-        if (sendInvite) fetchPendingInvitations();
+        if (rep) {
+          toast(
+            effectiveSendInvite
+              ? `Invitation sent to ${newEmail} (${roleLabel})`
+              : `${roleLabel} added`,
+            'success',
+          );
+        }
+        if (effectiveSendInvite) fetchPendingInvitations();
         resetAddModal();
       })
       .catch((err) => {
-        toast(err?.message ?? 'Failed to add rep', 'error');
+        toast(err?.message ?? 'Failed to add user', 'error');
         setIsAddingRep(false);
       });
-    // If a trainer was selected, persist assignment after real rep ID is known
+    // If a trainer was selected (rep role only), persist assignment
+    // after real rep ID is known.
     if (trainerIdSnapshot) {
       repPromise?.then((rep) => {
         if (!rep?.id) return;
@@ -478,7 +510,7 @@ function RepsPageInner() {
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
             style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
           >
-            <Plus className="w-4 h-4" /> Add Rep
+            <Plus className="w-4 h-4" /> Add User
           </button>
         </div>
       )}
@@ -1032,10 +1064,36 @@ function RepsPageInner() {
         >
           <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md" style={{ background: '#1d2028', border: '1px solid #333849' }}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-bold text-lg">Add New Rep</h3>
+              <h3 className="text-white font-bold text-lg">Add New User</h3>
               <button onClick={resetAddModal} className="text-[#8891a8] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Account role selector */}
+            <div className="mb-4">
+              <label className="text-xs font-medium mb-2 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Account type</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['rep', 'sub-dealer', 'project_manager', 'admin'] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setNewUserRole(r)}
+                    className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
+                      newUserRole === r
+                        ? 'border-[#00e07a] text-[#00e07a] bg-[#00e07a]/10'
+                        : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:text-[#c2c8d8]'
+                    }`}
+                  >
+                    {ROLE_LABELS_BY_ROLE[r]}
+                  </button>
+                ))}
+              </div>
+              {(newUserRole === 'admin' || newUserRole === 'project_manager') && (
+                <p className="text-[11px] mt-2" style={{ color: '#8891a8' }}>
+                  {ROLE_LABELS_BY_ROLE[newUserRole]} accounts are always invited by email — no dormant creation.
+                </p>
+              )}
             </div>
 
             {/* First Name + Last Name */}
@@ -1087,39 +1145,44 @@ function RepsPageInner() {
               />
             </div>
 
-            {/* Role selector — pill buttons */}
-            <div className="mb-4">
-              <label className="text-xs font-medium mb-2 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Role</label>
-              <div className="flex gap-2">
-                {(['closer', 'setter', 'both'] as const).map((rt) => (
-                  <button
-                    key={rt}
-                    type="button"
-                    onClick={() => setNewRepType(rt)}
-                    className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border ${
-                      newRepType === rt
-                        ? `${ROLE_BADGE_CLS[rt]} bg-opacity-100`
-                        : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:border-[#272b35] hover:text-[#c2c8d8]'
-                    }`}
-                    style={newRepType === rt ? ROLE_BADGE_STYLES[rt] : undefined}
-                  >
-                    {ROLE_LABELS[rt]}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Rep-specific fields — only shown when role === 'rep' */}
+            {newUserRole === 'rep' && (
+              <>
+                {/* Closer/Setter/Both selector */}
+                <div className="mb-4">
+                  <label className="text-xs font-medium mb-2 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Rep type</label>
+                  <div className="flex gap-2">
+                    {(['closer', 'setter', 'both'] as const).map((rt) => (
+                      <button
+                        key={rt}
+                        type="button"
+                        onClick={() => setNewRepType(rt)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border ${
+                          newRepType === rt
+                            ? `${ROLE_BADGE_CLS[rt]} bg-opacity-100`
+                            : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:border-[#272b35] hover:text-[#c2c8d8]'
+                        }`}
+                        style={newRepType === rt ? ROLE_BADGE_STYLES[rt] : undefined}
+                      >
+                        {ROLE_LABELS[rt]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Optional Trainer Assignment */}
-            <div className="mb-4">
-              <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Trainer (optional)</label>
-              <RepSelector
-                value={newTrainerId}
-                onChange={setNewTrainerId}
-                reps={reps}
-                placeholder="-- Select trainer --"
-                clearLabel="None"
-              />
-            </div>
+                {/* Optional Trainer Assignment */}
+                <div className="mb-4">
+                  <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Trainer (optional)</label>
+                  <RepSelector
+                    value={newTrainerId}
+                    onChange={setNewTrainerId}
+                    reps={reps}
+                    placeholder="-- Select trainer --"
+                    clearLabel="None"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Send Clerk invitation toggle */}
             <div className="mb-5">
@@ -1154,7 +1217,7 @@ function RepsPageInner() {
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
               >
-                Add Rep
+                {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>
             </div>
           </div>
