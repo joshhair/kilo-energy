@@ -57,15 +57,15 @@ export function formatKW(kw: number): string {
 }
 
 /**
- * Compact kW formatter for stat cards and tight spaces.
- * Below 1,000 kW: one decimal (`987.5 kW`).
- * 1,000–9,999 kW: one decimal K (`1.2K kW` → avoids `1000.0 kW`).
- * 10,000+ kW: integer K (`16K kW` → avoids `16093.0 kW` overflowing cards).
+ * Compact system-size formatter for stat cards and tight spaces.
+ * Below 1,000 kW: shown as kW with one decimal (`987.5 kW`).
+ * 1,000+ kW: converted to MW (`1.2 MW`, `16.1 MW`) — matches how solar
+ * industry actually talks about large totals and avoids the awkward
+ * "16K kW" double-abbreviation.
  */
 export function formatCompactKW(kw: number): string {
   const n = kw || 0;
-  if (n >= 10_000) return `${Math.round(n / 1_000)}K kW`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K kW`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)} MW`;
   return `${n.toFixed(1)} kW`;
 }
 
