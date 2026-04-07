@@ -760,7 +760,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
           // Check if entries already exist for this project + stage to avoid duplicates
           setPayrollEntries((prevEntries) => {
-            if (!dbReady) return prevEntries;
             const alreadyExists = prevEntries.some(
               (e) => e.projectId === id && (e.paymentStage === stage || (stage === 'M2' && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))
             );

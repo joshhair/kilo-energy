@@ -501,7 +501,7 @@ function PMSection() {
   };
 
   const handleDelete = async (pmId: string) => {
-    const res = await fetch(`/api/reps/${pmId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/users/${pmId}`, { method: 'DELETE' });
     if (res.ok) { toast('Project manager removed'); loadPMs(); }
   };
 

@@ -362,7 +362,7 @@ function AdminUsersSection() {
   };
 
   const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/reps/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
     if (res.ok) {
       toast('Admin removed');
       loadAdmins();
@@ -480,7 +480,7 @@ function ProjectManagersSection() {
   };
 
   const handleDelete = async (pmId: string) => {
-    const res = await fetch(`/api/reps/${pmId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/users/${pmId}`, { method: 'DELETE' });
     if (res.ok) { toast('PM removed'); loadPMs(); }
   };
 
