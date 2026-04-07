@@ -425,6 +425,18 @@ function ProjectsPageInner() {
               </button>
             </span>
           )}
+          {phaseFilter && (
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}>
+              Phase: {phaseFilter}
+              <button
+                onClick={() => setPhaseFilter('')}
+                className="text-[#c2c8d8] hover:text-white transition-colors"
+                aria-label="Clear phase filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
           <button
             onClick={clearAllFilters}
             className="text-[#c2c8d8] hover:text-white text-xs transition-colors"
@@ -703,7 +715,7 @@ function KanbanView({
                         ${phaseProjects.reduce((sum, p) => {
                           if (!isAdmin && dealScope === 'mine') {
                             if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                            if (p.setterId === currentRepId) return sum + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                            if (p.setterId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                             return sum;
                           }
                           return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
@@ -734,7 +746,7 @@ function KanbanView({
                       : null;
                     const isMyCard = myRole !== null;
                     const commissionTotal = !isAdmin && dealScope === 'mine'
-                      ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
+                      ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
                       : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -941,7 +953,7 @@ function KanbanView({
                     ${phaseProjects.reduce((sum, p) => {
                       if (!isAdmin && dealScope === 'mine') {
                         if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                        if (p.setterId === currentRepId) return sum + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        if (p.setterId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
                       return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
@@ -967,7 +979,7 @@ function KanbanView({
                       : null;
                     const isMyCard = myRole !== null;
                     const commissionTotal = !isAdmin && dealScope === 'mine'
-                      ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
+                      ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
                       : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -1105,7 +1117,7 @@ function KanbanView({
                     ${phaseProjects.reduce((sum, p) => {
                       if (!isAdmin && dealScope === 'mine') {
                         if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                        if (p.setterId === currentRepId) return sum + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        if (p.setterId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
                       return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
