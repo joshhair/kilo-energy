@@ -578,10 +578,15 @@ function KanbanView({
   const [openPhases, setOpenPhases] = useState<Set<string>>(() => new Set([currentPhase]));
   const [offTrackOpen, setOffTrackOpen] = useState(false);
 
-  // Kanban column card limit — columns show up to KANBAN_CARD_LIMIT cards by
-  // default; expanded columns show all.  State is a set of phase names that
-  // the user has explicitly expanded.
+  // Kanban column card limit — columns show up to KANBAN_CARD_LIMIT cards
+  // collapsed, or up to KANBAN_EXPANDED_MAX when the user clicks "Show all".
+  // The expanded cap exists because at real scale some phases hold 400+
+  // projects (Installed, PTO) and rendering every card in a DOM column
+  // freezes the page on scroll. If a phase exceeds the expanded cap, the
+  // toggle button directs users to the filtered list view instead, which
+  // has proper pagination.
   const KANBAN_CARD_LIMIT = 20;
+  const KANBAN_EXPANDED_MAX = 80;
   const [expandedColumns, setExpandedColumns] = useState<Set<string>>(new Set());
   const toggleExpand = (phase: string) => {
     setExpandedColumns((prev) => {
@@ -723,7 +728,7 @@ function KanbanView({
                       <p className="text-[#525c72] text-xs">No projects in this phase</p>
                     </div>
                   )}
-                  {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
+                  {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
                     const myRole = !isAdmin
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
@@ -832,8 +837,8 @@ function KanbanView({
                       className="w-full text-center py-2 text-xs font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
-                        ? 'Show less'
-                        : `Show all ${phaseProjects.length} projects`}
+                        ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
+                        : (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Show ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} projects` : `Show all ${phaseProjects.length} projects`)}
                     </button>
                   )}
                 </div>
@@ -877,7 +882,7 @@ function KanbanView({
                       {phase}
                     </p>
                     <div className="space-y-2">
-                      {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
+                      {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
                         <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                           <div className="bg-[#1d2028]/40 border border-[#272b35]/40 hover:border-[#272b35] rounded-xl px-4 min-h-[44px] flex items-center opacity-70 hover:opacity-100 transition-all">
                             <div className="py-3">
@@ -895,8 +900,8 @@ function KanbanView({
                           className="w-full text-center py-2 text-xs font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                         >
                           {expandedColumns.has(phase)
-                            ? 'Show less'
-                            : `Show all ${phaseProjects.length} projects`}
+                            ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
+                            : (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Show ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} projects` : `Show all ${phaseProjects.length} projects`)}
                         </button>
                       )}
                     </div>
@@ -956,7 +961,7 @@ function KanbanView({
                       <p className="text-[#525c72] text-xs mt-0.5">No projects here</p>
                     </div>
                   )}
-                  {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
+                  {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
                     const myRole = !isAdmin
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
@@ -1068,8 +1073,8 @@ function KanbanView({
                       className="w-full text-center py-1.5 text-[10px] font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
-                        ? 'Show less'
-                        : `Show all ${phaseProjects.length}`}
+                        ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : 'Show less')
+                        : (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Show ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : `Show all ${phaseProjects.length}`)}
                     </button>
                   )}
                 </div>
@@ -1111,7 +1116,7 @@ function KanbanView({
               {/* Scrollable card container with bottom-fade overflow hint */}
               <div className="relative">
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-                  {(expandedColumns.has(phase) ? phaseProjects : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
+                  {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => (
                     <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div className="relative rounded-xl p-3 cursor-pointer opacity-70 hover:opacity-100 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] active:shadow-none" style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${PHASE_COLORS[phase] ?? '#525c72'}` }}>
                         <p className="text-xs font-medium" style={{ color: '#8891a8' }}>{proj.customerName}</p>
@@ -1126,8 +1131,8 @@ function KanbanView({
                       className="w-full text-center py-1.5 text-[10px] font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
-                        ? 'Show less'
-                        : `Show all ${phaseProjects.length}`}
+                        ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : 'Show less')
+                        : (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Show ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : `Show all ${phaseProjects.length}`)}
                     </button>
                   )}
                 </div>

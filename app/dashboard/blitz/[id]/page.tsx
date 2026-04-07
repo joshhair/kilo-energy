@@ -143,8 +143,14 @@ export default function BlitzDetailPage() {
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const totalDeals = visibleProjects.length;
-  const totalKW = visibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0);
-  const totalCosts = blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0;
+  const totalKW = useMemo(
+    () => visibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
+    [visibleProjects],
+  );
+  const totalCosts = useMemo(
+    () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,
+    [blitz?.costs],
+  );
 
   // Profitability (admin only — uses ALL projects, not filtered)
   // Kilo profit = spread between closer baseline and kilo baseline per deal

@@ -1062,7 +1062,19 @@ function UsersPageInner() {
                 </div>
               )}
             <Link href={`/dashboard/users/${rep.id}`}>
-              <div className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale stagger-${Math.min(i + 1, 6)} ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[#00e07a]/40' : ''}`} style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? '#272b35'}` }}>
+              <div
+                className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[#00e07a]/40' : ''}`}
+                style={{
+                  background: '#161920',
+                  border: '1px solid #272b35',
+                  borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? '#272b35'}`,
+                  // Inline continuous stagger — same pattern as the non-rep
+                  // cards grid (40ms per card, soft cap at 600ms). Fixes the
+                  // "cards 5+ all pop at once" tail issue the old stagger-N
+                  // classes produced with 150 reps in the list.
+                  animationDelay: `${Math.min(i * 40, 600)}ms`,
+                }}
+              >
                 <div className="flex items-center gap-4">
 
                   {/* ── Avatar with conic progress ring ───────────────────── */}
