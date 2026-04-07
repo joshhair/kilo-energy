@@ -322,8 +322,12 @@ export default function MobileNewDeal() {
   const hasPcProducts = isPcInstaller && pcFamily !== '';
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
+  const isFullyPaidOut = (p: Project): boolean => {
+    const pct = INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    return pct < 100 ? p.m3Paid === true : p.m2Paid === true;
+  };
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => p.repId === form.setterId || p.setterId === form.setterId).length
+    ? projects.filter((p) => p.setterId === form.setterId && isFullyPaidOut(p)).length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -674,7 +678,7 @@ export default function MobileNewDeal() {
                   className={selectCls('repId')} style={v0InputStyle('repId')}
                 >
                   <option value="">-- Select closer --</option>
-                  {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
                 <FieldError errors={errors} field="repId" />
               </div>
