@@ -6,7 +6,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
-import { formatDate, downloadCSV, fmt$ } from '../../../lib/utils';
+import { formatDate, downloadCSV, fmt$, localDateString } from '../../../lib/utils';
 import { RelativeDate } from '../components/RelativeDate';
 import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
@@ -321,7 +321,7 @@ function PayrollPageInner() {
       type: 'Bonus',
       paymentStage: 'Bonus',
       status: 'Draft',
-      date: bonusForm.date || new Date().toISOString().split('T')[0],
+      date: bonusForm.date || localDateString(new Date()),
       notes: bonusForm.notes,
     };
     setPayrollEntries((prev) => [...prev, newEntry]);
@@ -365,7 +365,7 @@ function PayrollPageInner() {
       type: 'Deal',
       paymentStage: paymentForm.stage,
       status: 'Draft',
-      date: paymentForm.date || new Date().toISOString().split('T')[0],
+      date: paymentForm.date || localDateString(new Date()),
       notes: paymentForm.notes,
     };
     setPayrollEntries((prev) => [...prev, newEntry]);

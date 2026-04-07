@@ -52,6 +52,7 @@ interface AppContextType {
   /** Hard delete — removes the row entirely. Server enforces zero-relations gate (returns 409 if user has any history). */
   deleteRepPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
   updateRepType: (id: string, repType: 'closer' | 'setter' | 'both') => void;
+  updateRepContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => void;
   // Sub-dealer management
   subDealers: SubDealer[];
   addSubDealer: (firstName: string, lastName: string, email: string, phone: string, id?: string) => Promise<{ id: string } | undefined>;
@@ -60,6 +61,7 @@ interface AppContextType {
   deactivateSubDealer: (id: string) => Promise<void>;
   reactivateSubDealer: (id: string) => Promise<void>;
   deleteSubDealerPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
+  updateSubDealerContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => void;
   // Project editing
   updateProject: (id: string, updates: Partial<Project>) => void;
   // Editable baselines (derived from active pricing versions for backward compat)
@@ -451,6 +453,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ repType }),
     }, 'Failed to update rep type').catch(() => {});
   };
+  const updateRepContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
+    setReps((prev) => prev.map((r) => r.id === id ? { ...r, ...updates, name: `${updates.firstName ?? r.firstName} ${updates.lastName ?? r.lastName}` } : r));
+  };
 
   // ── Sub-dealer management ──
   const addSubDealer = (firstName: string, lastName: string, email: string, phone: string, id?: string) => {
@@ -505,6 +510,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (snapshot) setSubDealers((prev) => [...prev, snapshot]);
       return { success: false, error: err instanceof Error ? err.message : 'Failed to delete sub-dealer' };
     }
+  };
+  const updateSubDealerContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
+    setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, ...updates, name: `${updates.firstName ?? s.firstName} ${updates.lastName ?? s.lastName}` } : s));
   };
   // Legacy alias — same migration story as removeRep above.
   const removeSubDealer = (id: string) => {
@@ -687,7 +695,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const PIPELINE = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
         const oldIdx = PIPELINE.indexOf(old.phase);
         const newIdx = PIPELINE.indexOf(newPhase);
-        if (oldIdx >= 0 && (newPhase === 'On Hold' || (newIdx >= 0 && newIdx < oldIdx))) {
+        if (oldIdx >= 0 && newIdx >= 0 && newIdx < oldIdx) {
           const rollBackM1 = oldIdx >= PIPELINE.indexOf('Acceptance') && newIdx < PIPELINE.indexOf('Acceptance');
           const rollBackM2 = oldIdx >= PIPELINE.indexOf('Installed') && newIdx < PIPELINE.indexOf('Installed');
           const rollBackM3 = oldIdx >= PIPELINE.indexOf('PTO') && newIdx < PIPELINE.indexOf('PTO');
@@ -970,7 +978,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
                   // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
-                  const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId);
+                  const setterTraineeName = reps.find(r => r.id === old.setterId)?.name ?? old.setterName ?? '';
+                  const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId && (setterTraineeName ? e.notes?.includes(`— ${setterTraineeName} (`) : true));
                   const m2SetterRateMatch = m2SetterTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
                   const m2SetterParsed = m2SetterRateMatch ? parseFloat(m2SetterRateMatch[1]) : NaN;
                   const setterOverrideRate = !isNaN(m2SetterParsed)
@@ -1585,6 +1594,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         reactivateRep,
         deleteRepPermanently,
         updateRepType,
+        updateRepContact,
         updateProject,
         installerBaselines,
         updateInstallerBaseline,
@@ -1625,6 +1635,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deactivateSubDealer,
         reactivateSubDealer,
         deleteSubDealerPermanently,
+        updateSubDealerContact,
         unreadMentionCount,
         refreshMentionCount,
         viewAsUser,

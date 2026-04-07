@@ -64,7 +64,7 @@ export function isInDateRange(dateStr: string, startDate: string, endDate: strin
 }
 
 /** Format a Date as YYYY-MM-DD using local time (avoids UTC off-by-one). */
-function localDateString(d: Date): string {
+export function localDateString(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
