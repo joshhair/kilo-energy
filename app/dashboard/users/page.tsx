@@ -525,14 +525,14 @@ function UsersPageInner() {
   });
 
   // ── Pre-compute paid totals & rank order across ALL reps ──────────────────
-  const repPaidAmounts = new Map(
+  const repPaidAmounts = useMemo(() => new Map(
     reps.map((rep) => [
       rep.id,
       payrollEntries
         .filter((p) => p.repId === rep.id && p.status === 'Paid')
         .reduce((s, p) => s + p.amount, 0),
     ])
-  );
+  ), [reps, payrollEntries]);
 
   const rankMap = new Map(
     [...reps]
@@ -563,8 +563,22 @@ function UsersPageInner() {
     switch (sortBy) {
       case 'paid':   return arr.sort((a, b) => (repPaidAmounts.get(b.id) ?? 0) - (repPaidAmounts.get(a.id) ?? 0));
       case 'active': return arr.sort((a, b) => (activeDealsByRep.get(b.id) ?? 0) - (activeDealsByRep.get(a.id) ?? 0));
-      case 'deals':  return arr.sort((a, b) => projects.filter(p => p.repId === b.id || p.setterId === b.id).length - projects.filter(p => p.repId === a.id || p.setterId === a.id).length);
-      case 'kw':     return arr.sort((a, b) => projects.filter(p => p.repId === b.id || p.setterId === b.id).reduce((s, p) => s + p.kWSize, 0) - projects.filter(p => p.repId === a.id || p.setterId === a.id).reduce((s, p) => s + p.kWSize, 0));
+      case 'deals': {
+        const dealsByRep = new Map<string, number>();
+        for (const p of projects) {
+          if (p.repId)    dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
+          if (p.setterId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
+        }
+        return arr.sort((a, b) => (dealsByRep.get(b.id) ?? 0) - (dealsByRep.get(a.id) ?? 0));
+      }
+      case 'kw': {
+        const kwByRep = new Map<string, number>();
+        for (const p of projects) {
+          if (p.repId)    kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + p.kWSize);
+          if (p.setterId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + p.kWSize);
+        }
+        return arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
+      }
       case 'name':   return arr.sort((a, b) => a.name.localeCompare(b.name));
     }
   }, [filtered, sortBy, repPaidAmounts, activeDealsByRep, projects]);

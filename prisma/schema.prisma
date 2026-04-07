@@ -281,6 +281,7 @@ model Project {
   m2Amount       Float   @default(0)
   m3Amount       Float?
   m3Paid         Boolean @default(false)
+  setterM1Amount Float   @default(0)
   setterM2Amount Float   @default(0)
   setterM3Amount Float?
 

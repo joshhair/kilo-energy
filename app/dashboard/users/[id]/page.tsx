@@ -281,7 +281,6 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
   const handleDeletePermanently = async () => {
-    if (!confirm(`PERMANENTLY delete ${resolvedUser.firstName} ${resolvedUser.lastName}? This cannot be undone. Their Clerk account will also be removed.`)) return;
     let result: { success: boolean; error?: string };
     if (isRep) {
       result = await deleteRepPermanently(id);
@@ -530,7 +529,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 const hasRelations = (userMeta?.relationCount ?? 0) > 0;
                 return (
                   <button
-                    onClick={handleDeletePermanently}
+                    onClick={() => setConfirmDelete(true)}
                     disabled={hasRelations}
                     title={hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                     className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -554,6 +553,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               : 'Admin and project manager accounts don\u2019t have commission, projects, or payroll data. Use Settings for permission management.'}
           </p>
         </div>
+
+        <ConfirmDialog
+          open={confirmDelete}
+          onClose={() => setConfirmDelete(false)}
+          onConfirm={() => { setConfirmDelete(false); handleDeletePermanently(); }}
+          title="Permanently delete user"
+          message={`PERMANENTLY delete ${displayName}? This cannot be undone. Their Clerk account will also be removed.`}
+          confirmLabel="Delete permanently"
+          danger
+        />
       </div>
     );
   }
@@ -1059,7 +1068,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               const hasRelations = (userMeta?.relationCount ?? 0) > 0;
               return (
                 <button
-                  onClick={handleDeletePermanently}
+                  onClick={() => setConfirmDelete(true)}
                   disabled={hasRelations}
                   title={hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1083,6 +1092,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         title="Deactivate user"
         message={`Deactivate ${displayName}? This will lock them out of Clerk and revoke any pending invitation.`}
         confirmLabel="Deactivate"
+        danger
+      />
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => { setConfirmDelete(false); handleDeletePermanently(); }}
+        title="Permanently delete user"
+        message={`PERMANENTLY delete ${displayName}? This cannot be undone. Their Clerk account will also be removed.`}
+        confirmLabel="Delete permanently"
         danger
       />
     </div>

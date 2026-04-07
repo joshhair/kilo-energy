@@ -788,7 +788,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
 
             // Setter entry (M1 goes to setter if one exists)
-            if (old.setterId && isAcceptance && amount > 0) {
+            if (old.setterId && isAcceptance && (old.setterM1Amount ?? 0) > 0) {
               const setterRep = reps.find((r) => r.id === old.setterId);
               newEntries.push({
                 id: `pay_${ts}_${stage.toLowerCase()}_s`,
@@ -796,7 +796,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 repName: setterRep?.name ?? old.setterName ?? '',
                 projectId: id,
                 customerName: old.customerName,
-                amount,
+                amount: old.setterM1Amount!,
                 type: 'Deal',
                 paymentStage: stage,
                 status: 'Draft',
@@ -1493,6 +1493,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           m1Amount: project.m1Amount || 0,
           m2Amount: project.m2Amount || 0,
           m3Amount: project.m3Amount || 0,
+          setterM1Amount: project.setterM1Amount || 0,
           setterM2Amount: project.setterM2Amount || 0,
           setterM3Amount: project.setterM3Amount || 0,
           notes: project.notes || '',
