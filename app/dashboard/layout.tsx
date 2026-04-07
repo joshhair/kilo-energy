@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo, Fragment } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../../lib/context';
@@ -168,6 +168,33 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setSearch('');
+  }, []);
+
+  // Click-outside + Esc to close. Without these the dropdown had no way
+  // to dismiss: you either had to pick a user or re-click the View As...
+  // button itself, which wasn't obvious once focus had moved elsewhere.
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        close();
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [open, close]);
 
   const allUsers = [
     ...reps.map((r) => ({ ...r, role: 'rep' as const })),
@@ -179,31 +206,40 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
     : allUsers;
 
   return (
-    <div className="px-3 pb-2">
+    <div ref={containerRef} className="px-3 pb-2">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[#1d2028]"
         style={{ color: 'var(--d-muted, #8891a8)' }}
       >
         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
-        <span>View As...</span>
+        <span>{open ? 'Close' : 'View As...'}</span>
       </button>
       {open && (
         <div className="mt-1 bg-[#161920] border border-[#272b35] rounded-lg overflow-hidden shadow-xl">
-          <input
-            autoFocus
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search reps..."
-            className="w-full bg-transparent border-b border-[#333849] px-3 py-2 text-xs text-white outline-none placeholder:text-[#525c72]"
-          />
+          <div className="flex items-center border-b border-[#333849]">
+            <input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search reps..."
+              className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-[#525c72]"
+            />
+            <button
+              onClick={close}
+              aria-label="Close View As selector"
+              className="px-2 py-2 text-[#525c72] hover:text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 ? (
               <p className="text-xs text-[#525c72] p-3 text-center">No matches</p>
             ) : filtered.map((u) => (
               <button
                 key={u.id}
-                onClick={() => { onSelect(u); setOpen(false); setSearch(''); }}
+                onClick={() => { onSelect(u); close(); }}
                 className="w-full text-left px-3 py-2 text-xs text-[#c2c8d8] hover:bg-[#1d2028] hover:text-white transition-colors flex items-center justify-between"
               >
                 <span>{u.name}</span>
