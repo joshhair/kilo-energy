@@ -192,6 +192,93 @@ export default function BlitzDetailPage() {
     return reps.filter((r) => !participantIds.has(r.id));
   }, [reps, blitz?.participants]);
 
+  // ── Leaderboard + per-rep performance ────────────────────────────────
+  // Shared by: overview leaderboard, participants tab leaderboard,
+  // participants table deal counts, AND the Rep Performance analytics
+  // card. Previously each location ran its own O(participants × projects)
+  // scan inside an IIFE on every render — at 25 participants × 28
+  // projects that was 700 comparisons × 4 locations = 2800 per render,
+  // re-run on every tab switch and state change.
+  //
+  // New approach: one single walk through projects, attribute each deal's
+  // (deals count, kW, and payout) to both closer and setter per the
+  // blitz-payout split logic. Participant rows then hydrate in O(1) via
+  // Map lookup.
+  //
+  // Payout formula (unchanged from the original per-row computation):
+  //   closer + setter are SAME person (self-gen via blitz):
+  //       full amount (m1 + m2 + m3 + setterM2 + setterM3)
+  //   person is the setter (but not closer):
+  //       m1 + setterM2 + setterM3 (setter owns M1 in shared deals)
+  //   person is the closer (with a separate setter):
+  //       m2 + m3 (closer does NOT get M1 when a setter is present)
+  //   person is the closer (no setter on project):
+  //       m1 + m2 + m3
+  type LeaderboardEntry = {
+    userId: string;
+    user: { id: string; firstName: string; lastName: string };
+    name: string;
+    initials: string;
+    deals: number;
+    kW: number;
+    payout: number;
+  };
+  const leaderboard: LeaderboardEntry[] = useMemo(() => {
+    const participants = (blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved');
+    if (participants.length === 0) return [];
+
+    const statsByUserId = new Map<string, { deals: number; kW: number; payout: number }>();
+    const bump = (userId: string, dKw: number, dPayout: number) => {
+      const s = statsByUserId.get(userId) ?? { deals: 0, kW: 0, payout: 0 };
+      s.deals += 1;
+      s.kW += dKw;
+      s.payout += dPayout;
+      statsByUserId.set(userId, s);
+    };
+
+    for (const proj of blitz?.projects ?? []) {
+      if (proj.phase === 'Cancelled' || proj.phase === 'On Hold') continue;
+      const closerId = proj.closer?.id;
+      const setterId = proj.setter?.id;
+      const m1 = proj.m1Amount ?? 0;
+      const m2 = proj.m2Amount ?? 0;
+      const m3 = proj.m3Amount ?? 0;
+      const sM2 = proj.setterM2Amount ?? 0;
+      const sM3 = proj.setterM3Amount ?? 0;
+      const kW = proj.kWSize;
+
+      if (closerId && setterId && closerId === setterId) {
+        // Same person closed and set (self-gen) — gets everything
+        bump(closerId, kW, m1 + m2 + m3 + sM2 + sM3);
+      } else {
+        if (closerId) {
+          // Closer gets M2/M3. Gets M1 only if there's no separate setter.
+          const closerPayout = (setterId ? 0 : m1) + m2 + m3;
+          bump(closerId, kW, closerPayout);
+        }
+        if (setterId && setterId !== closerId) {
+          // Setter owns M1 when present, plus setterM2/M3.
+          bump(setterId, kW, m1 + sM2 + sM3);
+        }
+      }
+    }
+
+    const entries: LeaderboardEntry[] = participants.map((p: any) => {
+      const stats = statsByUserId.get(p.user.id) ?? { deals: 0, kW: 0, payout: 0 };
+      return {
+        userId: p.user.id,
+        user: p.user, // full user object, so Rep Performance card can render firstName/lastName
+        name: `${p.user.firstName} ${p.user.lastName}`,
+        initials: `${(p.user.firstName?.[0] ?? '').toUpperCase()}${(p.user.lastName?.[0] ?? '').toUpperCase()}`,
+        deals: stats.deals,
+        kW: stats.kW,
+        payout: stats.payout,
+      };
+    });
+    entries.sort((a, b) => b.deals - a.deals || b.kW - a.kW);
+    return entries;
+  }, [blitz?.participants, blitz?.projects]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -546,24 +633,19 @@ export default function BlitzDetailPage() {
             </div>
           )}
 
-          {/* Leaderboard on overview (active/completed blitzes with deals) */}
-          {(blitz.status === 'active' || blitz.status === 'completed') && (() => {
+          {/* Leaderboard on overview (active/completed blitzes with deals).
+              Uses the shared `leaderboard` memo — computed once per render
+              instead of re-running the O(participants × projects) scan
+              inside an IIFE. */}
+          {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && leaderboard[0].deals > 0 && (() => {
             const RANK_GRADIENTS_OV = ['from-yellow-400 to-amber-600', 'from-slate-300 to-slate-500', 'from-amber-600 to-amber-800'];
             const RANK_BG_OV = ['bg-yellow-900/20 border-yellow-600/30', 'bg-[#1d2028]/40 border-[#272b35]/30', 'bg-amber-900/20 border-amber-700/30'];
             const RANK_TEXT_OV = ['text-yellow-400', 'text-[#c2c8d8]', 'text-amber-400'];
-            const lb = (blitz.participants ?? [])
-              .filter((p: any) => p.joinStatus === 'approved')
-              .map((p: any) => {
-                const deals = (blitz.projects ?? []).filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
-                return { userId: p.user.id, name: `${p.user.firstName} ${p.user.lastName}`, initials: `${(p.user.firstName?.[0] ?? '').toUpperCase()}${(p.user.lastName?.[0] ?? '').toUpperCase()}`, deals: deals.length, kW: deals.reduce((s: number, proj: any) => s + proj.kWSize, 0) };
-              })
-              .sort((a: any, b: any) => b.deals - a.deals || b.kW - a.kW);
-            if (lb.length === 0 || lb[0].deals === 0) return null;
             return (
               <div className="card-surface rounded-2xl p-4">
                 <h3 className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider mb-3 flex items-center gap-2"><Trophy className="w-3.5 h-3.5 text-amber-400" /> Leaderboard</h3>
                 <div className="space-y-2">
-                  {lb.slice(0, 5).map((rep: any, idx: number) => {
+                  {leaderboard.slice(0, 5).map((rep, idx) => {
                     const rank = idx + 1;
                     const isTop3 = rank <= 3;
                     return (
@@ -649,8 +731,9 @@ export default function BlitzDetailPage() {
       {/* Participants */}
       {tab === 'participants' && (
         <div key="participants" className="animate-tab-enter space-y-4">
-          {/* Mini-leaderboard */}
-          {(() => {
+          {/* Mini-leaderboard — same shared `leaderboard` memo as the
+              overview panel. No second scan. */}
+          {leaderboard.length > 0 && leaderboard[0].deals > 0 && (() => {
             const RANK_GRADIENTS = [
               'from-yellow-400 to-amber-600',
               'from-slate-300 to-slate-500',
@@ -662,25 +745,11 @@ export default function BlitzDetailPage() {
               'bg-amber-900/20 border-amber-700/30',
             ];
             const RANK_TEXT = ['text-yellow-400', 'text-[#c2c8d8]', 'text-amber-400'];
-            const leaderboard = (blitz.participants ?? [])
-              .filter((p: any) => p.joinStatus === 'approved')
-              .map((p: any) => {
-                const deals = (blitz.projects ?? []).filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
-                return {
-                  userId: p.user.id,
-                  name: `${p.user.firstName} ${p.user.lastName}`,
-                  initials: `${(p.user.firstName?.[0] ?? '').toUpperCase()}${(p.user.lastName?.[0] ?? '').toUpperCase()}`,
-                  deals: deals.length,
-                  kW: deals.reduce((s: number, proj: any) => s + proj.kWSize, 0),
-                };
-              })
-              .sort((a: any, b: any) => b.deals - a.deals || b.kW - a.kW);
-            if (leaderboard.length === 0 || leaderboard[0].deals === 0) return null;
             return (
               <div className="card-surface rounded-2xl p-4">
                 <h3 className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider mb-3">Leaderboard</h3>
                 <div className="space-y-2">
-                  {leaderboard.slice(0, 5).map((rep: any, idx: number) => {
+                  {leaderboard.slice(0, 5).map((rep, idx) => {
                     const rank = idx + 1;
                     const isTop3 = rank <= 3;
                     return (
@@ -736,9 +805,15 @@ export default function BlitzDetailPage() {
                   {canManage && <th className="text-right px-4 py-3">Actions</th>}
                 </tr></thead>
                 <tbody>
-                  {blitz.participants.map((p: any, idx: number) => {
-                    const repDeals = p.joinStatus === 'approved' ? (blitz.projects?.filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold') ?? []) : [];
-                    const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
+                  {(() => {
+                    // Lookup map from the already-computed leaderboard memo.
+                    // Replaces a fresh O(projects) scan per participant row —
+                    // was N×P per render, now just N map lookups.
+                    const statsByUserId = new Map(leaderboard.map((r) => [r.userId, r]));
+                    return blitz.participants.map((p: any, idx: number) => {
+                    const stats = p.joinStatus === 'approved' ? statsByUserId.get(p.user.id) : null;
+                    const repDealCount = stats?.deals ?? 0;
+                    const repKW = stats?.kW ?? 0;
                     return (
                     <tr key={p.id} className={`border-b border-[#333849]/50 last:border-0 hover:bg-[#1d2028]/40 transition-colors ${idx % 2 === 0 ? 'bg-[#161920]/20' : ''}`}>
                       <td className="px-4 py-3 text-white font-medium"><Link href={`/dashboard/users/${p.user.id}`} className="hover:text-[#00c4f0] transition-colors">{p.user.firstName} {p.user.lastName}</Link></td>
@@ -747,7 +822,7 @@ export default function BlitzDetailPage() {
                           {p.joinStatus}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-[#c2c8d8] tabular-nums">{repDeals.length || <span className="text-[#525c72]">—</span>}</td>
+                      <td className="px-4 py-3 text-right text-[#c2c8d8] tabular-nums">{repDealCount || <span className="text-[#525c72]">—</span>}</td>
                       <td className="px-4 py-3 text-right text-[#c2c8d8] tabular-nums">{repKW > 0 ? repKW.toFixed(1) : <span className="text-[#525c72]">—</span>}</td>
                       <td className="px-4 py-3">
                         {canManage ? (
@@ -775,7 +850,8 @@ export default function BlitzDetailPage() {
                       )}
                     </tr>
                     );
-                  })}
+                  });
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -972,26 +1048,13 @@ export default function BlitzDetailPage() {
             </div>
           )}
 
-          {/* Per-rep performance */}
+          {/* Per-rep performance — uses the shared `leaderboard` memo
+              which now carries deals/kW/payout per approved participant.
+              Renamed fields from the memo (kW → kw) to match the
+              downstream render. */}
           {approvedParticipants.length > 0 && blitz.projects?.length > 0 && (() => {
-            const repStats = approvedParticipants.map((p: any) => {
-              const repDeals = blitz.projects.filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
-              const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
-              const repPayout = repDeals.reduce((s: number, proj: any) => {
-                const isCloser = proj.closer?.id === p.user.id;
-                const isSetter = proj.setter?.id === p.user.id;
-                if (isCloser && isSetter) {
-                  return s + (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
-                } else if (isSetter) {
-                  return s + (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
-                } else {
-                  const m1 = !proj.setter ? (proj.m1Amount ?? 0) : 0;
-                  return s + m1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
-                }
-              }, 0);
-              return { user: p.user, deals: repDeals.length, kw: repKW, payout: repPayout };
-            }).sort((a: { deals: number; kw: number }, b: { deals: number; kw: number }) => b.deals - a.deals || b.kw - a.kw);
-            const maxKW = Math.max(...repStats.map((r: { kw: number }) => r.kw), 1);
+            const repStats = leaderboard.map((r) => ({ user: r.user, deals: r.deals, kw: r.kW, payout: r.payout }));
+            const maxKW = Math.max(...repStats.map((r) => r.kw), 1);
 
             return (
             <div className="card-surface rounded-2xl p-5">

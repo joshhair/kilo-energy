@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../lib/context';
@@ -552,12 +552,18 @@ function PipelineOverview({ activeProjects }: { activeProjects: Array<{ phase: s
 
   const total = activeProjects.length;
 
-  const phaseCounts = ACTIVE_PHASES.reduce<Record<string, number>>((acc, phase) => {
-    acc[phase] = activeProjects.filter((p) => p.phase === phase).length;
-    return acc;
-  }, {});
+  // Single-pass phase count. Previously did one .filter() per phase
+  // (9 phases × 2000+ projects = ~18k comparisons per render).
+  const phaseCounts = useMemo<Record<string, number>>(() => {
+    const counts: Record<string, number> = {};
+    for (const phase of ACTIVE_PHASES) counts[phase] = 0;
+    for (const p of activeProjects) {
+      if (counts[p.phase] !== undefined) counts[p.phase]++;
+    }
+    return counts;
+  }, [activeProjects]);
 
-  const nonEmpty = ACTIVE_PHASES.filter((ph) => phaseCounts[ph] > 0);
+  const nonEmpty = useMemo(() => ACTIVE_PHASES.filter((ph) => phaseCounts[ph] > 0), [phaseCounts]);
 
   if (total === 0) {
     return (
@@ -1793,9 +1799,79 @@ function AdminDashboard({
   const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
   const totalUsers = totalReps;
 
-  const activeCount = allProjects.filter((p) => ['New','Acceptance','Site Survey','Design','Permitting','Pending Install','Installed','PTO'].includes(p.phase)).length;
-  const inactiveCount = allProjects.filter((p) => ['Cancelled','On Hold'].includes(p.phase)).length;
-  const completedCount = allProjects.filter((p) => p.phase === 'Completed').length;
+  // ── Single-pass project aggregations ──────────────────────────────────
+  // Previously this component did ~8 separate .filter() calls over
+  // allProjects (2000+ rows) per render, plus an IIFE-based Installer
+  // Insights Map build lower in the JSX. Now everything allProjects-
+  // derived is computed in ONE pass through the array and memoized on
+  // allProjects alone — state changes that don't touch projects won't
+  // re-trigger any of this.
+  const allProjectAggregations = useMemo(() => {
+    const activeSet = new Set(['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO']);
+    const inactiveSet = new Set(['Cancelled', 'On Hold']);
+    const attentionSet = new Set([...activeSet, 'On Hold']);
+
+    let activeCount = 0;
+    let inactiveCount = 0;
+    let completedCount = 0;
+    const pipelinePhaseCounts: Record<string, number> = {};
+    for (const phase of ACTIVE_PHASES) pipelinePhaseCounts[phase] = 0;
+    const pipelineActive: typeof allProjects = [];
+    const attentionActiveProjects: typeof allProjects = [];
+    const installerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
+
+    for (const p of allProjects) {
+      if (activeSet.has(p.phase)) {
+        activeCount++;
+        pipelineActive.push(p);
+        if (pipelinePhaseCounts[p.phase] !== undefined) pipelinePhaseCounts[p.phase]++;
+      } else if (inactiveSet.has(p.phase)) {
+        inactiveCount++;
+      } else if (p.phase === 'Completed') {
+        completedCount++;
+      }
+      if (attentionSet.has(p.phase)) attentionActiveProjects.push(p);
+
+      // Installer rollup (was an IIFE in the Installer Insights JSX block)
+      const prev = installerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
+      prev.deals++;
+      prev.kW += p.kWSize;
+      if (p.phase === 'Cancelled') prev.cancelled++;
+      installerMap.set(p.installer, prev);
+    }
+
+    const pipelineNonEmpty = ACTIVE_PHASES.filter((ph) => pipelinePhaseCounts[ph] > 0);
+    const installerRanking = [...installerMap.entries()]
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.deals - a.deals);
+    const maxInstallerDeals = Math.max(1, ...installerRanking.map((i) => i.deals));
+
+    return {
+      activeCount,
+      inactiveCount,
+      completedCount,
+      pipelineActive,
+      pipelinePhaseCounts,
+      pipelineNonEmpty,
+      pipelineTotal: pipelineActive.length,
+      attentionActiveProjects,
+      installerRanking,
+      maxInstallerDeals,
+    };
+  }, [allProjects]);
+
+  const {
+    activeCount,
+    inactiveCount,
+    completedCount,
+    pipelineActive,
+    pipelinePhaseCounts,
+    pipelineNonEmpty,
+    pipelineTotal,
+    attentionActiveProjects,
+    installerRanking,
+    maxInstallerDeals,
+  } = allProjectAggregations;
 
   const topStats = [
     { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
@@ -1818,16 +1894,11 @@ function AdminDashboard({
     'Design': '#e879f9', 'Permitting': '#fbbf24', 'Pending Install': '#fb923c',
     'Installed': '#2dd4bf', 'PTO': '#00c4f0',
   };
-  const pipelineActive = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
-  const pipelinePhaseCounts = ACTIVE_PHASES.reduce<Record<string, number>>((acc, phase) => {
-    acc[phase] = pipelineActive.filter((p) => p.phase === phase).length;
-    return acc;
-  }, {});
-  const pipelineNonEmpty = ACTIVE_PHASES.filter((ph) => pipelinePhaseCounts[ph] > 0);
-  const pipelineTotal = pipelineActive.length;
+  // pipelineActive / pipelinePhaseCounts / pipelineNonEmpty / pipelineTotal /
+  // attentionActiveProjects are all destructured from allProjectAggregations
+  // above — single-pass computation, memoized on allProjects.
 
   // Attention items count (used for All Clear vs Needs Attention)
-  const attentionActiveProjects = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase) || p.phase === 'On Hold');
   const PHASE_STUCK_THRESHOLDS_ADMIN = getPhaseStuckThresholds();
   const todayAdmin = new Date(); todayAdmin.setHours(0, 0, 0, 0);
   const attentionItemCount = (() => {
@@ -2018,20 +2089,10 @@ function AdminDashboard({
       )}
 
       {/* ── Installer Insights ────────────────────────────────────────────── */}
+      {/* installerRanking + maxInstallerDeals come from the single-pass memo
+          above — no per-render Map rebuild. */}
       {(() => {
-        const installerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
-        for (const p of allProjects) {
-          const prev = installerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
-          prev.deals++;
-          prev.kW += p.kWSize;
-          if (p.phase === 'Cancelled') prev.cancelled++;
-          installerMap.set(p.installer, prev);
-        }
-        const installerRanking = [...installerMap.entries()]
-          .map(([name, data]) => ({ name, ...data }))
-          .sort((a, b) => b.deals - a.deals);
-        const maxDeals = Math.max(1, ...installerRanking.map((i) => i.deals));
-
+        const maxDeals = maxInstallerDeals;
         return installerRanking.length > 0 ? (
           <div className="card-surface rounded-2xl p-5 mb-8">
             <button

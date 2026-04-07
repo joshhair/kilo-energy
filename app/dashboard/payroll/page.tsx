@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense, type CSSProperties } from 'react';
+import { useState, useRef, useEffect, useMemo, Suspense, type CSSProperties } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
@@ -210,24 +210,39 @@ function PayrollPageInner() {
 
   if (isMobile) return <MobilePayroll />;
 
-  const filtered = payrollEntries.filter((p) => {
-    if (p.status !== statusTab || p.type !== typeTab) return false;
-    if (payFilterFrom && p.date < payFilterFrom) return false;
-    if (payFilterTo && p.date > payFilterTo) return false;
-    if (filterRepId && p.repId !== filterRepId) return false;
-    return true;
-  });
+  // ── Single-pass filter + totals ───────────────────────────────────────
+  // Was: 5 separate passes over payrollEntries (2700+ rows) per render:
+  //   1. filter() for the visible status-filtered list
+  //   2. filter() for the broader date+rep filter (used for totals)
+  //   3-5. three .filter().reduce() pairs for Draft/Pending/Paid totals
+  // Now: one walk through payrollEntries computes everything, memoized
+  // on the inputs that actually matter.
+  const { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid } = useMemo(() => {
+    const filtered: typeof payrollEntries = [];
+    const filteredByDateRep: typeof payrollEntries = [];
+    let totalDraft = 0;
+    let totalPending = 0;
+    let totalPaid = 0;
 
-  const filteredByDateRep = payrollEntries.filter((p) => {
-    if (p.type !== typeTab) return false;
-    if (payFilterFrom && p.date < payFilterFrom) return false;
-    if (payFilterTo && p.date > payFilterTo) return false;
-    if (filterRepId && p.repId !== filterRepId) return false;
-    return true;
-  });
-  const totalDraft = filteredByDateRep.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-  const totalPending = filteredByDateRep.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-  const totalPaid = filteredByDateRep.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+    for (const p of payrollEntries) {
+      if (p.type !== typeTab) continue;
+      if (payFilterFrom && p.date < payFilterFrom) continue;
+      if (payFilterTo && p.date > payFilterTo) continue;
+      if (filterRepId && p.repId !== filterRepId) continue;
+
+      // Row passed the date/rep/type filters — it's in filteredByDateRep.
+      filteredByDateRep.push(p);
+      if (p.status === 'Draft') totalDraft += p.amount;
+      else if (p.status === 'Pending') totalPending += p.amount;
+      else if (p.status === 'Paid') totalPaid += p.amount;
+
+      // And it's in `filtered` (the visible table) only if its status
+      // also matches the active status tab.
+      if (p.status === statusTab) filtered.push(p);
+    }
+
+    return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid };
+  }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
   // Paginate the flat filtered list, then re-group by rep for display
   const adminTotalPages = Math.max(1, Math.ceil(filtered.length / adminRowsPerPage));
@@ -237,12 +252,17 @@ function PayrollPageInner() {
 
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
-  // Derived selection state — used by the floating action bar
-  const selectedTotal = filtered
-    .filter((e) => selectedIds.has(e.id))
-    .reduce((s, e) => s + e.amount, 0);
-  const allFilteredSelected =
-    filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id));
+  // Derived selection state — used by the floating action bar.
+  // Single walk through filtered to compute both totals together.
+  const { selectedTotal, allFilteredSelected } = useMemo(() => {
+    let total = 0;
+    let all = filtered.length > 0;
+    for (const e of filtered) {
+      if (selectedIds.has(e.id)) total += e.amount;
+      else all = false;
+    }
+    return { selectedTotal: total, allFilteredSelected: all };
+  }, [filtered, selectedIds]);
   // Floating toolbar is visible whenever one or more Draft entries are selected
   const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
 
