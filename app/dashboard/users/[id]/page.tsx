@@ -13,6 +13,7 @@ import { PaginationBar } from '../../components/PaginationBar';
 import { ChevronRight, ChevronLeft, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
 import { RepSelector } from '../../components/RepSelector';
 import { Sparkline } from '../../../../lib/sparkline';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 type FetchedUser = {
   id: string;
@@ -41,7 +42,7 @@ type UserMeta = {
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -56,6 +57,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [projPageSize, setProjPageSize] = useState(10);
   // Trainer assignment picker state
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // ── Admin-only metadata for the action footer ─────────────────────────
   // The /api/users/[id] route exposes relationCount + pendingInvitation
@@ -198,6 +201,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       if (fetchedUser) {
         setFetchedUser({ ...fetchedUser, ...body, name: `${body.firstName ?? fetchedUser.firstName} ${body.lastName ?? fetchedUser.lastName}` });
       }
+      // Sync context so rep/sub-dealer profiles update immediately across the app.
+      if (rep) updateRepContact(id, body);
+      else if (subDealer) updateSubDealerContact(id, body);
       setMetaRefreshKey((k) => k + 1);
       toast('Saved', 'success');
       setEditingField(null);
@@ -213,7 +219,6 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const isSubDealerRole = resolvedUser.role === 'sub-dealer';
 
   const handleDeactivate = async () => {
-    if (!confirm(`Deactivate ${resolvedUser.firstName} ${resolvedUser.lastName}? They will lose app access immediately. History is preserved.`)) return;
     try {
       if (isRep) {
         await deactivateRep(id);

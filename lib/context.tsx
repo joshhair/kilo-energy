@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
 import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTIVES, INSTALLERS, FINANCERS, Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, REPS, Rep, SubDealer, SUB_DEALERS, NON_SOLARTECH_BASELINES, SOLARTECH_PRODUCTS, InstallerBaseline, SolarTechProduct, INSTALLER_PRICING_VERSIONS, InstallerPricingVersion, InstallerRates, PRODUCT_CATALOG_INSTALLER_CONFIGS, PRODUCT_CATALOG_PRODUCTS, ProductCatalogInstallerConfig, ProductCatalogProduct, PREPAID_OPTIONS, Phase, PRODUCT_CATALOG_PRICING_VERSIONS, ProductCatalogPricingVersion, ProductCatalogTier, INSTALLER_PAY_CONFIGS, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
-import { getM1PayDate, getM2PayDate } from './utils';
+import { getM1PayDate, getM2PayDate, localDateString } from './utils';
 import { persistFetch } from './persist';
 
 type Role = 'rep' | 'admin' | 'sub-dealer' | 'project_manager' | null;
@@ -261,7 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // installerBaselines is derived from the currently active pricing version per installer
   // (flat rate only — tiered installers show the first band for backward compat display)
   const installerBaselines = useMemo<Record<string, InstallerBaseline>>(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateString(new Date());
     const result: Record<string, InstallerBaseline> = {};
     const allInstallerNames = Array.from(new Set(installerPricingVersions.map((v) => v.installer)));
     for (const name of allInstallerNames) {
@@ -1019,7 +1019,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // updateInstallerBaseline: writes through to the active version's flat rates.
   const updateInstallerBaseline = (installer: string, baseline: InstallerBaseline) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateString(new Date());
     setInstallerPricingVersions((prev) => {
       const activeIdx = prev.reduce<number>((best, v, i) => {
         if (v.installer !== installer) return best;
