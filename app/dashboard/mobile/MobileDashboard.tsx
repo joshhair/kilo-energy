@@ -535,10 +535,20 @@ export default function MobileDashboard() {
         </div>
       </div>
 
-      {/* Hero card — On Pace is the headline, Next Payout secondary */}
+      {/* Hero card — On Pace is the headline, Next Payout secondary.
+          The inner divs previously had key={period} which forced an
+          unmount/remount cycle on every period change so the
+          hero-stat-enter CSS fade could re-play. On mobile this caused
+          a visual glitch where multiple ghost copies of the hero card
+          appeared to stack below the live one after a period switch —
+          almost certainly a React key + CSS animation + iOS Safari
+          interaction. Removing key={period} keeps the same DOM node
+          mounted; the numeric count-up animations (useCountUp) already
+          provide smooth value transitions on period change, so the
+          fade is redundant anyway. */}
       <MobileCard hero>
         {onPaceAnnual > 0 ? (
-          <div key={period} className="hero-stat-enter">
+          <div>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
@@ -554,7 +564,7 @@ export default function MobileDashboard() {
             </div>
           </div>
         ) : (
-          <div key={period} className="hero-stat-enter">
+          <div>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
@@ -562,7 +572,7 @@ export default function MobileDashboard() {
         )}
 
         {/* Stats inside hero card */}
-        <div key={period} className="hero-stat-enter grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)', animationDelay: '40ms' }}>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
           <div className="min-w-0">
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>

@@ -168,8 +168,16 @@ export default function IncentivesPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Track which milestones have already triggered a toast to avoid repeats
+  // Track which milestones have already triggered a toast to avoid repeats.
+  // The `didInitializeToasts` ref silences the FIRST effect run so we don't
+  // spam a toast for every already-crossed milestone when the page first
+  // mounts. The synthetic dataset has many incentives where progress is
+  // already past the threshold but ms.achieved=false, which was firing a
+  // toast per milestone on every tab visit. Now the first run just seeds
+  // the "seen" set without announcing anything, and subsequent runs toast
+  // only for crossings that happen during the user's live session.
   const notifiedMilestonesRef = useRef<Set<string>>(new Set());
+  const didInitializeToastsRef = useRef(false);
 
   const isAdmin = currentRole === 'admin';
 
@@ -188,18 +196,26 @@ export default function IncentivesPage() {
   const expiredVisible = useMemo(() => visible.filter((i) => isExpired(i.endDate)), [visible]);
 
   // ── Feature 4: Toast on milestone reached ──
+  // Only fires for milestones that cross their threshold AFTER the page
+  // is already loaded. On first mount we silently seed the "seen" set
+  // with every already-crossed milestone so the user isn't greeted by
+  // a torrent of historical achievements on every tab visit.
   useEffect(() => {
     if (!isHydrated) return;
+    const isFirstRun = !didInitializeToastsRef.current;
     for (const inc of visible) {
       const progress = computeIncentiveProgress(inc, projects, payrollEntries);
       for (const ms of inc.milestones) {
         const key = `${inc.id}::${ms.id}`;
         if (progress >= ms.threshold && !ms.achieved && !notifiedMilestonesRef.current.has(key)) {
           notifiedMilestonesRef.current.add(key);
-          toast(`Milestone unlocked: ${ms.reward}!`, 'success');
+          if (!isFirstRun) {
+            toast(`Milestone unlocked: ${ms.reward}!`, 'success');
+          }
         }
       }
     }
+    didInitializeToastsRef.current = true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, projects, payrollEntries, isHydrated]);
 
