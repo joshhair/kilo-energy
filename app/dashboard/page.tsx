@@ -197,15 +197,11 @@ function NeedsAttentionSection({
 
   for (const proj of activeProjects) {
     if (proj.phase === 'On Hold') {
-      const [y, m, d] = proj.soldDate.split('-').map(Number);
-      const sold = new Date(y, m - 1, d);
-      const holdDays = Math.floor((today.getTime() - sold.getTime()) / 86_400_000);
       items.push({
         uid: `on-hold-${proj.id}`,
         projectId: proj.id,
         customerName: proj.customerName,
         kind: 'on-hold',
-        holdDays,
         repName: proj.repName,
       });
     }
@@ -335,7 +331,7 @@ function NeedsAttentionSection({
                       }`}>
                         {item.kind === 'flagged' && 'Flagged for review'}
                         {item.kind === 'stuck' && `${item.staleDays ?? 0} days in ${item.stuckPhase}`}
-                        {item.kind === 'on-hold' && `On hold ${item.holdDays} day${item.holdDays !== 1 ? 's' : ''}`}
+                        {item.kind === 'on-hold' && 'On hold'}
                         {isAdmin && item.repName ? ` \u00b7 ${item.repName}` : ''}
                       </p>
                     </div>

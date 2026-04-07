@@ -378,7 +378,7 @@ function RepEarningsView() {
   const totalPaid         = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
   const totalPending      = pendingItems.reduce((s, p) => s + p.amount, 0);
   const pendingCount      = pendingItems.length;
-  const nextPayoutItems   = pendingItems.filter((p) => p.date === nextFridayDate);
+  const nextPayoutItems   = myPayroll.filter((p) => p.status === 'Pending' && p.date === nextFridayDate);
   const nextPayoutTotal   = nextPayoutItems.reduce((s, p) => s + p.amount, 0);
   const nextPayoutCount   = nextPayoutItems.length;
   const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === effectiveRepId), [reimbursements, effectiveRepId]);
@@ -418,9 +418,7 @@ function RepEarningsView() {
   const sortedDealsBase = useMemo((): DealRow[] => {
     const allPayrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
     const payrollRows = monthFilter ? allPayrollRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allPayrollRows;
-    const allReimbRows: DealRow[] = myReimbs.map((r) => ({ kind: 'reimb' as const, entry: r }));
-    const reimbRows = monthFilter ? allReimbRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allReimbRows;
-    return [...payrollRows, ...reimbRows].sort((a, b) => {
+    return [...payrollRows].sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
       const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
       const aName = a.kind === 'payroll' ? (a.entry.customerName ?? '') : a.entry.description;
@@ -449,14 +447,14 @@ function RepEarningsView() {
       if (dealRoleFilter === 'Reimb.')  return row.kind === 'reimb';
       const role = row.kind === 'payroll' ? (row.entry.notes ?? '') : '';
       if (dealRoleFilter === 'Setter')  return role === 'Setter';
-      if (dealRoleFilter === 'Trainer') return role === 'Trainer override';
-      return role !== 'Setter' && role !== 'Trainer override' && row.kind !== 'reimb'; // Closer
+      if (dealRoleFilter === 'Trainer') return role.startsWith('Trainer override');
+      return role !== 'Setter' && !role.startsWith('Trainer override') && row.kind !== 'reimb'; // Closer
     }),
   [sortedDealsBase, dealRoleFilter]);
 
-  const closerCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes !== 'Setter' && r.entry.notes !== 'Trainer override').length;
+  const closerCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes !== 'Setter' && !(r.entry.notes ?? '').startsWith('Trainer override')).length;
   const setterCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes === 'Setter').length;
-  const trainerCount = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes === 'Trainer override').length;
+  const trainerCount = sortedDealsBase.filter(r => r.kind === 'payroll' && (r.entry.notes ?? '').startsWith('Trainer override')).length;
   const reimbCount   = sortedDealsBase.filter(r => r.kind === 'reimb').length;
 
   const dealTotal      = sortedDeals.length;
