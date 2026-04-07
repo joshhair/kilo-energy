@@ -25,10 +25,7 @@ type SettingsSection =
   | 'trainers'
   | 'installers' | 'financers' | 'baselines'
   | 'blitz-permissions'
-  | 'project-managers'
-  | 'sub-dealers'
   | 'export'
-  | 'users'
   | 'customization';
 
 type NavItem = { id: SettingsSection; label: string; icon: React.ComponentType<{ className?: string }> };
@@ -40,8 +37,6 @@ const NAV: NavGroup[] = [
     items: [
       { id: 'trainers', label: 'Trainer Overrides', icon: Layers },
       { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
-      { id: 'project-managers', label: 'Project Managers', icon: Users },
-      { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
     ],
   },
   {
@@ -57,7 +52,6 @@ const NAV: NavGroup[] = [
     items: [
       { id: 'customization', label: 'Customization', icon: Sliders },
       { id: 'export', label: 'Export', icon: Download },
-      { id: 'users', label: 'Admin Users', icon: Shield },
     ],
   },
 ];
@@ -607,7 +601,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'installers', 'financers', 'baselines', 'customization', 'export', 'users'];
+  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'installers', 'financers', 'baselines', 'customization', 'export'];
   const paramSection = searchParams.get('section') as SettingsSection | null;
   const initialSection: SettingsSection = paramSection && validSections.includes(paramSection) ? paramSection : 'trainers';
 
@@ -665,19 +659,15 @@ function SettingsPageInner() {
   const [newInstallerBaseline, setNewInstallerBaseline] = useState('');
   const [showSubDealerRates, setShowSubDealerRates] = useState(false);
 
-  // ── Admin users state (loaded from DB) ──────────────────────────────────────
+  // ── Admin users count (for dashboard stat — see adminCount usage below).
+  // The actual admin user management UI lives at /dashboard/users with the
+  // role filter; this is just a count, no form state needed. ──
   const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string }>>([]);
-  const [newAdminName, setNewAdminName] = useState('');
-  const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [adminEmailError, setAdminEmailError] = useState('');
-
-  // Fetch admin users on mount
-  const loadAdmins = () => {
+  useEffect(() => {
     fetch('/api/reps?role=admin').then((r) => r.ok ? r.json() : []).then((users: Array<{ id: string; firstName: string; lastName: string; email: string }>) => {
       setAdminUsers(users.map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email })));
     }).catch(() => {});
-  };
-  useEffect(() => { loadAdmins(); }, []);
+  }, []);
 
   // ── Installers / Financers state ────────────────────────────────────────────
   const [newInstaller, setNewInstaller] = useState('');
@@ -1629,16 +1619,6 @@ function SettingsPageInner() {
         {/* ── Blitz Permissions ──────────────────────────────────────────────── */}
         {section === 'blitz-permissions' && (
           <BlitzPermissionsSection reps={reps} />
-        )}
-
-        {/* ── Project Managers ───────────────────────────────────────────────────── */}
-        {section === 'project-managers' && (
-          <PMSection />
-        )}
-
-        {/* ── Sub-Dealers ────────────────────────────────────────────────────────── */}
-        {section === 'sub-dealers' && (
-          <SubDealersSection />
         )}
 
         {/* ── Installers ───────────────────────────────────────────────────────── */}
@@ -4232,122 +4212,6 @@ function SettingsPageInner() {
           </div>
         )}
 
-        {/* ── Admin Users ──────────────────────────────────────────────────────── */}
-        {section === 'users' && (
-          <div key={section} className="animate-tab-enter max-w-xl">
-            <SectionHeader title="Admin Users" subtitle="Accounts with full administrative access" />
-            <div className="card-surface rounded-2xl p-5 mb-4">
-              <h2 className="text-white font-semibold mb-4">Add Admin User</h2>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text" placeholder="Name"
-                  value={newAdminName}
-                  onChange={(e) => setNewAdminName(e.target.value)}
-                  className="flex-1 bg-[#1d2028] border border-[#333849] text-[#f0f2f7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] placeholder-[#525c72]"
-                />
-                <div className="flex-1">
-                  <input
-                    type="email" placeholder="Email"
-                    value={newAdminEmail}
-                    onChange={(e) => { setNewAdminEmail(e.target.value); setAdminEmailError(''); }}
-                    className={`w-full bg-[#1d2028] border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[#525c72] ${
-                      adminEmailError ? 'border-red-500 focus:ring-red-500' : 'border-[#272b35] focus:ring-[#00e07a]'
-                    }`}
-                  />
-                  {adminEmailError && <p className="text-red-400 text-[10px] mt-1">{adminEmailError}</p>}
-                </div>
-                <button
-                  onClick={() => {
-                    if (!newAdminName || !newAdminEmail) return;
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailRegex.test(newAdminEmail)) {
-                      setAdminEmailError('Please enter a valid email address');
-                      return;
-                    }
-                    fetch('/api/reps', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        firstName: newAdminName.split(' ')[0] || newAdminName,
-                        lastName: newAdminName.split(' ').slice(1).join(' ') || '',
-                        email: newAdminEmail,
-                        role: 'admin',
-                      }),
-                    }).then((r) => {
-                      if (r.ok) {
-                        toast('Admin user added', 'success');
-                        loadAdmins();
-                      } else {
-                        toast('Failed to add admin user', 'error');
-                      }
-                    });
-                    setNewAdminName('');
-                    setNewAdminEmail('');
-                    setAdminEmailError('');
-                  }}
-                  className="btn-primary text-black px-3 py-2 rounded-xl active:scale-[0.97]"
-                  style={{ backgroundColor: 'var(--brand)' }}
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            {adminUsers.length === 0 ? (
-              <div className="card-surface rounded-2xl p-5 border border-[#333849]/60">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-[#00e07a]/10 flex-shrink-0">
-                    <UserPlus className="w-4 h-4 text-[#00e07a]" />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium text-sm mb-1">No admin users</p>
-                    <p className="text-[#c2c8d8] text-xs leading-relaxed">
-                      Add an admin user above to grant full administrative access to the app.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-            <div className="space-y-2">
-              {adminUsers.map((u) => {
-                const isOnlyAdmin = adminUsers.length <= 1;
-                return (
-                <div key={u.id} className="card-surface rounded-xl px-5 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-white font-medium text-sm">{u.name}</p>
-                    <p className="text-[#8891a8] text-xs">{u.email}</p>
-                  </div>
-                  <button
-                    disabled={isOnlyAdmin}
-                    title={isOnlyAdmin ? 'Cannot delete the only admin' : `Delete ${u.name}`}
-                    onClick={() => {
-                      if (isOnlyAdmin) return;
-                      setConfirmAction({
-                        title: `Delete ${u.name}?`,
-                        message: 'Existing deals are unaffected.',
-                        onConfirm: () => {
-                          fetch(`/api/reps/${u.id}`, { method: 'DELETE' }).then((r) => {
-                            if (r.ok) {
-                              toast('Admin user removed', 'info');
-                              loadAdmins();
-                            } else {
-                              toast('Failed to remove admin', 'error');
-                            }
-                          });
-                          setConfirmAction(null);
-                        },
-                      });
-                    }}
-                    className={`transition-colors ${isOnlyAdmin ? 'text-[#525c72] cursor-not-allowed' : 'text-[#525c72] hover:text-red-400'}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
-            )}
-          </div>
-        )}
 
         {/* ── Spacer so content is never hidden behind the fixed action bar ── */}
         {(selectedInstallers.size > 0 || selectedFinancers.size > 0) && <div className="h-20" />}
