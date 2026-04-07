@@ -119,20 +119,30 @@ function UsersPageInner() {
   // the /api/reps?role=X endpoint on mount for admin viewers.
   const [adminUsers, setAdminUsers] = useState<SimpleUser[]>([]);
   const [pmUsers, setPmUsers] = useState<SimpleUser[]>([]);
+  // One combined state flag for both fetches — flipped true only after
+  // BOTH responses have landed. The All tab gates its entrance animation
+  // on this so the stagger plays once with all cards present, instead of
+  // playing twice as each fetch lands independently and replays the
+  // cascade for the newly-added cards (the "glitching in" bug).
+  // For non-admin viewers we skip the fetches entirely, so the flag
+  // defaults to true to avoid gating the animation on data that never
+  // arrives.
+  const [extraUsersReady, setExtraUsersReady] = useState(currentRole !== 'admin');
   useEffect(() => {
     if (currentRole !== 'admin') return;
-    fetch('/api/reps?role=admin')
-      .then((r) => r.ok ? r.json() : [])
-      .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
-        setAdminUsers(data.map((u) => ({ ...u, role: 'admin' })));
-      })
-      .catch(() => {});
-    fetch('/api/reps?role=project_manager')
-      .then((r) => r.ok ? r.json() : [])
-      .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
-        setPmUsers(data.map((u) => ({ ...u, role: 'project_manager' })));
-      })
-      .catch(() => {});
+    // Promise.all collapses both responses into a single state update, so
+    // the grid renders once with everyone present instead of twice.
+    Promise.all([
+      fetch('/api/reps?role=admin').then((r) => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/reps?role=project_manager').then((r) => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([adminsData, pmsData]: [
+      Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>,
+      Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>,
+    ]) => {
+      setAdminUsers(adminsData.map((u) => ({ ...u, role: 'admin' })));
+      setPmUsers(pmsData.map((u) => ({ ...u, role: 'project_manager' })));
+      setExtraUsersReady(true);
+    });
   }, [currentRole]);
 
   const initialFilter = (searchParams.get('filter') ?? 'all') as FilterTab;
@@ -721,12 +731,19 @@ function UsersPageInner() {
                   // Cascade entrance animation — same pattern the rep list
                   // uses. The stagger class caps at 6 so very long lists
                   // don't accumulate noticeable delay at the tail.
+                  //
+                  // Gated on extraUsersReady for the "all" filter (and not
+                  // needed for rep-only/sub-dealer-only filters): the
+                  // non-rep fetches land after the initial render, and we
+                  // want the cascade to play ONCE with all users present,
+                  // not twice as each population arrives.
+                  const shouldAnimate = roleFilter !== 'all' || extraUsersReady;
                   const staggerClass = `stagger-${Math.min(i + 1, 6)}`;
                   return (
                     <Link
                       key={u.id}
                       href={`/dashboard/users/${u.id}`}
-                      className={`card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98] animate-slide-in-scale ${staggerClass}`}
+                      className={`card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98] ${shouldAnimate ? `animate-slide-in-scale ${staggerClass}` : ''}`}
                       style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badge.color}` }}
                     >
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: badge.bg, color: badge.color }}>
