@@ -506,7 +506,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </button>
               ) : (
                 <button
-                  onClick={handleDeactivate}
+                  onClick={() => setConfirmDeactivate(true)}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
                   style={{ background: 'rgba(255,176,32,0.12)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }}
                 >
@@ -787,7 +787,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       tiers: [{ upToDeal: null, ratePerW: 0.05 }],
                     }),
                   })
-                    .then((r) => r.json())
+                    .then((r) => { if (!r.ok) throw new Error('Failed to assign trainer'); return r.json(); })
                     .then((assignment) => {
                       setTrainerAssignments((prev) =>
                         prev.map((a) =>
@@ -804,6 +804,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                             : a
                         )
                       );
+                    })
+                    .catch(() => {
+                      setTrainerAssignments((prev) => prev.filter((a) => a.id !== tempId));
+                      toast('Failed to assign trainer', 'error');
                     });
                 }}
                 reps={reps}
@@ -989,7 +993,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 <td className="px-5 py-3 text-[#c2c8d8]">{proj.kWSize}</td>
                 {!isPM && (
                   <td className="px-5 py-3 text-[#00e07a] font-semibold">
-                    ${((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)).toLocaleString()}
+                    ${(proj.repId === id
+                        ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
+                        : (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                      ).toLocaleString()}
                   </td>
                 )}
               </tr>
@@ -1032,7 +1039,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               </button>
             ) : (
               <button
-                onClick={handleDeactivate}
+                onClick={() => setConfirmDeactivate(true)}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
                 style={{ background: 'rgba(255,176,32,0.12)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }}
               >
@@ -1068,6 +1075,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeactivate}
+        onClose={() => setConfirmDeactivate(false)}
+        onConfirm={() => { setConfirmDeactivate(false); handleDeactivate(); }}
+        title="Deactivate user"
+        message={`Deactivate ${displayName}? This will lock them out of Clerk and revoke any pending invitation.`}
+        confirmLabel="Deactivate"
+        danger
+      />
     </div>
   );
 }
