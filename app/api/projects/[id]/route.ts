@@ -35,25 +35,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     for (const field of REP_BLOCKED_FIELDS) delete body[field];
   }
 
-  // Validate blitz participation before writing (mirrors POST /api/projects validation)
-  if (body.blitzId) {
-    const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true, setterId: true } });
-    const closerId = body.closerId ?? existing?.closerId;
-    if (closerId) {
-      const participation = await prisma.blitzParticipant.findFirst({
-        where: { blitzId: body.blitzId, userId: closerId, joinStatus: 'approved' },
-      });
-      if (!participation) {
-        return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
+  // Validate blitz participation and window before writing (mirrors POST /api/projects validation)
+  // Also runs when only setterId/closerId/soldDate changes — the project may already have a blitzId.
+  if (body.blitzId || body.setterId !== undefined || body.closerId !== undefined || body.soldDate !== undefined) {
+    const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true, setterId: true, blitzId: true } });
+    const effectiveBlitzId = body.blitzId ?? existing?.blitzId;
+    if (effectiveBlitzId) {
+      // Validate soldDate falls within the blitz window when it is being set
+      if (body.soldDate !== undefined) {
+        const blitz = await prisma.blitz.findUnique({
+          where: { id: effectiveBlitzId },
+          select: { startDate: true, endDate: true },
+        });
+        if (blitz) {
+          const sold = new Date(body.soldDate);
+          if (sold < new Date(blitz.startDate) || sold > new Date(blitz.endDate)) {
+            return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
+          }
+        }
       }
-    }
-    const setterId = body.setterId ?? existing?.setterId;
-    if (setterId) {
-      const setterParticipation = await prisma.blitzParticipant.findFirst({
-        where: { blitzId: body.blitzId, userId: setterId, joinStatus: 'approved' },
-      });
-      if (!setterParticipation) {
-        return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
+      const closerId = body.closerId ?? existing?.closerId;
+      if (closerId) {
+        const participation = await prisma.blitzParticipant.findFirst({
+          where: { blitzId: effectiveBlitzId, userId: closerId, joinStatus: 'approved' },
+        });
+        if (!participation) {
+          return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
+        }
+      }
+      const setterId = body.setterId ?? existing?.setterId;
+      if (setterId) {
+        const setterParticipation = await prisma.blitzParticipant.findFirst({
+          where: { blitzId: effectiveBlitzId, userId: setterId, joinStatus: 'approved' },
+        });
+        if (!setterParticipation) {
+          return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
+        }
       }
     }
   }

@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate blitz window and participation before writing
-  if (body.blitzId && body.soldDate) {
+  if (body.blitzId) {
+    if (!body.soldDate) {
+      return NextResponse.json({ error: 'soldDate is required when blitzId is provided' }, { status: 400 });
+    }
     const blitz = await prisma.blitz.findUnique({
       where: { id: body.blitzId },
       select: { startDate: true, endDate: true },
