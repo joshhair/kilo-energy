@@ -574,7 +574,8 @@ function NewDealPage() {
     if (duplicateApplied.current) return;
     if (searchParams.get('duplicate') !== 'true') return;
     duplicateApplied.current = true;
-    const installer = searchParams.get('installer') ?? '';
+    const rawInstaller = searchParams.get('installer') ?? '';
+    const installer = activeInstallers.includes(rawInstaller) ? rawInstaller : '';
     const financer = searchParams.get('financer') ?? '';
     const productType = searchParams.get('productType') ?? '';
     const repId = searchParams.get('repId') ?? (currentRole === 'admin' ? '' : (currentRepId ?? ''));
@@ -592,7 +593,7 @@ function NewDealPage() {
     toast('Deal duplicated — fill in the new customer details', 'info');
     // Auto-focus customer name field after a brief delay for form to render
     setTimeout(() => customerNameInputRef.current?.focus(), 150);
-  }, [searchParams, currentRole, currentRepId, toast]);
+  }, [searchParams, currentRole, currentRepId, activeInstallers, toast]);
 
   // ── Pre-fill last-used installer from localStorage ────────────────────────
   const lastInstallerApplied = useRef(false);
@@ -687,8 +688,9 @@ function NewDealPage() {
   };
 
   const handlePcFamilyChange = (value: string) => {
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '' }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '' }));
+    const mappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', ...(mappedFinancer ? { financer: mappedFinancer } : {}) }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', ...(mappedFinancer ? { financer: '' } : {}) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 
@@ -1487,7 +1489,10 @@ function NewDealPage() {
                       <SearchableSelect
                         value={form.financer}
                         onChange={(val) => handleFinancerChange(val)}
-                        options={activeFinancers.map((f) => ({ value: f, label: f }))}
+                        options={(pcConfig?.familyFinancerMap?.[form.pcFamily]
+                          ? [pcConfig.familyFinancerMap[form.pcFamily]]
+                          : activeFinancers
+                        ).map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
                         error={!!errors.financer}
                       />

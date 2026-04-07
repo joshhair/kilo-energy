@@ -257,9 +257,14 @@ export default function MobileNewDeal() {
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.json()).then((data) => {
-      setAvailableBlitzes((data ?? []).filter((b: any) => b.status === 'upcoming' || b.status === 'active' || b.status === 'completed'));
+      setAvailableBlitzes((data ?? []).filter((b: any) => {
+        const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
+        if (!statusOk) return false;
+        if (currentRole === 'admin') return true;
+        return b.participants?.some((p: any) => p.userId === currentRepId && p.joinStatus === 'approved');
+      }));
     }).catch(() => {});
-  }, []);
+  }, [currentRole, currentRepId]);
 
   // Pre-fill last-used installer
   const lastInstallerApplied = useRef(false);
@@ -323,7 +328,7 @@ export default function MobileNewDeal() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const isFullyPaidOut = (p: Project): boolean => {
-    const pct = INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const pct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
     return pct < 100 ? p.m3Paid === true : p.m2Paid === true;
   };
   const setterCompletedDeals = form.setterId
