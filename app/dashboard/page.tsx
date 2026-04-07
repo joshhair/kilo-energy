@@ -826,7 +826,7 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0;
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0;
       return s + Math.max(0, totalExpected - (allMtdPayrollByProject.get(p.id) ?? 0));
     }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
@@ -923,7 +923,7 @@ export default function DashboardPage() {
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
-        ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
         : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
@@ -943,7 +943,7 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
       return sum + Math.max(0, totalExpected - (allPayrollByProject.get(p.id) ?? 0));
     }, 0);
   // M3: build a set of project IDs that already have an M3 payroll entry (paid or unpaid).
@@ -992,7 +992,7 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
       return sum + Math.max(0, totalExpected - (prevAllPayrollByProject.get(p.id) ?? 0));
     }, 0);
   const prevM3PayrollProjectIds = new Set(myPrevPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
