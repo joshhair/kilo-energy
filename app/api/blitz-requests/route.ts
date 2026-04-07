@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const type = body.type || 'create';
 
+  if (type === 'cancel' && !body.blitzId) {
+    return NextResponse.json({ error: 'blitzId is required for cancel requests' }, { status: 400 });
+  }
+
   if (type === 'cancel' && body.blitzId) {
     const blitz = await prisma.blitz.findUnique({ where: { id: body.blitzId }, select: { ownerId: true, createdById: true } });
     if (!blitz || (blitz.ownerId !== user.id && blitz.createdById !== user.id)) {

@@ -232,7 +232,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   );
 }
 
-function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () => void; onCreated: () => void; userId: string; reps: Array<{ id: string; name: string }> }) {
+function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClose: () => void; onCreated: () => void; userId: string; reps: Array<{ id: string; name: string }>; isAdmin: boolean }) {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [housing, setHousing] = useState('');
@@ -307,13 +307,15 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps }: { onClose: () =>
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Leader</label>
-            <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
-              <option value={userId}>Me</option>
-              {reps.filter((r) => r.id !== userId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div>
+              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Leader</label>
+              <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
+                <option value={userId}>Me</option>
+                {reps.filter((r) => r.id !== userId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Notes</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" />
@@ -1047,6 +1049,7 @@ function BlitzPageInner() {
           onCreated={loadData}
           userId={effectiveRepId ?? currentRepId ?? ''}
           reps={reps}
+          isAdmin={isAdmin}
         />
       )}
 

@@ -373,7 +373,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           financerNameToId: { ...prev.financerNameToId, [name]: created.id as string },
         }));
       }
-    }).catch(console.error);
+    }).catch((err) => {
+      console.error('[addFinancer] Failed to create financer:', err);
+      setFinancers((prev) => prev.filter((f) => f.name !== name));
+      setIdMaps((prev) => {
+        const { [name]: _, ...rest } = prev.financerNameToId;
+        return { ...prev, financerNameToId: rest };
+      });
+      emitPersistError('Failed to add financer — please try again');
+    });
   };
   const addRep = (firstName: string, lastName: string, email: string, phone: string, repType: 'closer' | 'setter' | 'both' = 'both', id?: string, role: 'rep' | 'admin' | 'sub-dealer' = 'rep') => {
     const tempId = id ?? `rep_${Date.now()}`;
