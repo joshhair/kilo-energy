@@ -715,14 +715,18 @@ function UsersPageInner() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {filtered.map((u) => {
+                {filtered.map((u, i) => {
                   const badge = roleBadge[u.role] ?? { label: u.role, color: '#8891a8', bg: 'rgba(136,145,168,0.12)' };
                   const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
+                  // Cascade entrance animation — same pattern the rep list
+                  // uses. The stagger class caps at 6 so very long lists
+                  // don't accumulate noticeable delay at the tail.
+                  const staggerClass = `stagger-${Math.min(i + 1, 6)}`;
                   return (
                     <Link
                       key={u.id}
                       href={`/dashboard/users/${u.id}`}
-                      className="card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98]"
+                      className={`card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98] animate-slide-in-scale ${staggerClass}`}
                       style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badge.color}` }}
                     >
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: badge.bg, color: badge.color }}>
