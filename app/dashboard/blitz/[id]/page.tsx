@@ -210,14 +210,14 @@ export default function BlitzDetailPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { toast('Failed to add owner as participant', 'error'); return; }
+          if (!pr.ok) { toast('Failed to add owner as participant', 'error'); setEditing(false); loadBlitz(); return; }
         } else if (existingParticipant.joinStatus !== 'approved') {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { toast('Failed to approve owner as participant', 'error'); return; }
+          if (!pr.ok) { toast('Failed to approve owner as participant', 'error'); setEditing(false); loadBlitz(); return; }
         }
       }
       toast('Blitz updated');
@@ -816,7 +816,8 @@ export default function BlitzDetailPage() {
               <table className="w-full text-sm">
                 <thead className="table-header-frost"><tr className="border-b border-[#333849] text-xs text-[#8891a8] uppercase tracking-wider">
                   <th className="text-left px-4 py-3">Customer</th>
-                  <th className="text-left px-4 py-3">Rep</th>
+                  <th className="text-left px-4 py-3">Closer</th>
+                  {!isAdmin && !isOwner && <th className="text-left px-4 py-3">Role</th>}
                   <th className="text-left px-4 py-3">Phase</th>
                   <th className="text-right px-4 py-3">kW</th>
                   <th className="text-right px-4 py-3">Net PPW</th>
@@ -977,9 +978,16 @@ export default function BlitzDetailPage() {
               const repDeals = blitz.projects.filter((proj: any) => (proj.closer?.id === p.user.id || proj.setter?.id === p.user.id) && proj.phase !== 'Cancelled' && proj.phase !== 'On Hold');
               const repKW = repDeals.reduce((s: number, proj: any) => s + proj.kWSize, 0);
               const repPayout = repDeals.reduce((s: number, proj: any) => {
-                const isSetter = proj.setter?.id === p.user.id && proj.closer?.id !== p.user.id;
-                const m1 = (isSetter || !proj.setter) ? (proj.m1Amount ?? 0) : 0;
-                return s + m1 + (isSetter ? (proj.setterM2Amount ?? 0) : (proj.m2Amount ?? 0)) + (isSetter ? (proj.setterM3Amount ?? 0) : (proj.m3Amount ?? 0));
+                const isCloser = proj.closer?.id === p.user.id;
+                const isSetter = proj.setter?.id === p.user.id;
+                if (isCloser && isSetter) {
+                  return s + (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                } else if (isSetter) {
+                  return s + (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                } else {
+                  const m1 = !proj.setter ? (proj.m1Amount ?? 0) : 0;
+                  return s + m1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                }
               }, 0);
               return { user: p.user, deals: repDeals.length, kw: repKW, payout: repPayout };
             }).sort((a: { deals: number; kw: number }, b: { deals: number; kw: number }) => b.deals - a.deals || b.kw - a.kw);
