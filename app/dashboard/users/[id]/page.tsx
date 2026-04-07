@@ -13,9 +13,24 @@ import { ChevronRight, ChevronLeft, Pencil, Check, X, Plus, Trash2, FolderKanban
 import { RepSelector } from '../../components/RepSelector';
 import { Sparkline } from '../../../../lib/sparkline';
 
+type FetchedUser = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  repType: string;
+  active: boolean;
+  canCreateDeals?: boolean;
+  canAccessBlitz?: boolean;
+  canExport?: boolean;
+};
+
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps, subDealers } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -30,8 +45,37 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // Trainer assignment picker state
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
 
-  const rep = reps.find((r) => r.id === id);
-  useEffect(() => { document.title = rep ? `${rep.name} | Kilo Energy` : 'User Detail | Kilo Energy'; }, [rep?.name]);
+  // First try the app context — reps + sub-dealers are already hydrated there.
+  // `rep` is `let` so we can reassign to a sub-dealer/fetched user before
+  // falling through to the existing rep-detail JSX (which reads .name + .email).
+  let rep = reps.find((r) => r.id === id);
+  const subDealer = !rep ? subDealers.find((s) => s.id === id) : null;
+
+  // For admin + project_manager users (which aren't in context), fetch by id.
+  // Also used as a fallback when the context lookup fails for any reason.
+  const [fetchedUser, setFetchedUser] = useState<FetchedUser | null>(null);
+  const [lookupFailed, setLookupFailed] = useState(false);
+  useEffect(() => {
+    if (rep || subDealer) return; // found in context, no fetch needed
+    fetch(`/api/reps/${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: FetchedUser | null) => {
+        if (data) setFetchedUser(data);
+        else setLookupFailed(true);
+      })
+      .catch(() => setLookupFailed(true));
+  }, [id, rep, subDealer]);
+
+  // Resolve the display user from whichever source succeeded.
+  const resolvedUser =
+    rep
+      ? { ...rep, role: 'rep' as string, canCreateDeals: false, canAccessBlitz: false, canExport: false }
+      : subDealer
+      ? { ...subDealer, role: 'sub-dealer' as string, repType: 'both' as string, canCreateDeals: false, canAccessBlitz: false, canExport: false }
+      : fetchedUser;
+
+  const displayName = resolvedUser ? `${resolvedUser.firstName} ${resolvedUser.lastName}` : '';
+  useEffect(() => { document.title = displayName ? `${displayName} | Kilo Energy` : 'User Detail | Kilo Energy'; }, [displayName]);
 
   if (!hydrated) return <RepDetailSkeleton />;
 
@@ -45,7 +89,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  if (!rep) {
+  // Still fetching and nothing found in context yet — show skeleton.
+  if (!resolvedUser && !lookupFailed) return <RepDetailSkeleton />;
+
+  if (!resolvedUser) {
     return (
       <div className="p-8 text-[#8891a8] text-center">
         User not found.{' '}
@@ -55,6 +102,102 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       </div>
     );
   }
+
+  // ─── Early branch: admin / project_manager → simple detail shell ───
+  // These roles don't have commission, projects, payroll, or trainer data,
+  // so rendering the rep-specific UI below would show empty sections. The
+  // shell here has just the essentials: avatar, contact info, role badge,
+  // and (for PMs) the permission flags.
+  if (resolvedUser.role === 'admin' || resolvedUser.role === 'project_manager') {
+    const roleLabel = resolvedUser.role === 'admin' ? 'Admin' : 'Project Manager';
+    const badgeColor = resolvedUser.role === 'admin' ? '#ffb020' : '#00c4f0';
+    const badgeBg = resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)' : 'rgba(0,196,240,0.12)';
+    const initials = `${resolvedUser.firstName[0] ?? ''}${resolvedUser.lastName[0] ?? ''}`.toUpperCase();
+
+    return (
+      <div className="p-4 md:p-8 animate-fade-in-up">
+        {/* Breadcrumb */}
+        <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[#8891a8] mb-6">
+          <Link href="/dashboard" className="hover:text-[#c2c8d8] transition-colors">Dashboard</Link>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <Link href="/dashboard/users" className="hover:text-[#c2c8d8] transition-colors">Users</Link>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <span className="text-[#c2c8d8]">{resolvedUser.firstName} {resolvedUser.lastName}</span>
+        </nav>
+
+        {/* Header card */}
+        <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badgeColor}` }}>
+          <div className="flex items-start gap-5">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black shrink-0" style={{ background: badgeBg, color: badgeColor }}>
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <h1 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  {resolvedUser.firstName} {resolvedUser.lastName}
+                </h1>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold" style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeColor}40` }}>
+                  {roleLabel}
+                </span>
+              </div>
+              <div className="space-y-1 text-sm" style={{ color: '#c2c8d8' }}>
+                {resolvedUser.email && <div>{resolvedUser.email}</div>}
+                {resolvedUser.phone && <div>{resolvedUser.phone}</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Permissions card (PM only) */}
+        {resolvedUser.role === 'project_manager' && currentRole === 'admin' && (
+          <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35' }}>
+            <h2 className="text-white font-bold text-base mb-4">Permissions</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between py-2">
+                <span style={{ color: '#c2c8d8' }}>Can create deals</span>
+                <span className={resolvedUser.canCreateDeals ? 'text-[#00e07a] font-semibold' : 'text-[#525c72]'}>
+                  {resolvedUser.canCreateDeals ? 'Yes' : 'No'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-t border-[#272b35]">
+                <span style={{ color: '#c2c8d8' }}>Can access blitz</span>
+                <span className={resolvedUser.canAccessBlitz ? 'text-[#00e07a] font-semibold' : 'text-[#525c72]'}>
+                  {resolvedUser.canAccessBlitz ? 'Yes' : 'No'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-t border-[#272b35]">
+                <span style={{ color: '#c2c8d8' }}>Can export</span>
+                <span className={resolvedUser.canExport ? 'text-[#00e07a] font-semibold' : 'text-[#525c72]'}>
+                  {resolvedUser.canExport ? 'Yes' : 'No'}
+                </span>
+              </div>
+            </div>
+            <p className="text-[11px] mt-4 pt-4 border-t border-[#272b35]" style={{ color: '#525c72' }}>
+              Toggle these flags from Settings → Project Managers. Inline editing will move here in a follow-up.
+            </p>
+          </div>
+        )}
+
+        <div className="card-surface rounded-2xl p-5" style={{ background: '#161920', border: '1px solid #272b35' }}>
+          <p className="text-xs" style={{ color: '#8891a8' }}>
+            Admin and project manager accounts don&apos;t have commission, projects, or payroll data. Use Settings for permission management.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Below this point, resolvedUser.role is 'rep' or 'sub-dealer'.
+  // If `rep` wasn't in the context (sub-dealer or freshly fetched), reassign
+  // it to whichever source resolved so the existing rep-detail JSX below
+  // (which reads .name + .email) keeps working.
+  if (!rep) {
+    rep = resolvedUser as unknown as typeof rep;
+  }
+  // Type narrowing — at this point one of context lookup, sub-dealer
+  // lookup, or fetched user must have populated `rep` (we already
+  // returned for the not-found case + admin/PM case above).
+  if (!rep) return null;
 
   const repProjects = projects.filter((p) => p.repId === id || p.setterId === id);
   const repPayroll = payrollEntries.filter((p) => p.repId === id);
