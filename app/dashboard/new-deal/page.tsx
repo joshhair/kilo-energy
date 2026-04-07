@@ -698,14 +698,14 @@ function NewDealPage() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => (p.repId === form.setterId || p.setterId === form.setterId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length
+    ? projects.filter((p) => (p.repId === form.setterId || p.setterId === form.setterId) && p.phase === 'Completed').length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
   const closerCompletedDeals = closerId
-    ? projects.filter((p) => (p.repId === closerId || p.setterId === closerId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length
+    ? projects.filter((p) => (p.repId === closerId || p.setterId === closerId) && p.phase === 'Completed').length
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
@@ -781,7 +781,12 @@ function NewDealPage() {
   const subDealerRate = (() => {
     if (!isSubDealer || !form.installer) return 0;
     const baseline = installerBaselines[form.installer];
-    return baseline?.subDealerPerW ?? 0;
+    if (baseline) return baseline.subDealerPerW ?? 0;
+    // Tiered installer: resolve the correct band using the deal's kW
+    if (kW <= 0) return 0;
+    const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+    const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
+    return r.subDealerPerW ?? 0;
   })();
   const subDealerCommission = isSubDealer && kW > 0 && soldPPW > 0 && subDealerRate > 0
     ? calculateCommission(soldPPW, subDealerRate, kW)
@@ -811,7 +816,9 @@ function NewDealPage() {
     'kWSize',
     'netPPW',
   ];
-  const s3Fields: string[] = [];
+  const s3Fields: string[] = [
+    ...(form.leadSource === 'blitz' ? ['blitzId'] : []),
+  ];
 
   const stepsComplete = [
     s1Fields.every(isFieldValid),
@@ -1774,7 +1781,7 @@ function NewDealPage() {
                       if (value !== 'blitz' || form.leadSource === 'blitz') {
                         update('blitzId', '');
                       }
-                      if (form.leadSource === 'blitz' && value !== 'blitz') {
+                      if (form.leadSource === 'blitz') {
                         update('soldDate', new Date().toISOString().split('T')[0]);
                       }
                     }}
