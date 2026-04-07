@@ -728,23 +728,33 @@ function UsersPageInner() {
                 {filtered.map((u, i) => {
                   const badge = roleBadge[u.role] ?? { label: u.role, color: '#8891a8', bg: 'rgba(136,145,168,0.12)' };
                   const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
-                  // Cascade entrance animation — same pattern the rep list
-                  // uses. The stagger class caps at 6 so very long lists
-                  // don't accumulate noticeable delay at the tail.
+                  // Cascade entrance animation.
                   //
-                  // Gated on extraUsersReady for the "all" filter (and not
-                  // needed for rep-only/sub-dealer-only filters): the
-                  // non-rep fetches land after the initial render, and we
-                  // want the cascade to play ONCE with all users present,
-                  // not twice as each population arrives.
+                  // Gated on extraUsersReady for the "all" filter (not
+                  // needed for single-role filters): the non-rep fetches
+                  // land after the initial render, and we want the cascade
+                  // to play ONCE with all users present, not twice as each
+                  // population arrives.
+                  //
+                  // We use inline animationDelay instead of the stagger-N
+                  // CSS classes because those cap at stagger-6 (450ms),
+                  // which causes cards 6+ to all pop in simultaneously at
+                  // the end of the cascade. An inline per-card delay of
+                  // 40ms gives a continuous cascade up to a soft cap of
+                  // 600ms — smooth all the way through even with 30+ cards.
                   const shouldAnimate = roleFilter !== 'all' || extraUsersReady;
-                  const staggerClass = `stagger-${Math.min(i + 1, 6)}`;
+                  const delayMs = Math.min(i * 40, 600);
                   return (
                     <Link
                       key={u.id}
                       href={`/dashboard/users/${u.id}`}
-                      className={`card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98] ${shouldAnimate ? `animate-slide-in-scale ${staggerClass}` : ''}`}
-                      style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badge.color}` }}
+                      className={`card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98] ${shouldAnimate ? 'animate-slide-in-scale' : ''}`}
+                      style={{
+                        background: '#161920',
+                        border: '1px solid #272b35',
+                        borderLeft: `3px solid ${badge.color}`,
+                        ...(shouldAnimate ? { animationDelay: `${delayMs}ms` } : {}),
+                      }}
                     >
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: badge.bg, color: badge.color }}>
                         {initials}
