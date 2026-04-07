@@ -43,10 +43,13 @@ export async function POST(req: NextRequest) {
     }
     const blitz = await prisma.blitz.findUnique({
       where: { id: body.blitzId },
-      select: { startDate: true, endDate: true },
+      select: { startDate: true, endDate: true, status: true },
     });
     if (!blitz) {
       return NextResponse.json({ error: 'Blitz not found' }, { status: 400 });
+    }
+    if (blitz.status === 'cancelled') {
+      return NextResponse.json({ error: 'Cannot attribute a deal to a cancelled blitz' }, { status: 400 });
     }
     const sold = new Date(body.soldDate);
     const start = new Date(blitz.startDate);

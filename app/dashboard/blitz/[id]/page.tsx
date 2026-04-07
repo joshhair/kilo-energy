@@ -912,6 +912,7 @@ export default function BlitzDetailPage() {
                         <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-[#00c4f0] transition-colors">{p.customerName}</Link>
                       </td>
                       <td className="px-4 py-3 text-[#c2c8d8]">{p.closer?.id ? <Link href={`/dashboard/users/${p.closer.id}`} className="hover:text-[#00c4f0] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
+                      {!isAdmin && !isOwner && <td className="px-4 py-3 text-[#c2c8d8]">{p.closer?.id === effectiveRepId && p.setter?.id === effectiveRepId ? 'Self-gen' : p.closer?.id === effectiveRepId ? 'Closer' : 'Setter'}</td>}
                       <td className="px-4 py-3">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-[#1d2028]/40 text-[#c2c8d8] border-[#272b35]/30'}`}>{p.phase}</span>
                       </td>
@@ -923,7 +924,7 @@ export default function BlitzDetailPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-[#272b35] bg-[#1d2028]/30">
-                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-[#c2c8d8]">{visibleProjects.length} deal{visibleProjects.length !== 1 ? 's' : ''}</td>
+                    <td colSpan={!isAdmin && !isOwner ? 4 : 3} className="px-4 py-3 text-sm font-semibold text-[#c2c8d8]">{visibleProjects.length} deal{visibleProjects.length !== 1 ? 's' : ''}</td>
                     <td className="px-4 py-3 text-right text-sm font-bold text-white">{totalKW.toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[#8891a8]">—</td>
                     {isAdmin && <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0), 0))}</td>}

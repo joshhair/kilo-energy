@@ -56,6 +56,7 @@ export default function MobileProjects() {
   const [phaseFilter, setPhaseFilter] = useState<Phase | 'All'>('All');
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
+  const [listKey, setListKey] = useState(0);
 
   useEffect(() => {
     const delay = search === '' ? 0 : 300;
@@ -70,6 +71,10 @@ export default function MobileProjects() {
       setSpotlight({ left: el.offsetLeft, width: el.offsetWidth });
     }
   }, [phaseFilter]);
+
+  useEffect(() => {
+    setListKey((k) => k + 1);
+  }, [phaseFilter, debouncedSearch]);
 
   const visibleProjects = useMemo(() => {
     if (effectiveRole === 'admin' || effectiveRole === 'project_manager') return projects;
@@ -201,7 +206,7 @@ export default function MobileProjects() {
       </div>
 
       {/* Project cards */}
-      <div className="space-y-3">
+      <div key={listKey} className="space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No projects found</p>
@@ -219,7 +224,7 @@ export default function MobileProjects() {
                 key={project.id}
                 onTap={() => router.push(`/dashboard/projects/${project.id}`)}
                 className="animate-card-enter"
-                style={{ '--card-index': Math.min(index, 10) } as React.CSSProperties}
+                style={{ '--card-index': Math.min(index, 6) } as React.CSSProperties}
               >
                 <div className="flex items-start justify-between gap-3 mb-1">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
