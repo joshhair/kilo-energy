@@ -718,7 +718,7 @@ function NewDealPage() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => (p.repId === form.setterId || p.setterId === form.setterId) && isFullyPaidOut(p)).length
+    ? projects.filter((p) => p.setterId === form.setterId && isFullyPaidOut(p)).length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -1075,7 +1075,8 @@ function NewDealPage() {
   }
 
   // Compute month count for the left panel
-  const _today = new Date().toISOString().split('T')[0];
+  const _now = new Date();
+  const _today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
   const _monthPrefix = _today.slice(0, 7);
   const monthCount = projects.filter((p) => p.soldDate.startsWith(_monthPrefix) && (p.repId === (currentRepId ?? ''))).length;
   const todayCount = projects.filter((p) => p.soldDate.startsWith(_today) && (p.repId === (currentRepId ?? ''))).length;

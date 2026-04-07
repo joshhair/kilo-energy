@@ -909,7 +909,7 @@ export default function DashboardPage() {
   const activeProjects = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
 
   // ── Financial stats (project-based to account for milestone-triggered payroll) ──
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
   const paidPayrollByProject = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((map, p) => {
     if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
