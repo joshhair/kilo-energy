@@ -11,18 +11,65 @@ import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 
-const ROLE_LABELS: Record<string, string> = { closer: 'Closer', setter: 'Setter', both: 'Both' };
+const REP_TYPE_LABELS: Record<string, string> = { closer: 'Closer', setter: 'Setter', both: 'Both' };
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
+
+// Top-level role filter — matches the desktop Users page.
+const ROLE_FILTERS = [
+  { value: 'all',              label: 'All' },
+  { value: 'rep',              label: 'Reps' },
+  { value: 'sub-dealer',       label: 'SDs' },
+  { value: 'project_manager',  label: 'PMs' },
+  { value: 'admin',            label: 'Admins' },
+] as const;
+type RoleFilter = typeof ROLE_FILTERS[number]['value'];
+
+type SimpleUser = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  role: string;
+  repType?: string;
+};
+
+const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
+  rep:              { label: 'Rep',      color: '#00e5a0', bg: 'rgba(0,229,160,0.12)' },
+  'sub-dealer':     { label: 'SD',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
+  project_manager:  { label: 'PM',       color: '#00c4f0', bg: 'rgba(0,196,240,0.12)' },
+  admin:            { label: 'Admin',    color: '#ffb020', bg: 'rgba(255,176,32,0.12)' },
+};
 
 export default function MobileReps() {
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, addRep } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep } = useApp();
   const { toast } = useToast();
 
   const isAdmin = currentRole === 'admin';
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [adminUsers, setAdminUsers] = useState<SimpleUser[]>([]);
+  const [pmUsers, setPmUsers] = useState<SimpleUser[]>([]);
+
+  // Fetch admins + PMs for admin viewers so the role filter can show them.
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch('/api/reps?role=admin')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
+        setAdminUsers(data.map((u) => ({ ...u, role: 'admin' })));
+      })
+      .catch(() => {});
+    fetch('/api/reps?role=project_manager')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
+        setPmUsers(data.map((u) => ({ ...u, role: 'project_manager' })));
+      })
+      .catch(() => {});
+  }, [isAdmin]);
   const [showAddRep, setShowAddRep] = useState(false);
   const [addForm, setAddForm] = useState({
     firstName: '',
@@ -92,7 +139,7 @@ export default function MobileReps() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader
-        title="Reps"
+        title="Users"
         right={
           isAdmin ? (
             <button
@@ -107,12 +154,34 @@ export default function MobileReps() {
         }
       />
 
+      {/* Role filter pills — horizontal scroll for small screens */}
+      <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
+        {ROLE_FILTERS.map((rf) => {
+          const active = roleFilter === rf.value;
+          return (
+            <button
+              key={rf.value}
+              onClick={() => setRoleFilter(rf.value)}
+              className={`shrink-0 min-h-[40px] px-4 rounded-xl text-sm font-semibold transition-colors`}
+              style={{
+                background: active ? '#00e5a0' : 'var(--m-card, #0d1525)',
+                color: active ? '#000' : 'var(--m-text-muted, #8899aa)',
+                border: active ? 'none' : '1px solid var(--m-border, #1a2840)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {rf.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
         <input
           type="text"
-          placeholder="Search reps..."
+          placeholder={roleFilter === 'rep' ? 'Search reps...' : 'Search users...'}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-2xl text-base text-white focus:outline-none focus:ring-1 transition-colors"
@@ -124,8 +193,61 @@ export default function MobileReps() {
         />
       </div>
 
-      {/* Rep list */}
-      {filtered.length === 0 ? (
+      {/* Non-rep simple user list — shown for all filters except 'rep' */}
+      {roleFilter !== 'rep' && (() => {
+        const pool: SimpleUser[] =
+          roleFilter === 'all'
+            ? [
+                ...reps.map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
+                ...subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
+                ...pmUsers,
+                ...adminUsers,
+              ]
+            : roleFilter === 'sub-dealer'
+            ? subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
+            : roleFilter === 'project_manager'
+            ? pmUsers
+            : adminUsers;
+
+        const q = debouncedSearch.trim().toLowerCase();
+        const filteredPool = q
+          ? pool.filter((u) => `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q))
+          : pool;
+
+        if (filteredPool.length === 0) {
+          return <MobileEmptyState icon={Users} title="No users found" subtitle={q ? 'Try adjusting your search' : 'No users in this category yet'} />;
+        }
+        return (
+          <div className="space-y-3">
+            {filteredPool.map((u) => {
+              const badge = ROLE_BADGE[u.role] ?? { label: u.role, color: '#8891a8', bg: 'rgba(136,145,168,0.12)' };
+              const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
+              return (
+                <MobileCard key={u.id} onTap={() => router.push(`/dashboard/users/${u.id}`)}>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                      style={{ background: badge.bg, color: badge.color }}
+                    >
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
+                      {u.email && (
+                        <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>
+                      )}
+                    </div>
+                    <MobileBadge value={badge.label} />
+                  </div>
+                </MobileCard>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {/* Rep list — shown only when the role filter is 'rep' */}
+      {roleFilter === 'rep' && (filtered.length === 0 ? (
         <MobileEmptyState icon={Users} title="No reps found" subtitle="Try adjusting your search" />
       ) : (
         <div className="space-y-3">
@@ -149,7 +271,7 @@ export default function MobileReps() {
                       <p className="text-base truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
                     )}
                   </div>
-                  <MobileBadge value={ROLE_LABELS[rep.repType] ?? rep.repType} />
+                  <MobileBadge value={REP_TYPE_LABELS[rep.repType] ?? rep.repType} />
                 </div>
 
                 {isAdmin && (
@@ -165,7 +287,7 @@ export default function MobileReps() {
             );
           })}
         </div>
-      )}
+      ))}
 
       {/* Add Rep Bottom Sheet */}
       <MobileBottomSheet

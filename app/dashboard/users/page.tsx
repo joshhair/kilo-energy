@@ -19,6 +19,28 @@ const FILTER_TABS = [
 ] as const;
 type FilterTab = typeof FILTER_TABS[number]['value'];
 
+// Top-level role filter for the unified Users directory.
+// Distinct from FILTER_TABS (which is a rep-type sub-filter that only
+// applies when viewing reps).
+const ROLE_FILTERS = [
+  { value: 'all',              label: 'All' },
+  { value: 'rep',              label: 'Reps' },
+  { value: 'sub-dealer',       label: 'Sub-Dealers' },
+  { value: 'project_manager',  label: 'Project Managers' },
+  { value: 'admin',            label: 'Admins' },
+] as const;
+type RoleFilter = typeof ROLE_FILTERS[number]['value'];
+
+type SimpleUser = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  role: string;
+  repType?: string;
+};
+
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
 
 const ROLE_LABELS = { closer: 'Closer', setter: 'Setter', both: 'Both' } as const;
@@ -74,11 +96,44 @@ export default function UsersPage() {
 function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, addRep, removeRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, removeRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Top-level role filter (URL-backed via ?role= query param)
+  const initialRoleFilter = (searchParams.get('role') ?? 'all') as RoleFilter;
+  const [roleFilter, setRoleFilterState] = useState<RoleFilter>(
+    ROLE_FILTERS.some(r => r.value === initialRoleFilter) ? initialRoleFilter : 'all',
+  );
+  const setRoleFilter = (v: RoleFilter) => {
+    setRoleFilterState(v);
+    const params = new URLSearchParams(searchParams.toString());
+    if (v !== 'all') params.set('role', v); else params.delete('role');
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
+  // Fetched lists of admin + PM users. These aren't in the app context
+  // (which only includes reps + subDealers), so we pull them lazily from
+  // the /api/reps?role=X endpoint on mount for admin viewers.
+  const [adminUsers, setAdminUsers] = useState<SimpleUser[]>([]);
+  const [pmUsers, setPmUsers] = useState<SimpleUser[]>([]);
+  useEffect(() => {
+    if (currentRole !== 'admin') return;
+    fetch('/api/reps?role=admin')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
+        setAdminUsers(data.map((u) => ({ ...u, role: 'admin' })));
+      })
+      .catch(() => {});
+    fetch('/api/reps?role=project_manager')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
+        setPmUsers(data.map((u) => ({ ...u, role: 'project_manager' })));
+      })
+      .catch(() => {});
+  }, [currentRole]);
 
   const initialFilter = (searchParams.get('filter') ?? 'all') as FilterTab;
   const [filterTab, setFilterTabState] = useState<FilterTab>(FILTER_TABS.some(t => t.value === initialFilter) ? initialFilter : 'all');
@@ -493,13 +548,10 @@ function UsersPageInner() {
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
               <Users className="w-5 h-5 text-[#00e07a]" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Reps</h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[#00e07a]/10 text-[#00e07a] border border-[#00e07a]/20">
-              {filtered.length !== reps.length ? `${filtered.length} / ${reps.length}` : reps.length} reps
-            </span>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Users</h1>
           </div>
         </div>
-        <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">{filtered.length} sales representatives</p>
+        <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">Reps, sub-dealers, project managers, and admins</p>
       </div>
 
       {/* Admin: add rep button */}
@@ -560,8 +612,112 @@ function UsersPageInner() {
         </div>
       )}
 
-      {/* ── Top Performers Podium ─────────────────────────────────────────── */}
-      {podiumDisplay.length === 3 && !isPM && (
+      {/* ── Role filter bar — top-level filter across the unified directory ─ */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {ROLE_FILTERS.map((rf) => {
+          const active = roleFilter === rf.value;
+          return (
+            <button
+              key={rf.value}
+              onClick={() => setRoleFilter(rf.value)}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                active
+                  ? 'border-[#00e07a] text-[#00e07a] bg-[#00e07a]/10'
+                  : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:text-[#c2c8d8]'
+              }`}
+            >
+              {rf.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Non-rep view: simple user list ─────────────────────────────────── */}
+      {roleFilter !== 'rep' && (() => {
+        // Build the unified user pool based on the current role filter.
+        const pool: SimpleUser[] =
+          roleFilter === 'all'
+            ? [
+                ...reps.map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
+                ...subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
+                ...pmUsers,
+                ...adminUsers,
+              ]
+            : roleFilter === 'sub-dealer'
+            ? subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
+            : roleFilter === 'project_manager'
+            ? pmUsers
+            : adminUsers;
+
+        const q = debouncedSearch.trim().toLowerCase();
+        const filtered = q
+          ? pool.filter((u) => `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q))
+          : pool;
+
+        const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
+          rep:              { label: 'Rep',              color: '#00e07a', bg: 'rgba(0,224,122,0.12)' },
+          'sub-dealer':     { label: 'Sub-Dealer',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
+          project_manager:  { label: 'Project Manager',  color: '#00c4f0', bg: 'rgba(0,196,240,0.12)' },
+          admin:            { label: 'Admin',            color: '#ffb020', bg: 'rgba(255,176,32,0.12)' },
+        };
+
+        return (
+          <div>
+            {/* Search bar */}
+            <div className="relative mb-4 max-w-md">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#525c72] pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Search ${roleFilter === 'all' ? 'all users' : roleBadge[roleFilter]?.label.toLowerCase() + 's'}…`}
+                className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 placeholder-[#525c72]"
+              />
+            </div>
+
+            <div className="mb-3 text-xs" style={{ color: '#8891a8' }}>
+              {filtered.length} {filtered.length === 1 ? 'user' : 'users'}
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="card-surface rounded-2xl p-8 text-center" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
+                <p className="text-sm" style={{ color: '#8891a8' }}>
+                  {q ? 'No users match your search.' : 'No users in this category yet.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {filtered.map((u) => {
+                  const badge = roleBadge[u.role] ?? { label: u.role, color: '#8891a8', bg: 'rgba(136,145,168,0.12)' };
+                  const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
+                  return (
+                    <Link
+                      key={u.id}
+                      href={`/dashboard/users/${u.id}`}
+                      className="card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98]"
+                      style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badge.color}` }}
+                    >
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: badge.bg, color: badge.color }}>
+                        {initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{u.firstName} {u.lastName}</p>
+                        {u.email && <p className="text-xs truncate" style={{ color: '#8891a8' }}>{u.email}</p>}
+                      </div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0" style={{ background: badge.bg, color: badge.color }}>
+                        {badge.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ── Top Performers Podium (reps view only) ─────────────────────────── */}
+      {roleFilter === 'rep' && podiumDisplay.length === 3 && !isPM && (
         <div className="card-surface rounded-2xl p-5 mb-8 animate-slide-in-scale" style={{ animationDelay: 'var(--podium-delay, 300ms)' }}>
           {/* Section header */}
           <div className="h-[3px] w-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 mb-3" />
@@ -617,6 +773,11 @@ function UsersPageInner() {
         </div>
       )}
 
+      {/* ── REP-ONLY RICH UI — the podium below plus this summary bar, rep-type
+           filter tabs, search, and rep card grid only render when the role
+           filter is explicitly set to 'rep'. The 'all' view above is a simple
+           unified list that covers every role at a glance. ── */}
+      {roleFilter === 'rep' && (<>
       {/* ── Summary Bar — GradCards ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
@@ -1054,6 +1215,7 @@ function UsersPageInner() {
           </div>
         )}
       </div>
+      </>)}
       {/* ── Add Rep Modal ────────────────────────────────────────────────── */}
       {showAddModal && (
         <div
