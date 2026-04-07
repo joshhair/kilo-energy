@@ -590,7 +590,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const pagedProjects = repProjects.slice(projStart, projEnd);
 
   const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
-  const totalEst = repProjects.reduce((s, p) => s + p.m1Amount + p.m2Amount + (p.m3Amount ?? 0), 0);
+  const totalEst = repProjects.reduce((s, p) => {
+    if (p.repId === id) {
+      // Closer: m1Amount is the setter's M1 when a setter exists, so closer earns 0 M1 in that case
+      const closerM1 = p.setterId ? 0 : p.m1Amount;
+      return s + closerM1 + p.m2Amount + (p.m3Amount ?? 0);
+    } else {
+      // Setter: earns m1Amount (setter's M1) + setter's M2/M3
+      return s + p.m1Amount + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+    }
+  }, 0);
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
   const totalPending = repPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));

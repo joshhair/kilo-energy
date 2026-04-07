@@ -95,7 +95,7 @@ export function myCommissionOnProject(
   // For a setter with no entries yet, we don't have their specific numbers
   // stored — total will be 0 and status "projected".
   if (isViewerCloser || isViewerSubDealer) {
-    const m1Amount = isSubDealer ? 0 : project.m1Amount ?? 0;
+    const m1Amount = isSubDealer || project.setterId ? 0 : project.m1Amount ?? 0;
     const m2Amount = project.m2Amount ?? 0;
     const m3Amount = project.m3Amount ?? 0;
 

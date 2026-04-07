@@ -258,7 +258,7 @@ function MyPayPageInner() {
     const preAcceptance = ['New'];
     return myProjects
       .filter((p) => preAcceptance.includes(p.phase))
-      .reduce((s, p) => s + (p.m1Amount ?? 0), 0);
+      .reduce((s, p) => s + (p.setterId === effectiveRepId ? 0 : (p.m1Amount ?? 0)), 0);
   }, [myProjects]);
 
   const projectedM2 = useMemo(() => {
@@ -286,7 +286,13 @@ function MyPayPageInner() {
     }
 
     // Average commission per deal (M1 + M2)
-    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => s + (p.m1Amount ?? 0) + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0) / totalDeals;
+    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
+      const isSetterRole = p.setterId === effectiveRepId;
+      // m1Amount stores setterM1 when a setter exists; closer gets $0 M1 on those deals
+      const m1 = (isSetterRole || !p.setterId) ? (p.m1Amount ?? 0) : 0;
+      const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
+      return s + m1 + m2;
+    }, 0) / totalDeals;
 
     // --- Signal 2: Deals per month pace ---
     const firstDealDate = new Date(sortedByDate[0].soldDate + 'T12:00:00');
