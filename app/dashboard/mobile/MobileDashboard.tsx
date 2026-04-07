@@ -10,7 +10,7 @@ import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
-import MobileBadge from './shared/MobileBadge';
+import MobileBadge, { PHASE_COLORS } from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
 
 type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year' | 'last-year';
@@ -368,24 +368,34 @@ export default function MobileDashboard() {
           {recentProjects.length === 0 ? (
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
           ) : (
-            <MobileCard>
-              {recentProjects.map((p, i) => (
-                <button
-                  key={p.id}
-                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
-                    i < recentProjects.length - 1 ? 'border-b' : ''
-                  }`}
-                  style={{ borderColor: 'var(--m-border, #1a2840)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-                >
-                  <div className="min-w-0 flex items-center gap-2">
-                    <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
-                    <MobileBadge value={p.phase} />
-                  </div>
-                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
-                </button>
-              ))}
-            </MobileCard>
+            <div className="space-y-2">
+              {recentProjects.map((p) => {
+                const accent = PHASE_COLORS[p.phase]?.text ?? '#8899aa';
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                    className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
+                    style={{
+                      background: 'var(--m-card, #0d1525)',
+                      border: '1px solid #2a3858',
+                      transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    }}
+                  >
+                    {/* Left-edge phase accent strip — turns a uniform stack
+                        of cards into something you can scan by color. */}
+                    <div className="shrink-0" style={{ width: 4, background: accent }} />
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</span>
+                        <MobileBadge value={p.phase} />
+                      </div>
+                      <span className="shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </MobileSection>
       </div>
@@ -600,22 +610,34 @@ export default function MobileDashboard() {
       {/* Recent */}
       {recentProjects.length > 0 && (
         <MobileSection title="Recent">
-          <MobileCard>
-            {recentProjects.map((p, i) => (
-              <button
-                key={p.id}
-                onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < recentProjects.length - 1 ? 'border-b' : ''}`}
-                style={{ borderColor: 'var(--m-border, #1a2840)', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-              >
-                <div className="min-w-0 flex items-center gap-2">
-                  <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
-                  <MobileBadge value={p.phase} />
-                </div>
-                <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{relativeTime(p.soldDate)}</span>
-              </button>
-            ))}
-          </MobileCard>
+          <div className="space-y-2">
+            {recentProjects.map((p, i) => {
+              const accent = PHASE_COLORS[p.phase]?.text ?? '#8899aa';
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                  className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150 mobile-list-item"
+                  style={{
+                    background: 'var(--m-card, #0d1525)',
+                    border: '1px solid #2a3858',
+                    animationDelay: `${i * 45}ms`,
+                    transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  }}
+                >
+                  {/* Phase-colored accent strip — scan by color. */}
+                  <div className="shrink-0" style={{ width: 4, background: accent }} />
+                  <div className="flex-1 min-w-0 flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</span>
+                      <MobileBadge value={p.phase} />
+                    </div>
+                    <span className="shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </MobileSection>
       )}
     </div>

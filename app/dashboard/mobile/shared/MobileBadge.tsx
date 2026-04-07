@@ -1,6 +1,9 @@
 'use client';
 
-const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
+// Exported so other mobile components (e.g. the Recent Projects list
+// in MobileDashboard) can reuse the same palette for left-edge accent
+// strips, without duplicating the map.
+export const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
   'New':             { bg: 'rgba(0,229,160,0.12)', text: '#00e5a0' },
   'Acceptance':      { bg: 'rgba(0,180,216,0.12)', text: '#00b4d8' },
   'Site Survey':     { bg: 'rgba(245,166,35,0.12)', text: '#f5a623' },

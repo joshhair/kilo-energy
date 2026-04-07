@@ -147,6 +147,14 @@ export default function MobileProjects() {
           <div
             className="absolute top-0 rounded-xl pointer-events-none phase-spotlight"
             style={{
+              // `left: 0` anchors the spotlight to the flex container's
+              // content-box origin so the subsequent translateX(offsetLeft)
+              // is the sole positional driver. Without this, the spotlight's
+              // static position is determined by flex flow (which equals the
+              // container's left padding), and the translateX gets added on
+              // top — shifting the highlight ~20px right and landing it on
+              // the wrong button.
+              left: 0,
               height: 36,
               background: '#00e5a0',
               transform: `translateX(${spotlight.left}px)`,
