@@ -50,3 +50,13 @@ next-env.d.ts
 .claude/settings.local.json
 
 .vercel
+
+# Playwright browser cache (created when running e2e tests with persistent
+# context). Hundreds of binary files that should never be in git — they
+# polluted git status for months before being cleaned up.
+.playwright-session/
+
+# Generated visual artifacts from manual + automated screenshot runs.
+qa-screenshots/
+screenshots/
+mobile-audit-screenshots/
