@@ -28,8 +28,13 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
   // body.ids: string[], body.status: string
   if (body.ids && body.status) {
+    const allowedSource: Record<string, string> = { Pending: 'Draft', Paid: 'Pending' };
+    const sourceStatus = allowedSource[body.status];
+    if (!sourceStatus) {
+      return NextResponse.json({ error: 'Invalid target status' }, { status: 400 });
+    }
     const result = await prisma.payrollEntry.updateMany({
-      where: { id: { in: body.ids } },
+      where: { id: { in: body.ids }, status: sourceStatus },
       data: { status: body.status },
     });
     return NextResponse.json({ success: true, updated: result.count });

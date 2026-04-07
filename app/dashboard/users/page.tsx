@@ -809,7 +809,7 @@ function UsersPageInner() {
       {/* ── Summary Bar — GradCards ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Reps', value: reps.length.toString(), gradient: 'linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))', borderColor: 'rgba(77,159,255,0.3)', valueColor: '#4d9fff' },
+          { label: 'Total Reps', value: reps.filter(r => r.active !== false).length.toString(), gradient: 'linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))', borderColor: 'rgba(77,159,255,0.3)', valueColor: '#4d9fff' },
           { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), gradient: 'linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))', borderColor: 'rgba(0,196,240,0.3)', valueColor: '#00c4f0' },
           { label: 'kW Sold', value: `${projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0).toFixed(1)}`, gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
           ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, gradient: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))', borderColor: 'rgba(0,224,122,0.3)', valueColor: '#00e07a' }] : []),
@@ -955,7 +955,7 @@ function UsersPageInner() {
                   : 0;
                 const rpForCancel = ranges.current.from && ranges.current.to
                   ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
-                  : rpAll;
+                  : [];
                 const cancelRate = rpForCancel.length > 0 ? (rpForCancel.filter((p) => p.phase === 'Cancelled').length / rpForCancel.length * 100) : 0;
 
                 // Previous period stats

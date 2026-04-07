@@ -672,10 +672,9 @@ function PayrollPageInner() {
                               setProcessingReimIds((prev) => new Set(prev).add(r.id));
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Approved' } : x));
                               fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
-                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement approved for ${r.repName}`, 'success'); })
                                 .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
                                 .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
-                              toast(`Reimbursement approved for ${r.repName}`, 'success');
                             }}
                             className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[#00e07a] px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -688,10 +687,9 @@ function PayrollPageInner() {
                               setProcessingReimIds((prev) => new Set(prev).add(r.id));
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Denied' } : x));
                               fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
-                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement denied for ${r.repName}`, 'error'); })
                                 .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
                                 .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
-                              toast(`Reimbursement denied for ${r.repName}`, 'error');
                             }}
                             className="flex items-center gap-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-400 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
