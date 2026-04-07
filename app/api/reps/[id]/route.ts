@@ -61,7 +61,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     name: `${user.firstName} ${user.lastName}`,
     email: user.email,
     phone: user.phone,
-    role: 'rep' as const,
+    role: user.role,
     repType: user.repType,
   });
 }

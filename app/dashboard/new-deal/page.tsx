@@ -810,8 +810,8 @@ function NewDealPage() {
     const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
     return r.subDealerPerW ?? 0;
   })();
-  const subDealerCommission = isSubDealer && kW > 0 && soldPPW > 0 && subDealerRate > 0
-    ? calculateCommission(soldPPW, subDealerRate, kW)
+  const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0 && subDealerRate > kiloPerW
+    ? (subDealerRate - kiloPerW) * kW * 1000
     : 0;
 
   // ── Stepper: section completion & progress ────────────────────────────────
@@ -1599,7 +1599,7 @@ function NewDealPage() {
                     )}
                   </div>
                   <FieldError errors={errors} field="netPPW" />
-                  <PpwHint soldPPW={soldPPW} closerPerW={closerPerW} hasError={!!errors.netPPW} />
+                  {!isSubDealer && <PpwHint soldPPW={soldPPW} closerPerW={closerPerW} hasError={!!errors.netPPW} />}
                 </div>
               </div>
 

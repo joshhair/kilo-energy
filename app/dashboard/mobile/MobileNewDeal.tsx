@@ -233,6 +233,7 @@ export default function MobileNewDeal() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const [stepping, setStepping] = useState(false);
   // Synchronous lock — React batches state updates inside the same event
   // tick, so `submitting` (state) still reads false on a rapid double-tap.
   // The ref flips immediately and guards against double-submission.
@@ -245,12 +246,24 @@ export default function MobileNewDeal() {
 
   const formRef = useRef<HTMLFormElement>(null);
   const fieldWrapperRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const customerNameRef = useRef<HTMLInputElement>(null);
+  const kWSizeRef = useRef<HTMLInputElement>(null);
 
   // Scroll to top when step changes
   useEffect(() => {
     const el = document.querySelector('main');
     if (el) el.scrollTop = 0;
     window.scrollTo(0, 0);
+  }, [currentStep]);
+
+  // Auto-focus first field after step enter animation completes
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t = setTimeout(() => {
+      if (currentStep === 0) customerNameRef.current?.focus();
+      else if (currentStep === 1) kWSizeRef.current?.focus();
+    }, 330);
+    return () => clearTimeout(t);
   }, [currentStep]);
 
   // Blitz list
