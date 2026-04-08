@@ -181,7 +181,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   const repProjects = projects.filter((p) => p.repId === repId || p.setterId === repId);
   const repPayroll = payrollEntries.filter((p) => p.repId === repId);
-  const activeProjects = repProjects.filter((p) => !['Cancelled', 'Completed'].includes(p.phase));
+  const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
   const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
   const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);

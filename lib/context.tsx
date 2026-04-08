@@ -717,11 +717,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // ── ROLLBACK: When phase moves backward past a milestone, delete orphaned Draft entries ──
         const PIPELINE = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
         const oldIdx = PIPELINE.indexOf(old.phase);
+        // 'On Hold' is not in PIPELINE; treat it as beyond all milestones so rollback
+        // checks still run when a project is moved from On Hold to an earlier phase.
+        const effectiveOldIdx = oldIdx >= 0 ? oldIdx : (old.phase === 'On Hold' ? PIPELINE.length : -1);
         const newIdx = PIPELINE.indexOf(newPhase);
-        if (oldIdx >= 0 && newIdx >= 0 && newIdx < oldIdx) {
-          const rollBackM1 = oldIdx >= PIPELINE.indexOf('Acceptance') && newIdx < PIPELINE.indexOf('Acceptance');
-          const rollBackM2 = oldIdx >= PIPELINE.indexOf('Installed') && newIdx < PIPELINE.indexOf('Installed');
-          const rollBackM3 = oldIdx >= PIPELINE.indexOf('PTO') && newIdx < PIPELINE.indexOf('PTO');
+        if (effectiveOldIdx >= 0 && newIdx >= 0 && newIdx < effectiveOldIdx) {
+          const rollBackM1 = effectiveOldIdx >= PIPELINE.indexOf('Acceptance') && newIdx < PIPELINE.indexOf('Acceptance');
+          const rollBackM2 = effectiveOldIdx >= PIPELINE.indexOf('Installed') && newIdx < PIPELINE.indexOf('Installed');
+          const rollBackM3 = effectiveOldIdx >= PIPELINE.indexOf('PTO') && newIdx < PIPELINE.indexOf('PTO');
           if (rollBackM1 || rollBackM2 || rollBackM3) {
             setPayrollEntries((prevEntries) => {
               const toDelete = prevEntries.filter((e) => {
@@ -741,7 +744,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         const isSubDealerDeal = !!old.subDealerId;
-        const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance';
+        // If M2 entries already exist, the project previously crossed Acceptance+Installed,
+        // so On Hold→Acceptance is a rollback — not a fresh milestone crossing. Suppress M1
+        // creation to prevent isAcceptance from firing while stale M2 Drafts remain.
+        const hasExistingM2 = payrollEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
+        const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance' && !hasExistingM2;
         const isInstalled = newPhase === 'Installed' && old.phase !== 'Installed';
         const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
 
@@ -1037,6 +1044,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       return updated;
     });
+
+    // ── AMOUNT SYNC: When amounts are edited, patch existing Draft payroll entries ──
+    const stageAmountUpdates: Array<{ stage: 'M1' | 'M2' | 'M3'; setter: boolean; newAmount: number }> = [];
+    if (updates.m1Amount !== undefined) stageAmountUpdates.push({ stage: 'M1', setter: false, newAmount: updates.m1Amount });
+    if (updates.m2Amount !== undefined) stageAmountUpdates.push({ stage: 'M2', setter: false, newAmount: updates.m2Amount });
+    if (updates.m3Amount !== undefined) stageAmountUpdates.push({ stage: 'M3', setter: false, newAmount: updates.m3Amount });
+    if (updates.setterM2Amount !== undefined) stageAmountUpdates.push({ stage: 'M2', setter: true, newAmount: updates.setterM2Amount });
+    if (updates.setterM3Amount !== undefined) stageAmountUpdates.push({ stage: 'M3', setter: true, newAmount: updates.setterM3Amount });
+    if (stageAmountUpdates.length > 0) {
+      setPayrollEntries((prev) =>
+        prev.map((e) => {
+          if (e.projectId !== id || e.status !== 'Draft' || e.type !== 'Deal') return e;
+          const match = stageAmountUpdates.find(
+            (u) => u.stage === e.paymentStage && u.setter === (e.notes === 'Setter')
+          );
+          if (!match || match.newAmount === e.amount) return e;
+          persistFetch(`/api/payroll/${e.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: match.newAmount }),
+          }, 'Failed to update payroll entry amount').catch(() => {});
+          return { ...e, amount: match.newAmount };
+        })
+      );
+    }
   };
 
   // updateInstallerBaseline: writes through to the active version's flat rates.
