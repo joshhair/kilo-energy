@@ -382,6 +382,7 @@ function RepEarningsView() {
   const nextPayoutTotal   = nextPayoutItems.reduce((s, p) => s + p.amount, 0);
   const nextPayoutCount   = nextPayoutItems.length;
   const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === effectiveRepId), [reimbursements, effectiveRepId]);
+  const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs, [myReimbs, monthFilter]);
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
@@ -715,7 +716,7 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[#c2c8d8] hover:text-white'}`}>
-            {t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${myReimbs.length})`}
+            {t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}
           </button>
         ))}
       </div>
@@ -803,7 +804,7 @@ function RepEarningsView() {
                         <td className="px-5 py-3 text-xs">
                           {isReim ? <span className="text-violet-400">Reimb.</span>
                             : role === 'Setter' ? <span className="text-[#00e07a]">Setter</span>
-                            : role === 'Trainer override' ? <span className="text-amber-400">Trainer</span>
+                            : role.startsWith('Trainer override') ? <span className="text-amber-400">Trainer</span>
                             : <span className="text-[#00e07a]">Closer</span>}
                         </td>
                         <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
@@ -952,7 +953,7 @@ function RepEarningsView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {myReimbs.map((r, i) => (
+                  {filteredReimbs.map((r, i) => (
                     <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[#333849]/50 odd:bg-[#161920]/30 even:bg-[#1d2028]/30 hover:bg-[#1d2028]/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-white">{r.description}</td>
                       <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
@@ -961,7 +962,7 @@ function RepEarningsView() {
                       <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
                     </tr>
                   ))}
-                  {myReimbs.length === 0 && (
+                  {filteredReimbs.length === 0 && (
                     <tr><td colSpan={5} className="px-5 py-10 text-center">
                       <div className="flex justify-center">
                         <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">

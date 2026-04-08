@@ -197,11 +197,15 @@ function NeedsAttentionSection({
 
   for (const proj of activeProjects) {
     if (proj.phase === 'On Hold') {
+      const [y, m, d] = proj.soldDate.split('-').map(Number);
+      const sold = new Date(y, m - 1, d);
+      const holdDays = Math.floor((today.getTime() - sold.getTime()) / 86_400_000);
       items.push({
         uid: `on-hold-${proj.id}`,
         projectId: proj.id,
         customerName: proj.customerName,
         kind: 'on-hold',
+        holdDays,
         repName: proj.repName,
       });
     }

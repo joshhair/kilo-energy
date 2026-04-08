@@ -953,7 +953,7 @@ function KanbanView({
                     ${phaseProjects.reduce((sum, p) => {
                       if (!isAdmin && dealScope === 'mine') {
                         if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                        if (p.setterId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
                       return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
@@ -1117,7 +1117,7 @@ function KanbanView({
                     ${phaseProjects.reduce((sum, p) => {
                       if (!isAdmin && dealScope === 'mine') {
                         if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                        if (p.setterId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
                       return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
