@@ -86,6 +86,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.m2Amount !== undefined) data.m2Amount = body.m2Amount;
   if (body.m3Amount !== undefined) data.m3Amount = body.m3Amount;
   if (body.m3Paid !== undefined) data.m3Paid = body.m3Paid;
+  if (body.setterM1Amount !== undefined) data.setterM1Amount = body.setterM1Amount;
   if (body.setterM2Amount !== undefined) data.setterM2Amount = body.setterM2Amount;
   if (body.setterM3Amount !== undefined) data.setterM3Amount = body.setterM3Amount;
   if (body.cancellationReason !== undefined) data.cancellationReason = body.cancellationReason;

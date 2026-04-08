@@ -978,7 +978,7 @@ export default function DashboardPage() {
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
-        ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
         : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
@@ -1564,7 +1564,7 @@ export default function DashboardPage() {
               const estPay = proj.repId === effectiveRepId
                 ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
                 : proj.setterId === effectiveRepId
-                  ? (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                  ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                   : 0;
               const soldLabel = (() => {
                 const [y, m, d] = proj.soldDate.split('-').map(Number);

@@ -199,6 +199,7 @@ export async function GET() {
     m2Amount: stripFinancials ? 0 : p.m2Amount,
     m3Paid: stripFinancials ? false : (p.m3Paid ?? false),
     m3Amount: stripFinancials ? undefined : (p.m3Amount ?? undefined),
+    setterM1Amount: stripFinancials ? undefined : (p.setterM1Amount ?? undefined),
     setterM2Amount: stripFinancials ? undefined : (p.setterM2Amount ?? undefined),
     setterM3Amount: stripFinancials ? undefined : (p.setterM3Amount ?? undefined),
     notes: p.notes,
