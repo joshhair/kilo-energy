@@ -1,12 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2563eb"/>
-      <stop offset="100%" style="stop-color:#10b981"/>
+      <stop offset="0%"  stop-color="#050d18"/>
+      <stop offset="40%" stop-color="#0a2540"/>
+      <stop offset="100%" stop-color="#008f5a"/>
     </linearGradient>
+    <radialGradient id="hi" cx="25%" cy="20%" r="60%">
+      <stop offset="0%"  stop-color="#00e5a0" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#00e5a0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#00ffb4" stop-opacity="0.55"/>
+      <stop offset="35%" stop-color="#00e5a0" stop-opacity="0.18"/>
+      <stop offset="70%" stop-color="#00e5a0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="amb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00b4d8" stop-opacity="0.45"/>
+      <stop offset="65%" stop-color="#00b4d8" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="192" height="192" rx="35" fill="url(#bg)"/>
-  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+  <rect width="192" height="192" rx="37" fill="url(#bg)"/>
+  <rect width="192" height="192" rx="37" fill="url(#hi)"/>
+  <circle cx="169" cy="22" r="49" fill="url(#sun)"/>
+  <circle cx="22" cy="169" r="53" fill="url(#amb)"/>
+  <rect x="1" y="1" width="190" height="190" rx="36" fill="none"
+        stroke="#00e5a0" stroke-opacity="0.45" stroke-width="2"/>
+  <text x="50%" y="56%" dominant-baseline="middle" text-anchor="middle"
         fill="white" font-family="system-ui,sans-serif" font-weight="900"
-        font-size="106" letter-spacing="-2">K</text>
+        font-size="119" letter-spacing="-4"
+        style="filter: drop-shadow(0 2px 7px rgba(0,229,160,0.55));">K</text>
 </svg>
