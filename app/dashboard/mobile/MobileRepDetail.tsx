@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
-import { formatDate } from '../../../lib/utils';
+import { formatDate, formatCompactKW } from '../../../lib/utils';
 import { ArrowLeft, FolderKanban, DollarSign } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
@@ -212,7 +212,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.length}</span> deal{repProjects.length !== 1 ? 's' : ''}
         {' \u00B7 '}
-        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{totalKW.toFixed(1)}</span> kW
+        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
         {!isPM && (
           <>
             {' \u00B7 '}

@@ -213,8 +213,11 @@ function NeedsAttentionSection({
 
   // Note: @mentions are handled by the separate MyTasksSection, not Needs Attention
 
-  // Sort: by staleDays (stuck) or holdDays (on-hold) descending (most urgent first)
+  // Sort: flagged first, then by staleDays (stuck) or holdDays (on-hold) descending (most urgent first)
   items.sort((a, b) => {
+    const aFlagged = a.kind === 'flagged' ? 1 : 0;
+    const bFlagged = b.kind === 'flagged' ? 1 : 0;
+    if (bFlagged !== aFlagged) return bFlagged - aFlagged;
     return (b.staleDays ?? b.holdDays ?? 0) - (a.staleDays ?? a.holdDays ?? 0);
   });
 
@@ -1117,7 +1120,7 @@ export default function DashboardPage() {
     },
     {
       label: 'kW Sold',
-      value: `${totalKWSold.toFixed(1)} kW`,
+      value: formatCompactKW(totalKWSold),
       sub: `${activeProjects.length} active projects`,
       icon: Zap,
       color: 'text-yellow-400',
@@ -1665,7 +1668,7 @@ function PMDashboard({
         {[
           { label: 'Active Projects', value: activeProjects.length, color: 'text-[#00e07a]' },
           { label: 'Total Projects', value: projects.length, color: 'text-[#c2c8d8]' },
-          { label: 'Total kW', value: `${totalKW.toFixed(1)}`, color: 'text-[#00e07a]' },
+          { label: 'Total kW', value: formatCompactKW(totalKW), color: 'text-[#00e07a]' },
           { label: 'Flagged', value: flaggedCount, color: flaggedCount > 0 ? 'text-red-400' : 'text-[#8891a8]' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card-surface rounded-2xl p-5">
@@ -2426,7 +2429,7 @@ function SubDealerDashboard({
   const stats = [
     { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[#00e07a]', accentGradient: 'from-blue-500 to-blue-400' },
     { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400' },
-    { label: 'Total kW', value: `${totalKW.toFixed(1)} kW`, icon: Zap, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
+    { label: 'Total kW', value: formatCompactKW(totalKW), icon: Zap, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
     { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[#00e07a]', accentGradient: 'from-emerald-500 to-emerald-400' },
   ];
 

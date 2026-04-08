@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$ } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
 import { ACTIVE_PHASES } from '../../../lib/data';
 import { CheckCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -178,7 +178,7 @@ export default function MobileDashboard() {
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Active Projects" value={activeProjects.length} color={ACCENT} />
           <MobileStatCard label="Total Projects" value={myProjects.length} color="#fff" />
-          <MobileStatCard label="Total kW" value={totalKW.toFixed(1)} color={ACCENT2} />
+          <MobileStatCard label="Total kW" value={formatCompactKW(totalKW)} color={ACCENT2} />
           <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
         </div>
 
@@ -358,7 +358,7 @@ export default function MobileDashboard() {
         {/* Stat grid — 2x2 */}
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
-          <MobileStatCard label="kW Sold" value={totalKW.toFixed(1)} color={ACCENT2} />
+          <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color={ACCENT2} />
           <MobileStatCard label="Active Deals" value={activeProjects.length} color="#fff" />
           <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
         </div>
@@ -519,7 +519,7 @@ export default function MobileDashboard() {
               key={p.value}
               ref={(el) => { pillRefs.current[idx] = el; }}
               onClick={() => { setPeriod(p.value); requestAnimationFrame(() => { pillRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }); }}
-              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all min-h-[44px] touch-manipulation"
+              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all transition-colors duration-200 min-h-[44px] touch-manipulation"
               style={{
                 fontFamily: FONT_BODY,
                 color: period === p.value ? '#000' : MUTED,
@@ -527,6 +527,7 @@ export default function MobileDashboard() {
                 border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
                 position: 'relative',
                 zIndex: 1,
+                transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
               {p.label}
@@ -572,7 +573,7 @@ export default function MobileDashboard() {
         )}
 
         {/* Stats inside hero card */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+        <div key={period} className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)', animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div className="min-w-0">
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
@@ -582,7 +583,7 @@ export default function MobileDashboard() {
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
           </div>
           <div className="min-w-0">
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: '#fff', lineHeight: 1.15 }}>{periodKW.toFixed(1)} <span style={{ fontSize: '0.9rem', color: MUTED }}>kW</span></p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: '#fff', lineHeight: 1.15 }}>{formatCompactKW(periodKW)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Sold</p>
           </div>
           <div className="min-w-0">

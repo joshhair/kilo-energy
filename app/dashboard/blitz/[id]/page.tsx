@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
-import { formatDate, formatCurrency } from '../../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKW } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
 import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2, FolderKanban, Trophy } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
@@ -593,7 +593,7 @@ export default function BlitzDetailPage() {
             </div>
             <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-2">
               <p className="text-xs text-[#8891a8] mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Total kW</p>
-              <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
+              <p className="text-2xl font-bold text-white">{formatCompactKW(totalKW)}</p>
             </div>
             {isAdmin ? (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">

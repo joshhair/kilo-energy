@@ -131,3 +131,8 @@ Also: Cancelled, On Hold
 - API tests: `tests/api/*.test.ts` — real Prisma + SQLite, mock Clerk auth
 - E2E tests: `tests/e2e/*.test.ts` — Playwright, requires dev server
 - Always run `npm test` after changes to verify nothing broke
+
+### Before Committing
+- **Always run `npm run typecheck` before every commit.** Vercel builds from the committed tree — a clean working directory is not enough. Past incident: `abf6551` broke production because a component signature change was staged without its corresponding caller update.
+- **Stage files individually by name** (`git add app/foo.tsx lib/bar.ts`), not with `git add -A` or `git add .`. Broad staging captures in-progress partial refactors and produces commits that pass local checks but fail CI.
+- If a multi-file refactor is in progress, either complete it fully before committing or stash/discard the incomplete parts first.

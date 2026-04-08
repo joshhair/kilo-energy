@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileBlitz from '../mobile/MobileBlitz';
-import { formatDate, formatCurrency } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
 import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap, UserPlus, UserCheck, ChevronDown, X } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import { PaginationBar } from '../components/PaginationBar';
@@ -742,7 +742,7 @@ function BlitzPageInner() {
             <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Total kW</span>
             <Zap className="w-4 h-4 text-cyan-400" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{totalKW.toFixed(1)}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{formatCompactKW(totalKW)}</p>
         </div>
         {isAdmin && (
           <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>

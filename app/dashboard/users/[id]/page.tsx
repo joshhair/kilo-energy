@@ -7,7 +7,7 @@ import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileRepDetail from '../../mobile/MobileRepDetail';
 import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/data';
-import { formatDate } from '../../../../lib/utils';
+import { formatDate, formatCompactKW } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
 import { ChevronRight, ChevronLeft, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
@@ -695,7 +695,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         {[
           { label: 'Total Deals',    value: repProjects.length,              color: 'text-[#00e07a]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
           { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[#00e07a]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Total kW',       value: `${totalKW.toFixed(1)} kW`,      color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
           ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[#00e07a]', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: '#00e07a' }] : []),
         ].map((s) => (
           <div

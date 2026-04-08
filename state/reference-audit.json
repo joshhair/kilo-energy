@@ -1,5 +1,5 @@
 {
-  "takenAt": "2026-04-07T17:16:40.112Z",
+  "takenAt": "2026-04-07T19:38:53.877Z",
   "installers": [
     {
       "id": "inst_bryton",
@@ -35,7 +35,7 @@
       "versionCount": 1,
       "activeVCount": 1,
       "prepaidCount": 0,
-      "projectCount": 5
+      "projectCount": 533
     },
     {
       "id": "inst_exo",
@@ -95,7 +95,7 @@
       "versionCount": 0,
       "activeVCount": 0,
       "prepaidCount": 2,
-      "projectCount": 0
+      "projectCount": 831
     },
     {
       "id": "inst_solnova",
@@ -119,7 +119,7 @@
       "versionCount": 1,
       "activeVCount": 1,
       "prepaidCount": 0,
-      "projectCount": 0
+      "projectCount": 376
     },
     {
       "id": "inst_sunpower",
@@ -131,7 +131,7 @@
       "versionCount": 1,
       "activeVCount": 1,
       "prepaidCount": 0,
-      "projectCount": 0
+      "projectCount": 265
     }
   ],
   "financers": [
@@ -139,13 +139,13 @@
       "id": "cmnjpjmnb00010al84tq1ez84",
       "name": "Cash",
       "active": true,
-      "projectCount": 3
+      "projectCount": 160
     },
     {
       "id": "fin_credit_human",
       "name": "Credit Human",
       "active": true,
-      "projectCount": 0
+      "projectCount": 75
     },
     {
       "id": "fin_dividend",
@@ -157,7 +157,7 @@
       "id": "fin_enfin",
       "name": "Enfin",
       "active": true,
-      "projectCount": 1
+      "projectCount": 294
     },
     {
       "id": "fin_everbright",
@@ -169,13 +169,13 @@
       "id": "fin_goodleap",
       "name": "Goodleap",
       "active": true,
-      "projectCount": 0
+      "projectCount": 408
     },
     {
       "id": "fin_lightreach",
       "name": "LightReach",
       "active": true,
-      "projectCount": 0
+      "projectCount": 295
     },
     {
       "id": "fin_mosaic",
@@ -187,19 +187,19 @@
       "id": "fin_participate",
       "name": "Participate",
       "active": true,
-      "projectCount": 0
+      "projectCount": 98
     },
     {
       "id": "fin_solrite",
       "name": "Solrite",
       "active": true,
-      "projectCount": 0
+      "projectCount": 123
     },
     {
       "id": "fin_sungage",
       "name": "Sungage",
       "active": true,
-      "projectCount": 0
+      "projectCount": 203
     },
     {
       "id": "fin_sunnova",
@@ -211,13 +211,13 @@
       "id": "fin_sunrun",
       "name": "Sunrun",
       "active": true,
-      "projectCount": 0
+      "projectCount": 190
     },
     {
       "id": "fin_wheelhouse",
       "name": "Wheelhouse",
       "active": true,
-      "projectCount": 1
+      "projectCount": 159
     }
   ],
   "productCatalog": [

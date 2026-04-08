@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileReps from '../mobile/MobileReps';
 import { useApp } from '../../../lib/context';
+import { formatCompactKW } from '../../../lib/utils';
 import { Search, ChevronRight, Users, Plus, Trash2, Trophy, Award, X, Mail, Clock } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RepSelector } from '../components/RepSelector';
@@ -857,7 +858,7 @@ function UsersPageInner() {
         {[
           { label: 'Total Reps', value: reps.filter(r => r.active !== false).length.toString(), gradient: 'linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))', borderColor: 'rgba(77,159,255,0.3)', valueColor: '#4d9fff' },
           { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), gradient: 'linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))', borderColor: 'rgba(0,196,240,0.3)', valueColor: '#00c4f0' },
-          { label: 'kW Sold', value: `${projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0).toFixed(1)}`, gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
+          { label: 'kW Sold', value: formatCompactKW(projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0)), gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
           ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, gradient: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))', borderColor: 'rgba(0,224,122,0.3)', valueColor: '#00e07a' }] : []),
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: stat.gradient, border: `1px solid ${stat.borderColor}` }}>
@@ -1033,7 +1034,7 @@ function UsersPageInner() {
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between"><span className="text-[#c2c8d8]">kW Sold</span><span className="text-white font-semibold">{kwSold.toFixed(1)}</span></div>
+                      <div className="flex justify-between"><span className="text-[#c2c8d8]">kW Sold</span><span className="text-white font-semibold">{formatCompactKW(kwSold)}</span></div>
                       <div className="flex justify-between"><span className="text-[#c2c8d8]">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
                       <div className="flex justify-between"><span className="text-[#c2c8d8]">Earned</span><span className="text-[#00e07a] font-semibold">${commissionEarned.toLocaleString()}</span></div>
                       <div className="flex justify-between"><span className="text-[#c2c8d8]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[#c2c8d8]'}`}>{cancelRate.toFixed(0)}%</span></div>
@@ -1214,7 +1215,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#ffb020', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{totalKW.toFixed(1)}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#ffb020', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: '#525c72' }}>Total kW</p>
                   </div>

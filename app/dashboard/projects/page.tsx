@@ -718,7 +718,7 @@ function KanbanView({
                             if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                             return sum;
                           }
-                          return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                          return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         }, 0).toLocaleString()}
                       </p>
                     )}
@@ -747,7 +747,7 @@ function KanbanView({
                     const isMyCard = myRole !== null;
                     const commissionTotal = !isAdmin && dealScope === 'mine'
                       ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
-                      : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -956,7 +956,7 @@ function KanbanView({
                         if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
-                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                     }, 0).toLocaleString()}
                   </p>
                 )}
@@ -980,7 +980,7 @@ function KanbanView({
                     const isMyCard = myRole !== null;
                     const commissionTotal = !isAdmin && dealScope === 'mine'
                       ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
-                      : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -1120,7 +1120,7 @@ function KanbanView({
                         if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
-                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                     }, 0).toLocaleString()}
                   </p>
                 )}
