@@ -895,7 +895,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       productType: editVals.productType,
       kWSize: kw,
       netPPW: ppw,
-      m1Amount: kw >= 5 ? 1000 : 500,
+      m1Amount: editVals.setterId ? 0 : (kw >= 5 ? 1000 : 500),
       setterId: editVals.setterId || undefined,
       setterName: setterRep?.name ?? (editVals.setterId ? project.setterName : undefined),
       soldDate: editVals.soldDate,

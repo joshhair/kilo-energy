@@ -182,6 +182,7 @@ function UsersPageInner() {
   // Inactive (deactivated) reps live in a collapsible expander below the
   // main list. Default collapsed so the active roster stays clean.
   const [showInactive, setShowInactive] = useState(false);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   // ── Pending Clerk invitations (admin view) ────────────────────────────
   type PendingInvitation = {
@@ -294,7 +295,7 @@ function UsersPageInner() {
             return { id: json.user.id as string };
           })
       : newUserRole === 'sub-dealer'
-        ? (addSubDealer(newFirstName, newLastName, newEmail, newPhone, repId), Promise.resolve({ id: repId }))
+        ? addSubDealer(newFirstName, newLastName, newEmail, newPhone, repId).then(() => ({ id: repId }))
         : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId) as Promise<{ id: string } | null>);
 
     const roleLabel = ROLE_LABELS_BY_ROLE[newUserRole];
@@ -1354,14 +1355,20 @@ function UsersPageInner() {
                       </div>
                     </Link>
                     <button
+                      disabled={reactivatingId === rep.id}
                       onClick={async () => {
-                        await reactivateRep(rep.id);
-                        toast(`${rep.name} reactivated`, 'success');
+                        setReactivatingId(rep.id);
+                        try {
+                          await reactivateRep(rep.id);
+                          toast(`${rep.name} reactivated`, 'success');
+                        } finally {
+                          setReactivatingId(null);
+                        }
                       }}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110"
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
                     >
-                      Reactivate
+                      {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                     </button>
                   </div>
                 ))}

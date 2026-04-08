@@ -890,7 +890,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Guard against m3Amount being null in DB due to a failed persist at Installed time.
           // If missing, recalculate from the same formula used at the Installed transition.
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-          const m3 = (proj?.m3Amount ?? 0) > 0
+          const m3 = (proj?.m3Amount ?? 0) > 0 && installPayPct < 100
             ? proj!.m3Amount!
             : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
               ? Math.round((proj?.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
