@@ -1564,6 +1564,19 @@ select {
 }
 .deal-step-enter-fwd  { animation: deal-step-enter-fwd  280ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; }
 .deal-step-enter-back { animation: deal-step-enter-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; }
+@keyframes deal-step-exit-fwd {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-18px); }
+}
+@keyframes deal-step-exit-back {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(18px); }
+}
+.deal-step-exit-fwd  { animation: deal-step-exit-fwd  190ms cubic-bezier(0.4, 0, 1, 1) both; }
+.deal-step-exit-back { animation: deal-step-exit-back 190ms cubic-bezier(0.4, 0, 1, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .deal-step-exit-fwd, .deal-step-exit-back { animation: none; opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) { .step-dot { transition: none !important; } }
 @media (prefers-reduced-motion: no-preference) {
   @keyframes field-slide-in {

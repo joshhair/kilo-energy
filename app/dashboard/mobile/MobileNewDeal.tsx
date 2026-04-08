@@ -234,6 +234,7 @@ export default function MobileNewDeal() {
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [stepping, setStepping] = useState(false);
+  const [exitAnimClass, setExitAnimClass] = useState('');
   // Synchronous lock — React batches state updates inside the same event
   // tick, so `submitting` (state) still reads false on a rapid double-tap.
   // The ref flips immediately and guards against double-submission.
@@ -405,6 +406,33 @@ export default function MobileNewDeal() {
 
   const [commFlash, setCommFlash] = useState(false);
   const prevCloserTotalRef = useRef<number>(0);
+
+  const prevShowPreviewRef = useRef(false);
+  const [displayedTotal, setDisplayedTotal] = useState(0);
+  const countUpRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const firstAppear = !prevShowPreviewRef.current && showPreview;
+    prevShowPreviewRef.current = showPreview;
+    if (!showPreview) { setDisplayedTotal(0); return; }
+    if (firstAppear && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const start = performance.now();
+      const duration = 480;
+      const target = closerTotal;
+      const easeOutExpo = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+      if (countUpRafRef.current) cancelAnimationFrame(countUpRafRef.current);
+      const tick = (now: number) => {
+        const t = Math.min((now - start) / duration, 1);
+        setDisplayedTotal(Math.round(easeOutExpo(t) * target));
+        if (t < 1) countUpRafRef.current = requestAnimationFrame(tick);
+      };
+      countUpRafRef.current = requestAnimationFrame(tick);
+      return () => { if (countUpRafRef.current) cancelAnimationFrame(countUpRafRef.current); };
+    } else {
+      setDisplayedTotal(closerTotal);
+    }
+  }, [showPreview, closerTotal]);
+
   useEffect(() => {
     if (closerTotal !== prevCloserTotalRef.current && (closerTotal > 0 || prevCloserTotalRef.current > 0)) {
       prevCloserTotalRef.current = closerTotal;
@@ -484,12 +512,22 @@ export default function MobileNewDeal() {
       return;
     }
     stepDirectionRef.current = 'fwd';
-    setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
+    setExitAnimClass('deal-step-exit-fwd');
+    setStepping(true);
+    setTimeout(() => {
+      setExitAnimClass('');
+      setStepping(false);
+      setCurrentStep(prev => Math.min(prev + 1, DEAL_STEPS.length - 1));
+    }, 190);
   };
 
   const handlePrev = () => {
     stepDirectionRef.current = 'back';
-    setCurrentStep((prev) => Math.max(prev - 1, 0));
+    setExitAnimClass('deal-step-exit-back');
+    setTimeout(() => {
+      setExitAnimClass('');
+      setCurrentStep(prev => Math.max(prev - 1, 0));
+    }, 190);
   };
 
   // ── Submit (mirrors desktop exactly) ──────────────────────────────────────
@@ -626,6 +664,24 @@ export default function MobileNewDeal() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const netPPWGlowStyle: React.CSSProperties = (() => {
+    const base = v0InputStyle('netPPW');
+    if (soldPPW > 0 && closerPerW > 0 && !errors.netPPW) {
+      const above = soldPPW >= closerPerW;
+      return {
+        ...base,
+        border: above
+          ? '1px solid rgba(16,185,129,0.5)'
+          : '1px solid rgba(245,158,11,0.45)',
+        boxShadow: above
+          ? '0 0 0 3px rgba(16,185,129,0.12), inset 0 1px 0 rgba(16,185,129,0.08)'
+          : '0 0 0 3px rgba(245,158,11,0.12), inset 0 1px 0 rgba(245,158,11,0.08)',
+        transition: 'box-shadow 280ms ease, border-color 280ms ease',
+      };
+    }
+    return { ...base, transition: 'box-shadow 280ms ease, border-color 280ms ease' };
+  })();
+
   if (submitted) {
     return (
       <MobileSuccessScreen
@@ -671,7 +727,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 1: People ── */}
         {currentStep === 0 && (
-          <div key={0} className={`space-y-7 flex-1 flex flex-col ${stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back'}`}>
+          <div key={0} className={`space-y-7 flex-1 flex flex-col ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Customer Name */}
             <div ref={(el) => { fieldWrapperRefs.current['customerName'] = el; }}>
               <label className={labelCls} style={labelStyle}>Customer Name</label>
@@ -742,6 +798,7 @@ export default function MobileNewDeal() {
             <button
               type="button"
               onClick={handleNext}
+              disabled={!!exitAnimClass}
               className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(135deg, #1de9b6, #00b894)',
@@ -759,7 +816,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 2: Deal Details ── */}
         {currentStep === 1 && (
-          <div key={1} className={`space-y-7 flex-1 flex flex-col ${stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back'}`}>
+          <div key={1} className={`space-y-7 flex-1 flex flex-col ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Installer */}
             <div>
               <label className={labelCls} style={labelStyle}>Installer</label>
@@ -1114,7 +1171,7 @@ export default function MobileNewDeal() {
                 value={form.netPPW}
                 onChange={(e) => update('netPPW', e.target.value)}
                 onBlur={() => handleBlur('netPPW')}
-                className={inputCls('netPPW')} style={v0InputStyle('netPPW')}
+                className={inputCls('netPPW')} style={netPPWGlowStyle}
               />
               <FieldError errors={errors} field="netPPW" />
               {!errors.netPPW && soldPPW > 0 && closerPerW > 0 && (
@@ -1149,7 +1206,7 @@ export default function MobileNewDeal() {
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
                         style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
-                      >${subDealerCommission.toLocaleString()}</span>
+                      >${displayedTotal.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
@@ -1170,7 +1227,7 @@ export default function MobileNewDeal() {
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
                         style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
-                      >${closerTotal.toLocaleString()}</span>
+                      >${displayedTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
@@ -1221,6 +1278,7 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={handleNext}
+                disabled={!!exitAnimClass}
                 className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                 style={{
                   background: 'linear-gradient(135deg, #1de9b6, #00b894)',
@@ -1239,7 +1297,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 3: Review & Notes ── */}
         {currentStep === 2 && (
-          <div key={2} className={`space-y-7 flex-1 flex flex-col ${stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back'}`}>
+          <div key={2} className={`space-y-7 flex-1 flex flex-col ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Summary card */}
             <MobileCard>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, #8899aa)' }}>Deal Summary</p>
