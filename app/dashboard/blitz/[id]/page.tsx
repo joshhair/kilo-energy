@@ -441,7 +441,7 @@ export default function BlitzDetailPage() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'participants', label: `Participants (${approvedParticipants.length})` },
+    { key: 'participants', label: `Participants (${blitz.participants.length})` },
     { key: 'deals', label: `Deals (${totalDeals})` },
     ...(isAdmin ? [
       { key: 'costs' as TabKey, label: `Costs (${blitz.costs?.length ?? 0})` },

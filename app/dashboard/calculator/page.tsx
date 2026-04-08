@@ -436,6 +436,23 @@ function CalculatorPage() {
     ? Math.round(trainerRate * kW * 1000 * 100) / 100
     : 0;
 
+  // Closer trainer assignment
+  const closerAssignment = currentRepId
+    ? trainerAssignments.find((a) => a.traineeId === currentRepId)
+    : null;
+  const closerDealCount = currentRepId
+    ? projects.filter((p) => {
+        const pct = installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+        const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
+        return p.repId === currentRepId && fullyPaid;
+      }).length
+    : 0;
+  const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
+  const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
+  const closerTrainerTotal = closerTrainerRate > 0 && kW > 0
+    ? Math.round(closerTrainerRate * kW * 1000 * 100) / 100
+    : 0;
+
   const isSelfGen = !hasSetter || !selectedSetterId || setterBaselinePerW === 0;
   const installPayPct = installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
@@ -589,9 +606,10 @@ function CalculatorPage() {
   // Animated dollar counters — always called (hook rules), values are 0 when not shown
   const animatedCloserTotal  = useCountUp(closerTotal);
   const animatedSetterTotal  = useCountUp(setterTotal);
-  const animatedTrainerTotal = useCountUp(trainerTotal);
-  const animatedKiloTotal    = useCountUp(kiloTotal);
-  const animatedGrandTotal   = useCountUp(closerTotal + setterTotal + trainerTotal);
+  const animatedTrainerTotal        = useCountUp(trainerTotal);
+  const animatedCloserTrainerTotal  = useCountUp(closerTrainerTotal);
+  const animatedKiloTotal           = useCountUp(kiloTotal);
+  const animatedGrandTotal          = useCountUp(closerTotal + setterTotal + trainerTotal + closerTrainerTotal);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
   if (effectiveRole === 'project_manager') {
@@ -615,6 +633,7 @@ function CalculatorPage() {
     { key: 'closer', label: 'Closer', value: closerTotal, color: '#00e07a' },
     ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: '#00c4f0' }] : []),
     ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
+    ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: '#b47dff' }] : []),
     ...(currentRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: kiloTotal, color: '#ffb020' }] : []),
   ].filter(s => s.value > 0);
   const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
@@ -1030,7 +1049,7 @@ function CalculatorPage() {
                     </>
                   )}
 
-                  {/* Trainer */}
+                  {/* Setter Trainer */}
                   {trainerRep && trainerTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1040,6 +1059,20 @@ function CalculatorPage() {
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedTrainerTotal.toLocaleString()}</span>
                         {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((trainerTotal / breakdownTotal) * 100)}%</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Closer Trainer */}
+                  {closerTrainerRep && closerTrainerTotal > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {closerTrainerRep.name}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedCloserTrainerTotal.toLocaleString()}</span>
+                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((closerTrainerTotal / breakdownTotal) * 100)}%</span>}
                       </div>
                     </div>
                   )}
