@@ -563,6 +563,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           confirmLabel="Delete permanently"
           danger
         />
+
+        <ConfirmDialog
+          open={confirmDeactivate}
+          onClose={() => setConfirmDeactivate(false)}
+          onConfirm={() => { setConfirmDeactivate(false); handleDeactivate(); }}
+          title="Deactivate user"
+          message={`Deactivate ${displayName}? This will lock them out of Clerk and revoke any pending invitation.`}
+          confirmLabel="Deactivate"
+          danger
+        />
       </div>
     );
   }
@@ -601,12 +611,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
   const totalEst = repProjects.reduce((s, p) => {
     if (p.repId === id) {
-      // Closer: m1Amount is the setter's M1 when a setter exists, so closer earns 0 M1 in that case
+      // Closer: gets $0 M1 when a setter exists (setter takes M1); otherwise earns m1Amount
       const closerM1 = p.setterId ? 0 : p.m1Amount;
-      return s + closerM1 + p.m2Amount + (p.m3Amount ?? 0);
+      // Self-gen: rep is also the setter, so include setterM1Amount too
+      const selfGenM1 = p.setterId === id ? (p.setterM1Amount ?? 0) : 0;
+      return s + closerM1 + selfGenM1 + p.m2Amount + (p.m3Amount ?? 0);
     } else {
-      // Setter: earns m1Amount (setter's M1) + setter's M2/M3
-      return s + p.m1Amount + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+      // Setter: earns setterM1Amount + setter's M2/M3
+      return s + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
     }
   }, 0);
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
@@ -992,7 +1004,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </td>
                 <td className="px-5 py-3">
                   <span className="text-xs text-[#c2c8d8]">
-                    {proj.repId === id ? 'Closer' : 'Setter'}
+                    {proj.repId === id && proj.setterId === id ? 'Self-gen' : proj.repId === id ? 'Closer' : 'Setter'}
                   </span>
                 </td>
                 <td className="px-5 py-3">
@@ -1003,8 +1015,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 {!isPM && (
                   <td className="px-5 py-3 text-[#00e07a] font-semibold">
                     ${(proj.repId === id
-                        ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
-                        : (proj.m1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                        ? (proj.setterId === id ? (proj.setterM1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
+                        : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                       ).toLocaleString()}
                   </td>
                 )}

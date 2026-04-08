@@ -258,7 +258,7 @@ function MyPayPageInner() {
     const preAcceptance = ['New'];
     return myProjects
       .filter((p) => preAcceptance.includes(p.phase))
-      .reduce((s, p) => s + (p.setterId === effectiveRepId ? 0 : (p.m1Amount ?? 0)), 0);
+      .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0)), 0);
   }, [myProjects]);
 
   const projectedM2 = useMemo(() => {

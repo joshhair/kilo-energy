@@ -1013,7 +1013,7 @@ export default function DashboardPage() {
     const amount = p.repId === effectiveRepId
       ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
-        ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
         : 0;
     return { date: p.soldDate, amount };
   }));
@@ -1043,7 +1043,7 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
       const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
-      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
+      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
     }, 0);
 
   // Circumference for the 48×48 SVG ring (r=20): 2π×20 ≈ 125.66
