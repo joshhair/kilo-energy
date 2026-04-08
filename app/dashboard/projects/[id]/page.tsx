@@ -889,13 +889,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           ...(editVals.overrideSetterPerW !== '' && !isNaN(parsedSetterPerW) ? { setterPerW: parsedSetterPerW } : {}),
         }
       : undefined;
+    let editBaseline: InstallerBaseline;
+    if (editVals.useBaselineOverride) {
+      editBaseline = { closerPerW: parseFloat(editVals.overrideCloserPerW) || 0, kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0 };
+    } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
+      editBaseline = getSolarTechBaseline(project.solarTechProductId, kw);
+    } else if (project.installerProductId) {
+      editBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
+    } else {
+      editBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, kw, installerPricingVersions);
+    }
+    const editCloserTotal = calculateCommission(ppw, editBaseline.closerPerW, kw);
+    const editM1Flat = kw >= 5 ? 1000 : 500;
     ctxUpdateProject(project.id, {
       installer: editVals.installer,
       financer: editVals.financer,
       productType: editVals.productType,
       kWSize: kw,
       netPPW: ppw,
-      m1Amount: editVals.setterId ? 0 : (kw >= 5 ? 1000 : 500),
+      m1Amount: editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, editCloserTotal)),
       setterId: editVals.setterId || undefined,
       setterName: setterRep?.name ?? (editVals.setterId ? project.setterName : undefined),
       soldDate: editVals.soldDate,

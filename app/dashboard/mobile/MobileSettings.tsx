@@ -383,6 +383,9 @@ function AdminUsersSection() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Full name"
+            autoComplete="name"
+            autoCapitalize="words"
+            inputMode="text"
             className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
             style={{
               background: 'var(--m-card, #0d1525)',
@@ -396,6 +399,11 @@ function AdminUsersSection() {
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Email"
             type="email"
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
             style={{
               background: 'var(--m-card, #0d1525)',

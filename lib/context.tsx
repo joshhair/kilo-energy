@@ -386,6 +386,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addRep = (firstName: string, lastName: string, email: string, phone: string, repType: 'closer' | 'setter' | 'both' = 'both', id?: string, role: 'rep' | 'admin' | 'sub-dealer' = 'rep') => {
     const tempId = id ?? `rep_${Date.now()}`;
     setReps((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim(), phone: phone.trim(), role: role as Rep['role'], repType, active: true, hasClerkAccount: false }]);
+    // If id was pre-supplied, the caller already persisted — skip the POST
+    if (id) {
+      return Promise.resolve({ id } as { id: string });
+    }
     // Persist and update with real DB id
     return persistFetch('/api/reps', {
       method: 'POST',
@@ -458,13 +462,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ active: false }),
     }, 'Failed to remove rep').catch(() => {});
   };
-  const updateRepType = (id: string, repType: 'closer' | 'setter' | 'both') => {
+  const updateRepType = async (id: string, repType: 'closer' | 'setter' | 'both'): Promise<void> => {
+    const snapshot = reps.find((r) => r.id === id);
     setReps((prev) => prev.map((r) => r.id === id ? { ...r, repType } : r));
-    persistFetch(`/api/reps/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repType }),
-    }, 'Failed to update rep type').catch(() => {});
+    try {
+      await persistFetch(`/api/reps/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repType }),
+      }, 'Failed to update rep type');
+    } catch {
+      // Roll back the optimistic update on failure
+      if (snapshot) setReps((prev) => prev.map((r) => r.id === id ? { ...r, repType: snapshot.repType } : r));
+    }
   };
   const updateRepContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
     setReps((prev) => prev.map((r) => r.id === id ? { ...r, ...updates, name: `${updates.firstName ?? r.firstName} ${updates.lastName ?? r.lastName}` } : r));
