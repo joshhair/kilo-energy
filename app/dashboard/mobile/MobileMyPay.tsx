@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate } from '../../../lib/utils';
 import { PayrollEntry } from '../../../lib/data';
-import { Banknote } from 'lucide-react';
+import { Banknote, Receipt, ChevronRight } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -53,6 +53,30 @@ function statusColor(status: string): string {
   if (status === 'Paid') return ACCENT;
   if (status === 'Pending') return WARNING;
   return MUTED;
+}
+
+// ── Count-up animation hook ──────────────────────────────────────────────────
+
+const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function useCountUp(target: number, duration = 900, deps: unknown[] = []) {
+  const [display, setDisplay] = useState(target);
+  useEffect(() => {
+    if (prefersReduced || target === 0) { setDisplay(target); return; }
+    let start: number | null = null;
+    let raf: number;
+    const ease = (t: number) => 1 - Math.pow(1 - t, 4); // quartic-out, ~spring
+    const tick = (ts: number) => {
+      if (!start) start = ts;
+      const elapsed = Math.min((ts - start) / duration, 1);
+      setDisplay(Math.round(ease(elapsed) * target));
+      if (elapsed < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, duration, ...deps]);
+  return display;
 }
 
 // ── Pay Period Group ─────────────────────────────────────────────────────────
@@ -199,6 +223,12 @@ export default function MobileMyPay() {
     }
   }, [reimbForm, effectiveRepId, effectiveRepName, setReimbursements, toast]);
 
+  // ── Count-up display values ──
+  const displayNext = useCountUp(nextPayoutTotal, 900);
+  const displayPending = useCountUp(pendingTotal, 750);
+  const displayPipeline = useCountUp(pipelineTotal, 800);
+  const displayLifetime = useCountUp(lifetimeEarned, 1100);
+
   // ── PM guard ──
   if (effectiveRole === 'project_manager') {
     return (
@@ -222,7 +252,7 @@ export default function MobileMyPay() {
       <MobileCard hero>
         {/* ─ Primary: Next Payout ─ */}
         <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-        <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.05 }}>{fmt$(nextPayoutTotal)}</p>
+        <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.05 }}>{fmt$(displayNext)}</p>
         <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.4rem' }}>
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
         </p>
@@ -231,11 +261,11 @@ export default function MobileMyPay() {
         <div className="mt-5 pt-4 space-y-2.5" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pending</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING, lineHeight: 1.1 }}>{fmt$(pendingTotal)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING, lineHeight: 1.1 }}>{fmt$(displayPending)}</span>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pipeline</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(pipelineTotal)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(displayPipeline)}</span>
           </div>
         </div>
 
@@ -243,7 +273,7 @@ export default function MobileMyPay() {
         <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem', fontWeight: 500 }}>Lifetime Earned</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 5.5vw, 1.5rem)', color: '#e5e7eb', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 5.5vw, 1.5rem)', color: '#e5e7eb', lineHeight: 1.1 }}>{fmt$(displayLifetime)}</span>
           </div>
         </div>
       </MobileCard>
@@ -275,10 +305,22 @@ export default function MobileMyPay() {
       {/* ── Reimbursement link ── */}
       <button
         onClick={() => setShowReimbSheet(true)}
-        className="active:opacity-70 transition-opacity"
-        style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}
+        className="w-full flex items-center justify-between gap-3 active:scale-[0.97]"
+        style={{
+          minHeight: '52px',
+          padding: '14px 18px',
+          borderRadius: '16px',
+          background: 'rgba(255,255,255,0.04)',
+          border: '0.5px solid rgba(255,255,255,0.08)',
+          transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          fontFamily: FONT_BODY,
+        }}
       >
-        Request reimbursement &rarr;
+        <div className="flex items-center gap-3">
+          <Receipt size={18} color={ACCENT} />
+          <span style={{ color: ACCENT, fontSize: '1rem', fontWeight: 500 }}>Request Reimbursement</span>
+        </div>
+        <ChevronRight size={16} color={DIM} />
       </button>
 
       {/* ── Pay History ── */}
