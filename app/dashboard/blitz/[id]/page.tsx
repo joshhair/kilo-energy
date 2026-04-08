@@ -256,7 +256,7 @@ export default function BlitzDetailPage() {
 
       if (closerId && setterId && closerId === setterId) {
         // Same person closed and set (self-gen) — gets everything
-        bump(closerId, kW, m1 + m2 + m3 + sM2 + sM3);
+        bump(closerId, kW, m1 + m2 + m3 + sM1 + sM2 + sM3);
       } else {
         if (closerId) {
           // Closer gets M2/M3. Gets M1 only if there's no separate setter.
@@ -592,7 +592,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[#8891a8] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
+                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
               </div>
             )}
           </div>
@@ -603,15 +603,15 @@ export default function BlitzDetailPage() {
               <p className="text-xs text-[#8891a8] font-medium uppercase tracking-wider mb-3">Your Blitz Summary</p>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-white">{visibleProjects.length}</p>
-                  <p className="text-xs text-[#8891a8] mt-0.5">Deal{visibleProjects.length !== 1 ? 's' : ''} Closed</p>
+                  <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length}</p>
+                  <p className="text-xs text-[#8891a8] mt-0.5">Deal{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length !== 1 ? 's' : ''} Closed</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{totalKW.toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).reduce((s: number, p: any) => s + p.kWSize, 0).toFixed(1)}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
+                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)), 0))}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">Projected Pay</p>
                 </div>
               </div>

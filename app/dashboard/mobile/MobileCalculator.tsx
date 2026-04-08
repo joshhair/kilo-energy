@@ -11,7 +11,6 @@ import {
   getTrainerOverrideRate,
   SOLARTECH_FAMILIES,
   SOLARTECH_FAMILY_FINANCER,
-  SOLARTECH_PRODUCTS,
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -40,6 +39,7 @@ export default function MobileCalculator() {
     productCatalogInstallerConfigs,
     productCatalogProducts,
     installerPayConfigs,
+    solarTechProducts,
   } = useApp();
   const isHydrated = useIsHydrated();
 
@@ -73,7 +73,7 @@ export default function MobileCalculator() {
 
   // SolarTech family products
   const solarTechFamilyProducts = solarTechFamily
-    ? SOLARTECH_PRODUCTS.filter((p) => p.family === solarTechFamily)
+    ? solarTechProducts.filter((p) => p.family === solarTechFamily)
     : [];
 
   // PC family products
