@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import { useApp } from '../../../lib/context';
@@ -553,17 +553,26 @@ function NewDealPage() {
   const submittingRef = useRef(false);
 
   // Blitz list for lead source attribution
-  const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
+  const [rawBlitzes, setRawBlitzes] = useState<any[]>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((data) => {
-      setAvailableBlitzes((data ?? []).filter((b: any) => {
-        const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
-        if (!statusOk) return false;
-        if (currentRole === 'admin') return true;
-        return b.participants?.some((p: any) => p.userId === currentRepId && p.joinStatus === 'approved');
-      }));
+      setRawBlitzes(data ?? []);
     }).catch(() => {});
-  }, [currentRole, currentRepId]);
+  }, []);
+  const availableBlitzes = useMemo<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>(() => {
+    return rawBlitzes.filter((b: any) => {
+      const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
+      if (!statusOk) return false;
+      if (currentRole === 'admin') {
+        // When a rep is selected, only show blitzes that rep is approved for
+        if (form.repId) {
+          return b.participants?.some((p: any) => p.userId === form.repId && p.joinStatus === 'approved');
+        }
+        return true;
+      }
+      return b.participants?.some((p: any) => p.userId === currentRepId && p.joinStatus === 'approved');
+    });
+  }, [rawBlitzes, currentRole, currentRepId, form.repId]);
 
   // ── Duplicate deal pre-fill from query params ─────────────────────────────
   const searchParams = useSearchParams();
