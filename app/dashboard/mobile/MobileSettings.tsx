@@ -642,10 +642,12 @@ function SubDealersSection() {
 
 function ExportSection() {
   const { toast } = useToast();
-  const [loadingType, setLoadingType] = useState<string | null>(null);
+  const [status, setStatus] = useState<Record<string, 'idle' | 'loading' | 'done'>>({});
+  const getStatus = (t: string) => status[t] ?? 'idle';
 
   const handleExport = async (type: string) => {
-    setLoadingType(type);
+    if (getStatus(type) !== 'idle') return;
+    setStatus(p => ({ ...p, [type]: 'loading' }));
     try {
       const res = await fetch(`/api/export?type=${type}`);
       if (!res.ok) throw new Error('Export failed');
@@ -656,11 +658,12 @@ function ExportSection() {
       a.download = `${type}-export.csv`;
       a.click();
       URL.revokeObjectURL(url);
+      setStatus(p => ({ ...p, [type]: 'done' }));
+      setTimeout(() => setStatus(p => ({ ...p, [type]: 'idle' })), 1400);
       toast(`${type} exported`);
     } catch {
+      setStatus(p => ({ ...p, [type]: 'idle' }));
       toast('Export failed', 'error');
-    } finally {
-      setLoadingType(null);
     }
   };
 
@@ -668,30 +671,60 @@ function ExportSection() {
     <div className="space-y-3">
       <style>{`
         @keyframes exportSpin { to { transform: rotate(360deg); } }
-        @media(prefers-reduced-motion:reduce){ .export-spin{ animation: none; } }
+        @keyframes exportPulse {
+          0%   { box-shadow: 0 0 0 0 rgba(0,229,160,0.5); }
+          60%  { box-shadow: 0 0 0 8px rgba(0,229,160,0); }
+          100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
+        }
+        @keyframes exportShimmer {
+          from { transform: translateX(-100%); }
+          to   { transform: translateX(100%); }
+        }
+        @media(prefers-reduced-motion:reduce){ .export-shimmer{ display:none; } .export-pulse{ animation:none; } }
       `}</style>
       <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button
           key={type}
           onClick={() => handleExport(type)}
-          disabled={!!loadingType}
-          className="w-full min-h-[52px] rounded-2xl px-5 text-left flex items-center gap-3 active:scale-[0.97] transition-transform duration-150 disabled:opacity-50"
+          disabled={getStatus(type) === 'loading'}
+          className="w-full min-h-[56px] rounded-2xl px-5 text-left flex items-center gap-3 relative overflow-hidden"
           style={{
-            background: 'var(--m-card, #0d1525)',
-            border: '1px solid var(--m-border, #1a2840)',
+            background: getStatus(type) === 'done' ? 'rgba(0,229,160,0.1)' : 'var(--m-card, #0d1525)',
+            border: `1px solid ${
+              getStatus(type) === 'done' ? 'rgba(0,229,160,0.4)'
+              : getStatus(type) === 'loading' ? 'rgba(255,255,255,0.08)'
+              : 'var(--m-border, #1a2840)'
+            }`,
+            transition: 'background 300ms ease, border-color 300ms ease',
+            animation: getStatus(type) === 'done' ? 'exportPulse 600ms cubic-bezier(0.16,1,0.3,1) both' : 'none',
           }}
         >
-          <div
+          {getStatus(type) === 'loading' && (
+            <span
+              className="export-shimmer absolute inset-y-0 left-0 w-1/2 pointer-events-none"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)',
+                animation: 'exportShimmer 900ms cubic-bezier(0.4,0,0.6,1) infinite',
+              }}
+            />
+          )}
+          <Download
             className="w-5 h-5 shrink-0"
             style={{
-              color: 'var(--m-text-muted, #8899aa)',
-              animation: loadingType === type ? 'exportSpin 600ms linear infinite' : 'none',
+              color: getStatus(type) === 'done' ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+              transition: 'color 300ms ease',
+              animation: getStatus(type) === 'loading' ? 'exportSpin 600ms linear infinite' : 'none',
             }}
-          >
-            <Download className="w-5 h-5" />
-          </div>
-          <span className="text-base font-semibold text-white capitalize" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{type}</span>
+          />
+          <span
+            className="text-base font-semibold capitalize"
+            style={{
+              color: getStatus(type) === 'done' ? 'var(--m-accent, #00e5a0)' : 'white',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              transition: 'color 300ms ease',
+            }}
+          >{type}</span>
         </button>
       ))}
     </div>

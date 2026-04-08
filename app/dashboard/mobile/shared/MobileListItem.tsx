@@ -7,14 +7,17 @@ export default function MobileListItem({
   subtitle,
   right,
   onTap,
+  icon,
 }: {
   title: string;
   subtitle?: string;
   right?: React.ReactNode;
   onTap?: () => void;
+  icon?: React.ReactNode;
 }) {
   const content = (
     <>
+      {icon}
       <div className="flex-1 min-w-0">
         <p className="text-base font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
         {subtitle && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{subtitle}</p>}
