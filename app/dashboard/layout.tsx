@@ -407,15 +407,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!currentRole) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6"
-           style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-             style={{ background: 'linear-gradient(135deg, #00e07a, #00e07a)' }}>
-          <span className="text-white font-black text-3xl" style={{ letterSpacing: '-2px' }}>K</span>
-        </div>
-        <div className="w-6 h-6 relative">
-          <div className="absolute inset-0 rounded-full border-2 border-[#272b35]/40" />
-          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" />
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-6 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        {/* Ambient emerald glow behind the icon — reuses the existing
+            breathing animation so the loading screen has subtle motion
+            that matches the sign-in wrapper. */}
+        <div
+          aria-hidden="true"
+          className="absolute pointer-events-none hero-glow-orb"
+          style={{
+            width: '40vmin',
+            height: '40vmin',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)',
+            filter: 'blur(20px)',
+          }}
+        />
+        {/* Brand mark — use the real PWA icon so the loading screen
+            matches the app icon on the home screen and the favicon.
+            One source of truth for the logo. */}
+        <img
+          src="/icons/icon-192.svg"
+          alt="Kilo Energy"
+          width={80}
+          height={80}
+          className="relative z-10"
+          style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px rgba(0,229,160,0.35)' }}
+        />
+        {/* Brand-colored spinner — matches the rest of the emerald accents */}
+        <div className="w-6 h-6 relative z-10">
+          <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: 'rgba(0,229,160,0.15)' }} />
+          <div
+            className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+            style={{ borderTopColor: '#00e5a0' }}
+          />
         </div>
       </div>
     );
