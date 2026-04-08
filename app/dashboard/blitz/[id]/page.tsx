@@ -119,6 +119,7 @@ export default function BlitzDetailPage() {
   // Rep permissions (canRequestBlitz)
   const [canRequestBlitz, setCanRequestBlitz] = useState(false);
   const [processingParticipants, setProcessingParticipants] = useState<Set<string>>(new Set());
+  const [updatingAttendance, setUpdatingAttendance] = useState<Set<string>>(new Set());
   const [cancelRequesting, setCancelRequesting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -345,13 +346,23 @@ export default function BlitzDetailPage() {
   };
 
   const handleUpdateAttendance = async (userId: string, attendanceStatus: string | null) => {
+    if (updatingAttendance.has(userId)) return;
+    setUpdatingAttendance((s) => new Set(s).add(userId));
     const r = await fetch(`/api/blitzes/${blitzId}/participants`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, attendanceStatus }),
     });
-    if (!r.ok) { toast('Failed to update attendance', 'error'); return; }
-    loadBlitz();
+    if (!r.ok) {
+      toast('Failed to update attendance', 'error');
+      setUpdatingAttendance((s) => { const n = new Set(s); n.delete(userId); return n; });
+      return;
+    }
+    fetch(`/api/blitzes/${blitzId}`).then((res) => res.json()).then((data) => {
+      if (!data.error) setBlitz(data);
+    }).finally(() => {
+      setUpdatingAttendance((s) => { const n = new Set(s); n.delete(userId); return n; });
+    });
   };
 
   const handleAddCost = async () => {
@@ -832,8 +843,8 @@ export default function BlitzDetailPage() {
                       <td className="px-4 py-3 text-right text-[#c2c8d8] tabular-nums">{repDealCount || <span className="text-[#525c72]">—</span>}</td>
                       <td className="px-4 py-3 text-right text-[#c2c8d8] tabular-nums">{repKW > 0 ? repKW.toFixed(1) : <span className="text-[#525c72]">—</span>}</td>
                       <td className="px-4 py-3">
-                        {canManage ? (
-                          <select value={p.attendanceStatus ?? ''} onChange={(e) => handleUpdateAttendance(p.user.id, e.target.value || null)} className="bg-[#1d2028] border border-[#272b35] rounded px-2 py-1 text-xs text-white">
+                        {canManage && p.joinStatus === 'approved' ? (
+                          <select value={p.attendanceStatus ?? ''} onChange={(e) => handleUpdateAttendance(p.user.id, e.target.value || null)} disabled={updatingAttendance.has(p.user.id)} className="bg-[#1d2028] border border-[#272b35] rounded px-2 py-1 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                             <option value="">—</option>
                             <option value="attended">Attended</option>
                             <option value="partial">Partial</option>
@@ -851,7 +862,7 @@ export default function BlitzDetailPage() {
                               <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Decline</button>
                             </div>
                           ) : (
-                            <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will remove them from the blitz. They can be re-added later.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-[#525c72] hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will permanently remove them from the blitz and unlink all their attributed deals. This cannot be undone — re-adding them later will not restore those deal links.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-[#525c72] hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
                           )}
                         </td>
                       )}
