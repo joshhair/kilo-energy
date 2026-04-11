@@ -1142,6 +1142,7 @@ export default function MobileNewDeal() {
             <div>
               <label className={labelCls} style={labelStyle}>System Size (kW)</label>
               <input
+                ref={kWSizeRef}
                 type="number"
                 inputMode="decimal"
                 enterKeyHint="next"
@@ -1171,6 +1172,7 @@ export default function MobileNewDeal() {
                 value={form.netPPW}
                 onChange={(e) => update('netPPW', e.target.value)}
                 onBlur={() => handleBlur('netPPW')}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); netPPWRef.current?.blur(); handleNext(); } }}
                 className={inputCls('netPPW')} style={netPPWGlowStyle}
               />
               <FieldError errors={errors} field="netPPW" />

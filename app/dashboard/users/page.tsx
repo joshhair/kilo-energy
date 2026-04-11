@@ -293,11 +293,17 @@ function UsersPageInner() {
               throw new Error(body.error ?? 'Failed to send invitation');
             }
             const json = await r.json();
+            // Sync the new rep into local state so pickers reflect them
+            // immediately without a hard refresh. addRep with a pre-supplied
+            // id skips the POST and only updates the reps array.
+            if (json.user.role === 'rep') {
+              addRep(json.user.firstName, json.user.lastName, json.user.email, json.user.phone, json.user.repType, json.user.id);
+            }
             return { id: json.user.id as string };
           })
       : newUserRole === 'sub-dealer'
         ? addSubDealer(newFirstName, newLastName, newEmail, newPhone, repId).then(() => ({ id: repId }))
-        : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType, repId) as Promise<{ id: string } | null>);
+        : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType) as Promise<{ id: string } | null>);
 
     const roleLabel = ROLE_LABELS_BY_ROLE[newUserRole];
     repPromise
