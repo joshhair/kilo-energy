@@ -561,7 +561,7 @@ function KanbanView({
     ? projects.filter((p) => {
         const q = kanbanDebouncedSearch.toLowerCase();
         return p.customerName.toLowerCase().includes(q)
-          || p.repName.toLowerCase().includes(q)
+          || (p.repName ?? '').toLowerCase().includes(q)
           || p.installer.toLowerCase().includes(q);
       })
     : projects;

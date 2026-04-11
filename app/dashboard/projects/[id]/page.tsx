@@ -891,7 +891,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       : undefined;
     let editBaseline: InstallerBaseline;
     if (editVals.useBaselineOverride) {
-      editBaseline = { closerPerW: parseFloat(editVals.overrideCloserPerW) || 0, kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0 };
+      editBaseline = { closerPerW: parseFloat(editVals.overrideCloserPerW) || 0, kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0, ...(editVals.overrideSetterPerW !== '' && !isNaN(parsedSetterPerW) ? { setterPerW: parsedSetterPerW } : {}) };
     } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
       editBaseline = getSolarTechBaseline(project.solarTechProductId, kw);
     } else if (project.installerProductId && editVals.installer === project.installer) {
