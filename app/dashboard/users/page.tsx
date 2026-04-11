@@ -1257,8 +1257,10 @@ function UsersPageInner() {
                       <span className="text-[#c2c8d8] bg-[#8891a8]/10 rounded-lg px-2 py-0.5 text-xs">
                         {(() => {
                           if (repProjects.length === 0) return 'No deals yet';
-                          const latest = repProjects.reduce((a, b) => a.soldDate > b.soldDate ? a : b);
-                          const [y, m, d] = latest.soldDate.split('-').map(Number);
+                          const withDate = repProjects.filter(p => p.soldDate);
+                          if (withDate.length === 0) return 'No deals yet';
+                          const latest = withDate.reduce((a, b) => a.soldDate! > b.soldDate! ? a : b);
+                          const [y, m, d] = latest.soldDate!.split('-').map(Number);
                           const dt = new Date(y, m - 1, d);
                           return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                         })()}

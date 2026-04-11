@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTIVES, INSTALLERS, FINANCERS, Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, REPS, Rep, SubDealer, SUB_DEALERS, NON_SOLARTECH_BASELINES, SOLARTECH_PRODUCTS, InstallerBaseline, SolarTechProduct, INSTALLER_PRICING_VERSIONS, InstallerPricingVersion, InstallerRates, PRODUCT_CATALOG_INSTALLER_CONFIGS, PRODUCT_CATALOG_PRODUCTS, ProductCatalogInstallerConfig, ProductCatalogProduct, PREPAID_OPTIONS, Phase, PRODUCT_CATALOG_PRICING_VERSIONS, ProductCatalogPricingVersion, ProductCatalogTier, INSTALLER_PAY_CONFIGS, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
 import { getM1PayDate, getM2PayDate, localDateString } from './utils';
 import { persistFetch, emitPersistError } from './persist';
@@ -31,6 +31,9 @@ interface AppContextType {
   addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => boolean;
   // Marks individual payroll entries as Pending
   markForPayroll: (entryIds: string[]) => void;
+  // Persists a new payroll entry to the DB, registers its temp ID in the resolution map
+  // so markForPayroll waits for the real DB id before sending PATCH
+  persistPayrollEntry: (entry: PayrollEntry) => void;
   // Installer / financer management
   installers: ManagedItem[];
   financers: ManagedItem[];
@@ -158,6 +161,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [viewAsUser, setViewAsUserState] = useState<{ id: string; name: string; role: 'rep' | 'sub-dealer' } | null>(null);
   const [pmPermissions, setPmPermissions] = useState<{ canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null>(null);
 
+  // Maps temp client IDs (pay_${ts}_...) → Promise<realDbId> for in-flight payroll POSTs.
+  // markForPayroll awaits these before sending PATCH so it never sends temp IDs to the DB.
+  const payrollIdResolutionMap = useRef<Map<string, Promise<string>>>(new Map());
+
   const setViewAsUser = useCallback((user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => {
     setViewAsUserState(user);
   }, []);
@@ -223,7 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Helper: persist a payroll entry to the DB and sync the DB-assigned id back to local state
   const persistPayrollEntry = useCallback((entry: PayrollEntry) => {
     const clientId = entry.id;
-    fetch('/api/payroll', {
+    const promise = fetch('/api/payroll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -238,23 +245,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }),
     })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
-      .then((saved) => {
-        if (saved?.id && saved.id !== clientId) {
+      .then((saved): string => {
+        const realId: string = saved?.id ?? clientId;
+        if (realId !== clientId) {
           setPayrollEntries((prev) =>
-            prev.map((e) => (e.id === clientId ? { ...e, id: saved.id } : e))
+            prev.map((e) => (e.id === clientId ? { ...e, id: realId } : e))
           );
         }
+        payrollIdResolutionMap.current.delete(clientId);
+        return realId;
       })
-      .catch(() => {
+      .catch((err) => {
         setPayrollEntries((prev) => prev.filter((e) => e.id !== clientId));
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save payroll entry' }));
+        payrollIdResolutionMap.current.delete(clientId);
+        throw err;
       });
+    payrollIdResolutionMap.current.set(clientId, promise);
   }, [setPayrollEntries]);
 
   // Helper: delete payroll entries from DB by filter
   const deletePayrollEntriesFromDb = useCallback((ids: string[]) => {
     for (const id of ids) {
-      persistFetch(`/api/payroll/${id}`, { method: 'DELETE' }, 'Failed to delete payroll entry').catch(() => {});
+      const inflight = payrollIdResolutionMap.current.get(id);
+      if (inflight) {
+        // POST is still in-flight — wait for the real DB id, then delete it.
+        // Without this, the DELETE fires with a temp id, hits 404, and the
+        // resolved DB row becomes an orphaned Draft invisible to the UI.
+        inflight
+          .then((realId) => {
+            persistFetch(`/api/payroll/${realId}`, { method: 'DELETE' }, 'Failed to delete payroll entry').catch(() => {});
+          })
+          .catch(() => {});
+      } else {
+        persistFetch(`/api/payroll/${id}`, { method: 'DELETE' }, 'Failed to delete payroll entry').catch(() => {});
+      }
     }
   }, []);
 
@@ -477,7 +502,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
   const updateRepContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
+    const snapshot = reps.find((r) => r.id === id);
     setReps((prev) => prev.map((r) => r.id === id ? { ...r, ...updates, name: `${updates.firstName ?? r.firstName} ${updates.lastName ?? r.lastName}` } : r));
+    persistFetch(`/api/reps/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    }, 'Failed to update rep contact').catch(() => {
+      if (snapshot) setReps((prev) => prev.map((r) => r.id === id ? snapshot : r));
+    });
   };
 
   // ── Sub-dealer management ──
@@ -536,6 +569,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
   const updateSubDealerContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
     setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, ...updates, name: `${updates.firstName ?? s.firstName} ${updates.lastName ?? s.lastName}` } : s));
+    persistFetch(`/api/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    }, 'Failed to update sub-dealer contact');
   };
   // Legacy alias — same migration story as removeRep above.
   const removeSubDealer = (id: string) => {
@@ -1621,15 +1659,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
       snapshot = prev;
       return prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e));
     });
-    // Persist bulk status update — rollback on any failure
-    persistFetch('/api/payroll', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: entryIds, status: 'Pending' }),
-    }, 'Failed to update payroll status').then((res) => {
-      if (!res.ok && snapshot !== null) setPayrollEntries(snapshot);
-    }).catch(() => {
-      if (snapshot !== null) setPayrollEntries(snapshot);
+    // Resolve any temp IDs to real DB IDs before sending PATCH.
+    // If a payroll POST is still in-flight, await it so we never send a temp ID to the DB
+    // (the DB has no row for it yet, so updateMany would silently update 0 rows).
+    const resolveIds = async (): Promise<string[]> => {
+      const resolved = await Promise.all(
+        entryIds.map(async (id) => {
+          const pending = payrollIdResolutionMap.current.get(id);
+          if (pending) {
+            try { return await pending; } catch { return null; }
+          }
+          return id;
+        })
+      );
+      return resolved.filter((id): id is string => id !== null);
+    };
+    resolveIds().then((resolvedIds) => {
+      if (resolvedIds.length === 0) {
+        // All entries failed to persist — rollback the optimistic update
+        if (snapshot !== null) setPayrollEntries(snapshot);
+        return;
+      }
+      // Persist bulk status update — rollback on any failure
+      persistFetch('/api/payroll', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: resolvedIds, status: 'Pending' }),
+      }, 'Failed to update payroll status').then((res) => {
+        if (!res.ok && snapshot !== null) setPayrollEntries(snapshot);
+      }).catch(() => {
+        if (snapshot !== null) setPayrollEntries(snapshot);
+      });
     });
   };
 
@@ -1655,6 +1715,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIncentives,
         addDeal,
         markForPayroll,
+        persistPayrollEntry,
         installers,
         financers,
         activeInstallers,

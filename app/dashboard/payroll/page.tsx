@@ -63,7 +63,7 @@ export default function PayrollPage() {
 function PayrollPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, reps, projects, reimbursements, setReimbursements } = useApp();
+  const { currentRole, effectiveRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
@@ -350,23 +350,9 @@ function PayrollPageInner() {
     changeStatusTab('Draft');
     changeTypeTab('Bonus');
     toast(`Bonus added for ${rep?.name ?? 'rep'} — $${parseFloat(bonusForm.amount).toLocaleString()}`, 'success');
-    // Persist to DB — rollback optimistic add on failure
-    fetch('/api/payroll', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repId: newEntry.repId, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
-    }).then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const saved = await res.json();
-        if (saved?.id) {
-          setPayrollEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: saved.id } : e));
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        setPayrollEntries((prev) => prev.filter((e) => e.id !== newEntry.id));
-        toast('Failed to save bonus — entry removed', 'error');
-      });
+    // Persist to DB via context helper — registers temp ID in resolution map so
+    // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
+    persistPayrollEntry(newEntry);
   };
 
   const handleAddPayment = async (e: React.FormEvent) => {
@@ -394,23 +380,9 @@ function PayrollPageInner() {
     changeStatusTab('Draft');
     changeTypeTab('Deal');
     toast(`Payment draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
-    // Persist to DB — rollback optimistic add on failure
-    fetch('/api/payroll', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repId: newEntry.repId, projectId: newEntry.projectId, customerName: newEntry.customerName, amount: newEntry.amount, type: newEntry.type, paymentStage: newEntry.paymentStage, status: newEntry.status, date: newEntry.date, notes: newEntry.notes }),
-    }).then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const saved = await res.json();
-        if (saved?.id) {
-          setPayrollEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: saved.id } : e));
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        setPayrollEntries((prev) => prev.filter((e) => e.id !== newEntry.id));
-        toast('Failed to save payment — entry removed', 'error');
-      });
+    // Persist to DB via context helper — registers temp ID in resolution map so
+    // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
+    persistPayrollEntry(newEntry);
   };
 
   const inputCls = 'w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
