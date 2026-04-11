@@ -126,6 +126,20 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const displayName = resolvedUser ? `${resolvedUser.firstName} ${resolvedUser.lastName}` : '';
   useEffect(() => { document.title = displayName ? `${displayName} | Kilo Energy` : 'User Detail | Kilo Energy'; }, [displayName]);
 
+  const isAdminViewer = currentRole === 'admin';
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (editingField !== null) return;
+      if (!isAdminViewer) return;
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'e' || e.key === 'E') startEdit('name');
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [editingField, isAdminViewer]);
+
   if (!hydrated) return <RepDetailSkeleton />;
 
   if (isMobile) return <MobileRepDetail repId={id} />;
@@ -152,7 +166,6 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const isAdminViewer = currentRole === 'admin';
   const isInactive = userMeta ? !userMeta.active : (resolvedUser as { active?: boolean }).active === false;
 
   // ── Save handler for contact edits ────────────────────────────────────
@@ -352,6 +365,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     type="text"
                     value={editFirstName}
                     onChange={(e) => setEditFirstName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                     className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
                     style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', maxWidth: 180 }}
                     autoFocus
@@ -360,6 +374,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     type="text"
                     value={editLastName}
                     onChange={(e) => setEditLastName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                     className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
                     style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', maxWidth: 180 }}
                   />
@@ -384,9 +399,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     </span>
                   )}
                   {isAdminViewer && (
-                    <button onClick={() => startEdit('name')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit name">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    <span className="group relative">
+                      <button onClick={() => startEdit('name')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit name (E)">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-[#272b35] text-[#c2c8d8] text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap">Press E</span>
+                    </span>
                   )}
                 </div>
               )}
@@ -399,6 +417,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       type="email"
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                       className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
                       style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', minWidth: 280 }}
                       autoFocus
@@ -430,6 +449,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       type="tel"
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                       placeholder="(555) 000-0000"
                       className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 placeholder-slate-500"
                       style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', minWidth: 200 }}
@@ -660,7 +680,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl animate-fade-in-up">
+    <div className="p-4 md:p-8 animate-fade-in-up">
       {/* Breadcrumb */}
       <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[#8891a8] mb-6">
         <Link href="/dashboard" className="hover:text-[#c2c8d8] transition-colors">Dashboard</Link>
@@ -669,6 +689,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <ChevronRight className="w-3.5 h-3.5" />
         <span className="text-[#c2c8d8]">{rep.name}</span>
       </nav>
+
+      {/* Two-column layout at xl+ */}
+      <div className="xl:grid xl:grid-cols-[300px_1fr] xl:gap-8 xl:items-start">
+        {/* LEFT: sticky sidebar */}
+        <div className="xl:sticky xl:top-6 xl:self-start xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
+          <div className="xl:flex xl:flex-col xl:gap-6">
 
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
@@ -691,7 +717,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-4 mb-8">
         {[
           { label: 'Total Deals',    value: repProjects.length,              color: 'text-[#00e07a]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
           { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[#00e07a]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
@@ -915,6 +941,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         </table>
       </div>}
 
+          </div>{/* end xl:flex xl:flex-col left inner */}
+        </div>{/* end xl:sticky left col */}
+
+        {/* RIGHT: scrollable main content */}
+        <div className="xl:flex xl:flex-col xl:gap-6 xl:min-w-0">
+
       {/* Payment history */}
       {!isPM && <div className="card-surface rounded-2xl overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-[#333849] flex items-center justify-between">
@@ -930,7 +962,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Customer / Notes</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Type</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Stage</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Amount</th>
+              <th className="text-right px-5 py-3 text-[#c2c8d8] font-medium">Amount</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Status</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Date</th>
             </tr>
@@ -953,7 +985,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     {entry.paymentStage}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-[#00e07a] font-semibold">
+                <td className="px-5 py-3 text-right text-[#00e07a] font-semibold tabular-nums">
                   ${entry.amount.toLocaleString()}
                 </td>
                 <td className="px-5 py-3">
@@ -990,8 +1022,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Role</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Phase</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Installer</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">kW</th>
-              {!isPM && <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Est. Pay</th>}
+              <th className="hidden xl:table-cell text-right px-5 py-3 text-[#c2c8d8] font-medium">Sold</th>
+              <th className="text-right px-5 py-3 text-[#c2c8d8] font-medium tabular-nums">kW</th>
+              {!isPM && <th className="text-right px-5 py-3 text-[#c2c8d8] font-medium tabular-nums">Est. Pay</th>}
             </tr>
           </thead>
           <tbody>
@@ -1011,9 +1044,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <PhaseBadge phase={proj.phase} />
                 </td>
                 <td className="px-5 py-3 text-[#c2c8d8]">{proj.installer}</td>
-                <td className="px-5 py-3 text-[#c2c8d8]">{proj.kWSize}</td>
+                <td className="hidden xl:table-cell text-right px-5 py-3 text-[#8891a8] tabular-nums">{formatDate(proj.soldDate)}</td>
+                <td className="px-5 py-3 text-right text-[#c2c8d8] tabular-nums">{proj.kWSize}</td>
                 {!isPM && (
-                  <td className="px-5 py-3 text-[#00e07a] font-semibold">
+                  <td className="px-5 py-3 text-right text-[#00e07a] font-semibold tabular-nums">
                     ${(proj.repId === id
                         ? (proj.setterId === id ? (proj.setterM1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
                         : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
@@ -1024,7 +1058,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             ))}
             {repProjects.length === 0 && (
               <tr>
-                <td colSpan={isPM ? 5 : 6} className="px-5 py-14 text-center">
+                <td colSpan={isPM ? 6 : 7} className="px-5 py-14 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center">
                       <FolderKanban className="w-6 h-6 text-[#525c72] animate-pulse" />
@@ -1043,6 +1077,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             onPageChange={setProjPage} onRowsPerPageChange={(n) => { setProjPageSize(n); setProjPage(1); }} />
         )}
       </div>
+
+        </div>{/* end right col */}
+      </div>{/* end xl:grid two-column layout */}
 
       {/* ── Action footer ────────────────────────────────────────── */}
       {/* Same three-button footer as the admin/PM/SD shell — admin only. */}
