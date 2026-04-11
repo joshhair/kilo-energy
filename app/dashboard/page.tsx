@@ -1914,6 +1914,7 @@ function AdminDashboard({
       if (proj.flagged) count++;
     }
     for (const proj of attentionActiveProjects) {
+      if (proj.flagged) continue;
       const threshold = PHASE_STUCK_THRESHOLDS_ADMIN[proj.phase];
       if (threshold == null) continue;
       const [y, m, d] = proj.soldDate.split('-').map(Number);
@@ -2277,7 +2278,7 @@ function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">

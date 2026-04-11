@@ -172,9 +172,9 @@ export default function MobileAdminDashboard() {
   const phaseCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const phase of ACTIVE_PHASES) counts[phase] = 0;
-    for (const p of projects) { if (counts[p.phase] !== undefined) counts[p.phase]++; }
+    for (const p of active) { if (counts[p.phase] !== undefined) counts[p.phase]++; }
     return counts;
-  }, [projects]);
+  }, [active]);
 
   // Recent deals
   const recentDeals = useMemo(() => [...projects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 5), [projects]);
