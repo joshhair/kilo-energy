@@ -665,16 +665,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevMonthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
-  const thisMonthDeals = repProjects.filter((p) => p.soldDate.startsWith(thisMonthKey)).length;
-  const prevMonthDeals = repProjects.filter((p) => p.soldDate.startsWith(prevMonthKey)).length;
-  const thisMonthKW = repProjects.filter((p) => p.soldDate.startsWith(thisMonthKey)).reduce((s, p) => s + p.kWSize, 0);
-  const prevMonthKW = repProjects.filter((p) => p.soldDate.startsWith(prevMonthKey)).reduce((s, p) => s + p.kWSize, 0);
+  const thisMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey)).length;
+  const prevMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey)).length;
+  const thisMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey)).reduce((s, p) => s + p.kWSize, 0);
+  const prevMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey)).reduce((s, p) => s + p.kWSize, 0);
   const dealsTrend = thisMonthDeals - prevMonthDeals; // positive = up, negative = down
   const kwTrend = thisMonthKW - prevMonthKW;
 
   const assignment = trainerAssignments.find((a) => a.traineeId === id);
   const trainerRep = assignment ? reps.find((r) => r.id === assignment.trainerId) : null;
-  const completedDeals = repProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
+  const completedDeals = repProjects.filter((p) => p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed').length;
   const currentOverrideRate = assignment ? getTrainerOverrideRate(assignment, completedDeals) : 0;
 
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
@@ -1246,7 +1246,7 @@ function TrainerOverrideCard({
         </div>
         {isAdmin && !editing && (
           <button
-            onClick={() => setEditing(true)}
+            onClick={() => { setDraftTiers([...assignment.tiers]); setEditing(true); }}
             className="flex items-center gap-1.5 text-[#c2c8d8] hover:text-white text-sm transition-colors"
           >
             <Pencil className="w-3.5 h-3.5" />

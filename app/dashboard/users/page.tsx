@@ -582,8 +582,8 @@ function UsersPageInner() {
       case 'deals': {
         const dealsByRep = new Map<string, number>();
         for (const p of projects) {
-          if (p.repId)    dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
-          if (p.setterId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
+          if (p.repId)                       dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
+          if (p.setterId && p.setterId !== p.repId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
         }
         arr.sort((a, b) => (dealsByRep.get(b.id) ?? 0) - (dealsByRep.get(a.id) ?? 0));
         break;
@@ -591,8 +591,8 @@ function UsersPageInner() {
       case 'kw': {
         const kwByRep = new Map<string, number>();
         for (const p of projects) {
-          if (p.repId)    kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + p.kWSize);
-          if (p.setterId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + p.kWSize);
+          if (p.repId)                       kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + p.kWSize);
+          if (p.setterId && p.setterId !== p.repId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + p.kWSize);
         }
         arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
         break;
