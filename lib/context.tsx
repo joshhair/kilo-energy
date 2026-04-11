@@ -619,6 +619,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (updates.m2Amount !== undefined) dbUpdates.m2Amount = updates.m2Amount;
     if (updates.m3Paid !== undefined) dbUpdates.m3Paid = updates.m3Paid;
     if (updates.m3Amount !== undefined) dbUpdates.m3Amount = updates.m3Amount;
+    if (updates.setterM1Amount !== undefined) dbUpdates.setterM1Amount = updates.setterM1Amount;
     if (updates.setterM2Amount !== undefined) dbUpdates.setterM2Amount = updates.setterM2Amount;
     if (updates.setterM3Amount !== undefined) dbUpdates.setterM3Amount = updates.setterM3Amount;
     if (updates.cancellationReason !== undefined) dbUpdates.cancellationReason = updates.cancellationReason;
@@ -1064,6 +1065,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (updates.m1Amount !== undefined) stageAmountUpdates.push({ stage: 'M1', setter: false, newAmount: updates.m1Amount });
     if (updates.m2Amount !== undefined) stageAmountUpdates.push({ stage: 'M2', setter: false, newAmount: updates.m2Amount });
     if (updates.m3Amount !== undefined) stageAmountUpdates.push({ stage: 'M3', setter: false, newAmount: updates.m3Amount });
+    if (updates.setterM1Amount !== undefined) stageAmountUpdates.push({ stage: 'M1', setter: true, newAmount: updates.setterM1Amount });
     if (updates.setterM2Amount !== undefined) stageAmountUpdates.push({ stage: 'M2', setter: true, newAmount: updates.setterM2Amount });
     if (updates.setterM3Amount !== undefined) stageAmountUpdates.push({ stage: 'M3', setter: true, newAmount: updates.setterM3Amount });
     if (stageAmountUpdates.length > 0) {

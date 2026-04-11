@@ -901,6 +901,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
     const editCloserTotal = calculateCommission(ppw, editBaseline.closerPerW, kw);
     const editM1Flat = kw >= 5 ? 1000 : 500;
+    const editSetterPerW = 'setterPerW' in editBaseline && editBaseline.setterPerW != null
+      ? editBaseline.setterPerW
+      : Math.round((editBaseline.closerPerW + 0.10) * 100) / 100;
+    const editSetterTotal = calculateCommission(ppw, editSetterPerW, kw);
+    const editSetterM1Amount = editVals.setterId ? Math.min(editM1Flat, Math.max(0, editSetterTotal)) : 0;
     ctxUpdateProject(project.id, {
       installer: editVals.installer,
       financer: editVals.financer,
@@ -913,6 +918,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       soldDate: editVals.soldDate,
       notes: editVals.notes,
       baselineOverride,
+      setterM1Amount: editSetterM1Amount,
     });
     setShowEditModal(false);
     setEditErrors({});

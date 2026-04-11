@@ -511,7 +511,7 @@ function RepEarningsView() {
     if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
   }, [tab, isHydrated]);
 
-  useEffect(() => { setDealPage(1); setBonusPage(1); setDealRoleFilter('All'); }, [monthFilter]);
+  useEffect(() => { setDealPage(1); setBonusPage(1); setDealRoleFilter(null); }, [monthFilter]);
   useEffect(() => { setDealPage(1); }, [dealRoleFilter]);
 
   if (!isHydrated) return <EarningsSkeleton />;
