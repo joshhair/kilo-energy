@@ -7,7 +7,7 @@ import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileReps from '../mobile/MobileReps';
 import { useApp } from '../../../lib/context';
 import { formatCompactKW } from '../../../lib/utils';
-import { Search, ChevronRight, Users, Plus, Trash2, Trophy, Award, X, Mail, Clock } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, Trophy, Award, X, Mail, Clock } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
@@ -302,6 +302,8 @@ function UsersPageInner() {
               setAdminUsers((prev) => [...prev, { id: json.user.id, firstName: json.user.firstName, lastName: json.user.lastName, email: json.user.email, phone: json.user.phone, role: 'admin' }]);
             } else if (json.user.role === 'project_manager') {
               setPmUsers((prev) => [...prev, { id: json.user.id, firstName: json.user.firstName, lastName: json.user.lastName, email: json.user.email, phone: json.user.phone, role: 'project_manager' }]);
+            } else if (json.user.role === 'sub-dealer') {
+              addSubDealer(json.user.firstName, json.user.lastName, json.user.email, json.user.phone, json.user.id);
             }
             return { id: json.user.id as string };
           })
@@ -425,6 +427,7 @@ function UsersPageInner() {
   // ── Sort ────────────────────────────────────────────────────────────────
   type SortBy = 'paid' | 'active' | 'deals' | 'name' | 'kw';
   const [sortBy, setSortBy] = useState<SortBy>('paid');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   type ComparePeriod = 'this-week' | 'this-month' | 'last-month' | 'this-quarter' | 'last-quarter' | 'this-year' | 'custom';
   const PERIOD_OPTIONS: { value: ComparePeriod; label: string }[] = [
@@ -574,15 +577,16 @@ function UsersPageInner() {
   const sorted = useMemo(() => {
     const arr = [...filtered];
     switch (sortBy) {
-      case 'paid':   return arr.sort((a, b) => (repPaidAmounts.get(b.id) ?? 0) - (repPaidAmounts.get(a.id) ?? 0));
-      case 'active': return arr.sort((a, b) => (activeDealsByRep.get(b.id) ?? 0) - (activeDealsByRep.get(a.id) ?? 0));
+      case 'paid':   arr.sort((a, b) => (repPaidAmounts.get(b.id) ?? 0) - (repPaidAmounts.get(a.id) ?? 0)); break;
+      case 'active': arr.sort((a, b) => (activeDealsByRep.get(b.id) ?? 0) - (activeDealsByRep.get(a.id) ?? 0)); break;
       case 'deals': {
         const dealsByRep = new Map<string, number>();
         for (const p of projects) {
           if (p.repId)    dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
           if (p.setterId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
         }
-        return arr.sort((a, b) => (dealsByRep.get(b.id) ?? 0) - (dealsByRep.get(a.id) ?? 0));
+        arr.sort((a, b) => (dealsByRep.get(b.id) ?? 0) - (dealsByRep.get(a.id) ?? 0));
+        break;
       }
       case 'kw': {
         const kwByRep = new Map<string, number>();
@@ -590,11 +594,14 @@ function UsersPageInner() {
           if (p.repId)    kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + p.kWSize);
           if (p.setterId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + p.kWSize);
         }
-        return arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
+        arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
+        break;
       }
-      case 'name':   return arr.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name':   arr.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
-  }, [filtered, sortBy, repPaidAmounts, activeDealsByRep, projects]);
+    if (sortDir === 'asc') arr.reverse();
+    return arr;
+  }, [filtered, sortBy, sortDir, repPaidAmounts, activeDealsByRep, projects]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -956,12 +963,22 @@ function UsersPageInner() {
         {([['paid','Top Paid'],['active','Most Active'],['deals','Most Deals'],['kw','Most kW'],['name','Name']] as [SortBy, string][]).map(([val, label]) => (
           <button
             key={val}
-            onClick={() => setSortBy(val)}
+            onClick={() => {
+              if (sortBy === val) {
+                setSortDir((d) => d === 'desc' ? 'asc' : 'desc');
+              } else {
+                setSortBy(val);
+                setSortDir('desc');
+              }
+            }}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               sortBy === val ? 'bg-[#00e07a]/15 text-[#00e07a] border border-[#00e07a]/30' : 'bg-[#161920] text-[#8891a8] border border-[#272b35] hover:text-white'
             }`}
           >
             {label}
+            {sortBy === val && (
+              <ChevronDown className={"w-3 h-3 ml-1 inline transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] " + (sortDir === 'asc' ? 'rotate-180' : 'rotate-0')} />
+            )}
           </button>
         ))}
       </div>
@@ -1196,11 +1213,11 @@ function UsersPageInner() {
                 </div>
 
                 {/* ── Stats — hover-reveal with staggered blur-lift ─────────── */}
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3 md:flex md:items-center md:gap-8">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 md:flex md:items-center md:gap-6 xl:gap-10">
 
                   {/* Deals */}
                   <div
-                    className="text-center md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
+                    className="text-center xl:opacity-100 xl:translate-y-0 md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                     style={{ transitionDelay: '0ms' }}
                   >
                     <p className="font-semibold">
@@ -1211,7 +1228,7 @@ function UsersPageInner() {
 
                   {/* Active */}
                   <div
-                    className="text-center md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
+                    className="text-center xl:opacity-100 xl:translate-y-0 md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
@@ -1222,7 +1239,7 @@ function UsersPageInner() {
 
                   {/* kW */}
                   <div
-                    className="text-center md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
+                    className="text-center xl:opacity-100 xl:translate-y-0 md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
@@ -1233,7 +1250,7 @@ function UsersPageInner() {
 
                   {/* Last Deal */}
                   <div
-                    className="text-center md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
+                    className="text-center xl:opacity-100 xl:translate-y-0 md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                     style={{ transitionDelay: '190ms' }}
                   >
                     <p className="font-semibold">
@@ -1253,7 +1270,7 @@ function UsersPageInner() {
                   {/* Paid */}
                   {!isPM && (
                     <div
-                      className="text-center md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
+                      className="text-center xl:opacity-100 xl:translate-y-0 md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                       style={{ transitionDelay: '225ms' }}
                     >
                       <p className="font-semibold">
