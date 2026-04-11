@@ -323,8 +323,9 @@ export default function MobileNewDeal() {
   };
 
   const handlePcFamilyChange = (value: string) => {
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '' }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '' }));
+    const mappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', ...(mappedFinancer ? { financer: mappedFinancer } : {}) }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', ...(mappedFinancer ? { financer: '' } : {}) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 
@@ -1065,7 +1066,10 @@ export default function MobileNewDeal() {
                         className={selectCls('financer')} style={v0InputStyle('financer')}
                       >
                         <option value="">-- Select financer --</option>
-                        {activeFinancers.map((f) => <option key={f} value={f}>{f}</option>)}
+                        {(pcConfig?.familyFinancerMap?.[form.pcFamily]
+                          ? activeFinancers.filter((f) => f === pcConfig!.familyFinancerMap![form.pcFamily])
+                          : activeFinancers
+                        ).map((f) => <option key={f} value={f}>{f}</option>)}
                       </select>
                       <FieldError errors={errors} field="financer" />
                     </div>

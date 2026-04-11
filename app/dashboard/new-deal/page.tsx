@@ -692,8 +692,9 @@ function NewDealPage() {
   };
 
   const handleSolarTechFamilyChange = (value: string) => {
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '' }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '' }));
+    const mappedFinancer = SOLARTECH_FAMILY_FINANCER[value] ?? '';
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', ...(mappedFinancer ? { financer: mappedFinancer } : {}) }));
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', ...(mappedFinancer ? { financer: '' } : {}) }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
 

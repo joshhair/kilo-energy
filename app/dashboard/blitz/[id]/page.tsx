@@ -289,6 +289,10 @@ export default function BlitzDetailPage() {
   }, [blitz?.participants, blitz?.projects]);
 
   const handleSave = async () => {
+    if (editForm.startDate && editForm.endDate && editForm.endDate < editForm.startDate) {
+      toast('End date must be on or after start date', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const r = await fetch(`/api/blitzes/${blitzId}`, {
@@ -723,7 +727,7 @@ export default function BlitzDetailPage() {
                   {approvedParticipants.slice(0, 8).map((p: any) => (
                     <Link key={p.user.id} href={`/dashboard/users/${p.user.id}`} className="flex items-center gap-1.5 bg-[#1d2028]/60 border border-[#272b35]/50 rounded-full px-2.5 py-1 hover:border-[#00e07a]/40 hover:bg-[#1d2028] transition-colors">
                       <div className="w-5 h-5 rounded-full bg-[#00e07a]/30 border border-[#00e07a]/30 flex items-center justify-center text-[10px] font-bold text-[#00c4f0]">
-                        {p.user.firstName[0]}{p.user.lastName[0]}
+                        {(p.user.firstName?.[0] ?? '').toUpperCase()}{(p.user.lastName?.[0] ?? '').toUpperCase()}
                       </div>
                       <span className="text-xs text-[#c2c8d8]">{p.user.firstName}</span>
                     </Link>
