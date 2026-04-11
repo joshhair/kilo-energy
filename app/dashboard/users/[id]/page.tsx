@@ -526,12 +526,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
               {/* Delete permanently — gated to zero relations */}
               {(() => {
-                const hasRelations = (userMeta?.relationCount ?? 0) > 0;
+                const hasRelations = !userMeta || (userMeta.relationCount ?? 0) > 0;
                 return (
                   <button
                     onClick={() => setConfirmDelete(true)}
                     disabled={hasRelations}
-                    title={hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
+                    title={!userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                     className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
                   >
@@ -1077,12 +1077,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               </button>
             )}
             {(() => {
-              const hasRelations = (userMeta?.relationCount ?? 0) > 0;
+              const hasRelations = !userMeta || (userMeta.relationCount ?? 0) > 0;
               return (
                 <button
                   onClick={() => setConfirmDelete(true)}
                   disabled={hasRelations}
-                  title={hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
+                  title={!userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
                 >

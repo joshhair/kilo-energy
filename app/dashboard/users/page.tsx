@@ -298,6 +298,10 @@ function UsersPageInner() {
             // id skips the POST and only updates the reps array.
             if (json.user.role === 'rep') {
               addRep(json.user.firstName, json.user.lastName, json.user.email, json.user.phone, json.user.repType, json.user.id);
+            } else if (json.user.role === 'admin') {
+              setAdminUsers((prev) => [...prev, { id: json.user.id, firstName: json.user.firstName, lastName: json.user.lastName, email: json.user.email, phone: json.user.phone, role: 'admin' }]);
+            } else if (json.user.role === 'project_manager') {
+              setPmUsers((prev) => [...prev, { id: json.user.id, firstName: json.user.firstName, lastName: json.user.lastName, email: json.user.email, phone: json.user.phone, role: 'project_manager' }]);
             }
             return { id: json.user.id as string };
           })

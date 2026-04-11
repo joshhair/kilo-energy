@@ -1195,11 +1195,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex gap-4 mb-4">
                 <div className="flex-1 bg-[#1d2028]/50 rounded-xl px-4 py-3">
                   <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
-                  <p className="text-[#00e07a] font-bold">${project.m1Amount.toLocaleString()}</p>
+                  <p className="text-[#00e07a] font-bold">${(project.setterId === currentRepId ? (project.setterM1Amount ?? 0) : project.m1Amount).toLocaleString()}</p>
                 </div>
                 <div className="flex-1 bg-[#1d2028]/50 rounded-xl px-4 py-3">
                   <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
-                  <p className="text-[#00e07a] font-bold">${project.m2Amount.toLocaleString()}</p>
+                  <p className="text-[#00e07a] font-bold">${(project.setterId === currentRepId ? (project.setterM2Amount ?? 0) : project.m2Amount).toLocaleString()}</p>
                 </div>
                 {(project.m3Amount ?? 0) > 0 && (
                   <div className="flex-1 bg-[#1d2028]/50 rounded-xl px-4 py-3">

@@ -591,6 +591,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const oldSetter = old.setterId ? reps.find((r) => r.id === old.setterId)?.name ?? old.setterId : 'none';
         const newSetter = updates.setterId ? reps.find((r) => r.id === updates.setterId)?.name ?? updates.setterId : 'none';
         logProjectActivity(id, 'setter_assigned', `Setter changed from ${oldSetter} to ${newSetter}`, JSON.stringify({ oldSetterId: old.setterId, newSetterId: updates.setterId }));
+        // Purge the old setter's Draft/Pending payroll entries for this project so they
+        // cannot be accidentally promoted and paid after the setter is removed or replaced.
+        if (old.setterId) {
+          setPayrollEntries((prevEntries) => {
+            const toRemove = prevEntries.filter(
+              (e) => e.projectId === id && e.repId === old.setterId && (e.status === 'Draft' || e.status === 'Pending')
+            );
+            if (toRemove.length > 0) {
+              deletePayrollEntriesFromDb(toRemove.map((e) => e.id));
+              return prevEntries.filter((e) => !toRemove.includes(e));
+            }
+            return prevEntries;
+          });
+        }
       }
     }
 
