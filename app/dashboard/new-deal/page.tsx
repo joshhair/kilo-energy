@@ -707,6 +707,18 @@ function NewDealPage() {
 
   const closerId = currentRole === 'admin' ? form.repId : (currentRepId ?? '');
 
+  // When a blitz is selected, only approved participants of that blitz may be setters.
+  const setterPickerReps = useMemo(() => {
+    if (!form.blitzId) return reps;
+    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+    const approvedIds = new Set(
+      (selectedBlitz?.participants ?? [])
+        .filter((p: any) => p.joinStatus === 'approved')
+        .map((p: any) => p.userId as string),
+    );
+    return reps.filter((r) => approvedIds.has(r.id));
+  }, [form.blitzId, rawBlitzes, reps]);
+
   // Trainer override tier progression counts deals where the FINAL milestone
   // payment has actually been paid out. The "final" milestone depends on
   // the installer's payment model:
@@ -1194,7 +1206,7 @@ function NewDealPage() {
                   <label htmlFor="field-repId" className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">Closer (Rep) {fieldCheck('repId')}</span>
                   </label>
-                  <select id="field-repId" value={form.repId} onChange={(e) => update('repId', e.target.value)}
+                  <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('blitzId', ''); }}
                     onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
                     {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -1210,7 +1222,7 @@ function NewDealPage() {
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
-                  reps={reps}
+                  reps={setterPickerReps}
                   trainerAssignments={trainerAssignments}
                   excludeRepId={closerId || undefined}
                 />

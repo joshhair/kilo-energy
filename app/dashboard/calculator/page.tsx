@@ -426,7 +426,7 @@ function CalculatorPage() {
     ? projects.filter((p) => {
         const pct = installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
         const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return p.setterId === effectiveSetterId && fullyPaid;
+        return (p.setterId === effectiveSetterId || p.repId === effectiveSetterId) && fullyPaid;
       }).length
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
@@ -444,7 +444,7 @@ function CalculatorPage() {
     ? projects.filter((p) => {
         const pct = installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
         const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return p.repId === currentRepId && fullyPaid;
+        return (p.repId === currentRepId || p.setterId === currentRepId) && fullyPaid;
       }).length
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
