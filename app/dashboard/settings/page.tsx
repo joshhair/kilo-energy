@@ -92,13 +92,20 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
   }, [reps]);
 
   const togglePermission = async (repId: string, field: 'canRequestBlitz' | 'canCreateBlitz', value: boolean) => {
-    setPermissions((prev) => ({ ...prev, [repId]: { ...prev[repId], [field]: value } }));
-    await fetch(`/api/users/${repId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [field]: value }),
-    });
-    toast('Permission updated');
+    const prev = permissions[repId];
+    setPermissions((p) => ({ ...p, [repId]: { ...p[repId], [field]: value } }));
+    try {
+      const res = await fetch(`/api/users/${repId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!res.ok) throw new Error();
+      toast('Permission updated');
+    } catch {
+      setPermissions((p) => ({ ...p, [repId]: prev }));
+      toast('Failed to update permission', 'error');
+    }
   };
 
   // Role counts
@@ -2588,7 +2595,7 @@ function SettingsPageInner() {
                       if (exportSelected.has('payments')) {
                         const csv = toCSV(
                           ['Rep', 'Customer / Notes', 'Type', 'Stage', 'Amount', 'Status', 'Date'],
-                          filteredPayroll.map((p) => [p.repName, p.customerName || p.notes || '', p.type, p.paymentStage, String(p.amount), p.status, p.date]),
+                          filteredPayroll.map((p) => [p.repName, p.customerName || p.notes || '', p.type, String(p.paymentStage ?? ''), String(p.amount), p.status, p.date]),
                         );
                         download(csv, `kilo_payments_${new Date().toISOString().split('T')[0]}.csv`);
                       }

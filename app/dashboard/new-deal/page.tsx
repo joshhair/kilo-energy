@@ -585,7 +585,8 @@ function NewDealPage() {
     duplicateApplied.current = true;
     const rawInstaller = searchParams.get('installer') ?? '';
     const installer = activeInstallers.includes(rawInstaller) ? rawInstaller : '';
-    const financer = searchParams.get('financer') ?? '';
+    const rawFinancer = searchParams.get('financer') ?? '';
+    const financer = activeFinancers.includes(rawFinancer) ? rawFinancer : '';
     const productType = searchParams.get('productType') ?? '';
     const repId = searchParams.get('repId') ?? (currentRole === 'admin' ? '' : (currentRepId ?? ''));
     const setterId = searchParams.get('setterId') ?? '';
@@ -602,7 +603,7 @@ function NewDealPage() {
     toast('Deal duplicated — fill in the new customer details', 'info');
     // Auto-focus customer name field after a brief delay for form to render
     setTimeout(() => customerNameInputRef.current?.focus(), 150);
-  }, [searchParams, currentRole, currentRepId, activeInstallers, toast]);
+  }, [searchParams, currentRole, currentRepId, activeInstallers, activeFinancers, toast]);
 
   // ── Pre-fill last-used installer from localStorage ────────────────────────
   const lastInstallerApplied = useRef(false);
