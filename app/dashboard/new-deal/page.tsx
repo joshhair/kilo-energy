@@ -729,14 +729,14 @@ function NewDealPage() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => p.setterId === form.setterId && isFullyPaidOut(p)).length
+    ? projects.filter((p) => (p.setterId === form.setterId || p.repId === form.setterId) && isFullyPaidOut(p)).length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
   const closerCompletedDeals = closerId
-    ? projects.filter((p) => p.repId === closerId && isFullyPaidOut(p)).length
+    ? projects.filter((p) => (p.repId === closerId || p.setterId === closerId) && isFullyPaidOut(p)).length
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
@@ -1092,8 +1092,8 @@ function NewDealPage() {
   const _now = new Date();
   const _today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
   const _monthPrefix = _today.slice(0, 7);
-  const monthCount = projects.filter((p) => p.soldDate.startsWith(_monthPrefix) && (currentRepId == null || p.repId === currentRepId)).length;
-  const todayCount = projects.filter((p) => p.soldDate.startsWith(_today) && (currentRepId == null || p.repId === currentRepId)).length;
+  const monthCount = projects.filter((p) => p.soldDate.startsWith(_monthPrefix) && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
+  const todayCount = projects.filter((p) => p.soldDate.startsWith(_today) && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
 
   return (
     <div className="p-4 md:p-8" style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -1820,7 +1820,7 @@ function NewDealPage() {
                       if (value !== 'blitz' || form.leadSource === 'blitz') {
                         update('blitzId', '');
                       }
-                      if (form.leadSource === 'blitz' && value === 'blitz') {
+                      if (form.leadSource === 'blitz') {
                         update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
                     }}

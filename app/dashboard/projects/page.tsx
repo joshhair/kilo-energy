@@ -207,14 +207,6 @@ function ProjectsPageInner() {
         ? projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
         : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
 
-  // Keep a stable alias for the header count — always rep's own deals for reps, all for admin.
-  const myProjects =
-    effectiveRole === 'admin' || effectiveRole === 'project_manager'
-      ? projects
-      : isSubDealer
-        ? projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
-        : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
-
   const statusFiltered = applyStatusFilter(visibleProjects, statusFilter);
 
   const filtered = statusFiltered.filter((p) => {
