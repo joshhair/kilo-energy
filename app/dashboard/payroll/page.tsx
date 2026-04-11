@@ -1128,7 +1128,7 @@ function PayrollPageInner() {
                 <label className={labelCls}>Rep</label>
                 <RepSelector
                   value={paymentForm.repId}
-                  onChange={(repId) => setPaymentForm((p) => ({ ...p, repId }))}
+                  onChange={(repId) => setPaymentForm((p) => ({ ...p, repId, projectId: '' }))}
                   reps={reps}
                   placeholder="— Select rep —"
                   clearLabel="— Select rep —"

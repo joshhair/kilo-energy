@@ -253,7 +253,7 @@ function ProfileDrawer({
         {/* Nav items */}
         {items.length > 0 && (
           <div className="px-2 py-2">
-            {items.map(({ href, label, icon: Icon }) => (
+            {items.map(({ href, label, icon: Icon }, index) => (
               <Link
                 key={href}
                 href={href}
@@ -263,6 +263,9 @@ function ProfileDrawer({
                   color: '#fff',
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: '1rem',
+                  animation: !isExiting
+                    ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${index * 45}ms both`
+                    : 'none',
                 }}
               >
                 <span style={{ color: '#8899aa' }}><Icon className="w-5 h-5" /></span>
@@ -296,7 +299,7 @@ function ProfileDrawer({
                 <button
                   onClick={() => setViewAsOpen(!viewAsOpen)}
                   className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:opacity-70 transition-opacity"
-                  style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem' }}
+                  style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem', animation: !isExiting ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${items.length * 45}ms both` : 'none' }}
                 >
                   <Eye className="w-5 h-5" />
                   <span>View As Rep...</span>
@@ -346,6 +349,7 @@ function ProfileDrawer({
                 color: '#ff6b6b',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1rem',
+                animation: !isExiting ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${(items.length + 1) * 45}ms both` : 'none',
               }}
             >
               <LogOut className="w-5 h-5" />
@@ -485,11 +489,25 @@ export default function BottomNav({
                   className="relative flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[48px] transition-all duration-200 active:scale-95"
                   style={{ opacity: active ? 1 : 0.55 }}
                 >
-                  <span
-                    className="transition-transform duration-200"
-                    style={{ color: active ? '#00e5a0' : '#fff', transform: active ? 'scale(1.08)' : 'scale(1)' }}
-                  >
-                    <Icon className="w-[18px] h-[18px]" />
+                  <span className="relative w-[18px] h-[18px] block">
+                    <MoreHorizontal
+                      className="w-[18px] h-[18px] absolute inset-0"
+                      style={{
+                        color: active ? '#00e5a0' : '#fff',
+                        opacity: active ? 0 : 1,
+                        transform: active ? 'scale(0.5) rotate(-30deg)' : 'scale(1) rotate(0deg)',
+                        transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      }}
+                    />
+                    <X
+                      className="w-[18px] h-[18px] absolute inset-0"
+                      style={{
+                        color: '#00e5a0',
+                        opacity: active ? 1 : 0,
+                        transform: active ? 'scale(1) rotate(0deg)' : 'scale(0.5) rotate(30deg)',
+                        transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      }}
+                    />
                   </span>
                   <span className="text-[10px] tracking-wide transition-colors duration-200" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
                 </button>

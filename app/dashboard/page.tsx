@@ -2293,7 +2293,7 @@ function AdminDashboard({
                         {/* 8 */}<td className="px-6 py-3 text-[#00e07a] font-medium">${estPay.toLocaleString()}</td>
                         {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount ?? 0} /></td>
                         {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount ?? 0} /></td>
-                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.phase === 'PTO'} amount={proj.m3Amount ?? 0} /></td>}
+                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={proj.m3Amount ?? 0} /></td>}
                       </tr>
                       );
                     })}
