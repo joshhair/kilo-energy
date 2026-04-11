@@ -320,7 +320,7 @@ export default function IncentivesPage() {
     fetch(`/api/incentives/${updated.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate }),
+      body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate, metric: updated.metric, period: updated.period, startDate: updated.startDate, type: updated.type, targetRepId: updated.targetRepId, milestones: updated.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward, achieved: m.achieved })) }),
     }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
       .catch((err) => { console.error(err); toast('Failed to save incentive changes', 'error'); });
   };
@@ -416,7 +416,6 @@ export default function IncentivesPage() {
   const filterAndSort = (list: Incentive[]): Incentive[] => {
     let filtered = list;
     if (incentiveFilter === 'active') filtered = list.filter((i) => !isExpired(i.endDate) && i.active);
-    else if (incentiveFilter === 'expired') filtered = list.filter((i) => isExpired(i.endDate));
     else if (incentiveFilter === 'ending_soon') filtered = list.filter((i) => isEndingSoon(i.endDate));
 
     const sorted = [...filtered];

@@ -13,12 +13,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.description !== undefined) data.description = body.description;
   if (body.active !== undefined) data.active = body.active;
   if (body.endDate !== undefined) data.endDate = body.endDate;
+  if (body.metric !== undefined) data.metric = body.metric;
+  if (body.period !== undefined) data.period = body.period;
+  if (body.startDate !== undefined) data.startDate = body.startDate;
+  if (body.type !== undefined) data.type = body.type;
+  if (body.targetRepId !== undefined) data.targetRepId = body.targetRepId;
 
-  const incentive = await prisma.incentive.update({
-    where: { id },
-    data,
-    include: { milestones: true },
-  });
+  let incentive;
+  if (body.milestones !== undefined) {
+    await prisma.incentiveMilestone.deleteMany({ where: { incentiveId: id } });
+    incentive = await prisma.incentive.update({
+      where: { id },
+      data: {
+        ...data,
+        milestones: {
+          create: (body.milestones as { threshold: number; reward: string; achieved?: boolean }[]).map((m) => ({
+            threshold: m.threshold,
+            reward: m.reward,
+            achieved: m.achieved ?? false,
+          })),
+        },
+      },
+      include: { milestones: true },
+    });
+  } else {
+    incentive = await prisma.incentive.update({
+      where: { id },
+      data,
+      include: { milestones: true },
+    });
+  }
   return NextResponse.json(incentive);
 }
 

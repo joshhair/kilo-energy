@@ -173,7 +173,7 @@ function TrainingPageInner() {
       const currentRate = getTrainerOverrideRate(assignment, dealCount);
 
       // Find which tier is active and next threshold
-      let activeTierIndex = 0;
+      let activeTierIndex = assignment.tiers.length - 1;
       let nextThreshold: number | null = null;
       for (let i = 0; i < assignment.tiers.length; i++) {
         const tier = assignment.tiers[i];
