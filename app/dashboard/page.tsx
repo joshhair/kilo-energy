@@ -437,7 +437,7 @@ function MyTasksSection({
   onToggleTask,
 }: {
   mentions: MentionItem[];
-  onToggleTask: (projectId: string, messageId: string, checkItemId: string, completed: boolean) => void;
+  onToggleTask: (projectId: string, messageId: string, checkItemId: string, completed: boolean) => Promise<void>;
 }) {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
@@ -502,9 +502,25 @@ function MyTasksSection({
               <input
                 type="checkbox"
                 checked={checkedIds.has(task.checkItemId)}
-                onChange={() => {
-                  setCheckedIds((prev) => new Set([...prev, task.checkItemId]));
-                  onToggleTask(task.projectId, task.messageId, task.checkItemId, true);
+                onChange={async () => {
+                  const newCompleted = !checkedIds.has(task.checkItemId);
+                  setCheckedIds((prev) => {
+                    const next = new Set(prev);
+                    if (newCompleted) next.add(task.checkItemId);
+                    else next.delete(task.checkItemId);
+                    return next;
+                  });
+                  try {
+                    await onToggleTask(task.projectId, task.messageId, task.checkItemId, newCompleted);
+                  } catch {
+                    // Revert optimistic update on API failure
+                    setCheckedIds((prev) => {
+                      const next = new Set(prev);
+                      if (newCompleted) next.delete(task.checkItemId);
+                      else next.add(task.checkItemId);
+                      return next;
+                    });
+                  }
                 }}
                 className="w-4 h-4 rounded border-[#272b35] bg-[#1d2028] text-[#00e07a] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[#00e07a] flex-shrink-0"
               />
@@ -1339,26 +1355,26 @@ export default function DashboardPage() {
           <MyTasksSection
             mentions={dashMentions}
             onToggleTask={(projectId, messageId, checkItemId, completed) => {
-              fetch(`/api/projects/${projectId}/messages/${messageId}`, {
+              return fetch(`/api/projects/${projectId}/messages/${messageId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ checkItemId, completed, completedBy: effectiveRepId }),
               }).then((res) => {
-                if (!res.ok) return;
-                // Update local state to remove the completed task
+                if (!res.ok) throw new Error('Failed to update task');
+                // Update local state to reflect the completed status
                 setDashMentions((prev) =>
                   prev.map((m) =>
                     m.messageId === messageId
                       ? {
                           ...m,
                           checkItems: m.checkItems.map((ci) =>
-                            ci.id === checkItemId ? { ...ci, completed: true } : ci
+                            ci.id === checkItemId ? { ...ci, completed } : ci
                           ),
                         }
                       : m
                   )
                 );
-              }).catch(() => {});
+              });
             }}
           />
 
@@ -2208,7 +2224,7 @@ function AdminDashboard({
         const searchFiltered = projects.filter((p) => {
           if (!recentSearch.trim()) return true;
           const q = recentSearch.trim().toLowerCase();
-          return p.customerName.toLowerCase().includes(q) || p.repName.toLowerCase().includes(q);
+          return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q);
         });
         const sorted = [...searchFiltered].sort((a, b) => {
           let cmp = 0;
@@ -2503,20 +2519,20 @@ function SubDealerDashboard({
       <MyTasksSection
         mentions={mentions}
         onToggleTask={(projectId, messageId, checkItemId, completed) => {
-          fetch(`/api/projects/${projectId}/messages/${messageId}`, {
+          return fetch(`/api/projects/${projectId}/messages/${messageId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ checkItemId, completed, completedBy: currentRepId }),
           }).then((res) => {
-            if (!res.ok) return;
+            if (!res.ok) throw new Error('Failed to update task');
             setMentions((prev) =>
               prev.map((m) =>
                 m.messageId === messageId
-                  ? { ...m, checkItems: m.checkItems.map((ci) => ci.id === checkItemId ? { ...ci, completed: true } : ci) }
+                  ? { ...m, checkItems: m.checkItems.map((ci) => ci.id === checkItemId ? { ...ci, completed } : ci) }
                   : m
               )
             );
-          }).catch(() => {});
+          });
         }}
       />
 

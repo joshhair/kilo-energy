@@ -138,7 +138,8 @@ export default function MobileAdminDashboard() {
   const { totalPaid, totalRevenue, totalProfit } = useMemo(() => {
     let paid = 0, rev = 0, prof = 0;
     for (const e of periodPayroll) { if (e.status === 'Paid') paid += e.amount; }
-    for (const p of active) {
+    for (const p of periodProjects) {
+      if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
       const { closerPerW, kiloPerW } = getBaselines(p);
       const w = p.kWSize * 1000;
       rev += (p.netPPW ?? 0) * w;
@@ -146,7 +147,7 @@ export default function MobileAdminDashboard() {
     }
     return { totalPaid: paid, totalRevenue: rev, totalProfit: prof };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, periodPayroll, installerPricingVersions, productCatalogProducts]);
+  }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts]);
 
   const totalKW = useMemo(() => active.reduce((s, p) => s + p.kWSize, 0), [active]);
   const flaggedCount = useMemo(() => periodProjects.filter((p) => p.flagged).length, [periodProjects]);
@@ -177,7 +178,7 @@ export default function MobileAdminDashboard() {
   }, [active]);
 
   // Recent deals
-  const recentDeals = useMemo(() => [...projects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 5), [projects]);
+  const recentDeals = useMemo(() => [...projects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 5), [projects]);
 
   // Top reps by deal count
   const topReps = useMemo(() => {
