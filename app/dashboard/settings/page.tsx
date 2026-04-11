@@ -1094,6 +1094,15 @@ function SettingsPageInner() {
             const saved = deletedEntityRef.current;
             if (saved?.type === 'trainer') {
               setTrainerAssignments((prev) => [...prev, saved.assignment]);
+              fetch('/api/trainer-assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  trainerId: saved.assignment.trainerId,
+                  traineeId: saved.assignment.traineeId,
+                  tiers: saved.assignment.tiers,
+                }),
+              }).catch(console.error);
             }
           },
         });
@@ -2438,8 +2447,9 @@ function SettingsPageInner() {
             return true;
           });
           const filteredProjects = projects.filter((p) => {
-            if (exportDateFrom && p.soldDate < exportDateFrom) return false;
-            if (exportDateTo && p.soldDate > exportDateTo) return false;
+            if ((exportDateFrom || exportDateTo) && !p.soldDate) return false;
+            if (exportDateFrom && p.soldDate! < exportDateFrom) return false;
+            if (exportDateTo && p.soldDate! > exportDateTo) return false;
             return true;
           });
           const toggleExport = (type: 'payments' | 'projects' | 'baselines' | 'trainers') => {
