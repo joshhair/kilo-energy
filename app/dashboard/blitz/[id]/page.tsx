@@ -877,7 +877,7 @@ export default function BlitzDetailPage() {
 
           {/* Add participant modal */}
           {showAddParticipant && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={() => setShowAddParticipant(false)}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={() => { setShowAddParticipant(false); setSelectedRepId(''); }}>
               <div className="bg-[#161920] border border-[#272b35]/80 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-lg font-bold text-white mb-4">Add Participant</h3>
                 <select value={selectedRepId} onChange={(e) => setSelectedRepId(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-lg px-3 py-2 text-sm text-white mb-4">
@@ -885,7 +885,7 @@ export default function BlitzDetailPage() {
                   {availableReps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setShowAddParticipant(false)} className="px-3 py-2 text-sm text-[#c2c8d8]">Cancel</button>
+                  <button onClick={() => { setShowAddParticipant(false); setSelectedRepId(''); }} className="px-3 py-2 text-sm text-[#c2c8d8]">Cancel</button>
                   <button onClick={handleAddParticipant} disabled={!selectedRepId || addingParticipant} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[#00e07a] text-black rounded-lg hover:bg-[#00e07a] disabled:opacity-40 transition-colors">{addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingParticipant ? 'Adding...' : 'Add'}</button>
                 </div>
               </div>
@@ -967,7 +967,7 @@ export default function BlitzDetailPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setShowAddCost(false)} className="px-3 py-1.5 text-sm text-[#c2c8d8]">Cancel</button>
-                <button onClick={handleAddCost} disabled={addingCost} className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-[#00e07a] text-black rounded-lg hover:bg-[#00e07a] disabled:opacity-50 transition-colors">{addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingCost ? 'Adding...' : 'Add Cost'}</button>
+                <button onClick={handleAddCost} disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0} className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-[#00e07a] text-black rounded-lg hover:bg-[#00e07a] disabled:opacity-50 transition-colors">{addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingCost ? 'Adding...' : 'Add Cost'}</button>
               </div>
             </div>
           )}

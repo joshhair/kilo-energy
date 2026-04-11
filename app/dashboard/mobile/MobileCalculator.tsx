@@ -95,7 +95,7 @@ export default function MobileCalculator() {
   const { closerPerW, setterBaselinePerW, kiloPerW } = (() => {
     if (!hasInput) return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 };
     if (isSolarTech) {
-      const b = getSolarTechBaseline(solarTechProductId, kW);
+      const b = getSolarTechBaseline(solarTechProductId, kW, solarTechProducts);
       return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
     }
     if (isPcInstaller) {

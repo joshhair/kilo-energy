@@ -562,7 +562,7 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs } = useApp();
+  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();

@@ -248,7 +248,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
 
   const handleSubmit = async () => {
     setTouched(true);
-    if (!name.trim() || !startDate || !endDate) return;
+    if (!name.trim() || !startDate || !endDate || new Date(endDate) < new Date(startDate)) return;
     setSaving(true);
     try {
       const res = await fetch('/api/blitzes', {
@@ -303,8 +303,9 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
             </div>
             <div>
               <label className="block text-xs font-medium text-[#c2c8d8] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[#272b35]'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
             </div>
           </div>
           {isAdmin && (
@@ -350,7 +351,7 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
 
   const handleSubmit = async () => {
     setTouched(true);
-    if (!name.trim() || !startDate || !endDate) return;
+    if (!name.trim() || !startDate || !endDate || new Date(endDate) < new Date(startDate)) return;
     setSaving(true);
     try {
       const res = await fetch('/api/blitz-requests', {
@@ -408,8 +409,9 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
             </div>
             <div>
               <label className="block text-xs font-medium text-[#c2c8d8] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !endDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[#272b35]'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
             </div>
           </div>
           <div>

@@ -1107,9 +1107,11 @@ export const SOLARTECH_PRODUCTS: SolarTechProduct[] = [
 
 export function getSolarTechBaseline(
   productId: string,
-  kW: number
+  kW: number,
+  products?: SolarTechProduct[]
 ): { closerPerW: number; setterPerW: number; kiloPerW: number } {
-  const product = SOLARTECH_PRODUCTS.find((p) => p.id === productId);
+  const list = products ?? SOLARTECH_PRODUCTS;
+  const product = list.find((p) => p.id === productId);
   if (!product) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0 };
   const tier = product.tiers.find(
     (t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)
