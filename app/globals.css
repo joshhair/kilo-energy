@@ -1653,6 +1653,15 @@ select {
   }
 }
 
+@keyframes statCellEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-cell-stagger { animation: none !important; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @keyframes itemFadeUp {
     from { opacity: 0; transform: translateY(10px); }
