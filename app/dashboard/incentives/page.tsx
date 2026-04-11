@@ -417,6 +417,7 @@ export default function IncentivesPage() {
     let filtered = list;
     if (incentiveFilter === 'active') filtered = list.filter((i) => !isExpired(i.endDate) && i.active);
     else if (incentiveFilter === 'ending_soon') filtered = list.filter((i) => isEndingSoon(i.endDate));
+    else if (incentiveFilter === 'expired') filtered = list.filter((i) => isExpired(i.endDate));
 
     const sorted = [...filtered];
     if (incentiveSort === 'newest') {
@@ -460,7 +461,7 @@ export default function IncentivesPage() {
 
   // ── Filter/Sort toolbar (reusable for both sections) ──
   const filterSortToolbar = (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 flex-wrap">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 xl:mb-6 xl:border-b xl:border-[#272b35] xl:pb-4 flex-wrap">
       <div className="w-full sm:w-40">
         <SearchableSelect
           value={incentiveFilter}
@@ -631,7 +632,7 @@ export default function IncentivesPage() {
 
       {/* Company-wide section */}
       {(() => {
-        const company = filterAndSort(activeVisible.filter((i) => i.type === 'company'));
+        const company = filterAndSort((incentiveFilter === 'expired' ? visible : activeVisible).filter((i) => i.type === 'company'));
         if (company.length === 0 && !isAdmin) return null;
         return (
           <div className="mb-8">
@@ -642,7 +643,7 @@ export default function IncentivesPage() {
             {company.length === 0 ? (
               <EmptyState message="No company-wide incentives yet" subtitle="Company incentives apply to all reps — create one to boost team performance" />
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-4 xl:grid-cols-2">
                 {company.map((inc, index) => (
                   <IncentiveCard
                     key={inc.id}
@@ -668,7 +669,7 @@ export default function IncentivesPage() {
 
       {/* Personal section */}
       {(() => {
-        const personal = filterAndSort(activeVisible.filter((i) => i.type === 'personal'));
+        const personal = filterAndSort((incentiveFilter === 'expired' ? visible : activeVisible).filter((i) => i.type === 'personal'));
         if (personal.length === 0 && !isAdmin) return null;
         return (
           <div>
@@ -679,7 +680,7 @@ export default function IncentivesPage() {
             {personal.length === 0 ? (
               <EmptyState message={isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} subtitle={isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-4 xl:grid-cols-2">
                 {personal.map((inc, index) => (
                   <IncentiveCard
                     key={inc.id}
@@ -1013,7 +1014,7 @@ function IncentiveCard({
           {/* Collapsed progress indicator */}
           {!expanded && (
             <div className="flex items-center gap-2.5">
-              <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: '#272b35' }}>
+              <div className="w-24 xl:w-36 h-2 rounded-full overflow-hidden" style={{ background: '#272b35' }}>
                 <div
                   className="h-full rounded-full"
                   style={{
@@ -1024,8 +1025,11 @@ function IncentiveCard({
                   }}
                 />
               </div>
-              <span className="text-xs font-bold tabular-nums min-w-[2.5rem] text-right" style={{ color: pct >= 100 ? '#00e07a' : '#00c4f0' }}>
+              <span className="text-xs font-bold tabular-nums min-w-[2.5rem] xl:min-w-[3.5rem] text-right" style={{ color: pct >= 100 ? '#00e07a' : '#00c4f0' }}>
                 {Math.round(pct)}%
+              </span>
+              <span className="hidden xl:inline text-[10px] text-[#525c72] tabular-nums">
+                {formatIncentiveMetric(incentive.metric, progress)}
               </span>
             </div>
           )}
@@ -1237,11 +1241,13 @@ function CreateIncentiveModal({
     selectedMonth: initMonth,
     selectedQuarter: initQuarter,
   });
-  const [milestones, setMilestones] = useState<{ threshold: string; reward: string; existingAchieved?: boolean }[]>(
+  const [milestones, setMilestones] = useState<{ threshold: string; reward: string; existingId?: string; existingAchieved?: boolean }[]>(
     sourceIncentive
       ? sourceIncentive.milestones.map((m) => ({
           threshold: String(m.threshold),
           reward: m.reward,
+          // In duplicate mode, don't carry over the original ID (new incentive gets new IDs)
+          existingId: isDuplicate ? undefined : m.id,
           // In duplicate mode, reset achieved; in edit mode, preserve
           existingAchieved: isDuplicate ? false : m.achieved,
         }))
@@ -1284,10 +1290,8 @@ function CreateIncentiveModal({
     const builtMilestones: IncentiveMilestone[] = milestones
       .filter((m) => m.threshold && m.reward)
       .map((m, i) => {
-        // In edit mode (not duplicate), preserve existing milestone IDs and achieved state
-        const existingMs = isEdit && editIncentive ? editIncentive.milestones[i] : null;
         return {
-          id: existingMs?.id ?? `m_${Date.now()}_${i}`,
+          id: m.existingId ?? `m_${Date.now()}_${i}`,
           threshold: parseFloat(m.threshold),
           reward: m.reward,
           achieved: isDuplicate ? false : (m.existingAchieved ?? false),

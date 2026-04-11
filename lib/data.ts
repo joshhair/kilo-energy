@@ -1510,8 +1510,9 @@ export function computeIncentiveProgress(
 ): number {
   const inRange = (dateStr: string) => {
     const d = new Date(dateStr);
-    const start = new Date(incentive.startDate);
     const end = incentive.endDate ? new Date(incentive.endDate) : new Date('2099-12-31');
+    if (incentive.startDate === '') return d <= end;
+    const start = new Date(incentive.startDate);
     return d >= start && d <= end;
   };
 
