@@ -733,7 +733,7 @@ function getGreeting(name: string | null | undefined): string {
 }
 
 export default function DashboardPage() {
-  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs } = useApp();
+  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs, dbReady } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -874,7 +874,7 @@ export default function DashboardPage() {
   }, [currentRepId, currentRole]);
   useEffect(() => { fetchMentions(); }, [fetchMentions]);
 
-  if (!isHydrated) {
+  if (!isHydrated || !dbReady) {
     return <DashboardSkeleton />;
   }
 

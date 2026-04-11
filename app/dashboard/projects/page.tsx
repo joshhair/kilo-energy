@@ -131,7 +131,7 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageInner() {
-  const { currentRole, effectiveRole, currentRepId, effectiveRepId, projects, setProjects, updateProject, activeInstallers } = useApp();
+  const { currentRole, effectiveRole, currentRepId, effectiveRepId, projects, setProjects, updateProject, activeInstallers, dbReady } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();
@@ -289,7 +289,7 @@ function ProjectsPageInner() {
 
   if (isMobile) return <MobileProjects />;
 
-  if (!isHydrated) {
+  if (!isHydrated || !dbReady) {
     return <ProjectsSkeleton />;
   }
 
