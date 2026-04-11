@@ -234,6 +234,7 @@ export default function BlitzDetailPage() {
     const participants = (blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved');
     if (participants.length === 0) return [];
 
+    const participantIds = new Set(participants.map((p: any) => p.user.id));
     const statsByUserId = new Map<string, { deals: number; kW: number; payout: number }>();
     const bump = (userId: string, dKw: number, dPayout: number) => {
       const s = statsByUserId.get(userId) ?? { deals: 0, kW: 0, payout: 0 };
@@ -257,14 +258,14 @@ export default function BlitzDetailPage() {
 
       if (closerId && setterId && closerId === setterId) {
         // Same person closed and set (self-gen) — gets everything
-        bump(closerId, kW, m1 + m2 + m3 + sM1 + sM2 + sM3);
+        if (participantIds.has(closerId)) bump(closerId, kW, m1 + m2 + m3 + sM1 + sM2 + sM3);
       } else {
-        if (closerId) {
+        if (closerId && participantIds.has(closerId)) {
           // Closer gets M2/M3. Gets M1 only if there's no separate setter.
           const closerPayout = (setterId ? 0 : m1) + m2 + m3;
           bump(closerId, kW, closerPayout);
         }
-        if (setterId && setterId !== closerId) {
+        if (setterId && setterId !== closerId && participantIds.has(setterId)) {
           // Setter owns M1 when present, plus setterM2/M3.
           bump(setterId, kW, sM1 + sM2 + sM3);
         }
@@ -276,7 +277,7 @@ export default function BlitzDetailPage() {
       return {
         userId: p.user.id,
         user: p.user, // full user object, so Rep Performance card can render firstName/lastName
-        name: `${p.user.firstName} ${p.user.lastName}`,
+        name: `${p.user.firstName ?? ''} ${p.user.lastName ?? ''}`.trim(),
         initials: `${(p.user.firstName?.[0] ?? '').toUpperCase()}${(p.user.lastName?.[0] ?? '').toUpperCase()}`,
         deals: stats.deals,
         kW: stats.kW,

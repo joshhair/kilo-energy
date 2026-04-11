@@ -856,7 +856,7 @@ function CalculatorPage() {
                       />
                     </div>
                     <div className="text-right min-w-[100px]">
-                      {requiredPPW > 0 ? (
+                      {targetEarning.trim() !== '' && requiredPPW > 0 ? (
                         <>
                           <p style={{ color: '#4d9fff', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: '#525c72', fontSize: 12, fontWeight: 400 }}>/W</span></p>
                           <p style={{ color: '#525c72', fontSize: 12 }}>required PPW</p>
