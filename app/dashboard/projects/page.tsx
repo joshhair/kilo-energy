@@ -582,6 +582,13 @@ function KanbanView({
   const [openPhases, setOpenPhases] = useState<Set<string>>(() => new Set([currentPhase]));
   const [offTrackOpen, setOffTrackOpen] = useState(false);
 
+  // When outer filters change the set of visible projects, currentPhase may
+  // shift to a different phase. Sync openPhases so the accordion auto-opens
+  // the correct phase instead of keeping an empty one open.
+  useEffect(() => {
+    setOpenPhases(new Set([currentPhase]));
+  }, [currentPhase]);
+
   // Kanban column card limit — columns show up to KANBAN_CARD_LIMIT cards
   // collapsed, or up to KANBAN_EXPANDED_MAX when the user clicks "Show all".
   // The expanded cap exists because at real scale some phases hold 400+

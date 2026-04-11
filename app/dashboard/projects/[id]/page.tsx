@@ -894,7 +894,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       editBaseline = { closerPerW: parseFloat(editVals.overrideCloserPerW) || 0, kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0 };
     } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
       editBaseline = getSolarTechBaseline(project.solarTechProductId, kw);
-    } else if (project.installerProductId) {
+    } else if (project.installerProductId && editVals.installer === project.installer) {
       editBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
     } else {
       editBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, kw, installerPricingVersions);
@@ -1201,10 +1201,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
                   <p className="text-[#00e07a] font-bold">${(project.setterId === currentRepId ? (project.setterM2Amount ?? 0) : project.m2Amount).toLocaleString()}</p>
                 </div>
-                {(project.m3Amount ?? 0) > 0 && (
+                {(project.setterId === currentRepId ? (project.setterM3Amount ?? 0) : (project.m3Amount ?? 0)) > 0 && (
                   <div className="flex-1 bg-[#1d2028]/50 rounded-xl px-4 py-3">
                     <p className="text-[#8891a8] text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
-                    <p className="text-teal-400 font-bold">${(project.m3Amount ?? 0).toLocaleString()}</p>
+                    <p className="text-teal-400 font-bold">${(project.setterId === currentRepId ? (project.setterM3Amount ?? 0) : (project.m3Amount ?? 0)).toLocaleString()}</p>
                   </div>
                 )}
               </div>
@@ -1656,13 +1656,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 };
               } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
                 previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW);
-              } else if (project.installerProductId) {
+              } else if (project.installerProductId && editVals.installer === project.installer) {
                 previewBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, previewKW, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
               } else {
                 previewBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, previewKW, installerPricingVersions);
               }
 
-              const closerM1 = previewKW >= 5 ? 1000 : 500;
+              const closerM1 = editVals.setterId ? 0 : (previewKW >= 5 ? 1000 : 500);
               const closerM2 = calculateCommission(previewPPW, previewBaseline.closerPerW, previewKW);
               const kiloMargin = Math.round((previewBaseline.closerPerW - previewBaseline.kiloPerW) * previewKW * 1000 * 100) / 100;
               const belowBaseline = previewPPW < previewBaseline.closerPerW;
