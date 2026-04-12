@@ -215,6 +215,7 @@ function ProjectsPageInner() {
     const matchSearch =
       p.customerName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       p.repName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (p.setterName ?? '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       p.phase.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       p.installer.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchInstaller = !installerFilter || p.installer === installerFilter;
@@ -564,6 +565,7 @@ function KanbanView({
         const q = kanbanDebouncedSearch.toLowerCase();
         return p.customerName.toLowerCase().includes(q)
           || (p.repName ?? '').toLowerCase().includes(q)
+          || (p.setterName ?? '').toLowerCase().includes(q)
           || p.installer.toLowerCase().includes(q);
       })
     : projects;

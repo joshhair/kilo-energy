@@ -940,7 +940,7 @@ export default function DashboardPage() {
 
   // ── Financial stats (project-based to account for milestone-triggered payroll) ──
   const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
-  const paidPayrollByProject = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((map, p) => {
+  const paidPayrollByProject = allMyPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((map, p) => {
     if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
