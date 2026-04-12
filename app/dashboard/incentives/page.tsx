@@ -455,8 +455,8 @@ export default function IncentivesPage() {
       sorted.sort((a, b) => {
         const pA = computeIncentiveProgress(a, projects, payrollEntries);
         const pB = computeIncentiveProgress(b, projects, payrollEntries);
-        const maxA = a.milestones[a.milestones.length - 1]?.threshold ?? 1;
-        const maxB = b.milestones[b.milestones.length - 1]?.threshold ?? 1;
+        const maxA = a.milestones.length ? Math.max(...a.milestones.map(m => m.threshold)) : 1;
+        const maxB = b.milestones.length ? Math.max(...b.milestones.map(m => m.threshold)) : 1;
         return (pB / maxB) - (pA / maxA);
       });
     } else if (incentiveSort === 'ending_soonest') {
@@ -472,8 +472,8 @@ export default function IncentivesPage() {
 
   // ── Summary stats ──
   const activeIncentives = activeVisible.filter((i) => i.active);
-  const totalMilestones = activeVisible.reduce((sum, i) => sum + i.milestones.length, 0);
-  const achievedMilestones = activeVisible.reduce((sum, i) => sum + i.milestones.filter((m) => m.achieved).length, 0);
+  const totalMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.length, 0);
+  const achievedMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.filter((m) => m.achieved).length, 0);
   const nextDeadline = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -796,9 +796,9 @@ export default function IncentivesPage() {
           </button>
           {pastIncentivesOpen && (
             <div className="grid gap-3">
-              {expiredVisible.map((inc) => {
+              {filterAndSort(expiredVisible).map((inc) => {
                 const progress = computeIncentiveProgress(inc, projects, payrollEntries);
-                const maxThreshold = inc.milestones[inc.milestones.length - 1]?.threshold ?? 1;
+                const maxThreshold = inc.milestones.length ? Math.max(...inc.milestones.map(m => m.threshold)) : 1;
                 const pct = Math.min(100, (progress / maxThreshold) * 100);
                 return (
                   <div
@@ -966,7 +966,7 @@ function IncentiveCard({
 }) {
   const { reps } = useApp();
   const [expanded, setExpanded] = useState(false);
-  const maxThreshold = incentive.milestones[incentive.milestones.length - 1]?.threshold ?? 1;
+  const maxThreshold = incentive.milestones.length ? Math.max(...incentive.milestones.map(m => m.threshold)) : 1;
   const pct = Math.min(100, (progress / maxThreshold) * 100);
 
   const rep = incentive.targetRepId ? reps.find((r) => r.id === incentive.targetRepId) : null;
