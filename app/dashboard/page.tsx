@@ -1759,6 +1759,11 @@ function AdminDashboard({
 
   // Search filter for Recent Projects table
   const [recentSearch, setRecentSearch] = useState('');
+  const [barMounted, setBarMounted] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setBarMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   const [insightsExpanded, setInsightsExpanded] = useState(false);
   const [cancellationExpanded, setCancellationExpanded] = useState(false);
   const [recentExpanded, setRecentExpanded] = useState(true);
@@ -1990,31 +1995,31 @@ function AdminDashboard({
       </div>
 
       {/* Quick-action toolbar */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
+      <div className="grid grid-cols-4 gap-2.5 mb-7">
         {[
-          { label: 'Run Payroll', color: '#00e07a', grad: 'linear-gradient(135deg, #00160d, #001c10)', icon: '\u25C8', href: '/dashboard/payroll' },
-          { label: 'Add User', color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a, #0e0820)', icon: '\u25CE', href: '/dashboard/users' },
-          { label: 'New Deal', color: '#00c4f0', grad: 'linear-gradient(135deg, #000e16, #001218)', icon: '\u2295', href: '/dashboard/new-deal' },
-          { label: 'Settings', color: '#ffb020', grad: 'linear-gradient(135deg, #120b00, #180e00)', icon: '\u2699', href: '/dashboard/settings' },
-        ].map(a => (
-          <Link key={a.label} href={a.href} style={{
-            display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center',
-            background: a.grad, border: `1px solid ${a.color}35`, borderRadius: 12,
-            padding: '11px 20px', color: a.color, fontSize: 13, fontWeight: 700,
-            fontFamily: "'DM Sans', sans-serif",
-            transition: 'all 0.2s', textDecoration: 'none',
-          }}>
-            <span style={{ fontSize: 16 }}>{a.icon}</span> {a.label}
+          { label: 'Run Payroll', Icon: Banknote,   bgClass: 'bg-[#00160d]',  hoverBg: 'hover:bg-[#001e12]', borderCls: 'border-[#00e07a]/25', textCls: 'text-[#00e07a]', href: '/dashboard/payroll'   },
+          { label: 'Add User',   Icon: UserPlus,   bgClass: 'bg-[#0a061a]',  hoverBg: 'hover:bg-[#0e0820]', borderCls: 'border-[#b47dff]/25', textCls: 'text-[#b47dff]', href: '/dashboard/users'     },
+          { label: 'New Deal',   Icon: PlusCircle, bgClass: 'bg-[#000e16]',  hoverBg: 'hover:bg-[#001218]', borderCls: 'border-[#00c4f0]/25', textCls: 'text-[#00c4f0]', href: '/dashboard/new-deal'  },
+          { label: 'Settings',  Icon: Settings,   bgClass: 'bg-[#120b00]',  hoverBg: 'hover:bg-[#180e00]', borderCls: 'border-[#ffb020]/25', textCls: 'text-[#ffb020]', href: '/dashboard/settings'  },
+        ].map(({ label, Icon, bgClass, hoverBg, borderCls, textCls, href }) => (
+          <Link
+            key={label}
+            href={href}
+            className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 border font-bold text-sm motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:scale-[1.02] motion-safe:hover:translate-y-[-2px] active:scale-[0.97] ${bgClass} ${hoverBg} ${borderCls} ${textCls}`}
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
+          >
+            <Icon className="w-[15px] h-[15px] flex-shrink-0" />
+            {label}
           </Link>
         ))}
       </div>
 
       {/* Top 6 GradCard stats */}
       <div className="grid grid-cols-2 xl:grid-cols-6 gap-4 mb-4">
-        {topStats.map((stat) => {
+        {topStats.map((stat, i) => {
           const gc = gradCardConfig[stat.label] ?? { color: stat.accentHex, grad: 'linear-gradient(135deg, #101012, #141416)' };
           return (
-            <Link key={stat.label} href={stat.href} className="group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px]" style={{ textDecoration: 'none' }}>
+            <Link key={stat.label} href={stat.href} className={`group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${Math.min(i + 1, 6)}`} style={{ textDecoration: 'none' }}>
               <div style={{
                 background: gc.grad,
                 border: `1px solid ${gc.color}40`,
@@ -2073,9 +2078,9 @@ function AdminDashboard({
                 <div
                   key={phase}
                   style={{
-                    width: `${(pipelinePhaseCounts[phase] / pipelineTotal) * 100}%`,
+                    width: barMounted ? `${(pipelinePhaseCounts[phase] / pipelineTotal) * 100}%` : '0%',
                     background: PHASE_HEX[phase] ?? '#525c72',
-                    transition: 'width 0.7s ease-out',
+                    transition: 'width 700ms cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
                 />
               ))}
@@ -2252,7 +2257,12 @@ function AdminDashboard({
         const endIdx = Math.min(startIdx + recentRowsPerPage, sorted.length);
         const paginated = sorted.slice(startIdx, endIdx);
         const showM3 = allProjects.some((p) => (p.m3Amount ?? 0) > 0);
-        const thCls = 'text-left px-6 py-3 text-[#c2c8d8] font-medium select-none cursor-pointer hover:text-white transition-colors';
+        const thCls = (col: SortKey) =>
+          `text-left px-6 py-3 text-xs font-medium select-none cursor-pointer transition-colors ${
+            sortKey === col
+              ? 'text-[#00e07a] bg-[#00e07a]/[0.04]'
+              : 'text-[#c2c8d8] hover:text-white'
+          }`;
 
         return (
       <div className="card-surface rounded-2xl">
@@ -2285,15 +2295,15 @@ function AdminDashboard({
             <div className="border-t border-[#333849]">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                  <thead className="table-header-frost sticky top-0 z-10 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                     <tr className="border-b border-[#333849]">
-                      {/* 1 */}<th className={thCls} onClick={() => toggleSort('customerName')}>Customer<SortIcon col="customerName" /></th>
+                      {/* 1 */}<th className={thCls('customerName')} onClick={() => toggleSort('customerName')}>Customer<SortIcon col="customerName" /></th>
                       {/* 2 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">Rep</th>
-                      {/* 3 */}<th className={thCls} onClick={() => toggleSort('installer')}>Installer<SortIcon col="installer" /></th>
-                      {/* 4 */}<th className={thCls} onClick={() => toggleSort('soldDate')}>Sold<SortIcon col="soldDate" /></th>
-                      {/* 5 */}<th className={thCls} onClick={() => toggleSort('phase')}>Phase<SortIcon col="phase" /></th>
-                      {/* 6 */}<th className={thCls} onClick={() => toggleSort('kWSize')}>kW<SortIcon col="kWSize" /></th>
-                      {/* 7 */}<th className={thCls} onClick={() => toggleSort('netPPW')}>$/W<SortIcon col="netPPW" /></th>
+                      {/* 3 */}<th className={thCls('installer')} onClick={() => toggleSort('installer')}>Installer<SortIcon col="installer" /></th>
+                      {/* 4 */}<th className={thCls('soldDate')} onClick={() => toggleSort('soldDate')}>Sold<SortIcon col="soldDate" /></th>
+                      {/* 5 */}<th className={thCls('phase')} onClick={() => toggleSort('phase')}>Phase<SortIcon col="phase" /></th>
+                      {/* 6 */}<th className={thCls('kWSize')} onClick={() => toggleSort('kWSize')}>kW<SortIcon col="kWSize" /></th>
+                      {/* 7 */}<th className={thCls('netPPW')} onClick={() => toggleSort('netPPW')}>$/W<SortIcon col="netPPW" /></th>
                       {/* 8 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">Est. Pay</th>
                       {/* 9 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M1</th>
                       {/* 10 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M2</th>

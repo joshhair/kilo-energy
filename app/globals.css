@@ -362,6 +362,9 @@ body {
 .animate-slide-in-scale {
   animation: slideInScale 0.35s ease-out both;
 }
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-scale { animation: none; }
+}
 
 /* Stagger delay utilities — used with animate-slide-in-scale for cascade entrances */
 .stagger-0 { animation-delay:   0ms; }
