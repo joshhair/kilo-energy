@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import {
   PRODUCT_TYPES, Project,
   getTrainerOverrideRate, calculateCommission,
-  SOLARTECH_FAMILIES,
+  SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER,
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
@@ -317,15 +317,17 @@ export default function MobileNewDeal() {
   };
 
   const handleSolarTechFamilyChange = (value: string) => {
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '' }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '' }));
+    const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[value] ?? '';
+    const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: mappedFinancer }));
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', mappedFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
 
   const handlePcFamilyChange = (value: string) => {
     const mappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', ...(mappedFinancer ? { financer: mappedFinancer } : {}) }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', ...(mappedFinancer ? { financer: '' } : {}) }));
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: mappedFinancer }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 
@@ -347,7 +349,7 @@ export default function MobileNewDeal() {
     return pct < 100 ? p.m3Paid === true : p.m2Paid === true;
   };
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => p.setterId === form.setterId && isFullyPaidOut(p)).length
+    ? projects.filter((p) => (p.setterId === form.setterId || p.repId === form.setterId) && isFullyPaidOut(p)).length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -411,11 +413,13 @@ export default function MobileNewDeal() {
   const prevShowPreviewRef = useRef(false);
   const [displayedTotal, setDisplayedTotal] = useState(0);
   const countUpRafRef = useRef<number | null>(null);
+  const [pillMount, setPillMount] = useState(false);
 
   useEffect(() => {
     const firstAppear = !prevShowPreviewRef.current && showPreview;
     prevShowPreviewRef.current = showPreview;
-    if (!showPreview) { setDisplayedTotal(0); return; }
+    if (!showPreview) { setDisplayedTotal(0); setPillMount(false); return; }
+    setPillMount(currentStep === 1);
     if (firstAppear && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const start = performance.now();
       const duration = 480;
@@ -457,8 +461,8 @@ export default function MobileNewDeal() {
     const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
     return r.subDealerPerW ?? 0;
   })();
-  const subDealerCommission = isSubDealer && kW > 0 && soldPPW > 0 && subDealerRate > 0
-    ? calculateCommission(soldPPW, subDealerRate, kW)
+  const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0
+    ? Math.max(0, (subDealerRate - kiloPerW) * kW * 1000)
     : 0;
 
   // ── Step validation ───────────────────────────────────────────────────────
@@ -701,7 +705,7 @@ export default function MobileNewDeal() {
 
   return (
     <div
-      className="px-6 pt-3 pb-24 flex flex-col min-h-[calc(100vh-120px)]"
+      className="px-6 pt-3 pb-4 flex flex-col min-h-[calc(100vh-120px)]"
       style={{ touchAction: 'pan-y' }}
       onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; touchStartYRef.current = e.touches[0].clientY; }}
       onTouchEnd={(e) => {
@@ -729,7 +733,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 1: People ── */}
         {currentStep === 0 && (
-          <div key={0} className={`space-y-7 flex-1 flex flex-col ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={0} className={`space-y-7 flex-1 flex flex-col pb-[88px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Customer Name */}
             <div ref={(el) => { fieldWrapperRefs.current['customerName'] = el; }}>
               <label className={labelCls} style={labelStyle}>Customer Name</label>
@@ -793,32 +797,41 @@ export default function MobileNewDeal() {
               </div>
             )}
 
-            {/* Spacer to push button to bottom */}
-            <div className="flex-1" />
-
-            {/* Next */}
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={!!exitAnimClass}
-              className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
+            {/* Fixed CTA bar — Next */}
+            <div
+              key={`cta-0`}
+              className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
               style={{
-                background: 'linear-gradient(135deg, #1de9b6, #00b894)',
-                borderRadius: 16,
-                padding: 18,
-                fontSize: 16,
-                color: '#04342C',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                bottom: 'env(safe-area-inset-bottom, 0px)',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
+                paddingTop: '12px',
+                background: 'linear-gradient(to bottom, transparent 0%, rgba(6,14,26,0.92) 28%, rgba(6,14,26,1) 100%)',
+                backdropFilter: 'blur(8px)',
               }}
             >
-              Next <ArrowRight className="w-4 h-4" />
-            </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={!!exitAnimClass}
+                className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
+                style={{
+                  background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                  borderRadius: 16,
+                  padding: 18,
+                  fontSize: 16,
+                  color: '#04342C',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                Next <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* ── Step 2: Deal Details ── */}
         {currentStep === 1 && (
-          <div key={1} className={`space-y-7 flex-1 flex flex-col ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={1} className={`space-y-7 flex-1 flex flex-col pb-[88px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Installer */}
             <div>
               <label className={labelCls} style={labelStyle}>Installer</label>
@@ -1262,42 +1275,51 @@ export default function MobileNewDeal() {
               </MobileCard>
             )}
 
-            {/* Spacer to push buttons to bottom */}
-            <div className="flex-1" />
-
-            {/* Back + Next buttons */}
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handlePrev}
-                className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '0.5px solid rgba(255,255,255,0.1)',
-                  borderRadius: 16,
-                  padding: 18,
-                  fontSize: 16,
-                  color: 'rgba(255,255,255,0.6)',
-                }}
-              >
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={!!exitAnimClass}
-                className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
-                style={{
-                  background: 'linear-gradient(135deg, #1de9b6, #00b894)',
-                  borderRadius: 16,
-                  padding: 18,
-                  fontSize: 16,
-                  color: '#04342C',
-                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                }}
-              >
-                Next <ArrowRight className="w-4 h-4" />
-              </button>
+            {/* Fixed CTA bar — Back + Next */}
+            <div
+              key={`cta-1`}
+              className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
+              style={{
+                bottom: 'env(safe-area-inset-bottom, 0px)',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
+                paddingTop: '12px',
+                background: 'linear-gradient(to bottom, transparent 0%, rgba(6,14,26,0.92) 28%, rgba(6,14,26,1) 100%)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '0.5px solid rgba(255,255,255,0.1)',
+                    borderRadius: 16,
+                    padding: 18,
+                    fontSize: 16,
+                    color: 'rgba(255,255,255,0.6)',
+                  }}
+                >
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!!exitAnimClass}
+                  className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
+                  style={{
+                    background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                    borderRadius: 16,
+                    padding: 18,
+                    fontSize: 16,
+                    color: '#04342C',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
+                >
+                  Next <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1558,6 +1580,27 @@ export default function MobileNewDeal() {
           </div>
         )}
       </form>
+
+      {/* Floating commission pill — slides up from nav when preview unlocks on Step 2 */}
+      {pillMount && (
+        <div
+          className="fixed left-4 right-4 z-50 rounded-2xl flex items-center justify-between px-5 py-3.5"
+          style={{
+            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+            background: 'linear-gradient(135deg, rgba(0,229,160,0.12), rgba(0,180,216,0.08))',
+            border: '1px solid rgba(0,229,160,0.25)',
+            backdropFilter: 'blur(12px)',
+            animation: 'comm-pill-enter 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          }}
+        >
+          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Commission</span>
+          <span
+            key={commFlash ? 'flash' : 'idle'}
+            className={`text-xl font-black${commFlash ? ' commission-val-flash' : ''}`}
+            style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+          >${displayedTotal.toLocaleString()}</span>
+        </div>
+      )}
     </div>
   );
 }
