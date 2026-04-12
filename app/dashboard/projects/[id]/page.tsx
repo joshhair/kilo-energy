@@ -52,7 +52,9 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
 
   // Days elapsed since sold date (NOTE: this is time since sale, not time in current phase)
   const today = new Date();
-  const sold  = new Date(soldDate);
+  today.setHours(0, 0, 0, 0);
+  const [sy, sm, sd] = soldDate.split('-').map(Number);
+  const sold  = new Date(sy, sm - 1, sd);
   const daysSinceSold = Math.max(0, Math.floor((today.getTime() - sold.getTime()) / (1000 * 60 * 60 * 24)));
 
   const nextHint   = NEXT_ACTION_HINTS[phase] ?? null;
@@ -666,7 +668,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // ArrowLeft / ArrowRight keyboard shortcuts (only when no input is focused)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (showEditModal || showCancelConfirm) return;
+      if (showEditModal || showCancelConfirm || showDeleteConfirm || showCancelReasonModal || phaseConfirm) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement)?.isContentEditable) return;
       if (e.key === 'ArrowLeft' && prevProjectId) {
