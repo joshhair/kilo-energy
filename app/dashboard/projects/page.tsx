@@ -1088,7 +1088,7 @@ function KanbanView({
                       className="w-full text-center py-1.5 text-[10px] font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
-                        ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : 'Show less')
+                        ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
                         : (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Show ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : `Show all ${phaseProjects.length}`)}
                     </button>
                   )}
@@ -1146,7 +1146,7 @@ function KanbanView({
                       className="w-full text-center py-1.5 text-[10px] font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
                     >
                       {expandedColumns.has(phase)
-                        ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : 'Show less')
+                        ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
                         : (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Show ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length}` : `Show all ${phaseProjects.length}`)}
                     </button>
                   )}
