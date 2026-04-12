@@ -73,6 +73,16 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'last-year', label: 'Last Year' },
 ];
 
+const PHASE_STUCK_THRESHOLDS: Record<string, number> = {
+  'New':             5,
+  'Acceptance':      10,
+  'Site Survey':     20,
+  'Design':          30,
+  'Permitting':      50,
+  'Pending Install': 65,
+  'Installed':       75,
+};
+
 function isInPeriod(dateStr: string | null, period: Period): boolean {
   if (period === 'all') return true;
   if (!dateStr) return false;
@@ -155,20 +165,23 @@ export default function MobileAdminDashboard() {
   const totalKW = useMemo(() => active.reduce((s, p) => s + p.kWSize, 0), [active]);
   const flaggedCount = useMemo(() => periodProjects.filter((p) => p.flagged).length, [periodProjects]);
 
-  // Stalled projects (in same phase > 14 days)
+  // Stalled projects — per-phase cumulative thresholds (days from soldDate), matching desktop logic
   const stalledProjects = useMemo(() => {
     const now = Date.now();
     return active.filter((p) => {
+      const threshold = PHASE_STUCK_THRESHOLDS[p.phase];
+      if (threshold == null) return false;
+      if (!p.soldDate) return false;
       const sold = new Date(p.soldDate).getTime();
       const days = Math.floor((now - sold) / 86400000);
-      return days > 14 && p.phase !== 'Completed' && p.phase !== 'PTO';
+      return days > threshold;
     }).slice(0, 5);
   }, [active]);
 
   // Payroll
   const draftCount = useMemo(() => periodPayroll.filter((e) => e.status === 'Draft').length, [periodPayroll]);
   const pendingCount = useMemo(() => periodPayroll.filter((e) => e.status === 'Pending').length, [periodPayroll]);
-  const pendingTotal = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0), [payrollEntries]);
+  const pendingTotal = useMemo(() => periodPayroll.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0), [periodPayroll]);
 
   // Pipeline counts
   const phaseCounts = useMemo(() => {
@@ -179,7 +192,7 @@ export default function MobileAdminDashboard() {
   }, [active]);
 
   // Recent deals
-  const recentDeals = useMemo(() => [...projects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 5), [projects]);
+  const recentDeals = useMemo(() => [...periodProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 5), [periodProjects]);
 
   // Top reps by deal count
   const topReps = useMemo(() => {
