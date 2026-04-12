@@ -223,6 +223,20 @@ function TrainingPageInner() {
     return list;
   }, [traineeData, traineeSearch, traineeSort, traineeSortDir]);
 
+  // Find trainee info for a payment entry by matching projectId
+  const getTraineeForEntry = (entry: PayrollEntry): { name: string; id: string } | null => {
+    if (!entry.projectId) return null;
+    const project = projects.find((p) => p.id === entry.projectId);
+    if (!project) return null;
+    // Check if the project's closer or setter is one of my trainees
+    for (const td of traineeData) {
+      if (project.repId === td.traineeId || project.setterId === td.traineeId) {
+        return { name: td.traineeName, id: td.traineeId };
+      }
+    }
+    return null;
+  };
+
   // Filter payments
   const filteredPayments = useMemo(() => {
     let list = [...trainerEntries];
@@ -241,7 +255,7 @@ function TrainingPageInner() {
       list = list.filter((e) => e.status === paymentStatusFilter);
     }
     return list.sort((a, b) => b.date.localeCompare(a.date));
-  }, [trainerEntries, paymentSearch, paymentStatusFilter]);
+  }, [trainerEntries, paymentSearch, paymentStatusFilter, traineeData, projects]);
 
   // Overview stats
   const totalEarned = useMemo(
@@ -312,20 +326,6 @@ function TrainingPageInner() {
       setTraineeSort(field);
       setTraineeSortDir('asc');
     }
-  };
-
-  // Find trainee info for a payment entry by matching projectId
-  const getTraineeForEntry = (entry: PayrollEntry): { name: string; id: string } | null => {
-    if (!entry.projectId) return null;
-    const project = projects.find((p) => p.id === entry.projectId);
-    if (!project) return null;
-    // Check if the project's closer or setter is one of my trainees
-    for (const td of traineeData) {
-      if (project.repId === td.traineeId || project.setterId === td.traineeId) {
-        return { name: td.traineeName, id: td.traineeId };
-      }
-    }
-    return null;
   };
 
   return (
