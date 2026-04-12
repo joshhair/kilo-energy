@@ -262,6 +262,22 @@ function PayrollPageInner() {
     return { selectedTotal: total, allFilteredSelected: all };
   }, [filtered, selectedIds]);
 
+  // Floating toolbar is visible whenever one or more Draft entries are selected.
+  // Computed here (before early returns) so the useEffect below always fires — hooks
+  // must not be called after conditional returns.
+  const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
+
+  useEffect(() => {
+    if (showActionBar) {
+      setActionBarMounted(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setActionBarVisible(true)));
+    } else {
+      setActionBarVisible(false);
+      const t = setTimeout(() => setActionBarMounted(false), 260);
+      return () => clearTimeout(t);
+    }
+  }, [showActionBar]);
+
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -279,19 +295,6 @@ function PayrollPageInner() {
   const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
 
   // repGroups removed — flat table rendering uses paginatedFiltered directly
-  // Floating toolbar is visible whenever one or more Draft entries are selected
-  const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
-
-  useEffect(() => {
-    if (showActionBar) {
-      setActionBarMounted(true);
-      requestAnimationFrame(() => requestAnimationFrame(() => setActionBarVisible(true)));
-    } else {
-      setActionBarVisible(false);
-      const t = setTimeout(() => setActionBarMounted(false), 260);
-      return () => clearTimeout(t);
-    }
-  }, [showActionBar]);
 
   const handlePublish = async () => {
     // Publish only Pending entries matching the active filters (same set the button's disabled state reflects)
@@ -306,13 +309,19 @@ function PayrollPageInner() {
     setShowPublishConfirm(false);
     toast(`Payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
     // Persist to DB via bulk endpoint for atomicity
-    const res = await fetch('/api/payroll', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids, status: 'Paid' }),
-    });
-    if (!res.ok) {
-      console.error('[handlePublish] Bulk PATCH failed:', res.status);
+    try {
+      const res = await fetch('/api/payroll', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status: 'Paid' }),
+      });
+      if (!res.ok) {
+        console.error('[handlePublish] Bulk PATCH failed:', res.status);
+        setPayrollEntries(snapshot);
+        toast(`Payroll failed to save — rolled back`, 'error');
+      }
+    } catch (err) {
+      console.error('[handlePublish] Network error:', err);
       setPayrollEntries(snapshot);
       toast(`Payroll failed to save — rolled back`, 'error');
     }

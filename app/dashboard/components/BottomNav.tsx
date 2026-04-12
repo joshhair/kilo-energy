@@ -136,6 +136,13 @@ function ProfileDrawer({
 }) {
   const [viewAsSearch, setViewAsSearch] = useState('');
   const [viewAsOpen, setViewAsOpen] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const dragStartY = useRef(0);
+  const dragStartTime = useRef(0);
+  const lastDragY = useRef(0);
+
+  const reduceMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const [shouldRender, setShouldRender] = useState(open);
   const [isExiting, setIsExiting] = useState(false);
@@ -144,6 +151,7 @@ function ProfileDrawer({
     if (open) {
       setShouldRender(true);
       setIsExiting(false);
+      setDragY(0);
     } else {
       setIsExiting(true);
       const t = setTimeout(() => { setShouldRender(false); setIsExiting(false); }, 300);
@@ -180,7 +188,10 @@ function ProfileDrawer({
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-[60] md:hidden"
-        style={{ background: 'rgba(0,0,0,0.6)', animation: isExiting ? 'fadeOut 0.22s ease forwards' : 'fadeIn 0.2s ease' }}
+        style={{
+          background: `rgba(0,0,0,${Math.max(0, 0.6 * (1 - dragY / 180))})`,
+          animation: dragY > 0 ? 'none' : (isExiting ? 'fadeOut 0.22s ease forwards' : 'fadeIn 0.2s ease'),
+        }}
         onClick={onClose}
       />
       {/* Drawer */}
@@ -191,14 +202,49 @@ function ProfileDrawer({
           borderTop: '1px solid #1a2840',
           borderRadius: '20px 20px 0 0',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
-          animation: isExiting ? 'slideDown 0.28s cubic-bezier(0.4, 0, 1, 1) forwards' : 'slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both',
+          animation: dragY > 0 ? 'none' : (isExiting ? 'slideDown 0.28s cubic-bezier(0.4, 0, 1, 1) forwards' : 'slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both'),
           maxHeight: '80vh',
           overflowY: 'auto',
+          transform: `translateY(${dragY}px)`,
+          transition: dragging ? 'none' : 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
+        onPointerDown={(e) => {
+          setDragging(true);
+          dragStartY.current = e.clientY;
+          dragStartTime.current = performance.now();
+          lastDragY.current = 0;
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging) return;
+          const delta = Math.max(0, e.clientY - dragStartY.current);
+          lastDragY.current = delta;
+          setDragY(delta);
+        }}
+        onPointerUp={() => {
+          setDragging(false);
+          const elapsed = Math.max(1, performance.now() - dragStartTime.current);
+          const velocity = lastDragY.current / elapsed * 1000;
+          if (lastDragY.current > 110 || velocity > 450) {
+            onClose();
+          } else {
+            setDragY(0);
+          }
+        }}
+        onPointerCancel={() => { setDragging(false); setDragY(0); }}
       >
         {/* Handle bar */}
-        <div className="flex justify-center py-3">
-          <div className="w-10 h-1 rounded-full" style={{ background: '#1a2840' }} />
+        <div
+          className="flex justify-center py-4 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: 'none' }}
+        >
+          <div
+            className={`h-1 rounded-full ${dragY > 20 ? 'w-12' : 'w-10'}`}
+            style={{
+              background: dragY > 20 ? '#2a3860' : '#1a2840',
+              transition: 'background 120ms ease, width 120ms ease',
+            }}
+          />
         </div>
 
         {/* Profile header */}
@@ -258,12 +304,13 @@ function ProfileDrawer({
                 key={href}
                 href={href}
                 onClick={onClose}
-                className="flex items-center gap-3 min-h-[48px] px-4 py-3 rounded-xl active:opacity-70 transition-opacity"
+                className="flex items-center gap-3 min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
                 style={{
                   color: '#fff',
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: '1rem',
-                  animation: !isExiting
+                  WebkitTapHighlightColor: 'transparent',
+                  animation: !isExiting && !reduceMotion
                     ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${index * 45}ms both`
                     : 'none',
                 }}
@@ -288,18 +335,18 @@ function ProfileDrawer({
                 </div>
                 <button
                   onClick={() => { onClearViewAs(); onClose(); }}
-                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg active:opacity-70"
-                  style={{ color: '#f5a623' }}
+                  className="flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-xl min-h-[44px] active:scale-[0.94] active:bg-white/5 transition-[transform,background-color] duration-75"
+                  style={{ color: '#f5a623', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <XCircle className="w-3.5 h-3.5" /> Exit
+                  <XCircle className="w-4 h-4" /> Exit
                 </button>
               </div>
             ) : (
               <>
                 <button
                   onClick={() => setViewAsOpen(!viewAsOpen)}
-                  className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:opacity-70 transition-opacity"
-                  style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem', animation: !isExiting ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${items.length * 45}ms both` : 'none' }}
+                  className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
+                  style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem', WebkitTapHighlightColor: 'transparent', animation: !isExiting && !reduceMotion ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${items.length * 45}ms both` : 'none' }}
                 >
                   <Eye className="w-5 h-5" />
                   <span>View As Rep...</span>
@@ -324,8 +371,8 @@ function ProfileDrawer({
                           <button
                             key={u.id}
                             onClick={() => { onViewAs(u); setViewAsOpen(false); setViewAsSearch(''); onClose(); }}
-                            className="w-full text-left px-4 py-3 text-sm text-white active:opacity-70 flex items-center justify-between"
-                            style={{ borderBottom: '1px solid #1a2840', fontFamily: "'DM Sans', sans-serif" }}
+                            className="w-full text-left px-4 py-3 text-sm text-white active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
+                            style={{ borderBottom: '1px solid #1a2840', fontFamily: "'DM Sans', sans-serif", WebkitTapHighlightColor: 'transparent' }}
                           >
                             <span>{u.name}</span>
                             <span className="text-xs capitalize" style={{ color: '#8899aa' }}>{u.role}</span>
@@ -344,12 +391,13 @@ function ProfileDrawer({
           <div className="px-2 pt-1" style={{ borderTop: '1px solid #1a2840' }}>
             <button
               onClick={() => { onClose(); onLogout(); }}
-              className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:opacity-70 transition-opacity"
+              className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
               style={{
                 color: '#ff6b6b',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1rem',
-                animation: !isExiting ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${(items.length + 1) * 45}ms both` : 'none',
+                WebkitTapHighlightColor: 'transparent',
+                animation: !isExiting && !reduceMotion ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${(items.length + 1) * 45}ms both` : 'none',
               }}
             >
               <LogOut className="w-5 h-5" />
@@ -470,6 +518,7 @@ export default function BottomNav({
                   key={item.href}
                   href={item.href}
                   className="flex flex-col items-center justify-center -mt-4 min-w-[56px]"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
                     style={{ background: 'linear-gradient(135deg, #00e5a0 0%, #00b4d8 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
@@ -487,7 +536,7 @@ export default function BottomNav({
                   key="more"
                   onClick={() => setMoreOpen((v) => !v)}
                   className="relative flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[48px] transition-all duration-200 active:scale-95"
-                  style={{ opacity: active ? 1 : 0.55 }}
+                  style={{ opacity: active ? 1 : 0.55, WebkitTapHighlightColor: 'transparent' }}
                 >
                   <span className="relative w-[18px] h-[18px] block">
                     <MoreHorizontal
@@ -520,11 +569,17 @@ export default function BottomNav({
                 key={item.href}
                 href={item.href}
                 className="relative flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[48px] transition-all duration-200 active:scale-95"
-                style={{ opacity: active ? 1 : 0.55 }}
+                style={{ opacity: active ? 1 : 0.55, WebkitTapHighlightColor: 'transparent' }}
               >
                 <span
-                  className="transition-transform duration-200"
-                  style={{ color: active ? '#00e5a0' : '#fff', transform: active ? 'scale(1.08)' : 'scale(1)' }}
+                  key={active ? 'on' : 'off'}
+                  className="nav-icon-pop inline-block"
+                  style={{
+                    color: active ? '#00e5a0' : '#fff',
+                    animation: active ? 'navIconPop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
+                    transform: active ? undefined : 'scale(1)',
+                    transition: active ? 'none' : 'color 200ms ease, transform 200ms ease',
+                  }}
                 >
                   <Icon className="w-[18px] h-[18px]" />
                 </span>

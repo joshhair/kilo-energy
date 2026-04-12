@@ -69,9 +69,16 @@ function isDueDateOverdue(iso: string): boolean {
   return due.getTime() < Date.now();
 }
 
-/** Parse `@Name` patterns and render highlighted spans */
-function renderMessageText(text: string): React.ReactNode[] {
-  const parts = text.split(/(@\w[\w\s]*\b)/g);
+/** Parse `@Name` patterns and render highlighted spans.
+ *  Matches only against known user names to avoid over-matching trailing words. */
+function renderMessageText(text: string, knownNames: string[]): React.ReactNode[] {
+  if (knownNames.length === 0) return [<span key={0}>{text}</span>];
+  // Sort longest-first so multi-word names beat their sub-strings
+  const escaped = [...knownNames]
+    .sort((a, b) => b.length - a.length)
+    .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(`(@(?:${escaped.join('|')}))`, 'g');
+  const parts = text.split(pattern);
   return parts.map((part, i) => {
     if (part.startsWith('@')) {
       return (
@@ -564,7 +571,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
 
                 {/* Message text */}
                 <div className="text-[#c2c8d8] text-sm leading-relaxed whitespace-pre-wrap pl-[38px]">
-                  {renderMessageText(msg.text)}
+                  {renderMessageText(msg.text, mentionableUsers.map((u) => u.name))}
                 </div>
 
                 {/* Check items */}

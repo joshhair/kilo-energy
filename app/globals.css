@@ -1534,6 +1534,17 @@ select {
   }
 }
 
+/* ─── Nav icon spring-pop ──────────────────────────────────────────────── */
+@keyframes navIconPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.38); }
+  72%  { transform: scale(0.88); }
+  100% { transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-icon-pop { animation: none !important; transform: scale(1.08) !important; }
+}
+
 /* ─── Milestone progress track animations ─────────────────────────────── */
 @keyframes nodePop {
   0%   { transform: scale(0.5); opacity: 0; }
