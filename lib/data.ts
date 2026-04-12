@@ -1508,7 +1508,8 @@ export function computeIncentiveProgress(
   projects: Project[],
   payrollEntries: PayrollEntry[]
 ): number {
-  const inRange = (dateStr: string) => {
+  const inRange = (dateStr: string | null) => {
+    if (!dateStr) return false;
     const d = new Date(dateStr);
     const end = incentive.endDate ? new Date(incentive.endDate) : new Date('2099-12-31');
     if (incentive.startDate === '') return d <= end;

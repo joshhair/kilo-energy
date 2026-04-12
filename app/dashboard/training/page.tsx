@@ -704,7 +704,7 @@ function TrainingPageInner() {
                       const rangeLabel =
                         tier.upToDeal === null
                           ? `${prevEnd}+ deals`
-                          : `${prevEnd} – ${tier.upToDeal} deals`;
+                          : `${prevEnd} – ${tier.upToDeal - 1} deals`;
 
                       return (
                         <tr

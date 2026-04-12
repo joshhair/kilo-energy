@@ -383,15 +383,22 @@ export default function IncentivesPage() {
   // ── Bulk deactivate / delete selected ──
   const handleBulkDeactivate = () => {
     const count = selectedIds.size;
-    const ids = Array.from(selectedIds);
-    setIncentives((prev) =>
-      prev.map((i) => (selectedIds.has(i.id) ? { ...i, active: false } : i))
-    );
-    ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-      .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); }));
-    toast(`${count} incentive${count !== 1 ? 's' : ''} deactivated`, 'info');
-    clearSelection();
+    setConfirmAction({
+      title: 'Deactivate selected?',
+      message: `Deactivate ${count} incentive${count !== 1 ? 's' : ''}?`,
+      onConfirm: () => {
+        const ids = Array.from(selectedIds);
+        setIncentives((prev) =>
+          prev.map((i) => (selectedIds.has(i.id) ? { ...i, active: false } : i))
+        );
+        ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+          .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); }));
+        toast(`${count} incentive${count !== 1 ? 's' : ''} deactivated`, 'info');
+        clearSelection();
+        setConfirmAction(null);
+      },
+    });
   };
 
   const handleBulkDelete = () => {
@@ -752,7 +759,7 @@ export default function IncentivesPage() {
       )}
 
       {/* Past Incentives (expired archive) */}
-      {expiredVisible.length > 0 && (
+      {expiredVisible.length > 0 && incentiveFilter !== 'expired' && (
         <div className="mt-8">
           <button
             onClick={() => setPastIncentivesOpen((v) => !v)}
