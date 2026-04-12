@@ -762,6 +762,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     setShowDeleteConfirm(false);
     const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' });
     if (res.ok) {
+      setProjects(prev => prev.filter(p => p.id !== project.id));
       toast('Project deleted permanently');
       router.push('/dashboard/projects');
     } else {
@@ -907,7 +908,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     const editSetterTotal = calculateCommission(ppw, editSetterPerW, kw);
     const editSetterM1Amount = editVals.setterId ? Math.min(editM1Flat, Math.max(0, editSetterTotal)) : 0;
     const editInstallPayPct = installerPayConfigs[editVals.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-    const editHasM3 = editInstallPayPct < 100;
+    const editHasM3 = editInstallPayPct < 100 && !project.subDealerId;
     const editCloserM2Full = Math.max(0, editCloserTotal - Math.min(editM1Flat, Math.max(0, editCloserTotal)));
     const editSetterM2Full = Math.max(0, editSetterTotal - editSetterM1Amount);
     const editM2Amount = Math.round(editCloserM2Full * (editInstallPayPct / 100) * 100) / 100;
