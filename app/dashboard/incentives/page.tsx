@@ -287,16 +287,17 @@ export default function IncentivesPage() {
   };
 
   const handleMilestoneAchieved = (incId: string, milestoneId: string, achieved: boolean) => {
-    const targetInc = incentives.find((inc) => inc.id === incId);
-    if (!targetInc) return;
-    const updatedMilestones = targetInc.milestones.map((m) =>
-      m.id === milestoneId ? { ...m, achieved } : m
-    );
-    setIncentives((prev) =>
-      prev.map((inc) =>
-        inc.id === incId ? { ...inc, milestones: updatedMilestones } : inc
-      )
-    );
+    let updatedMilestones: typeof incentives[0]['milestones'] | undefined;
+    setIncentives((prev) => {
+      const targetInc = prev.find((inc) => inc.id === incId);
+      if (!targetInc) return prev;
+      updatedMilestones = targetInc.milestones.map((m) =>
+        m.id === milestoneId ? { ...m, achieved } : m
+      );
+      return prev.map((inc) =>
+        inc.id === incId ? { ...inc, milestones: updatedMilestones! } : inc
+      );
+    });
     if (achieved) toast('Milestone marked as achieved!', 'success');
     // Persist milestone change
     if (updatedMilestones) {

@@ -151,7 +151,7 @@ export default function BlitzDetailPage() {
       if (dealsSort.col === 'customer') { av = a.customerName ?? ''; bv = b.customerName ?? ''; }
       else if (dealsSort.col === 'kw') { av = a.kWSize; bv = b.kWSize; }
       else if (dealsSort.col === 'ppw') { av = a.netPPW; bv = b.netPPW; }
-      else { av = (a.setter?.id && a.closer?.id !== a.setter?.id ? 0 : (a.m1Amount ?? 0)) + (a.m2Amount ?? 0) + (a.m3Amount ?? 0) + (a.setterM1Amount ?? 0) + (a.setterM2Amount ?? 0) + (a.setterM3Amount ?? 0); bv = (b.setter?.id && b.closer?.id !== b.setter?.id ? 0 : (b.m1Amount ?? 0)) + (b.m2Amount ?? 0) + (b.m3Amount ?? 0) + (b.setterM1Amount ?? 0) + (b.setterM2Amount ?? 0) + (b.setterM3Amount ?? 0); }
+      else { av = (a.m1Amount ?? 0) + (a.m2Amount ?? 0) + (a.m3Amount ?? 0) + (a.setterM1Amount ?? 0) + (a.setterM2Amount ?? 0) + (a.setterM3Amount ?? 0); bv = (b.m1Amount ?? 0) + (b.m2Amount ?? 0) + (b.m3Amount ?? 0) + (b.setterM1Amount ?? 0) + (b.setterM2Amount ?? 0) + (b.setterM3Amount ?? 0); }
       if (av < bv) return dealsSort.dir === 'asc' ? -1 : 1;
       if (av > bv) return dealsSort.dir === 'asc' ? 1 : -1;
       return 0;
@@ -191,8 +191,7 @@ export default function BlitzDetailPage() {
       const setterCost = p.setterId ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
     }, 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blitz?.projects, installerPricingVersions, productCatalogProducts]);
+  }, [blitz?.projects, installerPricingVersions, productCatalogProducts, solarTechProducts]);
   const netProfit = kiloMargin - totalCosts;
   const roi = totalCosts > 0 ? ((netProfit / totalCosts) * 100) : 0;
 
@@ -983,7 +982,7 @@ export default function BlitzDetailPage() {
                       </td>
                       <td className={'px-4 py-3 text-right text-[#c2c8d8] tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[#1d2028]/20' : '')}>{p.kWSize.toFixed(1)}</td>
                       <td className={'px-4 py-3 text-right text-[#c2c8d8] tabular-nums' + (dealsSort.col === 'ppw' ? ' bg-[#1d2028]/20' : '')}>${p.netPPW.toFixed(2)}</td>
-                      {isAdmin && <td className={'px-4 py-3 text-right text-[#c2c8d8] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[#1d2028]/20' : '')}>{formatCurrency((p.setter?.id && p.closer?.id !== p.setter?.id ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0))}</td>}
+                      {isAdmin && <td className={'px-4 py-3 text-right text-[#c2c8d8] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[#1d2028]/20' : '')}>{formatCurrency((p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0))}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -992,7 +991,7 @@ export default function BlitzDetailPage() {
                     <td colSpan={!isAdmin && !isOwner ? 4 : 3} className="px-4 py-3 text-sm font-semibold text-[#c2c8d8]">{visibleProjects.length} deal{visibleProjects.length !== 1 ? 's' : ''}</td>
                     <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[#1d2028]/20' : '')}>{totalKW.toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[#8891a8]">—</td>
-                    {isAdmin && <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[#1d2028]/20' : '')}>{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.setter?.id && p.closer?.id !== p.setter?.id ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0), 0))}</td>}
+                    {isAdmin && <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[#1d2028]/20' : '')}>{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0), 0))}</td>}
                   </tr>
                 </tfoot>
               </table>

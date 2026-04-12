@@ -1773,6 +1773,8 @@ function NewDealPage() {
                         }
                       }
                       // Blitz deselected — leave soldDate as-is to preserve any manually entered date
+                      // Clear setter so stale blitz-A setter isn't submitted against blitz B
+                      update('setterId', '');
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}
