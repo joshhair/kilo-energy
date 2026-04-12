@@ -119,6 +119,7 @@ export default function MobileDashboard() {
   } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
+  const [statVersion, setStatVersion] = useState(0);
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const [pillReady, setPillReady] = useState(false);
@@ -133,6 +134,8 @@ export default function MobileDashboard() {
     setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
     setPillReady(true);
   }, [period]);
+
+  useEffect(() => { setStatVersion(v => v + 1); }, [period]);
 
   if (effectiveRole === 'admin') return <MobileAdminDashboard />;
 

@@ -959,7 +959,7 @@ export default function DashboardPage() {
 
   // "Total Estimated Pay" = unpaid payroll + expected amounts from projects not yet in payroll
   // (payrollProjectIds is hoisted above the isHydrated guard — already in scope)
-  const unpaidPayroll = myPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
+  const unpaidPayroll = allMyPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   // Build a per-project total of ALL payroll entries (any status) so we can subtract
   // what's already accounted for rather than skipping the whole project.
   // This prevents a project with only M1 drafted from losing its expected M2.
