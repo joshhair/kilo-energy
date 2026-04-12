@@ -917,6 +917,7 @@ export default function DashboardPage() {
       installerPricingVersions={installerPricingVersions}
       productCatalogProducts={productCatalogProducts}
       productCatalogPricingVersions={productCatalogPricingVersions}
+      solarTechProducts={solarTechProducts}
       currentRepName={currentRepName}
     />;
   }
@@ -1097,7 +1098,7 @@ export default function DashboardPage() {
   // Calculate days until next payday (Friday). Returns 0 if today is Friday.
   const daysUntilPayday = (() => {
     const today = new Date();
-    return (5 - today.getDay() + 7) % 7;
+    return ((5 - today.getDay() + 7) % 7) || 7;
   })();
   const nextFridayLabel = (() => {
     const today = new Date();
@@ -1743,6 +1744,7 @@ function AdminDashboard({
   installerPricingVersions,
   productCatalogProducts,
   productCatalogPricingVersions,
+  solarTechProducts,
   currentRepName,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
@@ -1755,6 +1757,7 @@ function AdminDashboard({
   installerPricingVersions: InstallerPricingVersion[];
   productCatalogProducts: ProductCatalogProduct[];
   productCatalogPricingVersions: ProductCatalogPricingVersion[];
+  solarTechProducts: ReturnType<typeof useApp>['solarTechProducts'];
   currentRepName: string | null;
 }) {
   const { updateProject } = useApp();
@@ -1804,7 +1807,7 @@ function AdminDashboard({
   function getProjectBaselines(p: Project): { closerPerW: number; kiloPerW: number } {
     if (p.baselineOverride) return p.baselineOverride;
     if (p.installer === 'SolarTech' && p.solarTechProductId) {
-      return getSolarTechBaseline(p.solarTechProductId, p.kWSize);
+      return getSolarTechBaseline(p.solarTechProductId, p.kWSize, solarTechProducts);
     }
     if (p.installerProductId) {
       return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
@@ -2310,7 +2313,7 @@ function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">

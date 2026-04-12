@@ -160,7 +160,7 @@ export default function MobileAdminDashboard() {
     }
     return { totalPaid: paid, totalRevenue: rev, totalProfit: prof };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts]);
+  }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions]);
 
   const totalKW = useMemo(() => active.reduce((s, p) => s + p.kWSize, 0), [active]);
   const flaggedCount = useMemo(() => periodProjects.filter((p) => p.flagged).length, [periodProjects]);
