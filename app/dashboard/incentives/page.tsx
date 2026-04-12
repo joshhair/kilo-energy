@@ -287,19 +287,18 @@ export default function IncentivesPage() {
   };
 
   const handleMilestoneAchieved = (incId: string, milestoneId: string, achieved: boolean) => {
-    let updatedMilestones: Incentive['milestones'] | null = null;
+    const targetInc = incentives.find((inc) => inc.id === incId);
+    if (!targetInc) return;
+    const updatedMilestones = targetInc.milestones.map((m) =>
+      m.id === milestoneId ? { ...m, achieved } : m
+    );
     setIncentives((prev) =>
-      prev.map((inc) => {
-        if (inc.id !== incId) return inc;
-        const milestones = inc.milestones.map((m) =>
-          m.id === milestoneId ? { ...m, achieved } : m
-        );
-        updatedMilestones = milestones;
-        return { ...inc, milestones };
-      })
+      prev.map((inc) =>
+        inc.id === incId ? { ...inc, milestones: updatedMilestones } : inc
+      )
     );
     if (achieved) toast('Milestone marked as achieved!', 'success');
-    // Persist milestone change using latest state captured from the updater
+    // Persist milestone change
     if (updatedMilestones) {
       fetch(`/api/incentives/${incId}`, {
         method: 'PATCH',
@@ -356,7 +355,7 @@ export default function IncentivesPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const created = await res.json();
-      setIncentives((prev) => [...prev, { ...inc, id: created.id }]);
+      setIncentives((prev) => [...prev, { ...inc, id: created.id, milestones: created.milestones }]);
       toast('Incentive duplicated', 'success');
     } catch (err) {
       console.error(err);
@@ -780,7 +779,7 @@ export default function IncentivesPage() {
       )}
 
       {/* Past Incentives (expired archive) */}
-      {expiredVisible.length > 0 && incentiveFilter !== 'expired' && (
+      {expiredVisible.length > 0 && incentiveFilter === 'all' && (
         <div className="mt-8">
           <button
             onClick={() => setPastIncentivesOpen((v) => !v)}
@@ -859,7 +858,7 @@ export default function IncentivesPage() {
               });
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const created = await res.json();
-              setIncentives((prev) => [...prev, { ...inc, id: created.id }]);
+              setIncentives((prev) => [...prev, { ...inc, id: created.id, milestones: created.milestones }]);
               toast('Incentive created successfully', 'success');
             } catch (err) {
               console.error(err);
