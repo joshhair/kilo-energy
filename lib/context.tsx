@@ -518,6 +518,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const tempId = id ?? `sd_${Date.now()}`;
     const name = `${firstName.trim()} ${lastName.trim()}`;
     setSubDealers((prev) => [...prev, { id: tempId, firstName: firstName.trim(), lastName: lastName.trim(), name, email: email.trim(), phone: phone.trim(), role: 'sub-dealer' as const, active: true, hasClerkAccount: false }]);
+    // If id was pre-supplied, the caller already persisted — skip the POST
+    if (id) {
+      return Promise.resolve({ id } as { id: string });
+    }
     return persistFetch('/api/reps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -568,12 +572,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
   const updateSubDealerContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
+    const snapshot = subDealers.find((s) => s.id === id);
     setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, ...updates, name: `${updates.firstName ?? s.firstName} ${updates.lastName ?? s.lastName}` } : s));
     persistFetch(`/api/users/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
-    }, 'Failed to update sub-dealer contact');
+    }, 'Failed to update sub-dealer contact').catch(() => {
+      if (snapshot) setSubDealers((prev) => prev.map((s) => s.id === id ? snapshot : s));
+    });
   };
   // Legacy alias — same migration story as removeRep above.
   const removeSubDealer = (id: string) => {
@@ -718,9 +725,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // ── ORPHANED CHARGEBACKS: When un-cancelling, remove chargeback (negative) entries ──
         if (old.phase === 'Cancelled' && newPhase !== 'Cancelled') {
           setPayrollEntries((prevEntries) => {
-            const toRemove = prevEntries.filter((e) => e.projectId === id && e.amount < 0);
+            const toRemove = prevEntries.filter((e) => e.projectId === id && e.amount < 0 && e.status !== 'Paid');
             if (toRemove.length > 0) deletePayrollEntriesFromDb(toRemove.map((e) => e.id));
-            return prevEntries.filter((e) => !(e.projectId === id && e.amount < 0));
+            return prevEntries.filter((e) => !(e.projectId === id && e.amount < 0 && e.status !== 'Paid'));
           });
         }
 
@@ -758,7 +765,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               type: 'Deal' as const,
               paymentStage: e.paymentStage,
               status: 'Draft' as const,
-              date: e.date,
+              date: localDateString(new Date()),
               notes: 'Chargeback — project cancelled',
             }));
             // Persist chargebacks to DB
