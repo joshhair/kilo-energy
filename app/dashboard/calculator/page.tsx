@@ -275,7 +275,7 @@ function CalculatorPage() {
     const proj = recentDeals.find((p) => p.id === projectId);
     if (!proj) return;
     setQuickFillSoldDate(proj.soldDate);
-    setInstaller(proj.installer);
+    setInstaller(activeInstallers.includes(proj.installer) ? proj.installer : '');
     setKWSize(String(proj.kWSize));
     setNetPPW(String(proj.netPPW));
 

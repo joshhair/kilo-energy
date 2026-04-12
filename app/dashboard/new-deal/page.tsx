@@ -1520,8 +1520,10 @@ function NewDealPage() {
                       <SearchableSelect
                         value={form.financer}
                         onChange={(val) => handleFinancerChange(val)}
-                        options={(pcConfig?.familyFinancerMap?.[form.pcFamily] && activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
-                          ? activeFinancers.filter((f) => f === pcConfig.familyFinancerMap![form.pcFamily])
+                        options={(pcConfig?.familyFinancerMap?.[form.pcFamily]
+                          ? (activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
+                              ? activeFinancers.filter((f) => f === pcConfig.familyFinancerMap![form.pcFamily])
+                              : [])
                           : activeFinancers
                         ).map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"

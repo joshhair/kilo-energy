@@ -111,6 +111,7 @@ export async function GET() {
       orderBy: { effectiveFrom: 'desc' },
     }),
     prisma.product.findMany({
+      where: { active: true },
       include: {
         pricingVersions: {
           include: { tiers: true },
