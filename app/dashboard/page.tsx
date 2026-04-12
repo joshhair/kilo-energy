@@ -1083,7 +1083,7 @@ export default function DashboardPage() {
   // Next Payout: Pending entries dated for the upcoming Friday (matches Earnings page).
   const nextFridayDate = (() => {
     const today = new Date();
-    const d = ((5 - today.getDay() + 7) % 7) || 7;
+    const d = today.getDay() <= 5 ? 5 - today.getDay() : 6;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
     const yyyy = nf.getFullYear();
@@ -1098,7 +1098,7 @@ export default function DashboardPage() {
   // Calculate days until next payday (Friday). Returns 0 if today is Friday.
   const daysUntilPayday = (() => {
     const today = new Date();
-    return ((5 - today.getDay() + 7) % 7) || 7;
+    return today.getDay() <= 5 ? 5 - today.getDay() : 6;
   })();
   const nextFridayLabel = (() => {
     const today = new Date();

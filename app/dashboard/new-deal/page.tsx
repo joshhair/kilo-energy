@@ -724,7 +724,7 @@ function NewDealPage() {
         .filter((p: any) => p.joinStatus === 'approved')
         .map((p: any) => p.userId as string),
     );
-    return reps.filter((r) => approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Trainer override tier progression counts deals where the FINAL milestone
