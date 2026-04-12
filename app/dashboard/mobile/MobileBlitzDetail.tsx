@@ -80,7 +80,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const availableReps = useMemo(() => {
     if (!blitz?.participants) return reps;
     const participantIds = new Set(blitz.participants.map((p: any) => p.user.id));
-    return reps.filter((r) => !participantIds.has(r.id));
+    return reps.filter((r) => r.active && !participantIds.has(r.id));
   }, [reps, blitz?.participants]);
 
   const handleAddParticipant = async () => {

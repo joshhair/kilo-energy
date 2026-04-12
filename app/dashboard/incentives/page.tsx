@@ -266,14 +266,20 @@ export default function IncentivesPage() {
   };
 
   const handleToggleActive = (id: string) => {
-    const target = incentives.find((i) => i.id === id);
+    let newActive: boolean | undefined;
     setIncentives((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, active: !i.active } : i))
+      prev.map((i) => {
+        if (i.id === id) {
+          newActive = !i.active;
+          return { ...i, active: newActive };
+        }
+        return i;
+      })
     );
     fetch(`/api/incentives/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active: !target?.active }),
+      body: JSON.stringify({ active: newActive }),
     }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
       .catch((err) => { console.error(err); toast('Failed to update incentive', 'error'); });
   };
@@ -298,7 +304,13 @@ export default function IncentivesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ milestones: updatedMilestones }),
       })
-        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+        .then(async (res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const saved = await res.json();
+          setIncentives((prev) =>
+            prev.map((inc) => (inc.id === incId ? { ...inc, milestones: saved.milestones } : inc))
+          );
+        })
         .catch((err) => { console.error(err); toast('Failed to persist milestone update', 'error'); });
     }
   };
@@ -316,8 +328,13 @@ export default function IncentivesPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate, metric: updated.metric, period: updated.period, startDate: updated.startDate, type: updated.type, targetRepId: updated.targetRepId, milestones: updated.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward, achieved: m.achieved })) }),
-    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-      .catch((err) => { console.error(err); toast('Failed to save incentive changes', 'error'); });
+    }).then(async (res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const saved = await res.json();
+      setIncentives((prev) =>
+        prev.map((i) => (i.id === updated.id ? { ...i, milestones: saved.milestones } : i))
+      );
+    }).catch((err) => { console.error(err); toast('Failed to save incentive changes', 'error'); });
   };
 
   // ── Duplicate handler ──
@@ -1448,7 +1465,7 @@ function CreateIncentiveModal({
                 value={form.targetRepId}
                 onChange={(v) => upd('targetRepId', v)}
                 placeholder="Select Rep..."
-                options={reps.map((r) => ({ value: r.id, label: r.name }))}
+                options={reps.filter((r) => r.active).map((r) => ({ value: r.id, label: r.name }))}
               />
               {submitted && errors.targetRepId && <p className={errTextCls}>{errors.targetRepId}</p>}
             </div>
