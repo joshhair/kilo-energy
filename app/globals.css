@@ -1680,6 +1680,27 @@ select {
 }
 .slide-up-fade { animation: slideUpFade 350ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) { .slide-up-fade { animation: none; } }
+
+@keyframes resultEnter {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+@keyframes resultExit {
+  from { opacity: 1; transform: translateY(0)  scale(1); }
+  to   { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.result-enter { animation: resultEnter 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.result-exit  { animation: resultExit  200ms ease-in forwards; }
+.calc-row-1 { opacity: 0; animation: rowIn 200ms cubic-bezier(0.16, 1, 0.3, 1) 160ms forwards; }
+.calc-row-2 { opacity: 0; animation: rowIn 200ms cubic-bezier(0.16, 1, 0.3, 1) 220ms forwards; }
+.calc-row-3 { opacity: 0; animation: rowIn 200ms cubic-bezier(0.16, 1, 0.3, 1) 280ms forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .result-enter, .result-exit, .calc-row-1, .calc-row-2, .calc-row-3 { animation: none; opacity: 1; transform: none; }
+}
 @keyframes fieldAppear {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }

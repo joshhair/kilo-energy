@@ -148,6 +148,15 @@ function UsersPageInner() {
 
   const initialFilter = (searchParams.get('filter') ?? 'all') as FilterTab;
   const [filterTab, setFilterTabState] = useState<FilterTab>(FILTER_TABS.some(t => t.value === initialFilter) ? initialFilter : 'all');
+
+  // Sync both filter states when the URL changes (e.g. browser back/forward)
+  useEffect(() => {
+    const urlRole = (searchParams.get('role') ?? 'all') as RoleFilter;
+    setRoleFilterState(ROLE_FILTERS.some(r => r.value === urlRole) ? urlRole : 'all');
+    const urlFilter = (searchParams.get('filter') ?? 'all') as FilterTab;
+    setFilterTabState(FILTER_TABS.some(t => t.value === urlFilter) ? urlFilter : 'all');
+  }, [searchParams]);
+
   const setFilterTab = (v: FilterTab) => {
     setFilterTabState(v);
     const params = new URLSearchParams(searchParams.toString());

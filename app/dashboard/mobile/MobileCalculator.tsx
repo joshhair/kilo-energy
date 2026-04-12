@@ -127,6 +127,21 @@ export default function MobileCalculator() {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [grandTotal]);
 
+  // ── Result card mount/unmount with exit animation ────────────────────────
+  const [resultMounted, setResultMounted] = useState(false);
+  const [resultExiting, setResultExiting] = useState(false);
+
+  useEffect(() => {
+    if (hasInput && soldPPW > 0) {
+      setResultMounted(true);
+      setResultExiting(false);
+    } else {
+      setResultExiting(true);
+      const t = setTimeout(() => setResultMounted(false), 220);
+      return () => clearTimeout(t);
+    }
+  }, [hasInput, soldPPW]);
+
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
@@ -304,26 +319,26 @@ export default function MobileCalculator() {
       </div>
 
       {/* ── Result card ─────────────────────────────────────────────────── */}
-      {hasInput && soldPPW > 0 && (
-        <MobileCard key="result" hero className="slide-up-fade">
+      {resultMounted && (
+        <MobileCard key="result" hero className={resultExiting ? 'result-exit' : 'result-enter'}>
           <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
           <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
             {fmt$(displayTotal)}
           </p>
 
           <div className="mt-5 space-y-2.5">
-            <div className="flex items-center justify-between">
+            <div className="calc-row-1 flex items-center justify-between">
               <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
               <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
             </div>
             {setterTotal > 0 && (
-              <div className="flex items-center justify-between">
+              <div className="calc-row-2 flex items-center justify-between">
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
               </div>
             )}
             {currentRole === 'admin' && (
-              <div className="flex items-center justify-between">
+              <div className="calc-row-2 flex items-center justify-between">
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloTotal)}</span>
               </div>
@@ -331,7 +346,7 @@ export default function MobileCalculator() {
           </div>
 
           {/* Baseline info */}
-          <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+          <div className="calc-row-3 mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
             <p className="text-xs" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Baseline: ${closerPerW.toFixed(2)}/W &middot; Sold: ${soldPPW.toFixed(2)}/W &middot; {kW.toFixed(1)} kW
             </p>
