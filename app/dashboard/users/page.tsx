@@ -873,6 +873,83 @@ function UsersPageInner() {
               </div>
             )}
 
+            {/* ── Inactive reps expander (all-users view only) ────────── */}
+            {canManageReps && roleFilter === 'all' && inactiveReps.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-dashed border-[#272b35]">
+                <button
+                  type="button"
+                  onClick={() => setShowInactive((v) => !v)}
+                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[#1d2028]/60"
+                  style={{ background: '#161920', border: '1px solid #272b35' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${showInactive ? 'rotate-90' : ''}`}
+                      style={{ color: '#525c72' }}
+                    />
+                    <span className="text-sm font-semibold" style={{ color: '#c2c8d8' }}>
+                      Show inactive reps ({inactiveReps.length})
+                    </span>
+                  </div>
+                  <span className="text-[11px]" style={{ color: '#525c72' }}>
+                    Deactivated reps — click to {showInactive ? 'hide' : 'view'}
+                  </span>
+                </button>
+                {showInactive && (
+                  <div className="mt-3 space-y-2">
+                    {inactiveReps.map((rep) => (
+                      <div
+                        key={rep.id}
+                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                        style={{ background: '#161920', border: '1px solid #272b35', opacity: 0.7 }}
+                      >
+                        <Link
+                          href={`/dashboard/users/${rep.id}`}
+                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                        >
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                            style={{ background: '#272b35', color: '#8891a8' }}
+                          >
+                            {rep.firstName[0]}{rep.lastName[0]}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
+                              {rep.name}
+                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: '#525c72' }}>
+                                (inactive)
+                              </span>
+                            </div>
+                            <div className="text-[11px]" style={{ color: '#525c72' }}>
+                              {ROLE_LABELS[rep.repType]}
+                            </div>
+                          </div>
+                        </Link>
+                        <button
+                          disabled={reactivatingId === rep.id}
+                          onClick={async () => {
+                            setReactivatingId(rep.id);
+                            try {
+                              await reactivateRep(rep.id);
+                              toast(`${rep.name} reactivated`, 'success');
+                            } catch {
+                              toast('Failed to reactivate rep', 'error');
+                            } finally {
+                              setReactivatingId(null);
+                            }
+                          }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+                        >
+                          {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ── Inactive sub-dealers expander ───────────────────────── */}
             {canManageReps && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
               <div className="mt-6 pt-6 border-t border-dashed border-[#272b35]">

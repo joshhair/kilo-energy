@@ -298,8 +298,8 @@ function PayrollPageInner() {
   const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
   const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
   const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
-  // Header checkbox state: only considers entries visible on the current page.
-  const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
+  // Header checkbox state: considers all filtered entries across all pages.
+  const allPageSelected = filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id));
 
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
@@ -375,7 +375,7 @@ function PayrollPageInner() {
   };
 
   const selectAll = () => {
-    const allIds = paginatedFiltered.map((e) => e.id);
+    const allIds = filtered.map((e) => e.id);
     const allSelected = allIds.every((id) => selectedIds.has(id));
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -776,7 +776,7 @@ function PayrollPageInner() {
                               setProcessingReimIds((prev) => new Set(prev).add(r.id));
                               setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Denied' } : x));
                               fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
-                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement denied for ${r.repName}`, 'error'); })
+                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement denied for ${r.repName}`); })
                                 .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
                                 .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
                             }}
