@@ -325,9 +325,10 @@ export default function MobileNewDeal() {
   };
 
   const handlePcFamilyChange = (value: string) => {
-    const mappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
+    const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
+    const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: mappedFinancer }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: '' }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', mappedFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 

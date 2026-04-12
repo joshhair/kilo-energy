@@ -243,7 +243,7 @@ function MyPayPageInner() {
   );
 
   const nextPayoutTotal = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === effectiveRepId && p.date === nextFridayStr && p.status !== 'Draft')
+    payrollEntries.filter((p) => p.repId === effectiveRepId && p.date === nextFridayStr && p.status === 'Pending')
       .reduce((s, p) => s + p.amount, 0),
     [payrollEntries, effectiveRepId, nextFridayStr]
   );
