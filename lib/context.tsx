@@ -1509,6 +1509,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       delete next[name];
       return next;
     });
+    // Clean up stale ID from idMaps so undo/restore doesn't PATCH the deleted installer
+    setIdMaps((prev) => {
+      const next = { ...prev, installerNameToId: { ...prev.installerNameToId } };
+      delete next.installerNameToId[name];
+      return next;
+    });
   };
 
   const deleteFinancer = async (name: string) => {

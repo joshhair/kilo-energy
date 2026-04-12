@@ -638,7 +638,8 @@ function BlitzPageInner() {
       if (!r.ok) { toast('Failed to approve request', 'error'); return; }
       toast('Request approved');
       loadData();
-    } finally { setProcessingRequest(null); }
+    } catch { toast('Failed to approve request', 'error'); }
+    finally { setProcessingRequest(null); }
   };
 
   const handleDenyRequest = async (reqId: string) => {
@@ -652,7 +653,8 @@ function BlitzPageInner() {
       if (!r.ok) { toast('Failed to deny request', 'error'); return; }
       toast('Request denied');
       loadData();
-    } finally { setProcessingRequest(null); }
+    } catch { toast('Failed to deny request', 'error'); }
+    finally { setProcessingRequest(null); }
   };
 
   const handleJoinBlitz = async (blitzId: string) => {
