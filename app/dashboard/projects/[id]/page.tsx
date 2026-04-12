@@ -1300,7 +1300,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   <div className="text-right">
                     <p className="text-[#c2c8d8] text-xs">Expected M1</p>
-                    <p className="text-[#00e07a] font-bold text-sm">${m1Flat.toLocaleString()}</p>
+                    <p className="text-[#00e07a] font-bold text-sm">${(project.setterM1Amount ?? m1Flat).toLocaleString()}</p>
                   </div>
                 </div>
                 {setterEntries.length > 0 ? (

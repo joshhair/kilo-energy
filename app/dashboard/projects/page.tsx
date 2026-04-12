@@ -1025,7 +1025,7 @@ function KanbanView({
                         </p>
                         {/* Mini commission preview + phase nav row */}
                         {!hideFinancials && (
-                          <div className={`flex items-center mt-1.5 ${isAdmin && (prevPhase || nextPhase) ? 'justify-between' : 'justify-end'}`}>
+                          <div className="flex items-center mt-1.5 justify-end">
                             <span className="text-[10px] font-medium tabular-nums" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>
                               ${commissionTotal.toLocaleString()}
                             </span>
@@ -1731,9 +1731,24 @@ function TableView({
 
   const executeBulkPhaseChange = (targetPhase: Phase) => {
     const count = selectedProjectIds.size;
-    selectedProjectIds.forEach((id) => {
-      onPhaseChange(id, targetPhase);
-    });
+    if (targetPhase === 'Cancelled') {
+      // onPhaseChange opens the per-project cancel-reason modal and returns early,
+      // so bulk cancel must call updateProject directly (the bulkConfirm dialog
+      // has already given the user a chance to abort before we get here).
+      selectedProjectIds.forEach((id) => {
+        updateProject(id, { phase: 'Cancelled' });
+      });
+    } else if (targetPhase === 'On Hold') {
+      // onPhaseChange opens a per-project setPhaseConfirm modal and returns early,
+      // so bulk 'On Hold' must call updateProject directly (bulkConfirm already confirmed).
+      selectedProjectIds.forEach((id) => {
+        updateProject(id, { phase: 'On Hold' });
+      });
+    } else {
+      selectedProjectIds.forEach((id) => {
+        onPhaseChange(id, targetPhase);
+      });
+    }
     setSelectedProjectIds(new Set());
     setBulkPhaseTarget('');
     setBulkConfirm(null);
