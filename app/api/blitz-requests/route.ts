@@ -37,9 +37,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (type === 'cancel' && body.blitzId) {
-    const blitz = await prisma.blitz.findUnique({ where: { id: body.blitzId }, select: { ownerId: true, createdById: true } });
+    const blitz = await prisma.blitz.findUnique({ where: { id: body.blitzId }, select: { ownerId: true, createdById: true, status: true } });
     if (!blitz || (blitz.ownerId !== user.id && blitz.createdById !== user.id)) {
       return NextResponse.json({ error: 'Forbidden — you can only request cancellation of blitzes you own' }, { status: 403 });
+    }
+    if (blitz.status !== 'upcoming' && blitz.status !== 'active') {
+      return NextResponse.json({ error: 'Cannot request cancellation of a blitz that is not upcoming or active' }, { status: 400 });
     }
   }
 

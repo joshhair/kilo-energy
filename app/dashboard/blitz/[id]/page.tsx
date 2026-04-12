@@ -323,6 +323,9 @@ export default function BlitzDetailPage() {
       toast('Blitz updated');
       setEditing(false);
       loadBlitz();
+    } catch {
+      toast('Network error — changes not saved', 'error');
+      setEditing(false);
     } finally { setSaving(false); }
   };
 
@@ -457,7 +460,7 @@ export default function BlitzDetailPage() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'participants', label: `Participants (${blitz.participants.length})` },
+    { key: 'participants', label: `Participants (${approvedParticipants.length})` },
     { key: 'deals', label: `Deals (${totalDeals})` },
     ...(isAdmin ? [
       { key: 'costs' as TabKey, label: `Costs (${blitz.costs?.length ?? 0})` },
@@ -552,7 +555,7 @@ export default function BlitzDetailPage() {
                 <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#c2c8d8] border border-[#272b35] rounded-lg hover:text-white hover:border-[#272b35] transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
                 <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); } })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
-            ) : canRequestBlitz && blitz.status !== 'cancelled' && (blitz.ownerId === effectiveRepId || blitz.createdById === effectiveRepId) && (
+            ) : canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && (blitz.ownerId === effectiveRepId || blitz.createdById === effectiveRepId) && (
               <button
                 disabled={cancelRequesting}
                 onClick={() => { setCancelReason(''); setShowCancelDialog(true); }}

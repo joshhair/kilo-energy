@@ -1536,6 +1536,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error(`Failed to delete financer: ${res.status}`);
     }
     setFinancers((prev) => prev.filter((f) => f.name !== name));
+    // Clean up stale ID from idMaps so re-adding the same name doesn't resolve to the deleted record
+    setIdMaps((prev) => {
+      const next = { ...prev, financerNameToId: { ...prev.financerNameToId } };
+      delete next.financerNameToId[name];
+      return next;
+    });
   };
 
   const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }) => {
