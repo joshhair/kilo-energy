@@ -1684,7 +1684,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               }
 
               const closerM1 = editVals.setterId ? 0 : (previewKW >= 5 ? 1000 : 500);
-              const closerM2 = calculateCommission(previewPPW, previewBaseline.closerPerW, previewKW);
+              const previewInstallPayPct = installerPayConfigs[editVals.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+              const closerTotal = calculateCommission(previewPPW, previewBaseline.closerPerW, previewKW);
+              const closerM2 = Math.round(Math.max(0, closerTotal - closerM1) * (previewInstallPayPct / 100) * 100) / 100;
               const kiloMargin = Math.round((previewBaseline.closerPerW - previewBaseline.kiloPerW) * previewKW * 1000 * 100) / 100;
               const belowBaseline = previewPPW < previewBaseline.closerPerW;
 
