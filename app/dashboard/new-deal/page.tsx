@@ -713,7 +713,7 @@ function NewDealPage() {
 
   // When a blitz is selected, only approved participants of that blitz may be setters.
   const setterPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps;
+    if (!form.blitzId) return reps.filter((r) => r.active);
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
@@ -785,10 +785,10 @@ function NewDealPage() {
     if (!form.setterId || setterBaselinePerW === 0) {
       return { closerTotal: calculateCommission(soldPPW, closerPerW, kW), setterTotal: 0 };
     }
-    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW) * kW * 1000 * 100) / 100 : 0;
+    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.max(0, Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW)) * kW * 1000 * 100) / 100 : 0;
     const splitPoint = setterBaselinePerW + trainerOverrideRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.round(aboveSplit / 2);
+    const half = Math.round(aboveSplit / 2 * 100) / 100;
     return { closerTotal: closerDifferential + half, setterTotal: aboveSplit - half };
   })();
 

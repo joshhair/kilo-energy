@@ -28,7 +28,7 @@ interface AppContextType {
   incentives: Incentive[];
   setIncentives: React.Dispatch<React.SetStateAction<Incentive[]>>;
   // Adds a project and auto-creates Draft payroll entries for all involved reps
-  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => boolean;
+  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string, closerTrainerId?: string) => boolean;
   // Marks individual payroll entries as Pending
   markForPayroll: (entryIds: string[]) => void;
   // Persists a new payroll entry to the DB, registers its temp ID in the resolution map
