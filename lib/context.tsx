@@ -692,6 +692,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Create Draft payroll entries for the incoming setter for any milestones the
         // project has already crossed. Without this, the new setter would never get paid
         // unless milestones were manually cycled backward and forward again.
+        // When a setter is removed from a project already at/past Acceptance, create
+        // the closer's M1 entry — it was intentionally skipped at phase transition
+        // because a setter existed (line 1092), but now there is no setter to hold M1.
+        if (!updates.setterId && old.setterId) {
+          const effectivePhase = (updates.phase ?? old.phase) as string;
+          const PIPELINE = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
+          const effectiveIdx = PIPELINE.indexOf(effectivePhase);
+          const pastAcceptance = effectiveIdx >= PIPELINE.indexOf('Acceptance');
+          const closerM1Amount = updates.m1Amount ?? old.m1Amount;
+
+          if (pastAcceptance && (closerM1Amount ?? 0) > 0) {
+            setPayrollEntries((prevEntries) => {
+              const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1');
+              if (hasM1) return prevEntries;
+              const closerRep = repsRef.current.find((r) => r.id === old.repId);
+              const ts = Date.now();
+              const newEntry: PayrollEntry = {
+                id: `pay_${ts}_m1_c`,
+                repId: old.repId,
+                repName: closerRep?.name ?? old.repName,
+                projectId: id,
+                customerName: old.customerName,
+                amount: closerM1Amount ?? 0,
+                type: 'Deal',
+                paymentStage: 'M1',
+                status: 'Draft',
+                date: getM1PayDate(),
+                notes: '',
+              };
+              persistPayrollEntry(newEntry);
+              return [...prevEntries, newEntry];
+            });
+          }
+        }
+
         if (updates.setterId) {
           const newSetterId = updates.setterId;
           const newSetterRep = repsRef.current.find((r) => r.id === newSetterId);
@@ -705,6 +740,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setPayrollEntries((prevEntries) => {
             const ts = Date.now();
             const newEntries: PayrollEntry[] = [];
+
+            // If this is the first setter ever on this project and it has already
+            // crossed Acceptance, the closer's M1 Draft/Pending entry must be removed —
+            // M1 belongs entirely to the setter when one exists (see line 1078).
+            let baseEntries = prevEntries;
+            if (!old.setterId && pastAcceptance) {
+              const closerM1 = prevEntries.filter(
+                (e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1' && (e.status === 'Draft' || e.status === 'Pending')
+              );
+              if (closerM1.length > 0) {
+                deletePayrollEntriesFromDb(closerM1.map((e) => e.id));
+                baseEntries = prevEntries.filter((e) => !closerM1.includes(e));
+              }
+            }
 
             const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
             const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
@@ -846,7 +895,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
             const validEntries = newEntries.filter((e) => e.amount > 0);
             validEntries.forEach((entry) => persistPayrollEntry(entry));
-            return [...prevEntries, ...validEntries];
+            return [...baseEntries, ...validEntries];
           });
         }
       }

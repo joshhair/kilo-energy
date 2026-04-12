@@ -489,6 +489,7 @@ function UsersPageInner() {
       setCompareMode(false);
       setCompareIds(new Set());
     } else {
+      setCompareMode(false);
       setCompareIds(new Set());
     }
   }, [roleFilter, filterTab]);
