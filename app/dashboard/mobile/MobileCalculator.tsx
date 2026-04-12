@@ -54,18 +54,6 @@ export default function MobileCalculator() {
   const [kWSize, setKWSize] = useState('');
   const [netPPW, setNetPPW] = useState('');
 
-  // ── PM guard ─────────────────────────────────────────────────────────────
-  if (effectiveRole === 'project_manager') {
-    return (
-      <div className="px-5 pt-4 pb-24">
-        <MobilePageHeader title="Calculator" />
-        <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
-        </div>
-      </div>
-    );
-  }
-
   // ── Derived installer flags ──────────────────────────────────────────────
   const isSolarTech = installer === 'SolarTech';
   const pcConfig = productCatalogInstallerConfigs[installer] ?? null;
@@ -114,6 +102,42 @@ export default function MobileCalculator() {
   const setterTotal = 0;
 
   const grandTotal = closerTotal + setterTotal;
+
+  // ── Animated commission counter ──────────────────────────────────────────
+  const prevTotalRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+  const [displayTotal, setDisplayTotal] = useState(0);
+
+  useEffect(() => {
+    const start = prevTotalRef.current;
+    const end = grandTotal;
+    prevTotalRef.current = end;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced || start === end) { setDisplayTotal(end); return; }
+    const DURATION = 600;
+    const startTime = performance.now();
+    const ease = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    const tick = (now: number) => {
+      const t = Math.min((now - startTime) / DURATION, 1);
+      setDisplayTotal(Math.round(start + (end - start) * ease(t)));
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [grandTotal]);
+
+  // ── PM guard ─────────────────────────────────────────────────────────────
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="px-5 pt-4 pb-24">
+        <MobilePageHeader title="Calculator" />
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Select styles ────────────────────────────────────────────────────────
   const selectStyle: React.CSSProperties = {
@@ -284,7 +308,7 @@ export default function MobileCalculator() {
         <MobileCard key="result" hero className="slide-up-fade">
           <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
           <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
-            {fmt$(grandTotal)}
+            {fmt$(displayTotal)}
           </p>
 
           <div className="mt-5 space-y-2.5">

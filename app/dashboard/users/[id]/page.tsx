@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, type CSSProperties } from 'react';
+import { use, useState, useEffect, useRef, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
@@ -93,6 +93,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  // Stable ref so the keydown effect can call startEdit without capturing a TDZ binding.
+  const startEditRef = useRef<((field: 'name' | 'email' | 'phone') => void) | null>(null);
 
   // First try the app context — reps + sub-dealers are already hydrated there.
   // `rep` is `let` so we can reassign to a sub-dealer/fetched user before
@@ -134,7 +136,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       if (!isAdminViewer) return;
       const tag = (document.activeElement as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (e.key === 'e' || e.key === 'E') startEdit('name');
+      if (e.key === 'e' || e.key === 'E') startEditRef.current?.('name');
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -176,6 +178,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     setEditPhone(resolvedUser.phone);
     setEditingField(field);
   };
+  startEditRef.current = startEdit;
   const cancelEdit = () => setEditingField(null);
   const saveEdit = async () => {
     if (savingEdit || !editingField) return;
@@ -674,7 +677,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   const assignment = trainerAssignments.find((a) => a.traineeId === id);
   const trainerRep = assignment ? reps.find((r) => r.id === assignment.trainerId) : null;
-  const completedDeals = repProjects.filter((p) => p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed').length;
+  const completedDeals = repProjects.filter((p) => p.repId === id && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
   const currentOverrideRate = assignment ? getTrainerOverrideRate(assignment, completedDeals) : 0;
 
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
@@ -1218,16 +1221,19 @@ function TrainerOverrideCard({
   const save = async () => {
     if (saving) return;
     setSaving(true);
-    const res = await fetch('/api/trainer-assignments', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: assignment.id, tiers: draftTiers }),
-    });
-    setSaving(false);
-    if (!res.ok) { toast('Failed to save trainer override', 'error'); return; }
-    onUpdate(draftTiers);
-    setEditing(false);
-    toast('Trainer override updated', 'success');
+    try {
+      const res = await fetch('/api/trainer-assignments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: assignment.id, tiers: draftTiers }),
+      });
+      if (!res.ok) { toast('Failed to save trainer override', 'error'); return; }
+      onUpdate(draftTiers);
+      setEditing(false);
+      toast('Trainer override updated', 'success');
+    } finally {
+      setSaving(false);
+    }
   };
   const cancel = () => { setDraftTiers([...assignment.tiers]); setEditing(false); };
 
