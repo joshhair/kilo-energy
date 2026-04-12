@@ -7,7 +7,7 @@ import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
 import { formatDate, formatCurrency, formatCompactKW } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
-import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2, FolderKanban, Trophy } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2, FolderKanban, Trophy, ChevronUp } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Link from 'next/link';
@@ -60,6 +60,7 @@ export default function BlitzDetailPage() {
   const [blitz, setBlitz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>('overview');
+  const [dealsSort, setDealsSort] = useState<{ col: 'customer' | 'kw' | 'ppw' | 'payout'; dir: 'asc' | 'desc' }>({ col: 'kw', dir: 'desc' });
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [tabIndicator, setTabIndicator] = useState<{ left: number; width: number } | null>(null);
   const [editing, setEditing] = useState(false);
@@ -142,6 +143,21 @@ export default function BlitzDetailPage() {
     if (isAdmin || isOwner) return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
     return blitz.projects.filter((p: any) => (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
+
+  const sortedDeals = useMemo(() => {
+    const arr = [...visibleProjects];
+    arr.sort((a: any, b: any) => {
+      let av: number | string, bv: number | string;
+      if (dealsSort.col === 'customer') { av = a.customerName ?? ''; bv = b.customerName ?? ''; }
+      else if (dealsSort.col === 'kw') { av = a.kWSize; bv = b.kWSize; }
+      else if (dealsSort.col === 'ppw') { av = a.netPPW; bv = b.netPPW; }
+      else { av = (a.m1Amount ?? 0) + (a.m2Amount ?? 0) + (a.m3Amount ?? 0) + (a.setterM1Amount ?? 0) + (a.setterM2Amount ?? 0) + (a.setterM3Amount ?? 0); bv = (b.m1Amount ?? 0) + (b.m2Amount ?? 0) + (b.m3Amount ?? 0) + (b.setterM1Amount ?? 0) + (b.setterM2Amount ?? 0) + (b.setterM3Amount ?? 0); }
+      if (av < bv) return dealsSort.dir === 'asc' ? -1 : 1;
+      if (av > bv) return dealsSort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [visibleProjects, dealsSort]);
 
   const totalDeals = visibleProjects.length;
   const totalKW = useMemo(
@@ -916,19 +932,35 @@ export default function BlitzDetailPage() {
           ) : (
             <div className="card-surface rounded-2xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="table-header-frost"><tr className="border-b border-[#333849] text-xs text-[#8891a8] uppercase tracking-wider">
-                  <th className="text-left px-4 py-3">Customer</th>
+                <thead className="table-header-frost sticky top-0 z-10"><tr className="border-b border-[#333849] text-xs text-[#8891a8] uppercase tracking-wider">
+                  <th className="text-left px-4 py-3">
+                    <button onClick={() => setDealsSort(s => s.col === 'customer' ? { col: 'customer', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'customer', dir: 'desc' })} className="flex items-center gap-1 cursor-pointer select-none group/th hover:text-[#c2c8d8] transition-colors">
+                      Customer<span className={'transition-transform duration-150 inline-block ' + (dealsSort.col === 'customer' ? 'opacity-100' : 'opacity-0 group-hover/th:opacity-40')}><ChevronUp className={'w-3 h-3' + (dealsSort.col === 'customer' && dealsSort.dir === 'desc' ? ' rotate-180' : '')} /></span>
+                    </button>
+                  </th>
                   <th className="text-left px-4 py-3">Closer</th>
                   {!isAdmin && !isOwner && <th className="text-left px-4 py-3">Role</th>}
                   <th className="text-left px-4 py-3">Phase</th>
-                  <th className="text-right px-4 py-3">kW</th>
-                  <th className="text-right px-4 py-3">Net PPW</th>
-                  {isAdmin && <th className="text-right px-4 py-3">Payout</th>}
+                  <th className="text-right px-4 py-3">
+                    <button onClick={() => setDealsSort(s => s.col === 'kw' ? { col: 'kw', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'kw', dir: 'desc' })} className="flex items-center gap-1 cursor-pointer select-none group/th hover:text-[#c2c8d8] transition-colors ml-auto">
+                      kW<span className={'transition-transform duration-150 inline-block ' + (dealsSort.col === 'kw' ? 'opacity-100' : 'opacity-0 group-hover/th:opacity-40')}><ChevronUp className={'w-3 h-3' + (dealsSort.col === 'kw' && dealsSort.dir === 'desc' ? ' rotate-180' : '')} /></span>
+                    </button>
+                  </th>
+                  <th className="text-right px-4 py-3">
+                    <button onClick={() => setDealsSort(s => s.col === 'ppw' ? { col: 'ppw', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'ppw', dir: 'desc' })} className="flex items-center gap-1 cursor-pointer select-none group/th hover:text-[#c2c8d8] transition-colors ml-auto">
+                      Net PPW<span className={'transition-transform duration-150 inline-block ' + (dealsSort.col === 'ppw' ? 'opacity-100' : 'opacity-0 group-hover/th:opacity-40')}><ChevronUp className={'w-3 h-3' + (dealsSort.col === 'ppw' && dealsSort.dir === 'desc' ? ' rotate-180' : '')} /></span>
+                    </button>
+                  </th>
+                  {isAdmin && <th className="text-right px-4 py-3">
+                    <button onClick={() => setDealsSort(s => s.col === 'payout' ? { col: 'payout', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'payout', dir: 'desc' })} className="flex items-center gap-1 cursor-pointer select-none group/th hover:text-[#c2c8d8] transition-colors ml-auto">
+                      Payout<span className={'transition-transform duration-150 inline-block ' + (dealsSort.col === 'payout' ? 'opacity-100' : 'opacity-0 group-hover/th:opacity-40')}><ChevronUp className={'w-3 h-3' + (dealsSort.col === 'payout' && dealsSort.dir === 'desc' ? ' rotate-180' : '')} /></span>
+                    </button>
+                  </th>}
                 </tr></thead>
                 <tbody>
-                  {visibleProjects.map((p: any, idx: number) => (
+                  {sortedDeals.map((p: any, idx: number) => (
                     <tr key={p.id} className={`border-b border-[#333849]/50 last:border-0 hover:bg-[#1d2028]/40 transition-colors ${idx % 2 === 0 ? 'bg-[#161920]/20' : ''}`}>
-                      <td className="px-4 py-3">
+                      <td className={'px-4 py-3' + (dealsSort.col === 'customer' ? ' bg-[#1d2028]/20' : '')}>
                         <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-[#00c4f0] transition-colors">{p.customerName}</Link>
                       </td>
                       <td className="px-4 py-3 text-[#c2c8d8]">{p.closer?.id ? <Link href={`/dashboard/users/${p.closer.id}`} className="hover:text-[#00c4f0] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
@@ -936,18 +968,18 @@ export default function BlitzDetailPage() {
                       <td className="px-4 py-3">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-[#1d2028]/40 text-[#c2c8d8] border-[#272b35]/30'}`}>{p.phase}</span>
                       </td>
-                      <td className="px-4 py-3 text-right text-[#c2c8d8]">{p.kWSize.toFixed(1)}</td>
-                      <td className="px-4 py-3 text-right text-[#c2c8d8]">${p.netPPW.toFixed(2)}</td>
-                      {isAdmin && <td className="px-4 py-3 text-right text-[#c2c8d8]">{formatCurrency((p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0))}</td>}
+                      <td className={'px-4 py-3 text-right text-[#c2c8d8] tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[#1d2028]/20' : '')}>{p.kWSize.toFixed(1)}</td>
+                      <td className={'px-4 py-3 text-right text-[#c2c8d8] tabular-nums' + (dealsSort.col === 'ppw' ? ' bg-[#1d2028]/20' : '')}>${p.netPPW.toFixed(2)}</td>
+                      {isAdmin && <td className={'px-4 py-3 text-right text-[#c2c8d8] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[#1d2028]/20' : '')}>{formatCurrency((p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0))}</td>}
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-[#272b35] bg-[#1d2028]/30">
                     <td colSpan={!isAdmin && !isOwner ? 4 : 3} className="px-4 py-3 text-sm font-semibold text-[#c2c8d8]">{visibleProjects.length} deal{visibleProjects.length !== 1 ? 's' : ''}</td>
-                    <td className="px-4 py-3 text-right text-sm font-bold text-white">{totalKW.toFixed(1)} kW</td>
+                    <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[#1d2028]/20' : '')}>{totalKW.toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[#8891a8]">—</td>
-                    {isAdmin && <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0), 0))}</td>}
+                    {isAdmin && <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[#1d2028]/20' : '')}>{formatCurrency(visibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0), 0))}</td>}
                   </tr>
                 </tfoot>
               </table>

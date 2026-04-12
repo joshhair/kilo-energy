@@ -676,7 +676,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       const closerM1 = p.setterId ? 0 : p.m1Amount;
       // Self-gen: rep is also the setter, so include setterM1Amount too
       const selfGenM1 = p.setterId === id ? (p.setterM1Amount ?? 0) : 0;
-      return s + closerM1 + selfGenM1 + p.m2Amount + (p.m3Amount ?? 0);
+      return s + closerM1 + selfGenM1 + p.m2Amount + (p.m3Amount ?? 0) + (p.setterId === id ? (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
     } else {
       // Setter: earns setterM1Amount + setter's M2/M3
       return s + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
@@ -948,7 +948,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <tbody>
             {(() => {
               const closerDeals = projects.filter((p) => p.repId === id);
-              const setterDeals = projects.filter((p) => p.setterId === id);
+              const setterDeals = projects.filter((p) => p.setterId === id && p.repId !== id);
               const trainerDeals = trainerAssignments.filter((a) => a.trainerId === id);
               const closerPay = repPayroll
                 .filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer')
@@ -958,6 +958,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 .reduce((s, e) => s + e.amount, 0);
               const trainerPay = repPayroll
                 .filter((e) => e.paymentStage === 'Trainer')
+                .reduce((s, e) => s + e.amount, 0);
+              const bonusPay = repPayroll
+                .filter((e) => e.type !== 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer')
                 .reduce((s, e) => s + e.amount, 0);
               return (
                 <>
@@ -971,13 +974,20 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     <td className="py-2.5 text-[#c2c8d8]">{setterDeals.length}</td>
                     <td className="py-2.5 text-[#00e07a] font-semibold">${setterPay.toLocaleString()}</td>
                   </tr>
-                  <tr className="table-row-enter row-stagger-2 relative even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                  <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[#333849]/50' : ''} even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
                     <td className="py-2.5 text-white">Trainer</td>
                     <td className="py-2.5 text-[#c2c8d8]">
                       {trainerDeals.length > 0 ? `${trainerDeals.length} trainee(s)` : '0'}
                     </td>
                     <td className="py-2.5 text-[#00e07a] font-semibold">${trainerPay.toLocaleString()}</td>
                   </tr>
+                  {bonusPay > 0 && (
+                    <tr className="table-row-enter row-stagger-3 relative even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                      <td className="py-2.5 text-white">Bonus / Other</td>
+                      <td className="py-2.5 text-[#c2c8d8]">—</td>
+                      <td className="py-2.5 text-[#00e07a] font-semibold">${bonusPay.toLocaleString()}</td>
+                    </tr>
+                  )}
                 </>
               );
             })()}
@@ -1126,7 +1136,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 {!isPM && (
                   <td className="px-5 py-3 text-right text-[#00e07a] font-semibold tabular-nums">
                     ${(proj.repId === id
-                        ? (proj.setterId === id ? (proj.setterM1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
+                        ? (proj.setterId === id ? (proj.setterM1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
                         : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                       ).toLocaleString()}
                   </td>
