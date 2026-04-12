@@ -160,15 +160,13 @@ export default function MobileAdminDashboard() {
     return active.filter((p) => {
       const sold = new Date(p.soldDate).getTime();
       const days = Math.floor((now - sold) / 86400000);
-      return days > 14 && p.phase !== 'Completed';
+      return days > 14 && p.phase !== 'Completed' && p.phase !== 'PTO';
     }).slice(0, 5);
   }, [active]);
 
-  const flaggedProjects = useMemo(() => projects.filter((p) => p.flagged).slice(0, 5), [projects]);
-
   // Payroll
-  const draftCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Draft').length, [payrollEntries]);
-  const pendingCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').length, [payrollEntries]);
+  const draftCount = useMemo(() => periodPayroll.filter((e) => e.status === 'Draft').length, [periodPayroll]);
+  const pendingCount = useMemo(() => periodPayroll.filter((e) => e.status === 'Pending').length, [periodPayroll]);
   const pendingTotal = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0), [payrollEntries]);
 
   // Pipeline counts
