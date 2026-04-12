@@ -960,8 +960,8 @@ export default function DashboardPage() {
   // Build a per-project total of ALL payroll entries (any status) so we can subtract
   // what's already accounted for rather than skipping the whole project.
   // This prevents a project with only M1 drafted from losing its expected M2.
-  const allPayrollByProject = myPayroll.reduce((map, p) => {
-    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
+  const allPayrollByProject = allMyPayroll.reduce((map, p) => {
+    if (p.projectId && p.paymentStage !== 'M3') map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
   const unmatchedProjectPay = myProjects
@@ -974,7 +974,7 @@ export default function DashboardPage() {
   // M3: build a set of project IDs that already have an M3 payroll entry (paid or unpaid).
   // If unpaid, the amount is already in unpaidPayroll. If paid, it belongs in totalPaid.
   // Only add m3Amount for projects with no M3 entry yet, regardless of phase.
-  const m3PayrollProjectIds = new Set(myPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
+  const m3PayrollProjectIds = new Set(allMyPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
   const pendingM3Pay = myProjects
     .filter((p) => !m3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && ((p.m3Amount ?? 0) > 0 || (p.setterM3Amount ?? 0) > 0))
     .reduce((sum, p) => {
