@@ -274,7 +274,7 @@ export default function BlitzDetailPage() {
 
       if (closerId && setterId && closerId === setterId) {
         // Same person closed and set (self-gen) — gets everything
-        if (participantIds.has(closerId)) bump(closerId, kW, m1 + m2 + m3 + sM2 + sM3);
+        if (participantIds.has(closerId)) bump(closerId, kW, m1 + m2 + m3 + sM1 + sM2 + sM3);
       } else {
         if (closerId && participantIds.has(closerId)) {
           // Closer gets M2/M3. Gets M1 only if there's no separate setter who is a participant.

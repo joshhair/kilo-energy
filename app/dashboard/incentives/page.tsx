@@ -276,12 +276,14 @@ export default function IncentivesPage() {
         return i;
       })
     );
-    fetch(`/api/incentives/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active: newActive }),
-    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-      .catch((err) => { console.error(err); toast('Failed to update incentive', 'error'); });
+    if (newActive !== undefined) {
+      fetch(`/api/incentives/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: newActive }),
+      }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+        .catch((err) => { console.error(err); toast('Failed to update incentive', 'error'); });
+    }
   };
 
   const handleMilestoneAchieved = (incId: string, milestoneId: string, achieved: boolean) => {
@@ -375,6 +377,9 @@ export default function IncentivesPage() {
     setSelectMode(false);
     setSelectedIds(new Set());
   };
+
+  // Clear selection when filter or sort changes to prevent bulk-actions on hidden incentives.
+  useEffect(() => { clearSelection(); }, [incentiveFilter, incentiveSort]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Bulk archive expired ──
   const expiredActiveCount = useMemo(() => visible.filter((i) => isExpired(i.endDate) && i.active).length, [visible]);
@@ -666,7 +671,7 @@ export default function IncentivesPage() {
               Company-Wide
             </h2>
             {company.length === 0 ? (
-              <EmptyState message="No company-wide incentives yet" subtitle="Company incentives apply to all reps — create one to boost team performance" />
+              <EmptyState message={incentiveFilter !== 'all' ? 'No company-wide incentives match this filter' : 'No company-wide incentives yet'} subtitle={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : 'Company incentives apply to all reps — create one to boost team performance'} />
             ) : (
               <div className="grid gap-4 xl:grid-cols-2">
                 {company.map((inc, index) => (
@@ -701,7 +706,7 @@ export default function IncentivesPage() {
               {isAdmin ? 'Personal Goals' : 'Your Personal Goals'}
             </h2>
             {personal.length === 0 ? (
-              <EmptyState message={isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} subtitle={isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
+              <EmptyState message={incentiveFilter !== 'all' ? 'No personal incentives match this filter' : isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} subtitle={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
             ) : (
               <div className="grid gap-4 xl:grid-cols-2">
                 {personal.map((inc, index) => (
