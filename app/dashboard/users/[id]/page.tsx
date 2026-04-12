@@ -157,6 +157,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     return () => document.removeEventListener('keydown', handler);
   }, [editingField, isAdminViewer]);
 
+  const [barsMounted, setBarsMounted] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setBarsMounted(true), 50); return () => clearTimeout(t); }, []);
+
   if (!hydrated) return <RepDetailSkeleton />;
 
   if (isMobile) return <MobileRepDetail repId={id} />;
@@ -184,7 +187,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   const isInactive = (rep || subDealer)
-    ? !(resolvedUser as { active?: boolean }).active
+    ? (resolvedUser as { active?: boolean }).active === false
     : userMeta
     ? !userMeta.active
     : (resolvedUser as { active?: boolean }).active === false;
@@ -719,9 +722,6 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const currentOverrideRate = assignment ? getTrainerOverrideRate(assignment, completedDeals) : 0;
 
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
-
-  const [barsMounted, setBarsMounted] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setBarsMounted(true), 50); return () => clearTimeout(t); }, []);
 
   return (
     <div className="p-4 md:p-8 animate-fade-in-up">

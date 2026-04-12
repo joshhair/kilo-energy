@@ -805,7 +805,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (old && updates.phase === 'Installed' && old.phase !== 'Installed' && !old.subDealerId) {
       const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
       if (installPayPct < 100) {
-        const fullAmount = old.m2Amount ?? 0;
+        const fullAmount = updates.m2Amount ?? old.m2Amount ?? 0;
         computedM3Amount = (old.m3Amount ?? 0) > 0
           ? old.m3Amount!
           : installPayPct > 0
@@ -826,6 +826,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? Math.round((old.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
             : 0;
         if (repairedM3 > 0) dbUpdates.m3Amount = repairedM3;
+      }
+    }
+    // When m2Amount is edited on a project that has already reached Installed, derive
+    // m3Amount from the new m2Amount so PTO payroll entries and project state stay in sync.
+    // Only applies when the caller didn't explicitly supply m3Amount and the installer
+    // config calls for a split payment (installPayPct < 100).
+    const PAST_INSTALLED_PHASES: Phase[] = ['Installed', 'PTO', 'Completed'];
+    if (updates.m2Amount !== undefined && updates.m3Amount === undefined && old && !old.subDealerId && PAST_INSTALLED_PHASES.includes(old.phase as Phase)) {
+      const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      if (installPayPct > 0 && installPayPct < 100) {
+        const derivedM3 = Math.round(updates.m2Amount * ((100 - installPayPct) / installPayPct) * 100) / 100;
+        updates.m3Amount = derivedM3;
+        dbUpdates.m3Amount = derivedM3;
+      }
+    }
+    if (updates.setterM2Amount !== undefined && updates.setterM3Amount === undefined && old && !old.subDealerId && old.setterId && PAST_INSTALLED_PHASES.includes(old.phase as Phase)) {
+      const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      if (installPayPct > 0 && installPayPct < 100) {
+        const derivedSetterM3 = Math.round(updates.setterM2Amount * ((100 - installPayPct) / installPayPct) * 100) / 100;
+        updates.setterM3Amount = derivedSetterM3;
+        dbUpdates.setterM3Amount = derivedSetterM3;
       }
     }
     if (Object.keys(dbUpdates).length > 0) {
