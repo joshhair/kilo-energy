@@ -1328,7 +1328,7 @@ function AdminFinancialsView() {
         {(['payroll', 'reimbursements', 'by-rep'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[#c2c8d8] hover:text-white'}`}>
-            {t === 'payroll' ? `Payroll (${payrollEntries.length})` : t === 'reimbursements' ? `Reimbursements (${reimbursements.length})` : 'By Rep'}
+            {t === 'payroll' ? `Payroll (${filteredPayroll.length})` : t === 'reimbursements' ? `Reimbursements (${filteredReimbs.length})` : 'By Rep'}
           </button>
         ))}
       </div>

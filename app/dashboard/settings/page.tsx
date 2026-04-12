@@ -1269,7 +1269,7 @@ function SettingsPageInner() {
         })()}
 
         {/* ── Settings Summary Dashboard ────────────────────────────────────── */}
-        {editingInstaller === null && editingAssignmentId === null && editingPrepaid === null && (() => {
+        {editingInstaller === null && editingAssignmentId === null && editingPrepaid === null && editingProductName === null && (() => {
           const activeInstallerCount = installers.filter((i) => i.active).length;
           const activeFinancerCount = financers.filter((f) => f.active && !hiddenFinancers.has(f.name)).length;
           const trainerCount = trainerAssignments.length;
@@ -2693,7 +2693,7 @@ function SettingsPageInner() {
                         trainerAssignments.forEach((a) => {
                           const trainee = reps.find((r) => r.id === a.traineeId);
                           const trainer = reps.find((r) => r.id === a.trainerId);
-                          const dealCount = projects.filter((p) => p.repId === a.traineeId || p.setterId === a.traineeId).length;
+                          const dealCount = projects.filter((p) => (p.repId === a.traineeId || p.setterId === a.traineeId) && ['Installed', 'PTO', 'Completed'].includes(p.phase)).length;
                           const tierStrs = a.tiers.map((t, i) => `Tier ${i + 1}: up to ${t.upToDeal === null ? '∞' : t.upToDeal} deals @ $${t.ratePerW}/W`).join(' | ');
                           rows.push([trainee?.name || a.traineeId, trainer?.name || a.trainerId, String(a.tiers.length), tierStrs, String(dealCount)]);
                         });

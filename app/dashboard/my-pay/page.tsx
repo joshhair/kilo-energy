@@ -288,8 +288,7 @@ function MyPayPageInner() {
     // Average commission per deal (M1 + M2)
     const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
       const isSetterRole = p.setterId === effectiveRepId;
-      // m1Amount stores setterM1 when a setter exists; closer gets $0 M1 on those deals
-      const m1 = (isSetterRole || !p.setterId) ? (p.m1Amount ?? 0) : 0;
+      const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (!p.setterId ? (p.m1Amount ?? 0) : 0);
       const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
       return s + m1 + m2;
     }, 0) / totalDeals;
