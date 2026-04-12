@@ -683,7 +683,7 @@ function NewDealPage() {
 
   const handleInstallerChange = (value: string) => {
     setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
-    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '' }));
+    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '' }));
   };
 
   const handleFinancerChange = (value: string) => {
@@ -704,8 +704,10 @@ function NewDealPage() {
   const handlePcFamilyChange = (value: string) => {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: mappedFinancer }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', mappedFinancer) }));
+    // Loan deals must not inherit a 'Cash' financer from the family mapping
+    const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 

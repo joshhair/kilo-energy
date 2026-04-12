@@ -258,7 +258,7 @@ export default function BlitzDetailPage() {
 
       if (closerId && setterId && closerId === setterId) {
         // Same person closed and set (self-gen) — gets everything
-        if (participantIds.has(closerId)) bump(closerId, kW, m1 + m2 + m3);
+        if (participantIds.has(closerId)) bump(closerId, kW, m1 + m2 + m3 + sM2 + sM3);
       } else {
         if (closerId && participantIds.has(closerId)) {
           // Closer gets M2/M3. Gets M1 only if there's no separate setter who is a participant.
@@ -611,7 +611,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[#8891a8] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id)); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id)); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
               </div>
             )}
           </div>
@@ -630,7 +630,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[#8891a8] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id)); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id)); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">Projected Pay</p>
                 </div>
               </div>
