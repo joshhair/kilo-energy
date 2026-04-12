@@ -1178,6 +1178,7 @@ function TrainerOverrideCard({
 }: TrainerOverrideCardProps) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [draftTiers, setDraftTiers] = useState<TrainerOverrideTier[]>([...assignment.tiers]);
 
   const updateTier = (index: number, field: keyof TrainerOverrideTier, value: string) => {
@@ -1215,11 +1216,14 @@ function TrainerOverrideCard({
   };
 
   const save = async () => {
+    if (saving) return;
+    setSaving(true);
     const res = await fetch('/api/trainer-assignments', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: assignment.id, tiers: draftTiers }),
     });
+    setSaving(false);
     if (!res.ok) { toast('Failed to save trainer override', 'error'); return; }
     onUpdate(draftTiers);
     setEditing(false);
@@ -1255,9 +1259,9 @@ function TrainerOverrideCard({
         )}
         {editing && (
           <div className="flex gap-2">
-            <button onClick={save} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors">
+            <button onClick={save} disabled={saving} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               <Check className="w-3.5 h-3.5" />
-              Save
+              {saving ? 'Saving…' : 'Save'}
             </button>
             <button onClick={cancel} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
               <X className="w-3.5 h-3.5" />

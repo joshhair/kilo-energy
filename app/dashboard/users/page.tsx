@@ -1392,6 +1392,8 @@ function UsersPageInner() {
                         try {
                           await reactivateRep(rep.id);
                           toast(`${rep.name} reactivated`, 'success');
+                        } catch {
+                          toast('Failed to reactivate rep', 'error');
                         } finally {
                           setReactivatingId(null);
                         }

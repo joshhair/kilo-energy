@@ -750,14 +750,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const paidEntries = remaining.filter(
               (e) => e.projectId === id && e.amount > 0 && e.type === 'Deal' && e.status === 'Paid'
             );
-            // Already has a chargeback? Don't double-charge
-            const hasChargeback = remaining.some(
-              (e) => e.projectId === id && e.type === 'Deal' && e.amount < 0
+            if (paidEntries.length === 0) return remaining;
+            // Filter out paid entries that already have a matching negative counterpart
+            // (matched by repId + paymentStage) to avoid double-charging on re-cancellation
+            const paidEntriesToChargeback = paidEntries.filter(
+              (pe) => !remaining.some(
+                (e) => e.projectId === id && e.type === 'Deal' && e.amount < 0
+                  && e.repId === pe.repId && e.paymentStage === pe.paymentStage
+              )
             );
-            if (paidEntries.length === 0 || hasChargeback) return remaining;
+            if (paidEntriesToChargeback.length === 0) return remaining;
 
             const ts = Date.now();
-            const chargebacks: PayrollEntry[] = paidEntries.map((e, i) => ({
+            const chargebacks: PayrollEntry[] = paidEntriesToChargeback.map((e, i) => ({
               id: `pay_${ts}_chargeback_${i}`,
               repId: e.repId,
               repName: e.repName,
@@ -809,7 +814,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // If M2 entries already exist, the project previously crossed Acceptance+Installed,
         // so On Hold→Acceptance is a rollback — not a fresh milestone crossing. Suppress M1
         // creation to prevent isAcceptance from firing while stale M2 Drafts remain.
-        const hasExistingM2 = payrollEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
+        // Exception: if M2 is being rolled back in this same transition, the setPayrollEntries
+        // deletion above has not yet applied — treat those entries as already gone so that
+        // Installed→Acceptance (for projects that skipped Acceptance) correctly drafts M1.
+        const m2RolledBack = effectiveOldIdx >= 0 && newIdx >= 0 && newIdx < effectiveOldIdx &&
+          effectiveOldIdx >= PIPELINE.indexOf('Installed') && newIdx < PIPELINE.indexOf('Installed');
+        const hasExistingM2 = !m2RolledBack && payrollEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
         const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance' && !hasExistingM2;
         const isInstalled = newPhase === 'Installed' && old.phase !== 'Installed';
         const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
