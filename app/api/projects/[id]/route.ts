@@ -102,11 +102,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // FK resolution: installer/financer name → ID
   if (body.installer !== undefined) {
     const inst = await prisma.installer.findFirst({ where: { name: body.installer } });
-    if (inst) data.installerId = inst.id;
+    if (!inst) return NextResponse.json({ error: `Installer "${body.installer}" not found` }, { status: 400 });
+    data.installerId = inst.id;
   }
   if (body.financer !== undefined) {
     const fin = await prisma.financer.findFirst({ where: { name: body.financer } });
-    if (fin) data.financerId = fin.id;
+    if (!fin) return NextResponse.json({ error: `Financer "${body.financer}" not found` }, { status: 400 });
+    data.financerId = fin.id;
   }
 
   const project = await prisma.project.update({

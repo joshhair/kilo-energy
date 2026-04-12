@@ -694,16 +694,16 @@ function NewDealPage() {
   const handleSolarTechFamilyChange = (value: string) => {
     const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', ...(mappedFinancer ? { financer: mappedFinancer } : {}) }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', ...(mappedFinancer ? { financer: '' } : {}) }));
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: mappedFinancer }));
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
 
   const handlePcFamilyChange = (value: string) => {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', ...(mappedFinancer ? { financer: mappedFinancer } : {}) }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', ...(mappedFinancer ? { financer: '' } : {}) }));
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: mappedFinancer }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 

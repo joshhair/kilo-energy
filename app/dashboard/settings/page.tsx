@@ -297,7 +297,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
         {filteredReps.length > rowsPerPage && (
           <PaginationBar
             totalResults={filteredReps.length}
-            startIdx={startIdx + 1}
+            startIdx={startIdx}
             endIdx={endIdx}
             currentPage={safePage}
             totalPages={totalPages}
@@ -471,6 +471,7 @@ function PMSection() {
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [confirmDeletePmId, setConfirmDeletePmId] = useState<string | null>(null);
 
   const loadPMs = () => {
     fetch('/api/reps?role=project_manager').then((r) => r.ok ? r.json() : []).then((data) => {
@@ -551,7 +552,7 @@ function PMSection() {
                   <p className="text-white font-medium text-sm">{pm.firstName} {pm.lastName}</p>
                   <p className="text-[#8891a8] text-xs">{pm.email}</p>
                 </div>
-                <button onClick={() => handleDelete(pm.id)} className="text-[#525c72] hover:text-red-400 transition-colors">
+                <button onClick={() => setConfirmDeletePmId(pm.id)} className="text-[#525c72] hover:text-red-400 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -579,6 +580,16 @@ function PMSection() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmDeletePmId}
+        onClose={() => setConfirmDeletePmId(null)}
+        onConfirm={() => { if (confirmDeletePmId) handleDelete(confirmDeletePmId); setConfirmDeletePmId(null); }}
+        title="Remove Project Manager"
+        message="This will permanently delete their account. This action cannot be undone."
+        confirmLabel="Remove"
+        danger
+      />
     </div>
   );
 }
@@ -1626,7 +1637,7 @@ function SettingsPageInner() {
                   {sorted.length > trainerRowsPerPage && (
                     <PaginationBar
                       totalResults={sorted.length}
-                      startIdx={startIdx + 1}
+                      startIdx={startIdx}
                       endIdx={endIdx}
                       currentPage={safePage}
                       totalPages={totalPages}
