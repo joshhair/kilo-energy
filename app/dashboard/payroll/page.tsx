@@ -77,6 +77,8 @@ function PayrollPageInner() {
   const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
   const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus'].includes(initialType) ? initialType : 'Deal');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [actionBarMounted, setActionBarMounted] = useState(false);
+  const [actionBarVisible, setActionBarVisible] = useState(false);
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
@@ -279,6 +281,17 @@ function PayrollPageInner() {
   // repGroups removed — flat table rendering uses paginatedFiltered directly
   // Floating toolbar is visible whenever one or more Draft entries are selected
   const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
+
+  useEffect(() => {
+    if (showActionBar) {
+      setActionBarMounted(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setActionBarVisible(true)));
+    } else {
+      setActionBarVisible(false);
+      const t = setTimeout(() => setActionBarMounted(false), 260);
+      return () => clearTimeout(t);
+    }
+  }, [showActionBar]);
 
   const handlePublish = async () => {
     // Publish only Pending entries matching the active filters (same set the button's disabled state reflects)
@@ -1189,22 +1202,27 @@ function PayrollPageInner() {
            selected. React unmounts it on deselection so the entrance animation
            fires fresh each time. Escape key and the × button both clear the
            selection.                                                            */}
-      {showActionBar && (
+      {actionBarMounted && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-[#161920]/80 border border-[#272b35]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in"
+          className="fixed bottom-6 left-1/2 z-30 backdrop-blur-xl bg-[#161920]/80 border border-[#272b35]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40"
           role="toolbar"
           aria-label="Batch actions for selected entries"
+          style={{
+            transition: 'transform 260ms cubic-bezier(0.16,1,0.3,1), opacity 220ms ease',
+            transform: actionBarVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(20px)',
+            opacity: actionBarVisible ? 1 : 0,
+          }}
         >
           <div className="flex items-center gap-3">
 
             {/* Selection count badge — blue accent pill */}
             <span className="flex items-center gap-1.5 bg-[#00e07a]/15 border border-[#00e07a]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
-              <span className="text-white font-bold tabular-nums">{selectedIds.size}</span>
+              <span key={selectedIds.size} className="text-white font-bold tabular-nums animate-badge-pop">{selectedIds.size}</span>
               <span className="text-[#00e07a] font-medium">selected</span>
               {selectedTotal > 0 && (
                 <>
                   <span className="text-[#525c72] mx-0.5">·</span>
-                  <span className="text-[#00e07a] font-semibold tabular-nums">${selectedTotal.toLocaleString()}</span>
+                  <span key={selectedTotal} className="text-[#00e07a] font-semibold tabular-nums animate-badge-pop">${selectedTotal.toLocaleString()}</span>
                 </>
               )}
             </span>

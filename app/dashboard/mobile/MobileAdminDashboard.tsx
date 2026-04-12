@@ -7,7 +7,7 @@ import { fmt$, formatDate, formatCompactKW } from '../../../lib/utils';
 import {
   ACTIVE_PHASES,
   getSolarTechBaseline,
-  getProductCatalogBaseline,
+  getProductCatalogBaselineVersioned,
   getInstallerRatesForDeal,
 } from '../../../lib/data';
 import { AlertTriangle, TrendingUp, Users, Zap, CreditCard, FolderKanban, ChevronRight, Flag, Clock } from 'lucide-react';
@@ -101,6 +101,7 @@ export default function MobileAdminDashboard() {
     reps,
     installerPricingVersions,
     productCatalogProducts,
+    productCatalogPricingVersions,
     currentRepName,
     dbReady,
   } = useApp();
@@ -129,7 +130,7 @@ export default function MobileAdminDashboard() {
   function getBaselines(p: (typeof projects)[number]) {
     if (p.baselineOverride) return p.baselineOverride;
     if (p.installer === 'SolarTech' && p.solarTechProductId) return getSolarTechBaseline(p.solarTechProductId, p.kWSize);
-    if (p.installerProductId) return getProductCatalogBaseline(productCatalogProducts, p.installerProductId, p.kWSize);
+    if (p.installerProductId) return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
     return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
   }
 

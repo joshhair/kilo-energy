@@ -1306,6 +1306,15 @@ select {
   animation: floatToolbarIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ── Count badge spring-pop — remounts via key= on every value change ──────── */
+@keyframes badgePop {
+  0%   { transform: scale(1.35); }
+  60%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-badge-pop { animation: badgePop 220ms cubic-bezier(0.34,1.56,0.64,1) both; }
+@media (prefers-reduced-motion: reduce) { .animate-badge-pop { animation: none; } }
+
 /* ── Scroll-triggered reveal — useScrollReveal() hook companion classes ──────── */
 
 /* Initial hidden state: nudged down + blurred + invisible.

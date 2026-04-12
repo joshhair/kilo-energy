@@ -71,7 +71,7 @@ function isDueDateOverdue(iso: string): boolean {
 
 /** Parse `@Name` patterns and render highlighted spans */
 function renderMessageText(text: string): React.ReactNode[] {
-  const parts = text.split(/(@\w[\w\s]*?\b)/g);
+  const parts = text.split(/(@\w[\w\s]*\b)/g);
   return parts.map((part, i) => {
     if (part.startsWith('@')) {
       return (

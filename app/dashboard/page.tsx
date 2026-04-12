@@ -9,9 +9,9 @@ import MobileDashboard from './mobile/MobileDashboard';
 import { computeSparklineData, Sparkline } from '../../lib/sparkline';
 import {
   computeIncentiveProgress, formatIncentiveMetric,
-  getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
+  getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   getTrainerOverrideRate,
-  Project, InstallerPricingVersion, ProductCatalogProduct, ACTIVE_PHASES,
+  Project, InstallerPricingVersion, ProductCatalogProduct, ProductCatalogPricingVersion, ACTIVE_PHASES,
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../lib/data';
 import { formatDate, fmt$, formatCompactKW, getCustomConfig } from '../../lib/utils';
@@ -30,8 +30,9 @@ const ACCENT_COLOR_MAP: Record<string, string> = {
   'from-amber-500 to-amber-400':     'rgba(245,158,11,0.08)',
 };
 
-function isInPeriod(dateStr: string, period: Period): boolean {
+function isInPeriod(dateStr: string | null | undefined, period: Period): boolean {
   if (period === 'all') return true;
+  if (!dateStr) return false;
   const [year, month] = dateStr.split('-').map(Number);
   const now = new Date();
   if (period === 'this-month') {
@@ -197,6 +198,7 @@ function NeedsAttentionSection({
   }
 
   for (const proj of activeProjects) {
+    if (proj.flagged) continue; // already added above; don't double-count
     if (proj.phase === 'On Hold') {
       if (!proj.soldDate) continue;
       const [y, m, d] = proj.soldDate.split('-').map(Number);
@@ -751,7 +753,7 @@ function getGreeting(name: string | null | undefined): string {
 }
 
 export default function DashboardPage() {
-  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs, dbReady } = useApp();
+  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs, dbReady } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -843,7 +845,7 @@ export default function DashboardPage() {
     .reduce((s, p) => s + p.amount, 0);
   // Build a per-project sum of ALL payroll entries so we subtract only what's already
   // accounted for, rather than skipping the entire project when only M1 has been drafted.
-  const allMtdPayrollByProject = allMyPayroll.reduce((map, p) => {
+  const allMtdPayrollByProject = allMyPayroll.filter((p) => isThisMonth(p.date)).reduce((map, p) => {
     if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
@@ -913,6 +915,7 @@ export default function DashboardPage() {
       totalReps={reps.length}
       installerPricingVersions={installerPricingVersions}
       productCatalogProducts={productCatalogProducts}
+      productCatalogPricingVersions={productCatalogPricingVersions}
       currentRepName={currentRepName}
     />;
   }
@@ -1737,6 +1740,7 @@ function AdminDashboard({
   totalReps,
   installerPricingVersions,
   productCatalogProducts,
+  productCatalogPricingVersions,
   currentRepName,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
@@ -1748,6 +1752,7 @@ function AdminDashboard({
   totalReps: number;
   installerPricingVersions: InstallerPricingVersion[];
   productCatalogProducts: ProductCatalogProduct[];
+  productCatalogPricingVersions: ProductCatalogPricingVersion[];
   currentRepName: string | null;
 }) {
   const { updateProject } = useApp();
@@ -1800,7 +1805,7 @@ function AdminDashboard({
       return getSolarTechBaseline(p.solarTechProductId, p.kWSize);
     }
     if (p.installerProductId) {
-      return getProductCatalogBaseline(productCatalogProducts, p.installerProductId, p.kWSize);
+      return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
     }
     return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
   }
@@ -1941,6 +1946,7 @@ function AdminDashboard({
       if (diffDays > threshold) count++;
     }
     for (const proj of attentionActiveProjects) {
+      if (proj.flagged) continue; // already counted above; don't double-count
       if (proj.phase === 'On Hold') count++;
     }
     return count;
