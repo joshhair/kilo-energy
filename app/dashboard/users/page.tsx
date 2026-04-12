@@ -308,7 +308,7 @@ function UsersPageInner() {
             return { id: json.user.id as string };
           })
       : newUserRole === 'sub-dealer'
-        ? addSubDealer(newFirstName, newLastName, newEmail, newPhone, repId).then(() => ({ id: repId }))
+        ? (addSubDealer(newFirstName, newLastName, newEmail, newPhone) as Promise<{ id: string } | null>)
         : (addRep(newFirstName, newLastName, newEmail, newPhone, newRepType) as Promise<{ id: string } | null>);
 
     const roleLabel = ROLE_LABELS_BY_ROLE[newUserRole];
@@ -986,8 +986,8 @@ function UsersPageInner() {
       {/* ── Comparison Cards ─────────────────────────────────────────────── */}
       {compareMode && compareIds.size >= 2 && (() => {
         const ranges = getCompareDateRanges();
-        const isInRange = (dateStr: string, from: string, to: string) => {
-          if (!from || !to) return false;
+        const isInRange = (dateStr: string | null, from: string, to: string) => {
+          if (!from || !to || !dateStr) return false;
           return dateStr >= from && dateStr <= to;
         };
         const compareReps = reps.filter((r) => compareIds.has(r.id));
@@ -1285,7 +1285,7 @@ function UsersPageInner() {
                   <ChevronRight className="hidden md:block w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
                   {canManageReps && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); setConfirmAction(null); } }); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } setConfirmAction(null); } }); }}
                       title="Deactivate rep"
                       className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[#525c72] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >

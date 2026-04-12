@@ -447,9 +447,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: false }),
       }, 'Failed to deactivate rep');
-    } catch {
+    } catch (err) {
       // Roll back the optimistic update on failure
       setReps((prev) => prev.map((r) => r.id === id ? { ...r, active: true } : r));
+      throw err;
     }
   };
   const reactivateRep = async (id: string): Promise<void> => {
@@ -460,8 +461,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: true }),
       }, 'Failed to reactivate rep');
-    } catch {
+    } catch (err) {
       setReps((prev) => prev.map((r) => r.id === id ? { ...r, active: false } : r));
+      throw err;
     }
   };
   const deleteRepPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
