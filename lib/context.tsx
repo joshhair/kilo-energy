@@ -386,7 +386,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }).catch((err) => {
       console.error('[addInstaller] Failed to create installer:', err);
       setInstallers((prev) => prev.filter((i) => i.name !== name));
-      setInstallerPricingVersions((prev) => prev.filter((v) => v.installer !== name));
+      setInstallerPricingVersions((prev) => prev.filter((v) => !(v.installer === name && v.id.startsWith('ipv_'))));
       emitPersistError('Failed to add installer — please try again');
     });
   };
@@ -494,12 +494,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // keep the old "remove from list immediately" UI behavior, but route to
   // the new deactivation endpoint server-side. Phase 4 migrates call sites.
   const removeRep = (id: string) => {
+    const snapshot = reps.find((r) => r.id === id);
     setReps((prev) => prev.filter((r) => r.id !== id));
     persistFetch(`/api/users/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active: false }),
-    }, 'Failed to remove rep').catch(() => {});
+    }, 'Failed to remove rep').catch(() => {
+      if (snapshot) setReps((prev) => [...prev, snapshot]);
+    });
   };
   const updateRepType = async (id: string, repType: 'closer' | 'setter' | 'both'): Promise<void> => {
     const snapshot = reps.find((r) => r.id === id);
@@ -603,12 +606,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
   // Legacy alias — same migration story as removeRep above.
   const removeSubDealer = (id: string) => {
+    const snapshot = subDealers.find((sd) => sd.id === id);
     setSubDealers((prev) => prev.filter((sd) => sd.id !== id));
     persistFetch(`/api/users/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active: false }),
-    }, 'Failed to remove sub-dealer').catch(() => {});
+    }, 'Failed to remove sub-dealer').catch(() => {
+      if (snapshot) setSubDealers((prev) => [...prev, snapshot]);
+    });
   };
 
   // ── Activity logging helper (fire-and-forget) ──

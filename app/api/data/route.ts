@@ -217,6 +217,7 @@ export async function GET() {
     subDealerName: p.subDealer ? `${p.subDealer.firstName} ${p.subDealer.lastName}` : undefined,
     cancellationReason: p.cancellationReason ?? undefined,
     cancellationNotes: p.cancellationNotes ?? undefined,
+    updatedAt: p.updatedAt.toISOString(),
   }));
 
   const transformedPayroll = payrollEntries.map((pe) => ({

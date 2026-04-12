@@ -1123,12 +1123,6 @@ function AdminFinancialsView() {
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
 
-  // Stats
-  const totalPaid     = payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
-  const totalPending  = payrollEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-  const totalDraft    = payrollEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-  const pendingReimbs = reimbursements.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
-
   type AdminTab = 'payroll' | 'reimbursements' | 'by-rep';
   const rawTab = searchParams.get('tab');
   const [tab, setTabState] = useState<AdminTab>(() => {
@@ -1192,6 +1186,12 @@ function AdminFinancialsView() {
       (!reimbStatusFilter || r.status === reimbStatusFilter)
     ).sort((a, b) => b.date.localeCompare(a.date));
   }, [reimbursements, reimbRepFilter, reimbStatusFilter]);
+
+  // Stats — computed from filtered data so they respect active rep/status filters
+  const totalPaid     = filteredPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const totalPending  = filteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+  const totalDraft    = filteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+  const pendingReimbs = filteredReimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
 
   const reimbTotal      = filteredReimbs.length;
   const reimbTotalPages = Math.max(1, Math.ceil(reimbTotal / reimbPageSize));

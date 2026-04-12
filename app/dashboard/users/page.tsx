@@ -431,7 +431,7 @@ function UsersPageInner() {
     const idx = FILTER_TABS.findIndex((t) => t.value === filterTab);
     const el = filterTabRefs.current[idx];
     if (el) setFilterIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [filterTab]);
+  }, [filterTab, roleFilter]);
 
   // ── Active deals count per rep (pipeline = not Cancelled/On Hold/Completed) ──
   const activeDealsByRep = useMemo(() => {
@@ -483,13 +483,15 @@ function UsersPageInner() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
 
-  // Clear compare state when navigating away from the rep tab
+  // Clear compare state when navigating away from the rep tab or switching filter tabs within it
   useEffect(() => {
     if (roleFilter !== 'rep') {
       setCompareMode(false);
       setCompareIds(new Set());
+    } else {
+      setCompareIds(new Set());
     }
-  }, [roleFilter]);
+  }, [roleFilter, filterTab]);
 
   // ── Sort ────────────────────────────────────────────────────────────────
   type SortBy = 'paid' | 'active' | 'deals' | 'name' | 'kw';

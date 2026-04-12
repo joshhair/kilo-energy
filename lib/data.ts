@@ -1286,9 +1286,7 @@ export function getProductCatalogBaselineVersioned(
     ? version.tiers
     : products.find((p) => p.id === productId)?.tiers;
   if (!tiers) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: null };
-  const tier =
-    tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)) ??
-    tiers.reduce((best, t) => (t.minKW > best.minKW ? t : best), tiers[0]);
+  const tier = tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW));
   if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: version?.id ?? null };
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW, pcPricingVersionId: version?.id ?? null };
 }
@@ -1363,7 +1361,7 @@ export function getInstallerRatesForDeal(
   }
   const { rates } = version;
   if (rates.type === 'tiered') {
-    const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW)) ?? rates.bands[rates.bands.length - 1];
+    const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW)) ?? rates.bands[0];
     if (!band) return { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35, versionId: version.id };
     const setter = band.setterPerW != null ? band.setterPerW : Math.round((band.closerPerW + 0.10) * 100) / 100;
     return { closerPerW: band.closerPerW, setterPerW: setter, kiloPerW: band.kiloPerW, subDealerPerW: band.subDealerPerW, versionId: version.id };
@@ -1541,9 +1539,23 @@ export function computeIncentiveProgress(
     case 'revenue':
       return relevantProjects.reduce((s, p) => s + Math.round(p.netPPW * p.kWSize * 1000), 0);
     case 'commission': {
+      if (incentive.targetRepId) {
+        const targetId = incentive.targetRepId;
+        // Split into closer projects and setter-only projects to avoid double-counting self-gen deals
+        const closerProjectIds = new Set(relevantProjects.filter((p) => p.repId === targetId).map((p) => p.id));
+        const setterOnlyProjectIds = new Set(relevantProjects.filter((p) => p.setterId === targetId && p.repId !== targetId).map((p) => p.id));
+        return payrollEntries
+          .filter((e) => {
+            if (e.projectId === null || e.status !== 'Paid' || e.type !== 'Deal' || e.paymentStage === 'Trainer' || e.repId !== targetId) return false;
+            if (closerProjectIds.has(e.projectId)) return e.notes !== 'Setter';
+            if (setterOnlyProjectIds.has(e.projectId)) return e.notes === 'Setter';
+            return false;
+          })
+          .reduce((s, e) => s + e.amount, 0);
+      }
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
       return payrollEntries
-        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal' && e.paymentStage !== 'Trainer' && (incentive.targetRepId === null || e.repId === incentive.targetRepId))
+        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal' && e.paymentStage !== 'Trainer')
         .reduce((s, e) => s + e.amount, 0);
     }
     default:

@@ -1753,25 +1753,26 @@ function NewDealPage() {
                       const blitzId = e.target.value;
                       update('blitzId', blitzId);
                       // Smart default sold date based on blitz date range (#15)
+                      // Only apply if user hasn't manually entered a date (still on the default today value)
                       if (blitzId) {
                         const blitz = availableBlitzes.find((b) => b.id === blitzId);
                         if (blitz?.startDate && blitz?.endDate) {
                           const today = new Date().toLocaleDateString('en-CA');
-                          if (today >= blitz.startDate && today <= blitz.endDate) {
-                            // Today is within the blitz range — keep today
-                            update('soldDate', today);
-                          } else if (today < blitz.startDate) {
-                            // Before blitz — set to blitz start
-                            update('soldDate', blitz.startDate);
-                          } else {
-                            // After blitz — set to blitz end
-                            update('soldDate', blitz.endDate);
+                          if (form.soldDate === today) {
+                            if (today >= blitz.startDate && today <= blitz.endDate) {
+                              // Today is within the blitz range — keep today
+                              update('soldDate', today);
+                            } else if (today < blitz.startDate) {
+                              // Before blitz — set to blitz start
+                              update('soldDate', blitz.startDate);
+                            } else {
+                              // After blitz — set to blitz end
+                              update('soldDate', blitz.endDate);
+                            }
                           }
                         }
-                      } else {
-                        // Blitz deselected — reset soldDate to today
-                        update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
+                      // Blitz deselected — leave soldDate as-is to preserve any manually entered date
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}

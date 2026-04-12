@@ -298,8 +298,8 @@ function PayrollPageInner() {
   const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
   const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
   const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
-  // Header checkbox state: considers all filtered entries across all pages.
-  const allPageSelected = filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id));
+  // Header checkbox state: considers only the visible page entries.
+  const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
 
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
@@ -375,12 +375,12 @@ function PayrollPageInner() {
   };
 
   const selectAll = () => {
-    const allIds = filtered.map((e) => e.id);
-    const allSelected = allIds.every((id) => selectedIds.has(id));
+    const pageIds = paginatedFiltered.map((e) => e.id);
+    const allSelected = pageIds.every((id) => selectedIds.has(id));
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (allSelected) allIds.forEach((id) => next.delete(id));
-      else allIds.forEach((id) => next.add(id));
+      if (allSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
       return next;
     });
   };
@@ -457,11 +457,11 @@ function PayrollPageInner() {
   const isAdmin = currentRole === 'admin';
   if (!isAdmin) {
     const myEntries = payrollEntries.filter((p) => p.repId === currentRepId);
-    const myDraft = myEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-    const myPending = myEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-    const myPaid = myEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
-    const myFiltered = myEntries
-      .filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter)
+    const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);
+    const myDraft = myTypeFiltered.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+    const myPending = myTypeFiltered.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+    const myPaid = myTypeFiltered.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+    const myFiltered = myTypeFiltered
       .filter((p) => repStatusFilter === 'All' || p.status === repStatusFilter)
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
     return (

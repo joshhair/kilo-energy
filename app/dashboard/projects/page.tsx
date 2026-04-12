@@ -151,6 +151,14 @@ function ProjectsPageInner() {
     return v === 'all' ? 'all' : 'phase';
   });
   const [dealScope, setDealScope] = useState<'mine' | 'all'>(isRep ? 'mine' : 'all');
+  // Re-initialise dealScope once effectiveRole resolves from null (context not yet hydrated on first render).
+  const didInitDealScope = useRef(false);
+  useEffect(() => {
+    if (!didInitDealScope.current && effectiveRole !== null) {
+      didInitDealScope.current = true;
+      setDealScope(effectiveRole !== 'admin' && effectiveRole !== 'project_manager' ? 'mine' : 'all');
+    }
+  }, [effectiveRole]);
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
@@ -811,10 +819,12 @@ function KanbanView({
                                   e.stopPropagation();
                                   const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, prevPhase);
-                                  toast(`${proj.customerName} → ${prevPhase}`, 'success', {
-                                    label: 'Undo',
-                                    onClick: () => onPhaseChange(proj.id, originalPhase),
-                                  });
+                                  if (prevPhase !== 'Cancelled' && prevPhase !== 'On Hold') {
+                                    toast(`${proj.customerName} → ${prevPhase}`, 'success', {
+                                      label: 'Undo',
+                                      onClick: () => onPhaseChange(proj.id, originalPhase),
+                                    });
+                                  }
                                 }}
                                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#272b35] hover:bg-amber-600 text-[#c2c8d8] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
@@ -830,10 +840,12 @@ function KanbanView({
                                   e.stopPropagation();
                                   const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, nextPhase);
-                                  toast(`${proj.customerName} → ${nextPhase}`, 'success', {
-                                    label: 'Undo',
-                                    onClick: () => onPhaseChange(proj.id, originalPhase),
-                                  });
+                                  if (nextPhase !== 'Cancelled' && nextPhase !== 'On Hold') {
+                                    toast(`${proj.customerName} → ${nextPhase}`, 'success', {
+                                      label: 'Undo',
+                                      onClick: () => onPhaseChange(proj.id, originalPhase),
+                                    });
+                                  }
                                 }}
                                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#272b35] hover:bg-[#00e07a] text-[#c2c8d8] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}
@@ -1047,10 +1059,12 @@ function KanbanView({
                                   e.stopPropagation();
                                   const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, prevPhase);
-                                  toast(`${proj.customerName} → ${prevPhase}`, 'success', {
-                                    label: 'Undo',
-                                    onClick: () => onPhaseChange(proj.id, originalPhase),
-                                  });
+                                  if (prevPhase !== 'Cancelled' && prevPhase !== 'On Hold') {
+                                    toast(`${proj.customerName} → ${prevPhase}`, 'success', {
+                                      label: 'Undo',
+                                      onClick: () => onPhaseChange(proj.id, originalPhase),
+                                    });
+                                  }
                                 }}
                                 className="p-1 rounded-md bg-[#272b35] hover:bg-amber-600 text-[#c2c8d8] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
@@ -1066,10 +1080,12 @@ function KanbanView({
                                   e.stopPropagation();
                                   const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, nextPhase);
-                                  toast(`${proj.customerName} → ${nextPhase}`, 'success', {
-                                    label: 'Undo',
-                                    onClick: () => onPhaseChange(proj.id, originalPhase),
-                                  });
+                                  if (nextPhase !== 'Cancelled' && nextPhase !== 'On Hold') {
+                                    toast(`${proj.customerName} → ${nextPhase}`, 'success', {
+                                      label: 'Undo',
+                                      onClick: () => onPhaseChange(proj.id, originalPhase),
+                                    });
+                                  }
                                 }}
                                 className="p-1 rounded-md bg-[#272b35] hover:bg-[#00e07a] text-[#c2c8d8] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}

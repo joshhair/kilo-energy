@@ -343,7 +343,7 @@ function NeedsAttentionSection({
                         })()
                       }`}>
                         {item.kind === 'flagged' && 'Flagged for review'}
-                        {item.kind === 'stuck' && `${item.staleDays ?? 0} days in ${item.stuckPhase}`}
+                        {item.kind === 'stuck' && `${item.staleDays ?? 0} days since sold · ${item.stuckPhase}`}
                         {item.kind === 'on-hold' && 'On hold'}
                         {isAdmin && item.repName ? ` \u00b7 ${item.repName}` : ''}
                       </p>
@@ -832,13 +832,12 @@ export default function DashboardPage() {
     if (el) setPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
   }, [period]);
 
-  // Hoist payrollProjectIds + MTD derivations above the isHydrated guard so that
+  // Hoist MTD derivations above the isHydrated guard so that
   // useCountUp (a React hook) is always called unconditionally — hooks rules require
   // every hook to be called in the same order on every render.
   // Use all payroll entries (not period-filtered) so MTD unmatched detection is
   // correct regardless of which period tab is selected.
   const allMyPayroll = payrollEntries.filter((p) => p.repId === effectiveRepId);
-  const payrollProjectIds = new Set(allMyPayroll.map((p) => p.projectId).filter(Boolean));
   const mtdProjects = projects.filter(
     (p) => (p.repId === effectiveRepId || p.setterId === effectiveRepId) && isThisMonth(p.soldDate)
   );
@@ -860,13 +859,11 @@ export default function DashboardPage() {
     }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
 
-  // Animated count-up for the MTD commission hero — always called (hook rules)
-  const animatedMtdCommission = useCountUp(mtdCommission, 1200);
 
   // Fetch @mentions for Needs Attention section (reps + sub-dealers)
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
   const fetchMentions = useCallback(() => {
-    if (!currentRepId || currentRole === 'admin') return;
+    if (!currentRepId) return;
     fetch(`/api/mentions?userId=${currentRepId}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch');
@@ -961,7 +958,6 @@ export default function DashboardPage() {
   }, 0);
 
   // "Total Estimated Pay" = unpaid payroll + expected amounts from projects not yet in payroll
-  // (payrollProjectIds is hoisted above the isHydrated guard — already in scope)
   const unpaidPayroll = allMyPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   // Build a per-project total of ALL payroll entries (any status) so we can subtract
   // what's already accounted for rather than skipping the whole project.
@@ -1599,6 +1595,7 @@ export default function DashboardPage() {
                   ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                   : 0;
               const soldLabel = (() => {
+                if (!proj.soldDate) return '—';
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
                 const sold = new Date(y, m - 1, d);
                 const diff = Math.floor((Date.now() - sold.getTime()) / 86_400_000);
@@ -1852,11 +1849,11 @@ function AdminDashboard({
     let completedCount = 0;
     const pipelinePhaseCounts: Record<string, number> = {};
     for (const phase of ACTIVE_PHASES) pipelinePhaseCounts[phase] = 0;
-    const pipelineActive: typeof allProjects = [];
-    const attentionActiveProjects: typeof allProjects = [];
+    const pipelineActive: typeof projects = [];
+    const attentionActiveProjects: typeof projects = [];
     const installerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
 
-    for (const p of allProjects) {
+    for (const p of projects) {
       if (activeSet.has(p.phase)) {
         activeCount++;
         pipelineActive.push(p);
@@ -1894,7 +1891,7 @@ function AdminDashboard({
       installerRanking,
       maxInstallerDeals,
     };
-  }, [allProjects]);
+  }, [projects]);
 
   const {
     activeCount,
@@ -1932,7 +1929,7 @@ function AdminDashboard({
   };
   // pipelineActive / pipelinePhaseCounts / pipelineNonEmpty / pipelineTotal /
   // attentionActiveProjects are all destructured from allProjectAggregations
-  // above — single-pass computation, memoized on allProjects.
+  // above — single-pass computation, memoized on projects (period-filtered).
 
   // Attention items count (used for All Clear vs Needs Attention)
   const PHASE_STUCK_THRESHOLDS_ADMIN = getPhaseStuckThresholds();
@@ -2314,7 +2311,7 @@ function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
@@ -2615,8 +2612,9 @@ function SubDealerDashboard({
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const estPay = proj.setterId === currentRepId
                 ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                : (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
               const soldLabel = (() => {
+                if (!proj.soldDate) return '—';
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
                 const sold = new Date(y, m - 1, d);
                 const diff = Math.floor((Date.now() - sold.getTime()) / 86_400_000);
