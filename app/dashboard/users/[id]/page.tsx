@@ -10,10 +10,12 @@ import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/dat
 import { formatDate, formatCompactKW } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
-import { ChevronRight, ChevronLeft, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronDown, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
 import { RepSelector } from '../../components/RepSelector';
 import { Sparkline } from '../../../../lib/sparkline';
 import ConfirmDialog from '../../components/ConfirmDialog';
+
+const PIPELINE_PHASES = ['New','Acceptance','Site Survey','Design','Permitting','Pending Install','Installed','PTO','Completed'] as const;
 
 type FetchedUser = {
   id: string;
@@ -52,6 +54,17 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // Pagination state — payment history
   const [payPage, setPayPage] = useState(1);
   const [payPageSize, setPayPageSize] = useState(10);
+  // Sort state — payment history
+  const [paySortCol, setPaySortCol] = useState<'amount' | 'date' | 'status' | null>(null);
+  const [paySortDir, setPaySortDir] = useState<'asc' | 'desc'>('desc');
+  const togglePaySort = (col: typeof paySortCol) => {
+    if (paySortCol === col) {
+      setPaySortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setPaySortCol(col);
+      setPaySortDir('desc');
+    }
+  };
   // Pagination state — projects
   const [projPage, setProjPage] = useState(1);
   const [projPageSize, setProjPageSize] = useState(10);
@@ -616,12 +629,21 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const repPayroll = payrollEntries.filter((p) => p.repId === id);
 
   // Payment history pagination
-  const payTotal = repPayroll.length;
+  const sortedPayroll = paySortCol
+    ? [...repPayroll].sort((a, b) => {
+        let cmp = 0;
+        if (paySortCol === 'amount') cmp = a.amount - b.amount;
+        else if (paySortCol === 'date') cmp = (a.date ?? '').localeCompare(b.date ?? '');
+        else if (paySortCol === 'status') cmp = (a.status ?? '').localeCompare(b.status ?? '');
+        return paySortDir === 'asc' ? cmp : -cmp;
+      })
+    : repPayroll;
+  const payTotal = sortedPayroll.length;
   const payTotalPages = Math.max(1, Math.ceil(payTotal / payPageSize));
   const paySafePage = Math.min(payPage, payTotalPages);
   const payStart = (paySafePage - 1) * payPageSize;
   const payEnd = Math.min(payStart + payPageSize, payTotal);
-  const pagedPayroll = repPayroll.slice(payStart, payEnd);
+  const pagedPayroll = sortedPayroll.slice(payStart, payEnd);
 
   // Projects pagination
   const projTotal = repProjects.length;
@@ -681,6 +703,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const currentOverrideRate = assignment ? getTrainerOverrideRate(assignment, completedDeals) : 0;
 
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
+
+  const [barsMounted, setBarsMounted] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setBarsMounted(true), 50); return () => clearTimeout(t); }, []);
 
   return (
     <div className="p-4 md:p-8 animate-fade-in-up">
@@ -951,7 +976,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <div className="xl:flex xl:flex-col xl:gap-6 xl:min-w-0">
 
       {/* Payment history */}
-      {!isPM && <div className="card-surface rounded-2xl overflow-hidden mb-6">
+      {!isPM && <div className="card-surface rounded-2xl overflow-clip mb-6">
         <div className="px-5 py-4 border-b border-[#333849] flex items-center justify-between">
           <h2 className="text-white font-semibold">Payment History</h2>
           <div className="flex gap-4 text-sm">
@@ -960,14 +985,26 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
         <table className="w-full text-sm">
-          <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+          <thead className="sticky top-0 z-10 bg-[#161920]/95 backdrop-blur-sm border-b border-[#333849] table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
             <tr className="border-b border-[#333849]">
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Customer / Notes</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Type</th>
               <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Stage</th>
-              <th className="text-right px-5 py-3 text-[#c2c8d8] font-medium">Amount</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Status</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Date</th>
+              <th className="text-right px-5 py-3 font-medium">
+                <button onClick={() => togglePaySort('amount')} className={`flex items-center gap-1 ml-auto transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[#00e07a]' : 'text-[#c2c8d8] hover:text-white'}`}>
+                  Amount <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'amount' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
+                </button>
+              </th>
+              <th className="text-left px-5 py-3 font-medium">
+                <button onClick={() => togglePaySort('status')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'status' ? 'text-[#00e07a]' : 'text-[#c2c8d8] hover:text-white'}`}>
+                  Status <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'status' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
+                </button>
+              </th>
+              <th className="text-left px-5 py-3 font-medium">
+                <button onClick={() => togglePaySort('date')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'date' ? 'text-[#00e07a]' : 'text-[#c2c8d8] hover:text-white'}`}>
+                  Date <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'date' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -988,13 +1025,13 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     {entry.paymentStage}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-right text-[#00e07a] font-semibold tabular-nums">
+                <td className={`px-5 py-3 text-right text-[#00e07a] font-semibold tabular-nums${paySortCol === 'amount' ? ' bg-[#00e07a]/[0.015]' : ''}`}>
                   ${entry.amount.toLocaleString()}
                 </td>
-                <td className="px-5 py-3">
+                <td className={`px-5 py-3${paySortCol === 'status' ? ' bg-[#00e07a]/[0.015]' : ''}`}>
                   <StatusBadge status={entry.status} />
                 </td>
-                <td className="px-5 py-3 text-[#8891a8]">{formatDate(entry.date)}</td>
+                <td className={`px-5 py-3 text-[#8891a8]${paySortCol === 'date' ? ' bg-[#00e07a]/[0.015]' : ''}`}>{formatDate(entry.date)}</td>
               </tr>
             ))}
             {repPayroll.length === 0 && (
@@ -1044,7 +1081,28 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   </span>
                 </td>
                 <td className="px-5 py-3">
-                  <PhaseBadge phase={proj.phase} />
+                  <div className="flex flex-col gap-1.5">
+                    <PhaseBadge phase={proj.phase} />
+                    {!['Cancelled', 'On Hold'].includes(proj.phase) && (
+                      <div className="h-[3px] w-full rounded-full bg-[#272b35] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#00c4f0] to-[#00e07a] motion-safe:transition-[width] motion-safe:duration-700 motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
+                          style={{
+                            width: barsMounted
+                              ? `${Math.round(((PIPELINE_PHASES.indexOf(proj.phase as typeof PIPELINE_PHASES[number]) + 1) / PIPELINE_PHASES.length) * 100)}%`
+                              : '0%',
+                            transitionDelay: barsMounted ? `${Math.min(i, 12) * 35}ms` : '0ms',
+                          }}
+                        />
+                      </div>
+                    )}
+                    {proj.phase === 'Cancelled' && (
+                      <div className="h-[3px] w-full rounded-full bg-red-500/30" />
+                    )}
+                    {proj.phase === 'On Hold' && (
+                      <div className="h-[3px] w-full rounded-full bg-yellow-500/30" />
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-3 text-[#c2c8d8]">{proj.installer}</td>
                 <td className="hidden xl:table-cell text-right px-5 py-3 text-[#8891a8] tabular-nums">{formatDate(proj.soldDate)}</td>
