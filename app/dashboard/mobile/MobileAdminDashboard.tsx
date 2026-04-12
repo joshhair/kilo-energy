@@ -162,15 +162,16 @@ export default function MobileAdminDashboard() {
   }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts]);
 
   const totalKW = useMemo(() => active.reduce((s, p) => s + p.kWSize, 0), [active]);
-  const flaggedCount = useMemo(() => periodProjects.filter((p) => p.flagged).length, [periodProjects]);
+  const flaggedCount = useMemo(() => projects.filter((p) => p.flagged).length, [projects]);
 
   // Stalled projects — cumulative days-from-sold thresholds (intentional design: no phaseEnteredAt field exists).
   // A project still in a given phase after this many total days from soldDate is "stuck".
   // This matches desktop logic in page.tsx (DEFAULT_PHASE_STUCK_THRESHOLDS). Do NOT attempt to switch to
   // phase-entry age without first adding a phaseEnteredAt field to the Project schema.
+  // Uses full `projects` (not period-scoped) so Needs Attention matches desktop regardless of selected period.
   const stalledProjects = useMemo(() => {
     const now = Date.now();
-    return active.filter((p) => {
+    return projects.filter((p) => ACTIVE_PHASES.includes(p.phase)).filter((p) => {
       const threshold = PHASE_STUCK_THRESHOLDS[p.phase];
       if (threshold == null) return false;
       if (!p.soldDate) return false;
@@ -178,7 +179,7 @@ export default function MobileAdminDashboard() {
       const days = Math.floor((now - sold) / 86400000);
       return days > threshold;
     });
-  }, [active]);
+  }, [projects]);
 
   // Payroll
   const draftCount = useMemo(() => periodPayroll.filter((e) => e.status === 'Draft').length, [periodPayroll]);
@@ -199,7 +200,7 @@ export default function MobileAdminDashboard() {
   // Top reps by deal count
   const topReps = useMemo(() => {
     const repDeals: Record<string, number> = {};
-    for (const p of active) { repDeals[p.repId] = (repDeals[p.repId] || 0) + 1; }
+    for (const p of periodProjects) { repDeals[p.repId] = (repDeals[p.repId] || 0) + 1; }
     return Object.entries(repDeals)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
@@ -207,7 +208,7 @@ export default function MobileAdminDashboard() {
         const rep = reps.find((r) => r.id === id);
         return { name: rep?.name ?? 'Unknown', count };
       });
-  }, [active, reps]);
+  }, [periodProjects, reps]);
 
   // ── Animated counters ────────────────────────────────────────────────────
   const animatedRevenue = useCountUp(Math.round(totalRevenue), 350);

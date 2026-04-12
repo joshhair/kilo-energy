@@ -14,7 +14,7 @@ import { PaginationBar, buildPageRange } from '../components/PaginationBar';
 import ConfirmDialog from '../components/ConfirmDialog';
 import MobileProjects from '../mobile/MobileProjects';
 
-type StatusFilter = 'active' | 'all' | 'completed' | 'cancelled' | 'on-hold';
+type StatusFilter = 'active' | 'all' | 'completed' | 'cancelled' | 'on-hold' | 'inactive';
 
 /** Returns the number of calendar days between a YYYY-MM-DD date string and today. */
 function daysSince(dateStr: string): number {
@@ -70,6 +70,7 @@ function applyStatusFilter(projects: ReturnType<typeof useApp>['projects'], stat
   if (status === 'completed') return projects.filter((p) => p.phase === 'Completed');
   if (status === 'cancelled') return projects.filter((p) => p.phase === 'Cancelled');
   if (status === 'on-hold') return projects.filter((p) => p.phase === 'On Hold');
+  if (status === 'inactive') return projects.filter((p) => p.phase === 'Cancelled' || p.phase === 'On Hold');
   return projects;
 }
 
@@ -122,6 +123,7 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
   completed: 'Completed',
   cancelled: 'Cancelled',
   'on-hold': 'On Hold',
+  inactive: 'Inactive',
 };
 
 export default function ProjectsPage() {
@@ -153,7 +155,7 @@ function ProjectsPageInner() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
     const v = searchParams.get('status') as StatusFilter | null;
-    return v && ['active', 'all', 'completed', 'cancelled', 'on-hold'].includes(v) ? v : 'active';
+    return v && ['active', 'all', 'completed', 'cancelled', 'on-hold', 'inactive'].includes(v) ? v : 'active';
   });
   const [installerFilter, setInstallerFilter] = useState(() => searchParams.get('installer') ?? '');
   const [phaseFilter, setPhaseFilter] = useState(() => searchParams.get('phase') ?? '');

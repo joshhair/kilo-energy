@@ -1920,7 +1920,7 @@ function AdminDashboard({
 
   const pipelineStats = [
     { label: 'Active Projects', value: activeCount, raw: activeCount, format: (n: number) => n.toString(), accentHex: '#00c4f0', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
-    { label: 'Inactive Projects', value: inactiveCount, raw: inactiveCount, format: (n: number) => n.toString(), accentHex: '#525c72', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?phase=On+Hold', tooltip: 'Projects that are cancelled or on hold' },
+    { label: 'Inactive Projects', value: inactiveCount, raw: inactiveCount, format: (n: number) => n.toString(), accentHex: '#525c72', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?status=inactive', tooltip: 'Projects that are cancelled or on hold' },
     { label: 'Completed Projects', value: completedCount, raw: completedCount, format: (n: number) => n.toString(), accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
@@ -2194,7 +2194,7 @@ function AdminDashboard({
 
       {/* ── Cancellation Reasons Summary ──────────────────────────────────── */}
       {(() => {
-        const cancelledProjects = allProjects.filter((p) => p.phase === 'Cancelled');
+        const cancelledProjects = projects.filter((p) => p.phase === 'Cancelled');
         if (cancelledProjects.length === 0) return null;
         const reasonCounts = new Map<string, number>();
         for (const p of cancelledProjects) {
