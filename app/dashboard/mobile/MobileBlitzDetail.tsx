@@ -87,11 +87,16 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     if (!selectedRepId) return;
     setAddingParticipant(true);
     try {
-      await fetch(`/api/blitzes/${blitzId}/participants`, {
+      const response = await fetch(`/api/blitzes/${blitzId}/participants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: selectedRepId, joinStatus: 'approved' }),
       });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        toast(err?.error || 'Failed to add participant', 'error');
+        return;
+      }
       toast('Participant added');
       setShowAddParticipant(false);
       setSelectedRepId('');
@@ -100,7 +105,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   };
 
   const handleRemoveParticipant = async (userId: string) => {
-    await fetch(`/api/blitzes/${blitzId}/participants?userId=${userId}`, { method: 'DELETE' });
+    const response = await fetch(`/api/blitzes/${blitzId}/participants?userId=${userId}`, { method: 'DELETE' });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      toast(err?.error || 'Failed to remove participant', 'error');
+      return;
+    }
     toast('Participant removed');
     setRemoveTarget(null);
     loadBlitz();

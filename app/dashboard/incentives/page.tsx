@@ -279,25 +279,20 @@ export default function IncentivesPage() {
   };
 
   const handleMilestoneAchieved = (incId: string, milestoneId: string, achieved: boolean) => {
+    let updatedMilestones: Incentive['milestones'] | null = null;
     setIncentives((prev) =>
-      prev.map((inc) =>
-        inc.id === incId
-          ? {
-              ...inc,
-              milestones: inc.milestones.map((m) =>
-                m.id === milestoneId ? { ...m, achieved } : m
-              ),
-            }
-          : inc
-      )
+      prev.map((inc) => {
+        if (inc.id !== incId) return inc;
+        const milestones = inc.milestones.map((m) =>
+          m.id === milestoneId ? { ...m, achieved } : m
+        );
+        updatedMilestones = milestones;
+        return { ...inc, milestones };
+      })
     );
     if (achieved) toast('Milestone marked as achieved!', 'success');
-    // Persist milestone change to the database
-    const inc = incentives.find((i) => i.id === incId);
-    if (inc) {
-      const updatedMilestones = inc.milestones.map((m) =>
-        m.id === milestoneId ? { ...m, achieved } : m
-      );
+    // Persist milestone change using latest state captured from the updater
+    if (updatedMilestones) {
       fetch(`/api/incentives/${incId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
