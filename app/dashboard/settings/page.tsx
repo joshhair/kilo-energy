@@ -324,7 +324,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
         onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
         onConfirm={() => { executeBulk(confirmDialog.action); setConfirmDialog({ ...confirmDialog, open: false }); }}
         title={confirmDialog.action === 'grant' ? 'Grant All Permissions' : 'Revoke All Permissions'}
-        message={`This will ${confirmDialog.action === 'grant' ? 'grant' : 'revoke'} both Request and Create permissions for ${filteredReps.length} visible rep${filteredReps.length !== 1 ? 's' : ''}. Continue?`}
+        message={`This will ${confirmDialog.action === 'grant' ? 'grant' : 'revoke'} both Request and Create permissions for ${filteredReps.length} matching rep${filteredReps.length !== 1 ? 's' : ''}. Continue?`}
         confirmLabel={confirmDialog.action === 'grant' ? 'Grant All' : 'Revoke All'}
         danger={confirmDialog.action === 'revoke'}
       />

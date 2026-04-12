@@ -717,7 +717,7 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[#c2c8d8] hover:text-white'}`}>
-            {t === 'deal' ? `Payroll Report (${sortedDealsBase.filter(r => r.kind === 'payroll').length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}
+            {t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}
           </button>
         ))}
       </div>

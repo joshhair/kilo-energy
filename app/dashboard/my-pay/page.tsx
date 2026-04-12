@@ -262,7 +262,7 @@ function MyPayPageInner() {
   }, [myProjects]);
 
   const projectedM2 = useMemo(() => {
-    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
+    const preInstalled = ['Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
     return myProjects
       .filter((p) => preInstalled.includes(p.phase))
       .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
@@ -288,7 +288,7 @@ function MyPayPageInner() {
     // Average commission per deal (M1 + M2)
     const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
       const isSetterRole = p.setterId === effectiveRepId;
-      const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (!p.setterId ? (p.m1Amount ?? 0) : 0);
+      const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
       const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
       return s + m1 + m2;
     }, 0) / totalDeals;
