@@ -948,7 +948,7 @@ function KanbanView({
   return (
     <div className="space-y-6">
       {kanbanSearchBar}
-      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4">
+      <div className="flex gap-4 overflow-x-auto [overflow-y:clip] snap-x snap-mandatory pb-4">
         {activePhasesForKanban.map((phase) => {
           const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
           // Next phase in the pipeline (undefined for PTO — the last active phase).
@@ -1561,6 +1561,11 @@ function TableView({
 
   // Sync sort to URL (read current params to preserve other filters)
   useEffect(() => {
+    // Skip if the URL already reflects the current sort state — avoids overwriting
+    // the parent's concurrent router.replace when both effects fire on initial mount.
+    const currentSort = tableSearchParams.get('sort') ?? 'soldDate';
+    const currentDir = tableSearchParams.get('dir') ?? 'desc';
+    if (currentSort === sortKey && currentDir === sortDirection) return;
     const params = new URLSearchParams(window.location.search);
     if (sortKey !== 'soldDate') params.set('sort', sortKey); else params.delete('sort');
     if (sortDirection !== 'desc') params.set('dir', sortDirection); else params.delete('dir');
@@ -1924,8 +1929,7 @@ function TableView({
       </div>
 
       {/* ── Desktop table view (md+) ─────────────────────────────────── */}
-      <div className="hidden md:block card-surface rounded-2xl overflow-auto">
-        <div className="overflow-x-auto scroll-smooth">
+      <div className="hidden md:block card-surface rounded-2xl overflow-x-auto scroll-smooth">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10" style={{ background: '#1d2028' }}>
               <tr>
@@ -2171,7 +2175,6 @@ function TableView({
               )}
             </tbody>
           </table>
-        </div>
         {/* ── Pagination bar ─────────────────────────────────────────── */}
         <PaginationBar
           totalResults={totalResults} startIdx={startIdx} endIdx={endIdx}
