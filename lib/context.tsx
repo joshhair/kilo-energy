@@ -660,6 +660,95 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return prevEntries;
           });
         }
+
+        // Create Draft payroll entries for the incoming setter for any milestones the
+        // project has already crossed. Without this, the new setter would never get paid
+        // unless milestones were manually cycled backward and forward again.
+        if (updates.setterId) {
+          const newSetterId = updates.setterId;
+          const newSetterRep = reps.find((r) => r.id === newSetterId);
+          const effectivePhase = (updates.phase ?? old.phase) as string;
+          const PIPELINE = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
+          const effectiveIdx = PIPELINE.indexOf(effectivePhase);
+          const pastAcceptance = effectiveIdx >= PIPELINE.indexOf('Acceptance');
+          const pastInstalled = effectiveIdx >= PIPELINE.indexOf('Installed');
+          const pastPTO = effectiveIdx >= PIPELINE.indexOf('PTO');
+
+          setPayrollEntries((prevEntries) => {
+            const ts = Date.now();
+            const newEntries: PayrollEntry[] = [];
+
+            if (pastAcceptance && (old.setterM1Amount ?? 0) > 0) {
+              const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M1');
+              if (!hasM1) {
+                newEntries.push({
+                  id: `pay_${ts}_m1_s`,
+                  repId: newSetterId,
+                  repName: newSetterRep?.name ?? '',
+                  projectId: id,
+                  customerName: old.customerName,
+                  amount: old.setterM1Amount!,
+                  type: 'Deal',
+                  paymentStage: 'M1',
+                  status: 'Draft',
+                  date: getM1PayDate(),
+                  notes: 'Setter',
+                });
+              }
+            }
+
+            if (pastInstalled && (old.setterM2Amount ?? 0) > 0) {
+              const hasM2 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M2');
+              if (!hasM2) {
+                newEntries.push({
+                  id: `pay_${ts}_m2_s`,
+                  repId: newSetterId,
+                  repName: newSetterRep?.name ?? '',
+                  projectId: id,
+                  customerName: old.customerName,
+                  amount: old.setterM2Amount!,
+                  type: 'Deal',
+                  paymentStage: 'M2',
+                  status: 'Draft',
+                  date: getM2PayDate(),
+                  notes: 'Setter',
+                });
+              }
+            }
+
+            if (pastPTO) {
+              const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+              const hasM2Entry = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
+              const setterM3 = (old.setterM3Amount ?? 0) > 0
+                ? old.setterM3Amount!
+                : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
+                  ? Math.round((old.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+                  : 0;
+              if (setterM3 > 0 && hasM2Entry) {
+                const hasM3 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M3');
+                if (!hasM3) {
+                  newEntries.push({
+                    id: `pay_${ts}_m3_s`,
+                    repId: newSetterId,
+                    repName: newSetterRep?.name ?? '',
+                    projectId: id,
+                    customerName: old.customerName,
+                    amount: setterM3,
+                    type: 'Deal',
+                    paymentStage: 'M3',
+                    status: 'Draft',
+                    date: getM2PayDate(),
+                    notes: 'Setter',
+                  });
+                }
+              }
+            }
+
+            const validEntries = newEntries.filter((e) => e.amount > 0);
+            validEntries.forEach((entry) => persistPayrollEntry(entry));
+            return [...prevEntries, ...validEntries];
+          });
+        }
       }
     }
 
@@ -1135,7 +1224,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (stageAmountUpdates.length > 0) {
       setPayrollEntries((prev) =>
         prev.map((e) => {
-          if (e.projectId !== id || e.status !== 'Draft' || e.type !== 'Deal') return e;
+          if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal') return e;
           const match = stageAmountUpdates.find(
             (u) => u.stage === e.paymentStage && u.setter === (e.notes === 'Setter')
           );
@@ -1691,10 +1780,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const markForPayroll = (entryIds: string[]) => {
     const idSet = new Set(entryIds);
-    // Snapshot before optimistic update so we can rollback on failure.
-    // Captured synchronously here — not inside the updater — so it's always
-    // available when the async PATCH callback fires.
-    const snapshot = payrollEntries;
+    const rollback = () =>
+      setPayrollEntries((prev) =>
+        prev.map((e) => (idSet.has(e.id) && e.status === 'Pending' ? { ...e, status: 'Draft' } : e))
+      );
     setPayrollEntries((prev) =>
       prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e))
     );
@@ -1716,7 +1805,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     resolveIds().then((resolvedIds) => {
       if (resolvedIds.length === 0) {
         // All entries failed to persist — rollback the optimistic update
-        if (snapshot !== null) setPayrollEntries(snapshot);
+        rollback();
         return;
       }
       // Persist bulk status update — rollback on any failure
@@ -1725,9 +1814,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: resolvedIds, status: 'Pending' }),
       }, 'Failed to update payroll status').then((res) => {
-        if (!res.ok && snapshot !== null) setPayrollEntries(snapshot);
+        if (!res.ok) rollback();
       }).catch(() => {
-        if (snapshot !== null) setPayrollEntries(snapshot);
+        rollback();
       });
     });
   };

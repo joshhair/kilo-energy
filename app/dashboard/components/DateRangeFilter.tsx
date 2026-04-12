@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { X } from 'lucide-react';
+import { localDateString } from '@/lib/utils';
 
 interface DateRangeFilterProps {
   from: string;
@@ -16,10 +17,6 @@ interface Preset {
   getRange: () => { from: string; to: string };
 }
 
-function toISO(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-
 function getPresets(): Preset[] {
   const now = new Date();
   const y = now.getFullYear();
@@ -29,15 +26,15 @@ function getPresets(): Preset[] {
     {
       label: 'This Month',
       getRange: () => ({
-        from: toISO(new Date(y, m, 1)),
-        to: toISO(new Date(y, m + 1, 0)),
+        from: localDateString(new Date(y, m, 1)),
+        to: localDateString(new Date(y, m + 1, 0)),
       }),
     },
     {
       label: 'Last Month',
       getRange: () => ({
-        from: toISO(new Date(y, m - 1, 1)),
-        to: toISO(new Date(y, m, 0)),
+        from: localDateString(new Date(y, m - 1, 1)),
+        to: localDateString(new Date(y, m, 0)),
       }),
     },
     {
@@ -46,7 +43,7 @@ function getPresets(): Preset[] {
         const end = new Date(now);
         const start = new Date(now);
         start.setDate(start.getDate() - 30);
-        return { from: toISO(start), to: toISO(end) };
+        return { from: localDateString(start), to: localDateString(end) };
       },
     },
     {
@@ -54,8 +51,8 @@ function getPresets(): Preset[] {
       getRange: () => {
         const qStart = Math.floor(m / 3) * 3;
         return {
-          from: toISO(new Date(y, qStart, 1)),
-          to: toISO(new Date(y, qStart + 3, 0)),
+          from: localDateString(new Date(y, qStart, 1)),
+          to: localDateString(new Date(y, qStart + 3, 0)),
         };
       },
     },
