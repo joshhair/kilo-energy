@@ -696,7 +696,7 @@ function NewDealPage() {
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer }));
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
     setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
@@ -706,7 +706,7 @@ function NewDealPage() {
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer }));
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
     setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
@@ -1523,7 +1523,7 @@ function NewDealPage() {
                         options={(pcConfig?.familyFinancerMap?.[form.pcFamily]
                           ? (activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
                               ? activeFinancers.filter((f) => f === pcConfig.familyFinancerMap![form.pcFamily])
-                              : [])
+                              : activeFinancers)
                           : activeFinancers
                         ).map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"

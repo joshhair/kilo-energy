@@ -1120,6 +1120,7 @@ function AdminFinancialsView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { payrollEntries, setPayrollEntries, reimbursements, setReimbursements, reps } = useApp();
+  const isHydrated = useIsHydrated();
   const { toast } = useToast();
 
   // Stats
@@ -1262,7 +1263,7 @@ function AdminFinancialsView() {
     const idx = TABS.indexOf(tab);
     const el = tabRefs.current[idx];
     if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tab]);
+  }, [tab, isHydrated]);
 
   const pendingPayrollCount = payrollEntries.filter((e) => e.status === 'Pending').length;
   const pendingReimbCount   = reimbursements.filter((r) => r.status === 'Pending').length;
