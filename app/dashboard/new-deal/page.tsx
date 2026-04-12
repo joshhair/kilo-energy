@@ -713,14 +713,14 @@ function NewDealPage() {
 
   // When a blitz is selected, only approved participants of that blitz may be setters.
   const setterPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active);
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both'));
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
         .filter((p: any) => p.joinStatus === 'approved')
         .map((p: any) => p.userId as string),
     );
-    return reps.filter((r) => approvedIds.has(r.id));
+    return reps.filter((r) => approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Trainer override tier progression counts deals where the FINAL milestone

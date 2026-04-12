@@ -909,7 +909,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     const editSetterM1Amount = editVals.setterId ? Math.min(editM1Flat, Math.max(0, editSetterTotal)) : 0;
     const editInstallPayPct = installerPayConfigs[editVals.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
     const editHasM3 = editInstallPayPct < 100 && !project.subDealerId;
-    const editCloserM2Full = Math.max(0, editCloserTotal - Math.min(editM1Flat, Math.max(0, editCloserTotal)));
+    const editCloserM1 = editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, editCloserTotal));
+    const editCloserM2Full = Math.max(0, editCloserTotal - editCloserM1);
     const editSetterM2Full = Math.max(0, editSetterTotal - editSetterM1Amount);
     const editM2Amount = Math.round(editCloserM2Full * (editInstallPayPct / 100) * 100) / 100;
     const editM3Amount = editHasM3 ? Math.round(editCloserM2Full * ((100 - editInstallPayPct) / 100) * 100) / 100 : 0;
@@ -1601,7 +1602,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
                   className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]">
                   <option value="">— None —</option>
-                  {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && r.id !== project.repId).map((r) => (
+                  {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && r.active && r.id !== project.repId).map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
