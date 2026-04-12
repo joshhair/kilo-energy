@@ -652,6 +652,7 @@ function SettingsPageInner() {
     setEditingInstaller(null);
     setEditingAssignmentId(null);
     setEditingPrepaid(null);
+    setEditingProductName(null);
     if (pendingSection) {
       setSection(pendingSection);
       router.replace(`/dashboard/settings?section=${pendingSection}`, { scroll: false });
@@ -1009,7 +1010,7 @@ function SettingsPageInner() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Only act when an edit is in progress
-      const isEditActive = editingInstaller !== null || editingAssignmentId !== null || editingPrepaid !== null;
+      const isEditActive = editingInstaller !== null || editingAssignmentId !== null || editingPrepaid !== null || editingProductName !== null;
       if (!isEditActive) return;
 
       // Don't intercept if user is in an input/select/textarea (Enter should work normally there for some)
@@ -1021,6 +1022,7 @@ function SettingsPageInner() {
         setEditingInstaller(null);
         setEditingAssignmentId(null);
         setEditingPrepaid(null);
+        setEditingProductName(null);
         // Clear bulk selections
         if (installerSelectMode) { setInstallerSelectMode(false); setSelectedInstallers(new Set()); }
         if (financerSelectMode) { setFinancerSelectMode(false); setSelectedFinancers(new Set()); }
@@ -1048,6 +1050,11 @@ function SettingsPageInner() {
           setTrainerAssignments((prev) =>
             prev.map((x) => (x.id === editingAssignmentId ? { ...x, tiers: editingTiers } : x))
           );
+          fetch('/api/trainer-assignments', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: editingAssignmentId, tiers: editingTiers }),
+          }).catch(console.error);
           setEditingAssignmentId(null);
         }
         // Save prepaid edit
@@ -1119,7 +1126,18 @@ function SettingsPageInner() {
                   traineeId: saved.assignment.traineeId,
                   tiers: saved.assignment.tiers,
                 }),
-              }).catch(console.error);
+              })
+                .then((r) => r.json())
+                .then((created) => {
+                  if (created?.id) {
+                    setTrainerAssignments((prev) =>
+                      prev.map((a) =>
+                        a.id === saved.assignment.id ? { ...a, id: created.id } : a,
+                      ),
+                    );
+                  }
+                })
+                .catch(console.error);
             }
           },
         });
