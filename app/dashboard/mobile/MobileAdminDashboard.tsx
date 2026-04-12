@@ -73,8 +73,9 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'last-year', label: 'Last Year' },
 ];
 
-function isInPeriod(dateStr: string, period: Period): boolean {
+function isInPeriod(dateStr: string | null, period: Period): boolean {
   if (period === 'all') return true;
+  if (!dateStr) return false;
   const now = new Date();
   const [y, m, d] = dateStr.split('-').map(Number);
   const date = new Date(y, m - 1, d);

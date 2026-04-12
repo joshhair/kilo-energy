@@ -179,6 +179,7 @@ function NeedsAttentionSection({
     if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
+    if (!proj.soldDate) continue;
     const [y, m, d] = proj.soldDate.split('-').map(Number);
     const sold = new Date(y, m - 1, d);
     const diffDays = Math.floor((today.getTime() - sold.getTime()) / 86_400_000);
@@ -197,6 +198,7 @@ function NeedsAttentionSection({
 
   for (const proj of activeProjects) {
     if (proj.phase === 'On Hold') {
+      if (!proj.soldDate) continue;
       const [y, m, d] = proj.soldDate.split('-').map(Number);
       const sold = new Date(y, m - 1, d);
       const holdDays = Math.floor((today.getTime() - sold.getTime()) / 86_400_000);
@@ -1580,7 +1582,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
-            {[...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8).map((proj) => {
+            {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const installPayPct = installerPayConfigs[proj.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const m2DisplayAmount = Math.round((proj.m2Amount ?? 0) * (installPayPct / 100) * 100) / 100;
               const closerM1 = proj.setterId ? 0 : (proj.m1Amount ?? 0);
@@ -2234,7 +2236,7 @@ function AdminDashboard({
             case 'kWSize': cmp = a.kWSize - b.kWSize; break;
             case 'netPPW': cmp = a.netPPW - b.netPPW; break;
             case 'phase': cmp = a.phase.localeCompare(b.phase); break;
-            case 'soldDate': cmp = a.soldDate.localeCompare(b.soldDate); break;
+            case 'soldDate': cmp = (a.soldDate ?? '').localeCompare(b.soldDate ?? ''); break;
           }
           return sortDir === 'asc' ? cmp : -cmp;
         });
@@ -2592,7 +2594,7 @@ function SubDealerDashboard({
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
-            {[...myProjects].sort((a, b) => b.soldDate.localeCompare(a.soldDate)).slice(0, 8).map((proj) => {
+            {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const estPay = (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
               const soldLabel = (() => {
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
