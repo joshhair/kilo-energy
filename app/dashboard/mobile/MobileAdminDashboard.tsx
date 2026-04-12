@@ -159,8 +159,7 @@ export default function MobileAdminDashboard() {
       prof += (closerPerW - kiloPerW) * w;
     }
     return { totalPaid: paid, totalRevenue: rev, totalProfit: prof };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions]);
+  }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts]);
 
   const totalKW = useMemo(() => active.reduce((s, p) => s + p.kWSize, 0), [active]);
   const flaggedCount = useMemo(() => periodProjects.filter((p) => p.flagged).length, [periodProjects]);
@@ -178,7 +177,7 @@ export default function MobileAdminDashboard() {
       const sold = new Date(p.soldDate).getTime();
       const days = Math.floor((now - sold) / 86400000);
       return days > threshold;
-    }).slice(0, 5);
+    });
   }, [active]);
 
   // Payroll
