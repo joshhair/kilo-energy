@@ -829,8 +829,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const saveM1 = () => {
     const val = parseFloat(m1Val);
-    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); }
-    setEditM1(false);
+    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
+    else { toast('Invalid amount', 'error'); }
   };
 
   const saveM2 = () => {
@@ -845,8 +845,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const newSetterM3 = Math.round((project.setterM3Amount ?? 0) * scale * 100) / 100;
       updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
       toast('M2 amount updated', 'success');
-    }
-    setEditM2(false);
+      setEditM2(false);
+    } else { toast('Invalid amount', 'error'); }
   };
 
   const openEditModal = () => {

@@ -75,6 +75,23 @@
   .cta-bar-enter { animation: none; }
 }
 
+/* ── Monthly bar chart grow-from-bottom entrance ────────────────────────────
+   transform-box:fill-box + transform-origin:bottom center anchors the scale
+   to each SVG rect's own baseline so bars grow upward from the axis.
+   backwards fill-mode hides bars during their stagger delay.                */
+@keyframes barGrow {
+  from { transform: scaleY(0); opacity: 0.3; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+.bar-enter {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: barGrow 520ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-enter { animation: none; }
+}
+
 /* ── Scrollbar-gutter: prevents layout shift ────────────────────────────────
    Reserving space for the scrollbar before it appears stops the content
    area from reflowing when the page grows tall enough to need one.          */

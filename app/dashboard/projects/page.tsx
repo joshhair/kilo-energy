@@ -1332,6 +1332,7 @@ function SetterPopover({
 
   // Apply search filter; exclude closers and the current setter (shown pinned at top)
   const otherReps = reps
+    .filter((r) => r.active)
     .filter((r) => r.id !== currentSetterId)
     .filter((r) => r.repType !== 'closer')
     .filter((r) => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -1946,6 +1947,7 @@ function TableView({
                     <Link
                       href={`/dashboard/projects/${proj.id}`}
                       className="text-white hover:text-[#00e07a] transition-colors flex items-center gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {proj.customerName}
                       {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}

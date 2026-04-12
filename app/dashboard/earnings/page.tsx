@@ -292,7 +292,8 @@ function MonthlyEarningsBarChart({
                       height={Math.max(bh, 0)}
                       rx={3}
                       fill={bar.color}
-                      className="transition-all duration-150 hover:brightness-125"
+                      className="bar-enter transition-all duration-150 hover:brightness-125"
+                      style={{ animationDelay: `${(i * barsPerGroup + bi) * 55}ms` }}
                     />
                   );
                 })}
