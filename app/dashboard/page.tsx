@@ -1759,11 +1759,6 @@ function AdminDashboard({
 
   // Search filter for Recent Projects table
   const [recentSearch, setRecentSearch] = useState('');
-  const [barMounted, setBarMounted] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setBarMounted(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
   const [insightsExpanded, setInsightsExpanded] = useState(false);
   const [cancellationExpanded, setCancellationExpanded] = useState(false);
   const [recentExpanded, setRecentExpanded] = useState(true);
@@ -2005,7 +2000,7 @@ function AdminDashboard({
           <Link
             key={label}
             href={href}
-            className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 border font-bold text-sm motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:scale-[1.02] motion-safe:hover:translate-y-[-2px] active:scale-[0.97] ${bgClass} ${hoverBg} ${borderCls} ${textCls}`}
+            className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 border font-bold text-sm ${bgClass} ${hoverBg} ${borderCls} ${textCls}`}
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
             <Icon className="w-[15px] h-[15px] flex-shrink-0" />
@@ -2016,10 +2011,10 @@ function AdminDashboard({
 
       {/* Top 6 GradCard stats */}
       <div className="grid grid-cols-2 xl:grid-cols-6 gap-4 mb-4">
-        {topStats.map((stat, i) => {
+        {topStats.map((stat) => {
           const gc = gradCardConfig[stat.label] ?? { color: stat.accentHex, grad: 'linear-gradient(135deg, #101012, #141416)' };
           return (
-            <Link key={stat.label} href={stat.href} className={`group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${Math.min(i + 1, 6)}`} style={{ textDecoration: 'none' }}>
+            <Link key={stat.label} href={stat.href} className="group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px]" style={{ textDecoration: 'none' }}>
               <div style={{
                 background: gc.grad,
                 border: `1px solid ${gc.color}40`,
@@ -2078,9 +2073,9 @@ function AdminDashboard({
                 <div
                   key={phase}
                   style={{
-                    width: barMounted ? `${(pipelinePhaseCounts[phase] / pipelineTotal) * 100}%` : '0%',
+                    width: `${(pipelinePhaseCounts[phase] / pipelineTotal) * 100}%`,
                     background: PHASE_HEX[phase] ?? '#525c72',
-                    transition: 'width 700ms cubic-bezier(0.16, 1, 0.3, 1)',
+                    transition: 'width 0.7s ease-out',
                   }}
                 />
               ))}

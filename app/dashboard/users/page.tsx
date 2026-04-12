@@ -1546,17 +1546,20 @@ function UsersPageInner() {
 
             {/* Send Clerk invitation toggle */}
             <div className="mb-5">
-              <label className="flex items-center gap-3 cursor-pointer select-none">
+              <label className={`flex items-center gap-3 select-none ${(newUserRole === 'admin' || newUserRole === 'project_manager') ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}>
                 <input
                   type="checkbox"
-                  checked={sendInvite}
+                  checked={sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager'}
                   onChange={(e) => setSendInvite(e.target.checked)}
-                  className="w-4 h-4 rounded border-[#333849] accent-[#00e07a] cursor-pointer"
+                  disabled={newUserRole === 'admin' || newUserRole === 'project_manager'}
+                  className="w-4 h-4 rounded border-[#333849] accent-[#00e07a] cursor-pointer disabled:cursor-not-allowed"
                 />
                 <div className="flex-1">
                   <div className="text-sm font-medium text-white">Send invitation email</div>
                   <div className="text-[11px]" style={{ color: '#8891a8' }}>
-                    Emails the rep a sign-up link. Leave off to add them without giving app access yet.
+                    {(newUserRole === 'admin' || newUserRole === 'project_manager')
+                      ? 'Required for this role — admin and project manager accounts must receive an invite to access the app.'
+                      : 'Emails the rep a sign-up link. Leave off to add them without giving app access yet.'}
                   </div>
                 </div>
               </label>

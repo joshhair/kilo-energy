@@ -176,9 +176,10 @@ function PayrollPageInner() {
   // Keyboard shortcuts: Escape → deselect, Enter → mark for payroll, Shift+A → select/deselect all
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // handleMarkForPayroll and selectAll are defined after the isMobile early return,
-      // so skip all shortcuts on mobile to avoid calling uninitialized bindings.
-      if (isMobile) return;
+      // handleMarkForPayroll and selectAll are defined after both the isMobile and
+      // project_manager early returns, so skip all shortcuts on those render paths
+      // to avoid calling uninitialized bindings (TDZ ReferenceError).
+      if (isMobile || effectiveRole === 'project_manager') return;
 
       // Skip if an input element is focused
       const target = e.target as HTMLElement;
@@ -214,7 +215,7 @@ function PayrollPageInner() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId]);
+  }, [isMobile, effectiveRole, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
   // ── Single-pass filter + totals ───────────────────────────────────────
   // Was: 5 separate passes over payrollEntries (2700+ rows) per render:
@@ -251,15 +252,12 @@ function PayrollPageInner() {
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
   // Derived selection state — used by the floating action bar.
-  // Single walk through filtered to compute both totals together.
-  const { selectedTotal, allFilteredSelected } = useMemo(() => {
+  const { selectedTotal } = useMemo(() => {
     let total = 0;
-    let all = filtered.length > 0;
     for (const e of filtered) {
       if (selectedIds.has(e.id)) total += e.amount;
-      else all = false;
     }
-    return { selectedTotal: total, allFilteredSelected: all };
+    return { selectedTotal: total };
   }, [filtered, selectedIds]);
 
   // Floating toolbar is visible whenever one or more Draft entries are selected.
@@ -293,6 +291,8 @@ function PayrollPageInner() {
   const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
   const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
   const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
+  // Header checkbox state: only considers entries visible on the current page.
+  const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
 
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
@@ -357,9 +357,14 @@ function PayrollPageInner() {
   };
 
   const selectAll = () => {
-    const allIds = filtered.map((e) => e.id);
-    const allSelected = allIds.every((id) => selectedIds.has(id));
-    setSelectedIds(allSelected ? new Set() : new Set(allIds));
+    const pageIds = paginatedFiltered.map((e) => e.id);
+    const allSelected = pageIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const handleAddBonus = async (e: React.FormEvent) => {
@@ -834,13 +839,13 @@ function PayrollPageInner() {
             onClear={() => { setPayFilterFrom(''); setPayFilterTo(''); setAdminPage(1); setSelectedIds(new Set()); }}
           />
           {/* Bulk actions (when selected) */}
-          {statusTab === 'Draft' && selectedIds.size > 0 && (
+          {statusTab === 'Draft' && (
             <button
               onClick={selectAll}
               className="text-xs hover:text-white underline transition-colors"
               style={{ color: '#8891a8' }}
             >
-              {allFilteredSelected ? 'Deselect All' : 'Select All'}
+              {allPageSelected ? 'Deselect All' : 'Select All'}
             </button>
           )}
           {/* Entry count */}
@@ -886,7 +891,7 @@ function PayrollPageInner() {
               <tr>
                 {statusTab === 'Draft' && (
                   <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const, width: 40 }}>
-                    <input type="checkbox" checked={allFilteredSelected} onChange={selectAll} style={{ accentColor: '#00e07a', cursor: 'pointer' }} />
+                    <input type="checkbox" checked={allPageSelected} onChange={selectAll} style={{ accentColor: '#00e07a', cursor: 'pointer' }} />
                   </th>
                 )}
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Rep</th>
