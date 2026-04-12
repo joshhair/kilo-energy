@@ -329,8 +329,9 @@ export default function MobileNewDeal() {
   const handlePcFamilyChange = (value: string) => {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: mappedFinancer }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', mappedFinancer) }));
+    const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 
@@ -339,7 +340,8 @@ export default function MobileNewDeal() {
   const closerId = currentRole === 'admin' ? form.repId : (currentRepId ?? '');
 
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
-  const hasSolarTechProducts = solarTechFamily !== '';
+  const solarTechFamilyProducts = solarTechProducts.filter((p) => p.family === solarTechFamily);
+  const hasSolarTechProducts = solarTechFamilyProducts.length > 0;
 
   const pcConfig = productCatalogInstallerConfigs[form.installer] ?? null;
   const isPcInstaller = pcConfig !== null;
