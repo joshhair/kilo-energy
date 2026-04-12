@@ -906,6 +906,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       : Math.round((editBaseline.closerPerW + 0.10) * 100) / 100;
     const editSetterTotal = calculateCommission(ppw, editSetterPerW, kw);
     const editSetterM1Amount = editVals.setterId ? Math.min(editM1Flat, Math.max(0, editSetterTotal)) : 0;
+    const editInstallPayPct = installerPayConfigs[editVals.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const editHasM3 = editInstallPayPct < 100;
+    const editCloserM2Full = Math.max(0, editCloserTotal - Math.min(editM1Flat, Math.max(0, editCloserTotal)));
+    const editSetterM2Full = Math.max(0, editSetterTotal - editSetterM1Amount);
+    const editM2Amount = Math.round(editCloserM2Full * (editInstallPayPct / 100) * 100) / 100;
+    const editM3Amount = editHasM3 ? Math.round(editCloserM2Full * ((100 - editInstallPayPct) / 100) * 100) / 100 : 0;
+    const editSetterM2Amount = editVals.setterId ? Math.round(editSetterM2Full * (editInstallPayPct / 100) * 100) / 100 : 0;
+    const editSetterM3Amount = editVals.setterId && editHasM3 ? Math.round(editSetterM2Full * ((100 - editInstallPayPct) / 100) * 100) / 100 : 0;
     ctxUpdateProject(project.id, {
       installer: editVals.installer,
       financer: editVals.financer,
@@ -913,12 +921,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       kWSize: kw,
       netPPW: ppw,
       m1Amount: editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, editCloserTotal)),
+      m2Amount: editM2Amount,
+      m3Amount: editM3Amount,
       setterId: editVals.setterId || undefined,
       setterName: setterRep?.name ?? (editVals.setterId ? project.setterName : undefined),
       soldDate: editVals.soldDate,
       notes: editVals.notes,
       baselineOverride,
       setterM1Amount: editSetterM1Amount,
+      setterM2Amount: editSetterM2Amount,
+      setterM3Amount: editSetterM3Amount,
     });
     setShowEditModal(false);
     setEditErrors({});

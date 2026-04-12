@@ -26,7 +26,8 @@ function daysSince(dateStr: string): number {
 }
 
 /** Returns a human-readable relative time string like "3d ago", "2mo ago", "1y ago". */
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
   const days = daysSince(dateStr);
   if (days === 0) return 'today';
   if (days === 1) return '1d ago';
@@ -43,8 +44,9 @@ function relativeTime(dateStr: string): string {
  *   30–59 days → amber
  *   60+ days   → red
  */
-function StaleBadge({ soldDate, phase }: { soldDate: string; phase: Phase }) {
+function StaleBadge({ soldDate, phase }: { soldDate: string | null; phase: Phase }) {
   if (!ACTIVE_PHASES.includes(phase)) return null;
+  if (!soldDate) return null;
   const days = daysSince(soldDate);
   if (days < 30) return null;
   const isRed = days >= 60;
