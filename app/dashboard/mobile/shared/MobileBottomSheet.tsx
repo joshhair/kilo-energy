@@ -1,27 +1,33 @@
 'use client';
 
 import { useEffect, type ComponentType } from 'react';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 function SheetItem({
   label,
   icon: Icon,
   onTap,
   danger,
+  active,
 }: {
   label: string;
   icon?: ComponentType<{ className?: string }>;
   onTap: () => void;
   danger?: boolean;
+  active?: boolean;
 }) {
   return (
     <button
       onClick={onTap}
       className="w-full flex items-center gap-3 min-h-[52px] px-5 py-3 text-left active:opacity-70 transition-opacity"
-      style={{ color: danger ? 'var(--m-danger, #ff6b6b)' : '#fff' }}
+      style={{
+        color: active ? '#00e5a0' : danger ? 'var(--m-danger, #ff6b6b)' : '#fff',
+        background: active ? 'rgba(0,229,160,0.06)' : undefined,
+      }}
     >
       {Icon && <Icon className="w-5 h-5 shrink-0 opacity-60" />}
-      <span className="text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
+      <span className="text-base flex-1" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
+      {active && <Check className="w-4 h-4 shrink-0" style={{ color: '#00e5a0' }} />}
     </button>
   );
 }

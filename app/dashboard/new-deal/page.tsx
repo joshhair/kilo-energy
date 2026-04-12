@@ -442,7 +442,7 @@ function DealEntryPage({ onStart, projects }: { onStart: () => void; projects: {
   const today = new Date().toISOString().split('T')[0];
   const monthPrefix = today.slice(0, 7);
   const todayCount = projects.filter((p) => p.soldDate === today).length;
-  const monthCount = projects.filter((p) => p.soldDate.startsWith(monthPrefix)).length;
+  const monthCount = projects.filter((p) => p.soldDate?.startsWith(monthPrefix)).length;
 
   return (
     <div className="p-4 md:p-8 max-w-2xl animate-slide-in-scale">
@@ -926,7 +926,7 @@ function NewDealPage() {
     if (hasStepErrors) return;
 
     userNavigatedBack.current = false;
-    autoAdvancedSteps.current.add(currentStep + 1);
+    autoAdvancedSteps.current.add(currentStep);
     setSlideDirection('forward');
     setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
   };

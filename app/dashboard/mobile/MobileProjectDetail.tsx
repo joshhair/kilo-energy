@@ -542,7 +542,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[48px] text-black text-base font-medium rounded-xl active:opacity-90"
+            className="flex-1 min-h-[48px] text-black text-base font-medium rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
               background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
@@ -554,7 +554,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         )}
         <button
           onClick={() => setMoreSheetOpen(true)}
-          className="min-h-[48px] px-5 text-base font-medium rounded-xl active:opacity-80"
+          className="min-h-[48px] px-5 text-base font-medium rounded-xl active:scale-[0.95] transition-transform duration-75 ease-out"
           style={{
             background: 'var(--m-card, #0d1525)',
             border: '1px solid var(--m-border, #1a2840)',
@@ -574,6 +574,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             label={phase}
             onTap={() => handlePhaseChange(phase)}
             danger={phase === 'Cancelled'}
+            active={phase === project.phase}
           />
         ))}
       </MobileBottomSheet>

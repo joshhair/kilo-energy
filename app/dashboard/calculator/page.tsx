@@ -265,7 +265,7 @@ function CalculatorPage() {
       ? projects
       : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
     return [...filtered]
-      .sort((a, b) => b.soldDate.localeCompare(a.soldDate))
+      .sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? ''))
       .slice(0, 10);
   })();
 
