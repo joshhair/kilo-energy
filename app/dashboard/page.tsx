@@ -151,6 +151,7 @@ function NeedsAttentionSection({
     soldDate: string;
     phase: string;
     repName?: string;
+    updatedAt?: string;
   }>;
   isAdmin?: boolean;
   onUnflag?: (projectId: string) => void;
@@ -202,10 +203,14 @@ function NeedsAttentionSection({
   for (const proj of activeProjects) {
     if (proj.flagged) continue; // already added above; don't double-count
     if (proj.phase === 'On Hold') {
-      if (!proj.soldDate) continue;
-      const [y, m, d] = proj.soldDate.split('-').map(Number);
-      const sold = new Date(y, m - 1, d);
-      const holdDays = Math.floor((today.getTime() - sold.getTime()) / 86_400_000);
+      // Use updatedAt as proxy for when the project was placed on hold.
+      // Fallback to soldDate only if updatedAt is absent (legacy data).
+      const holdSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
+        if (!proj.soldDate) return today;
+        const [y, m, d] = proj.soldDate.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      })();
+      const holdDays = Math.floor((today.getTime() - holdSince.getTime()) / 86_400_000);
       items.push({
         uid: `on-hold-${proj.id}`,
         projectId: proj.id,
@@ -1586,8 +1591,7 @@ export default function DashboardPage() {
         ) : (
           <div className="divide-y divide-slate-800/60">
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
-              const installPayPct = installerPayConfigs[proj.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-              const m2DisplayAmount = Math.round((proj.m2Amount ?? 0) * (installPayPct / 100) * 100) / 100;
+              const m2DisplayAmount = proj.m2Amount ?? 0;
               const closerM1 = proj.m1Amount ?? 0;
               const estPay = proj.repId === effectiveRepId
                 ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)

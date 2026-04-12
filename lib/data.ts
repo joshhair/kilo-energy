@@ -209,6 +209,8 @@ export interface Project {
   // Sub-dealer attribution
   subDealerId?: string;
   subDealerName?: string;
+  // Last modified timestamp (ISO string) — used as proxy for phase-change date
+  updatedAt?: string;
 }
 
 export interface PayrollEntry {
