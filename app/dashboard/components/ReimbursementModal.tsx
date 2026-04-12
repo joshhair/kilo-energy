@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useFocusTrap } from '../../../lib/hooks';
+import { localDateString } from '../../../lib/utils';
 import { Receipt, Upload, X } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -55,7 +56,7 @@ const labelCls = 'block text-xs font-medium text-[#c2c8d8] mb-1.5 uppercase trac
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: ReimbursementModalProps) {
-  const [form, setForm] = useState({ amount: '', description: '', date: new Date().toISOString().split('T')[0], fileName: '' });
+  const [form, setForm] = useState({ amount: '', description: '', date: localDateString(new Date()), fileName: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const panelRef = useRef<HTMLDivElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
@@ -64,7 +65,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
   // Reset form when modal opens/closes
   useEffect(() => {
     if (open) {
-      setForm({ amount: '', description: '', date: new Date().toISOString().split('T')[0], fileName: '' });
+      setForm({ amount: '', description: '', date: localDateString(new Date()), fileName: '' });
       setErrors({});
       requestAnimationFrame(() => amountRef.current?.focus());
     }
@@ -109,7 +110,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
       repName,
       amount: parseFloat(form.amount),
       description: form.description.trim(),
-      date: form.date || new Date().toISOString().split('T')[0],
+      date: form.date || localDateString(new Date()),
       receiptName: form.fileName || undefined,
     });
   };
