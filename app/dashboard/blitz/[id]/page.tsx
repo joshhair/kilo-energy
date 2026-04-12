@@ -67,7 +67,7 @@ export default function BlitzDetailPage() {
   const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '', ownerId: '' });
 
   // Confirmation dialog
-  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void; confirmLabel?: string } | null>(null);
 
   // Loading states for async ops
   const [saving, setSaving] = useState(false);
@@ -172,9 +172,6 @@ export default function BlitzDetailPage() {
   // Profitability (admin only — uses ALL projects, not filtered)
   // Kilo profit = spread between closer baseline and kilo baseline per deal
   // kiloMargin per deal = (closerPerW - kiloPerW) × kW × 1000
-  const allProjectsCount = blitz?.projects?.length ?? 0;
-  const allProjectsKW = blitz?.projects?.reduce((s: number, p: any) => s + p.kWSize, 0) ?? 0;
-
   const getBlitzProjectBaselines = (p: any): { closerPerW: number; kiloPerW: number } => {
     if (p.baselineOverrideJson) return JSON.parse(p.baselineOverrideJson);
     if (p.installer?.name === 'SolarTech' && p.productId) {
@@ -372,11 +369,18 @@ export default function BlitzDetailPage() {
   const handleUpdateAttendance = async (userId: string, attendanceStatus: string | null) => {
     if (updatingAttendance.has(userId)) return;
     setUpdatingAttendance((s) => new Set(s).add(userId));
-    const r = await fetch(`/api/blitzes/${blitzId}/participants`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, attendanceStatus }),
-    });
+    let r: Response;
+    try {
+      r = await fetch(`/api/blitzes/${blitzId}/participants`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, attendanceStatus }),
+      });
+    } catch {
+      toast('Failed to update attendance', 'error');
+      setUpdatingAttendance((s) => { const n = new Set(s); n.delete(userId); return n; });
+      return;
+    }
     if (!r.ok) {
       toast('Failed to update attendance', 'error');
       setUpdatingAttendance((s) => { const n = new Set(s); n.delete(userId); return n; });
@@ -543,7 +547,7 @@ export default function BlitzDetailPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => setEditing(false)} className="px-4 py-2 text-sm text-[#c2c8d8] hover:text-white transition-colors">Cancel</button>
+              <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: blitz.status, ownerId: blitz.owner?.id ?? '' }); }} className="px-4 py-2 text-sm text-[#c2c8d8] hover:text-white transition-colors">Cancel</button>
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[#00e07a] text-black rounded-lg hover:bg-[#00e07a] disabled:opacity-50 transition-colors">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}</button>
             </div>
           </div>
@@ -569,7 +573,7 @@ export default function BlitzDetailPage() {
             {isAdmin ? (
               <div className="flex items-center gap-2 shrink-0">
                 <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#c2c8d8] border border-[#272b35] rounded-lg hover:text-white hover:border-[#272b35] transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
-                <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); } })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+                <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); }, confirmLabel: 'Delete' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
             ) : canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && (blitz.ownerId === effectiveRepId || blitz.createdById === effectiveRepId) && (
               <button
@@ -1193,7 +1197,7 @@ export default function BlitzDetailPage() {
         onConfirm={() => confirmAction?.onConfirm()}
         title={confirmAction?.title ?? ''}
         message={confirmAction?.message ?? ''}
-        confirmLabel="Remove"
+        confirmLabel={confirmAction?.confirmLabel ?? 'Remove'}
         danger
       />
     </div>
