@@ -711,12 +711,12 @@ function UsersPageInner() {
           roleFilter === 'all'
             ? [
                 ...reps.filter((r) => r.active !== false).map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
-                ...subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
+                ...subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
                 ...pmUsers,
                 ...adminUsers,
               ]
             : roleFilter === 'sub-dealer'
-            ? subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
+            ? subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
             : roleFilter === 'project_manager'
             ? pmUsers
             : adminUsers;

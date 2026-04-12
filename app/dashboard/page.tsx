@@ -1009,7 +1009,7 @@ export default function DashboardPage() {
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0);
   const prevAllPayrollByProject = myPrevPayroll.reduce((map, p) => {
-    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
+    if (p.projectId && p.paymentStage !== 'M3') map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
   const prevUnpaidPayroll = myPrevPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);

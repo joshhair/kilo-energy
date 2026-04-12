@@ -103,6 +103,16 @@ function PayrollPageInner() {
   // Rep filter (admin)
   const [filterRepId, setFilterRepId] = useState(initialRep);
 
+  // Re-sync state when browser back/forward changes searchParams
+  useEffect(() => {
+    const s = (searchParams.get('status') ?? 'Draft') as StatusTab;
+    const t = (searchParams.get('type') ?? 'Deal') as TypeTab;
+    const r = searchParams.get('rep') ?? '';
+    setStatusTab(['Draft', 'Pending', 'Paid'].includes(s) ? s : 'Draft');
+    setTypeTab(['Deal', 'Bonus'].includes(t) ? t : 'Deal');
+    setFilterRepId(r);
+  }, [searchParams]);
+
   // Wrappers that sync tab/filter state to URL params
   const changeStatusTab = (v: StatusTab) => {
     setStatusTab(v);
@@ -159,9 +169,15 @@ function PayrollPageInner() {
     if (el) setTypeIndicator({ left: el.offsetLeft, width: el.offsetWidth });
   }, [typeTab]);
 
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   // Keyboard shortcuts: Escape → deselect, Enter → mark for payroll, Shift+A → select/deselect all
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // handleMarkForPayroll and selectAll are defined after the isMobile early return,
+      // so skip all shortcuts on mobile to avoid calling uninitialized bindings.
+      if (isMobile) return;
+
       // Skip if an input element is focused
       const target = e.target as HTMLElement;
       if (
@@ -196,19 +212,7 @@ function PayrollPageInner() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId]);
-
-  const isMobile = useMediaQuery('(max-width: 767px)');
-
-  if (effectiveRole === 'project_manager') {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
-      </div>
-    );
-  }
-
-  if (isMobile) return <MobilePayroll />;
+  }, [isMobile, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
   // ── Single-pass filter + totals ───────────────────────────────────────
   // Was: 5 separate passes over payrollEntries (2700+ rows) per render:
@@ -244,14 +248,6 @@ function PayrollPageInner() {
     return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
-  // Paginate the flat filtered list, then re-group by rep for display
-  const adminTotalPages = Math.max(1, Math.ceil(filtered.length / adminRowsPerPage));
-  const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
-  const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
-  const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
-
-  // repGroups removed — flat table rendering uses paginatedFiltered directly
-
   // Derived selection state — used by the floating action bar.
   // Single walk through filtered to compute both totals together.
   const { selectedTotal, allFilteredSelected } = useMemo(() => {
@@ -263,6 +259,24 @@ function PayrollPageInner() {
     }
     return { selectedTotal: total, allFilteredSelected: all };
   }, [filtered, selectedIds]);
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
+
+  if (isMobile) return <MobilePayroll />;
+
+  // Paginate the flat filtered list, then re-group by rep for display
+  const adminTotalPages = Math.max(1, Math.ceil(filtered.length / adminRowsPerPage));
+  const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
+  const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
+  const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
+
+  // repGroups removed — flat table rendering uses paginatedFiltered directly
   // Floating toolbar is visible whenever one or more Draft entries are selected
   const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
 
