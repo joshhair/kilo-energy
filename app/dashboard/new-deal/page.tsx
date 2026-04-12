@@ -694,8 +694,10 @@ function NewDealPage() {
   const handleSolarTechFamilyChange = (value: string) => {
     const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: mappedFinancer }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', mappedFinancer) }));
+    // Loan deals must not inherit a 'Cash' financer from the family mapping
+    const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer }));
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
 
@@ -1108,8 +1110,8 @@ function NewDealPage() {
   const _now = new Date();
   const _today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
   const _monthPrefix = _today.slice(0, 7);
-  const monthCount = projects.filter((p) => p.soldDate.startsWith(_monthPrefix) && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
-  const todayCount = projects.filter((p) => p.soldDate.startsWith(_today) && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
+  const monthCount = projects.filter((p) => p.soldDate?.startsWith(_monthPrefix) && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
+  const todayCount = projects.filter((p) => p.soldDate?.startsWith(_today) && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
 
   return (
     <div className="p-4 md:p-8" style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -1836,7 +1838,7 @@ function NewDealPage() {
                       if (value !== 'blitz' || form.leadSource === 'blitz') {
                         update('blitzId', '');
                       }
-                      if (form.leadSource === 'blitz' && value === 'blitz') {
+                      if (form.leadSource !== 'blitz' && value === 'blitz') {
                         update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
                     }}

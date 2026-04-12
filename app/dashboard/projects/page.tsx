@@ -945,7 +945,7 @@ function KanbanView({
                   <p className="text-xs text-[#8891a8] mt-0.5">
                     ${phaseProjects.reduce((sum, p) => {
                       if (!isAdmin && dealScope === 'mine') {
-                        if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                        if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
                         if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
@@ -1099,7 +1099,7 @@ function KanbanView({
                   <p className="text-xs text-[#8891a8] mt-0.5">
                     ${phaseProjects.reduce((sum, p) => {
                       if (!isAdmin && dealScope === 'mine') {
-                        if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                        if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
                         if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;
                       }
@@ -1678,6 +1678,8 @@ function TableView({
     setSelectedProjectIds(new Set());
     if (advanced > 0) {
       toast(`${advanced} project${advanced > 1 ? 's' : ''} advanced to next phase`, 'success');
+    } else {
+      toast('No projects advanced — selected projects may be Cancelled, On Hold, or already at the final phase', 'error');
     }
   };
 
@@ -2052,7 +2054,7 @@ function TableView({
                 </tr>
                 );
               })}
-              {projects.length === 0 && (
+              {pagedProjects.length === 0 && (
                 <tr>
                   <td colSpan={isAdmin ? 10 : dealScope === 'all' ? 8 : 7} className="px-5 py-12 text-center">
                     <div className="flex justify-center">

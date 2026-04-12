@@ -838,8 +838,13 @@ export function getBaselineRate(financer: string, productType: string, kW: numbe
       (r.tierMaxKW === null || kW < r.tierMaxKW)
   );
   if (match) return { closerPerW: match.closerPerW, kiloPerW: match.kiloPerW };
-  // Generic fallback by product type
-  const byType = BASELINE_RATES.find((r) => r.productType === productType);
+  // Generic fallback by product type, still respecting kW tier
+  const byType = BASELINE_RATES.find(
+    (r) =>
+      r.productType === productType &&
+      kW >= r.tierMinKW &&
+      (r.tierMaxKW === null || kW < r.tierMaxKW)
+  );
   if (byType) return { closerPerW: byType.closerPerW, kiloPerW: byType.kiloPerW };
   return { closerPerW: 3.00, kiloPerW: 2.45 };
 }
@@ -1224,6 +1229,9 @@ export const PRODUCT_CATALOG_PRICING_VERSIONS: ProductCatalogPricingVersion[] = 
 // Builds 4 standard kW tiers (1–5, 5–10, 10–13, 13+) from parallel closer/kilo arrays
 export function makeProductCatalogTiers(closer: number[], kilo: number[], subDealerOffset?: number): ProductCatalogTier[] {
   const breaks = [1, 5, 10, 13];
+  if (closer.length !== breaks.length || kilo.length !== breaks.length) {
+    throw new Error(`makeProductCatalogTiers: expected ${breaks.length} elements, got closer=${closer.length} kilo=${kilo.length}`);
+  }
   return closer.map((c, i) => ({
     minKW: breaks[i],
     maxKW: i < breaks.length - 1 ? breaks[i + 1] : null,

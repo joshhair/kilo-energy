@@ -319,8 +319,10 @@ export default function MobileNewDeal() {
   const handleSolarTechFamilyChange = (value: string) => {
     const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: mappedFinancer }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', mappedFinancer) }));
+    // Loan deals must not inherit a 'Cash' financer from the family mapping
+    const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer }));
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
 

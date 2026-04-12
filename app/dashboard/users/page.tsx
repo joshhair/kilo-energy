@@ -86,6 +86,52 @@ const PODIUM_BREATH_CLS: Record<number, string> = {
   3: 'animate-podium-breath-bronze',
 };
 
+// Count-up animation hook driven by requestAnimationFrame.
+// Returns the animated value; respects prefers-reduced-motion.
+function useCountUp(target: number, duration: number, delay: number): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setValue(target);
+      return;
+    }
+    let rafId: number;
+    const start = performance.now();
+    function tick(now: number) {
+      const elapsed = now - start;
+      const t = Math.min(Math.max((elapsed - delay) / duration, 0), 1);
+      const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+      setValue(Math.round(target * ease));
+      if (t < 1) rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [target, duration, delay]);
+  return value;
+}
+
+type GradCardProps = {
+  label: string;
+  rawValue: number;
+  formatter: (v: number) => string;
+  gradient: string;
+  borderColor: string;
+  valueColor: string;
+  delay: number;
+};
+
+function GradCard({ label, rawValue, formatter, gradient, borderColor, valueColor, delay }: GradCardProps) {
+  const animated = useCountUp(rawValue, 900, delay);
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: gradient, border: `1px solid ${borderColor}` }}>
+      <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+      <span className="text-2xl font-bold" style={{ fontFamily: "'DM Serif Display', serif", color: valueColor, textShadow: `0 0 20px ${valueColor}50` }}>
+        {formatter(animated)}
+      </span>
+    </div>
+  );
+}
+
 export default function UsersPage() {
   return (
     <Suspense>
@@ -969,19 +1015,44 @@ function UsersPageInner() {
       {roleFilter === 'rep' && (<>
       {/* ── Summary Bar — GradCards ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Total Reps', value: reps.filter(r => r.active !== false).length.toString(), gradient: 'linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))', borderColor: 'rgba(77,159,255,0.3)', valueColor: '#4d9fff' },
-          { label: 'Active Deals', value: (() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })().toString(), gradient: 'linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))', borderColor: 'rgba(0,196,240,0.3)', valueColor: '#00c4f0' },
-          { label: 'kW Sold', value: formatCompactKW(projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0)), gradient: 'linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))', borderColor: 'rgba(255,176,32,0.3)', valueColor: '#ffb020' },
-          ...(!isPM ? [{ label: 'Total Paid', value: `$${payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0).toLocaleString()}`, gradient: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))', borderColor: 'rgba(0,224,122,0.3)', valueColor: '#00e07a' }] : []),
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: stat.gradient, border: `1px solid ${stat.borderColor}` }}>
-            <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{stat.label}</span>
-            <span className="text-2xl font-bold" style={{ fontFamily: "'DM Serif Display', serif", color: stat.valueColor, textShadow: `0 0 20px ${stat.valueColor}50` }}>
-              {stat.value}
-            </span>
-          </div>
-        ))}
+        <GradCard
+          label="Total Reps"
+          rawValue={reps.filter(r => r.active !== false).length}
+          formatter={(v) => String(Math.round(v))}
+          gradient="linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))"
+          borderColor="rgba(77,159,255,0.3)"
+          valueColor="#4d9fff"
+          delay={0}
+        />
+        <GradCard
+          label="Active Deals"
+          rawValue={(() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })()}
+          formatter={(v) => String(Math.round(v))}
+          gradient="linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))"
+          borderColor="rgba(0,196,240,0.3)"
+          valueColor="#00c4f0"
+          delay={80}
+        />
+        <GradCard
+          label="kW Sold"
+          rawValue={projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0)}
+          formatter={formatCompactKW}
+          gradient="linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))"
+          borderColor="rgba(255,176,32,0.3)"
+          valueColor="#ffb020"
+          delay={160}
+        />
+        {!isPM && (
+          <GradCard
+            label="Total Paid"
+            rawValue={payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0)}
+            formatter={(v) => '$' + Math.round(v).toLocaleString()}
+            gradient="linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))"
+            borderColor="rgba(0,224,122,0.3)"
+            valueColor="#00e07a"
+            delay={240}
+          />
+        )}
       </div>
 
       {/* ── Role filter tabs ──────────────────────────────────────────────── */}
@@ -1124,10 +1195,10 @@ function UsersPageInner() {
                 const commissionEarned = ranges.current.from && ranges.current.to
                   ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to)).reduce((s, e) => s + e.amount, 0)
                   : 0;
-                const rpForCancel = ranges.current.from && ranges.current.to
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                const rpCancelled = ranges.current.from && ranges.current.to
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase === 'Cancelled' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
-                const cancelRate = rpForCancel.length > 0 ? (rpForCancel.filter((p) => p.phase === 'Cancelled').length / rpForCancel.length * 100) : 0;
+                const cancelRate = (rp.length + rpCancelled.length) > 0 ? (rpCancelled.length / (rp.length + rpCancelled.length) * 100) : 0;
 
                 // Previous period stats
                 const prevDeals = ranges.prev

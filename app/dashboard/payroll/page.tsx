@@ -83,6 +83,7 @@ function PayrollPageInner() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [publishingPayroll, setPublishingPayroll] = useState(false);
+  const [markingForPayroll, setMarkingForPayroll] = useState(false);
   const [bonusForm, setBonusForm] = useState({ repId: '', amount: '', notes: '', date: '' });
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', stage: 'M1' as 'M1' | 'M2' | 'M3', date: '', notes: '' });
   const bonusPanelRef = useRef<HTMLDivElement>(null);
@@ -118,6 +119,7 @@ function PayrollPageInner() {
     setStatusTab(['Draft', 'Pending', 'Paid'].includes(s) ? s : 'Draft');
     setTypeTab(['Deal', 'Bonus'].includes(t) ? t : 'Deal');
     setFilterRepId(r);
+    setSelectedIds(new Set());
   }, [searchParams]);
 
   // Wrappers that sync tab/filter state to URL params
@@ -220,7 +222,7 @@ function PayrollPageInner() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, effectiveRole, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId, adminPage, adminRowsPerPage]);
+  }, [isMobile, effectiveRole, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId, adminPage, adminRowsPerPage, markingForPayroll]);
 
   // ── Single-pass filter + totals ───────────────────────────────────────
   // Was: 5 separate passes over payrollEntries (2700+ rows) per render:
@@ -297,7 +299,7 @@ function PayrollPageInner() {
   const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
   const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
   // Header checkbox state: only considers entries visible on the current page.
-  const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
+  const allPageSelected = filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id));
 
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
@@ -337,6 +339,8 @@ function PayrollPageInner() {
   };
 
   const handleMarkForPayroll = () => {
+    if (markingForPayroll) return;
+    setMarkingForPayroll(true);
     const amount = filtered
       .filter((e) => selectedIds.has(e.id))
       .reduce((s, e) => s + e.amount, 0);
@@ -344,6 +348,7 @@ function PayrollPageInner() {
     setSelectedIds(new Set());
     changeStatusTab('Pending');
     toast(`${selectedIds.size} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
+    setTimeout(() => setMarkingForPayroll(false), 0);
   };
 
   const toggleEntry = (id: string) => {
@@ -366,12 +371,12 @@ function PayrollPageInner() {
   };
 
   const selectAll = () => {
-    const pageIds = paginatedFiltered.map((e) => e.id);
-    const allSelected = pageIds.every((id) => selectedIds.has(id));
+    const allIds = filtered.map((e) => e.id);
+    const allSelected = allIds.every((id) => selectedIds.has(id));
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (allSelected) pageIds.forEach((id) => next.delete(id));
-      else pageIds.forEach((id) => next.add(id));
+      if (allSelected) allIds.forEach((id) => next.delete(id));
+      else allIds.forEach((id) => next.add(id));
       return next;
     });
   };
@@ -1298,7 +1303,8 @@ function PayrollPageInner() {
             {statusTab === 'Draft' && (
               <button
                 onClick={handleMarkForPayroll}
-                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+                disabled={markingForPayroll}
+                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 Mark for Payroll →

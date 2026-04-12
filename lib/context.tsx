@@ -219,7 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshMentionCount = useCallback(() => {
     if (!effectiveRepId) { setUnreadMentionCount(0); return; }
     fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`)
-      .then((res) => res.json())
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
       .then((data) => {
         if (Array.isArray(data)) setUnreadMentionCount(data.length);
       })
@@ -472,6 +472,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteRepPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const snapshotIndex = reps.findIndex((r) => r.id === id);
     const snapshot = reps[snapshotIndex];
+    const nextRepId = reps[snapshotIndex + 1]?.id ?? null;
     setReps((prev) => prev.filter((r) => r.id !== id));
     try {
       await persistFetch(`/api/users/${id}`, { method: 'DELETE' }, 'Failed to delete rep');
@@ -480,7 +481,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Roll back — the server probably rejected with 409 (has relations)
       if (snapshot) setReps((prev) => {
         const next = [...prev];
-        next.splice(snapshotIndex, 0, snapshot);
+        const insertAt = nextRepId === null ? next.length : next.findIndex((r) => r.id === nextRepId);
+        next.splice(insertAt === -1 ? next.length : insertAt, 0, snapshot);
         return next;
       });
       return { success: false, error: err instanceof Error ? err.message : 'Failed to delete rep' };
@@ -571,13 +573,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
   const deleteSubDealerPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
-    const snapshot = subDealers.find((s) => s.id === id);
+    const snapshotIndex = subDealers.findIndex((s) => s.id === id);
+    const snapshot = snapshotIndex !== -1 ? subDealers[snapshotIndex] : undefined;
     setSubDealers((prev) => prev.filter((s) => s.id !== id));
     try {
       await persistFetch(`/api/users/${id}`, { method: 'DELETE' }, 'Failed to delete sub-dealer');
       return { success: true };
     } catch (err: unknown) {
-      if (snapshot) setSubDealers((prev) => [...prev, snapshot]);
+      if (snapshot) setSubDealers((prev) => {
+        const next = prev.filter((s) => s.id !== id);
+        next.splice(snapshotIndex, 0, snapshot);
+        return next;
+      });
       return { success: false, error: err instanceof Error ? err.message : 'Failed to delete sub-dealer' };
     }
   };
@@ -678,7 +685,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const ts = Date.now();
             const newEntries: PayrollEntry[] = [];
 
-            if (pastAcceptance && (old.setterM1Amount ?? 0) > 0) {
+            const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
+            const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
+            const effectiveSetterM3 = updates.setterM3Amount ?? old.setterM3Amount;
+            if (pastAcceptance && (effectiveSetterM1 ?? 0) > 0) {
               const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M1');
               if (!hasM1) {
                 newEntries.push({
@@ -687,7 +697,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   repName: newSetterRep?.name ?? '',
                   projectId: id,
                   customerName: old.customerName,
-                  amount: old.setterM1Amount!,
+                  amount: effectiveSetterM1!,
                   type: 'Deal',
                   paymentStage: 'M1',
                   status: 'Draft',
@@ -697,7 +707,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            if (pastInstalled && (old.setterM2Amount ?? 0) > 0) {
+            if (pastInstalled && (effectiveSetterM2 ?? 0) > 0) {
               const hasM2 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M2');
               if (!hasM2) {
                 newEntries.push({
@@ -706,7 +716,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   repName: newSetterRep?.name ?? '',
                   projectId: id,
                   customerName: old.customerName,
-                  amount: old.setterM2Amount!,
+                  amount: effectiveSetterM2!,
                   type: 'Deal',
                   paymentStage: 'M2',
                   status: 'Draft',
@@ -719,10 +729,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (pastPTO) {
               const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const hasM2Entry = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
-              const setterM3 = (old.setterM3Amount ?? 0) > 0
-                ? old.setterM3Amount!
+              const setterM3 = (effectiveSetterM3 ?? 0) > 0
+                ? effectiveSetterM3!
                 : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
-                  ? Math.round((old.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+                  ? Math.round((effectiveSetterM2 ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
                   : 0;
               if (setterM3 > 0 && hasM2Entry) {
                 const hasM3 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M3');
@@ -909,16 +919,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         const isSubDealerDeal = !!old.subDealerId;
-        // If M2 entries already exist, the project previously crossed Acceptance+Installed,
-        // so On Hold→Acceptance is a rollback — not a fresh milestone crossing. Suppress M1
-        // creation to prevent isAcceptance from firing while stale M2 Drafts remain.
-        // Exception: if M2 is being rolled back in this same transition, the setPayrollEntries
-        // deletion above has not yet applied — treat those entries as already gone so that
-        // Installed→Acceptance (for projects that skipped Acceptance) correctly drafts M1.
-        const m2RolledBack = effectiveOldIdx >= 0 && newIdx >= 0 && newIdx < effectiveOldIdx &&
-          effectiveOldIdx >= PIPELINE.indexOf('Installed') && newIdx < PIPELINE.indexOf('Installed');
-        const hasExistingM2 = !m2RolledBack && payrollEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
-        const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance' && !hasExistingM2;
+        const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance';
         const isInstalled = newPhase === 'Installed' && old.phase !== 'Installed';
         const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
 
@@ -945,8 +946,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
           const ts = Date.now();
 
-          // Check if entries already exist for this project + stage to avoid duplicates
+          // Check if entries already exist for this project + stage to avoid duplicates.
+          // Use prevEntries (functional updater) so this correctly chains after any
+          // same-cycle setPayrollEntries deletion (e.g. M2 rollback followed by re-entry).
           setPayrollEntries((prevEntries) => {
+            // Suppress M1 if M2 entries already exist — project previously reached Installed,
+            // so this Acceptance crossing is a re-entry, not a fresh milestone.
+            if (stage === 'M1' && prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M2')) {
+              return prevEntries;
+            }
             const alreadyExists = prevEntries.some(
               (e) => e.projectId === id && (e.paymentStage === stage || (stage === 'M2' && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))
             );
@@ -1337,25 +1345,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Persist to DB and replace temp ID with the real DB-assigned ID
     const instId = idMaps.installerNameToId[installer];
-    if (instId) {
-      const tiers = rates.type === 'tiered'
-        ? rates.bands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW, closerPerW: b.closerPerW, setterPerW: b.setterPerW, kiloPerW: b.kiloPerW, subDealerPerW: b.subDealerPerW }))
-        : [{ minKW: 0, closerPerW: rates.closerPerW, setterPerW: rates.setterPerW, kiloPerW: rates.kiloPerW, subDealerPerW: rates.subDealerPerW }];
-      fetch('/api/installer-pricing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ installerId: instId, label, effectiveFrom, rateType: rates.type, tiers, closePreviousForInstaller: true, closePreviousEffectiveTo: effectiveTo }),
-      })
-        .then((res) => res.json())
-        .then((data: { id?: string }) => {
-          if (data?.id && data.id !== tempId) {
-            setInstallerPricingVersions((prev) =>
-              prev.map((v) => v.id === tempId ? { ...v, id: data.id as string } : v),
-            );
-          }
-        })
-        .catch(console.error);
+    if (!instId) {
+      // Installer not yet resolved — revert local state to avoid a dangling temp ID
+      setInstallerPricingVersions((prev) =>
+        prev.filter((v) => v.id !== tempId).map((v) =>
+          v.installer === installer && v.effectiveTo === effectiveTo
+            ? { ...v, effectiveTo: null }
+            : v,
+        ),
+      );
+      console.error(`createNewInstallerVersion: no DB id for installer "${installer}" — version not saved`);
+      return;
     }
+    const tiers = rates.type === 'tiered'
+      ? rates.bands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW, closerPerW: b.closerPerW, setterPerW: b.setterPerW, kiloPerW: b.kiloPerW, subDealerPerW: b.subDealerPerW }))
+      : [{ minKW: 0, closerPerW: rates.closerPerW, setterPerW: rates.setterPerW, kiloPerW: rates.kiloPerW, subDealerPerW: rates.subDealerPerW }];
+    fetch('/api/installer-pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installerId: instId, label, effectiveFrom, rateType: rates.type, tiers, closePreviousForInstaller: true, closePreviousEffectiveTo: effectiveTo }),
+    })
+      .then((res) => res.json())
+      .then((data: { id?: string }) => {
+        if (data?.id && data.id !== tempId) {
+          setInstallerPricingVersions((prev) =>
+            prev.map((v) => v.id === tempId ? { ...v, id: data.id as string } : v),
+          );
+        }
+      })
+      .catch(console.error);
   };
   const updateSolarTechProduct = (id: string, updates: Partial<SolarTechProduct>) => {
     setSolarTechProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...updates } : p));
@@ -1698,9 +1716,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Trainer override entries are auto-drafted at M2 (80%) and M3 (20%).
     setProjects((prev) => [...prev, project]);
 
-    // Log creation activity (fire-and-forget, will use the local id first — updated when DB id arrives)
-    logProjectActivity(project.id, 'created', 'Project created');
-
     // Persist to DB
     const persistProject = (fId: string) => {
       fetch('/api/projects', {
@@ -1737,9 +1752,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return res.json();
       }).then((created) => {
         // Update local state with the DB-assigned id
+        const dbId = created.id && created.id !== project.id ? created.id : project.id;
         if (created.id && created.id !== project.id) {
           setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, id: created.id } : p));
         }
+        // Log creation activity only after the project exists in the DB, using the real DB id
+        logProjectActivity(dbId, 'created', 'Project created');
       }).catch((err) => {
         console.error('[addDeal] persist failed:', err);
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
@@ -1780,9 +1798,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const markForPayroll = (entryIds: string[]) => {
     const idSet = new Set(entryIds);
+    // Capture original statuses synchronously before the optimistic update so the rollback
+    // can restore them without depending on the optimistic state having been flushed by React.
+    const originalStatuses = new Map(
+      payrollEntries.filter((e) => idSet.has(e.id)).map((e) => [e.id, e.status])
+    );
     const rollback = () =>
       setPayrollEntries((prev) =>
-        prev.map((e) => (idSet.has(e.id) && e.status === 'Pending' ? { ...e, status: 'Draft' } : e))
+        prev.map((e) => {
+          const orig = originalStatuses.get(e.id);
+          return orig !== undefined ? { ...e, status: orig } : e;
+        })
       );
     setPayrollEntries((prev) =>
       prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e))
@@ -1790,22 +1816,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Resolve any temp IDs to real DB IDs before sending PATCH.
     // If a payroll POST is still in-flight, await it so we never send a temp ID to the DB
     // (the DB has no row for it yet, so updateMany would silently update 0 rows).
-    const resolveIds = async (): Promise<string[]> => {
-      const resolved = await Promise.all(
+    const resolveIds = async (): Promise<{ resolved: string[]; failedOrigIds: string[] }> => {
+      const results = await Promise.all(
         entryIds.map(async (id) => {
           const pending = payrollIdResolutionMap.current.get(id);
           if (pending) {
-            try { return await pending; } catch { return null; }
+            try { return { origId: id, resolvedId: await pending }; } catch { return { origId: id, resolvedId: null }; }
           }
-          return id;
+          return { origId: id, resolvedId: id };
         })
       );
-      return resolved.filter((id): id is string => id !== null);
+      const resolved = results.filter((r): r is { origId: string; resolvedId: string } => r.resolvedId !== null).map((r) => r.resolvedId);
+      const failedOrigIds = results.filter((r) => r.resolvedId === null).map((r) => r.origId);
+      return { resolved, failedOrigIds };
     };
-    resolveIds().then((resolvedIds) => {
+    resolveIds().then(({ resolved: resolvedIds, failedOrigIds }) => {
+      // Roll back any entries whose POST failed — they are still Draft in the DB
+      if (failedOrigIds.length > 0) {
+        const failedSet = new Set(failedOrigIds);
+        setPayrollEntries((prev) =>
+          prev.map((e) => {
+            if (!failedSet.has(e.id)) return e;
+            const orig = originalStatuses.get(e.id);
+            return orig !== undefined ? { ...e, status: orig } : e;
+          })
+        );
+      }
       if (resolvedIds.length === 0) {
-        // All entries failed to persist — rollback the optimistic update
-        rollback();
+        // All entries failed to persist — optimistic update already fully rolled back above
         return;
       }
       // Persist bulk status update — rollback on any failure

@@ -1079,10 +1079,10 @@ export default function DashboardPage() {
   // Circumference for the 48×48 SVG ring (r=20): 2π×20 ≈ 125.66
   const RING_CIRC = 125.66;
 
-  // Next Payout: Draft + Pending entries dated for the upcoming Friday (matches Earnings page).
+  // Next Payout: Pending entries dated for the upcoming Friday (matches Earnings page).
   const nextFridayDate = (() => {
     const today = new Date();
-    const d = (5 - today.getDay() + 7) % 7;
+    const d = ((5 - today.getDay() + 7) % 7) || 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
     const yyyy = nf.getFullYear();
@@ -1590,7 +1590,7 @@ export default function DashboardPage() {
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const installPayPct = installerPayConfigs[proj.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const m2DisplayAmount = Math.round((proj.m2Amount ?? 0) * (installPayPct / 100) * 100) / 100;
-              const closerM1 = proj.setterId ? 0 : (proj.m1Amount ?? 0);
+              const closerM1 = proj.m1Amount ?? 0;
               const estPay = proj.repId === effectiveRepId
                 ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
                 : proj.setterId === effectiveRepId
@@ -2310,7 +2310,7 @@ function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
@@ -2611,7 +2611,7 @@ function SubDealerDashboard({
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const estPay = proj.setterId === currentRepId
                 ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                : (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
               const soldLabel = (() => {
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
                 const sold = new Date(y, m - 1, d);
