@@ -232,7 +232,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   );
 }
 
-function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClose: () => void; onCreated: () => void; userId: string; reps: Array<{ id: string; name: string }>; isAdmin: boolean }) {
+function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClose: () => void; onCreated: () => void; userId: string; reps: Array<{ id: string; name: string; active?: boolean }>; isAdmin: boolean }) {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [housing, setHousing] = useState('');
@@ -313,7 +313,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
               <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Leader</label>
               <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
                 <option value={userId}>Me</option>
-                {reps.filter((r) => r.id !== userId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                {reps.filter((r) => r.id !== userId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
           )}
