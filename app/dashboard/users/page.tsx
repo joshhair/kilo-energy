@@ -483,6 +483,14 @@ function UsersPageInner() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
 
+  // Clear compare state when navigating away from the rep tab
+  useEffect(() => {
+    if (roleFilter !== 'rep') {
+      setCompareMode(false);
+      setCompareIds(new Set());
+    }
+  }, [roleFilter]);
+
   // ── Sort ────────────────────────────────────────────────────────────────
   type SortBy = 'paid' | 'active' | 'deals' | 'name' | 'kw';
   const [sortBy, setSortBy] = useState<SortBy>('paid');
