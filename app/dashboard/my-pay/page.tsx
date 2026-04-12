@@ -22,7 +22,7 @@ import { buildPageRange } from '../components/PaginationBar';
 function getNextFriday(): Date {
   const d = new Date();
   const day = d.getDay();
-  const diff = ((5 - day + 7) % 7) || 7;
+  const diff = (5 - day + 7) % 7;
   const nf = new Date(d);
   nf.setDate(d.getDate() + diff);
   return nf;
@@ -231,9 +231,9 @@ function MyPayPageInner() {
   );
 
   const pendingTotal = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === effectiveRepId && (p.status === 'Pending' || (p.status === 'Paid' && p.date > todayStr)))
+    payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')
       .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, effectiveRepId, todayStr]
+    [payrollEntries, effectiveRepId]
   );
 
   const draftTotal = useMemo(() =>

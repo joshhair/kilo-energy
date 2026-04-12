@@ -139,21 +139,26 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
   // Bulk actions
   const executeBulk = async (action: 'grant' | 'revoke') => {
     const value = action === 'grant';
-    const updates: Promise<void>[] = [];
+    const prevPerms = { ...permissions };
     const newPerms = { ...permissions };
     filteredReps.forEach((r) => {
       newPerms[r.id] = { canRequestBlitz: value, canCreateBlitz: value };
-      updates.push(
+    });
+    setPermissions(newPerms);
+    try {
+      const updates = filteredReps.map((r) =>
         fetch(`/api/users/${r.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ canRequestBlitz: value, canCreateBlitz: value }),
-        }).then(() => {})
+        }).then((res) => { if (!res.ok) throw new Error(); })
       );
-    });
-    setPermissions(newPerms);
-    await Promise.all(updates);
-    toast(`${action === 'grant' ? 'Granted' : 'Revoked'} permissions for ${filteredReps.length} reps`);
+      await Promise.all(updates);
+      toast(`${action === 'grant' ? 'Granted' : 'Revoked'} permissions for ${filteredReps.length} reps`);
+    } catch {
+      setPermissions(prevPerms);
+      toast('Failed to update permissions', 'error');
+    }
   };
 
   // Initials + avatar color
@@ -629,7 +634,8 @@ function SettingsPageInner() {
   const hasUnsavedChanges = () =>
     editingInstaller !== null ||
     editingAssignmentId !== null ||
-    editingPrepaid !== null;
+    editingPrepaid !== null ||
+    editingProductName !== null;
 
   /** Update URL when section changes */
   const handleSetSection = (s: SettingsSection) => {
