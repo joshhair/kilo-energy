@@ -97,7 +97,7 @@ export default function UsersPage() {
 function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, reactivateSubDealer, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
@@ -184,6 +184,10 @@ function UsersPageInner() {
   // main list. Default collapsed so the active roster stays clean.
   const [showInactive, setShowInactive] = useState(false);
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+
+  // Inactive sub-dealers — same pattern as inactive reps.
+  const [showInactiveSubDealers, setShowInactiveSubDealers] = useState(false);
+  const [reactivatingSubDealerId, setReactivatingSubDealerId] = useState<string | null>(null);
 
   // ── Pending Clerk invitations (admin view) ────────────────────────────
   type PendingInvitation = {
@@ -539,6 +543,14 @@ function UsersPageInner() {
     return true;
   });
 
+  // Inactive sub-dealers — same pattern.
+  const inactiveSubDealers = subDealers.filter((s) => {
+    if (s.active !== false) return false;
+    const name = `${s.firstName} ${s.lastName}`;
+    if (debouncedSearch && !name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
+  });
+
   // ── Pre-compute paid totals & rank order across ALL reps ──────────────────
   const repPaidAmounts = useMemo(() => new Map(
     reps.map((rep) => [
@@ -803,6 +815,81 @@ function UsersPageInner() {
                     </Link>
                   );
                 })}
+              </div>
+            )}
+
+            {/* ── Inactive sub-dealers expander ───────────────────────── */}
+            {canManageReps && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-dashed border-[#272b35]">
+                <button
+                  type="button"
+                  onClick={() => setShowInactiveSubDealers((v) => !v)}
+                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[#1d2028]/60"
+                  style={{ background: '#161920', border: '1px solid #272b35' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${showInactiveSubDealers ? 'rotate-90' : ''}`}
+                      style={{ color: '#525c72' }}
+                    />
+                    <span className="text-sm font-semibold" style={{ color: '#c2c8d8' }}>
+                      Show inactive sub-dealers ({inactiveSubDealers.length})
+                    </span>
+                  </div>
+                  <span className="text-[11px]" style={{ color: '#525c72' }}>
+                    Deactivated sub-dealers — click to {showInactiveSubDealers ? 'hide' : 'view'}
+                  </span>
+                </button>
+                {showInactiveSubDealers && (
+                  <div className="mt-3 space-y-2">
+                    {inactiveSubDealers.map((sd) => (
+                      <div
+                        key={sd.id}
+                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                        style={{ background: '#161920', border: '1px solid #272b35', opacity: 0.7 }}
+                      >
+                        <Link
+                          href={`/dashboard/users/${sd.id}`}
+                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                        >
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                            style={{ background: '#272b35', color: '#8891a8' }}
+                          >
+                            {sd.firstName[0]}{sd.lastName[0]}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
+                              {sd.firstName} {sd.lastName}
+                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: '#525c72' }}>
+                                (inactive)
+                              </span>
+                            </div>
+                            {sd.email && <div className="text-[11px] truncate" style={{ color: '#525c72' }}>{sd.email}</div>}
+                          </div>
+                        </Link>
+                        <button
+                          disabled={reactivatingSubDealerId === sd.id}
+                          onClick={async () => {
+                            setReactivatingSubDealerId(sd.id);
+                            try {
+                              await reactivateSubDealer(sd.id);
+                              toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
+                            } catch {
+                              toast('Failed to reactivate sub-dealer', 'error');
+                            } finally {
+                              setReactivatingSubDealerId(null);
+                            }
+                          }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: 'rgba(180,125,255,0.12)', color: '#b47dff', border: '1px solid rgba(180,125,255,0.3)' }}
+                        >
+                          {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

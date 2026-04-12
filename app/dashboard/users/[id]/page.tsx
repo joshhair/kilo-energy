@@ -79,6 +79,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // about. Only fetched when the viewer is an admin.
   const [userMeta, setUserMeta] = useState<UserMeta | null>(null);
   const [metaRefreshKey, setMetaRefreshKey] = useState(0);
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
   useEffect(() => {
     if (currentRole !== 'admin') return;
     fetch(`/api/users/${id}`)
@@ -181,7 +183,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const isInactive = userMeta ? !userMeta.active : (resolvedUser as { active?: boolean }).active === false;
+  const isInactive = (rep || subDealer)
+    ? !(resolvedUser as { active?: boolean }).active
+    : userMeta
+    ? !userMeta.active
+    : (resolvedUser as { active?: boolean }).active === false;
 
   // ── Save handler for contact edits ────────────────────────────────────
   const startEdit = (field: 'name' | 'email' | 'phone') => {
@@ -272,6 +278,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
   const handleReactivate = async () => {
+    if (isReactivating) return;
+    setIsReactivating(true);
     try {
       if (isRep) {
         await reactivateRep(id);
@@ -292,9 +300,13 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       toast(`${resolvedUser.firstName} reactivated`, 'success');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to reactivate', 'error');
+    } finally {
+      setIsReactivating(false);
     }
   };
   const handleSendInvite = async () => {
+    if (isSendingInvite) return;
+    setIsSendingInvite(true);
     try {
       const res = await fetch(`/api/users/${id}/invite`, { method: 'POST' });
       if (!res.ok) {
@@ -307,6 +319,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       setMetaRefreshKey((k) => k + 1);
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to send invite', 'error');
+    } finally {
+      setIsSendingInvite(false);
     }
   };
   const handleDeletePermanently = async () => {
@@ -534,10 +548,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               {isInactive ? (
                 <button
                   onClick={handleReactivate}
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                  disabled={isReactivating}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
                 >
-                  Reactivate
+                  {isReactivating ? 'Reactivating…' : 'Reactivate'}
                 </button>
               ) : (
                 <button
@@ -553,10 +568,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               {userMeta && !userMeta.hasClerkAccount && !isInactive && (
                 <button
                   onClick={handleSendInvite}
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                  disabled={isSendingInvite}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: 'rgba(0,196,240,0.12)', color: '#00c4f0', border: '1px solid rgba(0,196,240,0.3)' }}
                 >
-                  {userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
+                  {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
                 </button>
               )}
 
@@ -1151,10 +1167,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             {isInactive ? (
               <button
                 onClick={handleReactivate}
-                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                disabled={isReactivating}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
               >
-                Reactivate
+                {isReactivating ? 'Reactivating…' : 'Reactivate'}
               </button>
             ) : (
               <button
