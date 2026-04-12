@@ -632,7 +632,8 @@ function NewDealPage() {
 
   // Derived: SolarTech — family comes from form, not from financer
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
-  const hasSolarTechProducts = solarTechFamily !== '';
+  const solarTechFamilyProducts = solarTechProducts.filter((p) => p.family === solarTechFamily);
+  const hasSolarTechProducts = solarTechFamilyProducts.length > 0;
 
   // Derived: product catalog installer detection
   const pcConfig = productCatalogInstallerConfigs[form.installer] ?? null;
@@ -793,7 +794,7 @@ function NewDealPage() {
     const closerDifferential = soldPPW > closerPerW ? Math.round(Math.max(0, Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW)) * kW * 1000 * 100) / 100 : 0;
     const splitPoint = setterBaselinePerW + trainerOverrideRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.round(aboveSplit / 2 * 100) / 100;
+    const half = Math.floor(aboveSplit / 2 * 100) / 100;
     return { closerTotal: closerDifferential + half, setterTotal: aboveSplit - half };
   })();
 

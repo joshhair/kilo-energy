@@ -826,7 +826,7 @@ function CalculatorPage() {
                     reps={reps}
                     placeholder="-- Select setter --"
                     clearLabel="No setter"
-                    filterFn={(r) => r.repType === 'setter' || r.repType === 'both'}
+                    filterFn={(r) => r.active && (r.repType === 'setter' || r.repType === 'both')}
                     renderExtra={(r) => {
                       const ta = trainerAssignments.find((a) => a.traineeId === r.id);
                       const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;

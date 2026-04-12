@@ -1421,7 +1421,7 @@ export function splitCloserSetterPay(
   }
 
   const m1Flat = kW >= 5 ? 1000 : 500;
-  const closerM1 = Math.min(m1Flat, Math.max(0, closerTotal));
+  const closerM1 = isSelfGen ? Math.min(m1Flat, Math.max(0, closerTotal)) : 0;
   const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
   const setterM2Full = Math.max(0, setterTotal - setterM1);
