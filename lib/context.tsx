@@ -658,6 +658,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Purge the old setter's Draft/Pending payroll entries for this project so they
         // cannot be accidentally promoted and paid after the setter is removed or replaced.
         if (old.setterId) {
+          const oldSetterName = reps.find((r) => r.id === old.setterId)?.name ?? '';
           const oldSetterTrainerAssignment = trainerAssignments.find((a) => a.traineeId === old.setterId);
           setPayrollEntries((prevEntries) => {
             const toRemove = prevEntries.filter((e) => {
@@ -669,7 +670,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 oldSetterTrainerAssignment &&
                 e.repId === oldSetterTrainerAssignment.trainerId &&
                 e.paymentStage === 'Trainer' &&
-                (e.notes?.startsWith('Trainer override M2') || e.notes?.startsWith('Trainer override M3'))
+                (e.notes?.startsWith('Trainer override M2') || e.notes?.startsWith('Trainer override M3')) &&
+                (oldSetterName ? e.notes?.includes(`— ${oldSetterName} (`) : true)
               ) return true;
               return false;
             });
@@ -763,6 +765,75 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     date: getM2PayDate(),
                     notes: 'Setter',
                   });
+                }
+              }
+            }
+
+            // ── Trainer override entries for the new setter's trainer ──
+            const setterTrainerAssignment = trainerAssignments.find((a) => a.traineeId === newSetterId);
+            if (setterTrainerAssignment) {
+              const setterTrainerRep = repsRef.current.find((r) => r.id === setterTrainerAssignment.trainerId);
+              const setterTraineeDeals = projects.filter((p) =>
+                (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) &&
+                ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+              ).length;
+              const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
+              const trainerInstallPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+              const setterName = newSetterRep?.name ?? '';
+
+              if (pastInstalled) {
+                const hasTrainerM2 = prevEntries.some((e) =>
+                  e.projectId === id &&
+                  e.repId === setterTrainerAssignment.trainerId &&
+                  e.paymentStage === 'Trainer' &&
+                  e.notes?.startsWith('Trainer override M2') &&
+                  (setterName ? e.notes?.includes(`— ${setterName} (`) : true)
+                );
+                if (!hasTrainerM2) {
+                  const m2TrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (trainerInstallPayPct / 100) * 100) / 100;
+                  if (m2TrainerAmount > 0) {
+                    newEntries.push({
+                      id: `pay_${ts}_m2_trainer_s`,
+                      repId: setterTrainerAssignment.trainerId,
+                      repName: setterTrainerRep?.name ?? '',
+                      projectId: id,
+                      customerName: old.customerName,
+                      amount: m2TrainerAmount,
+                      type: 'Deal',
+                      paymentStage: 'Trainer',
+                      status: 'Draft',
+                      date: getM2PayDate(),
+                      notes: `Trainer override M2 — ${setterName} ($${setterOverrideRate.toFixed(2)}/W)`,
+                    });
+                  }
+                }
+              }
+
+              if (pastPTO && !old.subDealerId) {
+                const hasTrainerM3 = prevEntries.some((e) =>
+                  e.projectId === id &&
+                  e.repId === setterTrainerAssignment.trainerId &&
+                  e.paymentStage === 'Trainer' &&
+                  e.notes?.startsWith('Trainer override M3') &&
+                  (setterName ? e.notes?.includes(`— ${setterName} (`) : true)
+                );
+                if (!hasTrainerM3) {
+                  const m3TrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - trainerInstallPayPct) / 100) * 100) / 100;
+                  if (m3TrainerAmount > 0) {
+                    newEntries.push({
+                      id: `pay_${ts}_m3_trainer_s`,
+                      repId: setterTrainerAssignment.trainerId,
+                      repName: setterTrainerRep?.name ?? '',
+                      projectId: id,
+                      customerName: old.customerName,
+                      amount: m3TrainerAmount,
+                      type: 'Deal',
+                      paymentStage: 'Trainer',
+                      status: 'Draft',
+                      date: getM2PayDate(),
+                      notes: `Trainer override M3 — ${setterName} ($${setterOverrideRate.toFixed(2)}/W)`,
+                    });
+                  }
                 }
               }
             }
@@ -1056,7 +1127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
-                const traineeDeals = updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                const traineeDeals = updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
                 if (m2TrainerAmount > 0) {
@@ -1081,7 +1152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
-                  const setterTraineeDeals = updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+                  const setterTraineeDeals = updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
                   const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
                   if (m2SetterTrainerAmount > 0) {
@@ -1194,7 +1265,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const m2CloserParsed = m2CloserRateMatch ? parseFloat(m2CloserRateMatch[1]) : NaN;
                 const overrideRate = !isNaN(m2CloserParsed)
                   ? m2CloserParsed
-                  : getTrainerOverrideRate(closerTrainerAssignment, updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
+                  : getTrainerOverrideRate(closerTrainerAssignment, updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length);
                 const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                 if (m3TrainerAmount > 0) {
                   newEntries.push({
@@ -1225,7 +1296,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   const m2SetterParsed = m2SetterRateMatch ? parseFloat(m2SetterRateMatch[1]) : NaN;
                   const setterOverrideRate = !isNaN(m2SetterParsed)
                     ? m2SetterParsed
-                    : getTrainerOverrideRate(setterTrainerAssignment, updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length);
+                    : getTrainerOverrideRate(setterTrainerAssignment, updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length);
                   const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                   if (m3SetterTrainerAmount > 0) {
                     const setterRep = reps.find(r => r.id === old.setterId);

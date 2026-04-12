@@ -1543,7 +1543,7 @@ export function computeIncentiveProgress(
     case 'commission': {
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
       return payrollEntries
-        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal' && (incentive.targetRepId === null || e.repId === incentive.targetRepId))
+        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal' && e.paymentStage !== 'Trainer' && (incentive.targetRepId === null || e.repId === incentive.targetRepId))
         .reduce((s, e) => s + e.amount, 0);
     }
     default:
