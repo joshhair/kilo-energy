@@ -607,12 +607,12 @@ export const PAYROLL_ENTRIES: PayrollEntry[] = [
   { id: 'pay_p15_m1', repId: 'rep5', repName: 'Jordan Lee', projectId: 'proj15', customerName: 'Thomas & Gwen Burke', amount: 1232, type: 'Deal', paymentStage: 'M1', status: 'Draft', date: '2026-02-21', notes: '' },
   // ── Trainer override entries ──
   // Alex Rivera (rep1) earns trainer overrides from trainee James Park (rep3)
-  { id: 'pay_t1_p7', repId: 'rep1', repName: 'Alex Rivera', projectId: 'proj7', customerName: 'William Foster', amount: 1680, type: 'Deal', paymentStage: 'Trainer', status: 'Paid', date: '2025-12-12', notes: 'Trainer override — James Park (Deal 1, $0.20/W)' },
-  { id: 'pay_t1_p8', repId: 'rep1', repName: 'Alex Rivera', projectId: 'proj8', customerName: 'Helen & Mark Russo', amount: 1020, type: 'Deal', paymentStage: 'Trainer', status: 'Pending', date: '2026-01-31', notes: 'Trainer override — James Park (Deal 2, $0.20/W)' },
+  { id: 'pay_t1_p7', repId: 'rep1', repName: 'Alex Rivera', projectId: 'proj7', customerName: 'William Foster', amount: 2400, type: 'Deal', paymentStage: 'Trainer', status: 'Paid', date: '2025-12-12', notes: 'Trainer override — James Park (Deal 1, $0.20/W)' },
+  { id: 'pay_t1_p8', repId: 'rep1', repName: 'Alex Rivera', projectId: 'proj8', customerName: 'Helen & Mark Russo', amount: 1440, type: 'Deal', paymentStage: 'Trainer', status: 'Pending', date: '2026-01-31', notes: 'Trainer override — James Park (Deal 2, $0.20/W)' },
   // Maria Santos (rep2) earns trainer overrides from trainee Jordan Lee (rep5)
-  { id: 'pay_t2_p13', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj13', customerName: 'Kevin & Sara Okonkwo', amount: 1596, type: 'Deal', paymentStage: 'Trainer', status: 'Paid', date: '2025-12-26', notes: 'Trainer override — Jordan Lee (Deal 1, $0.20/W)' },
-  { id: 'pay_t2_p14', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj14', customerName: 'Fiona Castillo', amount: 1050, type: 'Deal', paymentStage: 'Trainer', status: 'Pending', date: '2026-02-07', notes: 'Trainer override — Jordan Lee (Deal 2, $0.20/W)' },
-  { id: 'pay_t2_p15', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj15', customerName: 'Thomas & Gwen Burke', amount: 1232, type: 'Deal', paymentStage: 'Trainer', status: 'Draft', date: '2026-02-21', notes: 'Trainer override — Jordan Lee (Deal 3, $0.20/W)' },
+  { id: 'pay_t2_p13', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj13', customerName: 'Kevin & Sara Okonkwo', amount: 2280, type: 'Deal', paymentStage: 'Trainer', status: 'Paid', date: '2025-12-26', notes: 'Trainer override — Jordan Lee (Deal 1, $0.20/W)' },
+  { id: 'pay_t2_p14', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj14', customerName: 'Fiona Castillo', amount: 1500, type: 'Deal', paymentStage: 'Trainer', status: 'Pending', date: '2026-02-07', notes: 'Trainer override — Jordan Lee (Deal 2, $0.20/W)' },
+  { id: 'pay_t2_p15', repId: 'rep2', repName: 'Maria Santos', projectId: 'proj15', customerName: 'Thomas & Gwen Burke', amount: 1760, type: 'Deal', paymentStage: 'Trainer', status: 'Draft', date: '2026-02-21', notes: 'Trainer override — Jordan Lee (Deal 3, $0.20/W)' },
 ];
 
 const _SEED_PAYROLL_ENTRIES: PayrollEntry[] = [
@@ -1120,11 +1120,11 @@ export function getSolarTechBaseline(
 ): { closerPerW: number; setterPerW: number; kiloPerW: number } {
   const list = products ?? SOLARTECH_PRODUCTS;
   const product = list.find((p) => p.id === productId);
-  if (!product) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0 };
+  if (!product) throw new Error(`getSolarTechBaseline: unknown product id "${productId}"`);
   const tier = product.tiers.find(
     (t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)
   );
-  if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0 };
+  if (!tier) throw new Error(`getSolarTechBaseline: no tier found for product "${productId}" at ${kW} kW`);
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW };
 }
 
@@ -1415,7 +1415,7 @@ export function splitCloserSetterPay(
       : 0;
     const splitPoint = setterBaselinePerW + trainerRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.round(aboveSplit / 2 * 100) / 100;
+    const half = Math.floor(aboveSplit / 2 * 100) / 100;
     closerTotal = closerDifferential + half;
     setterTotal = aboveSplit - half;
   }

@@ -807,7 +807,12 @@ function KanbanView({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, prevPhase);
+                                  toast(`${proj.customerName} → ${prevPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
                                 }}
                                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#272b35] hover:bg-amber-600 text-[#c2c8d8] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
@@ -821,7 +826,12 @@ function KanbanView({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, nextPhase);
+                                  toast(`${proj.customerName} → ${nextPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
                                 }}
                                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#272b35] hover:bg-[#00e07a] text-[#c2c8d8] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}
@@ -1033,7 +1043,12 @@ function KanbanView({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, prevPhase);
+                                  toast(`${proj.customerName} → ${prevPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
                                 }}
                                 className="p-1 rounded-md bg-[#272b35] hover:bg-amber-600 text-[#c2c8d8] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
@@ -1047,7 +1062,12 @@ function KanbanView({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  const originalPhase = proj.phase;
                                   onPhaseChange(proj.id, nextPhase);
+                                  toast(`${proj.customerName} → ${nextPhase}`, 'success', {
+                                    label: 'Undo',
+                                    onClick: () => onPhaseChange(proj.id, originalPhase),
+                                  });
                                 }}
                                 className="p-1 rounded-md bg-[#272b35] hover:bg-[#00e07a] text-[#c2c8d8] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}
@@ -1632,7 +1652,7 @@ function TableView({
           cmp = a[sortKey] - b[sortKey];
           break;
         case 'soldDate':
-          cmp = a.soldDate.localeCompare(b.soldDate);
+          cmp = (a.soldDate ?? '').localeCompare(b.soldDate ?? '');
           break;
       }
       return sortDirection === 'asc' ? cmp : -cmp;
@@ -1660,7 +1680,15 @@ function TableView({
   const toggleAllProjects = () => {
     const pageIds = pagedProjects.map((p) => p.id);
     const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedProjectIds.has(id));
-    setSelectedProjectIds(allSelected ? new Set() : new Set(pageIds));
+    setSelectedProjectIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
   };
 
   const handleBulkAdvance = () => {

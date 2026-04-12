@@ -30,7 +30,7 @@ interface AppContextType {
   // Adds a project and auto-creates Draft payroll entries for all involved reps
   addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string, closerTrainerId?: string) => boolean;
   // Marks individual payroll entries as Pending
-  markForPayroll: (entryIds: string[]) => void;
+  markForPayroll: (entryIds: string[]) => Promise<void>;
   // Persists a new payroll entry to the DB, registers its temp ID in the resolution map
   // so markForPayroll waits for the real DB id before sending PATCH
   persistPayrollEntry: (entry: PayrollEntry) => void;
@@ -45,7 +45,7 @@ interface AppContextType {
   addFinancer: (name: string) => void;
   // Rep management
   reps: Rep[];
-  addRep: (firstName: string, lastName: string, email: string, phone: string, repType?: 'closer' | 'setter' | 'both', id?: string) => Promise<{ id: string } | undefined>;
+  addRep: (firstName: string, lastName: string, email: string, phone: string, repType?: 'closer' | 'setter' | 'both', id?: string, role?: 'rep' | 'admin' | 'sub-dealer') => Promise<{ id: string } | undefined>;
   /** @deprecated Use `deactivateRep` (preserves entry, marks inactive) or `deleteRepPermanently` (hard delete). */
   removeRep: (id: string) => void;
   /** Soft-deactivate: marks active=false, keeps the entry in `reps` array so historical views can render greyed-out. Calls Clerk lock + invitation revoke server-side. */
@@ -145,6 +145,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [installers, setInstallers] = useState<ManagedItem[]>(INSTALLERS.map((name) => ({ name, active: true })));
   const [financers, setFinancers] = useState<ManagedItem[]>(FINANCERS.map((name) => ({ name, active: true })));
   const [reps, setReps] = useState<Rep[]>(REPS.map((r) => ({ ...r })));
+  const repsRef = useRef(reps);
+  repsRef.current = reps;
   const [subDealers, setSubDealers] = useState<SubDealer[]>(SUB_DEALERS.map((sd) => ({ ...sd })));
   const [installerPricingVersions, setInstallerPricingVersions] = useState<InstallerPricingVersion[]>(INSTALLER_PRICING_VERSIONS.map((v) => ({ ...v })));
   const [solarTechProducts, setSolarTechProducts] = useState<SolarTechProduct[]>(SOLARTECH_PRODUCTS.map((p) => ({ ...p, tiers: p.tiers.map((t) => ({ ...t })) })));
@@ -656,10 +658,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Purge the old setter's Draft/Pending payroll entries for this project so they
         // cannot be accidentally promoted and paid after the setter is removed or replaced.
         if (old.setterId) {
+          const oldSetterTrainerAssignment = trainerAssignments.find((a) => a.traineeId === old.setterId);
           setPayrollEntries((prevEntries) => {
-            const toRemove = prevEntries.filter(
-              (e) => e.projectId === id && e.repId === old.setterId && (e.status === 'Draft' || e.status === 'Pending')
-            );
+            const toRemove = prevEntries.filter((e) => {
+              if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending')) return false;
+              // The setter's own entries
+              if (e.repId === old.setterId) return true;
+              // Trainer override entries for the old setter's trainer
+              if (
+                oldSetterTrainerAssignment &&
+                e.repId === oldSetterTrainerAssignment.trainerId &&
+                e.paymentStage === 'Trainer' &&
+                (e.notes?.startsWith('Trainer override M2') || e.notes?.startsWith('Trainer override M3'))
+              ) return true;
+              return false;
+            });
             if (toRemove.length > 0) {
               deletePayrollEntriesFromDb(toRemove.map((e) => e.id));
               return prevEntries.filter((e) => !toRemove.includes(e));
@@ -673,7 +686,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // unless milestones were manually cycled backward and forward again.
         if (updates.setterId) {
           const newSetterId = updates.setterId;
-          const newSetterRep = reps.find((r) => r.id === newSetterId);
+          const newSetterRep = repsRef.current.find((r) => r.id === newSetterId);
           const effectivePhase = (updates.phase ?? old.phase) as string;
           const PIPELINE = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
           const effectiveIdx = PIPELINE.indexOf(effectivePhase);
@@ -697,7 +710,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   repName: newSetterRep?.name ?? '',
                   projectId: id,
                   customerName: old.customerName,
-                  amount: effectiveSetterM1!,
+                  amount: effectiveSetterM1 ?? 0,
                   type: 'Deal',
                   paymentStage: 'M1',
                   status: 'Draft',
@@ -716,7 +729,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   repName: newSetterRep?.name ?? '',
                   projectId: id,
                   customerName: old.customerName,
-                  amount: effectiveSetterM2!,
+                  amount: effectiveSetterM2 ?? 0,
                   type: 'Deal',
                   paymentStage: 'M2',
                   status: 'Draft',
@@ -730,7 +743,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const hasM2Entry = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
               const setterM3 = (effectiveSetterM3 ?? 0) > 0
-                ? effectiveSetterM3!
+                ? (effectiveSetterM3 ?? 0)
                 : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
                   ? Math.round((effectiveSetterM2 ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
                   : 0;
@@ -1107,20 +1120,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const newEntries: PayrollEntry[] = [];
               const closerRep = reps.find((r) => r.id === old.repId);
 
-              // Closer M3 entry
-              newEntries.push({
-                id: `pay_${ts}_m3_c`,
-                repId: old.repId,
-                repName: closerRep?.name ?? old.repName,
-                projectId: id,
-                customerName: old.customerName,
-                amount: m3,
-                type: 'Deal',
-                paymentStage: 'M3',
-                status: 'Draft',
-                date: payDate,
-                notes: '',
-              });
+              // Closer M3 entry — only when installPayPct < 100 produces a non-zero amount
+              if (m3 > 0) {
+                newEntries.push({
+                  id: `pay_${ts}_m3_c`,
+                  repId: old.repId,
+                  repName: closerRep?.name ?? old.repName,
+                  projectId: id,
+                  customerName: old.customerName,
+                  amount: m3,
+                  type: 'Deal',
+                  paymentStage: 'M3',
+                  status: 'Draft',
+                  date: payDate,
+                  notes: '',
+                });
+              }
 
               // Setter M3 entry
               if (old.setterId) {
@@ -1148,7 +1163,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               }
 
               // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
-              // Closer's trainer
+              // Closer's trainer — gated by m3 > 0, which is 0 for sub-dealer deals
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment && m3 > 0) {
                 const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
@@ -1177,8 +1192,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
               }
 
-              // Setter's trainer
-              if (old.setterId) {
+              // Setter's trainer — guarded by !old.subDealerId to match closer's trainer (m3 > 0 is 0 for sub-dealer deals)
+              if (old.setterId && !old.subDealerId) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
@@ -1615,14 +1630,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       delete next[name];
       return next;
     });
-    setProductCatalogProducts((prev) => {
-      const removedIds = prev.filter((p) => p.installer === name).map((p) => p.id);
-      // Also clean up pricing versions for removed products
-      if (removedIds.length > 0) {
-        setProductCatalogPricingVersions((pvPrev) => pvPrev.filter((v) => !removedIds.includes(v.productId)));
-      }
-      return prev.filter((p) => p.installer !== name);
-    });
+    const removedIds = productCatalogProducts.filter((p) => p.installer === name).map((p) => p.id);
+    setProductCatalogProducts((prev) => prev.filter((p) => p.installer !== name));
+    if (removedIds.length > 0) {
+      setProductCatalogPricingVersions((prev) => prev.filter((v) => !removedIds.includes(v.productId)));
+    }
     // Clean up pay config for deleted installer
     setInstallerPayConfigs((prev) => {
       const next = { ...prev };
@@ -1830,7 +1842,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const failedOrigIds = results.filter((r) => r.resolvedId === null).map((r) => r.origId);
       return { resolved, failedOrigIds };
     };
-    resolveIds().then(({ resolved: resolvedIds, failedOrigIds }) => {
+    return resolveIds().then(({ resolved: resolvedIds, failedOrigIds }) => {
       // Roll back any entries whose POST failed — they are still Draft in the DB
       if (failedOrigIds.length > 0) {
         const failedSet = new Set(failedOrigIds);
@@ -1847,7 +1859,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return;
       }
       // Persist bulk status update — rollback on any failure
-      persistFetch('/api/payroll', {
+      return persistFetch('/api/payroll', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: resolvedIds, status: 'Pending' }),

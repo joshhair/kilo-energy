@@ -75,7 +75,8 @@ function isThisWeek(dateStr: string): boolean {
   return date >= startOfWeek && date < endOfWeek;
 }
 
-function isThisMonth(dateStr: string): boolean {
+function isThisMonth(dateStr: string | null | undefined): boolean {
+  if (!dateStr) return false;
   const [year, month] = dateStr.split('-').map(Number);
   const now = new Date();
   return month - 1 === now.getMonth() && year === now.getFullYear();
@@ -1625,7 +1626,7 @@ export default function DashboardPage() {
                       <span className="text-[#00e07a] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
-                        <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
+                        <MilestoneDot label="M2" paid={proj.m2Paid} amount={m2DisplayAmount} />
                         {(proj.m3Amount ?? 0) > 0 && (
                           <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
                         )}
@@ -1708,7 +1709,7 @@ function PMDashboard({
         <div className="space-y-2">
           {ACTIVE_PHASES.map((phase) => {
             const count = phaseCounts[phase] || 0;
-            const pct = projects.length > 0 ? (count / projects.length) * 100 : 0;
+            const pct = activeProjects.length > 0 ? (count / activeProjects.length) * 100 : 0;
             return (
               <div key={phase} className="flex items-center gap-3">
                 <span className="text-xs text-[#c2c8d8] w-28 shrink-0">{phase}</span>
@@ -2313,7 +2314,7 @@ function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">

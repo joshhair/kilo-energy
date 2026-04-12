@@ -156,7 +156,7 @@ function PayrollPageInner() {
     const idx = pageView === 'payroll' ? 0 : 1;
     const el = pageViewRefs.current[idx];
     if (el) setPageViewIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [pageView]);
+  }, [pageView, isHydrated]);
 
   // Sliding tab indicators
   const statusTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -169,14 +169,14 @@ function PayrollPageInner() {
     const idx = STATUS_TABS.indexOf(statusTab);
     const el = statusTabRefs.current[idx];
     if (el) setStatusIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [statusTab]);
+  }, [statusTab, isHydrated]);
 
   useEffect(() => {
     const TYPE_TABS: TypeTab[] = ['Deal', 'Bonus'];
     const idx = TYPE_TABS.indexOf(typeTab);
     const el = typeTabRefs.current[idx];
     if (el) setTypeIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [typeTab]);
+  }, [typeTab, isHydrated]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -299,7 +299,7 @@ function PayrollPageInner() {
   const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
   const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
   // Header checkbox state: only considers entries visible on the current page.
-  const allPageSelected = filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id));
+  const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
 
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
@@ -338,17 +338,21 @@ function PayrollPageInner() {
     }
   };
 
-  const handleMarkForPayroll = () => {
+  const handleMarkForPayroll = async () => {
     if (markingForPayroll) return;
     setMarkingForPayroll(true);
     const amount = filtered
       .filter((e) => selectedIds.has(e.id))
       .reduce((s, e) => s + e.amount, 0);
-    markForPayroll(Array.from(selectedIds));
+    const ids = filtered.filter((e) => selectedIds.has(e.id)).map((e) => e.id);
     setSelectedIds(new Set());
     changeStatusTab('Pending');
-    toast(`${selectedIds.size} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
-    setTimeout(() => setMarkingForPayroll(false), 0);
+    toast(`${ids.length} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
+    try {
+      await markForPayroll(ids);
+    } finally {
+      setMarkingForPayroll(false);
+    }
   };
 
   const toggleEntry = (id: string) => {
@@ -371,7 +375,7 @@ function PayrollPageInner() {
   };
 
   const selectAll = () => {
-    const allIds = filtered.map((e) => e.id);
+    const allIds = paginatedFiltered.map((e) => e.id);
     const allSelected = allIds.every((id) => selectedIds.has(id));
     setSelectedIds((prev) => {
       const next = new Set(prev);

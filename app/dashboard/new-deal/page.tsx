@@ -582,6 +582,7 @@ function NewDealPage() {
   useEffect(() => {
     if (duplicateApplied.current) return;
     if (searchParams.get('duplicate') !== 'true') return;
+    if (!dbReady) return;
     duplicateApplied.current = true;
     const rawInstaller = searchParams.get('installer') ?? '';
     const installer = activeInstallers.includes(rawInstaller) ? rawInstaller : '';
@@ -603,7 +604,7 @@ function NewDealPage() {
     toast('Deal duplicated — fill in the new customer details', 'info');
     // Auto-focus customer name field after a brief delay for form to render
     setTimeout(() => customerNameInputRef.current?.focus(), 150);
-  }, [searchParams, currentRole, currentRepId, activeInstallers, activeFinancers, toast]);
+  }, [searchParams, dbReady, currentRole, currentRepId, activeInstallers, activeFinancers, toast]);
 
   // ── Pre-fill last-used installer from localStorage ────────────────────────
   const lastInstallerApplied = useRef(false);
@@ -1842,7 +1843,7 @@ function NewDealPage() {
                       if (value !== 'blitz' || form.leadSource === 'blitz') {
                         update('blitzId', '');
                       }
-                      if (form.leadSource !== 'blitz' && value === 'blitz') {
+                      if (form.leadSource !== 'blitz' && value === 'blitz' && !form.soldDate) {
                         update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
                     }}
@@ -1886,7 +1887,7 @@ function NewDealPage() {
                       }
                     }}
                     onBlur={() => handleBlur('blitzId')}
-                    className={inputCls('')} style={inputFieldStyle('')}
+                    className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}
                   >
                     <option value="">— Select Blitz —</option>
                     {availableBlitzes.map((b) => (
@@ -1965,7 +1966,7 @@ function NewDealPage() {
       </div> {/* end split layout */}
 
       {/* ── Sticky mobile commission preview bar (step 2 only) ── */}
-      {currentStep === 1 && showPreview && (
+      {currentStep === 1 && (showPreview || (isSubDealer && subDealerCommission > 0)) && (
         <div className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-[#161920]/95 backdrop-blur-sm border-t border-[#333849] px-4 py-3">
           <div className="flex items-center justify-between max-w-2xl mx-auto">
             <div className="flex flex-col">
