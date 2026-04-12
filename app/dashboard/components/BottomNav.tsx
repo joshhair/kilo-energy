@@ -558,7 +558,14 @@ export default function BottomNav({
                       }}
                     />
                   </span>
-                  <span className="text-[10px] tracking-wide transition-colors duration-200" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                  <span className="text-[10px] tracking-wide" style={{
+                    color: active ? '#00e5a0' : '#8899aa',
+                    fontFamily: "'DM Sans', sans-serif",
+                    transform: active ? 'translateY(0px)' : 'translateY(2px)',
+                    opacity: active ? 1 : 0.65,
+                    transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease',
+                    willChange: 'transform, opacity',
+                  }}>{item.label}</span>
                 </button>
               );
             }
@@ -583,7 +590,14 @@ export default function BottomNav({
                 >
                   <Icon className="w-[18px] h-[18px]" />
                 </span>
-                <span className="text-[10px] tracking-wide transition-colors duration-200" style={{ color: active ? '#00e5a0' : '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                <span className="text-[10px] tracking-wide" style={{
+                  color: active ? '#00e5a0' : '#8899aa',
+                  fontFamily: "'DM Sans', sans-serif",
+                  transform: active ? 'translateY(0px)' : 'translateY(2px)',
+                  opacity: active ? 1 : 0.65,
+                  transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease',
+                  willChange: 'transform, opacity',
+                }}>{item.label}</span>
               </Link>
             );
           })}

@@ -182,7 +182,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     fetch('/api/data')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`/api/data returned ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
         if (cancelled) return;
         setReps(data.reps ?? []);
@@ -214,18 +217,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch unread mention count for current rep
   const refreshMentionCount = useCallback(() => {
-    if (!currentRepId) { setUnreadMentionCount(0); return; }
-    fetch(`/api/mentions?userId=${encodeURIComponent(currentRepId)}`)
+    if (!effectiveRepId) { setUnreadMentionCount(0); return; }
+    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setUnreadMentionCount(data.length);
       })
       .catch(() => {});
-  }, [currentRepId]);
+  }, [effectiveRepId]);
 
   useEffect(() => {
-    if (dbReady && currentRepId) refreshMentionCount();
-  }, [dbReady, currentRepId, refreshMentionCount]);
+    if (dbReady && effectiveRepId) refreshMentionCount();
+  }, [dbReady, effectiveRepId, refreshMentionCount]);
 
   // Helper: persist a payroll entry to the DB and sync the DB-assigned id back to local state
   const persistPayrollEntry = useCallback((entry: PayrollEntry) => {
@@ -467,14 +470,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
   const deleteRepPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
-    const snapshot = reps.find((r) => r.id === id);
+    const snapshotIndex = reps.findIndex((r) => r.id === id);
+    const snapshot = reps[snapshotIndex];
     setReps((prev) => prev.filter((r) => r.id !== id));
     try {
       await persistFetch(`/api/users/${id}`, { method: 'DELETE' }, 'Failed to delete rep');
       return { success: true };
     } catch (err: unknown) {
       // Roll back — the server probably rejected with 409 (has relations)
-      if (snapshot) setReps((prev) => [...prev, snapshot]);
+      if (snapshot) setReps((prev) => {
+        const next = [...prev];
+        next.splice(snapshotIndex, 0, snapshot);
+        return next;
+      });
       return { success: false, error: err instanceof Error ? err.message : 'Failed to delete rep' };
     }
   };
@@ -756,6 +764,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const paidEntriesToChargeback = paidEntries.filter(
               (pe) => !remaining.some(
                 (e) => e.projectId === id && e.type === 'Deal' && e.amount < 0
+                  && e.status !== 'Paid'
                   && e.repId === pe.repId && e.paymentStage === pe.paymentStage
               )
             );
@@ -857,17 +866,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const newEntries: PayrollEntry[] = [];
             const closerRep = reps.find((r) => r.id === old.repId);
 
-            // Closer entry
-            if (amount > 0) {
+            // Closer entry (skip M1 when a setter exists — M1 goes entirely to the setter)
+            if (amount > 0 && !(isAcceptance && old.setterId)) {
               newEntries.push({
                 id: `pay_${ts}_${stage.toLowerCase()}_c`,
                 repId: old.repId,
                 repName: closerRep?.name ?? old.repName,
                 projectId: id,
                 customerName: old.customerName,
-                amount: isAcceptance
-                  ? (old.setterId ? 0 : amount)  // M1 goes to setter if there is one, else closer
-                  : amount,                        // M2 always to closer
+                amount,
                 type: 'Deal',
                 paymentStage: stage,
                 status: 'Draft',
@@ -1684,12 +1691,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const markForPayroll = (entryIds: string[]) => {
     const idSet = new Set(entryIds);
-    // Snapshot before optimistic update so we can rollback on failure
-    let snapshot: typeof payrollEntries | null = null;
-    setPayrollEntries((prev) => {
-      snapshot = prev;
-      return prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e));
-    });
+    // Snapshot before optimistic update so we can rollback on failure.
+    // Captured synchronously here — not inside the updater — so it's always
+    // available when the async PATCH callback fires.
+    const snapshot = payrollEntries;
+    setPayrollEntries((prev) =>
+      prev.map((e) => (idSet.has(e.id) && e.status === 'Draft' ? { ...e, status: 'Pending' } : e))
+    );
     // Resolve any temp IDs to real DB IDs before sending PATCH.
     // If a payroll POST is still in-flight, await it so we never send a temp ID to the DB
     // (the DB has no row for it yet, so updateMany would silently update 0 rows).

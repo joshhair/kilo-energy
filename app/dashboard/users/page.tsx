@@ -563,7 +563,7 @@ function UsersPageInner() {
 
   const rankMap = new Map(
     [...reps]
-      .filter((r) => r.active !== false)
+      .filter((r) => r.active !== false && (repPaidAmounts.get(r.id) ?? 0) > 0)
       .sort((a, b) => (repPaidAmounts.get(b.id) ?? 0) - (repPaidAmounts.get(a.id) ?? 0))
       .map((rep, idx) => [rep.id, idx + 1])
   );

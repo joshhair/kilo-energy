@@ -703,7 +703,7 @@ function NewDealPage() {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: mappedFinancer }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: '' }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', mappedFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 
@@ -1879,6 +1879,7 @@ function NewDealPage() {
                         update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
                     }}
+                    onBlur={() => handleBlur('blitzId')}
                     className={inputCls('')} style={inputFieldStyle('')}
                   >
                     <option value="">— Select Blitz —</option>

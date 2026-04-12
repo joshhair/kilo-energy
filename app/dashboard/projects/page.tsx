@@ -45,7 +45,7 @@ function relativeTime(dateStr: string | null | undefined): string {
  *   60+ days   → red
  */
 function StaleBadge({ soldDate, phase }: { soldDate: string | null; phase: Phase }) {
-  if (!ACTIVE_PHASES.includes(phase)) return null;
+  if (!ACTIVE_PHASES.includes(phase) || phase === 'Completed') return null;
   if (!soldDate) return null;
   const days = daysSince(soldDate);
   if (days < 30) return null;
@@ -214,7 +214,7 @@ function ProjectsPageInner() {
   const filtered = statusFiltered.filter((p) => {
     const matchSearch =
       p.customerName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      p.repName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (p.repName ?? '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       (p.setterName ?? '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       p.phase.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       p.installer.toLowerCase().includes(debouncedSearch.toLowerCase());
@@ -546,7 +546,7 @@ function KanbanView({
 }) {
   const { toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
-  const activePhasesForKanban = PHASES.filter((p) => p !== 'Cancelled' && p !== 'On Hold');
+  const activePhasesForKanban = PHASES.filter((p) => p !== 'Cancelled' && p !== 'On Hold' && p !== 'Completed');
   const cancelledAndHold = ['Cancelled', 'On Hold'] as Phase[];
 
   // ── Kanban search — filters cards by customer name ────────────────────────
@@ -717,7 +717,7 @@ function KanbanView({
                       <p className="text-xs text-[#8891a8] mt-0.5">
                         ${phaseProjects.reduce((sum, p) => {
                           if (!isAdmin && dealScope === 'mine') {
-                            if (p.repId === currentRepId) return sum + (p.setterId ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                            if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
                             if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                             return sum;
                           }
@@ -749,7 +749,7 @@ function KanbanView({
                       : null;
                     const isMyCard = myRole !== null;
                     const commissionTotal = !isAdmin && dealScope === 'mine'
-                      ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
+                      ? (myRole === 'Closer' ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
                       : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -972,7 +972,7 @@ function KanbanView({
                       : null;
                     const isMyCard = myRole !== null;
                     const commissionTotal = !isAdmin && dealScope === 'mine'
-                      ? (myRole === 'Closer' ? (proj.setterId ? 0 : (proj.m1Amount ?? 0)) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
+                      ? (myRole === 'Closer' ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
                       : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -1622,7 +1622,7 @@ function TableView({
         case 'repName':
         case 'installer':
         case 'financer':
-          cmp = a[sortKey].localeCompare(b[sortKey]);
+          cmp = (a[sortKey] ?? '').localeCompare(b[sortKey] ?? '');
           break;
         case 'phase':
           cmp = PHASES.indexOf(a.phase) - PHASES.indexOf(b.phase);
@@ -1703,8 +1703,20 @@ function TableView({
   // Bulk change phase — with ConfirmDialog for destructive phases
   const [bulkConfirm, setBulkConfirm] = useState<{ phase: Phase; count: number } | null>(null);
 
+  // Bulk cancellation reason modal state (mirrors the single-project cancel reason modal)
+  const [bulkCancelReasonModal, setBulkCancelReasonModal] = useState<{ count: number } | null>(null);
+  const [bulkCancelReason, setBulkCancelReason] = useState('');
+  const [bulkCancelNotes, setBulkCancelNotes] = useState('');
+
   const handleBulkChangePhase = (targetPhase: Phase) => {
-    if (targetPhase === 'Cancelled' || targetPhase === 'On Hold') {
+    if (targetPhase === 'Cancelled') {
+      setBulkCancelReason('');
+      setBulkCancelNotes('');
+      setBulkCancelReasonModal({ count: selectedProjectIds.size });
+      setBulkPhaseTarget('');
+      return;
+    }
+    if (targetPhase === 'On Hold') {
       setBulkConfirm({ phase: targetPhase, count: selectedProjectIds.size });
       setBulkPhaseTarget('');
       return;
@@ -1712,16 +1724,25 @@ function TableView({
     executeBulkPhaseChange(targetPhase);
   };
 
+  const confirmBulkCancelWithReason = () => {
+    if (!bulkCancelReasonModal) return;
+    const count = selectedProjectIds.size;
+    selectedProjectIds.forEach((id) => {
+      updateProject(id, {
+        phase: 'Cancelled',
+        cancellationReason: bulkCancelReason || undefined,
+        cancellationNotes: bulkCancelNotes || undefined,
+      } as Partial<typeof projects[0]>);
+    });
+    toast(`${count} project${count > 1 ? 's' : ''} moved to Cancelled`, 'info');
+    setSelectedProjectIds(new Set());
+    setBulkPhaseTarget('');
+    setBulkCancelReasonModal(null);
+  };
+
   const executeBulkPhaseChange = (targetPhase: Phase) => {
     const count = selectedProjectIds.size;
-    if (targetPhase === 'Cancelled') {
-      // onPhaseChange opens the per-project cancel-reason modal and returns early,
-      // so bulk cancel must call updateProject directly (the bulkConfirm dialog
-      // has already given the user a chance to abort before we get here).
-      selectedProjectIds.forEach((id) => {
-        updateProject(id, { phase: 'Cancelled' });
-      });
-    } else if (targetPhase === 'On Hold') {
+    if (targetPhase === 'On Hold') {
       // onPhaseChange opens a per-project setPhaseConfirm modal and returns early,
       // so bulk 'On Hold' must call updateProject directly (bulkConfirm already confirmed).
       selectedProjectIds.forEach((id) => {
@@ -1991,7 +2012,7 @@ function TableView({
                   <td className="px-5 py-3 text-[#c2c8d8]">{proj.installer}</td>
                   <td className="px-5 py-3 text-[#c2c8d8]">{proj.financer}</td>
                   <td className="px-5 py-3 text-[#c2c8d8]">{proj.kWSize}</td>
-                  {!hideFinancials && <td className="px-5 py-3" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW}</td>}
+                  {!hideFinancials && <td className="px-5 py-3" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW.toFixed(2)}</td>}
                   <td className="px-5 py-3 text-[#8891a8]">
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-[#525c72]">{relativeTime(proj.soldDate)}</div>
@@ -2187,16 +2208,58 @@ function TableView({
         </div>
       )}
 
-      {/* Bulk phase change confirmation */}
+      {/* Bulk phase change confirmation (On Hold only) */}
       <ConfirmDialog
         open={!!bulkConfirm}
         onClose={() => { setBulkConfirm(null); setBulkPhaseTarget(''); }}
         onConfirm={() => { if (bulkConfirm) executeBulkPhaseChange(bulkConfirm.phase); }}
         title={`Move ${bulkConfirm?.count ?? 0} project${(bulkConfirm?.count ?? 0) > 1 ? 's' : ''} to ${bulkConfirm?.phase ?? ''}?`}
-        message={`This will move ${bulkConfirm?.count ?? 0} selected project${(bulkConfirm?.count ?? 0) > 1 ? 's' : ''} to ${bulkConfirm?.phase ?? ''}. ${bulkConfirm?.phase === 'Cancelled' ? 'Cancelled projects are removed from the pipeline.' : 'On-hold projects are paused.'}`}
-        confirmLabel={bulkConfirm?.phase === 'Cancelled' ? 'Cancel Projects' : 'Put On Hold'}
-        danger={bulkConfirm?.phase === 'Cancelled'}
+        message={`This will move ${bulkConfirm?.count ?? 0} selected project${(bulkConfirm?.count ?? 0) > 1 ? 's' : ''} to ${bulkConfirm?.phase ?? ''}. On-hold projects are paused.`}
+        confirmLabel="Put On Hold"
+        danger={false}
       />
+
+      {/* Bulk Cancellation Reason Modal */}
+      {bulkCancelReasonModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setBulkCancelReasonModal(null); }}>
+          <div className="bg-[#161920] border border-[#272b35] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#333849]">
+              <h2 className="text-white font-bold text-base">Cancel {bulkCancelReasonModal.count} Project{bulkCancelReasonModal.count > 1 ? 's' : ''}</h2>
+              <button onClick={() => setBulkCancelReasonModal(null)} className="text-[#c2c8d8] hover:text-white transition-colors rounded-lg p-1 hover:bg-[#1d2028]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-[#c2c8d8] text-sm">Why are <span className="text-white font-medium">{bulkCancelReasonModal.count} project{bulkCancelReasonModal.count > 1 ? 's' : ''}</span> being cancelled?</p>
+              <div>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
+                <select value={bulkCancelReason} onChange={(e) => setBulkCancelReason(e.target.value)}
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]">
+                  <option value="">Select a reason...</option>
+                  <option value="Customer changed mind">Customer changed mind</option>
+                  <option value="Credit denied">Credit denied</option>
+                  <option value="Roof not suitable">Roof not suitable</option>
+                  <option value="Competitor won">Competitor won</option>
+                  <option value="Pricing issue">Pricing issue</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[#c2c8d8] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[#525c72] font-normal normal-case">(optional)</span></label>
+                <textarea rows={2} value={bulkCancelNotes} onChange={(e) => setBulkCancelNotes(e.target.value)} placeholder="Additional details..."
+                  className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a] resize-none placeholder-slate-500" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setBulkCancelReasonModal(null)}
+                  className="flex-1 bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] text-[#c2c8d8] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">Go Back</button>
+                <button onClick={confirmBulkCancelWithReason}
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]">Cancel Projects</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

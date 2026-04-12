@@ -49,7 +49,8 @@ function isInPeriod(dateStr: string | null | undefined, period: Period): boolean
 }
 
 /** Returns true when dateStr falls in the period immediately preceding `period`. */
-function isInPreviousPeriod(dateStr: string, period: Period): boolean {
+function isInPreviousPeriod(dateStr: string | null | undefined, period: Period): boolean {
+  if (!dateStr) return false;
   const [year, month] = dateStr.split('-').map(Number);
   const now = new Date();
   if (period === 'this-month') {
@@ -992,7 +993,7 @@ export default function DashboardPage() {
   const chargebackCount = myPayroll.filter((p) => p.amount < 0).length;
   const totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
-  const totalKWSold = totalKW;
+  const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // ── Previous-period equivalents for trend-badge percentage changes ──────────
@@ -1080,7 +1081,7 @@ export default function DashboardPage() {
   // Next Payout: Draft + Pending entries dated for the upcoming Friday (matches Earnings page).
   const nextFridayDate = (() => {
     const today = new Date();
-    const d = (5 - today.getDay() + 7) % 7;
+    const d = ((5 - today.getDay() + 7) % 7) || 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
     const yyyy = nf.getFullYear();
@@ -1095,7 +1096,7 @@ export default function DashboardPage() {
   // Calculate days until next payday (Friday). Returns 0 if today is Friday.
   const daysUntilPayday = (() => {
     const today = new Date();
-    return (5 - today.getDay() + 7) % 7;
+    return ((5 - today.getDay() + 7) % 7) || 7;
   })();
   const nextFridayLabel = (() => {
     const today = new Date();
@@ -1940,6 +1941,7 @@ function AdminDashboard({
       if (proj.flagged) continue;
       const threshold = PHASE_STUCK_THRESHOLDS_ADMIN[proj.phase];
       if (threshold == null) continue;
+      if (!proj.soldDate) continue;
       const [y, m, d] = proj.soldDate.split('-').map(Number);
       const sold = new Date(y, m - 1, d);
       const diffDays = Math.floor((todayAdmin.getTime() - sold.getTime()) / 86_400_000);
@@ -2307,7 +2309,7 @@ function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
@@ -2606,7 +2608,9 @@ function SubDealerDashboard({
         ) : (
           <div className="divide-y divide-slate-800/60">
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
-              const estPay = (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+              const estPay = proj.setterId === currentRepId
+                ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                : (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
               const soldLabel = (() => {
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
                 const sold = new Date(y, m - 1, d);

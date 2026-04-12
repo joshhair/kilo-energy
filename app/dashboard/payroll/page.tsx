@@ -82,6 +82,7 @@ function PayrollPageInner() {
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [publishingPayroll, setPublishingPayroll] = useState(false);
   const [bonusForm, setBonusForm] = useState({ repId: '', amount: '', notes: '', date: '' });
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', stage: 'M1' as 'M1' | 'M2' | 'M3', date: '', notes: '' });
   const bonusPanelRef = useRef<HTMLDivElement>(null);
@@ -93,6 +94,10 @@ function PayrollPageInner() {
   const [reimFilterFrom, setReimFilterFrom] = useState('');
   const [reimFilterTo, setReimFilterTo] = useState('');
   const [processingReimIds, setProcessingReimIds] = useState<Set<string>>(new Set());
+
+  // Rep-view filters (non-admin)
+  const [repTypeFilter, setRepTypeFilter] = useState<'All' | 'Deal' | 'Bonus'>('All');
+  const [repStatusFilter, setRepStatusFilter] = useState<'All' | 'Draft' | 'Pending' | 'Paid'>('All');
 
   // Payroll entries date filter
   const [payFilterFrom, setPayFilterFrom] = useState('');
@@ -215,7 +220,7 @@ function PayrollPageInner() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, effectiveRole, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId]);
+  }, [isMobile, effectiveRole, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId, adminPage, adminRowsPerPage]);
 
   // ── Single-pass filter + totals ───────────────────────────────────────
   // Was: 5 separate passes over payrollEntries (2700+ rows) per render:
@@ -297,6 +302,8 @@ function PayrollPageInner() {
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
   const handlePublish = async () => {
+    if (publishingPayroll) return;
+    setPublishingPayroll(true);
     // Publish only Pending entries matching the active filters (same set the button's disabled state reflects)
     const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending');
     const ids = pendingVisible.map((e) => e.id);
@@ -324,6 +331,8 @@ function PayrollPageInner() {
       console.error('[handlePublish] Network error:', err);
       setPayrollEntries(snapshot);
       toast(`Payroll failed to save — rolled back`, 'error');
+    } finally {
+      setPublishingPayroll(false);
     }
   };
 
@@ -442,6 +451,10 @@ function PayrollPageInner() {
     const myDraft = myEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
     const myPending = myEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
     const myPaid = myEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+    const myFiltered = myEntries
+      .filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter)
+      .filter((p) => repStatusFilter === 'All' || p.status === repStatusFilter)
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
     return (
       <div className="p-4 md:p-8">
         <div className="flex items-center gap-3 mb-8">
@@ -458,6 +471,32 @@ function PayrollPageInner() {
           <StatCard label="Draft" value={myDraft} color="text-[#c2c8d8]" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
           <StatCard label="Pending" value={myPending} color="text-yellow-400" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
           <StatCard label="Paid" value={myPaid} color="text-[#00e07a]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
+        </div>
+        {/* Type and status filters */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <div className="flex gap-1 rounded-xl p-1" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
+            {(['All', 'Deal', 'Bonus'] as const).map((t) => (
+              <button key={t} onClick={() => setRepTypeFilter(t)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
+                style={repTypeFilter === t ? { background: '#2563eb', color: '#fff' } : { color: '#8891a8' }}>
+                {t}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 rounded-xl p-1" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
+            {(['All', 'Draft', 'Pending', 'Paid'] as const).map((s) => (
+              <button key={s} onClick={() => setRepStatusFilter(s)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
+                style={repStatusFilter === s
+                  ? s === 'Paid' ? { background: 'rgba(0,224,122,0.2)', color: '#00e07a' }
+                    : s === 'Pending' ? { background: 'rgba(255,176,32,0.2)', color: '#ffb020' }
+                    : s === 'Draft' ? { background: 'rgba(77,159,255,0.2)', color: '#4d9fff' }
+                    : { background: '#2563eb', color: '#fff' }
+                  : { color: '#8891a8' }}>
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
         {myEntries.length === 0 ? (
           <div className="flex justify-center py-10">
@@ -481,12 +520,15 @@ function PayrollPageInner() {
               <p className="text-[#8891a8] text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
             </div>
           </div>
+        ) : myFiltered.length === 0 ? (
+          <p className="text-center text-sm py-10" style={{ color: '#8891a8' }}>No entries match the selected filters.</p>
         ) : (
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: '#1d2028', borderBottom: '1px solid #333849' }}>
                   <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Customer / Note</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Type</th>
                   <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Stage</th>
                   <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Amount</th>
                   <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Status</th>
@@ -494,10 +536,15 @@ function PayrollPageInner() {
                 </tr>
               </thead>
               <tbody>
-                {myEntries.map((entry, i) => (
+                {myFiltered.map((entry, i) => (
                   <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid #272b35', background: i % 2 === 0 ? '#161920' : '#191c24' }}>
                     <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>
                       {entry.type === 'Deal' ? entry.customerName : (entry.notes || '—')}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'rgba(168,85,247,0.15)' : 'rgba(37,99,235,0.15)', color: entry.type === 'Bonus' ? '#c084fc' : '#60a5fa' }}>
+                        {entry.type}
+                      </span>
                     </td>
                     <td className="px-5 py-3">
                       <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: '#1d2028', color: '#c2c8d8' }}>
@@ -1030,10 +1077,11 @@ function PayrollPageInner() {
               <div className="flex gap-3">
                 <button
                   onClick={handlePublish}
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  disabled={publishingPayroll}
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
-                  Publish Payroll
+                  {publishingPayroll ? 'Publishing…' : 'Publish Payroll'}
                 </button>
                 <button
                   onClick={() => setShowPublishConfirm(false)}
@@ -1067,6 +1115,7 @@ function PayrollPageInner() {
                   value={bonusForm.repId}
                   onChange={(repId) => setBonusForm((p) => ({ ...p, repId }))}
                   reps={reps}
+                  filterFn={(r) => r.active !== false}
                   placeholder="— Select rep —"
                   clearLabel="— Select rep —"
                 />
@@ -1076,7 +1125,7 @@ function PayrollPageInner() {
                 <input
                   required
                   type="number"
-                  min="0"
+                  min="0.01"
                   step="0.01"
                   value={bonusForm.amount}
                   onChange={(e) => setBonusForm((p) => ({ ...p, amount: e.target.value }))}
@@ -1143,6 +1192,7 @@ function PayrollPageInner() {
                   value={paymentForm.repId}
                   onChange={(repId) => setPaymentForm((p) => ({ ...p, repId, projectId: '' }))}
                   reps={reps}
+                  filterFn={(r) => r.active !== false}
                   placeholder="— Select rep —"
                   clearLabel="— Select rep —"
                 />
@@ -1161,7 +1211,7 @@ function PayrollPageInner() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Amount ($)</label>
-                  <input required type="number" min="0" step="0.01"
+                  <input required type="number" min="0.01" step="0.01"
                     value={paymentForm.amount}
                     onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
                     className={inputCls} />

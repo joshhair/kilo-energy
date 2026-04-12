@@ -882,6 +882,9 @@ export const SOLARTECH_FAMILY_FINANCER: Record<string, string> = {
 // subDealerOffset: if provided, subDealerPerW = kiloPerW + offset (e.g., 0.30)
 function makeTiers(closer: number[], kilo: number[], subDealerOffset?: number): SolarTechTier[] {
   const breaks = [1, 5, 10, 13];
+  if (closer.length !== breaks.length || kilo.length !== breaks.length) {
+    throw new Error(`makeTiers: expected ${breaks.length} elements, got closer=${closer.length} kilo=${kilo.length}`);
+  }
   return closer.map((c, i) => ({
     minKW: breaks[i],
     maxKW: i < breaks.length - 1 ? breaks[i + 1] : null,
@@ -1400,17 +1403,17 @@ export function splitCloserSetterPay(
     setterTotal = 0;
   } else {
     const closerDifferential = soldPPW > closerPerW
-      ? Math.round(Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW) * kW * 1000 * 100) / 100
+      ? Math.round(Math.max(0, Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW)) * kW * 1000 * 100) / 100
       : 0;
     const splitPoint = setterBaselinePerW + trainerRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.round(aboveSplit / 2);
+    const half = Math.round(aboveSplit / 2 * 100) / 100;
     closerTotal = closerDifferential + half;
     setterTotal = aboveSplit - half;
   }
 
   const m1Flat = kW >= 5 ? 1000 : 500;
-  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
+  const closerM1 = Math.min(m1Flat, Math.max(0, closerTotal));
   const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
   const setterM2Full = Math.max(0, setterTotal - setterM1);

@@ -8,8 +8,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
+  const ALLOWED_TRANSITIONS: Record<string, string> = {
+    Draft: 'Pending',
+    Pending: 'Paid',
+  };
+
   const data: Record<string, unknown> = {};
-  if (body.status !== undefined) data.status = body.status;
+  if (body.status !== undefined) {
+    const current = await prisma.payrollEntry.findUnique({ where: { id }, select: { status: true } });
+    if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (body.status !== current.status) {
+      if (ALLOWED_TRANSITIONS[current.status] !== body.status) {
+        return NextResponse.json(
+          { error: `Invalid transition: ${current.status} → ${body.status}. Allowed: ${current.status} → ${ALLOWED_TRANSITIONS[current.status] ?? '(none)'}` },
+          { status: 422 }
+        );
+      }
+    }
+    data.status = body.status;
+  }
   if (body.amount !== undefined) data.amount = body.amount;
   if (body.date !== undefined) data.date = body.date;
   if (body.notes !== undefined) data.notes = body.notes;
