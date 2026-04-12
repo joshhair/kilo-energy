@@ -538,7 +538,7 @@ function PMSection() {
           <label className="block text-[10px] text-[#8891a8] mb-0.5">Email</label>
           <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[#1d2028] border border-[#333849] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
         </div>
-        <button onClick={handleAdd} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
+        <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
           <Plus className="w-4 h-4" />
         </button>
       </div>
@@ -1350,7 +1350,7 @@ function SettingsPageInner() {
                     value={newTraineeId}
                     onChange={(v) => setNewTraineeId(v)}
                     placeholder="Select rep..."
-                    options={reps.filter((r) => !trainerAssignments.some((a) => a.traineeId === r.id)).map((r) => ({ value: r.id, label: r.name, sub: r.repType }))}
+                    options={reps.filter((r) => r.active && !trainerAssignments.some((a) => a.traineeId === r.id)).map((r) => ({ value: r.id, label: r.name, sub: r.repType }))}
                   />
                 </div>
                 <div className="flex-1">
@@ -1359,7 +1359,7 @@ function SettingsPageInner() {
                     value={newTrainerId}
                     onChange={(v) => setNewTrainerId(v)}
                     placeholder="Select trainer..."
-                    options={reps.filter((r) => r.id !== newTraineeId).map((r) => ({ value: r.id, label: r.name, sub: r.repType }))}
+                    options={reps.filter((r) => r.active && r.id !== newTraineeId).map((r) => ({ value: r.id, label: r.name, sub: r.repType }))}
                   />
                 </div>
                 <div className="flex items-end">
@@ -1385,8 +1385,15 @@ function SettingsPageInner() {
                         if (res.ok) {
                           const saved = await res.json();
                           setTrainerAssignments((prev) => prev.map((a) => a.id === tempId ? { ...a, id: saved.id } : a));
+                        } else {
+                          setTrainerAssignments((prev) => prev.filter((a) => a.id !== tempId));
+                          toast('Failed to create trainer assignment', 'error');
                         }
-                      } catch (e) { console.error('Failed to persist trainer assignment:', e); }
+                      } catch (e) {
+                        console.error('Failed to persist trainer assignment:', e);
+                        setTrainerAssignments((prev) => prev.filter((a) => a.id !== tempId));
+                        toast('Failed to create trainer assignment', 'error');
+                      }
                     }}
                     className="btn-primary text-black px-3 py-2 rounded-xl active:scale-[0.97]"
                     style={{ backgroundColor: 'var(--brand)' }}
@@ -3741,6 +3748,11 @@ function SettingsPageInner() {
                       <button
                         onClick={() => {
                           if (!pcNewVersionLabel.trim() || !pcNewVersionEffectiveFrom) return;
+                          const hasNonZeroRate = pcNewVersionTiers.some((t) => parseFloat(t.closerPerW) > 0);
+                          if (!hasNonZeroRate) {
+                            toast('At least one tier must have a closer rate greater than $0.00/W', 'error');
+                            return;
+                          }
                           const tiers: ProductCatalogTier[] = pcNewVersionTiers.map((t, i) => {
                             const breaks = [1, 5, 10, 13];
                             const maxBreaks = [5, 10, 13, null];
