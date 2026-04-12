@@ -102,6 +102,7 @@ export default function MobileAdminDashboard() {
     installerPricingVersions,
     productCatalogProducts,
     productCatalogPricingVersions,
+    solarTechProducts,
     currentRepName,
     dbReady,
   } = useApp();
@@ -129,7 +130,7 @@ export default function MobileAdminDashboard() {
   // ── Baseline helper ─────────────────────────────────────────────────────
   function getBaselines(p: (typeof projects)[number]) {
     if (p.baselineOverride) return p.baselineOverride;
-    if (p.installer === 'SolarTech' && p.solarTechProductId) return getSolarTechBaseline(p.solarTechProductId, p.kWSize);
+    if (p.installer === 'SolarTech' && p.solarTechProductId) return getSolarTechBaseline(p.solarTechProductId, p.kWSize, solarTechProducts);
     if (p.installerProductId) return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
     return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
   }

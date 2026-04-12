@@ -50,7 +50,7 @@ type TabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 export default function BlitzDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentRole, currentRepId, effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts } = useApp();
+  const { currentRole, currentRepId, effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts, solarTechProducts } = useApp();
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isAdmin = effectiveRole === 'admin';
@@ -162,7 +162,7 @@ export default function BlitzDetailPage() {
   const getBlitzProjectBaselines = (p: any): { closerPerW: number; kiloPerW: number } => {
     if (p.baselineOverrideJson) return JSON.parse(p.baselineOverrideJson);
     if (p.installer?.name === 'SolarTech' && p.productId) {
-      return getSolarTechBaseline(p.productId, p.kWSize);
+      return getSolarTechBaseline(p.productId, p.kWSize, solarTechProducts);
     }
     if (p.productId) {
       return getProductCatalogBaseline(productCatalogProducts, p.productId, p.kWSize);

@@ -894,7 +894,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     if (editVals.useBaselineOverride) {
       editBaseline = { closerPerW: parseFloat(editVals.overrideCloserPerW) || 0, kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0, ...(editVals.overrideSetterPerW !== '' && !isNaN(parsedSetterPerW) ? { setterPerW: parsedSetterPerW } : {}) };
     } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
-      editBaseline = getSolarTechBaseline(project.solarTechProductId, kw);
+      editBaseline = getSolarTechBaseline(project.solarTechProductId, kw, solarTechProducts);
     } else if (project.installerProductId && editVals.installer === project.installer) {
       editBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
     } else {
@@ -953,7 +953,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const projectBaselines = (() => {
     if (project.baselineOverride) return project.baselineOverride;
     if (project.installer === 'SolarTech' && project.solarTechProductId) {
-      return getSolarTechBaseline(project.solarTechProductId, project.kWSize);
+      return getSolarTechBaseline(project.solarTechProductId, project.kWSize, solarTechProducts);
     }
     if (project.installerProductId) {
       return getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, project.kWSize, project.soldDate, productCatalogPricingVersions);
@@ -1674,7 +1674,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0,
                 };
               } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
-                previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW);
+                previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW, solarTechProducts);
               } else if (project.installerProductId && editVals.installer === project.installer) {
                 previewBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, previewKW, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
               } else {

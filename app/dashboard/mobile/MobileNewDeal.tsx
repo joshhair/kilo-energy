@@ -1080,7 +1080,7 @@ export default function MobileNewDeal() {
                         className={selectCls('financer')} style={v0InputStyle('financer')}
                       >
                         <option value="">-- Select financer --</option>
-                        {(pcConfig?.familyFinancerMap?.[form.pcFamily]
+                        {(pcConfig?.familyFinancerMap?.[form.pcFamily] && activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
                           ? activeFinancers.filter((f) => f === pcConfig!.familyFinancerMap![form.pcFamily])
                           : activeFinancers
                         ).map((f) => <option key={f} value={f}>{f}</option>)}
