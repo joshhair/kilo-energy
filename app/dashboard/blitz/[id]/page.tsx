@@ -316,6 +316,13 @@ export default function BlitzDetailPage() {
       if (!r.ok) { toast('Failed to update blitz', 'error'); return; }
       // If the owner changed, ensure they are an approved participant
       if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
+        const revertOwner = async () => {
+          await fetch(`/api/blitzes/${blitzId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ownerId: blitz?.owner?.id ?? null }),
+          });
+        };
         const existingParticipant = blitz?.participants?.find((p: any) => p.user.id === editForm.ownerId);
         if (!existingParticipant) {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
@@ -323,22 +330,23 @@ export default function BlitzDetailPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { toast('Failed to add owner as participant', 'error'); setEditing(false); loadBlitz(); return; }
+          if (!pr.ok) { await revertOwner(); toast('Failed to add owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(); return; }
         } else if (existingParticipant.joinStatus !== 'approved') {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { toast('Failed to approve owner as participant', 'error'); setEditing(false); loadBlitz(); return; }
+          if (!pr.ok) { await revertOwner(); toast('Failed to approve owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(); return; }
         }
       }
       toast('Blitz updated');
       setEditing(false);
       loadBlitz();
     } catch {
-      toast('Network error — changes not saved', 'error');
+      toast('Network error — changes may not have been saved', 'error');
       setEditing(false);
+      loadBlitz();
     } finally { setSaving(false); }
   };
 
@@ -424,7 +432,7 @@ export default function BlitzDetailPage() {
       toast('Blitz deleted');
       router.push('/dashboard/blitz');
     } else {
-      toast('Failed to delete blitz');
+      toast('Failed to delete blitz', 'error');
     }
   };
 
@@ -779,7 +787,7 @@ export default function BlitzDetailPage() {
         <div key="participants" className="animate-tab-enter space-y-4">
           {/* Mini-leaderboard — same shared `leaderboard` memo as the
               overview panel. No second scan. */}
-          {leaderboard.length > 0 && leaderboard[0].deals > 0 && (() => {
+          {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && leaderboard[0].deals > 0 && (() => {
             const RANK_GRADIENTS = [
               'from-yellow-400 to-amber-600',
               'from-slate-300 to-slate-500',

@@ -566,7 +566,7 @@ function BlitzPageInner() {
       list = list.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
     }
     return list;
-  }, [blitzes, statusFilter, search, isAdmin, effectiveRepId]);
+  }, [blitzes, statusFilter, search]);
 
   // Sorted blitzes
   const sortedBlitzes = useMemo(() => {
