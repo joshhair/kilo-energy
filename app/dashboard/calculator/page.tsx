@@ -609,7 +609,6 @@ function CalculatorPage() {
   const animatedTrainerTotal        = useCountUp(trainerTotal);
   const animatedCloserTrainerTotal  = useCountUp(closerTrainerTotal);
   const animatedKiloTotal           = useCountUp(kiloTotal);
-  const animatedGrandTotal          = useCountUp(closerTotal + setterTotal + trainerTotal + closerTrainerTotal);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
   if (effectiveRole === 'project_manager') {

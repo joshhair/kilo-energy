@@ -87,121 +87,7 @@ function SectionHeader({ step, label }: { step: number; label: string }) {
   );
 }
 
-// ── Form stepper ─────────────────────────────────────────────────────────────
-
 const DEAL_STEPS = ['People', 'Deal Details', 'Review & Notes'] as const;
-
-interface FormStepperProps {
-  currentStep: number;
-  stepsComplete: boolean[];
-  progressPct: number;
-  onStepClick?: (step: number) => void;
-  pulseStep?: number | null;
-}
-
-function FormStepper({ currentStep, stepsComplete, progressPct, onStepClick, pulseStep }: FormStepperProps) {
-  return (
-    <div
-      className="sticky top-[60px] md:top-0 z-20 border-b border-[#333849]/60"
-      style={{ backgroundColor: 'var(--navy-base)' }}
-    >
-      {/* ── Desktop stepper (md+) ── */}
-      <div className="hidden md:flex items-center px-4 md:px-8 py-3 max-w-2xl">
-        {DEAL_STEPS.map((label, idx) => {
-          const isComplete = stepsComplete[idx];
-          const isCurrent  = currentStep === idx && !isComplete;
-          return (
-            <div key={label} className={`flex items-center ${idx < DEAL_STEPS.length - 1 ? 'flex-1' : ''}`}>
-              {/* Step node */}
-              <div
-                className={`flex flex-col items-center shrink-0${isComplete && onStepClick ? ' cursor-pointer group/step' : ''}`}
-                onClick={isComplete && onStepClick ? () => onStepClick(idx) : undefined}
-                role={isComplete && onStepClick ? 'button' : undefined}
-                tabIndex={isComplete && onStepClick ? 0 : undefined}
-                onKeyDown={isComplete && onStepClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStepClick(idx); } } : undefined}
-              >
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300 ${pulseStep === idx ? 'animate-pulse scale-110' : ''}`}
-                  style={
-                    isComplete
-                      ? { background: '#00c4f0', color: '#000', boxShadow: '0 0 12px rgba(0,196,240,0.3)' }
-                      : isCurrent
-                      ? { background: '#00e07a', color: '#000', boxShadow: '0 0 12px rgba(0,224,122,0.4)', width: '2rem', height: '2rem' }
-                      : { background: '#272b35', color: '#525c72', border: '1px solid #333849' }
-                  }
-                >
-                  {isComplete ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : idx + 1}
-                </div>
-                <span
-                  className="mt-1 text-[10px] font-medium whitespace-nowrap transition-colors"
-                  style={{ color: isCurrent ? '#00e07a' : isComplete ? '#00c4f0' : '#525c72' }}
-                >
-                  {label}
-                </span>
-              </div>
-
-              {/* Connector line between steps */}
-              {idx < DEAL_STEPS.length - 1 && (
-                <div className="flex-1 mx-3 h-[2px] relative overflow-hidden rounded-full mt-[-10px]">
-                  <div className="absolute inset-0" style={{ background: '#272b35' }} />
-                  <div
-                    className="absolute inset-0 transition-transform duration-500 origin-left"
-                    style={{ background: 'linear-gradient(90deg, #00e07a, #00c4f0)', transform: `scaleX(${stepsComplete[idx] ? 1 : 0})` }}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Mobile compact bar (<md) ── */}
-      <div className="flex md:hidden items-center gap-2.5 px-4 py-2.5">
-        {/* Mini step dots */}
-        <div className="flex items-center gap-1.5">
-          {DEAL_STEPS.map((_, idx) => {
-            const isComplete = stepsComplete[idx];
-            const isCurrent  = currentStep === idx;
-            return (
-              <div
-                key={idx}
-                onClick={isComplete && onStepClick ? () => onStepClick(idx) : undefined}
-                role={isComplete && onStepClick ? 'button' : undefined}
-                className={`rounded-full flex items-center justify-center transition-all duration-300 ${
-                  isComplete
-                    ? `w-4 h-4 bg-[#00e07a]${onStepClick ? ' cursor-pointer hover:bg-[#00e07a] hover:shadow-lg hover:shadow-emerald-500/25' : ''}`
-                    : isCurrent
-                    ? 'w-4 h-4 bg-[#00e07a] ring-2 ring-[#00e07a] ring-offset-1 ring-offset-[var(--navy-base)]'
-                    : 'w-2 h-2 bg-[#272b35]'
-                }`}
-              >
-                {isComplete && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-              </div>
-            );
-          })}
-        </div>
-        <span className="text-xs font-semibold text-[#c2c8d8]">
-          {currentStep + 1} of {DEAL_STEPS.length}
-        </span>
-        <span className="text-xs text-[#8891a8] truncate">— {DEAL_STEPS[currentStep]}</span>
-      </div>
-
-      {/* ── Thin progress bar ── */}
-      <div className="h-[2px]" style={{ background: '#272b35' }}>
-        <div
-          className="h-full transition-[width,box-shadow] duration-500 ease-out"
-          style={{
-            width: `${progressPct}%`,
-            background: progressPct >= 100
-              ? 'linear-gradient(90deg, #00e07a, #00c4f0)'
-              : 'linear-gradient(90deg, #00e07a, #00c4f0)',
-            boxShadow: progressPct >= 100 ? '0 0 12px rgba(0,224,122,0.3)' : undefined,
-          }}
-        />
-      </div>
-    </div>
-  );
-}
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -699,7 +585,7 @@ function NewDealPage() {
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', effectiveFinancer) }));
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: touched.has('financer') ? validateField('financer', effectiveFinancer) : '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
 
@@ -709,7 +595,7 @@ function NewDealPage() {
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', effectiveFinancer) }));
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: touched.has('financer') ? validateField('financer', effectiveFinancer) : '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
 
