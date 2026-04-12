@@ -1836,7 +1836,7 @@ function NewDealPage() {
                       if (value !== 'blitz' || form.leadSource === 'blitz') {
                         update('blitzId', '');
                       }
-                      if (form.leadSource === 'blitz') {
+                      if (form.leadSource === 'blitz' && value === 'blitz') {
                         update('soldDate', new Date().toLocaleDateString('en-CA'));
                       }
                     }}

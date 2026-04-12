@@ -3,14 +3,14 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireInternalUser, userCanAccessProject } from '../../../../lib/api-auth';
 
 // Financial fields that project managers must NOT be able to modify
-const PM_BLOCKED_FIELDS = ['m1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson'];
+const PM_BLOCKED_FIELDS = ['m1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid', 'setterM1Amount', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson'];
 
 // Fields reps/sub-dealers are NEVER allowed to modify on their own deals —
 // they can change notes, flag, and customer-facing info but not money,
 // phase (admin/PM only), or ownership.
 const REP_BLOCKED_FIELDS = [
   'm1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid',
-  'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson',
+  'setterM1Amount', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson',
   'phase', 'closerId', 'setterId', 'subDealerId',
 ];
 
@@ -38,17 +38,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Validate blitz participation and window before writing (mirrors POST /api/projects validation)
   // Also runs when only setterId/closerId/soldDate changes — the project may already have a blitzId.
   if (body.blitzId || body.setterId !== undefined || body.closerId !== undefined || body.soldDate !== undefined) {
-    const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true, setterId: true, blitzId: true } });
+    const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true, setterId: true, blitzId: true, soldDate: true } });
     const effectiveBlitzId = body.blitzId ?? existing?.blitzId;
     if (effectiveBlitzId) {
-      // Validate soldDate falls within the blitz window when it is being set
-      if (body.soldDate !== undefined) {
-        const blitz = await prisma.blitz.findUnique({
-          where: { id: effectiveBlitzId },
-          select: { startDate: true, endDate: true },
-        });
-        if (blitz) {
-          const sold = new Date(body.soldDate);
+      const blitz = await prisma.blitz.findUnique({
+        where: { id: effectiveBlitzId },
+        select: { startDate: true, endDate: true, status: true },
+      });
+      if (blitz) {
+        if (blitz.status === 'cancelled') {
+          return NextResponse.json({ error: 'Cannot link a project to a cancelled blitz' }, { status: 400 });
+        }
+        const effectiveSoldDate = body.soldDate ?? existing?.soldDate;
+        if (effectiveSoldDate) {
+          const sold = new Date(effectiveSoldDate);
           if (sold < new Date(blitz.startDate) || sold > new Date(blitz.endDate)) {
             return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
           }
