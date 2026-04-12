@@ -853,7 +853,7 @@ export default function DashboardPage() {
   const mtdUnmatchedCommission = mtdProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
-      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      const closerM1 = p.m1Amount ?? 0;
       const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0;
       return s + Math.max(0, totalExpected - (allMtdPayrollByProject.get(p.id) ?? 0));
     }, 0);
@@ -948,7 +948,7 @@ export default function DashboardPage() {
 
   // "In Pipeline" = expected commission from active projects minus what's actually been disbursed
   const inPipeline = activeProjects.reduce((sum, p) => {
-    const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+    const closerM1 = p.m1Amount ?? 0;
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
@@ -971,7 +971,7 @@ export default function DashboardPage() {
   const unmatchedProjectPay = myProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
-      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      const closerM1 = p.m1Amount ?? 0;
       const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
       return sum + Math.max(0, totalExpected - (allPayrollByProject.get(p.id) ?? 0));
     }, 0);
@@ -1003,7 +1003,7 @@ export default function DashboardPage() {
     return map;
   }, new Map<string, number>());
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
-    const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+    const closerM1 = p.m1Amount ?? 0;
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
@@ -1020,7 +1020,7 @@ export default function DashboardPage() {
   const prevUnmatchedPay = myPrevProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
-      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      const closerM1 = p.m1Amount ?? 0;
       const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
       return sum + Math.max(0, totalExpected - (prevAllPayrollByProject.get(p.id) ?? 0));
     }, 0);
@@ -1034,11 +1034,12 @@ export default function DashboardPage() {
   const prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay + prevPendingM3Pay;
   const prevTotalPaid = myPrevPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
   const prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const prevTotalKWSold = myPrevProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWInstalled = myPrevProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // Sparkline data for the five stat cards — last 7 unique dates, summed per day
   const pipelineSparkData   = computeSparklineData(activeProjects.map((p) => {
-    const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+    const closerM1 = p.m1Amount ?? 0;
     const amount = p.repId === effectiveRepId
       ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
@@ -1071,7 +1072,7 @@ export default function DashboardPage() {
   const allTimeEstPay = myProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
-      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
+      const closerM1 = p.m1Amount ?? 0;
       return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
     }, 0);
 
@@ -1081,7 +1082,7 @@ export default function DashboardPage() {
   // Next Payout: Draft + Pending entries dated for the upcoming Friday (matches Earnings page).
   const nextFridayDate = (() => {
     const today = new Date();
-    const d = ((5 - today.getDay() + 7) % 7) || 7;
+    const d = (5 - today.getDay() + 7) % 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
     const yyyy = nf.getFullYear();
@@ -1150,7 +1151,7 @@ export default function DashboardPage() {
       glowClass: 'stat-glow-yellow',
       sparkData: systemSizeSparkData,
       sparkStroke: '#eab308',
-      pctChange: computePctChange(totalKW, prevTotalKW),
+      pctChange: computePctChange(totalKWSold, prevTotalKWSold),
       href: '/dashboard/projects',
       tooltip: 'Total system size in kilowatts from all active deals',
     },

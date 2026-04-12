@@ -393,7 +393,7 @@ function RepEarningsView() {
 
   // Monthly sparkline data: last 6 calendar months per summary-card category
   const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid')),    [payrollEntries, effectiveRepId]);
-  const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && (p.status === 'Pending' || p.status === 'Draft'))), [payrollEntries, effectiveRepId]);
+  const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')), [payrollEntries, effectiveRepId]);
   const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved')), [reimbursements, effectiveRepId]);
 
   // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
