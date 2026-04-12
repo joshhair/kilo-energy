@@ -228,12 +228,14 @@ function TrainingPageInner() {
     let list = [...trainerEntries];
     if (paymentSearch) {
       const q = paymentSearch.toLowerCase();
-      list = list.filter(
-        (e) =>
+      list = list.filter((e) => {
+        const trainee = getTraineeForEntry(e);
+        return (
           (e.customerName ?? '').toLowerCase().includes(q) ||
-          (e.repName ?? '').toLowerCase().includes(q) ||
+          (trainee?.name ?? '').toLowerCase().includes(q) ||
           (e.notes ?? '').toLowerCase().includes(q)
-      );
+        );
+      });
     }
     if (paymentStatusFilter !== 'all') {
       list = list.filter((e) => e.status === paymentStatusFilter);

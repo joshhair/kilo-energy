@@ -327,16 +327,22 @@ export default function IncentivesPage() {
     setDuplicatingIncentive(source);
   };
 
-  const handleDuplicateCreate = (inc: Incentive) => {
-    setIncentives((prev) => [...prev, inc]);
+  const handleDuplicateCreate = async (inc: Incentive) => {
     setDuplicatingIncentive(null);
-    toast('Incentive duplicated', 'success');
-    fetch('/api/incentives', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
-    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-      .catch((err) => { console.error(err); toast('Failed to save duplicated incentive', 'error'); });
+    try {
+      const res = await fetch('/api/incentives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = await res.json();
+      setIncentives((prev) => [...prev, { ...inc, id: created.id }]);
+      toast('Incentive duplicated', 'success');
+    } catch (err) {
+      console.error(err);
+      toast('Failed to save duplicated incentive', 'error');
+    }
   };
 
   // ── Bulk select helpers ──
@@ -632,16 +638,16 @@ export default function IncentivesPage() {
         </div>
       </div>
 
+      {filterSortToolbar}
+
       {/* Company-wide section */}
       {(() => {
         const company = filterAndSort((incentiveFilter === 'expired' ? visible : activeVisible).filter((i) => i.type === 'company'));
-        if (company.length === 0 && !isAdmin) return null;
         return (
           <div className="mb-8">
             <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#525c72', letterSpacing: '0.1em' }}>
               Company-Wide
             </h2>
-            {filterSortToolbar}
             {company.length === 0 ? (
               <EmptyState message="No company-wide incentives yet" subtitle="Company incentives apply to all reps — create one to boost team performance" />
             ) : (
@@ -672,13 +678,11 @@ export default function IncentivesPage() {
       {/* Personal section */}
       {(() => {
         const personal = filterAndSort((incentiveFilter === 'expired' ? visible : activeVisible).filter((i) => i.type === 'personal'));
-        if (personal.length === 0 && !isAdmin) return null;
         return (
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#525c72', letterSpacing: '0.1em' }}>
               {isAdmin ? 'Personal Goals' : 'Your Personal Goals'}
             </h2>
-            {filterSortToolbar}
             {personal.length === 0 ? (
               <EmptyState message={isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} subtitle={isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
             ) : (
@@ -823,16 +827,22 @@ export default function IncentivesPage() {
       {showCreate && (
         <CreateIncentiveModal
           onClose={() => setShowCreate(false)}
-          onCreate={(inc) => {
-            setIncentives((prev) => [...prev, inc]);
+          onCreate={async (inc) => {
             setShowCreate(false);
-            toast('Incentive created successfully', 'success');
-            fetch('/api/incentives', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
-            }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-              .catch((err) => { console.error(err); toast('Failed to save new incentive', 'error'); });
+            try {
+              const res = await fetch('/api/incentives', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
+              });
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const created = await res.json();
+              setIncentives((prev) => [...prev, { ...inc, id: created.id }]);
+              toast('Incentive created successfully', 'success');
+            } catch (err) {
+              console.error(err);
+              toast('Failed to save new incentive', 'error');
+            }
           }}
         />
       )}
