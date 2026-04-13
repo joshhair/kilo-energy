@@ -632,12 +632,15 @@ function SettingsPageInner() {
 
   const [section, setSection] = useState<SettingsSection>(initialSection);
 
-  /** Check whether the user has unsaved inline edits */
+  /** Check whether the user has unsaved inline edits or open version-creation modals */
   const hasUnsavedChanges = () =>
     editingInstaller !== null ||
     editingAssignmentId !== null ||
     editingPrepaid !== null ||
-    editingProductName !== null;
+    editingProductName !== null ||
+    newVersionFor !== null ||
+    pcNewVersionFor !== null ||
+    dupAllOpen;
 
   /** Update URL when section changes */
   const handleSetSection = (s: SettingsSection) => {
@@ -733,6 +736,7 @@ function SettingsPageInner() {
   // ── Product name inline-edit state ──────────────────────────────────────
   const [editingProductName, setEditingProductName] = useState<string | null>(null);
   const [editProductNameVal, setEditProductNameVal] = useState('');
+  const productNameSavedRef = useRef(false);
 
   // ── Per-installer pay schedule state ──────────────────────────────────
   const [payScheduleExpanded, setPayScheduleExpanded] = useState<string | null>(null);
@@ -3416,12 +3420,18 @@ function SettingsPageInner() {
                                                 updateProductCatalogProduct(product.id, { name: trimmed });
                                                 toast(`Renamed to "${trimmed}"`, 'success');
                                               }
+                                              productNameSavedRef.current = true;
                                               setEditingProductName(null);
                                             } else if (e.key === 'Escape') {
+                                              productNameSavedRef.current = true;
                                               setEditingProductName(null);
                                             }
                                           }}
                                           onBlur={() => {
+                                            if (productNameSavedRef.current) {
+                                              productNameSavedRef.current = false;
+                                              return;
+                                            }
                                             const trimmed = editProductNameVal.trim();
                                             if (trimmed && trimmed !== product.name) {
                                               updateProductCatalogProduct(product.id, { name: trimmed });
@@ -4174,12 +4184,18 @@ function SettingsPageInner() {
                                               updateSolarTechProduct(product.id, { name: trimmed });
                                               toast(`Renamed to "${trimmed}"`, 'success');
                                             }
+                                            productNameSavedRef.current = true;
                                             setEditingProductName(null);
                                           } else if (e.key === 'Escape') {
+                                            productNameSavedRef.current = true;
                                             setEditingProductName(null);
                                           }
                                         }}
                                         onBlur={() => {
+                                          if (productNameSavedRef.current) {
+                                            productNameSavedRef.current = false;
+                                            return;
+                                          }
                                           const trimmed = editProductNameVal.trim();
                                           if (trimmed && trimmed !== product.name) {
                                             updateSolarTechProduct(product.id, { name: trimmed });

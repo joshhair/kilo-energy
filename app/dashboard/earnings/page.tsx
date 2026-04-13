@@ -555,7 +555,7 @@ function RepEarningsView() {
             <button
               onClick={() => {
                 const headers = ['Type', 'Customer / Note', 'Stage', 'Amount', 'Status', 'Date'];
-                const rows = sortedDealsBase.map((row) => {
+                const rows = sortedDeals.map((row) => {
                   if (row.kind === 'payroll') {
                     const e = row.entry as (typeof payrollEntries)[0];
                     return [e.type, e.customerName || e.notes || '', e.paymentStage, `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
@@ -565,7 +565,7 @@ function RepEarningsView() {
                 });
                 downloadCSV(`my-earnings-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
               }}
-              disabled={sortedDealsBase.length === 0}
+              disabled={sortedDeals.length === 0}
               className="flex items-center gap-1.5 text-xs text-[#c2c8d8] hover:text-white bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download earnings as CSV"
             >
@@ -736,7 +736,7 @@ function RepEarningsView() {
             </button>
           </span>
           <span className="text-xs text-[#525c72]">
-            {tab === 'deal' ? `${sortedDeals.length} entries` : `${sortedBonuses.length} entries`}
+            {tab === 'deal' ? `${sortedDeals.length} entries` : tab === 'reimbursements' ? `${filteredReimbs.length} entries` : `${sortedBonuses.length} entries`}
           </span>
         </div>
       )}
