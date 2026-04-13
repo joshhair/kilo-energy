@@ -852,7 +852,7 @@ function NewDealPage() {
       'customerName', 'soldDate', 'installer', ...(form.productType === 'Cash' ? [] : ['financer']), 'productType', 'kWSize', 'netPPW',
       ...(currentRole === 'admin' ? ['repId'] : []),
       ...(form.installer === 'SolarTech' ? ['solarTechFamily'] : []),
-      ...(form.installer === 'SolarTech' && form.solarTechFamily ? ['solarTechProductId'] : []),
+      ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
       ...(form.leadSource === 'blitz' ? ['blitzId'] : []),

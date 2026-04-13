@@ -112,7 +112,9 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const visibleProjects = (isAdmin || currentUserId === blitz.owner.id)
     ? activeProjects
     : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId);
-  const totalKW = visibleProjects.reduce((s, p) => s + p.kWSize, 0);
+  const totalKW = (isAdmin || currentUserId === blitz.owner.id)
+    ? visibleProjects.reduce((s, p) => s + p.kWSize, 0)
+    : visibleProjects.filter((p) => p.closer?.id === currentUserId).reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
@@ -697,7 +699,7 @@ function BlitzPageInner() {
   const activeBlitzes = filteredBlitzes.filter((b) => b.status === 'active').length;
   const upcomingBlitzes = filteredBlitzes.filter((b) => b.status === 'upcoming').length;
   const totalDeals = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)).length, 0);
-  const totalKW = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)).reduce((ps, p) => ps + p.kWSize, 0), 0);
+  const totalKW = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId)).reduce((ps, p) => ps + p.kWSize, 0), 0);
   const totalCosts = isAdmin ? filteredBlitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (
