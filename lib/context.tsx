@@ -948,7 +948,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Bundle m3Amount into the same PATCH as the Installed phase transition so both
     // land atomically — prevents phase=Installed / m3Amount=null DB inconsistency.
     let computedM3Amount: number | null = null;
-    if (old && updates.phase === 'Installed' && old.phase !== 'Installed' && !old.subDealerId) {
+    if (old && updates.phase === 'Installed' && old.phase !== 'Installed') {
       const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
       if (installPayPct < 100) {
         const fullAmount = updates.m2Amount ?? old.m2Amount ?? 0;
@@ -963,7 +963,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Repair m3Amount at PTO in the same PATCH as the phase change — if the Installed-time
     // persist failed and left m3Amount null in DB, this restores it atomically so the
     // DB record stays consistent with phase=PTO and the payroll entries that will be created.
-    if (old && updates.phase === 'PTO' && old.phase !== 'PTO' && !old.subDealerId) {
+    if (old && updates.phase === 'PTO' && old.phase !== 'PTO') {
       const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
       if (installPayPct < 100) {
         const repairedM3 = (old.m3Amount ?? 0) > 0
@@ -1281,7 +1281,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
           const m3 = (proj?.m3Amount ?? 0) > 0 && installPayPct < 100
             ? proj!.m3Amount!
-            : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
+            : installPayPct > 0 && installPayPct < 100
               ? Math.round((proj?.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
               : 0;
           const ts = Date.now();
@@ -1324,7 +1324,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (old.setterId) {
                 const setterM3 = (old.setterM3Amount ?? 0) > 0
                   ? old.setterM3Amount!
-                  : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
+                  : installPayPct > 0 && installPayPct < 100
                     ? Math.round((proj?.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
                     : 0;
                 if (setterM3 > 0) {
@@ -1629,6 +1629,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...prev,
           installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
         }));
+      } else {
+        const err = new Error('Installer POST returned no id');
+        console.error(err);
+        rejectInstallerId(err);
+        pendingInstallerIdRef.current.delete(name);
       }
     }).catch((err) => { console.error(err); rejectInstallerId(err); pendingInstallerIdRef.current.delete(name); });
   };

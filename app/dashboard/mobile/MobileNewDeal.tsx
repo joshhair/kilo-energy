@@ -385,10 +385,10 @@ export default function MobileNewDeal() {
     if (!form.setterId || setterBaselinePerW === 0) {
       return { closerTotal: calculateCommission(soldPPW, closerPerW, kW), setterTotal: 0 };
     }
-    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW) * kW * 1000 * 100) / 100 : 0;
+    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.max(0, Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW)) * kW * 1000 * 100) / 100 : 0;
     const splitPoint = setterBaselinePerW + trainerOverrideRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.round(aboveSplit / 2);
+    const half = Math.floor(aboveSplit / 2 * 100) / 100;
     return { closerTotal: closerDifferential + half, setterTotal: aboveSplit - half };
   })();
 
