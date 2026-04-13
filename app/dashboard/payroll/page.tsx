@@ -81,6 +81,8 @@ function PayrollPageInner() {
   const [actionBarVisible, setActionBarVisible] = useState(false);
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const bonusSubmitting = useRef(false);
+  const paymentSubmitting = useRef(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [publishingPayroll, setPublishingPayroll] = useState(false);
   const [markingForPayroll, setMarkingForPayroll] = useState(false);
@@ -387,8 +389,10 @@ function PayrollPageInner() {
 
   const handleAddBonus = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bonusForm.repId) { toast('Please select a rep', 'error'); return; }
-    if (!bonusForm.amount || isNaN(parseFloat(bonusForm.amount)) || parseFloat(bonusForm.amount) <= 0) { toast('Enter a valid amount greater than $0', 'error'); return; }
+    if (bonusSubmitting.current) return;
+    bonusSubmitting.current = true;
+    if (!bonusForm.repId) { bonusSubmitting.current = false; toast('Please select a rep', 'error'); return; }
+    if (!bonusForm.amount || isNaN(parseFloat(bonusForm.amount)) || parseFloat(bonusForm.amount) <= 0) { bonusSubmitting.current = false; toast('Enter a valid amount greater than $0', 'error'); return; }
     const rep = reps.find((r) => r.id === bonusForm.repId);
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}`,
@@ -408,6 +412,7 @@ function PayrollPageInner() {
     setBonusForm({ repId: '', amount: '', notes: '', date: '' });
     changeStatusTab('Draft');
     changeTypeTab('Bonus');
+    bonusSubmitting.current = false;
     toast(`Bonus added for ${rep?.name ?? 'rep'} — $${parseFloat(bonusForm.amount).toLocaleString()}`, 'success');
     // Persist to DB via context helper — registers temp ID in resolution map so
     // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
@@ -416,8 +421,10 @@ function PayrollPageInner() {
 
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!paymentForm.repId) { toast('Please select a rep', 'error'); return; }
-    if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount)) || parseFloat(paymentForm.amount) <= 0) { toast('Enter a valid amount greater than $0', 'error'); return; }
+    if (paymentSubmitting.current) return;
+    paymentSubmitting.current = true;
+    if (!paymentForm.repId) { paymentSubmitting.current = false; toast('Please select a rep', 'error'); return; }
+    if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount)) || parseFloat(paymentForm.amount) <= 0) { paymentSubmitting.current = false; toast('Enter a valid amount greater than $0', 'error'); return; }
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const project = projects.find((p) => p.id === paymentForm.projectId);
     const newEntry: PayrollEntry = {
@@ -607,14 +614,14 @@ function PayrollPageInner() {
         {pageView === 'payroll' && (
           <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
             <button
-              onClick={() => setShowPaymentModal(true)}
+              onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }}
               className="font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] whitespace-nowrap transition-colors"
               style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
             >
               + Add Payment
             </button>
             <button
-              onClick={() => setShowBonusModal(true)}
+              onClick={() => { bonusSubmitting.current = false; setShowBonusModal(true); }}
               className="font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] whitespace-nowrap transition-colors"
               style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
             >
@@ -928,7 +935,7 @@ function PayrollPageInner() {
               {statusTab === 'Draft' ? (typeTab === 'Deal' ? 'Draft entries are auto-created when projects hit milestones' : 'Create a bonus entry for any rep') : statusTab === 'Pending' ? 'Select Draft entries and mark them for payroll' : 'Publish pending payroll to move entries here'}
             </p>
             {statusTab === 'Draft' && typeTab === 'Deal' && (
-              <button onClick={() => setShowPaymentModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
+              <button onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
                 <ArrowRight className="w-3.5 h-3.5" /> Add Payment
               </button>
             )}

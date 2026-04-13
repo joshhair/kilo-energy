@@ -184,6 +184,9 @@ interface SubmittedDeal {
   closerM2: number;
   closerM3: number;
   setterTotal: number;
+  setterM1: number;
+  setterM2: number;
+  setterM3: number;
   setterName: string;
   repName: string;
 }
@@ -261,6 +264,7 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
               <div className="flex items-center justify-between border-t border-[#272b35] pt-2.5">
                 <div>
                   <p className="text-[#c2c8d8] text-sm font-medium">{deal.setterName} (Setter)</p>
+                  <p className="text-[#8891a8] text-xs">M1: ${deal.setterM1.toLocaleString()} · M2: ${deal.setterM2.toLocaleString()}{deal.setterM3 > 0 && ` · M3: $${deal.setterM3.toLocaleString()}`}</p>
                 </div>
                 <p className="text-lg font-bold text-[#00e07a]">${deal.setterTotal.toLocaleString()}</p>
               </div>
@@ -944,6 +948,9 @@ function NewDealPage() {
       closerM2: isSubDealer ? subDealerCommission : closerM2,
       closerM3: isSubDealer ? 0 : closerM3,
       setterTotal,
+      setterM1: isSubDealer ? 0 : setterM1,
+      setterM2: isSubDealer ? 0 : setterM2,
+      setterM3: isSubDealer ? 0 : setterM3,
       setterName: setter?.name ?? '',
       repName: rep?.name ?? currentRepName ?? 'You',
     });
@@ -1773,8 +1780,8 @@ function NewDealPage() {
                         }
                       }
                       // Blitz deselected — leave soldDate as-is to preserve any manually entered date
-                      // Clear setter so stale blitz-A setter isn't submitted against blitz B
-                      update('setterId', '');
+                      // Clear setter only when switching to a different blitz, not when deselecting entirely
+                      if (blitzId) update('setterId', '');
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}

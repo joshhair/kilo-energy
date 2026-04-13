@@ -1955,7 +1955,7 @@ function AdminDashboard({
     }
     for (const proj of attentionActiveProjects) {
       if (proj.flagged) continue; // already counted above; don't double-count
-      if (proj.phase === 'On Hold' && proj.soldDate) count++;
+      if (proj.phase === 'On Hold') count++;
     }
     return count;
   })();
