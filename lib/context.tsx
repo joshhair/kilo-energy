@@ -949,7 +949,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // land atomically — prevents phase=Installed / m3Amount=null DB inconsistency.
     let computedM3Amount: number | null = null;
     if (old && updates.phase === 'Installed' && old.phase !== 'Installed') {
-      const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      const installPayPct = installerPayConfigs[updates.installer ?? old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
       if (installPayPct < 100) {
         const fullAmount = updates.m2Amount ?? old.m2Amount ?? 0;
         computedM3Amount = (old.m3Amount ?? 0) > 0
@@ -964,7 +964,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // persist failed and left m3Amount null in DB, this restores it atomically so the
     // DB record stays consistent with phase=PTO and the payroll entries that will be created.
     if (old && updates.phase === 'PTO' && old.phase !== 'PTO') {
-      const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      const installPayPct = installerPayConfigs[updates.installer ?? old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
       if (installPayPct < 100) {
         const repairedM3 = (old.m3Amount ?? 0) > 0
           ? old.m3Amount!

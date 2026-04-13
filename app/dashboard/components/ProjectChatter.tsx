@@ -209,7 +209,10 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         setMessages([]);
         setTotalMessages(0);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        initialLoadDone.current = true;
+      });
   }, [projectId]);
 
   const loadEarlierMessages = useCallback(() => {
@@ -238,8 +241,6 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   const initialLoadDone = useRef(false);
   useEffect(() => {
     if (!initialLoadDone.current) {
-      // Skip the first render + first fetch — don't scroll on page load
-      if (messages.length > 0) initialLoadDone.current = true;
       return;
     }
     if (messagesEndRef.current) {
@@ -275,7 +276,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
       }
     }
 
-    const messageText = textLines.join('\n').trim() || trimmed;
+    const messageText = textLines.join('\n').trim();
 
     setSending(true);
 
@@ -514,7 +515,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             {unreadCount}
           </span>
         )}
-        <span className="text-[#8891a8] text-xs">({messages.length})</span>
+        <span className="text-[#8891a8] text-xs">({totalMessages})</span>
       </div>
 
       {/* Message List */}
