@@ -1092,7 +1092,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (rollBackM1 || rollBackM2 || rollBackM3) {
             setPayrollEntries((prevEntries) => {
               const toDelete = prevEntries.filter((e) => {
-                if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending')) return false;
+                if (e.projectId !== id || e.status !== 'Draft') return false;
                 if (rollBackM1 && e.paymentStage === 'M1') return true;
                 if (rollBackM2 && (e.paymentStage === 'M2' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))) return true;
                 if (rollBackM3 && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))) return true;
