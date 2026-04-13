@@ -963,7 +963,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   // All payroll entries for this project (admin view)
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
-  const closerEntries = projectEntries.filter((e) => e.repId === project.repId && !e.notes.toLowerCase().includes('setter') && !e.notes.toLowerCase().includes('trainer'));
+  const closerEntries = projectEntries.filter((e) => e.repId === project.repId);
   const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId) : [];
   const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e));
 
@@ -1713,9 +1713,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 previewBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, previewKW, installerPricingVersions);
               }
 
-              const closerM1 = editVals.setterId ? 0 : (previewKW >= 5 ? 1000 : 500);
               const previewInstallPayPct = installerPayConfigs[editVals.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const closerTotal = calculateCommission(previewPPW, previewBaseline.closerPerW, previewKW);
+              const editM1Flat = previewKW >= 5 ? 1000 : 500;
+              const closerM1 = editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, closerTotal));
               const closerM2 = Math.round(Math.max(0, closerTotal - closerM1) * (previewInstallPayPct / 100) * 100) / 100;
               const kiloMargin = Math.round((previewBaseline.closerPerW - previewBaseline.kiloPerW) * previewKW * 1000 * 100) / 100;
               const belowBaseline = previewPPW < previewBaseline.closerPerW;
