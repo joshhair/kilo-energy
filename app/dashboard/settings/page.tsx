@@ -1088,13 +1088,7 @@ function SettingsPageInner() {
         return;
       }
       if (baselineTab === name) setBaselineTab('standard');
-      toast(`"${name}" deleted`, 'info', {
-        label: 'Undo',
-        onClick: () => {
-          const saved = deletedEntityRef.current;
-          if (saved?.type === 'installer') addInstaller(saved.name);
-        },
-      });
+      toast(`"${name}" deleted`, 'info');
     } else if (type === 'financer') {
       try {
         await deleteFinancer(name);

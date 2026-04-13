@@ -1193,7 +1193,8 @@ function AdminFinancialsView() {
   const totalPaid     = repFilteredPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
   const totalPending  = repFilteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const totalDraft    = repFilteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-  const pendingReimbs = filteredReimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
+  const repFilteredReimbs = reimbRepFilter ? reimbursements.filter((r) => r.repId === reimbRepFilter) : reimbursements;
+  const pendingReimbs = repFilteredReimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
 
   const reimbTotal      = filteredReimbs.length;
   const reimbTotalPages = Math.max(1, Math.ceil(reimbTotal / reimbPageSize));

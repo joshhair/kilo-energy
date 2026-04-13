@@ -167,6 +167,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // markForPayroll awaits these before sending PATCH so it never sends temp IDs to the DB.
   const payrollIdResolutionMap = useRef<Map<string, Promise<string>>>(new Map());
 
+  // Maps installer name → Promise<realDbId> for in-flight installer POSTs.
+  // addProductCatalogProduct awaits this when the installer ID isn't in idMaps yet.
+  const pendingInstallerIdRef = useRef<Map<string, Promise<string>>>(new Map());
+
   const setViewAsUser = useCallback((user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => {
     setViewAsUserState(user);
   }, []);
@@ -1598,13 +1602,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addProductCatalogInstaller = (name: string, config: ProductCatalogInstallerConfig) => {
     setInstallers((prev) => prev.find((i) => i.name === name) ? prev : [...prev, { name, active: true }]);
     setProductCatalogInstallerConfigs((prev) => ({ ...prev, [name]: config }));
-    // Persist to DB
+    // Persist to DB — register a promise so addProductCatalogProduct can queue against it
+    // if it's called before this POST resolves.
+    let resolveInstallerId!: (id: string) => void;
+    const installerIdPromise = new Promise<string>((resolve) => { resolveInstallerId = resolve; });
+    pendingInstallerIdRef.current.set(name, installerIdPromise);
     fetch('/api/installers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, usesProductCatalog: true, families: config.families, familyFinancerMap: config.familyFinancerMap ?? {}, prepaidFamily: config.prepaidFamily ?? null }),
     }).then((res) => res.json()).then((created) => {
       if (created.id) {
+        resolveInstallerId(created.id as string);
+        pendingInstallerIdRef.current.delete(name);
         setIdMaps((prev) => ({
           ...prev,
           installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
@@ -1629,8 +1639,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
   const addProductCatalogProduct = (product: ProductCatalogProduct) => {
     setProductCatalogProducts((prev) => [...prev, product]);
-    const installerId = idMaps.installerNameToId[product.installer];
-    if (installerId) {
+    const doPost = (installerId: string) => {
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1640,6 +1649,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setProductCatalogProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, id: data.id as string } : p));
         }
       }).catch(console.error);
+    };
+    const installerId = idMaps.installerNameToId[product.installer];
+    if (installerId) {
+      doPost(installerId);
+    } else {
+      // Installer POST may still be in-flight — wait for its ID before writing the product.
+      const pending = pendingInstallerIdRef.current.get(product.installer);
+      if (pending) {
+        pending.then(doPost).catch(console.error);
+      }
     }
   };
   const updateProductCatalogProduct = (id: string, updates: Partial<ProductCatalogProduct>) => {
