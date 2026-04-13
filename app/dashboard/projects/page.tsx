@@ -272,6 +272,10 @@ function ProjectsPageInner() {
 
   const confirmCancelWithReason = () => {
     if (!cancelReasonModal) return;
+    if (!cancelReason) {
+      toast('Please select a cancellation reason.', 'error');
+      return;
+    }
     updateProject(cancelReasonModal.projectId, {
       phase: 'Cancelled',
       cancellationReason: cancelReason || undefined,

@@ -967,7 +967,7 @@ export default function DashboardPage() {
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
     return sum + projects
-      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+      .filter(p => isInPeriod(p.soldDate, period) && ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
       .reduce((pSum, p) => {
         const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
         const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
