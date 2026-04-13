@@ -40,6 +40,7 @@ type SimpleUser = {
   phone?: string;
   role: string;
   repType?: string;
+  active?: boolean;
 };
 
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
@@ -184,8 +185,8 @@ function UsersPageInner() {
       fetch('/api/reps?role=admin').then((r) => r.ok ? r.json() : []).catch(() => []),
       fetch('/api/reps?role=project_manager').then((r) => r.ok ? r.json() : []).catch(() => []),
     ]).then(([adminsData, pmsData]: [
-      Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>,
-      Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>,
+      Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string; active?: boolean }>,
+      Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string; active?: boolean }>,
     ]) => {
       setAdminUsers(adminsData.map((u) => ({ ...u, role: 'admin' })));
       setPmUsers(pmsData.map((u) => ({ ...u, role: 'project_manager' })));
@@ -791,8 +792,8 @@ function UsersPageInner() {
             ? [
                 ...reps.filter((r) => r.active !== false).map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
                 ...subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
-                ...pmUsers,
-                ...adminUsers,
+                ...pmUsers.filter((u) => u.active !== false),
+                ...adminUsers.filter((u) => u.active !== false),
               ]
             : roleFilter === 'sub-dealer'
             ? subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
