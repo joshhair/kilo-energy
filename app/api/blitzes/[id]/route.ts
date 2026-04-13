@@ -45,6 +45,23 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
+  // Non-admins: strip other reps' financial data from projects + hide costs
+  if (user.role !== 'admin') {
+    (blitz as any).costs = [];
+    for (const p of blitz.projects) {
+      const isMyDeal = p.closerId === user.id || p.setterId === user.id;
+      if (!isMyDeal) {
+        (p as any).netPPW = 0;
+        (p as any).m1Amount = 0;
+        (p as any).m2Amount = 0;
+        (p as any).m3Amount = 0;
+        (p as any).setterM1Amount = 0;
+        (p as any).setterM2Amount = 0;
+        (p as any).setterM3Amount = 0;
+      }
+    }
+  }
+
   return NextResponse.json(blitz);
 }
 

@@ -151,7 +151,7 @@ export async function GET() {
       role: 'rep' as const,
       repType: u.repType as 'closer' | 'setter' | 'both',
       active: u.active,
-      hasClerkAccount: !!u.clerkUserId,
+      ...(isAdmin ? { hasClerkAccount: !!u.clerkUserId } : {}),
       canRequestBlitz: u.canRequestBlitz ?? false,
       canCreateBlitz: u.canCreateBlitz ?? false,
     }));
@@ -167,15 +167,16 @@ export async function GET() {
       phone: isAdmin ? u.phone : '',
       role: 'sub-dealer' as const,
       active: u.active,
-      hasClerkAccount: !!u.clerkUserId,
+      ...(isAdmin ? { hasClerkAccount: !!u.clerkUserId } : {}),
     }));
 
   const installerNames = installers.map((i) => ({ name: i.name, active: i.active }));
   const financerNames = financers.map((f) => ({ name: f.name, active: f.active }));
 
+  // installPayPct reveals internal M1/M2 payment split — admin-only
   const installerPayConfigs: Record<string, { installPayPct: number }> = {};
   for (const inst of installers) {
-    installerPayConfigs[inst.name] = { installPayPct: inst.installPayPct };
+    installerPayConfigs[inst.name] = { installPayPct: isAdmin ? inst.installPayPct : 0 };
   }
 
   const instIdToName: Record<string, string> = {};
@@ -217,7 +218,11 @@ export async function GET() {
     installerProductId: p.installer.name !== 'SolarTech' ? (p.productId ?? undefined) : undefined,
     pricingVersionId: p.installerPricingVersionId ?? undefined,
     pcPricingVersionId: p.productPricingVersionId ?? undefined,
-    baselineOverride: stripFinancials ? undefined : (p.baselineOverrideJson ? JSON.parse(p.baselineOverrideJson) : undefined),
+    baselineOverride: stripFinancials ? undefined : (p.baselineOverrideJson ? (() => {
+      const bo = JSON.parse(p.baselineOverrideJson);
+      if (!isAdmin && bo) { delete bo.kiloPerW; }
+      return bo;
+    })() : undefined),
     prepaidSubType: p.prepaidSubType ?? undefined,
     leadSource: p.leadSource ?? undefined,
     blitzId: p.blitzId ?? undefined,
@@ -308,7 +313,7 @@ export async function GET() {
               maxKW: t.maxKW ?? undefined,
               closerPerW: t.closerPerW,
               setterPerW: t.setterPerW ?? undefined,
-              kiloPerW: t.kiloPerW,
+              ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
               subDealerPerW: t.subDealerPerW ?? undefined,
             })),
           }
@@ -316,7 +321,7 @@ export async function GET() {
             type: 'flat' as const,
             closerPerW: v.tiers[0].closerPerW,
             setterPerW: v.tiers[0].setterPerW ?? undefined,
-            kiloPerW: v.tiers[0].kiloPerW,
+            ...(isAdmin ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
             subDealerPerW: v.tiers[0].subDealerPerW ?? undefined,
           },
     }];
@@ -346,7 +351,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          kiloPerW: t.kiloPerW,
+          ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -367,7 +372,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          kiloPerW: t.kiloPerW,
+          ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -398,7 +403,7 @@ export async function GET() {
       maxKW: t.maxKW ?? null,
       closerPerW: t.closerPerW,
       setterPerW: t.setterPerW,
-      kiloPerW: t.kiloPerW,
+      ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
       subDealerPerW: t.subDealerPerW ?? undefined,
     })),
   }));
