@@ -257,18 +257,23 @@ export default function IncentivesPage() {
       message: 'This cannot be undone.',
       onConfirm: () => {
         let removed: typeof incentives[0] | undefined;
+        let removedIndex = -1;
         setIncentives((prev) => {
-          removed = prev.find((i) => i.id === id);
+          removedIndex = prev.findIndex((i) => i.id === id);
+          removed = prev[removedIndex];
           return prev.filter((i) => i.id !== id);
         });
         fetch(`/api/incentives/${id}`, { method: 'DELETE' })
-          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Incentive deleted'); })
           .catch((err) => {
             console.error(err);
-            if (removed) setIncentives((prev) => [...prev, removed!]);
+            if (removed) setIncentives((prev) => {
+              const next = [...prev];
+              next.splice(removedIndex, 0, removed!);
+              return next;
+            });
             toast('Failed to delete incentive', 'error');
           });
-        toast('Incentive deleted');
         setConfirmAction(null);
       },
     });
@@ -426,13 +431,14 @@ export default function IncentivesPage() {
       message: `Deactivate ${count} expired incentive${count !== 1 ? 's' : ''}?`,
       onConfirm: () => {
         const expired = incentives.filter((i) => isExpired(i.endDate) && i.active);
+        const originalStates = new Map(expired.map((i) => [i.id, i.active]));
         setIncentives((prev) =>
           prev.map((i) => (isExpired(i.endDate) && i.active ? { ...i, active: false } : i))
         );
-        expired.forEach((i) => fetch(`/api/incentives/${i.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
+        Promise.all(expired.map((i) => fetch(`/api/incentives/${i.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-          .catch((err) => { console.error(err); toast('Failed to archive some incentives', 'error'); }));
-        toast(`${count} expired incentive${count !== 1 ? 's' : ''} archived`, 'info');
+          .catch((err) => { console.error(err); toast('Failed to archive some incentives', 'error'); setIncentives((prev) => prev.map((x) => x.id === i.id ? { ...x, active: originalStates.get(i.id) ?? x.active } : x)); })))
+          .then(() => toast(`${count} expired incentive${count !== 1 ? 's' : ''} archived`, 'info'));
         setConfirmAction(null);
       },
     });
@@ -450,10 +456,10 @@ export default function IncentivesPage() {
         setIncentives((prev) =>
           prev.map((i) => (selectedIds.has(i.id) ? { ...i, active: false } : i))
         );
-        ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
+        Promise.all(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-          .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); setIncentives((prev) => prev.map((i) => i.id === id ? { ...i, active: originalStates.get(id) ?? i.active } : i)); }));
-        toast(`${count} incentive${count !== 1 ? 's' : ''} deactivated`, 'info');
+          .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); setIncentives((prev) => prev.map((i) => i.id === id ? { ...i, active: originalStates.get(id) ?? i.active } : i)); })))
+          .then(() => toast(`${count} incentive${count !== 1 ? 's' : ''} deactivated`, 'info'));
         clearSelection();
         setConfirmAction(null);
       },
@@ -467,17 +473,19 @@ export default function IncentivesPage() {
       message: `Permanently delete ${count} incentive${count !== 1 ? 's' : ''}? This cannot be undone.`,
       onConfirm: () => {
         const ids = Array.from(selectedIds);
-        const removedItems = incentives.filter((i) => selectedIds.has(i.id));
-        setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
-        ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
+        let snapshotBefore: typeof incentives | undefined;
+        setIncentives((prev) => {
+          snapshotBefore = prev;
+          return prev.filter((i) => !selectedIds.has(i.id));
+        });
+        Promise.all(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
           .catch((err) => {
             console.error(err);
             toast('Failed to delete some incentives', 'error');
-            const failed = removedItems.find((i) => i.id === id);
-            if (failed) setIncentives((prev) => [...prev, failed]);
-          }));
-        toast(`${count} incentive${count !== 1 ? 's' : ''} deleted`);
+            if (snapshotBefore) setIncentives(snapshotBefore);
+          })))
+          .then(() => toast(`${count} incentive${count !== 1 ? 's' : ''} deleted`));
         clearSelection();
         setConfirmAction(null);
       },

@@ -638,7 +638,7 @@ function TrainingPageInner() {
               </div>
             </div>
           ) : (
-            <div className="card-surface rounded-2xl overflow-hidden">
+            <div className="card-surface rounded-2xl overflow-clip">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="table-header-frost border-b border-[#333849]">
