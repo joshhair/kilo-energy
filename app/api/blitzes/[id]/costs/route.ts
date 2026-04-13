@@ -21,11 +21,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 // DELETE /api/blitzes/[id]/costs — Delete a cost
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  const { id: blitzId } = await params;
   const costId = req.nextUrl.searchParams.get('costId');
   if (!costId) return NextResponse.json({ error: 'costId required' }, { status: 400 });
 
-  await prisma.blitzCost.delete({ where: { id: costId } });
+  await prisma.blitzCost.delete({ where: { id: costId, blitzId } });
   return NextResponse.json({ success: true });
 }

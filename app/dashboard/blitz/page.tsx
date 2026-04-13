@@ -577,12 +577,26 @@ function BlitzPageInner() {
     switch (sortBy) {
       case 'newest': sorted.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); break;
       case 'oldest': sorted.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()); break;
-      case 'deals': sorted.sort((a, b) => b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length - a.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length); break;
-      case 'kw': sorted.sort((a, b) => b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0) - a.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0)); break;
+      case 'deals': {
+        const scopedDeals = (blitz: BlitzData) => {
+          const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+          return (isAdmin || effectiveRepId === blitz.owner.id) ? active : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId);
+        };
+        sorted.sort((a, b) => scopedDeals(b).length - scopedDeals(a).length);
+        break;
+      }
+      case 'kw': {
+        const scopedKW = (blitz: BlitzData) => {
+          const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+          return (isAdmin || effectiveRepId === blitz.owner.id) ? active : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId);
+        };
+        sorted.sort((a, b) => scopedKW(b).reduce((s, p) => s + p.kWSize, 0) - scopedKW(a).reduce((s, p) => s + p.kWSize, 0));
+        break;
+      }
       case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
     return sorted;
-  }, [filteredBlitzes, sortBy]);
+  }, [filteredBlitzes, sortBy, isAdmin, effectiveRepId]);
 
   // For reps: separate "My Blitzes" (participating/leading) from browseable ones
   const myBlitzes = useMemo(() => {

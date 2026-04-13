@@ -97,7 +97,7 @@ export default function BlitzDetailPage() {
     fetch(`/api/blitzes/${blitzId}`).then((r) => r.json()).then((data) => {
       if (data.error) { router.push('/dashboard/blitz'); return; }
       setBlitz(data);
-      setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
+      if (!editing) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
       setLoading(false);
     }).catch(() => { setLoading(false); });
   };
