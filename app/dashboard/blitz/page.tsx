@@ -33,7 +33,7 @@ interface BlitzData {
     user: { id: string; firstName: string; lastName: string };
   }>;
   costs: Array<{ id: string; category: string; amount: number; description: string; date: string }>;
-  projects: Array<{ id: string; customerName: string; kWSize: number; netPPW: number; m1Amount: number; m2Amount: number; phase: string }>;
+  projects: Array<{ id: string; customerName: string; kWSize: number; netPPW: number; m1Amount: number; m2Amount: number; phase: string; closer: { id: string } | null; setter: { id: string } | null }>;
 }
 
 interface BlitzRequestData {
@@ -116,8 +116,11 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
   const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-  const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
-  const totalDeals = activeProjects.length;
+  const visibleProjects = (isAdmin || currentUserId === blitz.owner.id)
+    ? activeProjects
+    : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId);
+  const totalKW = visibleProjects.reduce((s, p) => s + p.kWSize, 0);
+  const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
   const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;

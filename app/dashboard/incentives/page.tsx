@@ -224,6 +224,7 @@ export default function IncentivesPage() {
     if (!isAdmin) return [];
     const items: { incentive: Incentive; milestone: IncentiveMilestone; progress: number }[] = [];
     for (const inc of incentives) {
+      if (!inc.active) continue;
       const progress = computeIncentiveProgress(inc, projects, payrollEntries);
       for (const ms of inc.milestones) {
         if (progress >= ms.threshold && !ms.achieved) {
@@ -298,9 +299,11 @@ export default function IncentivesPage() {
         inc.id === incId ? { ...inc, milestones: updatedMilestones! } : inc
       );
     });
-    if (achieved) toast('Milestone marked as achieved!', 'success');
     // Persist milestone change
     if (updatedMilestones) {
+      const previousMilestones = updatedMilestones.map((m) =>
+        m.id === milestoneId ? { ...m, achieved: !achieved } : m
+      );
       fetch(`/api/incentives/${incId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -312,8 +315,15 @@ export default function IncentivesPage() {
           setIncentives((prev) =>
             prev.map((inc) => (inc.id === incId ? { ...inc, milestones: saved.milestones } : inc))
           );
+          if (achieved) toast('Milestone marked as achieved!', 'success');
         })
-        .catch((err) => { console.error(err); toast('Failed to persist milestone update', 'error'); });
+        .catch((err) => {
+          console.error(err);
+          setIncentives((prev) =>
+            prev.map((inc) => (inc.id === incId ? { ...inc, milestones: previousMilestones } : inc))
+          );
+          toast('Failed to persist milestone update', 'error');
+        });
     }
   };
 

@@ -280,7 +280,7 @@ export default function BlitzDetailPage() {
         }
         if (setterId && setterId !== closerId && participantIds.has(setterId)) {
           // Setter owns M1 when present, plus setterM2/M3.
-          bump(setterId, kW, (sM1 || m1) + sM2 + sM3);
+          bump(setterId, kW, sM1 + sM2 + sM3);
         }
       }
     }
