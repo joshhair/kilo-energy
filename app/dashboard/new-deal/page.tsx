@@ -530,7 +530,8 @@ function NewDealPage() {
   const isPcInstaller = pcConfig !== null;
   // For PC installer: family comes from form, not from financer
   const pcFamily = isPcInstaller ? form.pcFamily : '';
-  const hasPcProducts = isPcInstaller && pcFamily !== '';
+  const pcFamilyProducts = isPcInstaller ? productCatalogProducts.filter((p) => p.installer === form.installer && p.family === pcFamily) : [];
+  const hasPcProducts = isPcInstaller && pcFamily !== '' && pcFamilyProducts.length > 0;
 
   // ── Unsaved-changes guard ──────────────────────────────────────────────────
   const isFormDirty =
@@ -1781,7 +1782,7 @@ function NewDealPage() {
                       }
                       // Blitz deselected — leave soldDate as-is to preserve any manually entered date
                       // Clear setter only when switching to a different blitz, not when deselecting entirely
-                      if (blitzId && form.blitzId && blitzId !== form.blitzId) update('setterId', '');
+                      if (blitzId && blitzId !== form.blitzId) update('setterId', '');
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}
@@ -1871,7 +1872,7 @@ function NewDealPage() {
                 {form.installer}{kW > 0 ? ` \u00B7 ${kW.toFixed(1)} kW` : ''}
               </span>
               <span className="text-lg font-black text-[#00e07a]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                Est. Commission: ${closerTotal.toLocaleString()}
+                Est. Commission: ${(isSubDealer ? subDealerCommission : closerTotal).toLocaleString()}
               </span>
             </div>
           </div>
