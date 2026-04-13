@@ -35,7 +35,7 @@ function validateField(field: string, value: string): string {
     case 'blitzId':            return value ? '' : 'Blitz is required';
     case 'kWSize':
       if (!value) return 'kW size is required';
-      if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) return 'Must be greater than 0';
+      if (isNaN(parseFloat(value)) || parseFloat(value) < 1) return 'Must be at least 1 kW';
       return '';
     case 'netPPW':
       if (!value) return 'Net PPW is required';
