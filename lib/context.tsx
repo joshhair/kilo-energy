@@ -760,9 +760,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
             const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
             const effectiveSetterM3 = updates.setterM3Amount ?? old.setterM3Amount;
+            // If this is the first setter assignment and the closer's M1 is already
+            // Paid, do not create a setter M1 — that would produce a double M1 payment.
+            const closerHasPaidM1 = !old.setterId && prevEntries.some(
+              (e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1' && e.status === 'Paid'
+            );
             if (pastAcceptance && (effectiveSetterM1 ?? 0) > 0) {
               const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M1');
-              if (!hasM1) {
+              if (!hasM1 && !closerHasPaidM1) {
                 newEntries.push({
                   id: `pay_${ts}_m1_s`,
                   repId: newSetterId,
@@ -1091,6 +1096,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const payDate = isAcceptance ? getM1PayDate() : getM2PayDate();
           const freshProject = updated.find((p) => p.id === id)!;
           const fullAmount = isAcceptance ? old.m1Amount : freshProject.m2Amount;
+
+          // Guard: m2Amount must be present for M2 payroll. If null (e.g. project imported
+          // without the field), surface an error instead of silently skipping the entry.
+          if (isInstalled && fullAmount == null) {
+            emitPersistError(`M2 payroll skipped for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate.`);
+            return prev;
+          }
 
           // For M2, m2Amount is already stored as the post-split value
           // (closerM2Full * installPayPct/100) — use it directly, no re-apply needed

@@ -348,10 +348,12 @@ function PayrollPageInner() {
       .reduce((s, e) => s + e.amount, 0);
     const ids = filtered.filter((e) => selectedIds.has(e.id)).map((e) => e.id);
     setSelectedIds(new Set());
-    changeStatusTab('Pending');
-    toast(`${ids.length} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
     try {
       await markForPayroll(ids);
+      changeStatusTab('Pending');
+      toast(`${ids.length} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
+    } catch {
+      toast('Failed to move entries to Pending', 'error');
     } finally {
       setMarkingForPayroll(false);
     }
@@ -445,6 +447,7 @@ function PayrollPageInner() {
     setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
     changeStatusTab('Draft');
     changeTypeTab('Deal');
+    paymentSubmitting.current = false;
     toast(`Payment draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
     // Persist to DB via context helper — registers temp ID in resolution map so
     // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
