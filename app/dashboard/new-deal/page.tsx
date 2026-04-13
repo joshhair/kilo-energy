@@ -331,8 +331,8 @@ function TickerAmount({ amount, className }: { amount: number; className?: strin
 function DealEntryPage({ onStart, projects, currentRepId }: { onStart: () => void; projects: { soldDate: string; repId?: string; setterId?: string | null }[]; currentRepId: string | null | undefined }) {
   const today = new Date().toISOString().split('T')[0];
   const monthPrefix = today.slice(0, 7);
-  const todayCount = projects.filter((p) => p.soldDate === today && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
-  const monthCount = projects.filter((p) => p.soldDate?.startsWith(monthPrefix) && (currentRepId == null || p.repId === currentRepId || p.setterId === currentRepId)).length;
+  const todayCount = currentRepId == null ? 0 : projects.filter((p) => p.soldDate === today && (p.repId === currentRepId || p.setterId === currentRepId)).length;
+  const monthCount = currentRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(monthPrefix) && (p.repId === currentRepId || p.setterId === currentRepId)).length;
 
   return (
     <div className="p-4 md:p-8 max-w-2xl animate-slide-in-scale">

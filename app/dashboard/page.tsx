@@ -960,6 +960,19 @@ export default function DashboardPage() {
         : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
+  }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+    const completedDeals = projects.filter(p =>
+      (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+      ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+    ).length;
+    const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
+    return sum + projects
+      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+      .reduce((pSum, p) => {
+        const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
+        const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
+        return pSum + Math.max(0, expected - alreadyPaid);
+      }, 0);
   }, 0);
 
   // "Total Estimated Pay" = unpaid payroll + expected amounts from projects not yet in payroll
@@ -1014,6 +1027,19 @@ export default function DashboardPage() {
         : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
+  }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+    const completedDeals = prevPeriodProjects.filter(p =>
+      (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+      ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+    ).length;
+    const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
+    return sum + prevPeriodProjects
+      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+      .reduce((pSum, p) => {
+        const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
+        const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
+        return pSum + Math.max(0, expected - alreadyPaid);
+      }, 0);
   }, 0);
   const prevAllPayrollByProject = myPrevPayroll.reduce((map, p) => {
     if (p.projectId && p.paymentStage !== 'M3') map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
