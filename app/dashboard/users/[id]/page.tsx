@@ -969,7 +969,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <tbody>
             {(() => {
               const closerDeals = projects.filter((p) => p.repId === id);
-              const setterDeals = projects.filter((p) => p.setterId === id);
+              const setterDeals = projects.filter((p) => p.setterId === id && p.repId !== id);
               const trainerDeals = trainerAssignments.filter((a) => a.trainerId === id);
               const closerPay = repPayroll
                 .filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer')
