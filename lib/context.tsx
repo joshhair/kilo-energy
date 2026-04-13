@@ -672,7 +672,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Purge the old setter's Draft/Pending payroll entries for this project so they
         // cannot be accidentally promoted and paid after the setter is removed or replaced.
         if (old.setterId) {
-          const oldSetterName = reps.find((r) => r.id === old.setterId)?.name ?? '';
+          const oldSetterName = repsRef.current.find((r) => r.id === old.setterId)?.name ?? '';
           const oldSetterTrainerAssignment = trainerAssignments.find((a) => a.traineeId === old.setterId);
           setPayrollEntries((prevEntries) => {
             const toRemove = prevEntries.filter((e) => {
@@ -1423,7 +1423,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (stageAmountUpdates.length > 0) {
       setPayrollEntries((prev) =>
         prev.map((e) => {
-          if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal') return e;
+          if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback')) return e;
           const match = stageAmountUpdates.find(
             (u) => u.stage === e.paymentStage && u.setter === (e.notes === 'Setter')
           );
@@ -1607,7 +1607,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Persist to DB — register a promise so addProductCatalogProduct can queue against it
     // if it's called before this POST resolves.
     let resolveInstallerId!: (id: string) => void;
-    const installerIdPromise = new Promise<string>((resolve) => { resolveInstallerId = resolve; });
+    let rejectInstallerId!: (reason?: unknown) => void;
+    const installerIdPromise = new Promise<string>((resolve, reject) => { resolveInstallerId = resolve; rejectInstallerId = reject; });
     pendingInstallerIdRef.current.set(name, installerIdPromise);
     fetch('/api/installers', {
       method: 'POST',
@@ -1622,7 +1623,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
         }));
       }
-    }).catch(console.error);
+    }).catch((err) => { console.error(err); rejectInstallerId(err); pendingInstallerIdRef.current.delete(name); });
   };
   const updateProductCatalogInstallerConfig = (name: string, config: Partial<ProductCatalogInstallerConfig>) => {
     setProductCatalogInstallerConfigs((prev) => ({ ...prev, [name]: { ...prev[name], ...config } }));

@@ -373,9 +373,15 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   // ── Set due date on check item ──────────────────────────────────────────────
   const setCheckItemDueDate = useCallback(
     (messageId: string, checkItemId: string, dueDate: string | null) => {
-      // Optimistic update
-      setMessages((prev) =>
-        prev.map((msg) => {
+      // Capture previous dueDate before optimistic update so we can restore on failure
+      let previousDueDate: string | null = null;
+      setMessages((prev) => {
+        const msg = prev.find((m) => m.id === messageId);
+        if (msg) {
+          const ci = msg.checkItems.find((c) => c.id === checkItemId);
+          if (ci) previousDueDate = ci.dueDate ?? null;
+        }
+        return prev.map((msg) => {
           if (msg.id !== messageId) return msg;
           return {
             ...msg,
@@ -383,8 +389,8 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
               ci.id === checkItemId ? { ...ci, dueDate } : ci
             ),
           };
-        })
-      );
+        });
+      });
       setEditingDueDate(null);
 
       fetch(`/api/projects/${projectId}/messages/${messageId}`, {
@@ -399,7 +405,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             return {
               ...msg,
               checkItems: msg.checkItems.map((ci) =>
-                ci.id === checkItemId ? { ...ci, dueDate: null } : ci
+                ci.id === checkItemId ? { ...ci, dueDate: previousDueDate } : ci
               ),
             };
           })
