@@ -564,7 +564,7 @@ function CalculatorPage() {
 
   // Hash of all inputs — forces React to remount the results container on each
   // new calculation, replaying the slide-in-scale stagger entrance animation.
-  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${hasSetter ? '1' : '0'}|${selectedSetterId}`;
+  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${hasSetter ? '1' : '0'}|${selectedSetterId}|${quickFillSoldDate}`;
 
   // Save to history when a full calculation is displayed
   useEffect(() => {

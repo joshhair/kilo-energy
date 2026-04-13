@@ -1781,7 +1781,7 @@ function NewDealPage() {
                       }
                       // Blitz deselected — leave soldDate as-is to preserve any manually entered date
                       // Clear setter only when switching to a different blitz, not when deselecting entirely
-                      if (blitzId) update('setterId', '');
+                      if (blitzId && form.blitzId && blitzId !== form.blitzId) update('setterId', '');
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}
