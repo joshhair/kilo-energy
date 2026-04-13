@@ -658,6 +658,9 @@ function SettingsPageInner() {
     setEditingAssignmentId(null);
     setEditingPrepaid(null);
     setEditingProductName(null);
+    setNewVersionFor(null);
+    setPcNewVersionFor(null);
+    setDupAllOpen(null);
     if (pendingSection) {
       setSection(pendingSection);
       router.replace(`/dashboard/settings?section=${pendingSection}`, { scroll: false });

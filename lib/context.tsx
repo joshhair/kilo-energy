@@ -366,7 +366,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
-    }).then((res) => res.json()).then((created) => {
+    }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); }).then((created) => {
       if (created.id) {
         setIdMaps((prev) => ({
           ...prev,
@@ -402,7 +402,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
-    }).then((res) => res.json()).then((created) => {
+    }).then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }).then((created) => {
       if (created.id) {
         setIdMaps((prev) => ({
           ...prev,

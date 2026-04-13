@@ -1554,7 +1554,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <SearchableSelect
                   value={editVals.installer}
                   onChange={(val) => { setEditVals((v) => ({ ...v, installer: val })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
-                  options={activeInstallers.map((inst) => ({ value: inst, label: inst }))}
+                  options={(activeInstallers.includes(editVals.installer) || !editVals.installer ? activeInstallers : [editVals.installer, ...activeInstallers]).map((inst) => ({ value: inst, label: inst }))}
                   placeholder="Select installer…"
                   error={!!editErrors.installer}
                 />
