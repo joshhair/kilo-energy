@@ -325,16 +325,7 @@ export default function BlitzDetailPage() {
           const rv = await fetch(`/api/blitzes/${blitzId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: blitz?.name ?? '',
-              location: blitz?.location ?? null,
-              housing: blitz?.housing ?? null,
-              startDate: blitz?.startDate ?? null,
-              endDate: blitz?.endDate ?? null,
-              notes: blitz?.notes ?? null,
-              status: blitz?.status ?? null,
-              ownerId: blitz?.owner?.id ?? null,
-            }),
+            body: JSON.stringify({ ownerId: blitz?.owner?.id ?? null }),
           });
           if (!rv.ok) throw new Error('revert_failed');
         };
@@ -579,7 +570,18 @@ export default function BlitzDetailPage() {
               <div>
                 <label className="block text-xs text-[#8891a8] mb-1">Blitz Leader</label>
                 <select value={editForm.ownerId} onChange={(e) => setEditForm((f) => ({ ...f, ownerId: e.target.value }))} className="w-full bg-[#1d2028] border border-[#272b35] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[#00e07a] focus:border-transparent outline-none">
-                  {reps.filter((r) => r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {(() => {
+                    const activeReps = reps.filter((r) => r.active);
+                    const currentOwnerInList = activeReps.some((r) => r.id === editForm.ownerId);
+                    return (
+                      <>
+                        {!currentOwnerInList && blitz?.owner && (
+                          <option key={blitz.owner.id} value={blitz.owner.id}>{blitz.owner.firstName} {blitz.owner.lastName}</option>
+                        )}
+                        {activeReps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </>
+                    );
+                  })()}
                 </select>
               </div>
               <div>
@@ -647,6 +649,7 @@ export default function BlitzDetailPage() {
         const totalDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
         const elapsed = Math.max(0, Math.min(totalDays, Math.round((nowMs - startMs) / 86400000) + 1));
         const progressPct = blitz.status === 'completed' ? 100 : blitz.status === 'active' ? Math.round((elapsed / totalDays) * 100) : 0;
+        const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id));
 
         return (
         <div className="space-y-4">
@@ -672,7 +675,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[#8891a8] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id)); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
               </div>
             )}
           </div>
@@ -691,7 +694,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[#8891a8] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id)); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                  <p className="text-2xl font-bold text-[#00e07a]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.setter?.id && approvedIds.has(p.setter.id) ? 0 : (p.m1Amount ?? 0)) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">Projected Pay</p>
                 </div>
               </div>

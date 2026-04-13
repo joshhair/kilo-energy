@@ -52,13 +52,6 @@ interface BlitzRequestData {
   requestedBy: { id: string; firstName: string; lastName: string };
 }
 
-const STATUS_STYLES: Record<BlitzStatus, { bg: string; text: string; dot: string; border: string }> = {
-  upcoming:  { bg: '', text: '', dot: '', border: '' },
-  active:    { bg: '', text: '', dot: '', border: '' },
-  completed: { bg: '', text: '', dot: '', border: '' },
-  cancelled: { bg: '', text: '', dot: '', border: '' },
-};
-
 const STATUS_INLINE: Record<BlitzStatus, { bg: string; color: string; dotBg: string; border: string }> = {
   upcoming:  { bg: 'rgba(77,159,255,0.12)', color: '#4d9fff', dotBg: '#4d9fff', border: '1px solid rgba(77,159,255,0.3)' },
   active:    { bg: 'rgba(0,224,122,0.12)',  color: '#00e07a', dotBg: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' },
