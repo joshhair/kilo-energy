@@ -476,16 +476,27 @@ export default function IncentivesPage() {
         const snapshot = [...incentives];
         const itemsToDelete = new Map(snapshot.filter((i) => selectedIds.has(i.id)).map((i) => [i.id, { item: i, index: snapshot.indexOf(i) }]));
         setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
-        Promise.all(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
-          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return true; })
-          .catch((err) => {
-            console.error(err);
-            toast('Failed to delete some incentives', 'error');
-            const entry = itemsToDelete.get(id);
-            if (entry) setIncentives((prev) => { const next = [...prev]; next.splice(entry.index, 0, entry.item); return next; });
-            return false;
-          })))
-          .then((results) => { const succeeded = results.filter(Boolean).length; if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`); });
+        Promise.allSettled(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return id; })))
+          .then((results) => {
+            const failedEntries = ids
+              .filter((_, i) => results[i].status === 'rejected')
+              .map((id) => itemsToDelete.get(id))
+              .filter((e): e is { item: (typeof snapshot)[0]; index: number } => e !== undefined)
+              .sort((a, b) => a.index - b.index);
+            if (failedEntries.length > 0) {
+              toast('Failed to delete some incentives', 'error');
+              setIncentives((prev) => {
+                const next = [...prev];
+                for (const entry of failedEntries) {
+                  next.splice(entry.index, 0, entry.item);
+                }
+                return next;
+              });
+            }
+            const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+            if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`);
+          });
         clearSelection();
         setConfirmAction(null);
       },

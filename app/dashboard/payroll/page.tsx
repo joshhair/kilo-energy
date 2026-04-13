@@ -656,7 +656,7 @@ function PayrollPageInner() {
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
-              disabled={filteredByDateRep.filter(e => e.status === 'Pending').length === 0}
+              disabled={totalPendingAllTypes === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
             >

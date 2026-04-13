@@ -798,8 +798,8 @@ function UsersPageInner() {
             : roleFilter === 'sub-dealer'
             ? subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
             : roleFilter === 'project_manager'
-            ? pmUsers
-            : adminUsers;
+            ? pmUsers.filter((u) => u.active !== false)
+            : adminUsers.filter((u) => u.active !== false);
 
         const q = debouncedSearch.trim().toLowerCase();
         const filtered = q
@@ -1278,7 +1278,6 @@ function UsersPageInner() {
                 const rp = ranges.current.from && ranges.current.to
                   ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
-                const rpAll = projects.filter((p) => p.repId === rep.id || p.setterId === rep.id);
                 const dealsClosed = rp.length;
                 const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
                 const avgDealSize = dealsClosed > 0 ? kwSold / dealsClosed : 0;
