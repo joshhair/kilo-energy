@@ -1428,6 +1428,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (updates.setterM2Amount !== undefined) stageAmountUpdates.push({ stage: 'M2', setter: true, newAmount: updates.setterM2Amount });
     if (updates.setterM3Amount !== undefined) stageAmountUpdates.push({ stage: 'M3', setter: true, newAmount: updates.setterM3Amount });
     if (stageAmountUpdates.length > 0) {
+      const pendingPatches: Array<{ id: string; newAmount: number }> = [];
       setPayrollEntries((prev) =>
         prev.map((e) => {
           if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback')) return e;
@@ -1435,14 +1436,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
             (u) => u.stage === e.paymentStage && u.setter === (e.notes === 'Setter')
           );
           if (!match || match.newAmount === e.amount) return e;
-          persistFetch(`/api/payroll/${e.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: match.newAmount }),
-          }, 'Failed to update payroll entry amount').catch(() => {});
+          pendingPatches.push({ id: e.id, newAmount: match.newAmount });
           return { ...e, amount: match.newAmount };
         })
       );
+      for (const { id: entryId, newAmount } of pendingPatches) {
+        persistFetch(`/api/payroll/${entryId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: newAmount }),
+        }, 'Failed to update payroll entry amount').catch(() => {});
+      }
     }
   };
 
@@ -1527,8 +1531,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const createNewInstallerVersion = (installer: string, label: string, effectiveFrom: string, rates: InstallerRates) => {
     const prevDate = new Date(effectiveFrom);
-    prevDate.setDate(prevDate.getDate() - 1);
-    const effectiveTo = localDateString(prevDate);
+    prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+    const effectiveTo = `${prevDate.getUTCFullYear()}-${String(prevDate.getUTCMonth() + 1).padStart(2, '0')}-${String(prevDate.getUTCDate()).padStart(2, '0')}`;
 
     const tempId = `ipv_${installer.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
 
@@ -1725,8 +1729,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const createNewProductCatalogVersion = (productId: string, label: string, effectiveFrom: string, tiers: ProductCatalogTier[]) => {
     const prevDate = new Date(effectiveFrom);
-    prevDate.setDate(prevDate.getDate() - 1);
-    const effectiveTo = localDateString(prevDate);
+    prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+    const effectiveTo = `${prevDate.getUTCFullYear()}-${String(prevDate.getUTCMonth() + 1).padStart(2, '0')}-${String(prevDate.getUTCDate()).padStart(2, '0')}`;
     const tempId = `pcpv_${productId}_${Date.now()}`;
 
     setProductCatalogPricingVersions((prev) => [
