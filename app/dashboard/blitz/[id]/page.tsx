@@ -319,6 +319,7 @@ export default function BlitzDetailPage() {
         body: JSON.stringify(editForm),
       });
       if (!r.ok) { toast('Failed to update blitz', 'error'); return; }
+      const savedBlitz = await r.json();
       // If the owner changed, ensure they are an approved participant
       if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
         const revertOwner = async () => {
@@ -329,7 +330,7 @@ export default function BlitzDetailPage() {
           });
           if (!rv.ok) throw new Error('revert_failed');
         };
-        const existingParticipant = blitz?.participants?.find((p: any) => p.user.id === editForm.ownerId);
+        const existingParticipant = (savedBlitz.participants ?? []).find((p: any) => p.user.id === editForm.ownerId);
         if (!existingParticipant) {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'POST',
@@ -572,7 +573,7 @@ export default function BlitzDetailPage() {
                 <select value={editForm.ownerId} onChange={(e) => setEditForm((f) => ({ ...f, ownerId: e.target.value }))} className="w-full bg-[#1d2028] border border-[#272b35] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[#00e07a] focus:border-transparent outline-none">
                   {(() => {
                     const activeReps = reps.filter((r) => r.active);
-                    const currentOwnerInList = activeReps.some((r) => r.id === editForm.ownerId);
+                    const currentOwnerInList = activeReps.some((r) => r.id === blitz?.owner?.id);
                     return (
                       <>
                         {!currentOwnerInList && blitz?.owner && (

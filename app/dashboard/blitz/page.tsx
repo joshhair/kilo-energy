@@ -566,6 +566,12 @@ function BlitzPageInner() {
     return list;
   }, [blitzes, statusFilter, search]);
 
+  const searchOnlyBlitzes = useMemo(() => {
+    if (!search.trim()) return blitzes;
+    const q = search.toLowerCase();
+    return blitzes.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
+  }, [blitzes, search]);
+
   // Sorted blitzes
   const sortedBlitzes = useMemo(() => {
     const sorted = [...filteredBlitzes];
@@ -838,7 +844,7 @@ function BlitzPageInner() {
             {/* Status filter tabs with sliding pill */}
             <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: '#161920', border: '1px solid #272b35' }}>
               {STATUS_FILTER_OPTIONS.map((s, i) => {
-                const count = s === 'all' ? blitzes.length : blitzes.filter((b) => b.status === s).length;
+                const count = s === 'all' ? searchOnlyBlitzes.length : searchOnlyBlitzes.filter((b) => b.status === s).length;
                 const isActive = statusFilter === s;
                 return (
                   <button
