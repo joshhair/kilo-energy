@@ -510,6 +510,8 @@ function PMSection() {
     });
     if (res.ok) {
       setPms((prev) => prev.map((pm) => pm.id === pmId ? { ...pm, [field]: !current } : pm));
+    } else {
+      toast('Failed to update permission', 'error');
     }
   };
 
@@ -760,9 +762,9 @@ function SettingsPageInner() {
   // ── "/" shortcut to focus trainer search ────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName) && trainerSearchRef.current) {
         e.preventDefault();
-        trainerSearchRef.current?.focus();
+        trainerSearchRef.current.focus();
       }
     };
     window.addEventListener('keydown', handler);

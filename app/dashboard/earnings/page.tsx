@@ -395,6 +395,7 @@ function RepEarningsView() {
   const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid')),    [payrollEntries, effectiveRepId]);
   const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')), [payrollEntries, effectiveRepId]);
   const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved')), [reimbursements, effectiveRepId]);
+  const thisMonthPaidData  = useMemo(() => payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).sort((a, b) => a.date.localeCompare(b.date)).map((p) => p.amount), [payrollEntries, effectiveRepId, currentYYYYMM]);
 
   // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
   const monthlyBarData = useMemo(
@@ -683,7 +684,7 @@ function RepEarningsView() {
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[#00e07a] animate-count-up">
             ${thisMonthEarned.toLocaleString()}
           </p>
-          <SparklineWithTooltip data={earnedMonthlyData} stroke="#00c4f0" />
+          <SparklineWithTooltip data={thisMonthPaidData} stroke="#00c4f0" />
         </div>
 
         {/* 4 — Reimbursements approved (violet) */}
@@ -1187,10 +1188,11 @@ function AdminFinancialsView() {
     ).sort((a, b) => b.date.localeCompare(a.date));
   }, [reimbursements, reimbRepFilter, reimbStatusFilter]);
 
-  // Stats — computed from filtered data so they respect active rep/status filters
-  const totalPaid     = filteredPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
-  const totalPending  = filteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-  const totalDraft    = filteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+  // Stats — computed from rep-filtered (not status-filtered) data so status breakdown is always accurate
+  const repFilteredPayroll = repFilter ? payrollEntries.filter((e) => e.repId === repFilter) : payrollEntries;
+  const totalPaid     = repFilteredPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const totalPending  = repFilteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+  const totalDraft    = repFilteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
   const pendingReimbs = filteredReimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
 
   const reimbTotal      = filteredReimbs.length;
@@ -1265,7 +1267,7 @@ function AdminFinancialsView() {
     if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
   }, [tab, isHydrated]);
 
-  const pendingPayrollCount = payrollEntries.filter((e) => e.status === 'Pending').length;
+  const pendingPayrollCount = repFilteredPayroll.filter((e) => e.status === 'Pending').length;
   const pendingReimbCount   = reimbursements.filter((r) => r.status === 'Pending').length;
 
   const selectCls = 'bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-all input-focus-glow';
