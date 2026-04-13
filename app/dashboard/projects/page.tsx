@@ -561,7 +561,7 @@ function KanbanView({
   const { toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const activePhasesForKanban = PHASES.filter((p) => p !== 'Cancelled' && p !== 'On Hold' && p !== 'Completed');
-  const cancelledAndHold = ['Completed', 'Cancelled', 'On Hold'] as Phase[];
+  const cancelledAndHold = ['Cancelled', 'On Hold'] as Phase[];
 
   // ── Kanban search — filters cards by customer name ────────────────────────
   const [kanbanSearchInput, setKanbanSearchInput] = useState('');

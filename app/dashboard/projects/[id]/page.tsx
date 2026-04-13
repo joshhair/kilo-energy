@@ -749,6 +749,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const confirmCancelWithReason = () => {
+    if (!cancelReason) {
+      toast('Please select a cancellation reason', 'error');
+      return;
+    }
     updateProject({
       phase: 'Cancelled',
       cancellationReason: cancelReason || undefined,
