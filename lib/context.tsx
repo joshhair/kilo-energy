@@ -580,14 +580,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteSubDealerPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const snapshotIndex = subDealers.findIndex((s) => s.id === id);
     const snapshot = snapshotIndex !== -1 ? subDealers[snapshotIndex] : undefined;
+    const nextSubDealerId = subDealers[snapshotIndex + 1]?.id ?? null;
     setSubDealers((prev) => prev.filter((s) => s.id !== id));
     try {
       await persistFetch(`/api/users/${id}`, { method: 'DELETE' }, 'Failed to delete sub-dealer');
       return { success: true };
     } catch (err: unknown) {
       if (snapshot) setSubDealers((prev) => {
-        const next = prev.filter((s) => s.id !== id);
-        next.splice(snapshotIndex, 0, snapshot);
+        const next = [...prev];
+        const insertAt = nextSubDealerId === null ? next.length : next.findIndex((s) => s.id === nextSubDealerId);
+        next.splice(insertAt === -1 ? next.length : insertAt, 0, snapshot);
         return next;
       });
       return { success: false, error: err instanceof Error ? err.message : 'Failed to delete sub-dealer' };

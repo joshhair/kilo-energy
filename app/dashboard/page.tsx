@@ -456,7 +456,7 @@ function MyTasksSection({
   const tasks: TaskItem[] = [];
   for (const mention of mentions) {
     for (const ci of mention.checkItems) {
-      if (!ci.completed) {
+      if (!ci.completed && !checkedIds.has(ci.id)) {
         tasks.push({
           checkItemId: ci.id,
           text: ci.text,
@@ -868,8 +868,8 @@ export default function DashboardPage() {
   // Fetch @mentions for Needs Attention section (reps + sub-dealers)
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
   const fetchMentions = useCallback(() => {
-    if (!currentRepId) return;
-    fetch(`/api/mentions?userId=${currentRepId}`)
+    if (!effectiveRepId) return;
+    fetch(`/api/mentions?userId=${effectiveRepId}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();
@@ -895,7 +895,7 @@ export default function DashboardPage() {
         setDashMentions(items);
       })
       .catch(() => setDashMentions([]));
-  }, [currentRepId, currentRole]);
+  }, [effectiveRepId, currentRole]);
   useEffect(() => { fetchMentions(); }, [fetchMentions]);
 
   if (!isHydrated || !dbReady) {
