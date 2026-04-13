@@ -1768,7 +1768,7 @@ function SettingsPageInner() {
                 </div>
               )}
               <button
-                disabled={!newInstaller.trim() || installerDup}
+                disabled={!newInstaller.trim() || installerDup || (newInstallerStructure === 'product-catalog' && newPcFamilies.filter((f) => f.trim()).length === 0)}
                 onClick={() => {
                   if (!newInstaller.trim() || installerDup) return;
                   const name = newInstaller.trim();

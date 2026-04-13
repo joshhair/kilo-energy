@@ -351,6 +351,13 @@ function RepEarningsView() {
     if (rawTab === 'reimbursements' || rawTab === 'bonus' || rawTab === 'deal') return rawTab;
     return 'deal';
   });
+  useEffect(() => {
+    if (rawTab === 'reimbursements' || rawTab === 'bonus' || rawTab === 'deal') {
+      setTabState(rawTab);
+    } else {
+      setTabState('deal');
+    }
+  }, [rawTab]);
   const setTab = (t: Tab) => {
     setTabState(t);
     const params = new URLSearchParams(searchParams.toString());
@@ -1141,6 +1148,13 @@ function AdminFinancialsView() {
     if (rawTab === 'payroll' || rawTab === 'reimbursements' || rawTab === 'by-rep') return rawTab;
     return 'payroll';
   });
+  useEffect(() => {
+    if (rawTab === 'payroll' || rawTab === 'reimbursements' || rawTab === 'by-rep') {
+      setTabState(rawTab);
+    } else {
+      setTabState('payroll');
+    }
+  }, [rawTab]);
   const setTab = (t: AdminTab) => {
     setTabState(t);
     const params = new URLSearchParams(searchParams.toString());

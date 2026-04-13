@@ -49,6 +49,14 @@ export async function GET() {
     incentiveWhere.OR = [{ targetRepId: user.id }, { targetRepId: null }];
   }
 
+  // Ensure the Cash financer always exists so reps can submit Cash deals on
+  // fresh instances without hitting the admin-only POST /api/financers endpoint.
+  await prisma.financer.upsert({
+    where: { name: 'Cash' },
+    update: {},
+    create: { name: 'Cash' },
+  });
+
   const [
     users,
     installers,

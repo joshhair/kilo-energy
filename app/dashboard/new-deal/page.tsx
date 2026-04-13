@@ -1419,7 +1419,7 @@ function NewDealPage() {
                         options={(pcConfig?.familyFinancerMap?.[form.pcFamily]
                           ? (activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
                               ? activeFinancers.filter((f) => f === pcConfig.familyFinancerMap![form.pcFamily])
-                              : [])
+                              : activeFinancers)
                           : activeFinancers
                         ).map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
