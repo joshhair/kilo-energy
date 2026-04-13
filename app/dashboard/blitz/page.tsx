@@ -703,8 +703,8 @@ function BlitzPageInner() {
   // Summary stats
   const activeBlitzes = filteredBlitzes.filter((b) => b.status === 'active').length;
   const upcomingBlitzes = filteredBlitzes.filter((b) => b.status === 'upcoming').length;
-  const totalDeals = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, 0);
-  const totalKW = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((ps, p) => ps + p.kWSize, 0), 0);
+  const totalDeals = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)).length, 0);
+  const totalKW = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)).reduce((ps, p) => ps + p.kWSize, 0), 0);
   const totalCosts = isAdmin ? filteredBlitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (

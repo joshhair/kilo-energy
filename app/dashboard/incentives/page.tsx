@@ -276,9 +276,11 @@ export default function IncentivesPage() {
 
   const handleToggleActive = (id: string) => {
     let newActive: boolean | undefined;
+    let originalActive: boolean | undefined;
     setIncentives((prev) =>
       prev.map((i) => {
         if (i.id === id) {
+          originalActive = i.active;
           newActive = !i.active;
           return { ...i, active: newActive };
         }
@@ -291,7 +293,13 @@ export default function IncentivesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: newActive }),
       }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-        .catch((err) => { console.error(err); toast('Failed to update incentive', 'error'); });
+        .catch((err) => {
+          console.error(err);
+          if (originalActive !== undefined) {
+            setIncentives((prev) => prev.map((i) => i.id === id ? { ...i, active: originalActive! } : i));
+          }
+          toast('Failed to update incentive', 'error');
+        });
     }
   };
 
@@ -339,6 +347,7 @@ export default function IncentivesPage() {
   const editingIncentive = editingIncentiveId ? incentives.find((i) => i.id === editingIncentiveId) ?? null : null;
 
   const handleEditSave = (updated: Incentive) => {
+    const previousIncentive = incentives.find((i) => i.id === updated.id);
     setIncentives((prev) =>
       prev.map((i) => (i.id === updated.id ? updated : i))
     );
@@ -354,7 +363,15 @@ export default function IncentivesPage() {
       );
       setEditingIncentiveId(null);
       toast('Incentive updated', 'success');
-    }).catch((err) => { console.error(err); toast('Failed to save incentive changes', 'error'); });
+    }).catch((err) => {
+      console.error(err);
+      if (previousIncentive) {
+        setIncentives((prev) =>
+          prev.map((i) => (i.id === updated.id ? previousIncentive : i))
+        );
+      }
+      toast('Failed to save incentive changes', 'error');
+    });
   };
 
   // ── Duplicate handler ──
@@ -429,12 +446,13 @@ export default function IncentivesPage() {
       message: `Deactivate ${count} incentive${count !== 1 ? 's' : ''}?`,
       onConfirm: () => {
         const ids = Array.from(selectedIds);
+        const originalStates = new Map(incentives.filter((i) => selectedIds.has(i.id)).map((i) => [i.id, i.active]));
         setIncentives((prev) =>
           prev.map((i) => (selectedIds.has(i.id) ? { ...i, active: false } : i))
         );
         ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-          .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); }));
+          .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); setIncentives((prev) => prev.map((i) => i.id === id ? { ...i, active: originalStates.get(id) ?? i.active } : i)); }));
         toast(`${count} incentive${count !== 1 ? 's' : ''} deactivated`, 'info');
         clearSelection();
         setConfirmAction(null);
