@@ -1207,10 +1207,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             ) : (
               <button
                 onClick={() => setConfirmDeactivate(true)}
-                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                disabled={isDeactivating}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'rgba(255,176,32,0.12)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }}
               >
-                Deactivate
+                {isDeactivating ? 'Deactivating…' : 'Deactivate'}
               </button>
             )}
             {userMeta && !userMeta.hasClerkAccount && !isInactive && (
@@ -1223,13 +1224,23 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
               </button>
             )}
+            {/* Retry meta load — shown only when fetch failed */}
+            {userMetaError && (
+              <button
+                onClick={() => setMetaRefreshKey((k) => k + 1)}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                style={{ background: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.3)' }}
+              >
+                Retry
+              </button>
+            )}
             {(() => {
               const hasRelations = !userMeta || (userMeta.relationCount ?? 0) > 0;
               return (
                 <button
                   onClick={() => setConfirmDelete(true)}
                   disabled={hasRelations}
-                  title={!userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
+                  title={userMetaError ? 'Failed to load user data — use Retry to reload' : !userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
                 >

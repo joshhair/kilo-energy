@@ -1624,7 +1624,7 @@ function UsersPageInner() {
                         className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                         style={{ background: '#272b35', color: '#8891a8' }}
                       >
-                        {rep.firstName[0]}{rep.lastName[0]}
+                        {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
