@@ -261,6 +261,20 @@ function PayrollPageInner() {
     return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
+  // Total pending across ALL type tabs (used only for the Publish button's disabled state so
+  // that it doesn't flip enabled/disabled simply because the user switched type tabs).
+  const totalPendingAllTypes = useMemo(() => {
+    let sum = 0;
+    for (const p of payrollEntries) {
+      if (p.status !== 'Pending') continue;
+      if (payFilterFrom && p.date < payFilterFrom) continue;
+      if (payFilterTo && p.date > payFilterTo) continue;
+      if (filterRepId && p.repId !== filterRepId) continue;
+      sum += p.amount;
+    }
+    return sum;
+  }, [payrollEntries, payFilterFrom, payFilterTo, filterRepId]);
+
   // Derived selection state — used by the floating action bar.
   const { selectedTotal } = useMemo(() => {
     let total = 0;
@@ -273,7 +287,7 @@ function PayrollPageInner() {
   // Floating toolbar is visible whenever one or more Draft entries are selected.
   // Computed here (before early returns) so the useEffect below always fires — hooks
   // must not be called after conditional returns.
-  const showActionBar = pageView === 'payroll' && selectedIds.size > 0;
+  const showActionBar = pageView === 'payroll' && statusTab === 'Draft' && selectedIds.size > 0;
 
   useEffect(() => {
     if (showActionBar) {
@@ -375,17 +389,6 @@ function PayrollPageInner() {
     });
   };
 
-  const toggleRepGroup = (entries: PayrollEntry[]) => {
-    const ids = entries.map((e) => e.id);
-    const allSelected = ids.every((id) => selectedIds.has(id));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (allSelected) ids.forEach((id) => next.delete(id));
-      else ids.forEach((id) => next.add(id));
-      return next;
-    });
-  };
-
   const selectAll = () => {
     const pageIds = paginatedFiltered.map((e) => e.id);
     const allSelected = pageIds.every((id) => selectedIds.has(id));
@@ -405,7 +408,7 @@ function PayrollPageInner() {
     if (!bonusForm.amount || isNaN(parseFloat(bonusForm.amount)) || parseFloat(bonusForm.amount) <= 0) { bonusSubmitting.current = false; toast('Enter a valid amount greater than $0', 'error'); return; }
     const rep = reps.find((r) => r.id === bonusForm.repId);
     const newEntry: PayrollEntry = {
-      id: `pay_${Date.now()}`,
+      id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       repId: bonusForm.repId,
       repName: rep?.name ?? '',
       projectId: null,
@@ -653,7 +656,7 @@ function PayrollPageInner() {
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
-              disabled={totalPending === 0}
+              disabled={filteredByDateRep.filter(e => e.status === 'Pending').length === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
             >
@@ -951,7 +954,7 @@ function PayrollPageInner() {
         </div>
         {/* Keyboard hints */}
         <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-          {([['Enter','Mark for Payroll'],['Shift+A','Select All'],['Esc','Clear']] as [string,string][]).map(([k,d]) => (
+          {([['Enter','Mark for Payroll'],['Shift+A','Select All on Page'],['Esc','Clear']] as [string,string][]).map(([k,d]) => (
             <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ background: '#1d2028', border: '1px solid #333849', borderRadius: 5, padding: '2px 6px', fontSize: 10, fontFamily: 'monospace', color: '#c2c8d8' }}>{k}</span>
               <span style={{ color: '#525c72', fontSize: 11, fontFamily: "'DM Sans',sans-serif" }}>{d}</span>

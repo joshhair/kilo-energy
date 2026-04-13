@@ -69,6 +69,7 @@ export interface InstallerPayConfig {
 export const INSTALLER_PAY_CONFIGS: Record<string, InstallerPayConfig> = {
   'ESP': { installPayPct: 80 },
   'EXO': { installPayPct: 80 },
+  'EXO (OLD)': { installPayPct: 80 },
   'SolarTech': { installPayPct: 100 },
   'GEG': { installPayPct: 80 },
   'SunPower': { installPayPct: 80 },
@@ -1363,7 +1364,7 @@ export function getInstallerRatesForDeal(
   }
   const { rates } = version;
   if (rates.type === 'tiered') {
-    const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW)) ?? rates.bands[0];
+    const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW));
     if (!band) return { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35, versionId: version.id };
     const setter = band.setterPerW != null ? band.setterPerW : Math.round((band.closerPerW + 0.10) * 100) / 100;
     return { closerPerW: band.closerPerW, setterPerW: setter, kiloPerW: band.kiloPerW, subDealerPerW: band.subDealerPerW, versionId: version.id };

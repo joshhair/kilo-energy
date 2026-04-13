@@ -147,6 +147,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [reps, setReps] = useState<Rep[]>(REPS.map((r) => ({ ...r })));
   const repsRef = useRef(reps);
   repsRef.current = reps;
+  const projectsRef = useRef(projects);
+  projectsRef.current = projects;
   const trainerAssignmentsRef = useRef(trainerAssignments);
   trainerAssignmentsRef.current = trainerAssignments;
   const [subDealers, setSubDealers] = useState<SubDealer[]>(SUB_DEALERS.map((sd) => ({ ...sd })));
@@ -257,7 +259,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
       .then((saved): string => {
-        const realId: string = saved?.id ?? clientId;
+        if (!saved?.id) throw new Error('Payroll POST response missing id');
+        const realId: string = saved.id;
         if (realId !== clientId) {
           setPayrollEntries((prev) =>
             prev.map((e) => (e.id === clientId ? { ...e, id: realId } : e))
@@ -481,9 +484,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
   const deleteRepPermanently = async (id: string): Promise<{ success: boolean; error?: string }> => {
-    const snapshotIndex = reps.findIndex((r) => r.id === id);
-    const snapshot = reps[snapshotIndex];
-    const nextRepId = reps[snapshotIndex + 1]?.id ?? null;
+    const snapshotIndex = repsRef.current.findIndex((r) => r.id === id);
+    const snapshot = repsRef.current[snapshotIndex];
+    const nextRepId = repsRef.current[snapshotIndex + 1]?.id ?? null;
     setReps((prev) => prev.filter((r) => r.id !== id));
     try {
       await persistFetch(`/api/users/${id}`, { method: 'DELETE' }, 'Failed to delete rep');
@@ -676,7 +679,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // cannot be accidentally promoted and paid after the setter is removed or replaced.
         if (old.setterId) {
           const oldSetterName = repsRef.current.find((r) => r.id === old.setterId)?.name ?? '';
-          const oldSetterTrainerAssignment = trainerAssignments.find((a) => a.traineeId === old.setterId);
+          const oldSetterTrainerAssignment = trainerAssignmentsRef.current.find((a) => a.traineeId === old.setterId);
           setPayrollEntries((prevEntries) => {
             const toRemove = prevEntries.filter((e) => {
               if (e.projectId !== id || (e.status !== 'Draft' && e.status !== 'Pending')) return false;
@@ -845,7 +848,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const setterTrainerAssignment = trainerAssignmentsRef.current.find((a) => a.traineeId === newSetterId);
             if (setterTrainerAssignment) {
               const setterTrainerRep = repsRef.current.find((r) => r.id === setterTrainerAssignment.trainerId);
-              const setterTraineeDeals = projects.filter((p) =>
+              const setterTraineeDeals = projectsRef.current.filter((p) =>
                 (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) &&
                 ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
               ).length;
@@ -2062,7 +2065,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (resolvedIds.length === 0) {
         // All entries failed to persist — optimistic update already fully rolled back above
-        return;
+        throw new Error('All entries failed to persist');
       }
       // Persist bulk status update — rollback on any failure
       return persistFetch('/api/payroll', {
@@ -2070,9 +2073,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: resolvedIds, status: 'Pending' }),
       }, 'Failed to update payroll status').then((res) => {
-        if (!res.ok) rollback();
-      }).catch(() => {
+        if (!res.ok) { rollback(); throw new Error('Failed to update payroll status'); }
+      }).catch((err) => {
         rollback();
+        throw err;
       });
     });
   };

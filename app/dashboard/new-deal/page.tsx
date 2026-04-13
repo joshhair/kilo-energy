@@ -447,7 +447,9 @@ function NewDealPage() {
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((data) => {
       setRawBlitzes(data ?? []);
-    }).catch(() => {});
+    }).catch(() => {
+      toast('Failed to load blitz list. Please refresh the page.', 'error');
+    });
   }, []);
   const availableBlitzes = useMemo<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>(() => {
     return rawBlitzes.filter((b: any) => {
@@ -850,9 +852,9 @@ function NewDealPage() {
       'customerName', 'soldDate', 'installer', ...(form.productType === 'Cash' ? [] : ['financer']), 'productType', 'kWSize', 'netPPW',
       ...(currentRole === 'admin' ? ['repId'] : []),
       ...(form.installer === 'SolarTech' ? ['solarTechFamily'] : []),
-      ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
+      ...(form.installer === 'SolarTech' && form.solarTechFamily ? ['solarTechProductId'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
-      ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
+      ...(isPcInstaller && form.installer !== 'SolarTech' && pcFamily !== '' ? ['installerProductId'] : []),
       ...(form.leadSource === 'blitz' ? ['blitzId'] : []),
     ];
 
@@ -872,6 +874,7 @@ function NewDealPage() {
 
     setSubmitting(true);
 
+    try {
     const rep = reps.find((r) => r.id === closerId);
     const setter = form.setterId ? reps.find((r) => r.id === form.setterId) : null;
     const projectId = genId('proj');
@@ -957,6 +960,11 @@ function NewDealPage() {
     });
     setSubmitting(false);
     submittingRef.current = false;
+    } catch (e) {
+      setSubmitting(false);
+      submittingRef.current = false;
+      throw e;
+    }
   };
 
   // ── Style helpers ──────────────────────────────────────────────────────────

@@ -145,6 +145,33 @@ export function useTableKeyNav(tbodyRef: RefObject<HTMLTableSectionElement | nul
 }
 
 /**
+ * Syncs a tab state variable with a URL search param on browser navigation.
+ *
+ * Pass the raw `tab` param value (from `searchParams.get('tab')`), the list of
+ * valid tab values, and the default tab. Returns `[tab, setTabState]` — the
+ * controlled state is initialised from the URL and re-synced whenever the URL
+ * param changes (e.g. browser back/forward).
+ *
+ * @example
+ * const rawTab = searchParams.get('tab');
+ * const [tab, setTabState] = useSearchParamTab(rawTab, ['a', 'b'] as const, 'a');
+ */
+export function useSearchParamTab<T extends string>(
+  rawTab: string | null,
+  validTabs: readonly T[],
+  defaultTab: T,
+): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const resolve = (raw: string | null): T =>
+    validTabs.includes(raw as T) ? (raw as T) : defaultTab;
+  const [tab, setTabState] = useState<T>(() => resolve(rawTab));
+  useEffect(() => {
+    setTabState(resolve(rawTab));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawTab]);
+  return [tab, setTabState];
+}
+
+/**
  * Subscribe to a CSS media query and return whether it currently matches.
  *
  * @example

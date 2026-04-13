@@ -473,17 +473,15 @@ export default function IncentivesPage() {
       message: `Permanently delete ${count} incentive${count !== 1 ? 's' : ''}? This cannot be undone.`,
       onConfirm: () => {
         const ids = Array.from(selectedIds);
-        let snapshotBefore: typeof incentives | undefined;
-        setIncentives((prev) => {
-          snapshotBefore = prev;
-          return prev.filter((i) => !selectedIds.has(i.id));
-        });
+        const itemsToDelete = new Map(incentives.filter((i) => selectedIds.has(i.id)).map((i) => [i.id, i]));
+        setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
         Promise.all(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
           .catch((err) => {
             console.error(err);
             toast('Failed to delete some incentives', 'error');
-            if (snapshotBefore) setIncentives(snapshotBefore);
+            const item = itemsToDelete.get(id);
+            if (item) setIncentives((prev) => [...prev, item]);
           })))
           .then(() => toast(`${count} incentive${count !== 1 ? 's' : ''} deleted`));
         clearSelection();

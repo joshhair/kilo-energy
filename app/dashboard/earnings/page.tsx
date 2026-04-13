@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery, useSearchParamTab } from '../../../lib/hooks';
 import MobileEarnings from '../mobile/MobileEarnings';
 import { useToast } from '../../../lib/toast';
 import { Reimbursement } from '../../../lib/data';
@@ -346,18 +346,9 @@ function RepEarningsView() {
   const { toast } = useToast();
 
   type Tab = 'deal' | 'bonus' | 'reimbursements';
+  const REP_TABS = ['deal', 'bonus', 'reimbursements'] as const;
   const rawTab = searchParams.get('tab');
-  const [tab, setTabState] = useState<Tab>(() => {
-    if (rawTab === 'reimbursements' || rawTab === 'bonus' || rawTab === 'deal') return rawTab;
-    return 'deal';
-  });
-  useEffect(() => {
-    if (rawTab === 'reimbursements' || rawTab === 'bonus' || rawTab === 'deal') {
-      setTabState(rawTab);
-    } else {
-      setTabState('deal');
-    }
-  }, [rawTab]);
+  const [tab, setTabState] = useSearchParamTab(rawTab, REP_TABS, 'deal');
   const setTab = (t: Tab) => {
     setTabState(t);
     const params = new URLSearchParams(searchParams.toString());
@@ -1143,18 +1134,9 @@ function AdminFinancialsView() {
   const { toast } = useToast();
 
   type AdminTab = 'payroll' | 'reimbursements' | 'by-rep';
+  const ADMIN_TABS = ['payroll', 'reimbursements', 'by-rep'] as const;
   const rawTab = searchParams.get('tab');
-  const [tab, setTabState] = useState<AdminTab>(() => {
-    if (rawTab === 'payroll' || rawTab === 'reimbursements' || rawTab === 'by-rep') return rawTab;
-    return 'payroll';
-  });
-  useEffect(() => {
-    if (rawTab === 'payroll' || rawTab === 'reimbursements' || rawTab === 'by-rep') {
-      setTabState(rawTab);
-    } else {
-      setTabState('payroll');
-    }
-  }, [rawTab]);
+  const [tab, setTabState] = useSearchParamTab(rawTab, ADMIN_TABS, 'payroll');
   const setTab = (t: AdminTab) => {
     setTabState(t);
     const params = new URLSearchParams(searchParams.toString());

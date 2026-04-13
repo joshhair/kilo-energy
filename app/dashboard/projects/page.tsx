@@ -2087,7 +2087,7 @@ function TableView({
               })}
               {pagedProjects.length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? 10 : dealScope === 'all' ? 8 : 7} className="px-5 py-12 text-center">
+                  <td colSpan={(isAdmin ? 10 : dealScope === 'all' ? 8 : 7) - (hideFinancials ? 1 : 0)} className="px-5 py-12 text-center">
                     <div className="flex justify-center">
                       {hasActiveFilters ? (
                         /* ── Filtered: no results ─────────────────────────────────── */
