@@ -732,7 +732,7 @@ function NewDealPage() {
     return r.subDealerPerW ?? 0;
   })();
   const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0 && subDealerRate > kiloPerW
-    ? (subDealerRate - kiloPerW) * kW * 1000
+    ? Math.round((subDealerRate - kiloPerW) * kW * 1000 * 100) / 100
     : 0;
 
   // ── Stepper: section completion & progress ────────────────────────────────

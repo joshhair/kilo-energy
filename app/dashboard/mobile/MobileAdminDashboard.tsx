@@ -40,7 +40,7 @@ function fmtCompact(n: number): string {
 }
 
 function useCountUp(target: number, duration = 350): number {
-  const [displayed, setDisplayed] = useState(target);
+  const [displayed, setDisplayed] = useState(0);
   const prev = useRef(target);
   const raf = useRef<number | null>(null);
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -175,7 +175,8 @@ export default function MobileAdminDashboard() {
       const threshold = PHASE_STUCK_THRESHOLDS[p.phase];
       if (threshold == null) return false;
       if (!p.soldDate) return false;
-      const sold = new Date(p.soldDate).getTime();
+      const [y, m, d] = p.soldDate.split('-').map(Number);
+      const sold = new Date(y, m - 1, d).getTime();
       const days = Math.floor((now - sold) / 86400000);
       return days > threshold;
     });

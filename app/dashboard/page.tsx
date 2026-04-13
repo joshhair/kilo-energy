@@ -1028,7 +1028,7 @@ export default function DashboardPage() {
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
-    const completedDeals = prevPeriodProjects.filter(p =>
+    const completedDeals = projects.filter(p =>
       (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
       ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
     ).length;
