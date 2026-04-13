@@ -2,31 +2,64 @@
 @import "tailwindcss";
 
 :root {
+  /* ── Brand ──────────────────────────────────────────────────────────────── */
   --brand: #00e07a;
   --brand-light: #00c4f0;
   --brand-dark: #00b868;
-  --navy-base: #0b0d11;
-  --navy-card: #0f1117;
-  --navy-hover: #1d2028;
-}
 
-:root {
-  /* Desktop design system */
-  --d-surface: #161920;
-  --d-card: #1d2028;
-  --d-border: #272b35;
-  --d-border2: #333849;
-  --d-text: #f0f2f7;
-  --d-sub: #c2c8d8;
-  --d-muted: #8891a8;
-  --d-dim: #525c72;
-  --d-green: #00e07a;
-  --d-cyan: #00c4f0;
-  --d-amber: #ffb020;
-  --d-red: #ff5252;
-  --d-blue: #4d9fff;
-  --d-purple: #b47dff;
-  --d-teal: #00d4c8;
+  /* ── Surfaces ───────────────────────────────────────────────────────────── */
+  --surface-base: #0b0d11;
+  --surface-deep: #0f1117;
+  --surface: #161920;
+  --surface-card: #1d2028;
+  --surface-mobile-base: #060b13;
+  --surface-mobile-card: #0d1525;
+
+  /* ── Text ────────────────────────────────────────────────────────────────── */
+  --text-primary: #f0f2f7;
+  --text-secondary: #c2c8d8;
+  --text-muted: #8891a8;
+  --text-dim: #525c72;
+  --text-mobile-muted: #8899aa;
+  --text-mobile-dim: #445577;
+
+  /* ── Borders ─────────────────────────────────────────────────────────────── */
+  --border: #272b35;
+  --border-subtle: #333849;
+  --border-mobile: #1a2840;
+
+  /* ── Accents ─────────────────────────────────────────────────────────────── */
+  --accent-green: #00e07a;
+  --accent-emerald: #00e5a0;
+  --accent-cyan: #00c4f0;
+  --accent-cyan2: #00b4d8;
+  --accent-amber: #ffb020;
+  --accent-red: #ff5252;
+  --accent-blue: #4d9fff;
+  --accent-purple: #b47dff;
+  --accent-teal: #00d4c8;
+  --accent-danger: #ff6b6b;
+  --accent-warning: #f5a623;
+
+  /* ── Legacy aliases (match existing --d-* / --m-* references) ───────────── */
+  --d-surface: var(--surface);
+  --d-card: var(--surface-card);
+  --d-border: var(--border);
+  --d-border2: var(--border-subtle);
+  --d-text: var(--text-primary);
+  --d-sub: var(--text-secondary);
+  --d-muted: var(--text-muted);
+  --d-dim: var(--text-dim);
+  --d-green: var(--accent-green);
+  --d-cyan: var(--accent-cyan);
+  --d-amber: var(--accent-amber);
+  --d-red: var(--accent-red);
+  --d-blue: var(--accent-blue);
+  --d-purple: var(--accent-purple);
+  --d-teal: var(--accent-teal);
+  --navy-base: var(--surface-base);
+  --navy-card: var(--surface-deep);
+  --navy-hover: var(--surface-card);
 }
 
 /* ── Accessibility: reduced-motion safety net ───────────────────────────────
