@@ -335,7 +335,6 @@ export default function IncentivesPage() {
       prev.map((i) => (i.id === updated.id ? updated : i))
     );
     setEditingIncentiveId(null);
-    toast('Incentive updated', 'success');
     fetch(`/api/incentives/${updated.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -346,6 +345,7 @@ export default function IncentivesPage() {
       setIncentives((prev) =>
         prev.map((i) => (i.id === updated.id ? { ...i, milestones: saved.milestones } : i))
       );
+      toast('Incentive updated', 'success');
     }).catch((err) => { console.error(err); toast('Failed to save incentive changes', 'error'); });
   };
 

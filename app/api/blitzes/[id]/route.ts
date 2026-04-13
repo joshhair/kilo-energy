@@ -48,10 +48,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json(blitz);
 }
 
-// PATCH /api/blitzes/[id] — Update blitz (admin only)
+// PATCH /api/blitzes/[id] — Update blitz (admin or blitz owner)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let user;
+  try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  if (user.role !== 'admin') {
+    const existing = await prisma.blitz.findUnique({ where: { id }, select: { ownerId: true } });
+    if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (existing.ownerId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const body = await req.json();
 
   const data: Record<string, unknown> = {};

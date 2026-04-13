@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Also runs when only setterId/closerId/soldDate changes — the project may already have a blitzId.
   if (body.blitzId || body.setterId !== undefined || body.closerId !== undefined || body.soldDate !== undefined) {
     const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true, setterId: true, blitzId: true, soldDate: true } });
-    const effectiveBlitzId = body.blitzId ?? existing?.blitzId;
+    const effectiveBlitzId = body.blitzId !== undefined ? body.blitzId : existing?.blitzId;
     if (effectiveBlitzId) {
       const blitz = await prisma.blitz.findUnique({
         where: { id: effectiveBlitzId },
