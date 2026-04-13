@@ -826,7 +826,7 @@ function CalculatorPage() {
                     reps={reps}
                     placeholder="-- Select setter --"
                     clearLabel="No setter"
-                    filterFn={(r) => r.active && (r.repType === 'setter' || r.repType === 'both')}
+                    filterFn={(r) => r.active && (r.repType === 'setter' || r.repType === 'both') && r.id !== currentRepId}
                     renderExtra={(r) => {
                       const ta = trainerAssignments.find((a) => a.traineeId === r.id);
                       const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
@@ -956,7 +956,7 @@ function CalculatorPage() {
                 )}
 
                 {/* Tier gap warning — baselines couldn't be resolved for this kW size */}
-                {hasSetter && setterBaselinePerW === 0 && closerPerW === 0 && soldPPW > 0 && (
+                {closerPerW === 0 && soldPPW > 0 && (
                   <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid #ffb020', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#ffb020' }}>
                     No pricing tier found for {kW.toFixed(1)} kW — baselines could not be resolved. Results below are unreliable. Select a product or check that a tier covers this system size.
                   </div>
