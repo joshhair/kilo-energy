@@ -697,7 +697,7 @@ function NewDealPage() {
   // It goes to the setter. Closer only receives M1 if self-gen (no setter).
   // Trainers are paid post-installation — M2 stage only, no M1.
   const m1Flat = kW >= 5 ? 1000 : 500;
-  const isSelfGen = !form.setterId || setterBaselinePerW === 0;
+  const isSelfGen = !form.setterId;
   const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
   const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
@@ -1586,7 +1586,7 @@ function NewDealPage() {
                           </span>
                         </span>
                       </div>
-                      {form.setterId && setterBaselinePerW === 0 && closerPerW > 0 && (
+                      {form.setterId && setterBaselinePerW === 0 && (
                         <div className="flex justify-between items-center rounded-lg px-3 py-2" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)' }}>
                           <span className="text-amber-400 text-xs">Setter baseline unavailable — verify system size and product selection. Setter commission cannot be calculated.</span>
                         </div>

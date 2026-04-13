@@ -1280,6 +1280,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <p className="text-[#8891a8] text-xs">Closer</p>
                 </div>
                 <div className="text-right">
+                  {!project.setterId && (
+                    <>
+                      <p className="text-[#c2c8d8] text-xs">Expected M1</p>
+                      <p className="text-[#00e07a] font-bold text-sm mb-1">${(project.m1Amount ?? 0).toLocaleString()}</p>
+                    </>
+                  )}
                   <p className="text-[#c2c8d8] text-xs">Expected M2</p>
                   <p className="text-[#00e07a] font-bold text-sm">${closerExpectedM2.toLocaleString()}</p>
                 </div>
