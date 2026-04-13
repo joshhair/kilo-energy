@@ -2024,7 +2024,7 @@ function AdminDashboard({
   // GradCard color config for the 6 stat cards
   const gradCardConfig: Record<string, { color: string; grad: string }> = {
     'Kilo Revenue':      { color: '#00e07a', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
-    'Gross Profit':      { color: '#00c4f0', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
+    'Gross Profit':      totalProfit < 0 ? { color: '#ff5252', grad: 'linear-gradient(135deg, #160000 0%, #1a0000 100%)' } : { color: '#00c4f0', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
     'Total Paid Out':    { color: '#ffb020', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
     'Total Users':       { color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a 0%, #0e0820 100%)' },
     'Total kW Sold':     { color: '#00d4c8', grad: 'linear-gradient(135deg, #001210 0%, #001614 100%)' },
@@ -2655,7 +2655,7 @@ function SubDealerDashboard({
           </Link>
         </div>
         <div className="divider-gradient-animated" />
-        {myProjects.length === 0 ? (
+        {allProjects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId).length === 0 ? (
           <div className="mx-6 my-6 border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
@@ -2674,7 +2674,7 @@ function SubDealerDashboard({
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
-            {[...allProjects].filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId).sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
+            {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const estPay = proj.setterId === currentRepId
                 ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                 : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
@@ -2704,9 +2704,20 @@ function SubDealerDashboard({
                       <span className="text-[#525c72]">&middot;</span>
                       <span className="text-[#00e07a] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
-                        <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
-                        {(proj.m3Amount ?? 0) > 0 && (
-                          <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
+                        {proj.setterId === currentRepId ? (
+                          <>
+                            <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.setterM2Amount ?? 0} />
+                            {(proj.setterM3Amount ?? 0) > 0 && (
+                              <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.setterM3Amount ?? 0} />
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.m2Amount ?? 0} />
+                            {(proj.m3Amount ?? 0) > 0 && (
+                              <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
