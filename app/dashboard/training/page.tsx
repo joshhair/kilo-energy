@@ -187,7 +187,18 @@ function TrainingPageInner() {
       // Earnings from this trainee
       // Trainer entries have the trainee's customer in customerName — we match by
       // looking at entries whose projectId links to a project with this trainee
-      const traineeProjectIds = new Set(traineeDeals.map((p) => p.id));
+      // Include both closer (repId) and setter (setterId) roles to match getTraineeForEntry logic
+      const traineeProjectIds = new Set([
+        ...traineeDeals.map((p) => p.id),
+        ...projects
+          .filter(
+            (p) =>
+              p.setterId === assignment.traineeId &&
+              p.phase !== 'Cancelled' &&
+              p.phase !== 'On Hold'
+          )
+          .map((p) => p.id),
+      ]);
       const earningsFromTrainee = trainerEntries
         .filter((e) => e.projectId && traineeProjectIds.has(e.projectId))
         .reduce((s, e) => s + e.amount, 0);

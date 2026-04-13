@@ -436,9 +436,9 @@ export default function IncentivesPage() {
           prev.map((i) => (isExpired(i.endDate) && i.active ? { ...i, active: false } : i))
         );
         Promise.all(expired.map((i) => fetch(`/api/incentives/${i.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
-          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-          .catch((err) => { console.error(err); toast('Failed to archive some incentives', 'error'); setIncentives((prev) => prev.map((x) => x.id === i.id ? { ...x, active: originalStates.get(i.id) ?? x.active } : x)); })))
-          .then(() => toast(`${count} expired incentive${count !== 1 ? 's' : ''} archived`, 'info'));
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return true; })
+          .catch((err) => { console.error(err); toast('Failed to archive some incentives', 'error'); setIncentives((prev) => prev.map((x) => x.id === i.id ? { ...x, active: originalStates.get(i.id) ?? x.active } : x)); return false; })))
+          .then((results) => { const succeeded = results.filter(Boolean).length; if (succeeded > 0) toast(`${succeeded} expired incentive${succeeded !== 1 ? 's' : ''} archived`, 'info'); });
         setConfirmAction(null);
       },
     });
@@ -457,9 +457,9 @@ export default function IncentivesPage() {
           prev.map((i) => (selectedIds.has(i.id) ? { ...i, active: false } : i))
         );
         Promise.all(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
-          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-          .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); setIncentives((prev) => prev.map((i) => i.id === id ? { ...i, active: originalStates.get(id) ?? i.active } : i)); })))
-          .then(() => toast(`${count} incentive${count !== 1 ? 's' : ''} deactivated`, 'info'));
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return true; })
+          .catch((err) => { console.error(err); toast('Failed to deactivate some incentives', 'error'); setIncentives((prev) => prev.map((i) => i.id === id ? { ...i, active: originalStates.get(id) ?? i.active } : i)); return false; })))
+          .then((results) => { const succeeded = results.filter(Boolean).length; if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deactivated`, 'info'); });
         clearSelection();
         setConfirmAction(null);
       },
@@ -473,17 +473,19 @@ export default function IncentivesPage() {
       message: `Permanently delete ${count} incentive${count !== 1 ? 's' : ''}? This cannot be undone.`,
       onConfirm: () => {
         const ids = Array.from(selectedIds);
-        const itemsToDelete = new Map(incentives.filter((i) => selectedIds.has(i.id)).map((i) => [i.id, i]));
+        const snapshot = [...incentives];
+        const itemsToDelete = new Map(snapshot.filter((i) => selectedIds.has(i.id)).map((i) => [i.id, { item: i, index: snapshot.indexOf(i) }]));
         setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
         Promise.all(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
-          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return true; })
           .catch((err) => {
             console.error(err);
             toast('Failed to delete some incentives', 'error');
-            const item = itemsToDelete.get(id);
-            if (item) setIncentives((prev) => [...prev, item]);
+            const entry = itemsToDelete.get(id);
+            if (entry) setIncentives((prev) => { const next = [...prev]; next.splice(entry.index, 0, entry.item); return next; });
+            return false;
           })))
-          .then(() => toast(`${count} incentive${count !== 1 ? 's' : ''} deleted`));
+          .then((results) => { const succeeded = results.filter(Boolean).length; if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`); });
         clearSelection();
         setConfirmAction(null);
       },
@@ -1039,7 +1041,7 @@ function IncentiveCard({
 
   return (
     <div
-      className={`relative rounded-2xl border overflow-hidden transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-[#00e07a]/5 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[#00e07a]/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${cardIndex} ${!incentive.active ? 'opacity-50' : ''}`}
+      className={`relative rounded-2xl border overflow-hidden transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-[#00e07a]/5 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[#00e07a]/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${Math.min(cardIndex, 6)} ${!incentive.active ? 'opacity-50' : ''}`}
       style={{ borderColor: incentive.type === 'company' ? 'rgba(77,159,255,0.3)' : 'rgba(180,125,255,0.3)', background: '#161920' }}
     >
       {/* Header */}
