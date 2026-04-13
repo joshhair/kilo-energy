@@ -25,7 +25,6 @@ export async function GET() {
             { ownerId: user.id },
             { createdById: user.id },
             { participants: { some: { userId: user.id, joinStatus: { in: ['approved', 'pending'] } } } },
-            { status: { in: ['upcoming', 'active'] } },
           ],
         };
 

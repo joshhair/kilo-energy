@@ -160,10 +160,10 @@ function TrainingPageInner() {
       const traineeName = trainee ? trainee.name : assignment.traineeId;
       const traineeRole = trainee?.repType ?? 'closer';
 
-      // Deals closed by this trainee
+      // Deals closed by this trainee (closer role only — setter-only deals excluded from tier advancement)
       const traineeDeals = projects.filter(
         (p) =>
-          (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+          p.repId === assignment.traineeId &&
           p.phase !== 'Cancelled' &&
           p.phase !== 'On Hold'
       );

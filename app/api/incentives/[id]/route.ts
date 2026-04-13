@@ -21,13 +21,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   let incentive;
   if (body.milestones !== undefined) {
-    await prisma.incentiveMilestone.deleteMany({ where: { incentiveId: id } });
+    const milestones = body.milestones as { id?: string; threshold: number; reward: string; achieved?: boolean }[];
+    const withId = milestones.filter((m) => m.id);
+    const withoutId = milestones.filter((m) => !m.id);
+    const keepIds = withId.map((m) => m.id as string);
     incentive = await prisma.incentive.update({
       where: { id },
       data: {
         ...data,
         milestones: {
-          create: (body.milestones as { threshold: number; reward: string; achieved?: boolean }[]).map((m) => ({
+          deleteMany: keepIds.length > 0 ? { id: { notIn: keepIds } } : {},
+          upsert: withId.map((m) => ({
+            where: { id: m.id as string },
+            update: { threshold: m.threshold, reward: m.reward, achieved: m.achieved ?? false },
+            create: { threshold: m.threshold, reward: m.reward, achieved: m.achieved ?? false },
+          })),
+          create: withoutId.map((m) => ({
             threshold: m.threshold,
             reward: m.reward,
             achieved: m.achieved ?? false,

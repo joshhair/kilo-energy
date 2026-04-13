@@ -206,7 +206,7 @@ export default function IncentivesPage() {
     for (const inc of visible) {
       const progress = computeIncentiveProgress(inc, projects, payrollEntries);
       for (const ms of inc.milestones) {
-        const key = `${inc.id}::${ms.id}`;
+        const key = `${inc.id}::${ms.threshold}`;
         if (progress >= ms.threshold && !ms.achieved && !notifiedMilestonesRef.current.has(key)) {
           notifiedMilestonesRef.current.add(key);
           if (!isFirstRun) {
@@ -339,7 +339,7 @@ export default function IncentivesPage() {
     fetch(`/api/incentives/${updated.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate, metric: updated.metric, period: updated.period, startDate: updated.startDate, type: updated.type, targetRepId: updated.targetRepId, milestones: updated.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward, achieved: m.achieved })) }),
+      body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate, metric: updated.metric, period: updated.period, startDate: updated.startDate, type: updated.type, targetRepId: updated.targetRepId, milestones: updated.milestones.map((m: any) => ({ ...(m.id ? { id: m.id } : {}), threshold: m.threshold, reward: m.reward, achieved: m.achieved })) }),
     }).then(async (res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const saved = await res.json();
