@@ -1528,7 +1528,7 @@ export function computeIncentiveProgress(
     return d >= start && d <= end;
   };
 
-  let relevantProjects = projects.filter((p) => inRange(p.soldDate) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+  let relevantProjects = projects.filter((p) => inRange(p.soldDate) && p.phase !== 'Cancelled');
   if (incentive.type === 'personal' && incentive.targetRepId) {
     relevantProjects = relevantProjects.filter((p) => p.repId === incentive.targetRepId || p.setterId === incentive.targetRepId);
   }

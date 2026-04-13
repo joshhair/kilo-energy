@@ -982,6 +982,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dbUpdates.setterM3Amount = derivedSetterM3;
       }
     }
+    // Guard: abort the entire transition if m2Amount is missing at Installed — prevents
+    // persistFetch from landing phase=Installed in DB while setProjects later bails on
+    // the null check and leaves local state on the old phase (DB/UI divergence).
+    if (updates.phase === 'Installed' && old && old.phase !== 'Installed' && !old.subDealerId) {
+      if ((updates.m2Amount ?? old.m2Amount) == null) {
+        emitPersistError(`M2 payroll skipped for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate.`);
+        return;
+      }
+    }
     if (Object.keys(dbUpdates).length > 0) {
       persistFetch(`/api/projects/${id}`, {
         method: 'PATCH',
@@ -1101,7 +1110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // without the field), surface an error instead of silently skipping the entry.
           if (isInstalled && fullAmount == null) {
             emitPersistError(`M2 payroll skipped for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate.`);
-            return prev;
+            return updated;
           }
 
           // For M2, m2Amount is already stored as the post-split value
@@ -1135,7 +1144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (alreadyExists) return prevEntries;
 
             const newEntries: PayrollEntry[] = [];
-            const closerRep = reps.find((r) => r.id === old.repId);
+            const closerRep = repsRef.current.find((r) => r.id === old.repId);
 
             // Closer entry (skip M1 when a setter exists — M1 goes entirely to the setter)
             if (amount > 0 && !(isAcceptance && old.setterId)) {
@@ -1990,7 +1999,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Resolve any temp IDs to real DB IDs before sending PATCH.
     // If a payroll POST is still in-flight, await it so we never send a temp ID to the DB
     // (the DB has no row for it yet, so updateMany would silently update 0 rows).
-    const resolveIds = async (): Promise<{ resolved: string[]; failedOrigIds: string[] }> => {
+    const resolveIds = async (): Promise<{ resolved: string[]; failedOrigIds: string[]; idMap: Map<string, string> }> => {
       const results = await Promise.all(
         entryIds.map(async (id) => {
           const pending = payrollIdResolutionMap.current.get(id);
@@ -2002,9 +2011,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
       const resolved = results.filter((r): r is { origId: string; resolvedId: string } => r.resolvedId !== null).map((r) => r.resolvedId);
       const failedOrigIds = results.filter((r) => r.resolvedId === null).map((r) => r.origId);
-      return { resolved, failedOrigIds };
+      const idMap = new Map(results.filter((r): r is { origId: string; resolvedId: string } => r.resolvedId !== null).map((r) => [r.origId, r.resolvedId]));
+      return { resolved, failedOrigIds, idMap };
     };
-    return resolveIds().then(({ resolved: resolvedIds, failedOrigIds }) => {
+    return resolveIds().then(({ resolved: resolvedIds, failedOrigIds, idMap }) => {
+      // Augment originalStatuses with resolved DB IDs so rollback() can match entries
+      // whose temp IDs were replaced in state by persistPayrollEntry before the PATCH failed.
+      for (const [origId, resolvedId] of idMap) {
+        if (origId !== resolvedId) {
+          const origStatus = originalStatuses.get(origId);
+          if (origStatus !== undefined) originalStatuses.set(resolvedId, origStatus);
+        }
+      }
       // Roll back any entries whose POST failed — they are still Draft in the DB
       if (failedOrigIds.length > 0) {
         const failedSet = new Set(failedOrigIds);
