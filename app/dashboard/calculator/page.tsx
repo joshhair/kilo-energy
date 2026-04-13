@@ -261,7 +261,7 @@ function CalculatorPage() {
 
   // ── Recent deals for Quick Fill ──────────────────────────────────────────────
   const recentDeals = (() => {
-    const filtered = currentRole === 'admin'
+    const filtered = effectiveRole === 'admin'
       ? projects
       : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
     return [...filtered]
