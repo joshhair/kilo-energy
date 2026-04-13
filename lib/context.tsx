@@ -147,6 +147,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [reps, setReps] = useState<Rep[]>(REPS.map((r) => ({ ...r })));
   const repsRef = useRef(reps);
   repsRef.current = reps;
+  const trainerAssignmentsRef = useRef(trainerAssignments);
+  trainerAssignmentsRef.current = trainerAssignments;
   const [subDealers, setSubDealers] = useState<SubDealer[]>(SUB_DEALERS.map((sd) => ({ ...sd })));
   const [installerPricingVersions, setInstallerPricingVersions] = useState<InstallerPricingVersion[]>(INSTALLER_PRICING_VERSIONS.map((v) => ({ ...v })));
   const [solarTechProducts, setSolarTechProducts] = useState<SolarTechProduct[]>(SOLARTECH_PRODUCTS.map((p) => ({ ...p, tiers: p.tiers.map((t) => ({ ...t })) })));
@@ -836,7 +838,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
 
             // ── Trainer override entries for the new setter's trainer ──
-            const setterTrainerAssignment = trainerAssignments.find((a) => a.traineeId === newSetterId);
+            const setterTrainerAssignment = trainerAssignmentsRef.current.find((a) => a.traineeId === newSetterId);
             if (setterTrainerAssignment) {
               const setterTrainerRep = repsRef.current.find((r) => r.id === setterTrainerAssignment.trainerId);
               const setterTraineeDeals = projects.filter((p) =>
@@ -1186,7 +1188,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
 
             // Setter entry (M2 at Installed — setterM2Amount is already post-installPayPct)
-            if (old.setterId && isInstalled && (old.setterM2Amount ?? 0) > 0) {
+            if (old.setterId && isInstalled && (freshProject.setterM2Amount ?? 0) > 0) {
               const setterRep = repsRef.current.find((r) => r.id === old.setterId);
               newEntries.push({
                 id: `pay_${ts}_m2_s`,
@@ -1194,7 +1196,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 repName: setterRep?.name ?? old.setterName ?? '',
                 projectId: id,
                 customerName: old.customerName,
-                amount: old.setterM2Amount!,
+                amount: freshProject.setterM2Amount!,
                 type: 'Deal',
                 paymentStage: 'M2',
                 status: 'Draft',
@@ -1206,7 +1208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // ── Trainer override M2 entries (installPayPct% of override at Installed) ──
             if (isInstalled) {
               // Closer's trainer
-              const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
+              const closerTrainerAssignment = trainerAssignmentsRef.current.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
                 const trainerRep = repsRef.current.find(r => r.id === closerTrainerAssignment.trainerId);
                 const traineeDeals = updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
@@ -1231,7 +1233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
               // Setter's trainer
               if (old.setterId) {
-                const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
+                const setterTrainerAssignment = trainerAssignmentsRef.current.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = repsRef.current.find(r => r.id === setterTrainerAssignment.trainerId);
                   const setterTraineeDeals = updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
@@ -1338,7 +1340,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
               // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
               // Closer's trainer — gated by m3 > 0, which is 0 for sub-dealer deals
-              const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
+              const closerTrainerAssignment = trainerAssignmentsRef.current.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment && m3 > 0) {
                 const trainerRep = repsRef.current.find(r => r.id === closerTrainerAssignment.trainerId);
                 // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
@@ -1368,7 +1370,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
               // Setter's trainer — guarded by !old.subDealerId to match closer's trainer (m3 > 0 is 0 for sub-dealer deals)
               if (old.setterId && !old.subDealerId) {
-                const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
+                const setterTrainerAssignment = trainerAssignmentsRef.current.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
                   const setterTrainerRep = repsRef.current.find(r => r.id === setterTrainerAssignment.trainerId);
                   // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project

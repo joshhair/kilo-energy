@@ -1703,7 +1703,7 @@ function PMDashboard({
     acc[phase] = projects.filter((p) => p.phase === phase).length;
     return acc;
   }, {} as Record<string, number>);
-  const flaggedCount = projects.filter((p) => p.flagged).length;
+  const flaggedCount = allProjects.filter((p) => p.flagged).length;
   const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
 
   return (
@@ -2341,7 +2341,7 @@ function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
