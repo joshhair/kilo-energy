@@ -18,6 +18,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { CommandPalette, ShortcutsOverlay } from '../../lib/command-palette';
 import InstallPrompt from './components/InstallPrompt';
 import BottomNav from './components/BottomNav';
@@ -769,7 +770,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             and a subtler pageEnter on desktop. prefers-reduced-motion is
             honored via the @media rule in globals.css. */}
         <div key={pathname} className="animate-page-enter">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </div>
 
         {/* Scroll-to-top button */}
