@@ -96,6 +96,7 @@ function PayrollPageInner() {
   // Reimbursements date filter
   const [reimFilterFrom, setReimFilterFrom] = useState('');
   const [reimFilterTo, setReimFilterTo] = useState('');
+  const [reimFilterStatus, setReimFilterStatus] = useState<'All' | 'Pending' | 'Approved' | 'Denied'>('Pending');
   const [processingReimIds, setProcessingReimIds] = useState<Set<string>>(new Set());
 
   // Rep-view filters (non-admin)
@@ -596,6 +597,7 @@ function PayrollPageInner() {
   const pendingReimCount = reimbursements.filter((r) => r.status === 'Pending').length;
 
   const filteredReimbursements = reimbursements.filter((r) => {
+    if (reimFilterStatus !== 'All' && r.status !== reimFilterStatus) return false;
     if (reimFilterFrom && r.date < reimFilterFrom) return false;
     if (reimFilterTo && r.date > reimFilterTo) return false;
     return true;
@@ -703,9 +705,20 @@ function PayrollPageInner() {
       {/* ── Reimbursements view ──────────────────────────────────────────────── */}
       {pageView === 'reimbursements' && (
         <div key={pageView} className="animate-tab-enter">
-          {/* Date filter */}
+          {/* Date + status filter */}
           <div className="flex items-center gap-3 mb-5">
             <Filter className="w-4 h-4 text-[#8891a8] flex-shrink-0" />
+            <select
+              value={reimFilterStatus}
+              onChange={(e) => setReimFilterStatus(e.target.value as 'All' | 'Pending' | 'Approved' | 'Denied')}
+              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
+              style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+            >
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Denied">Denied</option>
+              <option value="All">All</option>
+            </select>
             <div className="flex items-center gap-2">
               <label className="text-xs text-[#8891a8] whitespace-nowrap">From</label>
               <input
@@ -726,9 +739,9 @@ function PayrollPageInner() {
                 style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
               />
             </div>
-            {(reimFilterFrom || reimFilterTo) && (
+            {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending') && (
               <button
-                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); }}
+                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); }}
                 className="text-xs text-[#8891a8] hover:text-white underline transition-colors"
               >
                 Clear
@@ -806,8 +819,8 @@ function PayrollPageInner() {
                     <td colSpan={7} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Receipt className="w-10 h-10 text-[#525c72]" />
-                        <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected date range'}</p>
-                        <p className="text-xs text-[#8891a8]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the date filters to find what you need'}</p>
+                        <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected filters'}</p>
+                        <p className="text-xs text-[#8891a8]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the status or date filters to find what you need'}</p>
                       </div>
                     </td>
                   </tr>

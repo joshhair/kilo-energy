@@ -76,6 +76,39 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ─── Numeric field validation ───
+  const kWSize = Number(body.kWSize);
+  const netPPW = Number(body.netPPW);
+  if (!Number.isFinite(kWSize) || kWSize <= 0) {
+    return NextResponse.json({ error: 'kWSize must be a positive number' }, { status: 400 });
+  }
+  if (!Number.isFinite(netPPW) || netPPW <= 0) {
+    return NextResponse.json({ error: 'netPPW must be a positive number' }, { status: 400 });
+  }
+  const numericAmountFields = ['m1Amount', 'm2Amount', 'm3Amount', 'setterM1Amount', 'setterM2Amount', 'setterM3Amount'];
+  for (const field of numericAmountFields) {
+    if (body[field] !== undefined && body[field] !== null) {
+      const val = Number(body[field]);
+      if (!Number.isFinite(val) || val < 0) {
+        return NextResponse.json({ error: `${field} must be a non-negative number` }, { status: 400 });
+      }
+    }
+  }
+
+  // ─── FK existence checks ───
+  if (body.installerId) {
+    const installer = await prisma.installer.findUnique({ where: { id: body.installerId }, select: { id: true } });
+    if (!installer) {
+      return NextResponse.json({ error: 'Installer not found' }, { status: 400 });
+    }
+  }
+  if (body.financerId) {
+    const financer = await prisma.financer.findUnique({ where: { id: body.financerId }, select: { id: true } });
+    if (!financer) {
+      return NextResponse.json({ error: 'Financer not found' }, { status: 400 });
+    }
+  }
+
   const project = await prisma.project.create({
     data: {
       customerName: body.customerName,
@@ -85,8 +118,8 @@ export async function POST(req: NextRequest) {
       installerId: body.installerId,
       financerId: body.financerId,
       productType: body.productType,
-      kWSize: body.kWSize,
-      netPPW: body.netPPW,
+      kWSize,
+      netPPW,
       phase: body.phase || 'New',
       m1Amount: body.m1Amount || 0,
       m2Amount: body.m2Amount || 0,

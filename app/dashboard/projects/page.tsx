@@ -1755,6 +1755,10 @@ function TableView({
 
   const confirmBulkCancelWithReason = () => {
     if (!bulkCancelReasonModal) return;
+    if (!bulkCancelReason) {
+      toast('Please select a cancellation reason.', 'error');
+      return;
+    }
     const count = selectedProjectIds.size;
     selectedProjectIds.forEach((id) => {
       updateProject(id, {

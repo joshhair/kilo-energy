@@ -174,9 +174,10 @@ function UsersPageInner() {
   // For non-admin viewers we skip the fetches entirely, so the flag
   // defaults to true to avoid gating the animation on data that never
   // arrives.
-  const [extraUsersReady, setExtraUsersReady] = useState(currentRole !== 'admin' && currentRole !== 'project_manager');
+  const [extraUsersReady, setExtraUsersReady] = useState(false);
   useEffect(() => {
-    if (currentRole !== 'admin' && currentRole !== 'project_manager') return;
+    if (currentRole === null) return;
+    if (currentRole !== 'admin' && currentRole !== 'project_manager') { setExtraUsersReady(true); return; }
     // Promise.all collapses both responses into a single state update, so
     // the grid renders once with everyone present instead of twice.
     Promise.all([
@@ -919,7 +920,7 @@ function UsersPageInner() {
                             className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                             style={{ background: '#272b35', color: '#8891a8' }}
                           >
-                            {rep.firstName[0]}{rep.lastName[0]}
+                            {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
                           </div>
                           <div className="min-w-0">
                             <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
@@ -996,7 +997,7 @@ function UsersPageInner() {
                             className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                             style={{ background: '#272b35', color: '#8891a8' }}
                           >
-                            {sd.firstName[0]}{sd.lastName[0]}
+                            {sd.firstName[0] ?? ''}{sd.lastName[0] ?? ''}
                           </div>
                           <div className="min-w-0">
                             <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
