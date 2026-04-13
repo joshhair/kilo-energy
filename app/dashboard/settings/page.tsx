@@ -92,7 +92,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
   }, [reps]);
 
   const togglePermission = async (repId: string, field: 'canRequestBlitz' | 'canCreateBlitz', value: boolean) => {
-    const prev = permissions[repId];
+    const prevValue = permissions[repId]?.[field];
     setPermissions((p) => ({ ...p, [repId]: { ...p[repId], [field]: value } }));
     try {
       const res = await fetch(`/api/users/${repId}`, {
@@ -103,7 +103,7 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
       if (!res.ok) throw new Error();
       toast('Permission updated');
     } catch {
-      setPermissions((p) => ({ ...p, [repId]: prev }));
+      setPermissions((p) => ({ ...p, [repId]: { ...p[repId], [field]: prevValue } }));
       toast('Failed to update permission', 'error');
     }
   };
@@ -145,19 +145,24 @@ function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: str
       newPerms[r.id] = { canRequestBlitz: value, canCreateBlitz: value };
     });
     setPermissions(newPerms);
-    try {
-      const updates = filteredReps.map((r) =>
-        fetch(`/api/users/${r.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ canRequestBlitz: value, canCreateBlitz: value }),
-        }).then((res) => { if (!res.ok) throw new Error(); })
-      );
-      await Promise.all(updates);
+    const updates = filteredReps.map((r) =>
+      fetch(`/api/users/${r.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ canRequestBlitz: value, canCreateBlitz: value }),
+      }).then((res) => { if (!res.ok) throw new Error(); })
+    );
+    const results = await Promise.allSettled(updates);
+    const failedReps = filteredReps.filter((_, i) => results[i].status === 'rejected');
+    if (failedReps.length > 0) {
+      setPermissions((curr) => {
+        const rolled = { ...curr };
+        failedReps.forEach((r) => { rolled[r.id] = prevPerms[r.id]; });
+        return rolled;
+      });
+      toast(`Failed to update ${failedReps.length} rep(s): ${failedReps.map((r) => r.name).join(', ')}`, 'error');
+    } else {
       toast(`${action === 'grant' ? 'Granted' : 'Revoked'} permissions for ${filteredReps.length} reps`);
-    } catch {
-      setPermissions(prevPerms);
-      toast('Failed to update permissions', 'error');
     }
   };
 
