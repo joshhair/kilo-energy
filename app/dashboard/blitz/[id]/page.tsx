@@ -322,7 +322,7 @@ export default function BlitzDetailPage() {
       // If the owner changed, ensure they are an approved participant
       if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
         const revertOwner = async () => {
-          await fetch(`/api/blitzes/${blitzId}`, {
+          const rv = await fetch(`/api/blitzes/${blitzId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -336,6 +336,7 @@ export default function BlitzDetailPage() {
               ownerId: blitz?.owner?.id ?? null,
             }),
           });
+          if (!rv.ok) throw new Error('revert_failed');
         };
         const existingParticipant = blitz?.participants?.find((p: any) => p.user.id === editForm.ownerId);
         if (!existingParticipant) {
@@ -344,14 +345,22 @@ export default function BlitzDetailPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { await revertOwner(); toast('Failed to add owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(true); return; }
+          if (!pr.ok) {
+            try { await revertOwner(); toast('Failed to add owner as participant — owner change reverted', 'error'); }
+            catch { toast('Failed to add owner as participant — owner revert also failed, blitz is in inconsistent state', 'error'); }
+            setEditing(false); loadBlitz(true); return;
+          }
         } else if (existingParticipant.joinStatus !== 'approved') {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { await revertOwner(); toast('Failed to approve owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(true); return; }
+          if (!pr.ok) {
+            try { await revertOwner(); toast('Failed to approve owner as participant — owner change reverted', 'error'); }
+            catch { toast('Failed to approve owner as participant — owner revert also failed, blitz is in inconsistent state', 'error'); }
+            setEditing(false); loadBlitz(true); return;
+          }
         }
       }
       toast('Blitz updated');
@@ -678,7 +687,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[#8891a8] mt-0.5">Deal{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length !== 1 ? 's' : ''} Closed</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).reduce((s: number, p: any) => s + p.kWSize, 0).toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? p.kWSize : 0), 0).toFixed(1)}</p>
                   <p className="text-xs text-[#8891a8] mt-0.5">kW Sold</p>
                 </div>
                 <div>
@@ -966,7 +975,7 @@ export default function BlitzDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="card-surface rounded-2xl overflow-hidden">
+            <div className="card-surface rounded-2xl overflow-x-clip">
               <table className="w-full text-sm">
                 <thead className="table-header-frost sticky top-0 z-10"><tr className="border-b border-[#333849] text-xs text-[#8891a8] uppercase tracking-wider">
                   <th className="text-left px-4 py-3">
