@@ -484,10 +484,13 @@ function UsersPageInner() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
 
-  // Clear compare state only when navigating away from the rep tab
+  // Clear compare state when navigating away from the rep tab, or when
+  // filterTab changes within the rep view (reps no longer visible can't be deselected)
   useEffect(() => {
     if (roleFilter !== 'rep') {
       setCompareMode(false);
+      setCompareIds(new Set());
+    } else {
       setCompareIds(new Set());
     }
   }, [roleFilter, filterTab]);

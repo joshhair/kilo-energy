@@ -34,7 +34,7 @@ function relativeTime(dateStr: string | null | undefined): string {
   if (days < 30) return `${days}d ago`;
   const months = Math.floor(days / 30);
   if (months < 12) return `${months}mo ago`;
-  const years = Math.floor(months / 12);
+  const years = Math.floor(days / 365);
   return `${years}y ago`;
 }
 
@@ -1413,7 +1413,6 @@ function SetterPopover({
                 </p>
                 <button
                   disabled
-                  onClick={(e) => { e.stopPropagation(); handleAssign(currentSetter); }}
                   className="w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors min-h-[44px] cursor-default"
                 >
                   {/* Initials avatar */}
@@ -1697,7 +1696,7 @@ function TableView({
       const proj = projects.find((p) => p.id === id);
       if (!proj) return;
       const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
-      const nextPhase = phaseIdx >= 0 ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
+      const nextPhase = (phaseIdx >= 0 && phaseIdx < PIPELINE_PHASES.length - 1) ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
       if (nextPhase) {
         onPhaseChange(id, nextPhase, true);
         advanced++;
@@ -2052,7 +2051,7 @@ function TableView({
                   </td>
                   {isAdmin && (() => {
                     const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
-                    const nextPhase = phaseIdx >= 0 ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
+                    const nextPhase = (phaseIdx >= 0 && phaseIdx < PIPELINE_PHASES.length - 1) ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
                     return (
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

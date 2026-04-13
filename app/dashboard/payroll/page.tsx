@@ -331,6 +331,13 @@ function PayrollPageInner() {
         console.error('[handlePublish] Bulk PATCH failed:', res.status);
         setPayrollEntries(snapshot);
         toast(`Payroll failed to save — rolled back`, 'error');
+      } else {
+        const data = await res.json();
+        if (data.updated !== ids.length) {
+          console.warn(`[handlePublish] Server updated ${data.updated} of ${ids.length} entries — status mismatch`);
+          setPayrollEntries(snapshot);
+          toast(`Payroll out of sync — please refresh and try again`, 'error');
+        }
       }
     } catch (err) {
       console.error('[handlePublish] Network error:', err);
@@ -348,9 +355,9 @@ function PayrollPageInner() {
       .filter((e) => selectedIds.has(e.id))
       .reduce((s, e) => s + e.amount, 0);
     const ids = filtered.filter((e) => selectedIds.has(e.id)).map((e) => e.id);
-    setSelectedIds(new Set());
     try {
       await markForPayroll(ids);
+      setSelectedIds(new Set());
       changeStatusTab('Pending');
       toast(`${ids.length} entries moved to Pending — $${amount.toLocaleString()}`, 'success');
     } catch {
@@ -936,7 +943,7 @@ function PayrollPageInner() {
               className="text-xs hover:text-white underline transition-colors"
               style={{ color: '#8891a8' }}
             >
-              {allPageSelected ? 'Deselect All' : 'Select All'}
+              {allPageSelected ? 'Deselect All on Page' : 'Select All on Page'}
             </button>
           )}
           {/* Entry count */}
