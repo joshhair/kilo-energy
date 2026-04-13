@@ -78,11 +78,13 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // which the deactivate / send-invite / hard-delete buttons need to know
   // about. Only fetched when the viewer is an admin.
   const [userMeta, setUserMeta] = useState<UserMeta | null>(null);
+  const [userMetaError, setUserMetaError] = useState(false);
   const [metaRefreshKey, setMetaRefreshKey] = useState(0);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   useEffect(() => {
     if (currentRole !== 'admin') return;
+    setUserMetaError(false);
     fetch(`/api/users/${id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -93,9 +95,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             hasClerkAccount: !!data.hasClerkAccount,
             active: data.active ?? true,
           });
+        } else {
+          setUserMetaError(true);
         }
       })
-      .catch(() => {});
+      .catch(() => { setUserMetaError(true); });
   }, [id, currentRole, metaRefreshKey]);
 
   // ── Edit-in-place state for contact info ───────────────────────────────
@@ -581,12 +585,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
               {/* Delete permanently — gated to zero relations */}
               {(() => {
-                const hasRelations = !userMeta || (userMeta.relationCount ?? 0) > 0;
+                const hasRelations = (!userMeta && !userMetaError) || (!userMetaError && (userMeta?.relationCount ?? 0) > 0);
                 return (
                   <button
                     onClick={() => setConfirmDelete(true)}
                     disabled={hasRelations}
-                    title={!userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
+                    title={userMetaError ? 'Failed to load user data — click retry above' : !userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                     className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
                   >

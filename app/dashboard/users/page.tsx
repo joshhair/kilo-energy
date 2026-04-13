@@ -174,9 +174,9 @@ function UsersPageInner() {
   // For non-admin viewers we skip the fetches entirely, so the flag
   // defaults to true to avoid gating the animation on data that never
   // arrives.
-  const [extraUsersReady, setExtraUsersReady] = useState(currentRole !== 'admin');
+  const [extraUsersReady, setExtraUsersReady] = useState(currentRole !== 'admin' && currentRole !== 'project_manager');
   useEffect(() => {
-    if (currentRole !== 'admin') return;
+    if (currentRole !== 'admin' && currentRole !== 'project_manager') return;
     // Promise.all collapses both responses into a single state update, so
     // the grid renders once with everyone present instead of twice.
     Promise.all([
@@ -483,12 +483,9 @@ function UsersPageInner() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
 
-  // Clear compare state when navigating away from the rep tab or switching filter tabs within it
+  // Clear compare state only when navigating away from the rep tab
   useEffect(() => {
     if (roleFilter !== 'rep') {
-      setCompareMode(false);
-      setCompareIds(new Set());
-    } else {
       setCompareMode(false);
       setCompareIds(new Set());
     }
