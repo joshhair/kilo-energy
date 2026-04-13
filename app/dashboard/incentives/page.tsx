@@ -256,10 +256,18 @@ export default function IncentivesPage() {
       title: 'Delete incentive?',
       message: 'This cannot be undone.',
       onConfirm: () => {
-        setIncentives((prev) => prev.filter((i) => i.id !== id));
+        let removed: typeof incentives[0] | undefined;
+        setIncentives((prev) => {
+          removed = prev.find((i) => i.id === id);
+          return prev.filter((i) => i.id !== id);
+        });
         fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-          .catch((err) => { console.error(err); toast('Failed to delete incentive', 'error'); });
+          .catch((err) => {
+            console.error(err);
+            if (removed) setIncentives((prev) => [...prev, removed!]);
+            toast('Failed to delete incentive', 'error');
+          });
         toast('Incentive deleted');
         setConfirmAction(null);
       },
@@ -334,7 +342,6 @@ export default function IncentivesPage() {
     setIncentives((prev) =>
       prev.map((i) => (i.id === updated.id ? updated : i))
     );
-    setEditingIncentiveId(null);
     fetch(`/api/incentives/${updated.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -345,6 +352,7 @@ export default function IncentivesPage() {
       setIncentives((prev) =>
         prev.map((i) => (i.id === updated.id ? { ...i, milestones: saved.milestones } : i))
       );
+      setEditingIncentiveId(null);
       toast('Incentive updated', 'success');
     }).catch((err) => { console.error(err); toast('Failed to save incentive changes', 'error'); });
   };
@@ -441,10 +449,16 @@ export default function IncentivesPage() {
       message: `Permanently delete ${count} incentive${count !== 1 ? 's' : ''}? This cannot be undone.`,
       onConfirm: () => {
         const ids = Array.from(selectedIds);
+        const removedItems = incentives.filter((i) => selectedIds.has(i.id));
         setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
         ids.forEach((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
-          .catch((err) => { console.error(err); toast('Failed to delete some incentives', 'error'); }));
+          .catch((err) => {
+            console.error(err);
+            toast('Failed to delete some incentives', 'error');
+            const failed = removedItems.find((i) => i.id === id);
+            if (failed) setIncentives((prev) => [...prev, failed]);
+          }));
         toast(`${count} incentive${count !== 1 ? 's' : ''} deleted`);
         clearSelection();
         setConfirmAction(null);

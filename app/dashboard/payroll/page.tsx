@@ -413,8 +413,14 @@ function PayrollPageInner() {
     setPayrollEntries((prev) => [...prev, newEntry]);
     setShowBonusModal(false);
     setBonusForm({ repId: '', amount: '', notes: '', date: '' });
-    changeStatusTab('Draft');
-    changeTypeTab('Bonus');
+    setStatusTab('Draft');
+    setTypeTab('Bonus');
+    setSelectedIds(new Set());
+    setAdminPage(1);
+    const bonusParams = new URLSearchParams(searchParams.toString());
+    bonusParams.set('status', 'Draft');
+    bonusParams.set('type', 'Bonus');
+    router.replace(`?${bonusParams.toString()}`, { scroll: false });
     bonusSubmitting.current = false;
     toast(`Bonus added for ${rep?.name ?? 'rep'} — $${parseFloat(bonusForm.amount).toLocaleString()}`, 'success');
     // Persist to DB via context helper — registers temp ID in resolution map so
@@ -446,8 +452,14 @@ function PayrollPageInner() {
     setPayrollEntries((prev) => [...prev, newEntry]);
     setShowPaymentModal(false);
     setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
-    changeStatusTab('Draft');
-    changeTypeTab('Deal');
+    setStatusTab('Draft');
+    setTypeTab('Deal');
+    setSelectedIds(new Set());
+    setAdminPage(1);
+    const paymentParams = new URLSearchParams(searchParams.toString());
+    paymentParams.set('status', 'Draft');
+    paymentParams.set('type', 'Deal');
+    router.replace(`?${paymentParams.toString()}`, { scroll: false });
     paymentSubmitting.current = false;
     toast(`Payment draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
     // Persist to DB via context helper — registers temp ID in resolution map so

@@ -1348,7 +1348,7 @@ function UsersPageInner() {
           return (
             <div key={rep.id} className="relative">
               {compareMode && (
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={compareIds.has(rep.id)}
