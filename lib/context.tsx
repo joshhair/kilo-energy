@@ -1169,7 +1169,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
             // Setter entry (M1 goes to setter if one exists)
             if (old.setterId && isAcceptance && (old.setterM1Amount ?? 0) > 0) {
-              const setterRep = reps.find((r) => r.id === old.setterId);
+              const setterRep = repsRef.current.find((r) => r.id === old.setterId);
               newEntries.push({
                 id: `pay_${ts}_${stage.toLowerCase()}_s`,
                 repId: old.setterId,
@@ -1187,7 +1187,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
             // Setter entry (M2 at Installed — setterM2Amount is already post-installPayPct)
             if (old.setterId && isInstalled && (old.setterM2Amount ?? 0) > 0) {
-              const setterRep = reps.find((r) => r.id === old.setterId);
+              const setterRep = repsRef.current.find((r) => r.id === old.setterId);
               newEntries.push({
                 id: `pay_${ts}_m2_s`,
                 repId: old.setterId,
@@ -1208,7 +1208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // Closer's trainer
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment) {
-                const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
+                const trainerRep = repsRef.current.find(r => r.id === closerTrainerAssignment.trainerId);
                 const traineeDeals = updated.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
                 const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
                 const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
@@ -1233,12 +1233,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (old.setterId) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
-                  const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
+                  const setterTrainerRep = repsRef.current.find(r => r.id === setterTrainerAssignment.trainerId);
                   const setterTraineeDeals = updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
                   const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
                   const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
                   if (m2SetterTrainerAmount > 0) {
-                    const setterRep = reps.find(r => r.id === old.setterId);
+                    const setterRep = repsRef.current.find(r => r.id === old.setterId);
                     newEntries.push({
                       id: `pay_${ts}_m2_trainer_s`,
                       repId: setterTrainerAssignment.trainerId,
@@ -1292,7 +1292,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (!hasM2Entry) return prevEntries;
 
               const newEntries: PayrollEntry[] = [];
-              const closerRep = reps.find((r) => r.id === old.repId);
+              const closerRep = repsRef.current.find((r) => r.id === old.repId);
 
               // Closer M3 entry — only when installPayPct < 100 produces a non-zero amount
               if (m3 > 0) {
@@ -1319,7 +1319,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     ? Math.round((proj?.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
                     : 0;
                 if (setterM3 > 0) {
-                  const setterRep = reps.find((r) => r.id === old.setterId);
+                  const setterRep = repsRef.current.find((r) => r.id === old.setterId);
                   newEntries.push({
                     id: `pay_${ts}_m3_s`,
                     repId: old.setterId,
@@ -1340,7 +1340,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // Closer's trainer — gated by m3 > 0, which is 0 for sub-dealer deals
               const closerTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.repId);
               if (closerTrainerAssignment && m3 > 0) {
-                const trainerRep = reps.find(r => r.id === closerTrainerAssignment.trainerId);
+                const trainerRep = repsRef.current.find(r => r.id === closerTrainerAssignment.trainerId);
                 // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
                 const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId);
                 const m2CloserRateMatch = m2CloserTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
@@ -1370,9 +1370,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (old.setterId && !old.subDealerId) {
                 const setterTrainerAssignment = trainerAssignments.find(a => a.traineeId === old.setterId);
                 if (setterTrainerAssignment) {
-                  const setterTrainerRep = reps.find(r => r.id === setterTrainerAssignment.trainerId);
+                  const setterTrainerRep = repsRef.current.find(r => r.id === setterTrainerAssignment.trainerId);
                   // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
-                  const setterTraineeName = reps.find(r => r.id === old.setterId)?.name ?? old.setterName ?? '';
+                  const setterTraineeName = repsRef.current.find(r => r.id === old.setterId)?.name ?? old.setterName ?? '';
                   const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === id && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId && (setterTraineeName ? e.notes?.includes(`— ${setterTraineeName} (`) : true));
                   const m2SetterRateMatch = m2SetterTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
                   const m2SetterParsed = m2SetterRateMatch ? parseFloat(m2SetterRateMatch[1]) : NaN;
@@ -1381,7 +1381,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     : getTrainerOverrideRate(setterTrainerAssignment, updated.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length);
                   const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
                   if (m3SetterTrainerAmount > 0) {
-                    const setterRep = reps.find(r => r.id === old.setterId);
+                    const setterRep = repsRef.current.find(r => r.id === old.setterId);
                     newEntries.push({
                       id: `pay_${ts}_m3_trainer_s`,
                       repId: setterTrainerAssignment.trainerId,
@@ -1519,7 +1519,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const createNewInstallerVersion = (installer: string, label: string, effectiveFrom: string, rates: InstallerRates) => {
     const prevDate = new Date(effectiveFrom);
     prevDate.setDate(prevDate.getDate() - 1);
-    const effectiveTo = prevDate.toISOString().split('T')[0];
+    const effectiveTo = localDateString(prevDate);
 
     const tempId = `ipv_${installer.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
 
@@ -1711,7 +1711,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const createNewProductCatalogVersion = (productId: string, label: string, effectiveFrom: string, tiers: ProductCatalogTier[]) => {
     const prevDate = new Date(effectiveFrom);
     prevDate.setDate(prevDate.getDate() - 1);
-    const effectiveTo = prevDate.toISOString().split('T')[0];
+    const effectiveTo = localDateString(prevDate);
     const tempId = `pcpv_${productId}_${Date.now()}`;
 
     setProductCatalogPricingVersions((prev) => [
