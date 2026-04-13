@@ -327,7 +327,7 @@ export default function BlitzDetailPage() {
             body: JSON.stringify({
               name: blitz?.name ?? '',
               location: blitz?.location ?? null,
-              housingType: blitz?.housingType ?? null,
+              housing: blitz?.housing ?? null,
               startDate: blitz?.startDate ?? null,
               endDate: blitz?.endDate ?? null,
               notes: blitz?.notes ?? null,
@@ -439,20 +439,24 @@ export default function BlitzDetailPage() {
   };
 
   const handleDeleteCost = async (costId: string) => {
-    const r = await fetch(`/api/blitzes/${blitzId}/costs?costId=${costId}`, { method: 'DELETE' });
-    if (!r.ok) { toast('Failed to remove cost', 'error'); return; }
-    toast('Cost removed');
-    loadBlitz();
+    try {
+      const r = await fetch(`/api/blitzes/${blitzId}/costs?costId=${costId}`, { method: 'DELETE' });
+      if (!r.ok) { toast('Failed to remove cost', 'error'); return; }
+      toast('Cost removed');
+      loadBlitz();
+    } catch { toast('Failed to remove cost', 'error'); }
   };
 
   const handleDeleteBlitz = async () => {
-    const res = await fetch(`/api/blitzes/${blitzId}`, { method: 'DELETE' });
-    if (res.ok) {
-      toast('Blitz deleted');
-      router.push('/dashboard/blitz');
-    } else {
-      toast('Failed to delete blitz', 'error');
-    }
+    try {
+      const res = await fetch(`/api/blitzes/${blitzId}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast('Blitz deleted');
+        router.push('/dashboard/blitz');
+      } else {
+        toast('Failed to delete blitz', 'error');
+      }
+    } catch { toast('Failed to delete blitz', 'error'); }
   };
 
   const handleRequestCancellation = async (reason: string) => {
