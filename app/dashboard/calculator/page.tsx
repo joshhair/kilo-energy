@@ -463,10 +463,10 @@ function CalculatorPage() {
   const handleCopyResult = () => {
     const parts = [
       `Deal: ${kW.toFixed(1)} kW @ $${soldPPW.toFixed(2)}/W`,
-      `— Closer: $${closerTotal.toLocaleString()} (M1: $${closerM1.toLocaleString()}, M2: $${closerM2.toLocaleString()})`,
+      `— Closer: $${closerTotal.toLocaleString()} (M1: $${closerM1.toLocaleString()}, M2: $${closerM2.toLocaleString()}${hasM3Split ? `, M3: $${closerM3.toLocaleString()}` : ''})`,
     ];
     if (hasSetter && setterTotal > 0) {
-      parts.push(`· Setter: $${setterTotal.toLocaleString()} (M1: $${setterM1.toLocaleString()}, M2: $${setterM2.toLocaleString()})`);
+      parts.push(`· Setter: $${setterTotal.toLocaleString()} (M1: $${setterM1.toLocaleString()}, M2: $${setterM2.toLocaleString()}${hasM3Split ? `, M3: $${setterM3.toLocaleString()}` : ''})`);
     }
     navigator.clipboard.writeText(parts.join(' ')).then(
       () => toast('Summary copied to clipboard', 'success'),
@@ -479,10 +479,10 @@ function CalculatorPage() {
     const lines = [
       `Commission Calc — ${installer}`,
       `${kW.toFixed(1)} kW @ $${soldPPW.toFixed(2)}/W`,
-      `Closer: $${closerTotal.toLocaleString()} (M1: $${closerM1.toLocaleString()} / M2: $${closerM2.toLocaleString()})`,
+      `Closer: $${closerTotal.toLocaleString()} (M1: $${closerM1.toLocaleString()} / M2: $${closerM2.toLocaleString()}${hasM3Split ? ` / M3: $${closerM3.toLocaleString()}` : ''})`,
     ];
     if (hasSetter && setterTotal > 0) {
-      lines.push(`Setter: $${setterTotal.toLocaleString()}`);
+      lines.push(`Setter: $${setterTotal.toLocaleString()}${hasM3Split ? ` (M1: $${setterM1.toLocaleString()} / M2: $${setterM2.toLocaleString()} / M3: $${setterM3.toLocaleString()})` : ''}`);
     }
     lines.push(`Baseline: $${closerPerW.toFixed(2)}/W | Break-even: $${breakEvenPPW.toFixed(2)}/W`);
     navigator.clipboard.writeText(lines.join('\n')).then(
@@ -589,7 +589,8 @@ function CalculatorPage() {
 
     setCalcHistory((prev) => {
       const next = [entry, ...prev.filter((e) =>
-        !(e.installer === entry.installer && e.kW === entry.kW && e.ppw === entry.ppw)
+        !(e.installer === entry.installer && e.kW === entry.kW && e.ppw === entry.ppw &&
+          e.solarTechProductId === entry.solarTechProductId && e.pcProductId === entry.pcProductId)
       )].slice(0, MAX_HISTORY);
       saveCalcHistory(next);
       return next;

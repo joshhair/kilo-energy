@@ -596,8 +596,8 @@ function NewDealPage() {
   const handlePcFamilyChange = (value: string) => {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    // Loan deals must not inherit a 'Cash' financer from the family mapping
-    const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
+    // Cash and Loan deals must not inherit a financer from the family mapping
+    const effectiveFinancer = (form.productType === 'Loan' || form.productType === 'Cash') ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
     setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: touched.has('financer') ? validateField('financer', effectiveFinancer) : '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
