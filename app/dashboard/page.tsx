@@ -895,7 +895,7 @@ export default function DashboardPage() {
         setDashMentions(items);
       })
       .catch(() => setDashMentions([]));
-  }, [effectiveRepId, currentRole]);
+  }, [effectiveRepId]);
   useEffect(() => { fetchMentions(); }, [fetchMentions]);
 
   if (!isHydrated || !dbReady) {

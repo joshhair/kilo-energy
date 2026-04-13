@@ -554,18 +554,29 @@ function RepEarningsView() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => {
-                const headers = ['Type', 'Customer / Note', 'Stage', 'Amount', 'Status', 'Date'];
-                const rows = sortedDeals.map((row) => {
-                  if (row.kind === 'payroll') {
-                    const e = row.entry as (typeof payrollEntries)[0];
-                    return [e.type, e.customerName || e.notes || '', e.paymentStage, `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
-                  }
-                  const r = row.entry as (typeof myReimbs)[0];
-                  return ['Reimbursement', r.description, 'Reimb', `$${r.amount.toFixed(2)}`, r.status, formatDate(r.date)];
-                });
-                downloadCSV(`my-earnings-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+                const dateStr = new Date().toISOString().split('T')[0];
+                if (tab === 'bonus') {
+                  const headers = ['Type', 'Note', 'Amount', 'Status', 'Date'];
+                  const rows = sortedBonuses.map((e) => ['Bonus', e.notes || '', `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)]);
+                  downloadCSV(`my-bonuses-${dateStr}.csv`, headers, rows);
+                } else if (tab === 'reimbursements') {
+                  const headers = ['Description', 'Amount', 'Status', 'Date'];
+                  const rows = filteredReimbs.map((r) => [r.description, `$${r.amount.toFixed(2)}`, r.status, formatDate(r.date)]);
+                  downloadCSV(`my-reimbursements-${dateStr}.csv`, headers, rows);
+                } else {
+                  const headers = ['Type', 'Customer / Note', 'Stage', 'Amount', 'Status', 'Date'];
+                  const rows = sortedDeals.map((row) => {
+                    if (row.kind === 'payroll') {
+                      const e = row.entry as (typeof payrollEntries)[0];
+                      return [e.type, e.customerName || e.notes || '', e.paymentStage, `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
+                    }
+                    const r = row.entry as (typeof myReimbs)[0];
+                    return ['Reimbursement', r.description, 'Reimb', `$${r.amount.toFixed(2)}`, r.status, formatDate(r.date)];
+                  });
+                  downloadCSV(`my-earnings-${dateStr}.csv`, headers, rows);
+                }
               }}
-              disabled={sortedDeals.length === 0}
+              disabled={tab === 'bonus' ? sortedBonuses.length === 0 : tab === 'reimbursements' ? filteredReimbs.length === 0 : sortedDeals.length === 0}
               className="flex items-center gap-1.5 text-xs text-[#c2c8d8] hover:text-white bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download earnings as CSV"
             >
