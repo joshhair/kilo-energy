@@ -854,7 +854,7 @@ function NewDealPage() {
       ...(form.installer === 'SolarTech' ? ['solarTechFamily'] : []),
       ...(form.installer === 'SolarTech' && form.solarTechFamily ? ['solarTechProductId'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
-      ...(isPcInstaller && form.installer !== 'SolarTech' && pcFamily !== '' ? ['installerProductId'] : []),
+      ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
       ...(form.leadSource === 'blitz' ? ['blitzId'] : []),
     ];
 
