@@ -1857,7 +1857,7 @@ function AdminDashboard({
     const attentionActiveProjects: typeof projects = [];
     const installerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
 
-    for (const p of projects) {
+    for (const p of allProjects) {
       if (activeSet.has(p.phase)) {
         activeCount++;
         pipelineActive.push(p);
@@ -1895,7 +1895,7 @@ function AdminDashboard({
       installerRanking,
       maxInstallerDeals,
     };
-  }, [projects]);
+  }, [allProjects]);
 
   const {
     activeCount,
@@ -2248,7 +2248,7 @@ function AdminDashboard({
             case 'customerName': cmp = a.customerName.localeCompare(b.customerName); break;
             case 'installer': cmp = a.installer.localeCompare(b.installer); break;
             case 'kWSize': cmp = a.kWSize - b.kWSize; break;
-            case 'netPPW': cmp = a.netPPW - b.netPPW; break;
+            case 'netPPW': cmp = (a.netPPW ?? 0) - (b.netPPW ?? 0); break;
             case 'phase': cmp = a.phase.localeCompare(b.phase); break;
             case 'soldDate': cmp = (a.soldDate ?? '').localeCompare(b.soldDate ?? ''); break;
           }

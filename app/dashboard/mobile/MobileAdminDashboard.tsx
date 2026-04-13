@@ -181,9 +181,10 @@ export default function MobileAdminDashboard() {
     });
   }, [projects]);
 
-  // Payroll
-  const draftCount = useMemo(() => periodPayroll.filter((e) => e.status === 'Draft').length, [periodPayroll]);
-  const pendingCount = useMemo(() => periodPayroll.filter((e) => e.status === 'Pending').length, [periodPayroll]);
+  // Payroll — draft/pending counts use unfiltered payrollEntries so the Needs Attention badge
+  // stays consistent with flagged/stalled counts, which are also period-independent.
+  const draftCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Draft').length, [payrollEntries]);
+  const pendingCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').length, [payrollEntries]);
   const pendingTotal = useMemo(() => periodPayroll.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0), [periodPayroll]);
 
   // Pipeline counts
