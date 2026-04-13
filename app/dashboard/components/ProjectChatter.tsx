@@ -167,8 +167,8 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   // Build rep list for mentions
   const mentionableUsers = useMemo(() => {
     const users: Array<{ id: string; name: string }> = [];
-    reps.forEach((r) => users.push({ id: r.id, name: r.name }));
-    subDealers.forEach((sd) => users.push({ id: sd.id, name: `${sd.firstName} ${sd.lastName}` }));
+    reps.filter((r) => r.active !== false).forEach((r) => users.push({ id: r.id, name: r.name }));
+    subDealers.filter((sd) => sd.active !== false).forEach((sd) => users.push({ id: sd.id, name: `${sd.firstName} ${sd.lastName}` }));
     return users;
   }, [reps, subDealers]);
 

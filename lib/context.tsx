@@ -688,7 +688,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 e.repId === oldSetterTrainerAssignment.trainerId &&
                 e.paymentStage === 'Trainer' &&
                 (e.notes?.startsWith('Trainer override M2') || e.notes?.startsWith('Trainer override M3')) &&
-                (oldSetterName ? e.notes?.includes(`— ${oldSetterName} (`) : true)
+                (oldSetterName ? e.notes?.includes(`— ${oldSetterName} (`) : false)
               ) return true;
               return false;
             });
@@ -714,6 +714,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const closerM1Amount = updates.m1Amount ?? old.m1Amount;
 
           if (pastAcceptance && (closerM1Amount ?? 0) > 0) {
+            const transitionDate = new Date();
             setPayrollEntries((prevEntries) => {
               const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1');
               if (hasM1) return prevEntries;
