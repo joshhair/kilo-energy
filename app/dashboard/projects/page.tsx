@@ -241,11 +241,11 @@ function ProjectsPageInner() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
 
-  const doPhaseChange = (projectId: string, phase: Phase) => {
+  const doPhaseChange = (projectId: string, phase: Phase, silent?: boolean) => {
     const project = projects.find((p) => p.id === projectId);
     const previousPhase = project?.phase;
     updateProject(projectId, { phase });
-    if (project) toast(
+    if (!silent && project) toast(
       `${project.customerName} moved to ${phase}`,
       'success',
       previousPhase && previousPhase !== phase
@@ -254,7 +254,7 @@ function ProjectsPageInner() {
     );
   };
 
-  const handlePhaseChange = (projectId: string, phase: Phase) => {
+  const handlePhaseChange = (projectId: string, phase: Phase, silent?: boolean) => {
     if (phase === 'Cancelled') {
       const project = projects.find((p) => p.id === projectId);
       setCancelReason('');
@@ -267,7 +267,7 @@ function ProjectsPageInner() {
       setPhaseConfirm({ projectId, phase, projectName: project?.customerName ?? 'this project' });
       return;
     }
-    doPhaseChange(projectId, phase);
+    doPhaseChange(projectId, phase, silent);
   };
 
   const confirmCancelWithReason = () => {
@@ -1412,8 +1412,9 @@ function SetterPopover({
                   Currently assigned
                 </p>
                 <button
+                  disabled
                   onClick={(e) => { e.stopPropagation(); handleAssign(currentSetter); }}
-                  className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-600/20 transition-colors min-h-[44px]"
+                  className="w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors min-h-[44px] cursor-default"
                 >
                   {/* Initials avatar */}
                   <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
@@ -1514,7 +1515,7 @@ function TableView({
   isAdmin: boolean;
   currentRepId: string | null;
   dealScope: 'mine' | 'all';
-  onPhaseChange: (id: string, phase: Phase) => void;
+  onPhaseChange: (id: string, phase: Phase, silent?: boolean) => void;
   setProjects: React.Dispatch<React.SetStateAction<ReturnType<typeof useApp>['projects']>>;
   hasActiveFilters: boolean;
   clearAllFilters: () => void;
@@ -1698,7 +1699,7 @@ function TableView({
       const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
       const nextPhase = phaseIdx >= 0 ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
       if (nextPhase) {
-        onPhaseChange(id, nextPhase);
+        onPhaseChange(id, nextPhase, true);
         advanced++;
       }
     });
@@ -1783,7 +1784,7 @@ function TableView({
       });
     } else {
       selectedProjectIds.forEach((id) => {
-        onPhaseChange(id, targetPhase);
+        onPhaseChange(id, targetPhase, true);
       });
     }
     setSelectedProjectIds(new Set());

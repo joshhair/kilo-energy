@@ -765,13 +765,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const handleDeleteProject = async () => {
     setShowDeleteConfirm(false);
-    const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setProjects(prev => prev.filter(p => p.id !== project.id));
-      toast('Project deleted permanently');
-      router.push('/dashboard/projects');
-    } else {
-      toast('Failed to delete project');
+    try {
+      const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setProjects(prev => prev.filter(p => p.id !== project.id));
+        toast('Project deleted permanently');
+        router.push('/dashboard/projects');
+      } else {
+        toast('Failed to delete project', 'error');
+      }
+    } catch {
+      toast('Failed to delete project', 'error');
     }
   };
 
