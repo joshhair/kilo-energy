@@ -721,9 +721,11 @@ function AnimatedStatValue({ raw, format, className, style }: { raw: number; for
 function useCountUp(target: number, duration = 800): number {
   const [display, setDisplay] = useState(0);
   const rafRef = useRef<number | null>(null);
+  const prevRef = useRef(0);
 
   useEffect(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    const start = prevRef.current;
     let startTime: number | null = null;
 
     const step = (ts: number) => {
@@ -732,10 +734,12 @@ function useCountUp(target: number, duration = 800): number {
       const progress = Math.min(elapsed / duration, 1);
       // cubic ease-out
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(target * eased));
+      const current = Math.round(start + (target - start) * eased);
+      setDisplay(current);
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(step);
       } else {
+        prevRef.current = target;
         setDisplay(target);
         rafRef.current = null;
       }
@@ -1945,10 +1949,15 @@ function AdminDashboard({
     { label: 'Total kW Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#ff5252', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status (Chargebacks row)' },
   ];
 
+  // Period-filtered pipeline counts for the stat cards (mirrors the financial stats above)
+  const periodActiveCount = projects.filter((p) => ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO'].includes(p.phase)).length;
+  const periodInactiveCount = projects.filter((p) => p.phase === 'Cancelled' || p.phase === 'On Hold').length;
+  const periodCompletedCount = projects.filter((p) => p.phase === 'Completed').length;
+
   const pipelineStats = [
-    { label: 'Active Projects', value: activeCount, raw: activeCount, format: (n: number) => n.toString(), accentHex: '#00c4f0', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
-    { label: 'Inactive Projects', value: inactiveCount, raw: inactiveCount, format: (n: number) => n.toString(), accentHex: '#525c72', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?status=inactive', tooltip: 'Projects that are cancelled or on hold' },
-    { label: 'Completed Projects', value: completedCount, raw: completedCount, format: (n: number) => n.toString(), accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
+    { label: 'Active Projects', value: periodActiveCount, raw: periodActiveCount, format: (n: number) => n.toString(), accentHex: '#00c4f0', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
+    { label: 'Inactive Projects', value: periodInactiveCount, raw: periodInactiveCount, format: (n: number) => n.toString(), accentHex: '#525c72', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?status=inactive', tooltip: 'Projects that are cancelled or on hold' },
+    { label: 'Completed Projects', value: periodCompletedCount, raw: periodCompletedCount, format: (n: number) => n.toString(), accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
   // Inline pipeline phase hex colors for the segmented bar

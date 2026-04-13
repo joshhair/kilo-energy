@@ -186,7 +186,7 @@ export default function MobileAdminDashboard() {
   // stays consistent with flagged/stalled counts, which are also period-independent.
   const draftCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Draft').length, [payrollEntries]);
   const pendingCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').length, [payrollEntries]);
-  const pendingTotal = useMemo(() => periodPayroll.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0), [periodPayroll]);
+  const pendingTotal = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0), [payrollEntries]);
 
   // Pipeline counts
   const phaseCounts = useMemo(() => {
