@@ -280,7 +280,7 @@ export default function BlitzDetailPage() {
         }
         if (setterId && setterId !== closerId && participantIds.has(setterId)) {
           // Setter owns M1 when present, plus setterM2/M3.
-          bump(setterId, kW, sM1 + sM2 + sM3);
+          bump(setterId, kW, (sM1 || m1) + sM2 + sM3);
         }
       }
     }
@@ -414,6 +414,8 @@ export default function BlitzDetailPage() {
       toast('Cost added');
       setCostAmount('');
       setCostDesc('');
+      const today = new Date();
+      setCostDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
       setShowAddCost(false);
       loadBlitz();
     } finally { setAddingCost(false); }
