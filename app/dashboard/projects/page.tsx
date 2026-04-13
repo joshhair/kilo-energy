@@ -195,7 +195,7 @@ function ProjectsPageInner() {
   }, [tab]);
 
   useEffect(() => {
-    const STATUS_FILTER_TABS: StatusFilter[] = ['active', 'all', 'completed', 'cancelled', 'on-hold'];
+    const STATUS_FILTER_TABS: StatusFilter[] = ['active', 'all', 'completed', 'cancelled', 'on-hold', 'inactive'];
     const idx = STATUS_FILTER_TABS.indexOf(statusFilter);
     const el = statusFilterRefs.current[idx];
     if (el) setStatusFilterIndicator({ left: el.offsetLeft, width: el.offsetWidth });
@@ -367,6 +367,7 @@ function ProjectsPageInner() {
             { value: 'completed', label: '✓ Completed' },
             { value: 'cancelled', label: 'Cancelled' },
             { value: 'on-hold', label: 'On Hold' },
+            { value: 'inactive', label: 'Inactive' },
           ] as { value: StatusFilter; label: string }[]).map((s, i) => (
             <button
               key={s.value}
