@@ -93,11 +93,11 @@ export default function BlitzDetailPage() {
   }, [showAddParticipant]);
   const [selectedRepId, setSelectedRepId] = useState('');
 
-  const loadBlitz = () => {
+  const loadBlitz = (forceUpdateForm = false) => {
     fetch(`/api/blitzes/${blitzId}`).then((r) => r.json()).then((data) => {
       if (data.error) { router.push('/dashboard/blitz'); return; }
       setBlitz(data);
-      if (!editing) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
+      if (!editing || forceUpdateForm) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
       setLoading(false);
     }).catch(() => { setLoading(false); });
   };
@@ -302,6 +302,10 @@ export default function BlitzDetailPage() {
   }, [blitz?.participants, blitz?.projects]);
 
   const handleSave = async () => {
+    if (!editForm.name?.trim()) {
+      toast('Blitz name is required', 'error');
+      return;
+    }
     if (editForm.startDate && editForm.endDate && editForm.endDate < editForm.startDate) {
       toast('End date must be on or after start date', 'error');
       return;
@@ -320,7 +324,16 @@ export default function BlitzDetailPage() {
           await fetch(`/api/blitzes/${blitzId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ownerId: blitz?.owner?.id ?? null }),
+            body: JSON.stringify({
+              name: blitz?.name ?? '',
+              location: blitz?.location ?? null,
+              housingType: blitz?.housingType ?? null,
+              startDate: blitz?.startDate ?? null,
+              endDate: blitz?.endDate ?? null,
+              notes: blitz?.notes ?? null,
+              status: blitz?.status ?? null,
+              ownerId: blitz?.owner?.id ?? null,
+            }),
           });
         };
         const existingParticipant = blitz?.participants?.find((p: any) => p.user.id === editForm.ownerId);
@@ -330,23 +343,23 @@ export default function BlitzDetailPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { await revertOwner(); toast('Failed to add owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(); return; }
+          if (!pr.ok) { await revertOwner(); toast('Failed to add owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(true); return; }
         } else if (existingParticipant.joinStatus !== 'approved') {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) { await revertOwner(); toast('Failed to approve owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(); return; }
+          if (!pr.ok) { await revertOwner(); toast('Failed to approve owner as participant — owner change reverted', 'error'); setEditing(false); loadBlitz(true); return; }
         }
       }
       toast('Blitz updated');
       setEditing(false);
-      loadBlitz();
+      loadBlitz(true);
     } catch {
       toast('Network error — changes may not have been saved', 'error');
       setEditing(false);
-      loadBlitz();
+      loadBlitz(true);
     } finally { setSaving(false); }
   };
 
@@ -368,10 +381,14 @@ export default function BlitzDetailPage() {
   };
 
   const handleRemoveParticipant = async (userId: string) => {
-    const r = await fetch(`/api/blitzes/${blitzId}/participants?userId=${userId}`, { method: 'DELETE' });
-    if (!r.ok) { toast('Failed to remove participant', 'error'); return; }
-    toast('Participant removed');
-    loadBlitz();
+    try {
+      const r = await fetch(`/api/blitzes/${blitzId}/participants?userId=${userId}`, { method: 'DELETE' });
+      if (!r.ok) { toast('Failed to remove participant', 'error'); return; }
+      toast('Participant removed');
+      loadBlitz();
+    } catch {
+      toast('Failed to remove participant', 'error');
+    }
   };
 
   const handleUpdateAttendance = async (userId: string, attendanceStatus: string | null) => {

@@ -55,7 +55,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json();
 
   const data: Record<string, unknown> = {};
-  if (body.name !== undefined) data.name = body.name;
+  if (body.name !== undefined) {
+    if (!body.name || !String(body.name).trim()) {
+      return NextResponse.json({ error: 'Blitz name is required' }, { status: 400 });
+    }
+    data.name = body.name;
+  }
   if (body.location !== undefined) data.location = body.location;
   if (body.housing !== undefined) data.housing = body.housing;
   if (body.startDate !== undefined) data.startDate = body.startDate;
