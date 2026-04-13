@@ -879,6 +879,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     if (!editVals.soldDate) errs.soldDate = 'Sold date is required';
     if (!editVals.kWSize || isNaN(kw) || kw <= 0) errs.kWSize = 'Must be a number greater than 0';
     if (!editVals.netPPW || isNaN(ppw) || ppw <= 0) errs.netPPW = 'Must be a number greater than 0';
+    if (editVals.useBaselineOverride) {
+      const oc = parseFloat(editVals.overrideCloserPerW);
+      const ok = parseFloat(editVals.overrideKiloPerW);
+      if (!editVals.overrideCloserPerW || isNaN(oc) || oc <= 0) errs.overrideCloserPerW = 'Must be a number greater than 0';
+      if (!editVals.overrideKiloPerW || isNaN(ok) || ok <= 0) errs.overrideKiloPerW = 'Must be a number greater than 0';
+    }
     setEditErrors(errs);
     if (Object.values(errs).some(Boolean)) return;
 
@@ -1639,8 +1645,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <label className="text-[#8891a8] text-xs block mb-1">Closer $/W</label>
                       <input type="number" step="0.01" value={editVals.overrideCloserPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.closerPerW ?? 2.90)}
-                        onChange={(e) => setEditVals((v) => ({ ...v, overrideCloserPerW: e.target.value }))}
-                        className="w-full bg-[#272b35] border border-[#272b35] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]" />
+                        onChange={(e) => { setEditVals((v) => ({ ...v, overrideCloserPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideCloserPerW: '' })); }}
+                        className={`w-full bg-[#272b35] border ${editErrors.overrideCloserPerW ? 'border-red-500' : 'border-[#272b35]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]`} />
+                      {editErrors.overrideCloserPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideCloserPerW}</p>}
                     </div>
                     <div>
                       <label className="text-[#8891a8] text-xs block mb-1">Setter $/W</label>
@@ -1655,8 +1662,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <label className="text-[#8891a8] text-xs block mb-1">Kilo $/W</label>
                       <input type="number" step="0.01" value={editVals.overrideKiloPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.kiloPerW ?? 2.35)}
-                        onChange={(e) => setEditVals((v) => ({ ...v, overrideKiloPerW: e.target.value }))}
-                        className="w-full bg-[#272b35] border border-[#272b35] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]" />
+                        onChange={(e) => { setEditVals((v) => ({ ...v, overrideKiloPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideKiloPerW: '' })); }}
+                        className={`w-full bg-[#272b35] border ${editErrors.overrideKiloPerW ? 'border-red-500' : 'border-[#272b35]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]`} />
+                      {editErrors.overrideKiloPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideKiloPerW}</p>}
                     </div>
                   </div>
                 )}
@@ -1671,9 +1679,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
               let previewBaseline: InstallerBaseline;
               if (editVals.useBaselineOverride) {
+                const overrideCloser = parseFloat(editVals.overrideCloserPerW);
+                const overrideKilo = parseFloat(editVals.overrideKiloPerW);
+                if (isNaN(overrideCloser) || isNaN(overrideKilo)) {
+                  return (
+                    <div className="mt-4 rounded-xl p-4 bg-amber-900/20 border border-amber-500/30">
+                      <p className="text-xs uppercase tracking-wider text-[#c2c8d8] font-medium mb-2">Commission Preview</p>
+                      <p className="text-amber-400 text-xs flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Enter valid Closer $/W and Kilo $/W values to see the commission preview.
+                      </p>
+                    </div>
+                  );
+                }
                 previewBaseline = {
-                  closerPerW: parseFloat(editVals.overrideCloserPerW) || 0,
-                  kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0,
+                  closerPerW: overrideCloser,
+                  kiloPerW: overrideKilo,
                 };
               } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
                 previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW, solarTechProducts);

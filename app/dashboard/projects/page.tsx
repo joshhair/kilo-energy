@@ -557,7 +557,7 @@ function KanbanView({
   const { toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const activePhasesForKanban = PHASES.filter((p) => p !== 'Cancelled' && p !== 'On Hold' && p !== 'Completed');
-  const cancelledAndHold = ['Cancelled', 'On Hold'] as Phase[];
+  const cancelledAndHold = ['Completed', 'Cancelled', 'On Hold'] as Phase[];
 
   // ── Kanban search — filters cards by customer name ────────────────────────
   const [kanbanSearchInput, setKanbanSearchInput] = useState('');
@@ -600,7 +600,7 @@ function KanbanView({
   // shift to a different phase. Sync openPhases so the accordion auto-opens
   // the correct phase instead of keeping an empty one open.
   useEffect(() => {
-    setOpenPhases(new Set([currentPhase]));
+    setOpenPhases((prev) => new Set([...prev, currentPhase]));
   }, [currentPhase]);
 
   // Kanban column card limit — columns show up to KANBAN_CARD_LIMIT cards
