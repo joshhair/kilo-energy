@@ -1954,6 +1954,30 @@ function AdminDashboard({
   const periodInactiveCount = projects.filter((p) => p.phase === 'Cancelled' || p.phase === 'On Hold').length;
   const periodCompletedCount = projects.filter((p) => p.phase === 'Completed').length;
 
+  // Period-filtered pipeline bar data — must match the period filter, not all-time
+  const periodPipelinePhaseCounts: Record<string, number> = {};
+  for (const phase of ACTIVE_PHASES) periodPipelinePhaseCounts[phase] = 0;
+  for (const p of projects) {
+    if (periodPipelinePhaseCounts[p.phase] !== undefined) periodPipelinePhaseCounts[p.phase]++;
+  }
+  const periodPipelineNonEmpty = ACTIVE_PHASES.filter((ph) => periodPipelinePhaseCounts[ph] > 0);
+  const periodPipelineTotal = periodPipelineNonEmpty.reduce((sum, ph) => sum + periodPipelinePhaseCounts[ph], 0);
+
+  // Installer rollup scoped to the period filter — keeps Installer Insights in sync
+  // with the financial stats above instead of always showing all-time totals.
+  const periodInstallerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
+  for (const p of projects) {
+    const prev = periodInstallerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
+    prev.deals++;
+    prev.kW += p.kWSize;
+    if (p.phase === 'Cancelled') prev.cancelled++;
+    periodInstallerMap.set(p.installer, prev);
+  }
+  const periodInstallerRanking = [...periodInstallerMap.entries()]
+    .map(([name, data]) => ({ name, ...data }))
+    .sort((a, b) => b.deals - a.deals);
+  const periodMaxInstallerDeals = Math.max(1, ...periodInstallerRanking.map((i) => i.deals));
+
   const pipelineStats = [
     { label: 'Active Projects', value: periodActiveCount, raw: periodActiveCount, format: (n: number) => n.toString(), accentHex: '#00c4f0', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
     { label: 'Inactive Projects', value: periodInactiveCount, raw: periodInactiveCount, format: (n: number) => n.toString(), accentHex: '#525c72', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?status=inactive', tooltip: 'Projects that are cancelled or on hold' },
@@ -1966,9 +1990,9 @@ function AdminDashboard({
     'Design': '#e879f9', 'Permitting': '#fbbf24', 'Pending Install': '#fb923c',
     'Installed': '#2dd4bf', 'PTO': '#00c4f0',
   };
-  // pipelineActive / pipelinePhaseCounts / pipelineNonEmpty / pipelineTotal /
-  // attentionActiveProjects are all destructured from allProjectAggregations
-  // above — single-pass computation, memoized on projects (period-filtered).
+  // pipelineActive / attentionActiveProjects are destructured from allProjectAggregations
+  // above — single-pass computation, memoized on allProjects (all-time).
+  // Pipeline bar uses periodPipeline* variables computed from period-filtered `projects`.
 
   // Attention items count (used for All Clear vs Needs Attention)
   const PHASE_STUCK_THRESHOLDS_ADMIN = getPhaseStuckThresholds();
@@ -2107,16 +2131,16 @@ function AdminDashboard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00e07a', boxShadow: '0 0 8px #00e07a', flexShrink: 0 }} />
           <h2 style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>Pipeline Overview</h2>
-          <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{pipelineTotal} active deal{pipelineTotal !== 1 ? 's' : ''}</span>
+          <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{periodPipelineTotal} active deal{periodPipelineTotal !== 1 ? 's' : ''}</span>
         </div>
-        {pipelineTotal > 0 ? (
+        {periodPipelineTotal > 0 ? (
           <>
             <div style={{ display: 'flex', height: 10, borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
-              {pipelineNonEmpty.map((phase) => (
+              {periodPipelineNonEmpty.map((phase) => (
                 <div
                   key={phase}
                   style={{
-                    width: `${(pipelinePhaseCounts[phase] / pipelineTotal) * 100}%`,
+                    width: `${(periodPipelinePhaseCounts[phase] / periodPipelineTotal) * 100}%`,
                     background: PHASE_HEX[phase] ?? '#525c72',
                     transition: 'width 0.7s ease-out',
                   }}
@@ -2124,11 +2148,11 @@ function AdminDashboard({
               ))}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
-              {pipelineNonEmpty.map((phase) => (
+              {periodPipelineNonEmpty.map((phase) => (
                 <Link key={phase} href={`/dashboard/projects?phase=${encodeURIComponent(phase)}`} style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: PHASE_HEX[phase] ?? '#525c72', flexShrink: 0 }} />
                   <span style={{ fontSize: 12, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>{phase}</span>
-                  <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{pipelinePhaseCounts[phase]}</span>
+                  <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{periodPipelinePhaseCounts[phase]}</span>
                 </Link>
               ))}
             </div>
@@ -2167,8 +2191,8 @@ function AdminDashboard({
       {/* installerRanking + maxInstallerDeals come from the single-pass memo
           above — no per-render Map rebuild. */}
       {(() => {
-        const maxDeals = maxInstallerDeals;
-        return installerRanking.length > 0 ? (
+        const maxDeals = periodMaxInstallerDeals;
+        return periodInstallerRanking.length > 0 ? (
           <div className="card-surface rounded-2xl p-5 mb-8">
             <button
               onClick={() => setInsightsExpanded(e => !e)}
@@ -2197,7 +2221,7 @@ function AdminDashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {installerRanking.map((inst, i) => (
+                      {periodInstallerRanking.map((inst, i) => (
                         <tr key={inst.name} className="border-b border-[#333849]/50 hover:bg-[#1d2028]/30 transition-colors">
                           <td className="px-4 py-2.5 text-white font-medium flex items-center gap-2">
                             {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-white`}>#{i + 1}</span>}
