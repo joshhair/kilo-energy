@@ -13,17 +13,19 @@ export interface FinancersSectionProps {
   hiddenFinancers: Set<string>;
   deleteConfirm: { type: 'installer' | 'financer' | 'trainer'; id: string; name: string; message: string } | null;
   setDeleteConfirm: React.Dispatch<React.SetStateAction<{ type: 'installer' | 'financer' | 'trainer'; id: string; name: string; message: string } | null>>;
+  financerSelectMode: boolean;
+  setFinancerSelectMode: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedFinancers: Set<string>;
+  setSelectedFinancers: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConfirm }: FinancersSectionProps) {
+export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConfirm, financerSelectMode, setFinancerSelectMode, selectedFinancers, setSelectedFinancers }: FinancersSectionProps) {
   const { financers, setFinancerActive, addFinancer, projects } = useApp();
   const { toast } = useToast();
 
   const [newFinancer, setNewFinancer] = useState('');
   const [financerSearch, setFinancerSearch] = useState('');
   const [archivedFinancersOpen, setArchivedFinancersOpen] = useState(false);
-  const [financerSelectMode, setFinancerSelectMode] = useState(false);
-  const [selectedFinancers, setSelectedFinancers] = useState<Set<string>>(new Set());
 
   return (
     <div key="financers" className="animate-tab-enter max-w-xl">

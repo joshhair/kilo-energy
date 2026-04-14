@@ -403,7 +403,7 @@ export default function MobileNewDeal() {
   const trainerM1 = 0;
   const trainerM2 = trainerTotal;
 
-  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct || DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
   const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
   const closerM3 = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;

@@ -17,12 +17,18 @@ export interface InstallersSectionProps {
   deleteConfirm: { type: 'installer' | 'financer' | 'trainer'; id: string; name: string; message: string } | null;
   setDeleteConfirm: React.Dispatch<React.SetStateAction<{ type: 'installer' | 'financer' | 'trainer'; id: string; name: string; message: string } | null>>;
   setBaselineTab: React.Dispatch<React.SetStateAction<string>>;
+  installerSelectMode: boolean;
+  setInstallerSelectMode: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedInstallers: Set<string>;
+  setSelectedInstallers: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 export function InstallersSection({
   editingPrepaid, setEditingPrepaid,
   deleteConfirm, setDeleteConfirm,
   setBaselineTab,
+  installerSelectMode, setInstallerSelectMode,
+  selectedInstallers, setSelectedInstallers,
 }: InstallersSectionProps) {
   const {
     installers, setInstallerActive, addInstaller, deleteInstaller,
@@ -42,8 +48,6 @@ export function InstallersSection({
   const [newPcFamilies, setNewPcFamilies] = useState<string[]>(['']);
   const [installerSearch, setInstallerSearch] = useState('');
   const [archivedInstallersOpen, setArchivedInstallersOpen] = useState(false);
-  const [installerSelectMode, setInstallerSelectMode] = useState(false);
-  const [selectedInstallers, setSelectedInstallers] = useState<Set<string>>(new Set());
   const [prepaidInstallerExpanded, setPrepaidInstallerExpanded] = useState<string | null>(null);
   const [newPrepaidOption, setNewPrepaidOption] = useState('');
   const [editPrepaidVal, setEditPrepaidVal] = useState('');

@@ -175,8 +175,10 @@ export async function GET() {
 
   // installPayPct reveals internal M1/M2 payment split — admin-only
   const installerPayConfigs: Record<string, { installPayPct: number }> = {};
-  for (const inst of installers) {
-    installerPayConfigs[inst.name] = { installPayPct: isAdmin ? inst.installPayPct : 0 };
+  if (isAdmin) {
+    for (const inst of installers) {
+      installerPayConfigs[inst.name] = { installPayPct: inst.installPayPct };
+    }
   }
 
   const instIdToName: Record<string, string> = {};

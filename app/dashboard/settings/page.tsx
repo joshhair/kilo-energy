@@ -469,6 +469,10 @@ function SettingsPageInner() {
             deleteConfirm={deleteConfirm}
             setDeleteConfirm={setDeleteConfirm}
             setBaselineTab={setBaselineTab}
+            installerSelectMode={installerSelectMode}
+            setInstallerSelectMode={setInstallerSelectMode}
+            selectedInstallers={selectedInstallers}
+            setSelectedInstallers={setSelectedInstallers}
           />
         )}
 
@@ -477,6 +481,10 @@ function SettingsPageInner() {
             hiddenFinancers={hiddenFinancers}
             deleteConfirm={deleteConfirm}
             setDeleteConfirm={setDeleteConfirm}
+            financerSelectMode={financerSelectMode}
+            setFinancerSelectMode={setFinancerSelectMode}
+            selectedFinancers={selectedFinancers}
+            setSelectedFinancers={setSelectedFinancers}
           />
         )}
 

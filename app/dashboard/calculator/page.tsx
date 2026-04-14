@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileCalculator from '../mobile/MobileCalculator';
-import { getSolarTechBaseline, calculateCommission, splitCloserSetterPay, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { getSolarTechBaseline, calculateCommission, splitCloserSetterPay, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS } from '../../../lib/data';
 import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2, Link2 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { RepSelector } from '../components/RepSelector';
@@ -454,7 +454,7 @@ function CalculatorPage() {
     : 0;
 
   const isSelfGen = !hasSetter || !selectedSetterId || setterBaselinePerW === 0;
-  const installPayPct = installerPayConfigs[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+  const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
   const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } =
     splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct);
