@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
           create: [{
             minKW: 0,
             maxKW: null,
-            closerPerW: 2.90,
-            kiloPerW: 2.35,
+            closerPerW: body.closerPerW ?? 2.90,
+            kiloPerW: body.kiloPerW ?? 2.35,
           }],
         },
       },

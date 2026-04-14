@@ -106,7 +106,7 @@ export function createInstallerActions(deps: InstallerDeps) {
     fetch('/api/installers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, ...(initialRates ? { closerPerW: initialRates.closerPerW, kiloPerW: initialRates.kiloPerW } : {}) }),
     }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); }).then((created) => {
       if (created.id) {
         setIdMaps((prev) => ({
@@ -121,13 +121,6 @@ export function createInstallerActions(deps: InstallerDeps) {
             : v,
           ),
         );
-        if (initialRates) {
-          fetch(`/api/installer-pricing/${created.pricingVersionId as string}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tiers: [{ minKW: 0, closerPerW: initialRates.closerPerW, setterPerW: null, kiloPerW: initialRates.kiloPerW, subDealerPerW: null }] }),
-          }).catch(console.error);
-        }
       }
     }).catch((err) => {
       console.error('[addInstaller] Failed to create installer:', err);

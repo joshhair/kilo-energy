@@ -79,6 +79,11 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
+
+  if (!body.startDate || !body.endDate) {
+    return NextResponse.json({ error: 'startDate and endDate are required' }, { status: 400 });
+  }
+
   // Force createdById + ownerId to the current user unless admin supplies an ownerId override.
   const ownerId = user.role === 'admin' && body.ownerId ? body.ownerId : user.id;
   const createdById = user.id;
