@@ -64,7 +64,7 @@ export function genId(prefix: string): string {
 
 export function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
   return errors[field] ? (
-    <p id={`${field}-error`} className="text-red-400 text-xs mt-1" role="alert">
+    <p id={`${field}-error`} className="text-red-500 text-sm mt-1" role="alert">
       {errors[field]}
     </p>
   ) : null;
