@@ -1191,7 +1191,7 @@ export default function DashboardPage() {
       {/* MTD ring charts removed — financial detail lives in My Pay */}
 
       {/* ── Zero-project onboarding hero ─────────────────────────────────── */}
-      {activeProjects.length === 0 && (
+      {myProjects.length === 0 && (
         <div className="card-surface rounded-2xl p-8 mb-6 flex flex-col items-center text-center gap-6">
           {/* Inline SVG — solar panel with a plus badge */}
           <div className="flex-shrink-0">
@@ -1256,7 +1256,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats grid — only shown once at least one deal exists */}
-      {activeProjects.length > 0 && (
+      {myProjects.length > 0 && (
         <>
           <div
             ref={statsRef}

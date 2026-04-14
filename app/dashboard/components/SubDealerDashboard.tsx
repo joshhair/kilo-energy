@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { TrendingUp, Zap, DollarSign, FolderKanban, PlusCircle } from 'lucide-react';
-import { formatCompactKW, fmt$ } from '../../../lib/utils';
+import { formatCompactKW, fmt$, todayLocalDateStr } from '../../../lib/utils';
 import { Project, ACTIVE_PHASES } from '../../../lib/data';
 import type { useApp } from '../../../lib/context';
 import { type Period, getGreeting } from './dashboard-utils';
@@ -52,7 +52,7 @@ export function SubDealerDashboard({
   const activePipeline = activeProjects.length;
   const totalKW = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   // Total Earned = M2 + M3 payroll only (sub-dealers don't get M1)
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalDateStr();
   const totalEarned = myPayroll
     .filter((e) => (e.paymentStage === 'M2' || e.paymentStage === 'M3') && e.status === 'Paid' && e.date <= today)
     .reduce((sum, e) => sum + e.amount, 0);
@@ -207,9 +207,15 @@ export function SubDealerDashboard({
         ) : (
           <div className="divide-y divide-slate-800/60">
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
+              const isSubDealerSourced = proj.subDealerId === currentRepId && proj.repId !== currentRepId && proj.setterId !== currentRepId;
+              const subDealerPayroll = isSubDealerSourced
+                ? myPayroll.filter((e) => e.projectId === proj.id && (e.paymentStage === 'M2' || e.paymentStage === 'M3'))
+                : [];
               const estPay = proj.setterId === currentRepId
                 ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                : (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                : isSubDealerSourced
+                  ? subDealerPayroll.reduce((s, e) => s + e.amount, 0)
+                  : (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
               const soldLabel = (() => {
                 if (!proj.soldDate) return '—';
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
@@ -242,6 +248,15 @@ export function SubDealerDashboard({
                             {(proj.setterM3Amount ?? 0) > 0 && (
                               <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.setterM3Amount ?? 0} />
                             )}
+                          </>
+                        ) : isSubDealerSourced ? (
+                          <>
+                            {subDealerPayroll.filter((e) => e.paymentStage === 'M2').map((e) => (
+                              <MilestoneDot key={e.id} label="M2" paid={e.status === 'Paid'} amount={e.amount} />
+                            ))}
+                            {subDealerPayroll.filter((e) => e.paymentStage === 'M3').map((e) => (
+                              <MilestoneDot key={e.id} label="M3" paid={e.status === 'Paid'} amount={e.amount} />
+                            ))}
                           </>
                         ) : (
                           <>
