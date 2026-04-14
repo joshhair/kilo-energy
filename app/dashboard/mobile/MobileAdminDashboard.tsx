@@ -11,7 +11,7 @@ import {
   getInstallerRatesForDeal,
 } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
-import { AlertTriangle, TrendingUp, Users, Zap, CreditCard, FolderKanban, ChevronRight, Flag, Clock } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Users, Zap, CreditCard, FolderKanban, ChevronRight, Flag, Clock, PauseCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
@@ -108,7 +108,7 @@ export default function MobileAdminDashboard() {
   }
 
   // ── Computations (period-filtered) ───────────────────────────────────────
-  const active = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold'), [periodProjects]);
+  const active = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && p.phase !== 'Completed'), [periodProjects]);
 
   const { totalPaid, totalRevenue, totalProfit } = useMemo(() => {
     let paid = 0, rev = 0, prof = 0;
@@ -343,6 +343,19 @@ export default function MobileAdminDashboard() {
               <div className="flex items-center gap-3">
                 <Clock className="w-4 h-4" style={{ color: MUTED }} />
                 <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{stalledProjects.length} stalled projects</span>
+              </div>
+              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
+            </button>
+          )}
+
+          {onHoldCount > 0 && (
+            <button
+              onClick={() => router.push('/dashboard/projects')}
+              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity"
+            >
+              <div className="flex items-center gap-3">
+                <PauseCircle className="w-4 h-4" style={{ color: MUTED }} />
+                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{onHoldCount} on hold</span>
               </div>
               <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>

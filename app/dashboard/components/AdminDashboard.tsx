@@ -111,7 +111,8 @@ export function AdminDashboard({
     { totalRevenue: 0, totalProfit: 0 }
   );
 
-  const totalPaid = payroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
+  const totalPaid = payroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalKWSold = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
   const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
   const totalUsers = totalReps;
@@ -624,9 +625,9 @@ export function AdminDashboard({
                         {/* 6 */}<td className="px-6 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
                         {/* 7 */}<td className="px-6 py-3 text-[var(--text-secondary)]">${(proj.netPPW ?? 0).toFixed(2)}</td>
                         {/* 8 */}<td className="px-6 py-3 text-[var(--accent-green)] font-medium">${estPay.toLocaleString()}</td>
-                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={(proj.m1Amount ?? 0) + (proj.setterM1Amount ?? 0)} /></td>
-                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={(proj.m2Amount ?? 0) + (proj.setterM2Amount ?? 0)} /></td>
-                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={(proj.m3Amount ?? 0) + (proj.setterM3Amount ?? 0)} /></td>}
+                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount ?? 0} /></td>
+                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount ?? 0} /></td>
+                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={proj.m3Amount ?? 0} /></td>}
                       </tr>
                       );
                     })}
