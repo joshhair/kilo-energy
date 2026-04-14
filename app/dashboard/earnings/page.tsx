@@ -563,7 +563,7 @@ function RepEarningsView() {
                   downloadCSV(`my-reimbursements-${dateStr}.csv`, headers, rows);
                 } else {
                   const headers = ['Type', 'Customer / Note', 'Stage', 'Amount', 'Status', 'Date'];
-                  const rows = sortedDealsBase.map((row) => {
+                  const rows = sortedDeals.map((row) => {
                     if (row.kind === 'payroll') {
                       const e = row.entry as (typeof payrollEntries)[0];
                       return [e.type, e.customerName || e.notes || '', e.paymentStage, `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
@@ -574,7 +574,7 @@ function RepEarningsView() {
                   downloadCSV(`my-earnings-${dateStr}.csv`, headers, rows);
                 }
               }}
-              disabled={tab === 'bonus' ? sortedBonuses.length === 0 : tab === 'reimbursements' ? filteredReimbs.length === 0 : sortedDealsBase.length === 0}
+              disabled={tab === 'bonus' ? sortedBonuses.length === 0 : tab === 'reimbursements' ? filteredReimbs.length === 0 : sortedDeals.length === 0}
               className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download earnings as CSV"
             >
@@ -1252,17 +1252,19 @@ function AdminFinancialsView() {
   };
 
   const approveReim = (id: string) => {
+    const originalStatus = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Approved' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement approved', 'success'); })
-      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Pending' } : r)); toast('Failed to approve reimbursement', 'error'); });
+      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to approve reimbursement', 'error'); });
   };
 
   const rejectReim = (id: string) => {
+    const originalStatus = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Denied' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement rejected', 'info'); })
-      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Pending' } : r)); toast('Failed to reject reimbursement', 'error'); });
+      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to reject reimbursement', 'error'); });
   };
 
   // By Rep summary

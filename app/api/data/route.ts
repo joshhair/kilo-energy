@@ -313,7 +313,7 @@ export async function GET() {
               maxKW: t.maxKW ?? undefined,
               closerPerW: t.closerPerW,
               setterPerW: t.setterPerW ?? undefined,
-              ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
+              ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
               subDealerPerW: t.subDealerPerW ?? undefined,
             })),
           }
@@ -321,7 +321,7 @@ export async function GET() {
             type: 'flat' as const,
             closerPerW: v.tiers[0].closerPerW,
             setterPerW: v.tiers[0].setterPerW ?? undefined,
-            ...(isAdmin ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
+            ...(isAdmin || isSubDealer ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
             subDealerPerW: v.tiers[0].subDealerPerW ?? undefined,
           },
     }];
@@ -351,7 +351,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
+          ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -372,7 +372,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
+          ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -403,7 +403,7 @@ export async function GET() {
       maxKW: t.maxKW ?? null,
       closerPerW: t.closerPerW,
       setterPerW: t.setterPerW,
-      ...(isAdmin ? { kiloPerW: t.kiloPerW } : {}),
+      ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
       subDealerPerW: t.subDealerPerW ?? undefined,
     })),
   }));

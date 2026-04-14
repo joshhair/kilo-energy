@@ -357,7 +357,7 @@ export function createInstallerActions(deps: InstallerDeps) {
     if (installerId) {
       const body: Record<string, unknown> = {};
       if (config.families !== undefined) body.families = config.families;
-      if (config.familyFinancerMap !== undefined) body.familyFinancerMap = JSON.stringify(config.familyFinancerMap);
+      if (config.familyFinancerMap !== undefined) body.familyFinancerMap = config.familyFinancerMap;
       if (config.prepaidFamily !== undefined) body.prepaidFamily = config.prepaidFamily;
       fetch(`/api/installers/${installerId}/config`, {
         method: 'PATCH',
