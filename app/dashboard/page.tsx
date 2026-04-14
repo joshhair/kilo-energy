@@ -12,7 +12,7 @@ import {
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   getTrainerOverrideRate,
   Project, InstallerPricingVersion, ProductCatalogProduct, ProductCatalogPricingVersion, ACTIVE_PHASES,
-  DEFAULT_INSTALL_PAY_PCT,
+  DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS,
 } from '../../lib/data';
 import { formatDate, fmt$, formatCompactKW, getCustomConfig } from '../../lib/utils';
 import { TrendingUp, TrendingDown, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Users, BarChart2, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, PauseCircle, HelpCircle, MessageSquare } from 'lucide-react';
@@ -859,7 +859,7 @@ export default function DashboardPage() {
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
     const completedDeals = projects.filter(p =>
       (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
-      ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+      ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
     return sum + periodProjects
@@ -926,7 +926,7 @@ export default function DashboardPage() {
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
     const completedDeals = projects.filter(p =>
       (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
-      ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+      ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
     return sum + prevPeriodProjects

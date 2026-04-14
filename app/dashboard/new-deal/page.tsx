@@ -274,7 +274,7 @@ function NewDealPage() {
   // M3 entirely (would never reach Completed under the agent's restricted
   // logic if admin doesn't manually advance them).
   const isFullyPaidOut = (p: typeof projects[number]): boolean => {
-    const pct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
     if (pct < 100) {
       return p.m3Paid === true;
     }
@@ -345,7 +345,7 @@ function NewDealPage() {
   const trainerM2 = trainerTotal;
 
   // M2/M3 split based on installer pay config
-  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+  const installPayPct = installerPayConfigs[form.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
   const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
   const closerM3 = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
