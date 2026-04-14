@@ -1,3 +1,5 @@
+import { isPaidAndEffective } from './utils';
+
 export type Phase =
   | 'New'
   | 'Acceptance'
@@ -1365,7 +1367,7 @@ export function getInstallerRatesForDeal(
   const { rates } = version;
   if (rates.type === 'tiered') {
     const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW));
-    if (!band) return { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35, versionId: version.id };
+    if (!band) return { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35, versionId: null };
     const setter = band.setterPerW != null ? band.setterPerW : Math.round((band.closerPerW + 0.10) * 100) / 100;
     return { closerPerW: band.closerPerW, setterPerW: setter, kiloPerW: band.kiloPerW, subDealerPerW: band.subDealerPerW, versionId: version.id };
   }
@@ -1549,7 +1551,7 @@ export function computeIncentiveProgress(
         const setterOnlyProjectIds = new Set(relevantProjects.filter((p) => p.setterId === targetId && p.repId !== targetId).map((p) => p.id));
         return payrollEntries
           .filter((e) => {
-            if (e.projectId === null || e.status !== 'Paid' || e.type !== 'Deal' || e.paymentStage === 'Trainer' || e.repId !== targetId) return false;
+            if (e.projectId === null || !isPaidAndEffective(e) || e.type !== 'Deal' || e.paymentStage === 'Trainer' || e.repId !== targetId) return false;
             if (closerProjectIds.has(e.projectId)) return e.notes !== 'Setter';
             if (setterOnlyProjectIds.has(e.projectId)) return e.notes === 'Setter';
             return false;
@@ -1558,7 +1560,7 @@ export function computeIncentiveProgress(
       }
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
       return payrollEntries
-        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && e.status === 'Paid' && e.type === 'Deal' && e.paymentStage !== 'Trainer')
+        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && isPaidAndEffective(e) && e.type === 'Deal' && e.paymentStage !== 'Trainer')
         .reduce((s, e) => s + e.amount, 0);
     }
     default:

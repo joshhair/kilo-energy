@@ -577,6 +577,12 @@ function NewDealPage() {
       return;
     }
 
+    if (form.setterId && setterBaselinePerW === 0 && kW > 0 && soldPPW > 0) {
+      toast('No setter pricing baseline found for this product. Remove the setter or fix the product pricing before submitting.', 'error');
+      submittingRef.current = false;
+      return;
+    }
+
     setSubmitting(true);
 
     try {
