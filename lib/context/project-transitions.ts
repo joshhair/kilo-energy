@@ -465,6 +465,20 @@ export function createM3Payroll(
   const newEntries: PayrollEntry[] = [];
   const closerRep = deps.repsRef.current.find((r) => r.id === old.repId);
 
+  // Pre-compute closer M3 trainer deduction so trainer's cut comes out of
+  // the closer's share rather than being paid on top (mirrors M2 deduction logic).
+  let closerM3TrainerDeduction = 0;
+  const ctaForM3 = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.repId);
+  if (ctaForM3 && m3 > 0) {
+    const m2CloserTrainerEntryForM3 = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === ctaForM3.trainerId);
+    const m2RateMatchForM3 = m2CloserTrainerEntryForM3?.notes?.match(/\(\$([0-9.]+)\/W\)/);
+    const m2ParsedForM3 = m2RateMatchForM3 ? parseFloat(m2RateMatchForM3[1]) : NaN;
+    const m3OverrideRate = !isNaN(m2ParsedForM3)
+      ? m2ParsedForM3
+      : getTrainerOverrideRate(ctaForM3, updatedProjects.filter(p => (p.repId === ctaForM3.traineeId || p.setterId === ctaForM3.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length);
+    closerM3TrainerDeduction = Math.round(m3OverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+  }
+
   // Closer M3 entry — only when installPayPct < 100 produces a non-zero amount
   if (m3 > 0) {
     newEntries.push({
@@ -473,7 +487,7 @@ export function createM3Payroll(
       repName: closerRep?.name ?? old.repName,
       projectId,
       customerName: old.customerName,
-      amount: m3,
+      amount: Math.max(0, m3 - closerM3TrainerDeduction),
       type: 'Deal',
       paymentStage: 'M3',
       status: 'Draft',
@@ -589,6 +603,7 @@ export function syncPayrollAmounts(
   updates: Partial<Project>,
   prevEntries: PayrollEntry[],
   closerM2TrainerDeduction = 0,
+  closerM3TrainerDeduction = 0,
 ): AmountSyncResult {
   const stageAmountUpdates: Array<{ stage: 'M1' | 'M2' | 'M3'; setter: boolean; newAmount: number }> = [];
   if (updates.m1Amount !== undefined) stageAmountUpdates.push({ stage: 'M1', setter: false, newAmount: updates.m1Amount });
@@ -607,8 +622,11 @@ export function syncPayrollAmounts(
       (u) => u.stage === e.paymentStage && u.setter === (e.notes ?? '').startsWith('Setter')
     );
     if (!match) return e;
-    const adjustedAmount = (match.stage === 'M2' && !match.setter && closerM2TrainerDeduction > 0)
-      ? Math.max(0, match.newAmount - closerM2TrainerDeduction)
+    const adjustedAmount = (!match.setter && (
+      (match.stage === 'M2' && closerM2TrainerDeduction > 0) ||
+      (match.stage === 'M3' && closerM3TrainerDeduction > 0)
+    ))
+      ? Math.max(0, match.newAmount - (match.stage === 'M3' ? closerM3TrainerDeduction : closerM2TrainerDeduction))
       : match.newAmount;
     if (adjustedAmount === e.amount) return e;
     patches.push({ id: e.id, newAmount: adjustedAmount });

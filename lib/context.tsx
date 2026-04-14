@@ -761,9 +761,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
           closerM2TrainerDeduction = Math.round(getTrainerOverrideRate(cta, ctDeals) * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
         }
       }
+      // Re-compute closer M3 trainer deduction, mirroring createM3Payroll's deduction logic.
+      let closerM3TrainerDeduction = 0;
+      if (updates.m3Amount !== undefined && old) {
+        const cta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.repId);
+        if (cta) {
+          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+          if (installPayPct < 100) {
+            const ctDeals = projects.filter((p) =>
+              (p.repId === cta.traineeId || p.setterId === cta.traineeId) &&
+              ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
+                ? p.m3Paid === true : p.m2Paid === true)
+            ).length;
+            closerM3TrainerDeduction = Math.round(getTrainerOverrideRate(cta, ctDeals) * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+          }
+        }
+      }
       const pendingPatches: Array<{ id: string; newAmount: number }> = [];
       setPayrollEntries((prev) => {
-        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction);
+        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction, closerM3TrainerDeduction);
         pendingPatches.push(...result.patches);
         return result.patches.length > 0 ? result.updatedEntries : prev;
       });
