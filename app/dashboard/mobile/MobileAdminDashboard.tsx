@@ -125,7 +125,7 @@ export default function MobileAdminDashboard() {
     return { totalPaid: paid, totalRevenue: rev, totalProfit: prof };
   }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts]);
 
-  const totalKW = useMemo(() => active.reduce((s, p) => s + p.kWSize, 0), [active]);
+  const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
   const flaggedCount = useMemo(() => projects.filter((p) => p.flagged).length, [projects]);
 
   // Stalled projects — cumulative days-from-sold thresholds (intentional design: no phaseEnteredAt field exists).
