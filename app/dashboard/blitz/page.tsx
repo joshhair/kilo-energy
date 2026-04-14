@@ -514,7 +514,7 @@ function BlitzPageInner() {
     const idx = tab === 'blitzes' ? 0 : 1;
     const el = adminTabRefs.current[idx];
     if (el) setAdminTabIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tab]);
+  }, [tab, hydrated]);
 
   // Status filter sliding indicator
   const STATUS_FILTER_OPTIONS = ['all', 'active', 'upcoming', 'completed', 'cancelled'] as const;
@@ -525,10 +525,10 @@ function BlitzPageInner() {
     const idx = STATUS_FILTER_OPTIONS.indexOf(statusFilter);
     const el = statusTabRefs.current[idx];
     if (el) setStatusIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [statusFilter]);
+  }, [statusFilter, hydrated]);
 
   const loadData = () => {
-    Promise.all([
+    return Promise.all([
       fetch('/api/blitzes').then((r) => r.json()),
       fetch('/api/blitz-requests').then((r) => r.json()),
     ]).then(([b, r]) => {
