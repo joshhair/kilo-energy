@@ -793,7 +793,7 @@ function NewDealPage() {
                     <span className="inline-flex items-center gap-1">Closer (Rep) {fieldCheck('repId')}</span>
                   </label>
                   <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('blitzId', ''); }}
-                    onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} className={selectCls('repId')} style={inputFieldStyle('repId')}>
+                    onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} aria-describedby={errors.repId ? 'repId-error' : undefined} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
                     {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
@@ -833,6 +833,7 @@ function NewDealPage() {
                 <input id="field-customerName" ref={customerNameInputRef} type="text" placeholder="e.g. John & Jane Smith"
                   value={form.customerName} onChange={(e) => update('customerName', e.target.value)}
                   onBlur={() => handleBlur('customerName')} aria-invalid={!!errors.customerName}
+                  aria-describedby={errors.customerName ? 'customerName-error' : undefined}
                   className={inputCls('customerName')} style={inputFieldStyle('customerName')} />
                 <FieldError errors={errors} field="customerName" />
               </div>
@@ -842,7 +843,8 @@ function NewDealPage() {
                 </label>
                 <input id="field-soldDate" type="date" value={form.soldDate}
                   onChange={(e) => update('soldDate', e.target.value)} onBlur={() => handleBlur('soldDate')}
-                  aria-invalid={!!errors.soldDate} className={inputCls('soldDate')} style={inputFieldStyle('soldDate')} />
+                  aria-invalid={!!errors.soldDate} aria-describedby={errors.soldDate ? 'soldDate-error' : undefined}
+                  className={inputCls('soldDate')} style={inputFieldStyle('soldDate')} />
                 <FieldError errors={errors} field="soldDate" />
               </div>
             </div>

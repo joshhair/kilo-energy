@@ -208,7 +208,7 @@ export function SubDealerDashboard({
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const estPay = proj.setterId === currentRepId
                 ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                : (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
               const soldLabel = (() => {
                 if (!proj.soldDate) return '—';
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
