@@ -356,6 +356,18 @@ function ProjectsPageInner() {
               </button>
             </span>
           )}
+          {qaOnly && (
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+              QA only
+              <button
+                onClick={() => setQaOnly(false)}
+                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                aria-label="Clear QA filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
           <button
             onClick={clearAllFilters}
             className="text-[var(--text-secondary)] hover:text-white text-xs transition-colors"

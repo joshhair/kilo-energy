@@ -522,6 +522,24 @@ function NewDealPage() {
       return;
     }
 
+    // Guard: if a blitz is selected and a setter is chosen, the setter must be
+    // an approved participant of that blitz. The UI clears setterId on blitz
+    // change, but this prevents stale IDs (e.g. approval revoked after selection)
+    // from reaching the database.
+    if (form.blitzId && form.setterId) {
+      const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+      const approvedIds = new Set(
+        (selectedBlitz?.participants ?? [])
+          .filter((p: any) => p.joinStatus === 'approved')
+          .map((p: any) => p.userId as string),
+      );
+      if (!approvedIds.has(form.setterId)) {
+        toast('Selected setter is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
+    }
+
     if (closerPerW === 0 && kW > 0 && soldPPW > 0) {
       toast('No pricing baseline found for this system size. Check that a matching tier exists for this product and kW.', 'error');
       submittingRef.current = false;

@@ -283,6 +283,21 @@ export function createMilestonePayroll(
   const newEntries: PayrollEntry[] = [];
   const closerRep = deps.repsRef.current.find((r) => r.id === old.repId);
 
+  // Pre-compute closer trainer deduction for M2 so the trainer's cut comes out of
+  // the closer's share rather than being paid on top (mirrors setter's splitPoint logic).
+  let closerM2TrainerDeduction = 0;
+  if (isInstalled) {
+    const cta = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.repId);
+    if (cta) {
+      const ctDeals = updatedProjects.filter(p =>
+        (p.repId === cta.traineeId || p.setterId === cta.traineeId) &&
+        ((deps.installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
+          ? p.m3Paid === true : p.m2Paid === true)
+      ).length;
+      closerM2TrainerDeduction = Math.round(getTrainerOverrideRate(cta, ctDeals) * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+    }
+  }
+
   // Closer entry (skip M1 when a setter exists — M1 goes entirely to the setter)
   if ((fullAmount ?? 0) > 0 && !(isAcceptance && old.setterId)) {
     newEntries.push({
@@ -291,7 +306,7 @@ export function createMilestonePayroll(
       repName: closerRep?.name ?? old.repName,
       projectId,
       customerName: old.customerName,
-      amount: fullAmount!,
+      amount: Math.max(0, fullAmount! - closerM2TrainerDeduction),
       type: 'Deal',
       paymentStage: stage,
       status: 'Draft',
