@@ -108,9 +108,10 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const style = STATUS_INLINE[blitz.status] ?? STATUS_INLINE.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
+  const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
   const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   const visibleProjects = (isAdmin || currentUserId === blitz.owner.id)
-    ? activeProjects
+    ? activeProjects.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
     : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId);
   const totalKW = visibleProjects.reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = visibleProjects.length;
@@ -690,10 +691,10 @@ function BlitzPageInner() {
       } else {
         toast('Join request sent!', 'success');
       }
-      loadData();
+      await loadData();
     } catch {
       toast('Failed to join blitz — please try again', 'error');
-      loadData();
+      await loadData();
     }
   };
 

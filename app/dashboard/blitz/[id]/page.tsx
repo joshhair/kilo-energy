@@ -327,7 +327,7 @@ export default function BlitzDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
-      if (!r.ok) { toast('Failed to update blitz', 'error'); return; }
+      if (!r.ok) { toast('Failed to update blitz', 'error'); setEditing(false); loadBlitz(true); return; }
       const savedBlitz = await r.json();
       // If the owner changed, ensure they are an approved participant
       if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
@@ -383,7 +383,7 @@ export default function BlitzDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: selectedRepId, joinStatus: 'approved' }),
       });
-      if (!r.ok) { toast('Failed to add participant', 'error'); return; }
+      if (!r.ok) { const body = await r.json().catch(() => ({})); toast(body.error || 'Failed to add participant', 'error'); return; }
       toast('Participant added');
       setShowAddParticipant(false);
       setSelectedRepId('');
