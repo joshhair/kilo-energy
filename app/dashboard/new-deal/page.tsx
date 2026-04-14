@@ -527,8 +527,29 @@ function NewDealPage() {
       if (error) hasErrors = true;
     }
     setErrors(newErrors);
+    // Mark all validated fields as touched so inline errors render
+    setTouched((prev) => {
+      const next = new Set(prev);
+      fieldsToValidate.forEach((f) => next.add(f));
+      return next;
+    });
     if (hasErrors) {
       submittingRef.current = false;
+      // Navigate to the first step that contains an invalid field so the
+      // error messages are visible (they live in step-specific JSX).
+      const firstErrorField = fieldsToValidate.find((f) => newErrors[f]);
+      if (firstErrorField) {
+        const targetStep = s1Fields.includes(firstErrorField) ? 0
+          : s2Fields.includes(firstErrorField) ? 1
+          : 2;
+        setSlideDirection('backward');
+        setCurrentStep(targetStep);
+        // Focus the field after the step transition renders
+        setTimeout(() => {
+          if (firstErrorField === 'customerName') customerNameInputRef.current?.focus();
+          else if (firstErrorField === 'soldDate') soldDateInputRef.current?.focus();
+        }, 50);
+      }
       return;
     }
 
