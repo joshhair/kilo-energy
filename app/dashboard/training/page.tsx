@@ -525,7 +525,7 @@ function TrainingPageInner() {
                   t.activeTierIndex > 0
                     ? t.assignment.tiers[t.activeTierIndex - 1].upToDeal ?? 0
                     : 0;
-                const progressMax = t.nextThreshold ? t.nextThreshold - prevThreshold : 1;
+                const progressMax = t.nextThreshold ? (t.nextThreshold + 1) - prevThreshold : 1;
                 const progressVal = t.nextThreshold
                   ? Math.min(t.dealCount - prevThreshold, progressMax)
                   : 1;
@@ -577,7 +577,7 @@ function TrainingPageInner() {
                       </span>
                       {t.nextThreshold && (
                         <span className="text-[var(--text-muted)] text-[10px]">
-                          {t.dealCount}/{t.nextThreshold} deals
+                          {t.dealCount}/{t.nextThreshold + 1} deals
                         </span>
                       )}
                       {!t.nextThreshold && (
@@ -711,7 +711,7 @@ function TrainingPageInner() {
                       const rangeLabel =
                         tier.upToDeal === null
                           ? `${prevEnd}+ deals`
-                          : `${prevEnd} – ${tier.upToDeal - 1} deals`;
+                          : `${prevEnd} – ${tier.upToDeal} deals`;
 
                       return (
                         <tr

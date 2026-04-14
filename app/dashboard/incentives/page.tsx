@@ -186,7 +186,7 @@ export default function IncentivesPage() {
     isAdmin
       ? incentives
       : incentives.filter(
-          (inc) => inc.active && (inc.type === 'company' || inc.targetRepId === currentRepId)
+          (inc) => inc.active && (inc.type === 'company' || (currentRepId != null && inc.targetRepId === currentRepId))
         ),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [incentives, isAdmin, currentRepId]);
