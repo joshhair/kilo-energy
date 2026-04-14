@@ -834,7 +834,10 @@ export default function DashboardPage() {
   }
 
   // Rep dashboard
-  const activeProjects = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  // Use unfiltered projects so prior-period deals still in-flight show up in PipelineOverview
+  const activeProjects = projects
+    .filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId)
+    .filter((p) => ACTIVE_PHASES.includes(p.phase));
 
   // ── Financial stats (project-based to account for milestone-triggered payroll) ──
   const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
@@ -860,7 +863,7 @@ export default function DashboardPage() {
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
     return sum + projects
-      .filter(p => isInPeriod(p.soldDate, period) && ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
       .reduce((pSum, p) => {
         const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
         const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
@@ -1545,10 +1548,22 @@ export default function DashboardPage() {
                       <span className="text-[var(--text-dim)]">·</span>
                       <span className="text-[var(--accent-green)] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
-                        <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
-                        <MilestoneDot label="M2" paid={proj.m2Paid} amount={m2DisplayAmount} />
-                        {(proj.m3Amount ?? 0) > 0 && (
-                          <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
+                        {proj.setterId === effectiveRepId ? (
+                          <>
+                            <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.setterM1Amount ?? 0} />
+                            <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.setterM2Amount ?? 0} />
+                            {(proj.setterM3Amount ?? 0) > 0 && (
+                              <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.setterM3Amount ?? 0} />
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
+                            <MilestoneDot label="M2" paid={proj.m2Paid} amount={m2DisplayAmount} />
+                            {(proj.m3Amount ?? 0) > 0 && (
+                              <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
