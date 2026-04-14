@@ -247,7 +247,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (dbReady && effectiveRepId) refreshMentionCount();
-  }, [dbReady, effectiveRepId, refreshMentionCount]);
+  }, [dbReady, effectiveRepId]);
 
   // ── Payroll actions (delegated to lib/context/payroll.ts) ──
   const payrollActions = useMemo(() => createPayrollActions({

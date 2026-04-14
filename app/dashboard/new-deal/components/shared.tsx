@@ -43,6 +43,7 @@ export function validateField(field: string, value: string): string {
     case 'solarTechProductId': return value ? '' : 'Product is required';
     case 'pcFamily':           return value ? '' : 'Product family is required';
     case 'installerProductId': return value ? '' : 'Product is required';
+    case 'prepaidSubType':     return value ? '' : 'Prepaid type is required';
     case 'blitzId':            return value ? '' : 'Blitz is required';
     case 'kWSize':
       if (!value) return 'kW size is required';

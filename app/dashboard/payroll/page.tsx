@@ -63,7 +63,7 @@ export default function PayrollPage() {
 function PayrollPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements } = useApp();
+  const { currentRole, effectiveRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements, installerPayConfigs } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
@@ -436,6 +436,11 @@ function PayrollPageInner() {
     if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount)) || parseFloat(paymentForm.amount) <= 0) { paymentSubmitting.current = false; toast('Enter a valid amount greater than $0', 'error'); return; }
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const project = projects.find((p) => p.id === paymentForm.projectId);
+    if (paymentForm.stage === 'M3') {
+      const installerName = project?.installer ?? '';
+      const payPct = installerPayConfigs[installerName]?.installPayPct ?? 100;
+      if (payPct >= 100) { paymentSubmitting.current = false; toast('M3 payments are only allowed for installers with a partial install payment percentage (installPayPct < 100)', 'error'); return; }
+    }
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       repId: paymentForm.repId,

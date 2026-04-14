@@ -135,6 +135,7 @@ function ProjectsPageInner() {
 
   const doPhaseChange = (projectId: string, phase: Phase, silent?: boolean) => {
     const project = projects.find((p) => p.id === projectId);
+    if (isRep && project?.repId !== effectiveRepId) return;
     const previousPhase = project?.phase;
     updateProject(projectId, { phase });
     if (!silent && project) toast(
@@ -168,6 +169,8 @@ function ProjectsPageInner() {
       toast('Please select a cancellation reason.', 'error');
       return;
     }
+    const cancelProject = projects.find((p) => p.id === cancelReasonModal.projectId);
+    if (isRep && cancelProject?.repId !== effectiveRepId) { setCancelReasonModal(null); return; }
     updateProject(cancelReasonModal.projectId, {
       phase: 'Cancelled',
       cancellationReason: cancelReason || undefined,

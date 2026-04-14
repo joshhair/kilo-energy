@@ -378,7 +378,7 @@ export default function TableView({
 
   // ── Bulk selection state (admin only) ──────────────────────────────────────
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
-  const showActionBar = isAdmin && selectedProjectIds.size > 0;
+  const showActionBar = isAdmin && !readOnly && selectedProjectIds.size > 0;
 
   // Escape key → deselect all selected projects
   useEffect(() => {
@@ -692,7 +692,7 @@ export default function TableView({
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10" style={{ background: 'var(--surface-card)' }}>
               <tr>
-                {isAdmin && (
+                {isAdmin && !readOnly && (
                   <th className="px-3 py-3 w-10">
                     <input
                       type="checkbox"
@@ -731,7 +731,7 @@ export default function TableView({
                 <th className={thClass('soldDate')} onClick={() => handleSort('soldDate')}>
                   Sold Date<SortIcon colKey="soldDate" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
-                {isAdmin && (
+                {isAdmin && !readOnly && (
                   <th className="text-left px-5 py-3 font-medium text-[var(--text-secondary)] select-none whitespace-nowrap">
                     Actions
                   </th>
@@ -763,7 +763,7 @@ export default function TableView({
                         : undefined,
                   }}
                 >
-                  {isAdmin && (
+                  {isAdmin && !readOnly && (
                     <td className="px-3 py-3 w-10">
                       <input
                         type="checkbox"
@@ -805,7 +805,7 @@ export default function TableView({
                     </td>
                   )}
                   <td className="px-5 py-3">
-                    {isAdmin ? (
+                    {isAdmin && !readOnly ? (
                       <select
                         value={proj.phase}
                         onChange={(e) => onPhaseChange(proj.id, e.target.value as Phase)}
@@ -828,7 +828,7 @@ export default function TableView({
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-[var(--text-dim)]">{relativeTime(proj.soldDate)}</div>
                   </td>
-                  {isAdmin && (() => {
+                  {isAdmin && !readOnly && (() => {
                     const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
                     const nextPhase = (phaseIdx >= 0 && phaseIdx < PIPELINE_PHASES.length - 1) ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
                     return (

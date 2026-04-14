@@ -1419,7 +1419,7 @@ export function splitCloserSetterPay(
       : 0;
     const splitPoint = setterBaselinePerW + trainerRate;
     const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.floor(aboveSplit / 2 * 100) / 100;
+    const half = Math.round(aboveSplit / 2 * 100) / 100;
     closerTotal = closerDifferential + half;
     setterTotal = aboveSplit - half;
   }
