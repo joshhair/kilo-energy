@@ -625,6 +625,18 @@ function RepEarningsView() {
             </div>
           </div>
         </div>
+      ) : totalPending > 0 ? (
+        <div
+          className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
+          style={{ '--card-accent': 'rgba(16,185,129,0.07)' } as React.CSSProperties}
+        >
+          <div className="h-[3px] w-16 rounded-full bg-gradient-to-r from-emerald-500/30 to-emerald-400/30 mb-5" />
+          <div className="flex flex-col items-center py-3 text-center gap-3">
+            <p className="text-[var(--text-secondary)] text-sm font-medium leading-relaxed">
+              ${totalPending.toLocaleString()} pending across {pendingCount} {pendingCount === 1 ? 'entry' : 'entries'} — nothing due this Friday
+            </p>
+          </div>
+        </div>
       ) : (
         <div
           className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
@@ -1276,7 +1288,10 @@ function AdminFinancialsView() {
   }, [tab, isHydrated]);
 
   const pendingPayrollCount = repFilteredPayroll.filter((e) => e.status === 'Pending').length;
-  const pendingReimbCount   = reimbursements.filter((r) => r.status === 'Pending').length;
+  const pendingReimbCount   = repFilteredReimbs.filter((r) => r.status === 'Pending').length;
+
+  const payrollFilterLabel = repFilter ? (reps.find((r) => r.id === repFilter)?.name ?? null) : null;
+  const reimbFilterLabel   = reimbRepFilter ? (reps.find((r) => r.id === reimbRepFilter)?.name ?? null) : null;
 
   const selectCls = 'bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-all input-focus-glow';
 
@@ -1303,6 +1318,7 @@ function AdminFinancialsView() {
             <DollarSign className="w-4 h-4 text-[var(--accent-green)]" />
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent-green)]">${totalPaid.toLocaleString()}</p>
+          {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-2" style={{ '--card-accent': 'rgba(234,179,8,0.12)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
@@ -1312,6 +1328,7 @@ function AdminFinancialsView() {
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-yellow-400">${totalPending.toLocaleString()}</p>
           {pendingPayrollCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingPayrollCount} entries</p>}
+          {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-3" style={{ '--card-accent': 'rgba(100,116,139,0.12)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-slate-500 to-slate-400 mb-3" />
@@ -1320,6 +1337,7 @@ function AdminFinancialsView() {
             <DollarSign className="w-4 h-4 text-[var(--text-secondary)]" />
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--text-secondary)]">${totalDraft.toLocaleString()}</p>
+          {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-4" style={{ '--card-accent': 'rgba(139,92,246,0.12)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
@@ -1329,6 +1347,7 @@ function AdminFinancialsView() {
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
           {pendingReimbCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingReimbCount} requests</p>}
+          {reimbFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{reimbFilterLabel}</p>}
         </div>
       </div>
 
@@ -1688,6 +1707,8 @@ function EarningsPageInner() {
   const isMobile = useMediaQuery('(max-width: 767px)');
   useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
 
+  if (!isHydrated) return <EarningsSkeleton />;
+
   if (isMobile) return <MobileEarnings />;
 
   if (effectiveRole === 'project_manager') {
@@ -1697,8 +1718,6 @@ function EarningsPageInner() {
       </div>
     );
   }
-
-  if (!isHydrated) return <EarningsSkeleton />;
   if (effectiveRole === 'admin') return <AdminFinancialsView />;
   if (effectiveRole === 'sub-dealer') return <SubDealerEarningsView />;
   return <RepEarningsView />;

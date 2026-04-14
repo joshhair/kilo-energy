@@ -18,8 +18,6 @@ import { ConfirmDeleteDialog } from './components/ConfirmDeleteDialog';
 import { SectionHeader } from './components/SectionHeader';
 import { SettingsSkeleton } from './components/SettingsSkeleton';
 import { BlitzPermissionsSection } from './sections/BlitzPermissionsSection';
-import { SubDealersSection } from './sections/SubDealersSection';
-import { PMSection } from './sections/PMSection';
 import { TrainersSection } from './sections/TrainersSection';
 import { InstallersSection } from './sections/InstallersSection';
 import { FinancersSection } from './sections/FinancersSection';
