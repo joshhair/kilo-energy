@@ -149,10 +149,12 @@ function TrainingPageInner() {
 
   const isTrainer = myAssignments.length > 0;
 
-  // Trainer payroll entries for this rep
+  // Trainer payroll entries — all trainers for admin, self-only for reps
   const trainerEntries = useMemo(
-    () => payrollEntries.filter((e) => e.repId === effectiveRepId && e.paymentStage === 'Trainer'),
-    [payrollEntries, effectiveRepId]
+    () => effectiveRole === 'admin'
+      ? payrollEntries.filter((e) => e.paymentStage === 'Trainer')
+      : payrollEntries.filter((e) => e.repId === effectiveRepId && e.paymentStage === 'Trainer'),
+    [payrollEntries, effectiveRepId, effectiveRole]
   );
 
   // Build trainee info
@@ -270,11 +272,13 @@ function TrainingPageInner() {
     () => trainerEntries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0),
     [trainerEntries]
   );
-  const activeTraineeCount = myAssignments.length;
-  const totalTraineeDeals = traineeData.reduce((s, t) => s + t.dealCount, 0);
+  const activeTraineeCount = new Set(myAssignments.map((a) => a.traineeId)).size;
+  const uniqueTraineeData = [...new Map(traineeData.map((t) => [t.traineeId, t])).values()];
+  const totalTraineeDeals = uniqueTraineeData.reduce((s, t) => s + t.dealCount, 0);
   const avgOverrideRate = useMemo(() => {
-    if (traineeData.length === 0) return 0;
-    return traineeData.reduce((s, t) => s + t.currentRate, 0) / traineeData.length;
+    const unique = [...new Map(traineeData.map((t) => [t.traineeId, t])).values()];
+    if (unique.length === 0) return 0;
+    return unique.reduce((s, t) => s + t.currentRate, 0) / unique.length;
   }, [traineeData]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
