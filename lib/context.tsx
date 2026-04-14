@@ -609,10 +609,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       m3AtInstalled = computeM3Amount(old, updates, installerPayConfigs);
       if (m3AtInstalled !== null) dbUpdates.m3Amount = m3AtInstalled;
     }
-    // Repair m3Amount at PTO
+    // Repair m3Amount / setterM3Amount at PTO
     if (old && updates.phase === 'PTO' && old.phase !== 'PTO') {
-      const repairedM3 = repairM3AmountAtPTO(old, updates, installerPayConfigs);
-      if (repairedM3 !== null) dbUpdates.m3Amount = repairedM3;
+      const { closer: repairedM3, setter: repairedSetterM3 } = repairM3AmountAtPTO(old, updates, installerPayConfigs);
+      if (repairedM3 !== null) {
+        dbUpdates.m3Amount = repairedM3;
+        updates.m3Amount = repairedM3;
+      }
+      if (repairedSetterM3 !== null) {
+        dbUpdates.setterM3Amount = repairedSetterM3;
+        updates.setterM3Amount = repairedSetterM3;
+      }
     }
     // Derive m3 from m2 edits on projects past Installed
     if (old) deriveM3FromM2Edit(updates, old, installerPayConfigs, dbUpdates);

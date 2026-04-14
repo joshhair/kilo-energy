@@ -74,22 +74,32 @@ export function computeM3Amount(
 }
 
 /**
- * Repair m3Amount at PTO — if Installed-time persist failed and left m3Amount null.
- * Returns the repaired value, or null if no repair is needed.
+ * Repair m3Amount / setterM3Amount at PTO — if Installed-time persist failed and left them null.
+ * Returns repaired values for closer and setter; null means no repair needed.
  */
 export function repairM3AmountAtPTO(
   old: Project,
   updates: Partial<Project>,
   installerPayConfigs: Record<string, InstallerPayConfig>,
-): number | null {
+): { closer: number | null; setter: number | null } {
   const installPayPct = installerPayConfigs[updates.installer ?? old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-  if (installPayPct >= 100) return null;
+  if (installPayPct >= 100) return { closer: null, setter: null };
   const repairedM3 = (old.m3Amount ?? 0) > 0
     ? old.m3Amount!
     : installPayPct > 0
       ? Math.round((old.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
       : 0;
-  return repairedM3 > 0 ? repairedM3 : null;
+  const repairedSetterM3 = old.setterId
+    ? (old.setterM3Amount ?? 0) > 0
+      ? old.setterM3Amount!
+      : installPayPct > 0
+        ? Math.round((old.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0
+    : 0;
+  return {
+    closer: repairedM3 > 0 ? repairedM3 : null,
+    setter: repairedSetterM3 > 0 ? repairedSetterM3 : null,
+  };
 }
 
 /**
