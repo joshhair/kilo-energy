@@ -335,6 +335,21 @@ export function createMilestonePayroll(
     });
   }
 
+  // Pre-compute setter trainer deduction for M2 so the trainer's cut comes out of
+  // the setter's share rather than being paid on top (mirrors closerM2TrainerDeduction).
+  let setterM2TrainerDeduction = 0;
+  if (isInstalled && old.setterId) {
+    const sta = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.setterId);
+    if (sta) {
+      const stDeals = updatedProjects.filter(p =>
+        (p.repId === sta.traineeId || p.setterId === sta.traineeId) &&
+        ((deps.installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
+          ? p.m3Paid === true : p.m2Paid === true)
+      ).length;
+      setterM2TrainerDeduction = Math.round(getTrainerOverrideRate(sta, stDeals) * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+    }
+  }
+
   // Setter entry (M2 at Installed — setterM2Amount is already post-installPayPct)
   if (old.setterId && isInstalled && (freshProject.setterM2Amount ?? 0) > 0) {
     const setterRep = deps.repsRef.current.find((r) => r.id === old.setterId);
@@ -344,7 +359,7 @@ export function createMilestonePayroll(
       repName: setterRep?.name ?? old.setterName ?? '',
       projectId,
       customerName: old.customerName,
-      amount: freshProject.setterM2Amount!,
+      amount: Math.max(0, freshProject.setterM2Amount! - setterM2TrainerDeduction),
       type: 'Deal',
       paymentStage: 'M2',
       status: 'Draft',
@@ -492,6 +507,22 @@ export function createM3Payroll(
     });
   }
 
+  // Pre-compute setter M3 trainer deduction so the trainer's cut comes from the
+  // setter's share rather than being paid on top (mirrors closerM3TrainerDeduction).
+  let setterM3TrainerDeduction = 0;
+  if (old.setterId) {
+    const staForM3 = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.setterId);
+    if (staForM3) {
+      const m2SetterTrainerEntryForM3 = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === staForM3.trainerId);
+      const m2SetterRateMatchForM3 = m2SetterTrainerEntryForM3?.notes?.match(/\(\$([0-9.]+)\/W\)/);
+      const m2SetterParsedForM3 = m2SetterRateMatchForM3 ? parseFloat(m2SetterRateMatchForM3[1]) : NaN;
+      const setterM3OverrideRate = !isNaN(m2SetterParsedForM3)
+        ? m2SetterParsedForM3
+        : getTrainerOverrideRate(staForM3, updatedProjects.filter(p => (p.repId === staForM3.traineeId || p.setterId === staForM3.traineeId) && ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length);
+      setterM3TrainerDeduction = Math.round(setterM3OverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+    }
+  }
+
   // Setter M3 entry
   if (old.setterId) {
     const setterM3 = (old.setterM3Amount ?? 0) > 0
@@ -507,7 +538,7 @@ export function createM3Payroll(
         repName: setterRep?.name ?? old.setterName ?? '',
         projectId,
         customerName: old.customerName,
-        amount: setterM3,
+        amount: Math.max(0, setterM3 - setterM3TrainerDeduction),
         type: 'Deal',
         paymentStage: 'M3',
         status: 'Draft',
@@ -627,8 +658,8 @@ export function syncPayrollAmounts(
     // M1/M2/M3 stageAmountUpdates. Recompute from the rate embedded in their notes.
     if (e.paymentStage === 'Trainer' && kWSize > 0) {
       const notes = e.notes ?? '';
-      const isM2 = notes.startsWith('Trainer override M2') && updates.m2Amount !== undefined;
-      const isM3 = notes.startsWith('Trainer override M3') && updates.m3Amount !== undefined;
+      const isM2 = notes.startsWith('Trainer override M2') && (updates.m2Amount !== undefined || updates.setterM2Amount !== undefined);
+      const isM3 = notes.startsWith('Trainer override M3') && (updates.m3Amount !== undefined || updates.setterM3Amount !== undefined);
       if (!isM2 && !isM3) return e;
       const rateMatch = notes.match(/\(\$([0-9.]+)\/W\)/);
       if (!rateMatch) return e;

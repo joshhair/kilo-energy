@@ -44,6 +44,10 @@ export function isInPreviousPeriod(dateStr: string | null | undefined, period: P
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return month - 1 === lastMonth.getMonth() && year === lastMonth.getFullYear();
   }
+  if (period === 'last-month') {
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    return month - 1 === twoMonthsAgo.getMonth() && year === twoMonthsAgo.getFullYear();
+  }
   if (period === 'this-year') {
     return year === now.getFullYear() - 1;
   }
