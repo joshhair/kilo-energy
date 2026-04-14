@@ -84,6 +84,20 @@ export function localDateString(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Today's date as YYYY-MM-DD in local time. Use this instead of new Date().toISOString().slice(0,10) to avoid UTC off-by-one. */
+export function todayLocalDateStr(): string {
+  return localDateString(new Date());
+}
+
+/**
+ * Returns true when a payroll entry is Paid AND its pay date is not in the future.
+ * Use this everywhere a "Paid" filter is applied to payroll entries to prevent
+ * future-scheduled entries (created during payroll batch runs) from inflating stats.
+ */
+export function isPaidAndEffective(entry: { status: string; date: string }): boolean {
+  return entry.status === 'Paid' && entry.date <= todayLocalDateStr();
+}
+
 /**
  * M1 payroll date: project reaches Acceptance phase.
  * Cutoff is Sunday 11:59 PM. M1 is paid on the following Friday.
