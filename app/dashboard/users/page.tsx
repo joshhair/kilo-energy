@@ -1071,6 +1071,160 @@ function UsersPageInner() {
                 )}
               </div>
             )}
+
+            {/* ── Inactive PMs expander ───────────────────────────────── */}
+            {canManageReps && (roleFilter === 'project_manager' || roleFilter === 'all') && inactivePMs.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setShowInactivePMs((v) => !v)}
+                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${showInactivePMs ? 'rotate-90' : ''}`}
+                      style={{ color: 'var(--text-dim)' }}
+                    />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                      Show inactive project managers ({inactivePMs.length})
+                    </span>
+                  </div>
+                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
+                    Deactivated PMs — click to {showInactivePMs ? 'hide' : 'view'}
+                  </span>
+                </button>
+                {showInactivePMs && (
+                  <div className="mt-3 space-y-2">
+                    {inactivePMs.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                      >
+                        <Link
+                          href={`/dashboard/users/${u.id}`}
+                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                        >
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
+                          >
+                            {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
+                              {u.firstName} {u.lastName}
+                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+                                (inactive)
+                              </span>
+                            </div>
+                            {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
+                          </div>
+                        </Link>
+                        <button
+                          disabled={reactivatingPmId === u.id}
+                          onClick={async () => {
+                            setReactivatingPmId(u.id);
+                            try {
+                              const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                              if (!res.ok) throw new Error();
+                              setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
+                              toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                            } catch {
+                              toast('Failed to reactivate project manager', 'error');
+                            } finally {
+                              setReactivatingPmId(null);
+                            }
+                          }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,196,240,0.3)' }}
+                        >
+                          {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Inactive admins expander ─────────────────────────────── */}
+            {canManageReps && (roleFilter === 'admin' || roleFilter === 'all') && inactiveAdmins.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setShowInactiveAdmins((v) => !v)}
+                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${showInactiveAdmins ? 'rotate-90' : ''}`}
+                      style={{ color: 'var(--text-dim)' }}
+                    />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                      Show inactive admins ({inactiveAdmins.length})
+                    </span>
+                  </div>
+                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
+                    Deactivated admins — click to {showInactiveAdmins ? 'hide' : 'view'}
+                  </span>
+                </button>
+                {showInactiveAdmins && (
+                  <div className="mt-3 space-y-2">
+                    {inactiveAdmins.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                      >
+                        <Link
+                          href={`/dashboard/users/${u.id}`}
+                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                        >
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
+                          >
+                            {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
+                              {u.firstName} {u.lastName}
+                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+                                (inactive)
+                              </span>
+                            </div>
+                            {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
+                          </div>
+                        </Link>
+                        <button
+                          disabled={reactivatingAdminId === u.id}
+                          onClick={async () => {
+                            setReactivatingAdminId(u.id);
+                            try {
+                              const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                              if (!res.ok) throw new Error();
+                              setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
+                              toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                            } catch {
+                              toast('Failed to reactivate admin', 'error');
+                            } finally {
+                              setReactivatingAdminId(null);
+                            }
+                          }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)' }}
+                        >
+                          {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
       })()}

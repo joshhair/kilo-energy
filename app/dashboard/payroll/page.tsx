@@ -334,9 +334,10 @@ function PayrollPageInner() {
       } else {
         const data = await res.json();
         if (data.updated !== ids.length) {
-          console.warn(`[handlePublish] Server updated ${data.updated} of ${ids.length} entries — status mismatch`);
-          setPayrollEntries(snapshot);
-          toast(`Payroll out of sync — please refresh and try again`, 'error');
+          console.warn(`[handlePublish] Server updated ${data.updated} of ${ids.length} entries — some were already Paid`);
+          // Do NOT roll back: entries skipped by the server were already Paid in the DB,
+          // so the optimistic UI state (all Paid) correctly reflects reality.
+          toast(`${data.updated} of ${ids.length} entries published — others were already Paid`, 'success');
         }
       }
     } catch (err) {
