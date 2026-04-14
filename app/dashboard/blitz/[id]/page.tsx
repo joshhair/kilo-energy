@@ -281,7 +281,7 @@ export default function BlitzDetailPage() {
         if (setterId && setterId !== closerId && participantIds.has(setterId)) {
           // Setter owns M1 when present, plus setterM2/M3.
           // kW is attributed to the closer; pass 0 here to avoid double-counting.
-          bump(setterId, 0, sM1 + sM2 + sM3);
+          bump(setterId, 0, m1 + sM1 + sM2 + sM3);
         }
       }
     }

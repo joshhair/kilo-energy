@@ -224,7 +224,7 @@ export default function IncentivesPage() {
     if (!isAdmin) return [];
     const items: { incentive: Incentive; milestone: IncentiveMilestone; progress: number }[] = [];
     for (const inc of incentives) {
-      if (!inc.active) continue;
+      if (!inc.active || isExpired(inc.endDate)) continue;
       const progress = computeIncentiveProgress(inc, projects, payrollEntries);
       for (const ms of inc.milestones) {
         if (progress >= ms.threshold && !ms.achieved) {
@@ -474,25 +474,15 @@ export default function IncentivesPage() {
       onConfirm: () => {
         const ids = Array.from(selectedIds);
         const snapshot = [...incentives];
-        const itemsToDelete = new Map(snapshot.filter((i) => selectedIds.has(i.id)).map((i) => [i.id, { item: i, index: snapshot.indexOf(i) }]));
         setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
         Promise.allSettled(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return id; })))
           .then((results) => {
-            const failedEntries = ids
-              .filter((_, i) => results[i].status === 'rejected')
-              .map((id) => itemsToDelete.get(id))
-              .filter((e): e is { item: (typeof snapshot)[0]; index: number } => e !== undefined)
-              .sort((a, b) => a.index - b.index);
-            if (failedEntries.length > 0) {
+            const succeededIds = new Set(ids.filter((_, i) => results[i].status === 'fulfilled'));
+            const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'));
+            if (failedIds.size > 0) {
               toast('Failed to delete some incentives', 'error');
-              setIncentives((prev) => {
-                const next = [...prev];
-                for (const entry of failedEntries) {
-                  next.splice(entry.index, 0, entry.item);
-                }
-                return next;
-              });
+              setIncentives(() => snapshot.filter((i) => !succeededIds.has(i.id)));
             }
             const succeeded = results.filter((r) => r.status === 'fulfilled').length;
             if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`);

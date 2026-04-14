@@ -74,7 +74,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const totalDeals = visibleProjects.length;
-  const totalKW = visibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0);
+  const totalKW = visibleProjects.reduce((s: number, p: any) => s + (isAdmin || isOwner || p.closer?.id === effectiveRepId ? p.kWSize : 0), 0);
   const totalCosts = blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0;
 
   const availableReps = useMemo(() => {
