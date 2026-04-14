@@ -894,18 +894,19 @@ export default function DashboardPage() {
     if (p.projectId && p.paymentStage !== 'M3') map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
-  const unmatchedProjectPay = myProjects
+  const unmatchedProjectPay = activeProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
       const closerM1 = p.m1Amount ?? 0;
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
+      const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + closerM2Net : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
       return sum + Math.max(0, totalExpected - (allPayrollByProject.get(p.id) ?? 0));
     }, 0);
   // M3: build a set of project IDs that already have an M3 payroll entry (paid or unpaid).
   // If unpaid, the amount is already in unpaidPayroll. If paid, it belongs in totalPaid.
   // Only add m3Amount for projects with no M3 entry yet, regardless of phase.
   const m3PayrollProjectIds = new Set(allMyPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
-  const pendingM3Pay = myProjects
+  const pendingM3Pay = activeProjects
     .filter((p) => !m3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && ((p.m3Amount ?? 0) > 0 || (p.setterM3Amount ?? 0) > 0))
     .reduce((sum, p) => {
       const m3 = p.repId === effectiveRepId ? (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM3Amount ?? 0) : 0;
