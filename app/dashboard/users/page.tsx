@@ -624,6 +624,22 @@ function UsersPageInner() {
     return true;
   });
 
+  // Inactive PMs — same pattern.
+  const inactivePMs = pmUsers.filter((u) => {
+    if (u.active !== false) return false;
+    const name = `${u.firstName} ${u.lastName}`;
+    if (debouncedSearch && !name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
+  });
+
+  // Inactive admins — same pattern.
+  const inactiveAdmins = adminUsers.filter((u) => {
+    if (u.active !== false) return false;
+    const name = `${u.firstName} ${u.lastName}`;
+    if (debouncedSearch && !name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
+  });
+
   // ── Pre-compute paid totals & rank order across ALL reps ──────────────────
   const repPaidAmounts = useMemo(() => new Map(
     reps.map((rep) => [
@@ -675,7 +691,7 @@ function UsersPageInner() {
       }
       case 'kw': {
         const kwByRep = new Map<string, number>();
-        for (const p of projects) {
+        for (const p of projects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold')) {
           if (p.repId)                       kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + p.kWSize);
           if (p.setterId && p.setterId !== p.repId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + p.kWSize);
         }
@@ -1362,8 +1378,9 @@ function UsersPageInner() {
 
           // ── Progress ring ─────────────────────────────────────────────────
           const completedCount = repProjects.filter((p) => p.phase === 'Completed').length;
+          const activeProjectCount = repProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
           const completionRate =
-            repProjects.length > 0 ? completedCount / repProjects.length : 0;
+            activeProjectCount > 0 ? completedCount / activeProjectCount : 0;
           const dashOffset = REP_RING_CIRCUMFERENCE * (1 - completionRate);
 
           return (

@@ -1369,7 +1369,8 @@ function TrainerOverrideCard({
   };
   const cancel = () => { setDraftTiers([...assignment.tiers]); setEditing(false); };
 
-  const activeTierIndex = assignment.tiers.findIndex(
+  const activeTierSource = editing ? draftTiers : assignment.tiers;
+  const activeTierIndex = activeTierSource.findIndex(
     (t) => t.upToDeal === null || completedDeals < t.upToDeal
   );
 
@@ -1412,7 +1413,7 @@ function TrainerOverrideCard({
       <div className="space-y-2">
         {(editing ? draftTiers : assignment.tiers).map((tier, i) => {
           const isActive = i === activeTierIndex;
-          const prevUpTo = i === 0 ? 0 : (assignment.tiers[i - 1].upToDeal ?? 0);
+          const prevUpTo = i === 0 ? 0 : ((editing ? draftTiers : assignment.tiers)[i - 1].upToDeal ?? 0);
           const dealRange = editing
             ? null
             : tier.upToDeal === null
