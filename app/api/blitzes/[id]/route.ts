@@ -92,7 +92,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.endDate !== undefined) data.endDate = body.endDate;
   if (body.notes !== undefined) data.notes = body.notes;
   if (body.status !== undefined) data.status = body.status;
-  if (body.ownerId !== undefined) data.ownerId = body.ownerId;
+  if (body.ownerId !== undefined && user.role === 'admin') data.ownerId = body.ownerId;
 
   const blitz = await prisma.blitz.update({
     where: { id },
