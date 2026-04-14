@@ -437,7 +437,7 @@ function UsersPageInner() {
     const idx = FILTER_TABS.findIndex((t) => t.value === filterTab);
     const el = filterTabRefs.current[idx];
     if (el) setFilterIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [filterTab, roleFilter]);
+  }, [filterTab, roleFilter, isHydrated]);
 
   // ── Active deals count per rep (pipeline = not Cancelled/On Hold/Completed) ──
   const activeDealsByRep = useMemo(() => {
