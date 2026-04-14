@@ -12,381 +12,17 @@ import {
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
-import { Check, Loader2, PlusCircle, CheckCircle2, ArrowRight, RotateCcw } from 'lucide-react';
+import { Check, Loader2, PlusCircle, RotateCcw } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { Breadcrumb } from '../components/Breadcrumb';
 import MobileNewDeal from '../mobile/MobileNewDeal';
 
-// ── Validation ────────────────────────────────────────────────────────────────
-
-function validateField(field: string, value: string): string {
-  switch (field) {
-    case 'repId':        return value ? '' : 'Closer is required';
-    case 'customerName': return value.trim() ? '' : 'Customer name is required';
-    case 'soldDate':     return value ? '' : 'Sold date is required';
-    case 'installer':    return value ? '' : 'Installer is required';
-    case 'financer':     return value ? '' : 'Financer is required'; // skipped at call-site when product type is Cash
-    case 'productType':  return value ? '' : 'Product type is required';
-    case 'solarTechFamily':    return value ? '' : 'Product family is required';
-    case 'solarTechProductId': return value ? '' : 'Product is required';
-    case 'pcFamily':           return value ? '' : 'Product family is required';
-    case 'installerProductId': return value ? '' : 'Product is required';
-    case 'blitzId':            return value ? '' : 'Blitz is required';
-    case 'kWSize':
-      if (!value) return 'kW size is required';
-      if (isNaN(parseFloat(value)) || parseFloat(value) < 1) return 'Must be at least 1 kW';
-      return '';
-    case 'netPPW':
-      if (!value) return 'Net PPW is required';
-      if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) return 'Must be greater than 0';
-      return '';
-    default: return '';
-  }
-}
-
-function genId(prefix: string): string {
-  return `${prefix}_${Date.now()}`;
-}
-
-// ── FieldError ────────────────────────────────────────────────────────────────
-
-function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
-  return errors[field] ? (
-    <p id={`${field}-error`} className="text-red-400 text-xs mt-1" role="alert">
-      {errors[field]}
-    </p>
-  ) : null;
-}
-
-// ── Inline hints ──────────────────────────────────────────────────────────────
-
-
-function PpwHint({ soldPPW, closerPerW, hasError }: { soldPPW: number; closerPerW: number; hasError: boolean }) {
-  if (hasError || soldPPW <= 0 || closerPerW <= 0) return null;
-  const above = soldPPW >= closerPerW;
-  const diff = Math.abs(soldPPW - closerPerW).toFixed(2);
-  return (
-    <p id="netPPW-hint" className={`text-xs mt-1 ${above ? 'text-[var(--accent-green)]' : 'text-amber-400'}`}>
-      {above ? `$${diff}/W above baseline ✓` : `$${diff}/W below baseline — no commission`}
-    </p>
-  );
-}
-
-// ── Section header ────────────────────────────────────────────────────────────
-
-function SectionHeader({ step, label }: { step: number; label: string }) {
-  return (
-    <div className="flex items-center gap-2.5 mb-4">
-      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: 'rgba(0,224,122,0.15)', border: '1px solid rgba(0,224,122,0.3)', color: 'var(--accent-green)' }}>
-        {step}
-      </span>
-      <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-      <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-    </div>
-  );
-}
-
-const DEAL_STEPS = ['People', 'Deal Details', 'Review & Notes'] as const;
-
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
-function SkeletonField({ delay }: { delay: number }) {
-  return (
-    <div className="space-y-1.5">
-      <div className="h-3 w-24 bg-[var(--surface-card)]/70 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
-      <div className="h-10 w-full bg-[var(--surface-card)] rounded-xl animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
-    </div>
-  );
-}
-
-function NewDealSkeleton() {
-  return (
-    <div>
-      {/* Stepper bar skeleton — mirrors the sticky FormStepper (3 steps + connecting lines) */}
-      <div
-        className="sticky top-[60px] md:top-0 z-20 border-b border-[var(--border-subtle)]/60"
-        style={{ backgroundColor: 'var(--navy-base)' }}
-      >
-        {/* Desktop stepper (md+): 3 dots connected by 2 lines */}
-        <div className="hidden md:flex items-center px-4 md:px-8 py-3 max-w-2xl">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className={`flex items-center ${i < 2 ? 'flex-1' : ''}`}>
-              <div className="flex flex-col items-center shrink-0">
-                <div
-                  className="w-7 h-7 rounded-full bg-[var(--surface-card)] animate-skeleton"
-                  style={{ animationDelay: `${i * 60}ms` }}
-                />
-                <div
-                  className="mt-1 h-2 w-14 bg-[var(--surface-card)]/60 rounded animate-skeleton"
-                  style={{ animationDelay: `${i * 60 + 30}ms` }}
-                />
-              </div>
-              {i < 2 && (
-                <div
-                  className="flex-1 mx-3 h-[2px] bg-[var(--border)]/60 rounded-full mt-[-10px] animate-skeleton"
-                  style={{ animationDelay: `${i * 60 + 50}ms` }}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        {/* Mobile stepper: progress bar + step label */}
-        <div className="md:hidden h-12 flex items-center px-4 gap-3">
-          <div className="h-1.5 flex-1 bg-[var(--surface-card)] rounded-full animate-skeleton" />
-          <div className="h-3 w-20 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ animationDelay: '50ms' }} />
-        </div>
-      </div>
-
-      {/* Page header + form */}
-      <div className="p-4 md:p-8 max-w-2xl">
-        <div className="mb-8">
-          <div className="h-[3px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3" />
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton" />
-            <div className="h-8 w-32 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
-          </div>
-          <div className="h-3 w-72 bg-[var(--surface-card)]/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
-        </div>
-
-        {/* Form card — 2-column grid with 6 field placeholders */}
-        <div className="card-surface rounded-2xl p-6 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SkeletonField delay={0} />
-            <SkeletonField delay={75} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SkeletonField delay={150} />
-            <SkeletonField delay={225} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SkeletonField delay={300} />
-            <SkeletonField delay={375} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Success screen ────────────────────────────────────────────────────────────
-
-interface SubmittedDeal {
-  projectId: string;
-  customerName: string;
-  installer: string;
-  financer: string;
-  productType: string;
-  kW: number;
-  soldPPW: number;
-  closerTotal: number;
-  closerM1: number;
-  closerM2: number;
-  closerM3: number;
-  setterTotal: number;
-  setterM1: number;
-  setterM2: number;
-  setterM3: number;
-  setterName: string;
-  repName: string;
-}
-
-function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => void }) {
-  const router = useRouter();
-
-  return (
-    <div className="p-4 md:p-8 max-w-2xl animate-slide-in-scale">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <PlusCircle className="w-5 h-5 text-[var(--accent-green)]" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>New Deal</h1>
-        </div>
-      </div>
-
-      {/* Success card */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.04))', border: '1px solid rgba(0,224,122,0.25)', boxShadow: '0 0 40px rgba(0,224,122,0.08)' }}>
-        {/* Green top bar */}
-        <div className="h-1" style={{ background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan))' }} />
-
-        <div className="p-8">
-          {/* Icon + message */}
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.3)' }}>
-              <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--accent-green)' }} strokeWidth={1.5} />
-            </div>
-            <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--text-primary)' }}>Deal Submitted!</h2>
-            <p className="text-[var(--text-secondary)] text-sm">
-              <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
-            </p>
-          </div>
-
-          {/* Deal summary */}
-          <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Deal Summary</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
-              <div>
-                <p className="text-[var(--text-muted)] text-xs mb-0.5">Installer</p>
-                <p className="text-white font-medium">{deal.installer}</p>
-              </div>
-              <div>
-                <p className="text-[var(--text-muted)] text-xs mb-0.5">Financer</p>
-                <p className="text-white font-medium">{deal.financer || '—'}</p>
-              </div>
-              <div>
-                <p className="text-[var(--text-muted)] text-xs mb-0.5">Product Type</p>
-                <p className="text-white font-medium">{deal.productType}</p>
-              </div>
-              <div>
-                <p className="text-[var(--text-muted)] text-xs mb-0.5">System Size</p>
-                <p className="text-white font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Commission summary */}
-          <div className="rounded-xl p-4 mb-6 space-y-2.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Commission</p>
-            {deal.closerTotal > 0 ? (
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[var(--text-secondary)] text-sm font-medium">{deal.repName} (Closer)</p>
-                  <p className="text-[var(--text-muted)] text-xs">M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}{deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}</p>
-                </div>
-                <p className="text-2xl font-black" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-green)', textShadow: '0 0 20px #00e07a50' }}>${deal.closerTotal.toLocaleString()}</p>
-              </div>
-            ) : (
-              <p className="text-[var(--text-muted)] text-sm">Commission will be calculated once pricing is confirmed.</p>
-            )}
-            {deal.setterTotal > 0 && (
-              <div className="flex items-center justify-between border-t border-[var(--border)] pt-2.5">
-                <div>
-                  <p className="text-[var(--text-secondary)] text-sm font-medium">{deal.setterName} (Setter)</p>
-                  <p className="text-[var(--text-muted)] text-xs">M1: ${deal.setterM1.toLocaleString()} · M2: ${deal.setterM2.toLocaleString()}{deal.setterM3 > 0 && ` · M3: $${deal.setterM3.toLocaleString()}`}</p>
-                </div>
-                <p className="text-lg font-bold text-[var(--accent-green)]">${deal.setterTotal.toLocaleString()}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.push('/dashboard/projects')}
-              className="flex-1 inline-flex items-center justify-center gap-2 font-bold px-5 py-2.5 rounded-xl text-sm transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
-            >
-              View Projects <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onReset}
-              className="flex-1 inline-flex items-center justify-center gap-2 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors hover:brightness-125"
-              style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
-            >
-              <RotateCcw className="w-4 h-4" /> Submit Another
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── TickerAmount ──────────────────────────────────────────────────────────────
-// Wraps a formatted dollar amount in a span with tabular-nums and a brief
-// opacity fade whenever the underlying number changes — gives the live
-// commission preview a "premium ticker" feel without an animation library.
-
-function TickerAmount({ amount, className }: { amount: number; className?: string }) {
-  const [visible, setVisible] = useState(true);
-  const prevRef = useRef(amount);
-
-  useEffect(() => {
-    if (prevRef.current === amount) return;
-    prevRef.current = amount;
-    const t1 = setTimeout(() => setVisible(false), 0);
-    const t2 = setTimeout(() => setVisible(true), 60);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [amount]);
-
-  return (
-    <span
-      className={className}
-      style={{
-        fontVariantNumeric: 'tabular-nums',
-        transition: 'opacity 0.22s ease-in-out',
-        opacity: visible ? 1 : 0,
-        display: 'inline-block',
-      }}
-    >
-      ${amount.toLocaleString()}
-    </span>
-  );
-}
-
-// ── Entry Page ────────────────────────────────────────────────────────────────
-
-function DealEntryPage({ onStart, projects, currentRepId }: { onStart: () => void; projects: { soldDate: string; repId?: string; setterId?: string | null }[]; currentRepId: string | null | undefined }) {
-  const today = new Date().toISOString().split('T')[0];
-  const monthPrefix = today.slice(0, 7);
-  const todayCount = currentRepId == null ? 0 : projects.filter((p) => p.soldDate === today && (p.repId === currentRepId || p.setterId === currentRepId)).length;
-  const monthCount = currentRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(monthPrefix) && (p.repId === currentRepId || p.setterId === currentRepId)).length;
-
-  return (
-    <div className="p-4 md:p-8 max-w-2xl animate-slide-in-scale">
-      <div className="card-surface rounded-2xl">
-        <div className="px-6 py-8 sm:px-8 sm:py-10 md:px-12 md:py-14">
-          {/* Icon + heading */}
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <PlusCircle className="w-6 h-6 text-[var(--accent-green)]" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-              New Deal
-            </h1>
-          </div>
-
-          <p className="text-[var(--text-secondary)] text-[15px] mb-8 max-w-sm leading-relaxed ml-[52px]">
-            Log a closed solar deal and track commissions in seconds.
-          </p>
-
-          {/* Stats strip */}
-          {(todayCount > 0 || monthCount > 0) && (
-            <div className="flex items-center gap-6 mb-8 ml-[52px]">
-              <div>
-                <p className="text-2xl font-black text-white tabular-nums">{todayCount}</p>
-                <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Today</p>
-              </div>
-              <div className="w-px h-8 bg-[var(--border)]/70" />
-              <div>
-                <p className="text-2xl font-black text-white tabular-nums">{monthCount}</p>
-                <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">This Month</p>
-              </div>
-            </div>
-          )}
-
-          {/* CTA — matches dashboard glow style */}
-          <div className="ml-[52px]">
-            <div className="relative inline-flex">
-              <div className="absolute -inset-0.5 rounded-2xl opacity-[0.15] blur-[3px] animate-pulse" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))' }} />
-              <button
-                onClick={onStart}
-                className="relative inline-flex items-center gap-2.5 font-bold px-8 py-4 rounded-2xl text-base active:scale-[0.97] transition-all hover:brightness-110"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
-              >
-                <PlusCircle className="w-5 h-5" />
-                Submit a Deal
-              </button>
-            </div>
-          </div>
-          <span className="text-[var(--text-dim)] text-xs hidden sm:block">or press ⌘↵ on the form</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { SubmittedDeal, DEAL_STEPS, validateField, genId, FieldError, PpwHint } from './components/shared';
+import { CommissionPreview } from './components/CommissionPreview';
+import { SuccessScreen } from './components/SuccessScreen';
+import { DealEntryPage } from './components/DealEntryPage';
+import { NewDealSkeleton } from './components/NewDealSkeleton';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -1541,95 +1177,35 @@ function NewDealPage() {
               </div>
 
               {/* Commission preview */}
-              <div style={{ maxHeight: showPreview || (isSubDealer && subDealerCommission > 0) ? '400px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s ease-in-out' }}>
-                <div className="rounded-xl p-4 text-sm space-y-2" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.05))', border: '1px solid rgba(0,224,122,0.2)' }}>
-                  <p className="font-medium text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Commission Preview</p>
-                  {isSubDealer ? (
-                    <>
-                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
-                      {subDealerRate > 0 && (
-                        <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
-                          <span>Sub-dealer rate</span>
-                          <span>${subDealerRate.toFixed(2)}/W</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
-                        <span>M1</span>
-                        <span className="text-[var(--text-dim)]">N/A &mdash; paid at install</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[var(--text-secondary)]">M2 commission</span>
-                        <span className="text-[var(--accent-green)] font-semibold">
-                          <TickerAmount amount={subDealerCommission} />
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
-                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
-                        <span>Your redline</span>
-                        <span>${closerPerW.toFixed(2)}/W</span>
-                      </div>
-                      {currentRole === 'admin' && (
-                        <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
-                          <span>Kilo baseline</span>
-                          <span>${kiloPerW.toFixed(2)}/W</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span style={{ color: 'var(--text-muted)' }}>Closer commission</span>
-                        <span className="font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
-                          <TickerAmount amount={closerTotal} />
-                          <span className="text-[var(--text-muted)] font-normal">
-                            {' '}(M1: <TickerAmount amount={closerM1} className="tabular-nums" /> · M2: <TickerAmount amount={closerM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={closerM3} className="tabular-nums" /></>})
-                          </span>
-                        </span>
-                      </div>
-                      {form.setterId && setterBaselinePerW === 0 && (
-                        <div className="flex justify-between items-center rounded-lg px-3 py-2" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)' }}>
-                          <span className="text-amber-400 text-xs">Setter baseline unavailable — verify system size and product selection. Setter commission cannot be calculated.</span>
-                        </div>
-                      )}
-                      {form.setterId && setterTotal > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-[var(--text-secondary)]">Setter commission</span>
-                          <span className="text-[var(--accent-green)] font-semibold">
-                            <TickerAmount amount={setterTotal} />
-                            <span className="text-[var(--text-muted)] font-normal">
-                              {' '}(M1: <TickerAmount amount={setterM1} className="tabular-nums" /> · M2: <TickerAmount amount={setterM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={setterM3} className="tabular-nums" /></>})
-                            </span>
-                          </span>
-                        </div>
-                      )}
-                      {trainerRep && trainerTotal > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-[var(--text-secondary)]">Trainer override ({trainerRep.name})</span>
-                          <span className="text-amber-400 font-semibold">
-                            <TickerAmount amount={trainerTotal} />
-                            <span className="text-[var(--text-muted)] font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
-                          </span>
-                        </div>
-                      )}
-                      {closerTrainerRep && closerTrainerTotal > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-[var(--text-secondary)]">Trainer override ({closerTrainerRep.name})</span>
-                          <span className="text-amber-400 font-semibold">
-                            <TickerAmount amount={closerTrainerTotal} />
-                            <span className="text-[var(--text-muted)] font-normal"> (${closerTrainerOverrideRate.toFixed(2)}/W)</span>
-                          </span>
-                        </div>
-                      )}
-                      {currentRole === 'admin' && (
-                        <div className="flex justify-between border-t border-[var(--border)] pt-2">
-                          <span className="text-[var(--text-secondary)]">Kilo revenue</span>
-                          <TickerAmount amount={kiloTotal} className="text-[var(--text-secondary)] font-semibold" />
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
+              <CommissionPreview
+                showPreview={showPreview}
+                isSubDealer={isSubDealer}
+                subDealerCommission={subDealerCommission}
+                kW={kW}
+                soldPPW={soldPPW}
+                closerPerW={closerPerW}
+                kiloPerW={kiloPerW}
+                closerTotal={closerTotal}
+                closerM1={closerM1}
+                closerM2={closerM2}
+                closerM3={closerM3}
+                hasM3={hasM3}
+                setterTotal={setterTotal}
+                setterM1={setterM1}
+                setterM2={setterM2}
+                setterM3={setterM3}
+                setterId={form.setterId}
+                setterBaselinePerW={setterBaselinePerW}
+                trainerRep={trainerRep}
+                trainerTotal={trainerTotal}
+                trainerOverrideRate={trainerOverrideRate}
+                closerTrainerRep={closerTrainerRep}
+                closerTrainerTotal={closerTrainerTotal}
+                closerTrainerOverrideRate={closerTrainerOverrideRate}
+                kiloTotal={kiloTotal}
+                currentRole={currentRole}
+                subDealerRate={subDealerRate}
+              />
             </div> {/* end card-surface 2 */}
 
           </div>
