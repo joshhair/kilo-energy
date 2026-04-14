@@ -215,6 +215,7 @@ function CalculatorPage() {
   const [targetEarning, setTargetEarning] = useState('');
   const [quickFillValue, setQuickFillValue] = useState('');
   const [quickFillSoldDate, setQuickFillSoldDate] = useState('');
+  const [quickFillRepId, setQuickFillRepId] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -271,10 +272,11 @@ function CalculatorPage() {
 
   const handleQuickFill = (projectId: string) => {
     setQuickFillValue(projectId);
-    if (!projectId) { setQuickFillSoldDate(''); return; }
+    if (!projectId) { setQuickFillSoldDate(''); setQuickFillRepId(null); return; }
     const proj = recentDeals.find((p) => p.id === projectId);
     if (!proj) return;
     setQuickFillSoldDate(proj.soldDate);
+    setQuickFillRepId(proj.repId ?? null);
     setInstaller(activeInstallers.includes(proj.installer) ? proj.installer : '');
     setKWSize(String(proj.kWSize));
     setNetPPW(String(proj.netPPW));
@@ -331,6 +333,7 @@ function CalculatorPage() {
     const snapshot = {
       quickFillValue,
       quickFillSoldDate,
+      quickFillRepId,
       installer,
       solarTechFamily,
       solarTechProductId,
@@ -345,6 +348,7 @@ function CalculatorPage() {
 
     setQuickFillValue('');
     setQuickFillSoldDate('');
+    setQuickFillRepId(null);
     setInstaller('');
     setSolarTechFamily('');
     setSolarTechProductId('');
@@ -361,6 +365,7 @@ function CalculatorPage() {
       onClick: () => {
         setQuickFillValue(snapshot.quickFillValue);
         setQuickFillSoldDate(snapshot.quickFillSoldDate);
+        setQuickFillRepId(snapshot.quickFillRepId);
         setInstaller(snapshot.installer);
         setSolarTechFamily(snapshot.solarTechFamily);
         setSolarTechProductId(snapshot.solarTechProductId);
@@ -436,15 +441,16 @@ function CalculatorPage() {
     ? Math.round(trainerRate * kW * 1000 * 100) / 100
     : 0;
 
-  // Closer trainer assignment
-  const closerAssignment = currentRepId
-    ? trainerAssignments.find((a) => a.traineeId === currentRepId)
+  // Closer trainer assignment — use the Quick Fill rep when an admin models another rep's deal
+  const effectiveCloserId = quickFillRepId ?? currentRepId;
+  const closerAssignment = effectiveCloserId
+    ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;
-  const closerDealCount = currentRepId
+  const closerDealCount = effectiveCloserId
     ? projects.filter((p) => {
         const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
         const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return (p.repId === currentRepId || p.setterId === currentRepId) && fullyPaid;
+        return (p.repId === effectiveCloserId || p.setterId === effectiveCloserId) && fullyPaid;
       }).length
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
@@ -1106,7 +1112,7 @@ function CalculatorPage() {
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-green), transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
                   <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
-                    ${animatedCloserTotal.toLocaleString()}
+                    ${(reps.find((r) => r.id === currentRepId)?.repType === 'setter' ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>
 

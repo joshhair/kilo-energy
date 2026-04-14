@@ -171,8 +171,8 @@ export default function BlitzDetailPage() {
     return arr;
   }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => s + (isAdmin || isOwner ? p.kWSize : (p.closer?.id === effectiveRepId ? p.kWSize : 0)), 0),
-    [approvedVisibleProjects, isAdmin, isOwner, effectiveRepId],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
+    [approvedVisibleProjects],
   );
   const totalCosts = useMemo(
     () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,

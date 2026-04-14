@@ -1096,10 +1096,9 @@ function NewDealPage() {
                     <FieldError errors={errors} field="pcFamily" />
                   </div>
 
-                  {/* Prepaid sub-type — shown when installer has prepaid options AND (Cash/Loan or prepaid family selected) */}
+                  {/* Prepaid sub-type — shown when installer has prepaid options AND prepaid family is selected */}
                   {getInstallerPrepaidOptions(form.installer).length > 0 && (
-                    (form.productType === 'Cash' || form.productType === 'Loan') ||
-                    (pcConfig.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily)
+                    pcConfig.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily
                   ) && (
                     <div className="transition-all duration-200">
                       <label className={labelCls} style={labelStyle}>
