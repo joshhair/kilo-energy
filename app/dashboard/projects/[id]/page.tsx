@@ -125,7 +125,7 @@ function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: string }
       <div className="mt-3 pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-3">
 
         {/* Badge — days elapsed since sold date */}
-        {!isOffTrack && (
+        {!isOffTrack && !isComplete && (
           <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
             daysSinceSold > 30
               ? daysSinceSold > 60
@@ -960,7 +960,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setterM1Amount: editSetterM1Amount,
       setterM2Amount: editSetterM2Amount,
       setterM3Amount: editSetterM3Amount,
-      ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
+      ...(editVals.installer !== project.installer ? { installerProductId: undefined, solarTechProductId: undefined } : {}),
     });
     setShowEditModal(false);
     setEditErrors({});
@@ -1247,7 +1247,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
-                  <p className="text-[var(--accent-green)] font-bold">${(project.setterId === currentRepId ? (project.setterM2Amount ?? 0) : project.m2Amount).toLocaleString()}</p>
+                  <p className="text-[var(--accent-green)] font-bold">${(project.setterId === currentRepId ? (project.setterM2Amount ?? 0) : (project.m2Amount ?? 0)).toLocaleString()}</p>
                 </div>
                 {(project.setterId === currentRepId ? (project.setterM3Amount ?? 0) : (project.m3Amount ?? 0)) > 0 && (
                   <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
@@ -1644,7 +1644,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
                   className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]">
                   <option value="">— None —</option>
-                  {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && r.active && r.id !== project.repId).map((r) => (
+                  {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editVals.setterId) && r.id !== project.repId).map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
