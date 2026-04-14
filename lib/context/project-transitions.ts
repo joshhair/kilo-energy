@@ -442,10 +442,6 @@ export function createM3Payroll(
   );
   if (m3AlreadyExists) return [];
 
-  const trainerM3AlreadyExists = prevEntries.some(
-    (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')
-  );
-
   // Guard: only draft M3 if M2 was previously created for this project.
   const hasM2Entry = prevEntries.some(
     (e) => e.projectId === projectId && e.paymentStage === 'M2'
@@ -524,7 +520,10 @@ export function createM3Payroll(
   // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
   // Closer's trainer — gated by m3 > 0, which is 0 for sub-dealer deals
   const closerTrainerAssignment = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.repId);
-  if (closerTrainerAssignment && m3 > 0 && !trainerM3AlreadyExists) {
+  const closerTrainerM3AlreadyExists = closerTrainerAssignment ? prevEntries.some(
+    (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === closerTrainerAssignment.trainerId
+  ) : false;
+  if (closerTrainerAssignment && m3 > 0 && !closerTrainerM3AlreadyExists) {
     const trainerRep = deps.repsRef.current.find(r => r.id === closerTrainerAssignment.trainerId);
     // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
     const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId);
@@ -552,9 +551,12 @@ export function createM3Payroll(
   }
 
   // Setter's trainer — guarded by !old.subDealerId to match closer's trainer
-  if (old.setterId && !old.subDealerId && !trainerM3AlreadyExists) {
+  if (old.setterId && !old.subDealerId) {
     const setterTrainerAssignment = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.setterId);
-    if (setterTrainerAssignment) {
+    const setterTrainerM3AlreadyExists = setterTrainerAssignment ? prevEntries.some(
+      (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === setterTrainerAssignment.trainerId
+    ) : false;
+    if (setterTrainerAssignment && !setterTrainerM3AlreadyExists) {
       const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterTrainerAssignment.trainerId);
       // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
       const setterTraineeName = deps.repsRef.current.find(r => r.id === old.setterId)?.name ?? old.setterName ?? '';
