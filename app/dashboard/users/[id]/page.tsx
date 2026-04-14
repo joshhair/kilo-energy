@@ -984,7 +984,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             {(() => {
               const closerDeals = projects.filter((p) => p.repId === id);
               const setterDeals = projects.filter((p) => p.setterId === id && p.repId !== id);
-              const trainerDeals = trainerAssignments.filter((a) => a.trainerId === id);
+              const trainerDeals = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId));
               const closerPay = repPayroll
                 .filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer')
                 .reduce((s, e) => s + e.amount, 0);
@@ -1012,7 +1012,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[var(--border-subtle)]/50' : ''} even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
                     <td className="py-2.5 text-white">Trainer</td>
                     <td className="py-2.5 text-[var(--text-secondary)]">
-                      {trainerDeals.length > 0 ? `${trainerDeals.length} trainee(s)` : '0'}
+                      {trainerDeals.size}
                     </td>
                     <td className="py-2.5 text-[var(--accent-green)] font-semibold">${trainerPay.toLocaleString()}</td>
                   </tr>

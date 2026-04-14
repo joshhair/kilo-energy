@@ -632,6 +632,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Guard: abort the entire transition if m1Amount is missing at Acceptance
+    if (updates.phase === 'Acceptance' && old && old.phase !== 'Acceptance' && !old.subDealerId) {
+      if ((updates.m1Amount ?? old.m1Amount) == null) {
+        emitPersistError(`M1 payroll skipped for ${old.customerName} — m1Amount is missing. Re-save the project to recalculate.`);
+        return;
+      }
+    }
+
     // ── 4. Persist DB changes ──
     if (Object.keys(dbUpdates).length > 0) {
       persistFetch(`/api/projects/${id}`, {
