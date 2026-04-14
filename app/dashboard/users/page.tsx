@@ -144,7 +144,7 @@ export default function UsersPage() {
 function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, reactivateSubDealer, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
@@ -767,7 +767,11 @@ function UsersPageInner() {
 
       {/* ── Role filter bar — top-level filter across the unified directory ─ */}
       <div className="mb-6 flex flex-wrap gap-2">
-        {ROLE_FILTERS.map((rf) => {
+        {ROLE_FILTERS.filter((rf) =>
+          currentRole === 'admin' || currentRole === 'project_manager'
+            ? true
+            : rf.value !== 'admin' && rf.value !== 'project_manager'
+        ).map((rf) => {
           const active = roleFilter === rf.value;
           return (
             <button
@@ -881,6 +885,15 @@ function UsersPageInner() {
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0" style={{ background: badge.bg, color: badge.color }}>
                         {badge.label}
                       </span>
+                      {canManageReps && u.role === 'sub-dealer' && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } setConfirmAction(null); } }); }}
+                          title="Deactivate sub-dealer"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </Link>
                   );
                 })}

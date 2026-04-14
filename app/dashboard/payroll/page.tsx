@@ -491,9 +491,9 @@ function PayrollPageInner() {
   if (!isAdmin) {
     const myEntries = payrollEntries.filter((p) => p.repId === currentRepId);
     const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);
-    const myDraft = myTypeFiltered.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-    const myPending = myTypeFiltered.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-    const myPaid = myTypeFiltered.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+    const myDraft = myEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+    const myPending = myEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+    const myPaid = myEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
     const myFiltered = myTypeFiltered
       .filter((p) => repStatusFilter === 'All' || p.status === repStatusFilter)
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
@@ -656,7 +656,7 @@ function PayrollPageInner() {
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
-              disabled={filteredByDateRep.filter((e) => e.status === 'Pending').length === 0}
+              disabled={totalPendingAllTypes === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
             >
