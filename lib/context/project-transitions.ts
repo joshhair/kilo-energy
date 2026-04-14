@@ -257,7 +257,7 @@ export function createMilestonePayroll(
   const { projectId, old, updatedProjects, stage, isAcceptance, isInstalled, installPayPct, deps } = params;
   const payDate = isAcceptance ? getM1PayDate() : getM2PayDate();
   const freshProject = updatedProjects.find((p) => p.id === projectId)!;
-  const fullAmount = isAcceptance ? old.m1Amount : freshProject.m2Amount;
+  const fullAmount = isAcceptance ? freshProject.m1Amount : freshProject.m2Amount;
 
   // Suppress M1 if M2 entries already exist — project previously reached Installed,
   // so this Acceptance crossing is a re-entry, not a fresh milestone.
@@ -299,7 +299,7 @@ export function createMilestonePayroll(
       repName: setterRep?.name ?? old.setterName ?? '',
       projectId,
       customerName: old.customerName,
-      amount: old.setterM1Amount!,
+      amount: freshProject.setterM1Amount!,
       type: 'Deal',
       paymentStage: stage,
       status: 'Draft',

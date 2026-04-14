@@ -55,7 +55,7 @@ export function DealEntryPage({ onStart, projects, currentRepId }: { onStart: ()
               </button>
             </div>
           </div>
-          <span className="text-[var(--text-dim)] text-xs hidden sm:block">or press \u2318\u21B5 on the form</span>
+          <span className="text-[var(--text-dim)] text-xs hidden sm:block">or press ⌘↵ on the form</span>
         </div>
       </div>
     </div>

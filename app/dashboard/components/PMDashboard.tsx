@@ -26,7 +26,7 @@ export function PMDashboard({
     acc[phase] = projects.filter((p) => p.phase === phase).length;
     return acc;
   }, {} as Record<string, number>);
-  const flaggedCount = allProjects.filter((p) => p.flagged).length;
+  const flaggedCount = projects.filter((p) => p.flagged).length;
   const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
 
   return (

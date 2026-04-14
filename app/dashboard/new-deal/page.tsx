@@ -198,7 +198,16 @@ function NewDealPage() {
 
   // ── Field helpers ──────────────────────────────────────────────────────────
 
-  const update = (field: string, value: string) => { isDirty.current = true; setForm((prev) => ({ ...prev, [field]: value })); };
+  const update = (field: string, value: string) => {
+    isDirty.current = true;
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      next[field] = '';
+      return next;
+    });
+  };
 
   const handleBlur = (field: string) => {
     const value = form[field as keyof typeof form] ?? '';

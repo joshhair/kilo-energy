@@ -400,7 +400,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const pastAcceptance = effectiveIdx >= PIPELINE_PHASES.indexOf('Acceptance');
           const closerM1Amount = updates.m1Amount ?? old.m1Amount;
 
-          if (pastAcceptance && (closerM1Amount ?? 0) > 0) {
+          if (pastAcceptance && !old.subDealerId && (closerM1Amount ?? 0) > 0) {
             setPayrollEntries((prevEntries) => {
               const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1');
               if (hasM1) return prevEntries;
@@ -739,7 +739,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       // pendingPatches is populated synchronously by the updater above in React's
       // batching model. Persist each patch to DB.
+      // Skip entries with temp client IDs (pay_${ts}_...) — they were created in
+      // this same updateProject call and don't have a real DB row yet. Their amount
+      // is already correct in the POST body, so no PATCH is needed.
       for (const { id: entryId, newAmount } of pendingPatches) {
+        if (entryId.startsWith('pay_')) continue;
         persistFetch(`/api/payroll/${entryId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
