@@ -6,7 +6,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
-import { formatDate, downloadCSV, fmt$, localDateString } from '../../../lib/utils';
+import { formatDate, downloadCSV, fmt$, localDateString, todayLocalDateStr } from '../../../lib/utils';
 import { RelativeDate } from '../components/RelativeDate';
 import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
@@ -234,7 +234,7 @@ function PayrollPageInner() {
   //   3-5. three .filter().reduce() pairs for Draft/Pending/Paid totals
   // Now: one walk through payrollEntries computes everything, memoized
   // on the inputs that actually matter.
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalDateStr();
 
   const { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
