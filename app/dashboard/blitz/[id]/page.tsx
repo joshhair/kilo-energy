@@ -87,7 +87,7 @@ export default function BlitzDetailPage() {
   // Escape key closes Add Participant modal
   useEffect(() => {
     if (!showAddParticipant) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowAddParticipant(false); };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') { setShowAddParticipant(false); setSelectedRepId(''); } };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [showAddParticipant]);
@@ -676,7 +676,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[var(--text-muted)] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
               </div>
             )}
           </div>
@@ -695,7 +695,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                    <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">Projected Pay</p>
                 </div>
               </div>
