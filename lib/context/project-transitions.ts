@@ -68,11 +68,9 @@ export function computeM3Amount(
   const installPayPct = installerPayConfigs[updates.installer ?? old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   if (installPayPct >= 100) return null;
   const fullAmount = updates.m2Amount ?? old.m2Amount ?? 0;
-  return (old.m3Amount ?? 0) > 0
-    ? old.m3Amount!
-    : installPayPct > 0
-      ? Math.round(fullAmount * ((100 - installPayPct) / installPayPct) * 100) / 100
-      : 0;
+  return installPayPct > 0
+    ? Math.round(fullAmount * ((100 - installPayPct) / installPayPct) * 100) / 100
+    : 0;
 }
 
 /**
@@ -225,8 +223,8 @@ export function handlePhaseRollback(
     .filter((e) => {
       if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending')) return false;
       if (rollBackM1 && e.paymentStage === 'M1') return true;
-      if (rollBackM2 && (e.paymentStage === 'M2' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))) return true;
-      if (rollBackM3 && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))) return true;
+      if (rollBackM2 && (e.paymentStage === 'M2' || (e.paymentStage === 'Trainer' && e.notes?.includes('Trainer override M2')))) return true;
+      if (rollBackM3 && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.includes('Trainer override M3')))) return true;
       return false;
     })
     .map((e) => e.id);
@@ -578,7 +576,7 @@ export function syncPayrollAmounts(
   const updatedEntries = prevEntries.map((e) => {
     if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback')) return e;
     const match = stageAmountUpdates.find(
-      (u) => u.stage === e.paymentStage && u.setter === (e.notes === 'Setter')
+      (u) => u.stage === e.paymentStage && u.setter === (e.notes ?? '').startsWith('Setter')
     );
     if (!match || match.newAmount === e.amount) return e;
     patches.push({ id: e.id, newAmount: match.newAmount });

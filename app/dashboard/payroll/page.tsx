@@ -656,7 +656,7 @@ function PayrollPageInner() {
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
-              disabled={totalPendingAllTypes === 0}
+              disabled={totalPending === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
             >
