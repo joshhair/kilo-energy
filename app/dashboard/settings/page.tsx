@@ -172,6 +172,10 @@ function SettingsPageInner() {
     setNewVersionFor(null);
     setPcNewVersionFor(null);
     setDupAllOpen(null);
+    setSelectedInstallers(new Set());
+    setSelectedFinancers(new Set());
+    setInstallerSelectMode(false);
+    setFinancerSelectMode(false);
     if (pendingSection) {
       setSection(pendingSection);
       router.replace(`/dashboard/settings?section=${pendingSection}`, { scroll: false });

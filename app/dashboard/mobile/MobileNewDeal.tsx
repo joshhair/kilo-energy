@@ -346,7 +346,8 @@ export default function MobileNewDeal() {
   const pcConfig = productCatalogInstallerConfigs[form.installer] ?? null;
   const isPcInstaller = pcConfig !== null;
   const pcFamily = isPcInstaller ? form.pcFamily : '';
-  const hasPcProducts = isPcInstaller && pcFamily !== '';
+  const pcFamilyProducts = isPcInstaller ? productCatalogProducts.filter((p) => p.installer === form.installer && p.family === pcFamily) : [];
+  const hasPcProducts = isPcInstaller && pcFamily !== '' && pcFamilyProducts.length > 0;
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const isFullyPaidOut = (p: Project): boolean => {
@@ -1085,7 +1086,7 @@ export default function MobileNewDeal() {
                         className={selectCls('financer')} style={v0InputStyle('financer')}
                       >
                         <option value="">-- Select financer --</option>
-                        {(pcConfig?.familyFinancerMap?.[form.pcFamily] && activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
+                        {(pcConfig?.familyFinancerMap?.[form.pcFamily] && activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily]) && form.productType !== 'Loan'
                           ? activeFinancers.filter((f) => f === pcConfig!.familyFinancerMap![form.pcFamily])
                           : activeFinancers
                         ).map((f) => <option key={f} value={f}>{f}</option>)}
