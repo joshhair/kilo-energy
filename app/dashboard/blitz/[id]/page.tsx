@@ -159,10 +159,20 @@ export default function BlitzDetailPage() {
     return arr;
   }, [visibleProjects, dealsSort]);
 
-  const totalDeals = visibleProjects.length;
+  const approvedParticipantIds = useMemo(
+    () => new Set((blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved').map((p: any) => p.user.id)),
+    [blitz?.participants],
+  );
+  const approvedVisibleProjects = useMemo(
+    () => (isAdmin || isOwner)
+      ? visibleProjects.filter((p: any) => approvedParticipantIds.has(p.closer?.id) || approvedParticipantIds.has(p.setter?.id))
+      : visibleProjects,
+    [visibleProjects, isAdmin, isOwner, approvedParticipantIds],
+  );
+  const totalDeals = approvedVisibleProjects.length;
   const totalKW = useMemo(
-    () => visibleProjects.reduce((s: number, p: any) => s + (isAdmin || isOwner ? p.kWSize : (p.closer?.id === effectiveRepId ? p.kWSize : 0)), 0),
-    [visibleProjects, isAdmin, isOwner, effectiveRepId],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => s + (isAdmin || isOwner ? p.kWSize : (p.closer?.id === effectiveRepId ? p.kWSize : 0)), 0),
+    [approvedVisibleProjects, isAdmin, isOwner, effectiveRepId],
   );
   const totalCosts = useMemo(
     () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,
@@ -688,7 +698,7 @@ export default function BlitzDetailPage() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length}</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Deal{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length !== 1 ? 's' : ''} Closed</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Deal{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length !== 1 ? 's' : ''} Attributed</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? p.kWSize : 0), 0).toFixed(1)}</p>

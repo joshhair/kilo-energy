@@ -105,7 +105,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   await prisma.blitzParticipant.deleteMany({ where: { blitzId, userId } });
 
   // After removal, only unlink a project if its co-participant is also no longer in the blitz.
-  const remaining = await prisma.blitzParticipant.findMany({ where: { blitzId }, select: { userId: true } });
+  const remaining = await prisma.blitzParticipant.findMany({ where: { blitzId, joinStatus: 'approved' }, select: { userId: true } });
   const remainingIds = new Set(remaining.map(p => p.userId));
 
   const closerProjects = await prisma.project.findMany({
