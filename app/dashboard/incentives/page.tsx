@@ -236,6 +236,20 @@ export default function IncentivesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incentives, projects, payrollEntries, isAdmin]);
 
+  const nextDeadline = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let soonest: string | null = null;
+    for (const inc of activeVisible.filter((i) => i.active)) {
+      if (!inc.endDate) continue;
+      const [y, m, d] = inc.endDate.split('-').map(Number);
+      const end = new Date(y, m - 1, d);
+      if (end >= today && (!soonest || inc.endDate < soonest)) soonest = inc.endDate;
+    }
+    return soonest;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVisible]);
+
   const isMobile = useMediaQuery('(max-width: 767px)');
   if (isMobile) return <MobileIncentives />;
 
@@ -524,19 +538,6 @@ export default function IncentivesPage() {
   const activeIncentives = activeVisible.filter((i) => i.active);
   const totalMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.length, 0);
   const achievedMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.filter((m) => m.achieved).length, 0);
-  const nextDeadline = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let soonest: string | null = null;
-    for (const inc of activeIncentives) {
-      if (!inc.endDate) continue;
-      const [y, m, d] = inc.endDate.split('-').map(Number);
-      const end = new Date(y, m - 1, d);
-      if (end >= today && (!soonest || inc.endDate < soonest)) soonest = inc.endDate;
-    }
-    return soonest;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeVisible]);
 
   // ── Filter/Sort toolbar (reusable for both sections) ──
   const filterSortToolbar = (
