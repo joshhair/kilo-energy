@@ -10,6 +10,7 @@ import {
   getProductCatalogBaselineVersioned,
   getInstallerRatesForDeal,
 } from '../../../lib/data';
+import { type Period, PERIODS, isInPeriod } from '../components/dashboard-utils';
 import { AlertTriangle, TrendingUp, Users, Zap, CreditCard, FolderKanban, ChevronRight, Flag, Clock } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBadge from './shared/MobileBadge';
@@ -63,16 +64,6 @@ function useCountUp(target: number, duration = 350): number {
   return displayed;
 }
 
-type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year' | 'last-year';
-const PERIODS: { value: Period; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'this-month', label: 'This Month' },
-  { value: 'last-month', label: 'Last Month' },
-  { value: 'this-quarter', label: 'This Quarter' },
-  { value: 'this-year', label: 'This Year' },
-  { value: 'last-year', label: 'Last Year' },
-];
-
 const PHASE_STUCK_THRESHOLDS: Record<string, number> = {
   'New':             5,
   'Acceptance':      10,
@@ -82,27 +73,6 @@ const PHASE_STUCK_THRESHOLDS: Record<string, number> = {
   'Pending Install': 65,
   'Installed':       75,
 };
-
-function isInPeriod(dateStr: string | null, period: Period): boolean {
-  if (period === 'all') return true;
-  if (!dateStr) return false;
-  const now = new Date();
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  if (period === 'this-month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-  if (period === 'last-month') {
-    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return date.getMonth() === lm.getMonth() && date.getFullYear() === lm.getFullYear();
-  }
-  if (period === 'this-quarter') {
-    const q = Math.floor(now.getMonth() / 3);
-    const dq = Math.floor((m - 1) / 3);
-    return dq === q && y === now.getFullYear();
-  }
-  if (period === 'this-year') return date.getFullYear() === now.getFullYear();
-  if (period === 'last-year') return date.getFullYear() === now.getFullYear() - 1;
-  return true;
-}
 
 export default function MobileAdminDashboard() {
   const {
@@ -202,7 +172,10 @@ export default function MobileAdminDashboard() {
   // Top reps by deal count
   const topReps = useMemo(() => {
     const repDeals: Record<string, number> = {};
-    for (const p of periodProjects) { repDeals[p.repId] = (repDeals[p.repId] || 0) + 1; }
+    for (const p of periodProjects) {
+      repDeals[p.repId] = (repDeals[p.repId] || 0) + 1;
+      if (p.setterId && p.setterId !== p.repId) repDeals[p.setterId] = (repDeals[p.setterId] || 0) + 1;
+    }
     return Object.entries(repDeals)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
