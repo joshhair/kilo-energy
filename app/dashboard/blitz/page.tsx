@@ -476,6 +476,7 @@ function BlitzPageInner() {
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
   const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({ canRequestBlitz: false, canCreateBlitz: false });
+  const [permsLoaded, setPermsLoaded] = useState(false);
   const [showRequestBlitz, setShowRequestBlitz] = useState(false);
   const { toast } = useToast();
 
@@ -543,18 +544,21 @@ function BlitzPageInner() {
 
   // Fetch rep blitz permissions
   useEffect(() => {
-    if (isAdmin || !effectiveRepId) return;
+    if (isAdmin) { setPermsLoaded(true); return; }
+    if (!effectiveRepId) return;
     fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       if (u) setUserPerms({ canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false });
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setPermsLoaded(true));
   }, [isAdmin, effectiveRepId]);
 
   // If a rep lands on ?tab=requests without canRequestBlitz (e.g. via shared link), redirect to blitzes
+  // Gate on permsLoaded so we don't redirect before the fetch resolves
   useEffect(() => {
+    if (!permsLoaded) return;
     if (!isAdmin && !userPerms.canRequestBlitz && tab === 'requests') {
       setTab('blitzes');
     }
-  }, [isAdmin, userPerms.canRequestBlitz]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAdmin, permsLoaded, userPerms.canRequestBlitz]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;

@@ -97,9 +97,12 @@ export async function POST(req: NextRequest) {
 
   // ─── FK existence checks ───
   if (body.installerId) {
-    const installer = await prisma.installer.findUnique({ where: { id: body.installerId }, select: { id: true } });
+    const installer = await prisma.installer.findUnique({ where: { id: body.installerId }, select: { id: true, active: true } });
     if (!installer) {
       return NextResponse.json({ error: 'Installer not found' }, { status: 400 });
+    }
+    if (!installer.active) {
+      return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
     }
   }
   // For Cash deals, auto-resolve the Cash financer so clients don't need the ID
@@ -112,9 +115,12 @@ export async function POST(req: NextRequest) {
     body.financerId = cashFinancer.id;
   }
   if (body.financerId) {
-    const financer = await prisma.financer.findUnique({ where: { id: body.financerId }, select: { id: true } });
+    const financer = await prisma.financer.findUnique({ where: { id: body.financerId }, select: { id: true, active: true } });
     if (!financer) {
       return NextResponse.json({ error: 'Financer not found' }, { status: 400 });
+    }
+    if (!financer.active) {
+      return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
     }
   }
 
