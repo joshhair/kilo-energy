@@ -105,6 +105,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       projects: true,
     },
   });
+
+  // Unlink projects whose soldDate falls outside the updated date window
+  if (body.startDate !== undefined || body.endDate !== undefined) {
+    await prisma.project.updateMany({
+      where: {
+        blitzId: id,
+        OR: [
+          ...(blitz.startDate ? [{ soldDate: { lt: blitz.startDate } }] : []),
+          ...(blitz.endDate ? [{ soldDate: { gt: blitz.endDate } }] : []),
+        ],
+      },
+      data: { blitzId: null },
+    });
+    blitz.projects = await prisma.project.findMany({ where: { blitzId: id } });
+  }
+
   return NextResponse.json(blitz);
 }
 
