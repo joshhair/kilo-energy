@@ -606,6 +606,8 @@ export function syncPayrollAmounts(
   prevEntries: PayrollEntry[],
   closerM2TrainerDeduction = 0,
   closerM3TrainerDeduction = 0,
+  kWSize = 0,
+  installPayPct = 100,
 ): AmountSyncResult {
   const stageAmountUpdates: Array<{ stage: 'M1' | 'M2' | 'M3'; setter: boolean; newAmount: number }> = [];
   if (updates.m1Amount !== undefined) stageAmountUpdates.push({ stage: 'M1', setter: false, newAmount: updates.m1Amount });
@@ -620,6 +622,24 @@ export function syncPayrollAmounts(
   const patches: Array<{ id: string; newAmount: number }> = [];
   const updatedEntries = prevEntries.map((e) => {
     if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback')) return e;
+
+    // Trainer override entries have paymentStage === 'Trainer' and never match the
+    // M1/M2/M3 stageAmountUpdates. Recompute from the rate embedded in their notes.
+    if (e.paymentStage === 'Trainer' && kWSize > 0) {
+      const notes = e.notes ?? '';
+      const isM2 = notes.startsWith('Trainer override M2') && updates.m2Amount !== undefined;
+      const isM3 = notes.startsWith('Trainer override M3') && updates.m3Amount !== undefined;
+      if (!isM2 && !isM3) return e;
+      const rateMatch = notes.match(/\(\$([0-9.]+)\/W\)/);
+      if (!rateMatch) return e;
+      const rate = parseFloat(rateMatch[1]);
+      const pct = isM2 ? (installPayPct / 100) : ((100 - installPayPct) / 100);
+      const newAmount = Math.round(rate * kWSize * 1000 * pct * 100) / 100;
+      if (newAmount === e.amount) return e;
+      patches.push({ id: e.id, newAmount });
+      return { ...e, amount: newAmount };
+    }
+
     const match = stageAmountUpdates.find(
       (u) => u.stage === e.paymentStage && u.setter === (e.notes ?? '').startsWith('Setter')
     );

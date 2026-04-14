@@ -777,9 +777,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
       }
+      const effectiveKWSize = old ? (updates.kWSize ?? old.kWSize) : 0;
+      const effectiveInstallPayPct = old ? (installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) : 100;
       const pendingPatches: Array<{ id: string; newAmount: number }> = [];
       setPayrollEntries((prev) => {
-        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction, closerM3TrainerDeduction);
+        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction, closerM3TrainerDeduction, effectiveKWSize, effectiveInstallPayPct);
         pendingPatches.push(...result.patches);
         return result.patches.length > 0 ? result.updatedEntries : prev;
       });
