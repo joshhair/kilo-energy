@@ -113,7 +113,11 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const visibleProjects = (isAdmin || currentUserId === blitz.owner.id)
     ? activeProjects.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
     : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId);
-  const totalKW = visibleProjects.reduce((s, p) => s + p.kWSize, 0);
+  const totalKW = visibleProjects.reduce((s, p) => {
+    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+    const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+    return s + (isSelfGen || closerApproved ? p.kWSize : 0);
+  }, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
@@ -596,11 +600,16 @@ function BlitzPageInner() {
         const scopedKW = (blitz: BlitzData) => {
           const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
           const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-          return (isAdmin || effectiveRepId === blitz.owner.id)
+          const visible = (isAdmin || effectiveRepId === blitz.owner.id)
             ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
             : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId);
+          return visible.reduce((s, p) => {
+            const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+            const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+            return s + (isSelfGen || closerApproved ? p.kWSize : 0);
+          }, 0);
         };
-        sorted.sort((a, b) => scopedKW(b).reduce((s, p) => s + p.kWSize, 0) - scopedKW(a).reduce((s, p) => s + p.kWSize, 0));
+        sorted.sort((a, b) => scopedKW(b) - scopedKW(a));
         break;
       }
       case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
@@ -724,12 +733,17 @@ function BlitzPageInner() {
   }, 0);
   const totalKW = filteredBlitzes.reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
-    return s + b.projects.filter((p) =>
+    const visibleProjects = b.projects.filter((p) =>
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
       (isAdmin || b.owner.id === effectiveRepId
         ? approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
         : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)
-    ).reduce((ps, p) => ps + p.kWSize, 0);
+    );
+    return s + visibleProjects.reduce((ps, p) => {
+      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+      const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+      return ps + (isSelfGen || closerApproved ? p.kWSize : 0);
+    }, 0);
   }, 0);
   const totalCosts = isAdmin ? filteredBlitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
