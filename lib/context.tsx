@@ -634,7 +634,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Guard: abort the entire transition if m1Amount is missing at Acceptance
     if (updates.phase === 'Acceptance' && old && old.phase !== 'Acceptance' && !old.subDealerId) {
-      if ((updates.m1Amount ?? old.m1Amount) == null) {
+      const effectiveSetterId = updates.setterId ?? old.setterId;
+      const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
+      if (
+        (updates.m1Amount ?? old.m1Amount) == null ||
+        (effectiveSetterId != null && effectiveSetterM1 == null)
+      ) {
         emitPersistError(`M1 payroll skipped for ${old.customerName} — m1Amount is missing. Re-save the project to recalculate.`);
         return;
       }
@@ -679,12 +684,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        // Rollback: delete Draft entries for milestones we rolled past
+        // Rollback: delete Draft entries for milestones we rolled past.
+        // PMs cannot delete Pending/Paid entries (server returns 403), so only
+        // remove entries from client state that the current actor can actually
+        // delete — otherwise the optimistic filter causes a permanent desync.
         setPayrollEntries((prevEntries) => {
           const toDelete = handlePhaseRollback(id, old.phase, newPhase, prevEntries);
-          if (toDelete.length > 0) {
-            deletePayrollEntriesFromDb(toDelete);
-            return prevEntries.filter((e) => !toDelete.includes(e.id));
+          const safeToDelete = effectiveRole === 'admin'
+            ? toDelete
+            : toDelete.filter((delId) => prevEntries.find((e) => e.id === delId)?.status === 'Draft');
+          if (safeToDelete.length > 0) {
+            deletePayrollEntriesFromDb(safeToDelete);
+            return prevEntries.filter((e) => !safeToDelete.includes(e.id));
           }
           return prevEntries;
         });
