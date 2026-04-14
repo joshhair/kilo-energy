@@ -141,8 +141,10 @@ function TrainingPageInner() {
   // ── Derived data ───────────────────────────────────────────────────────────
 
   const myAssignments = useMemo(
-    () => trainerAssignments.filter((a) => a.trainerId === effectiveRepId),
-    [trainerAssignments, effectiveRepId]
+    () => effectiveRole === 'admin'
+      ? trainerAssignments
+      : trainerAssignments.filter((a) => a.trainerId === effectiveRepId),
+    [trainerAssignments, effectiveRepId, effectiveRole]
   );
 
   const isTrainer = myAssignments.length > 0;
@@ -160,10 +162,10 @@ function TrainingPageInner() {
       const traineeName = trainee ? trainee.name : assignment.traineeId;
       const traineeRole = trainee?.repType ?? 'closer';
 
-      // Deals closed by this trainee (closer role only — setter-only deals excluded from tier advancement)
+      // Deals involving this trainee as closer or setter (both count toward tier advancement)
       const traineeDeals = projects.filter(
         (p) =>
-          p.repId === assignment.traineeId &&
+          (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
           p.phase !== 'Cancelled' &&
           p.phase !== 'On Hold'
       );
@@ -184,21 +186,8 @@ function TrainingPageInner() {
         }
       }
 
-      // Earnings from this trainee
-      // Trainer entries have the trainee's customer in customerName — we match by
-      // looking at entries whose projectId links to a project with this trainee
-      // Include both closer (repId) and setter (setterId) roles to match getTraineeForEntry logic
-      const traineeProjectIds = new Set([
-        ...traineeDeals.map((p) => p.id),
-        ...projects
-          .filter(
-            (p) =>
-              p.setterId === assignment.traineeId &&
-              p.phase !== 'Cancelled' &&
-              p.phase !== 'On Hold'
-          )
-          .map((p) => p.id),
-      ]);
+      // Earnings from this trainee — match by projectId across closer and setter roles
+      const traineeProjectIds = new Set(traineeDeals.map((p) => p.id));
       const earningsFromTrainee = trainerEntries
         .filter((e) => e.projectId && traineeProjectIds.has(e.projectId))
         .reduce((s, e) => s + e.amount, 0);
@@ -304,7 +293,7 @@ function TrainingPageInner() {
 
   if (!isHydrated) return <TrainingSkeleton />;
 
-  if (!isTrainer) {
+  if (!isTrainer && effectiveRole !== 'admin') {
     return (
       <div className="p-4 md:p-8 max-w-5xl animate-fade-in-up">
         <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Training' }]} />

@@ -179,7 +179,7 @@ export default function IncentivesPage() {
   const notifiedMilestonesRef = useRef<Set<string>>(new Set());
   const didInitializeToastsRef = useRef(false);
 
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = effectiveRole === 'admin';
 
   // Rep sees: company-wide + their personal incentives
   const visible = useMemo(() =>
@@ -482,7 +482,7 @@ export default function IncentivesPage() {
             const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'));
             if (failedIds.size > 0) {
               toast('Failed to delete some incentives', 'error');
-              setIncentives(() => snapshot.filter((i) => !succeededIds.has(i.id)));
+              setIncentives((prev) => prev.filter((i) => !succeededIds.has(i.id)));
             }
             const succeeded = results.filter((r) => r.status === 'fulfilled').length;
             if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`);
