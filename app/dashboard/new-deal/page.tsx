@@ -513,6 +513,12 @@ function NewDealPage() {
       return;
     }
 
+    if (closerPerW === 0 && kW > 0 && soldPPW > 0) {
+      toast('No pricing baseline found for this system size. Check that a matching tier exists for this product and kW.', 'error');
+      submittingRef.current = false;
+      return;
+    }
+
     setSubmitting(true);
 
     try {

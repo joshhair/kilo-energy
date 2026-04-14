@@ -1004,7 +1004,7 @@ export default function DashboardPage() {
   const installedSparkData = computeSparklineData(myProjects.filter((p) => installedPhases.includes(p.phase)).map((p) => ({ date: p.soldDate, amount: p.kWSize })));
 
   const thisWeekPayroll = payrollEntries.filter(
-    (p) => p.repId === effectiveRepId && isThisWeek(p.date) && p.status !== 'Paid'
+    (p) => p.repId === effectiveRepId && isThisWeek(p.date) && p.status === 'Pending'
   );
   const thisWeekTotal = thisWeekPayroll.reduce((s, p) => s + p.amount, 0);
 
@@ -1094,7 +1094,7 @@ export default function DashboardPage() {
     {
       label: 'kW Sold',
       value: formatCompactKW(totalKWSold),
-      sub: `${activeProjects.length} active projects`,
+      sub: `${myProjects.length} projects this period`,
       icon: Zap,
       color: 'text-yellow-400',
       accentGradient: 'from-yellow-500 to-yellow-400',

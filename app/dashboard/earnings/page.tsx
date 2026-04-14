@@ -563,7 +563,7 @@ function RepEarningsView() {
                   downloadCSV(`my-reimbursements-${dateStr}.csv`, headers, rows);
                 } else {
                   const headers = ['Type', 'Customer / Note', 'Stage', 'Amount', 'Status', 'Date'];
-                  const rows = sortedDeals.map((row) => {
+                  const rows = sortedDealsBase.map((row) => {
                     if (row.kind === 'payroll') {
                       const e = row.entry as (typeof payrollEntries)[0];
                       return [e.type, e.customerName || e.notes || '', e.paymentStage, `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
@@ -574,7 +574,7 @@ function RepEarningsView() {
                   downloadCSV(`my-earnings-${dateStr}.csv`, headers, rows);
                 }
               }}
-              disabled={tab === 'bonus' ? sortedBonuses.length === 0 : tab === 'reimbursements' ? filteredReimbs.length === 0 : sortedDeals.length === 0}
+              disabled={tab === 'bonus' ? sortedBonuses.length === 0 : tab === 'reimbursements' ? filteredReimbs.length === 0 : sortedDealsBase.length === 0}
               className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download earnings as CSV"
             >
