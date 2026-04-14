@@ -182,7 +182,7 @@ function TrainingPageInner() {
       let nextThreshold: number | null = null;
       for (let i = 0; i < assignment.tiers.length; i++) {
         const tier = assignment.tiers[i];
-        if (tier.upToDeal === null || dealCount < tier.upToDeal) {
+        if (tier.upToDeal === null || dealCount <= tier.upToDeal) {
           activeTierIndex = i;
           nextThreshold = tier.upToDeal;
           break;

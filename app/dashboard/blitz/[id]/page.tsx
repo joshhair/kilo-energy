@@ -979,7 +979,7 @@ export default function BlitzDetailPage() {
       {/* Deals */}
       {tab === 'deals' && (
         <div key="deals" className="animate-tab-enter space-y-3">
-          {visibleProjects.length === 0 ? (
+          {sortedDeals.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-[var(--surface)]/30 border border-dashed border-[var(--border-subtle)]">
               <FolderKanban className="w-12 h-12 text-[var(--text-dim)]" />
               <div className="text-center">
