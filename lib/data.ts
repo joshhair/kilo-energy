@@ -1129,7 +1129,7 @@ export function getSolarTechBaseline(
   const tier = product.tiers.find(
     (t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)
   );
-  if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0 };
+  if (!tier) throw new Error(`getSolarTechBaseline: no tier matched kW=${kW} for product "${productId}"`);
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW };
 }
 
@@ -1253,9 +1253,9 @@ export function getProductCatalogBaseline(
   kW: number,
 ): { closerPerW: number; setterPerW: number; kiloPerW: number } {
   const product = products.find((p) => p.id === productId);
-  if (!product) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0 };
+  if (!product) throw new Error(`getProductCatalogBaseline: unknown product id "${productId}"`);
   const tier = product.tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW));
-  if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0 };
+  if (!tier) throw new Error(`getProductCatalogBaseline: no tier matched kW=${kW} for product "${productId}"`);
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW };
 }
 
@@ -1290,9 +1290,10 @@ export function getProductCatalogBaselineVersioned(
   const tiers = version
     ? version.tiers
     : products.find((p) => p.id === productId)?.tiers;
-  if (!tiers) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: null };
+  if (!tiers) throw new Error(`getProductCatalogBaselineVersioned: unknown product id "${productId}"`);
   const tier = tiers.find((t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW));
-  if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, pcPricingVersionId: version?.id ?? null };
+  if (!tier) throw new Error(`getProductCatalogBaselineVersioned: no tier matched kW=${kW} for product "${productId}"`);
+
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW, pcPricingVersionId: version?.id ?? null };
 }
 

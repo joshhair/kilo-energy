@@ -725,7 +725,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         // Sub-dealer deals skip M1 payroll entirely
         if ((isAcceptance && !isSubDealerDeal) || isInstalled) {
-          const freshProject = updated.find((p) => p.id === id)!;
+          const freshProject = updated.find((p) => p.id === id);
+          if (!freshProject) return updated;
           const fullAmount = isAcceptance ? old.m1Amount : freshProject.m2Amount;
 
           // Guard: m2Amount must be present for M2 payroll
@@ -777,12 +778,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (hasAmountUpdates) {
       // Re-compute closer M2 trainer deduction so syncPayrollAmounts subtracts it,
       // mirroring the deduction applied at createMilestonePayroll time (line 309).
+      const updatedProjects = projects.map((p) => p.id === id ? { ...p, ...updates } : p);
       let closerM2TrainerDeduction = 0;
       if (updates.m2Amount !== undefined && old) {
         const cta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.repId);
         if (cta) {
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-          const ctDeals = projects.filter((p) =>
+          const ctDeals = updatedProjects.filter((p) =>
             (p.repId === cta.traineeId || p.setterId === cta.traineeId) &&
             ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
               ? p.m3Paid === true : p.m2Paid === true)
@@ -797,7 +799,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cta) {
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
           if (installPayPct < 100) {
-            const ctDeals = projects.filter((p) =>
+            const ctDeals = updatedProjects.filter((p) =>
               (p.repId === cta.traineeId || p.setterId === cta.traineeId) &&
               ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
                 ? p.m3Paid === true : p.m2Paid === true)
@@ -812,7 +814,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const sta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.setterId);
         if (sta) {
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-          const stDeals = projects.filter((p) =>
+          const stDeals = updatedProjects.filter((p) =>
             (p.repId === sta.traineeId || p.setterId === sta.traineeId) &&
             ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
               ? p.m3Paid === true : p.m2Paid === true)
@@ -827,7 +829,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (sta) {
           const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
           if (installPayPct < 100) {
-            const stDeals = projects.filter((p) =>
+            const stDeals = updatedProjects.filter((p) =>
               (p.repId === sta.traineeId || p.setterId === sta.traineeId) &&
               ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
                 ? p.m3Paid === true : p.m2Paid === true)
