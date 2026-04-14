@@ -36,6 +36,8 @@ export default function KanbanView({
   const [kanbanSearchInput, setKanbanSearchInput] = useState('');
   const [kanbanDebouncedSearch, setKanbanDebouncedSearch] = useState('');
   const kanbanSearchRef = useRef<HTMLInputElement>(null);
+  const kanbanHeaderRef = useRef<HTMLDivElement>(null);
+  const kanbanBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const delay = kanbanSearchInput === '' ? 0 : 300;
@@ -407,7 +409,52 @@ export default function KanbanView({
   return (
     <div className="space-y-6">
       {kanbanSearchBar}
-      <div className="flex gap-4 overflow-x-auto [overflow-y:clip] snap-x snap-mandatory pb-4">
+      {/* Sticky header row — outside overflow-x-auto so sticky top-0 is relative to page scroll,
+          not the horizontal scroll container. Scrolls horizontally in sync with the body via ref. */}
+      <div
+        ref={kanbanHeaderRef}
+        className="sticky top-0 z-20 overflow-x-hidden"
+        style={{ background: 'var(--navy-base)' }}
+      >
+        <div className="flex gap-4 pb-1">
+          {activePhasesForKanban.map((phase) => {
+            const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
+            return (
+              <div key={phase} className="flex-shrink-0 w-52">
+                <div className="backdrop-blur-sm px-2 py-1.5 rounded-lg" style={{ background: `${PHASE_COLORS[phase] ?? 'var(--text-muted)'}12`, border: `1px solid ${PHASE_COLORS[phase] ?? 'var(--text-muted)'}30` }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: PHASE_COLORS[phase] ?? 'var(--text-muted)' }}>{phase}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'var(--surface-card)', color: 'var(--text-muted)' }}>
+                      {phaseProjects.length}
+                    </span>
+                  </div>
+                  {!hideFinancials && (
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      ${phaseProjects.reduce((sum, p) => {
+                        if (!isAdmin && dealScope === 'mine') {
+                          if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                          if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                          return sum;
+                        }
+                        return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                      }, 0).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div
+        ref={kanbanBodyRef}
+        className="flex gap-4 overflow-x-auto [overflow-y:clip] snap-x snap-mandatory pb-4"
+        onScroll={() => {
+          if (kanbanHeaderRef.current && kanbanBodyRef.current) {
+            kanbanHeaderRef.current.scrollLeft = kanbanBodyRef.current.scrollLeft;
+          }
+        }}
+      >
         {activePhasesForKanban.map((phase) => {
           const phaseProjects = kanbanFiltered.filter((p) => p.phase === phase);
           // Next phase in the pipeline (undefined for PTO — the last active phase).
@@ -416,27 +463,6 @@ export default function KanbanView({
           const prevPhase = activePhasesForKanban[phaseIdx - 1] as Phase | undefined;
           return (
             <div key={phase} className={`flex-shrink-0 w-52 snap-start kanban-col-enter kanban-col-${phaseIdx}`}>
-              {/* Sticky column header — stays visible while cards scroll */}
-              <div className="sticky top-0 z-10 backdrop-blur-sm pb-2 mb-1 px-2 py-1.5 rounded-lg" style={{ background: `${PHASE_COLORS[phase] ?? 'var(--text-muted)'}12`, border: `1px solid ${PHASE_COLORS[phase] ?? 'var(--text-muted)'}30` }}>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: PHASE_COLORS[phase] ?? 'var(--text-muted)' }}>{phase}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'var(--surface-card)', color: 'var(--text-muted)' }}>
-                    {phaseProjects.length}
-                  </span>
-                </div>
-                {!hideFinancials && (
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    ${phaseProjects.reduce((sum, p) => {
-                      if (!isAdmin && dealScope === 'mine') {
-                        if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                        if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                        return sum;
-                      }
-                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                    }, 0).toLocaleString()}
-                  </p>
-                )}
-              </div>
               {/* Scrollable card container with bottom-fade overflow hint */}
               <div className="relative">
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">

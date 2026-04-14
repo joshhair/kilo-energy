@@ -177,7 +177,7 @@ function ProjectsPageInner() {
     setCancelReasonModal(null);
   };
 
-  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '' || qaOnly;
+  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '' || qaOnly || dealScope !== (isRep ? 'mine' : 'all');
 
   const clearAllFilters = () => {
     setStatusFilter('active');
@@ -186,6 +186,7 @@ function ProjectsPageInner() {
     setDebouncedSearch('');
     setPhaseFilter('');
     setQaOnly(false);
+    setDealScope(isRep ? 'mine' : 'all');
     toast('Filters cleared', 'info');
   };
 

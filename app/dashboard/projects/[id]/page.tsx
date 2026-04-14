@@ -960,6 +960,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setterM1Amount: editSetterM1Amount,
       setterM2Amount: editSetterM2Amount,
       setterM3Amount: editSetterM3Amount,
+      ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
     });
     setShowEditModal(false);
     setEditErrors({});
