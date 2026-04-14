@@ -36,6 +36,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'blitzId is required for cancel requests' }, { status: 400 });
   }
 
+  if (type === 'create') {
+    if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
+      return NextResponse.json({ error: 'name is required' }, { status: 400 });
+    }
+    if (!body.startDate || typeof body.startDate !== 'string' || !body.startDate.trim()) {
+      return NextResponse.json({ error: 'startDate is required' }, { status: 400 });
+    }
+    if (!body.endDate || typeof body.endDate !== 'string' || !body.endDate.trim()) {
+      return NextResponse.json({ error: 'endDate is required' }, { status: 400 });
+    }
+  }
+
   if (type === 'cancel' && body.blitzId) {
     const blitz = await prisma.blitz.findUnique({ where: { id: body.blitzId }, select: { ownerId: true, createdById: true, status: true } });
     if (!blitz || (blitz.ownerId !== user.id && blitz.createdById !== user.id)) {

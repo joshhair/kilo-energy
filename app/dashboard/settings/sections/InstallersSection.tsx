@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Plus, Pencil, Check, X, EyeOff, Eye, Trash2, Search,
   ChevronRight, ChevronDown, CreditCard, DollarSign,
@@ -53,6 +53,7 @@ export function InstallersSection({
   const [editPrepaidVal, setEditPrepaidVal] = useState('');
   const [payScheduleExpanded, setPayScheduleExpanded] = useState<string | null>(null);
   const [editPayPct, setEditPayPct] = useState('');
+  const payPctDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return (
     <div key="installers" className="animate-tab-enter max-w-xl">
@@ -403,7 +404,10 @@ export function InstallersSection({
                                 setEditPayPct(e.target.value);
                                 const val = parseInt(e.target.value);
                                 if (!isNaN(val) && val >= 0 && val <= 100) {
-                                  updateInstallerPayConfig(inst.name, val);
+                                  if (payPctDebounceRef.current) clearTimeout(payPctDebounceRef.current);
+                                  payPctDebounceRef.current = setTimeout(() => {
+                                    updateInstallerPayConfig(inst.name, val);
+                                  }, 500);
                                 }
                               }}
                               className="w-24 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"

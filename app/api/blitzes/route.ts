@@ -80,6 +80,10 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
+  if (!body.name || !body.name.trim()) {
+    return NextResponse.json({ error: 'name is required' }, { status: 400 });
+  }
+
   if (!body.startDate || !body.endDate) {
     return NextResponse.json({ error: 'startDate and endDate are required' }, { status: 400 });
   }
