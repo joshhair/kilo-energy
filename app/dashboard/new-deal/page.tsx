@@ -108,6 +108,7 @@ function NewDealPage() {
   const duplicateCustomerName = searchParams.get('duplicate') === 'true' ? (searchParams.get('customerName') ?? '') : '';
   const customerNameInputRef = useRef<HTMLInputElement>(null);
   const soldDateInputRef = useRef<HTMLInputElement>(null);
+  const repIdSelectRef = useRef<HTMLSelectElement>(null);
   useEffect(() => {
     if (duplicateApplied.current) return;
     if (searchParams.get('duplicate') !== 'true') return;

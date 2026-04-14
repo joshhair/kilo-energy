@@ -110,9 +110,11 @@ export default function MobileAdminDashboard() {
   // ── Computations (period-filtered) ───────────────────────────────────────
   const active = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && p.phase !== 'Completed'), [periodProjects]);
 
+  const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
+
   const { totalPaid, totalRevenue, totalProfit } = useMemo(() => {
     let paid = 0, rev = 0, prof = 0;
-    for (const e of periodPayroll) { if (e.status === 'Paid') paid += e.amount; }
+    for (const e of periodPayroll) { if (e.status === 'Paid' && e.date <= todayStr) paid += e.amount; }
     for (const p of periodProjects) {
       if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
       const { closerPerW, kiloPerW } = getBaselines(p);
