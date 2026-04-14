@@ -698,7 +698,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const projEnd = Math.min(projStart + projPageSize, projTotal);
   const pagedProjects = repProjects.slice(projStart, projEnd);
 
-  const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
+  const totalKW = repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
   const totalEst = repProjects.reduce((s, p) => {
     if (p.repId === id) {
       // Closer: gets $0 M1 when a setter exists (setter takes M1); otherwise earns m1Amount

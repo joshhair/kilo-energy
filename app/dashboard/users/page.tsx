@@ -1356,7 +1356,7 @@ function UsersPageInner() {
           const activeCount = repProjects.filter(
             (p) => !PIPELINE_EXCLUDED.has(p.phase)
           ).length;
-          const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
+          const totalKW = repProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
           const initials = rep.name.split(' ').map((n) => n[0]).join('');
           const rank = rankMap.get(rep.id) ?? 999;
 
