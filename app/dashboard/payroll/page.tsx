@@ -234,14 +234,14 @@ function PayrollPageInner() {
   //   3-5. three .filter().reduce() pairs for Draft/Pending/Paid totals
   // Now: one walk through payrollEntries computes everything, memoized
   // on the inputs that actually matter.
+  const today = new Date().toISOString().slice(0, 10);
+
   const { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
     const filteredByDateRep: typeof payrollEntries = [];
     let totalDraft = 0;
     let totalPending = 0;
     let totalPaid = 0;
-
-    const today = new Date().toISOString().slice(0, 10);
     for (const p of payrollEntries) {
       if (p.type !== typeTab) continue;
       if (payFilterFrom && p.date < payFilterFrom) continue;
@@ -483,7 +483,7 @@ function PayrollPageInner() {
     const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);
     const myDraft = myTypeFiltered.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
     const myPending = myTypeFiltered.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-    const myPaid = myTypeFiltered.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+    const myPaid = myTypeFiltered.filter((p) => p.status === 'Paid' && p.date <= today).reduce((s, p) => s + p.amount, 0);
     const myFiltered = myTypeFiltered
       .filter((p) => repStatusFilter === 'All' || p.status === repStatusFilter)
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
@@ -863,7 +863,7 @@ function PayrollPageInner() {
         <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
-          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Paid').length} entries</p>
+          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Paid' && p.date <= today).length} entries</p>
         </div>
       </div>
 
@@ -883,7 +883,7 @@ function PayrollPageInner() {
           >
             {s}
             <span className="ml-1.5 text-xs opacity-70">
-              ({filteredByDateRep.filter((p) => p.status === s && p.type === typeTab).length})
+              ({filteredByDateRep.filter((p) => p.status === s && p.type === typeTab && (s !== 'Paid' || p.date <= today)).length})
             </span>
           </button>
         ))}

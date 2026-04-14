@@ -642,14 +642,16 @@ function UsersPageInner() {
 
   // ── Pre-compute paid totals & rank order across ALL reps ──────────────────
   const today = new Date().toISOString().slice(0, 10);
-  const repPaidAmounts = useMemo(() => new Map(
-    reps.map((rep) => [
-      rep.id,
-      payrollEntries
-        .filter((p) => p.repId === rep.id && p.status === 'Paid' && p.date <= today)
-        .reduce((s, p) => s + p.amount, 0),
-    ])
-  ), [reps, payrollEntries]);
+  const repPaidAmounts = useMemo(() => {
+    return new Map(
+      reps.map((rep) => [
+        rep.id,
+        payrollEntries
+          .filter((p) => p.repId === rep.id && p.status === 'Paid' && p.date <= today)
+          .reduce((s, p) => s + p.amount, 0),
+      ])
+    );
+  }, [reps, payrollEntries]);
 
   const rankMap = new Map(
     [...reps]
