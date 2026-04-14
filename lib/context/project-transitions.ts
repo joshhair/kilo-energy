@@ -84,16 +84,18 @@ export function repairM3AmountAtPTO(
 ): { closer: number | null; setter: number | null } {
   const installPayPct = installerPayConfigs[updates.installer ?? old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   if (installPayPct >= 100) return { closer: null, setter: null };
-  const repairedM3 = (old.m3Amount ?? 0) > 0
+  const effectiveM2 = updates.m2Amount ?? old.m2Amount;
+  const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
+  const repairedM3 = (old.m3Amount ?? 0) > 0 && updates.m2Amount === undefined
     ? old.m3Amount!
     : installPayPct > 0
-      ? Math.round((old.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+      ? Math.round((effectiveM2 ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
       : 0;
   const repairedSetterM3 = old.setterId
-    ? (old.setterM3Amount ?? 0) > 0
+    ? (old.setterM3Amount ?? 0) > 0 && updates.setterM2Amount === undefined
       ? old.setterM3Amount!
       : installPayPct > 0
-        ? Math.round((old.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
+        ? Math.round((effectiveSetterM2 ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0
     : 0;
   return {
@@ -361,7 +363,7 @@ export function createMilestonePayroll(
       const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
       const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
       const closerTrainerAlreadyExists = prevEntries.some(
-        (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId && e.status !== 'Draft'
+        (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId
       );
       if (m2TrainerAmount > 0 && !closerTrainerAlreadyExists) {
         newEntries.push({
@@ -389,7 +391,7 @@ export function createMilestonePayroll(
         const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
         const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
         const setterTrainerAlreadyExists = prevEntries.some(
-          (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId && e.status !== 'Draft'
+          (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId
         );
         if (m2SetterTrainerAmount > 0 && !setterTrainerAlreadyExists) {
           const setterRep = deps.repsRef.current.find(r => r.id === old.setterId);
