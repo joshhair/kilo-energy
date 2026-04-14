@@ -241,6 +241,7 @@ function PayrollPageInner() {
     let totalPending = 0;
     let totalPaid = 0;
 
+    const today = new Date().toISOString().slice(0, 10);
     for (const p of payrollEntries) {
       if (p.type !== typeTab) continue;
       if (payFilterFrom && p.date < payFilterFrom) continue;
@@ -251,7 +252,7 @@ function PayrollPageInner() {
       filteredByDateRep.push(p);
       if (p.status === 'Draft') totalDraft += p.amount;
       else if (p.status === 'Pending') totalPending += p.amount;
-      else if (p.status === 'Paid') totalPaid += p.amount;
+      else if (p.status === 'Paid' && p.date <= today) totalPaid += p.amount;
 
       // And it's in `filtered` (the visible table) only if its status
       // also matches the active status tab.

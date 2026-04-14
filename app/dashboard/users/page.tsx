@@ -1324,7 +1324,7 @@ function UsersPageInner() {
         {!isPM && (
           <GradCard
             label="Total Paid"
-            rawValue={payrollEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0)}
+            rawValue={payrollEntries.filter((p) => p.status === 'Paid' && p.date <= today).reduce((s, p) => s + p.amount, 0)}
             formatter={(v) => '$' + Math.round(v).toLocaleString()}
             gradient="linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))"
             borderColor="rgba(0,224,122,0.3)"
@@ -1471,7 +1471,7 @@ function UsersPageInner() {
                 const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
                 const avgDealSize = dealsClosed > 0 ? kwSold / dealsClosed : 0;
                 const commissionEarned = ranges.current.from && ranges.current.to
-                  ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to)).reduce((s, e) => s + e.amount, 0)
+                  ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to) && e.date <= today).reduce((s, e) => s + e.amount, 0)
                   : 0;
                 const rpCancelled = ranges.current.from && ranges.current.to
                   ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase === 'Cancelled' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))

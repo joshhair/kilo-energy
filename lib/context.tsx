@@ -476,6 +476,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
               }
             }
 
+            // Pre-compute setter trainer deductions so the trainer's cut comes from
+            // the setter's entry rather than being paid on top (mirrors project-transitions.ts:362/541)
+            let setterM2TrainerDeduction = 0;
+            let setterM3TrainerDeduction = 0;
+            if (!old.subDealerId) {
+              const earlySetterTA = trainerAssignmentsRef.current.find((a) => a.traineeId === newSetterId);
+              if (earlySetterTA) {
+                const earlyDeals = projectsRef.current.filter((p) =>
+                  (p.repId === earlySetterTA.traineeId || p.setterId === earlySetterTA.traineeId) &&
+                  ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+                ).length;
+                const earlyRate = getTrainerOverrideRate(earlySetterTA, earlyDeals);
+                const earlyInstPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+                setterM2TrainerDeduction = Math.round(earlyRate * old.kWSize * 1000 * (earlyInstPct / 100) * 100) / 100;
+                setterM3TrainerDeduction = Math.round(earlyRate * old.kWSize * 1000 * ((100 - earlyInstPct) / 100) * 100) / 100;
+              }
+            }
+
             if (pastInstalled && (effectiveSetterM2 ?? 0) > 0) {
               const hasM2 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M2');
               if (!hasM2) {
@@ -485,7 +503,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   repName: newSetterRep?.name ?? '',
                   projectId: id,
                   customerName: old.customerName,
-                  amount: effectiveSetterM2 ?? 0,
+                  amount: Math.max(0, (effectiveSetterM2 ?? 0) - setterM2TrainerDeduction),
                   type: 'Deal',
                   paymentStage: 'M2',
                   status: 'Draft',
@@ -512,7 +530,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     repName: newSetterRep?.name ?? '',
                     projectId: id,
                     customerName: old.customerName,
-                    amount: setterM3,
+                    amount: Math.max(0, setterM3 - setterM3TrainerDeduction),
                     type: 'Deal',
                     paymentStage: 'M3',
                     status: 'Draft',
