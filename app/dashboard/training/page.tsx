@@ -191,7 +191,7 @@ function TrainingPageInner() {
       // Earnings from this trainee — match by projectId across closer and setter roles
       const traineeProjectIds = new Set(traineeDeals.map((p) => p.id));
       const earningsFromTrainee = trainerEntries
-        .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId && e.status === 'Paid')
+        .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId && e.status === 'Paid' && e.date <= new Date().toISOString().slice(0, 10))
         .reduce((s, e) => s + e.amount, 0);
 
       return {
@@ -260,8 +260,9 @@ function TrainingPageInner() {
   }, [trainerEntries, paymentSearch, paymentStatusFilter, traineeData, projects]);
 
   // Overview stats
+  const today = new Date().toISOString().slice(0, 10);
   const totalEarned = useMemo(
-    () => trainerEntries.filter((e) => e.status === 'Paid').reduce((s, e) => s + e.amount, 0),
+    () => trainerEntries.filter((e) => e.status === 'Paid' && e.date <= today).reduce((s, e) => s + e.amount, 0),
     [trainerEntries]
   );
   const pendingAmount = useMemo(
