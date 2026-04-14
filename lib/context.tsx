@@ -623,7 +623,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Bundle m3Amount into the same PATCH as the Installed phase transition
     let m3AtInstalled: number | null = null;
-    if (old && updates.phase === 'Installed' && old.phase !== 'Installed') {
+    if (old && updates.phase === 'Installed' && old.phase !== 'Installed' && !old.subDealerId) {
       m3AtInstalled = computeM3Amount(old, updates, installerPayConfigs);
       if (m3AtInstalled !== null) dbUpdates.m3Amount = m3AtInstalled;
     }

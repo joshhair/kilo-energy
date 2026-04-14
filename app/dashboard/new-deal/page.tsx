@@ -554,18 +554,23 @@ function NewDealPage() {
       return;
     }
 
-    // Guard: if a blitz is selected and a setter is chosen, the setter must be
-    // an approved participant of that blitz. The UI clears setterId on blitz
+    // Guard: if a blitz is selected, both the closer and setter (if chosen) must
+    // be approved participants of that blitz. The UI clears setterId on blitz
     // change, but this prevents stale IDs (e.g. approval revoked after selection)
     // from reaching the database.
-    if (form.blitzId && form.setterId) {
+    if (form.blitzId) {
       const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
       const approvedIds = new Set(
         (selectedBlitz?.participants ?? [])
           .filter((p: any) => p.joinStatus === 'approved')
           .map((p: any) => p.userId as string),
       );
-      if (!approvedIds.has(form.setterId)) {
+      if (form.repId && !approvedIds.has(form.repId)) {
+        toast('Selected closer is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
+      if (form.setterId && !approvedIds.has(form.setterId)) {
         toast('Selected setter is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;

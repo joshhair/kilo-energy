@@ -846,11 +846,25 @@ export default function DashboardPage() {
     return map;
   }, new Map<string, number>());
 
+  // Net milestone amounts per project from actual payroll entries (which are reduced by trainer
+  // deductions at creation time). Used below so totalExpected matches what will actually be paid.
+  const payrollNetByProjectStage = allMyPayroll.reduce((map, e) => {
+    if (e.projectId && (e.paymentStage === 'M1' || e.paymentStage === 'M2' || e.paymentStage === 'M3')) {
+      const key = `${e.projectId}:${e.paymentStage}`;
+      map.set(key, (map.get(key) ?? 0) + e.amount);
+    }
+    return map;
+  }, new Map<string, number>());
+
   // "In Pipeline" = expected commission from active projects minus what's actually been disbursed
   const inPipeline = activeProjects.reduce((sum, p) => {
     const closerM1 = p.m1Amount ?? 0;
+    // Use net payroll amounts when entries exist (they are net of trainer deductions).
+    // Fall back to gross project amounts only for stages not yet triggered.
+    const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
+    const closerM3Net = payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0);
     const totalExpected = p.repId === effectiveRepId
-      ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
+      ? closerM1 + closerM2Net + closerM3Net
       : p.setterId === effectiveRepId
         ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
         : 0;
@@ -1177,7 +1191,7 @@ export default function DashboardPage() {
       {/* MTD ring charts removed — financial detail lives in My Pay */}
 
       {/* ── Zero-project onboarding hero ─────────────────────────────────── */}
-      {myProjects.length === 0 && (
+      {activeProjects.length === 0 && (
         <div className="card-surface rounded-2xl p-8 mb-6 flex flex-col items-center text-center gap-6">
           {/* Inline SVG — solar panel with a plus badge */}
           <div className="flex-shrink-0">
@@ -1242,7 +1256,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats grid — only shown once at least one deal exists */}
-      {myProjects.length > 0 && (
+      {activeProjects.length > 0 && (
         <>
           <div
             ref={statsRef}
