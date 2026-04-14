@@ -107,6 +107,7 @@ function NewDealPage() {
   const duplicateApplied = useRef(false);
   const duplicateCustomerName = searchParams.get('duplicate') === 'true' ? (searchParams.get('customerName') ?? '') : '';
   const customerNameInputRef = useRef<HTMLInputElement>(null);
+  const soldDateInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (duplicateApplied.current) return;
     if (searchParams.get('duplicate') !== 'true') return;
@@ -472,7 +473,16 @@ function NewDealPage() {
       return next;
     });
     setErrors((prev) => ({ ...prev, ...stepErrors }));
-    if (hasStepErrors) return;
+    if (hasStepErrors) {
+      // Focus the first invalid field so the user's attention is drawn to it
+      const firstErrorField = stepFields.find((f) => stepErrors[f]);
+      if (firstErrorField === 'customerName') {
+        customerNameInputRef.current?.focus();
+      } else if (firstErrorField === 'soldDate') {
+        soldDateInputRef.current?.focus();
+      }
+      return;
+    }
 
     userNavigatedBack.current = false;
     autoAdvancedSteps.current.add(currentStep);
@@ -841,7 +851,7 @@ function NewDealPage() {
                 <label htmlFor="field-soldDate" className={labelCls} style={labelStyle}>
                   <span className="inline-flex items-center gap-1">Sold Date {fieldCheck('soldDate')}</span>
                 </label>
-                <input id="field-soldDate" type="date" value={form.soldDate}
+                <input id="field-soldDate" ref={soldDateInputRef} type="date" value={form.soldDate}
                   onChange={(e) => update('soldDate', e.target.value)} onBlur={() => handleBlur('soldDate')}
                   aria-invalid={!!errors.soldDate} aria-describedby={errors.soldDate ? 'soldDate-error' : undefined}
                   className={inputCls('soldDate')} style={inputFieldStyle('soldDate')} />
