@@ -132,7 +132,7 @@ export function getTrainerOverrideRate(
   completedDeals: number
 ): number {
   for (const tier of assignment.tiers) {
-    if (tier.upToDeal === null || completedDeals < tier.upToDeal) {
+    if (tier.upToDeal === null || completedDeals <= tier.upToDeal) {
       return tier.ratePerW;
     }
   }

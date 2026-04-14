@@ -402,7 +402,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
           if (pastAcceptance && !old.subDealerId && (closerM1Amount ?? 0) > 0) {
             setPayrollEntries((prevEntries) => {
-              const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1');
+              const hasM1 = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M1' && (e.repId === old.repId || e.status === 'Paid'));
               if (hasM1) return prevEntries;
               const closerRep = repsRef.current.find((r) => r.id === old.repId);
               const ts = Date.now();
@@ -535,7 +535,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const trainerInstallPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const setterName = newSetterRep?.name ?? '';
 
-              if (pastInstalled) {
+              if (pastInstalled && !old.subDealerId) {
                 const hasTrainerM2 = prevEntries.some((e) =>
                   e.projectId === id &&
                   e.repId === setterTrainerAssignment.trainerId &&
