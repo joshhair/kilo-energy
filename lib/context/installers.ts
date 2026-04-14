@@ -47,24 +47,44 @@ export function createInstallerActions(deps: InstallerDeps) {
   const setInstallerActive = (name: string, active: boolean) => {
     setInstallers((prev) => prev.map((i) => i.name === name ? { ...i, active } : i));
     const instId = getIdMaps().installerNameToId[name];
+    const doPatch = (id: string) => persistFetch(`/api/installers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active }),
+    }, 'Failed to update installer status').catch(() => {});
     if (instId) {
-      persistFetch(`/api/installers/${instId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active }),
-      }, 'Failed to update installer status').catch(() => {});
+      doPatch(instId);
+    } else {
+      fetch(`/api/installers?name=${encodeURIComponent(name)}`)
+        .then((r) => r.ok ? r.json() as Promise<{ id: string }> : null)
+        .then((data) => {
+          if (!data?.id) return;
+          setIdMaps((prev) => ({ ...prev, installerNameToId: { ...prev.installerNameToId, [name]: data.id } }));
+          doPatch(data.id);
+        })
+        .catch(() => {});
     }
   };
 
   const setFinancerActive = (name: string, active: boolean) => {
     setFinancers((prev) => prev.map((f) => f.name === name ? { ...f, active } : f));
     const finId = getIdMaps().financerNameToId[name];
+    const doPatch = (id: string) => persistFetch(`/api/financers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active }),
+    }, 'Failed to update financer status').catch(() => {});
     if (finId) {
-      persistFetch(`/api/financers/${finId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active }),
-      }, 'Failed to update financer status').catch(() => {});
+      doPatch(finId);
+    } else {
+      fetch(`/api/financers?name=${encodeURIComponent(name)}`)
+        .then((r) => r.ok ? r.json() as Promise<{ id: string }> : null)
+        .then((data) => {
+          if (!data?.id) return;
+          setIdMaps((prev) => ({ ...prev, financerNameToId: { ...prev.financerNameToId, [name]: data.id } }));
+          doPatch(data.id);
+        })
+        .catch(() => {});
     }
   };
 

@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
 
+// GET /api/installers?name=X — Look up a single installer by name (admin only)
+export async function GET(req: NextRequest) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  const name = req.nextUrl.searchParams.get('name');
+  if (!name) return NextResponse.json({ error: 'name query param required' }, { status: 400 });
+  const installer = await prisma.installer.findFirst({ where: { name } });
+  if (!installer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json(installer);
+}
+
 // POST /api/installers — Create a new installer (admin only)
 export async function POST(req: NextRequest) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }

@@ -139,6 +139,7 @@ function NewDealPage() {
   useEffect(() => {
     if (lastInstallerApplied.current) return;
     if (searchParams.get('duplicate') === 'true') return; // duplicate overrides
+    if (!dbReady) return; // wait for DB hydration so admin-added installers are present
     lastInstallerApplied.current = true;
     try {
       const lastInstaller = localStorage.getItem('lastInstaller');
@@ -146,7 +147,7 @@ function NewDealPage() {
         setForm((prev) => prev.installer ? prev : { ...prev, installer: lastInstaller });
       }
     } catch {}
-  }, [searchParams, activeInstallers]);
+  }, [searchParams, activeInstallers, dbReady]);
 
   // ── Multi-step navigation ──────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(0);
@@ -228,8 +229,9 @@ function NewDealPage() {
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: touched.has('financer') ? validateField('financer', effectiveFinancer) : '' }));
-    setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
+    const financerCleared = !effectiveFinancer;
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: (touched.has('financer') || financerCleared) ? validateField('financer', effectiveFinancer) : '' }));
+    setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); if (financerCleared) next.add('financer'); return next; });
   };
 
   const handlePcFamilyChange = (value: string) => {
@@ -238,8 +240,9 @@ function NewDealPage() {
     // Loan deals must not inherit a financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: touched.has('financer') ? validateField('financer', effectiveFinancer) : '' }));
-    setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
+    const financerCleared = !effectiveFinancer;
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: (touched.has('financer') || financerCleared) ? validateField('financer', effectiveFinancer) : '' }));
+    setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); if (financerCleared) next.add('financer'); return next; });
   };
 
   // ── Derived values ─────────────────────────────────────────────────────────
@@ -1060,7 +1063,7 @@ function NewDealPage() {
                       <SearchableSelect
                         value={form.financer}
                         onChange={(val) => handleFinancerChange(val)}
-                        options={(pcConfig?.familyFinancerMap?.[form.pcFamily]
+                        options={(pcConfig?.familyFinancerMap?.[form.pcFamily] && form.productType !== 'Loan'
                           ? (activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
                               ? activeFinancers.filter((f) => f === pcConfig.familyFinancerMap![form.pcFamily])
                               : activeFinancers)
