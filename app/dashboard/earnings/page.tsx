@@ -164,10 +164,13 @@ function computeMonthlyBarData(
   reimbursements: { date: string; amount: number; status: string; repId: string }[],
   repId: string | null,
 ): MonthlyBarDatum[] {
+  const today = new Date().toISOString().slice(0, 10);
+  const currentMonthKey = today.slice(0, 7);
   const map = new Map<string, MonthlyBarDatum>();
 
   for (const e of payrollEntries) {
     if (e.repId !== repId) continue;
+    if (e.date > today) continue;
     const key = e.date.slice(0, 7);
     if (!map.has(key)) {
       const monthIdx = parseInt(key.slice(5, 7), 10) - 1;
@@ -181,6 +184,7 @@ function computeMonthlyBarData(
   for (const r of reimbursements) {
     if (r.repId !== repId) continue;
     if (r.status !== 'Approved') continue;
+    if (r.date > today) continue;
     const key = r.date.slice(0, 7);
     if (!map.has(key)) {
       const monthIdx = parseInt(key.slice(5, 7), 10) - 1;
@@ -189,7 +193,9 @@ function computeMonthlyBarData(
     map.get(key)!.reimbursement += r.amount;
   }
 
-  const sorted = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const sorted = [...map.entries()]
+    .filter(([key]) => key <= currentMonthKey)
+    .sort((a, b) => a[0].localeCompare(b[0]));
   return sorted.slice(-6).map(([, v]) => v);
 }
 
@@ -384,7 +390,8 @@ function RepEarningsView() {
   const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs, [myReimbs, monthFilter]);
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
+  const todayStr        = today.toISOString().slice(0, 10);
+  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM) && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);

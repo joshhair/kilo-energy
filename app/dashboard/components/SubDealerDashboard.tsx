@@ -52,8 +52,9 @@ export function SubDealerDashboard({
   const activePipeline = activeProjects.length;
   const totalKW = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   // Total Earned = M2 + M3 payroll only (sub-dealers don't get M1)
+  const today = new Date().toISOString().slice(0, 10);
   const totalEarned = myPayroll
-    .filter((e) => (e.paymentStage === 'M2' || e.paymentStage === 'M3') && e.status === 'Paid')
+    .filter((e) => (e.paymentStage === 'M2' || e.paymentStage === 'M3') && e.status === 'Paid' && e.date <= today)
     .reduce((sum, e) => sum + e.amount, 0);
 
   const stats = [
