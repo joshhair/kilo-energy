@@ -309,17 +309,16 @@ export default function IncentivesPage() {
   };
 
   const handleMilestoneAchieved = (incId: string, milestoneId: string, achieved: boolean) => {
-    let updatedMilestones: typeof incentives[0]['milestones'] | undefined;
-    setIncentives((prev) => {
-      const targetInc = prev.find((inc) => inc.id === incId);
-      if (!targetInc) return prev;
-      updatedMilestones = targetInc.milestones.map((m) =>
-        m.id === milestoneId ? { ...m, achieved } : m
-      );
-      return prev.map((inc) =>
-        inc.id === incId ? { ...inc, milestones: updatedMilestones! } : inc
-      );
-    });
+    const targetInc = incentives.find((inc) => inc.id === incId);
+    if (!targetInc) return;
+    const updatedMilestones = targetInc.milestones.map((m) =>
+      m.id === milestoneId ? { ...m, achieved } : m
+    );
+    setIncentives((prev) =>
+      prev.map((inc) =>
+        inc.id === incId ? { ...inc, milestones: updatedMilestones } : inc
+      )
+    );
     // Persist milestone change
     if (updatedMilestones) {
       const previousMilestones = updatedMilestones.map((m) =>
@@ -482,7 +481,7 @@ export default function IncentivesPage() {
             const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'));
             if (failedIds.size > 0) {
               toast('Failed to delete some incentives', 'error');
-              setIncentives((prev) => prev.filter((i) => !succeededIds.has(i.id)));
+              setIncentives(snapshot.filter((i) => !succeededIds.has(i.id)));
             }
             const succeeded = results.filter((r) => r.status === 'fulfilled').length;
             if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`);
