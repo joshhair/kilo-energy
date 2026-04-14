@@ -577,7 +577,7 @@ function RepEarningsView() {
               className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download earnings as CSV"
             >
-              <Download className="w-3.5 h-3.5" /> CSV
+              <Download className="w-3.5 h-3.5" /> CSV{tab !== 'bonus' && tab !== 'reimbursements' && dealRoleFilter ? ` (${dealRoleFilter})` : ''}
             </button>
             <button
               onClick={() => setShowReimbModal(true)}
