@@ -699,7 +699,7 @@ function UsersPageInner() {
         arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
         break;
       }
-      case 'name':   arr.sort((a, b) => b.name.localeCompare(a.name)); break;
+      case 'name':   arr.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
     if (sortDir === 'asc') arr.reverse();
     return arr;

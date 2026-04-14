@@ -711,7 +711,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       return s + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
     }
   }, 0);
-  const totalPaid = repPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending = repPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
 
@@ -723,7 +724,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const total = repPayroll
-        .filter((p) => p.date.startsWith(key))
+        .filter((p) => p.date.startsWith(key) && p.status === 'Paid')
         .reduce((s, p) => s + p.amount, 0);
       months.push(total);
     }

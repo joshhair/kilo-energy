@@ -554,7 +554,7 @@ export function createM3Payroll(
   const closerTrainerM3AlreadyExists = closerTrainerAssignment ? prevEntries.some(
     (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === closerTrainerAssignment.trainerId
   ) : false;
-  if (closerTrainerAssignment && m3 > 0 && !closerTrainerM3AlreadyExists) {
+  if (closerTrainerAssignment && m3 > 0 && !old.subDealerId && !closerTrainerM3AlreadyExists) {
     const trainerRep = deps.repsRef.current.find(r => r.id === closerTrainerAssignment.trainerId);
     // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
     const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId);
