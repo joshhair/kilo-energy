@@ -179,7 +179,7 @@ export default function BlitzDetailPage() {
     [blitz?.costs],
   );
 
-  // Profitability (admin only — uses ALL projects, not filtered)
+  // Profitability (admin only — uses approvedVisibleProjects, same filter as Deals tab)
   // Kilo profit = spread between closer baseline and kilo baseline per deal
   // kiloMargin per deal = (closerPerW - kiloPerW) × kW × 1000, minus $0.10/W setter cost for split deals
   const getBlitzProjectBaselines = (p: any): { closerPerW: number; kiloPerW: number } => {
@@ -195,13 +195,12 @@ export default function BlitzDetailPage() {
   };
 
   const kiloMargin = useMemo(() => {
-    if (!blitz?.projects) return 0;
-    return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s: number, p: any) => {
+    return approvedVisibleProjects.reduce((s: number, p: any) => {
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
       const setterCost = p.setterId ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
     }, 0);
-  }, [blitz?.projects, installerPricingVersions, productCatalogProducts, solarTechProducts]);
+  }, [approvedVisibleProjects, installerPricingVersions, productCatalogProducts, solarTechProducts]);
   const netProfit = kiloMargin - totalCosts;
   const roi = totalCosts > 0 ? ((netProfit / totalCosts) * 100) : 0;
 

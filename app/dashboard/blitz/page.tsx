@@ -112,9 +112,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const visibleProjects = (isAdmin || currentUserId === blitz.owner.id)
     ? activeProjects
     : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId);
-  const totalKW = (isAdmin || currentUserId === blitz.owner.id)
-    ? visibleProjects.reduce((s, p) => s + p.kWSize, 0)
-    : visibleProjects.filter((p) => p.closer?.id === currentUserId).reduce((s, p) => s + p.kWSize, 0);
+  const totalKW = visibleProjects.reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
@@ -474,7 +472,7 @@ function BlitzPageInner() {
   };
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
-  const [processingRequest, setProcessingRequest] = useState<string | null>(null);
+  const [processingRequest, setProcessingRequest] = useState<Set<string>>(new Set());
   const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({ canRequestBlitz: false, canCreateBlitz: false });
   const [permsLoaded, setPermsLoaded] = useState(false);
   const [showRequestBlitz, setShowRequestBlitz] = useState(false);
@@ -650,7 +648,7 @@ function BlitzPageInner() {
   const pendingRequests = requests.filter((r) => r.status === 'pending');
 
   const handleApproveRequest = async (reqId: string) => {
-    setProcessingRequest(reqId);
+    setProcessingRequest((prev) => new Set(prev).add(reqId));
     try {
       const r = await fetch(`/api/blitz-requests/${reqId}`, {
         method: 'PATCH',
@@ -661,11 +659,11 @@ function BlitzPageInner() {
       toast('Request approved');
       loadData();
     } catch { toast('Failed to approve request', 'error'); }
-    finally { setProcessingRequest(null); }
+    finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
   };
 
   const handleDenyRequest = async (reqId: string) => {
-    setProcessingRequest(reqId);
+    setProcessingRequest((prev) => new Set(prev).add(reqId));
     try {
       const r = await fetch(`/api/blitz-requests/${reqId}`, {
         method: 'PATCH',
@@ -676,7 +674,7 @@ function BlitzPageInner() {
       toast('Request denied');
       loadData();
     } catch { toast('Failed to deny request', 'error'); }
-    finally { setProcessingRequest(null); }
+    finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
   };
 
   const handleJoinBlitz = async (blitzId: string) => {
@@ -709,7 +707,7 @@ function BlitzPageInner() {
   const activeBlitzes = filteredBlitzes.filter((b) => b.status === 'active').length;
   const upcomingBlitzes = filteredBlitzes.filter((b) => b.status === 'upcoming').length;
   const totalDeals = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)).length, 0);
-  const totalKW = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId)).reduce((ps, p) => ps + p.kWSize, 0), 0);
+  const totalKW = filteredBlitzes.reduce((s, b) => s + b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (isAdmin || b.owner.id === effectiveRepId || p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)).reduce((ps, p) => ps + p.kWSize, 0), 0);
   const totalCosts = isAdmin ? filteredBlitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (
@@ -1041,10 +1039,10 @@ function BlitzPageInner() {
                     <div className="flex items-center gap-2 shrink-0">
                       {req.status === 'pending' ? (
                         <>
-                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">
-                            {processingRequest === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
+                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">
+                            {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>
-                          <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
+                          <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
                             <XCircle className="w-3 h-3" /> Deny
                           </button>
                         </>
