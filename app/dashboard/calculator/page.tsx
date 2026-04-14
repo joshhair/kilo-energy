@@ -695,12 +695,13 @@ function CalculatorPage() {
           {/* Main form card */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 12 }} className="space-y-5 overflow-visible relative z-20">
             <div>
-              <label className={labelCls} style={labelStyle}>
+              <label htmlFor="calc-installer" className={labelCls} style={labelStyle}>
                 Installer
                 <FieldTooltip text="The installation company handling this project. Rates vary by installer." />
               </label>
               <div ref={installerRef}>
                 <SearchableSelect
+                  id="calc-installer"
                   value={installer}
                   onChange={(val) => {
                     setInstaller(val);
@@ -784,11 +785,12 @@ function CalculatorPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelCls} style={labelStyle}>
+                <label htmlFor="calc-system-size" className={labelCls} style={labelStyle}>
                   System Size (kW)
                   <FieldTooltip text="Total system size in kilowatts. Larger systems = higher commission." />
                 </label>
                 <input
+                  id="calc-system-size"
                   ref={kWSizeRef}
                   type="number" step="0.1" min="0" placeholder="e.g. 8.4"
                   value={kWSize} onChange={(e) => setKWSize(e.target.value)}

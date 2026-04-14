@@ -29,6 +29,7 @@ interface SearchableSelectProps {
   className?: string;
   error?: boolean;
   disabled?: boolean;
+  id?: string;
 }
 
 export function SearchableSelect({
@@ -40,6 +41,7 @@ export function SearchableSelect({
   className,
   error,
   disabled,
+  id,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -173,6 +175,7 @@ export function SearchableSelect({
     <div className={`relative ${open ? 'z-50' : ''} ${className ?? ''}`} ref={containerRef} onKeyDown={handleKeyDown}>
       {/* ── Trigger button ── */}
       <button
+        id={id}
         type="button"
         disabled={disabled}
         onClick={() => (open ? closeDropdown() : setOpen(true))}
