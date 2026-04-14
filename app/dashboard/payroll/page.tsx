@@ -436,7 +436,7 @@ function PayrollPageInner() {
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const project = projects.find((p) => p.id === paymentForm.projectId);
     const newEntry: PayrollEntry = {
-      id: `pay_${Date.now()}_manual`,
+      id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       repId: paymentForm.repId,
       repName: rep?.name ?? '',
       projectId: paymentForm.projectId || null,
