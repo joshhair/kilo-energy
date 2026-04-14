@@ -118,7 +118,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
       data: { blitzId: null },
     });
-    blitz.projects = await prisma.project.findMany({ where: { blitzId: id } });
+    blitz.projects = await prisma.project.findMany({
+      where: { blitzId: id },
+      include: { closer: true, setter: true, installer: true, financer: true },
+    });
   }
 
   return NextResponse.json(blitz);
