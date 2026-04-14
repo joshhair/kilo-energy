@@ -192,12 +192,13 @@ export function AdminDashboard({
   const periodCompletedCount = projects.filter((p) => p.phase === 'Completed').length;
 
   // Period-filtered pipeline bar data
+  const PIPELINE_PHASES = ACTIVE_PHASES.filter((ph) => ph !== 'Completed');
   const periodPipelinePhaseCounts: Record<string, number> = {};
-  for (const phase of ACTIVE_PHASES) periodPipelinePhaseCounts[phase] = 0;
+  for (const phase of PIPELINE_PHASES) periodPipelinePhaseCounts[phase] = 0;
   for (const p of projects) {
     if (periodPipelinePhaseCounts[p.phase] !== undefined) periodPipelinePhaseCounts[p.phase]++;
   }
-  const periodPipelineNonEmpty = ACTIVE_PHASES.filter((ph) => periodPipelinePhaseCounts[ph] > 0);
+  const periodPipelineNonEmpty = PIPELINE_PHASES.filter((ph) => periodPipelinePhaseCounts[ph] > 0);
   const periodPipelineTotal = periodPipelineNonEmpty.reduce((sum, ph) => sum + periodPipelinePhaseCounts[ph], 0);
 
   // Installer rollup scoped to the period filter
@@ -609,7 +610,7 @@ export function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">

@@ -146,7 +146,7 @@ export default function MobileAdminDashboard() {
   }
 
   // ── Computations (period-filtered) ───────────────────────────────────────
-  const active = useMemo(() => periodProjects.filter((p) => ACTIVE_PHASES.includes(p.phase)), [periodProjects]);
+  const active = useMemo(() => periodProjects.filter((p) => ACTIVE_PHASES.includes(p.phase) && p.phase !== 'Completed'), [periodProjects]);
 
   const { totalPaid, totalRevenue, totalProfit } = useMemo(() => {
     let paid = 0, rev = 0, prof = 0;
