@@ -261,20 +261,6 @@ function PayrollPageInner() {
     return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId]);
 
-  // Total pending across ALL type tabs (used only for the Publish button's disabled state so
-  // that it doesn't flip enabled/disabled simply because the user switched type tabs).
-  const totalPendingAllTypes = useMemo(() => {
-    let sum = 0;
-    for (const p of payrollEntries) {
-      if (p.status !== 'Pending') continue;
-      if (payFilterFrom && p.date < payFilterFrom) continue;
-      if (payFilterTo && p.date > payFilterTo) continue;
-      if (filterRepId && p.repId !== filterRepId) continue;
-      sum += p.amount;
-    }
-    return sum;
-  }, [payrollEntries, payFilterFrom, payFilterTo, filterRepId]);
-
   // Derived selection state — used by the floating action bar.
   const { selectedTotal } = useMemo(() => {
     let total = 0;
@@ -491,9 +477,9 @@ function PayrollPageInner() {
   if (!isAdmin) {
     const myEntries = payrollEntries.filter((p) => p.repId === currentRepId);
     const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);
-    const myDraft = myEntries.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-    const myPending = myEntries.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-    const myPaid = myEntries.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+    const myDraft = myTypeFiltered.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
+    const myPending = myTypeFiltered.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+    const myPaid = myTypeFiltered.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
     const myFiltered = myTypeFiltered
       .filter((p) => repStatusFilter === 'All' || p.status === repStatusFilter)
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));

@@ -746,9 +746,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       || updates.m3Amount !== undefined || updates.setterM1Amount !== undefined
       || updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined;
     if (hasAmountUpdates) {
+      // Re-compute closer M2 trainer deduction so syncPayrollAmounts subtracts it,
+      // mirroring the deduction applied at createMilestonePayroll time (line 309).
+      let closerM2TrainerDeduction = 0;
+      if (updates.m2Amount !== undefined && old) {
+        const cta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.repId);
+        if (cta) {
+          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+          const ctDeals = projects.filter((p) =>
+            (p.repId === cta.traineeId || p.setterId === cta.traineeId) &&
+            ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
+              ? p.m3Paid === true : p.m2Paid === true)
+          ).length;
+          closerM2TrainerDeduction = Math.round(getTrainerOverrideRate(cta, ctDeals) * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+        }
+      }
       const pendingPatches: Array<{ id: string; newAmount: number }> = [];
       setPayrollEntries((prev) => {
-        const result = syncPayrollAmounts(id, updates, prev);
+        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction);
         pendingPatches.push(...result.patches);
         return result.patches.length > 0 ? result.updatedEntries : prev;
       });

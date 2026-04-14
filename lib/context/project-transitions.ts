@@ -316,7 +316,7 @@ export function createMilestonePayroll(
   }
 
   // Setter entry (M1 goes to setter if one exists)
-  if (old.setterId && isAcceptance && (old.setterM1Amount ?? 0) > 0) {
+  if (old.setterId && isAcceptance && (freshProject.setterM1Amount ?? 0) > 0) {
     const setterRep = deps.repsRef.current.find((r) => r.id === old.setterId);
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_s`,
@@ -586,6 +586,7 @@ export function syncPayrollAmounts(
   projectId: string,
   updates: Partial<Project>,
   prevEntries: PayrollEntry[],
+  closerM2TrainerDeduction = 0,
 ): AmountSyncResult {
   const stageAmountUpdates: Array<{ stage: 'M1' | 'M2' | 'M3'; setter: boolean; newAmount: number }> = [];
   if (updates.m1Amount !== undefined) stageAmountUpdates.push({ stage: 'M1', setter: false, newAmount: updates.m1Amount });
@@ -603,9 +604,13 @@ export function syncPayrollAmounts(
     const match = stageAmountUpdates.find(
       (u) => u.stage === e.paymentStage && u.setter === (e.notes ?? '').startsWith('Setter')
     );
-    if (!match || match.newAmount === e.amount) return e;
-    patches.push({ id: e.id, newAmount: match.newAmount });
-    return { ...e, amount: match.newAmount };
+    if (!match) return e;
+    const adjustedAmount = (match.stage === 'M2' && !match.setter && closerM2TrainerDeduction > 0)
+      ? Math.max(0, match.newAmount - closerM2TrainerDeduction)
+      : match.newAmount;
+    if (adjustedAmount === e.amount) return e;
+    patches.push({ id: e.id, newAmount: adjustedAmount });
+    return { ...e, amount: adjustedAmount };
   });
 
   return { updatedEntries, patches };
