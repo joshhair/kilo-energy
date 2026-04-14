@@ -491,10 +491,10 @@ function UsersPageInner() {
     if (roleFilter !== 'rep') {
       setCompareMode(false);
       setCompareIds(new Set());
-    } else {
-      setCompareMode(false);
-      setCompareIds(new Set());
     }
+    // When staying in the rep view, filterTab switches do not reset compare mode.
+    // IDs for reps outside the current sub-filter are harmlessly ignored until
+    // the user returns to a tab where those reps are visible.
   }, [roleFilter, filterTab]);
 
   // ── Sort ────────────────────────────────────────────────────────────────

@@ -710,7 +710,7 @@ export default function MobileNewDeal() {
 
   return (
     <div
-      className="px-6 pt-3 pb-4 flex flex-col min-h-[calc(100vh-120px)]"
+      className="px-6 pt-3 pb-28 flex flex-col min-h-[calc(100vh-120px)]"
       style={{ touchAction: 'pan-y' }}
       onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; touchStartYRef.current = e.touches[0].clientY; }}
       onTouchEnd={(e) => {
@@ -807,8 +807,8 @@ export default function MobileNewDeal() {
               key={`cta-0`}
               className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
               style={{
-                bottom: 'env(safe-area-inset-bottom, 0px)',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
+                bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: '12px',
                 paddingTop: '12px',
                 background: 'linear-gradient(to bottom, transparent 0%, rgba(6,14,26,0.92) 28%, rgba(6,14,26,1) 100%)',
                 backdropFilter: 'blur(8px)',
@@ -1285,8 +1285,8 @@ export default function MobileNewDeal() {
               key={`cta-1`}
               className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
               style={{
-                bottom: 'env(safe-area-inset-bottom, 0px)',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
+                bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: '12px',
                 paddingTop: '12px',
                 background: 'linear-gradient(to bottom, transparent 0%, rgba(6,14,26,0.92) 28%, rgba(6,14,26,1) 100%)',
                 backdropFilter: 'blur(8px)',
@@ -1331,7 +1331,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 3: Review & Notes ── */}
         {currentStep === 2 && (
-          <div key={2} className={`space-y-7 flex-1 flex flex-col ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={2} className={`space-y-7 flex-1 flex flex-col pb-24 ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Summary card */}
             <MobileCard>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Deal Summary</p>
@@ -1339,8 +1339,8 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(0); }}
-                className="w-full text-left -mx-1 px-1 pb-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
-                style={{ borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', marginLeft: '-12px' }}
+                className="w-full text-left pb-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
+                style={{ borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>People</span>
@@ -1373,8 +1373,8 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(1); }}
-                className="w-full text-left -mx-1 px-1 pt-2 mt-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
-                style={{ borderTop: '1px solid rgba(26,40,64,0.5)', borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', marginLeft: '-12px', paddingTop: '8px', marginTop: '8px' }}
+                className="w-full text-left pt-2 mt-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
+                style={{ borderTop: '1px solid rgba(26,40,64,0.5)', borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>

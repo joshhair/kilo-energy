@@ -808,9 +808,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    // Validate financer mapping before mutating local state to avoid split-brain
-    const financerId = idMaps.financerNameToId[project.financer];
-    if (!financerId && project.productType !== 'Cash' && project.financer !== 'Cash') {
+    // Validate financer mapping before mutating local state to avoid split-brain.
+    // Cash deals can proceed without a financer ID — the server resolves it via upsert.
+    const financerId = idMaps.financerNameToId[project.financer] ?? '';
+    const isCashDeal = project.productType === 'Cash' || project.financer === 'Cash';
+    if (!financerId && !isCashDeal) {
       console.error('[addDeal] Cannot persist: missing financer ID mapping', { financer: project.financer });
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer not found. Please refresh and try again.' }));
@@ -874,32 +876,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    if (financerId) {
-      persistProject(financerId);
-    } else if (project.productType === 'Cash' || project.financer === 'Cash') {
-      // Cash deals: financer record may not exist yet — create it on the fly
-      fetch('/api/financers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Cash' }),
-      })
-        .then((res) => res.json())
-        .then((created) => {
-          const newId = created.id as string;
-          setIdMaps((prev) => ({
-            ...prev,
-            financerNameToId: { ...prev.financerNameToId, Cash: newId },
-          }));
-          persistProject(newId);
-        })
-        .catch((err) => {
-          console.error('[addDeal] Cash financer creation failed:', err);
-          setProjects((prev) => prev.filter((p) => p.id !== project.id));
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer creation error' }));
-          }
-        });
-    }
+    // Cash deals: server auto-resolves the financer via upsert, so pass empty string
+    persistProject(financerId || '');
     return true;
   };
 

@@ -416,28 +416,30 @@ function NewDealPage() {
     ? Math.round((allRequired.filter(isFieldValid).length / allRequired.length) * 100)
     : 0;
 
-  // ── Auto-advance when a step is fully filled (#5) ──────────────────────────
+  // ── Auto-advance when a step is fully filled ───────────────────────────────
+  // Uses a 1.5s delay so the user has time to finish typing before the form
+  // advances. The timer resets on every keystroke (form dependency) so it only
+  // fires after the user stops interacting.
   useEffect(() => {
-    // Only auto-advance if: step is complete, user hasn't navigated backward,
-    // we haven't already auto-advanced this step, and there's a next step
     if (
       !userNavigatedBack.current &&
       stepsComplete[currentStep] &&
       !autoAdvancedSteps.current.has(currentStep) &&
       currentStep < DEAL_STEPS.length - 1
     ) {
-      autoAdvancedSteps.current.add(currentStep);
-      // Brief green pulse on the step circle
-      setPulseStep(currentStep);
-      const pulseClear = setTimeout(() => setPulseStep(null), 600);
-      // Auto-advance after 500ms delay
       const advanceTimer = setTimeout(() => {
+        // Re-check completion in case the user edited a field during the delay
+        if (!stepsComplete[currentStep]) return;
+        autoAdvancedSteps.current.add(currentStep);
+        setPulseStep(currentStep);
+        setTimeout(() => setPulseStep(null), 600);
         setSlideDirection('forward');
         setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
-      }, 500);
-      return () => { clearTimeout(advanceTimer); clearTimeout(pulseClear); };
+      }, 1500);
+      return () => clearTimeout(advanceTimer);
     }
-  }, [stepsComplete[currentStep], currentStep]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepsComplete[currentStep], currentStep, form]);
 
   // ── Step navigation handlers ───────────────────────────────────────────────
 

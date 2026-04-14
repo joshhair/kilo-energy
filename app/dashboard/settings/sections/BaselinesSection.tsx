@@ -89,6 +89,13 @@ export function BaselinesSection({
   const [dupAllLabel, setDupAllLabel] = useState('');
   const [dupAllEffectiveFrom, setDupAllEffectiveFrom] = useState('');
 
+  // Helper: generate a suggested version label like "Q2 2026 Pricing"
+  const suggestVersionLabel = () => {
+    const now = new Date();
+    const q = Math.ceil((now.getMonth() + 1) / 3);
+    return `Q${q} ${now.getFullYear()} Pricing`;
+  };
+
   // Bulk Adjust panel state
   const [bulkAdjustOpen, setBulkAdjustOpen] = useState<'solartech' | 'productcatalog' | null>(null);
   const [bulkRateAdj, setBulkRateAdj] = useState('');
@@ -490,8 +497,7 @@ export function BaselinesSection({
                                 <button
                                   onClick={() => {
                                     setNewVersionFor(installer);
-                                    const nextNum = allVersions.length + 1;
-                                    setNewVersionLabel(`v${nextNum}`);
+                                    setNewVersionLabel(suggestVersionLabel());
                                     setNewVersionEffectiveFrom('');
                                     const avRates = activeVersion?.rates;
                                     const avFlat = avRates?.type === 'flat' ? avRates : null;
@@ -719,7 +725,7 @@ export function BaselinesSection({
                   {!isViewingArchive && (
                     <>
                       <button
-                        onClick={() => { setDupAllOpen('productcatalog'); setDupAllLabel(''); setDupAllEffectiveFrom(''); }}
+                        onClick={() => { setDupAllOpen('productcatalog'); setDupAllLabel(suggestVersionLabel()); setDupAllEffectiveFrom(''); }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] transition-colors"
                       >
                         <Copy className="w-3.5 h-3.5" /> Duplicate All as New Version
@@ -893,7 +899,7 @@ export function BaselinesSection({
                               <td className="px-4 py-3 text-center">
                                 {!pcIsArchive && (
                                   <div className="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => { setPcNewVersionFor(product.id); const nextNum = pcAllVersions.length + 1; setPcNewVersionLabel(`v${nextNum}`); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-green)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => { setPcNewVersionFor(product.id); setPcNewVersionLabel(suggestVersionLabel()); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-green)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button>
                                     <button onClick={() => { setConfirmAction({ title: `Delete ${product.name}?`, message: 'Existing deals are unaffected.', onConfirm: async () => { try { await removeProductCatalogProduct(product.id); toast('Product removed', 'info'); } catch { toast('Failed to delete product', 'error'); } setConfirmAction(null); } }); }} className="text-[var(--text-dim)] hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                   </div>
                                 )}
@@ -1032,7 +1038,7 @@ export function BaselinesSection({
                   {stSortedGroups.map(([key, g]) => (<option key={key} value={key}>{g.label} &mdash; {g.effectiveFrom}</option>))}
                 </select>
                 {stIsArchive && (<><span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium"><History className="w-3 h-3" />Viewing archived version{(() => { const g = stVersionGroups.get(stCurrentView); return g ? ` \u00b7 ${g.effectiveFrom} \u2192 ${g.effectiveTo}` : ''; })()}</span><button onClick={() => { const [label, effectiveFrom] = stCurrentView.split('|'); setConfirmAction({ title: 'Delete Pricing Version', message: 'Delete this pricing version? This cannot be undone.', onConfirm: () => { const idsToDelete = productCatalogPricingVersions.filter((v) => stFamilyProductIds.has(v.productId) && v.label === label && v.effectiveFrom === effectiveFrom).map((v) => v.id); deleteProductCatalogPricingVersions(idsToDelete); setStVersionView((prev) => ({ ...prev, [stFamily]: 'current' })); toast('Pricing version deleted', 'success'); setConfirmAction(null); } }); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete Version</button></>)}
-                {!stIsArchive && (<><button onClick={() => { setDupAllOpen('solartech'); setDupAllLabel(''); setDupAllEffectiveFrom(''); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] transition-colors"><Copy className="w-3.5 h-3.5" /> Duplicate All as New Version</button><button onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'solartech' ? null : 'solartech'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${bulkAdjustOpen === 'solartech' ? 'bg-[var(--accent-green)]/15 border-[var(--accent-green)]/30 text-[var(--accent-green)]' : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)]'}`}><Sliders className="w-3.5 h-3.5" /> Bulk Adjust{bulkAdjustOpen === 'solartech' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}</button></>)}
+                {!stIsArchive && (<><button onClick={() => { setDupAllOpen('solartech'); setDupAllLabel(suggestVersionLabel()); setDupAllEffectiveFrom(''); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] transition-colors"><Copy className="w-3.5 h-3.5" /> Duplicate All as New Version</button><button onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'solartech' ? null : 'solartech'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${bulkAdjustOpen === 'solartech' ? 'bg-[var(--accent-green)]/15 border-[var(--accent-green)]/30 text-[var(--accent-green)]' : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)]'}`}><Sliders className="w-3.5 h-3.5" /> Bulk Adjust{bulkAdjustOpen === 'solartech' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}</button></>)}
               </div>
             );
           })()}
@@ -1101,7 +1107,7 @@ export function BaselinesSection({
                             {stIsArchive ? (archiveVersion ? archiveVersion.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-1 items-center"><span className="text-[var(--accent-green)]/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span><span className="text-[var(--accent-green)]/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>{showSubDealerRates && <span className="text-amber-400/50 text-xs">{(tier as any).subDealerPerW != null ? `$${(tier as any).subDealerPerW.toFixed(2)}` : '\u2014'}</span>}</div></td>)) : <td colSpan={4} className="px-4 py-3 text-center text-[var(--text-dim)] text-xs">No version data</td>) : (
                               product.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-0.5 items-center"><input ref={(el) => setTierInputRef(`${product.id}-${ti}-closer`, el)} type="number" step="0.01" min="0" value={tier.closerPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'closer')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-green)] font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />{renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}<input ref={(el) => setTierInputRef(`${product.id}-${ti}-kilo`, el)} type="number" step="0.01" min="0" value={tier.kiloPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'kilo')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-green)]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />{renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}{showSubDealerRates && <input type="number" step="0.01" min="0" value={tier.subDealerPerW ?? ''} placeholder="\u2014" onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0; updateSolarTechTier(product.id, ti, { subDealerPerW: val }); }} className="w-16 bg-[var(--surface-card)] border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500" />}</div></td>))
                             )}
-                            <td className="px-4 py-3 text-center">{!stIsArchive && (<div className="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => { setPcNewVersionFor(product.id); const nextNum = stAllVersions.length + 1; setPcNewVersionLabel(`v${nextNum}`); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-green)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button></div>)}</td>
+                            <td className="px-4 py-3 text-center">{!stIsArchive && (<div className="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => { setPcNewVersionFor(product.id); setPcNewVersionLabel(suggestVersionLabel()); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-green)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button></div>)}</td>
                           </tr>
                         );
                       })}

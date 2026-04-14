@@ -102,6 +102,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Installer not found' }, { status: 400 });
     }
   }
+  // For Cash deals, auto-resolve the Cash financer so clients don't need the ID
+  if (!body.financerId && (body.productType === 'Cash' || body.financer === 'Cash')) {
+    const cashFinancer = await prisma.financer.upsert({
+      where: { name: 'Cash' },
+      update: {},
+      create: { name: 'Cash' },
+    });
+    body.financerId = cashFinancer.id;
+  }
   if (body.financerId) {
     const financer = await prisma.financer.findUnique({ where: { id: body.financerId }, select: { id: true } });
     if (!financer) {
