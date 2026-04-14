@@ -483,8 +483,8 @@ export default function BottomNav({
         onClearViewAs={clearViewAs}
       />
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
-        style={{ background: 'linear-gradient(to top, #080c14 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed left-0 right-0 z-50 md:hidden"
+        style={{ bottom: 'var(--install-prompt-offset, 0px)', background: 'linear-gradient(to top, #080c14 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="relative">
           {(() => {

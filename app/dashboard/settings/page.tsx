@@ -9,7 +9,7 @@ import { useToast } from '../../../lib/toast';
 import { TrainerAssignment, TrainerOverrideTier } from '../../../lib/data';
 import {
   Layers, Building2, Landmark, BookOpen, Download, Settings,
-  ChevronRight, Sliders, Tent, EyeOff, Eye, X,
+  ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -18,6 +18,8 @@ import { ConfirmDeleteDialog } from './components/ConfirmDeleteDialog';
 import { SectionHeader } from './components/SectionHeader';
 import { SettingsSkeleton } from './components/SettingsSkeleton';
 import { BlitzPermissionsSection } from './sections/BlitzPermissionsSection';
+import { SubDealersSection } from './sections/SubDealersSection';
+import { PMSection } from './sections/PMSection';
 import { TrainersSection } from './sections/TrainersSection';
 import { InstallersSection } from './sections/InstallersSection';
 import { FinancersSection } from './sections/FinancersSection';
@@ -31,6 +33,8 @@ type SettingsSection =
   | 'trainers'
   | 'installers' | 'financers' | 'baselines'
   | 'blitz-permissions'
+  | 'sub-dealers'
+  | 'project-managers'
   | 'export'
   | 'customization';
 
@@ -43,6 +47,8 @@ const NAV: NavGroup[] = [
     items: [
       { id: 'trainers', label: 'Trainer Overrides', icon: Layers },
       { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
+      { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
+      { id: 'project-managers', label: 'Project Managers', icon: UserCog },
     ],
   },
   {
@@ -88,7 +94,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'installers', 'financers', 'baselines', 'customization', 'export'];
+  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'sub-dealers', 'project-managers', 'installers', 'financers', 'baselines', 'customization', 'export'];
   const paramSection = searchParams.get('section') as SettingsSection | null;
   const initialSection: SettingsSection = paramSection && validSections.includes(paramSection) ? paramSection : 'trainers';
 
@@ -459,6 +465,10 @@ function SettingsPageInner() {
         {section === 'blitz-permissions' && (
           <BlitzPermissionsSection reps={reps} />
         )}
+
+        {section === 'sub-dealers' && <SubDealersSection />}
+
+        {section === 'project-managers' && <PMSection />}
 
         {section === 'installers' && (
           <InstallersSection

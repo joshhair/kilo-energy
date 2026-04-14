@@ -770,7 +770,7 @@ function UsersPageInner() {
       )}
 
       {/* ── Role filter bar — top-level filter across the unified directory ─ */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex overflow-x-auto whitespace-nowrap gap-2">
         {ROLE_FILTERS.filter((rf) =>
           currentRole === 'admin' || currentRole === 'project_manager'
             ? true
@@ -781,7 +781,7 @@ function UsersPageInner() {
             <button
               key={rf.value}
               onClick={() => setRoleFilter(rf.value)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all border ${
+              className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold transition-all border ${
                 active
                   ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'
                   : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'

@@ -85,20 +85,38 @@ export default function InstallPrompt() {
   };
 
   // When banner is visible, add extra bottom padding to the main scroll
-  // container so fixed banner does not overlap page content. Removed on dismiss.
+  // container so fixed banner does not overlap page content, and set a CSS
+  // variable on :root so the fixed bottom nav can shift up by the same amount.
+  // Both are cleaned up on dismiss/unmount.
+  // ResizeObserver is used so the padding tracks the banner's full rendered
+  // height (including env(safe-area-inset-bottom)) even after the browser
+  // resolves the CSS environment variable post-mount.
   useEffect(() => {
     const main = document.querySelector('main');
-    if (!main || !(main instanceof HTMLElement)) return;
     if (!show || !bannerRef.current) {
-      main.style.removeProperty('padding-bottom');
+      if (main instanceof HTMLElement) main.style.removeProperty('padding-bottom');
+      document.documentElement.style.removeProperty('--install-prompt-offset');
       setBannerHeight(0);
       return;
     }
-    const height = bannerRef.current.offsetHeight;
-    setBannerHeight(height);
-    main.style.setProperty('padding-bottom', `${height}px`);
+
+    const applyOffset = (el: Element) => {
+      const height = (el as HTMLElement).offsetHeight;
+      setBannerHeight(height);
+      if (main instanceof HTMLElement) main.style.setProperty('padding-bottom', `${height}px`);
+      document.documentElement.style.setProperty('--install-prompt-offset', `${height}px`);
+    };
+
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) applyOffset(entry.target);
+    });
+    observer.observe(bannerRef.current);
+    applyOffset(bannerRef.current);
+
     return () => {
-      main.style.removeProperty('padding-bottom');
+      observer.disconnect();
+      if (main instanceof HTMLElement) main.style.removeProperty('padding-bottom');
+      document.documentElement.style.removeProperty('--install-prompt-offset');
     };
   }, [show, isIOS]);
 
