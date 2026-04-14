@@ -313,8 +313,6 @@ function PayrollPageInner() {
     const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending');
     const ids = pendingVisible.map((e) => e.id);
     const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
-    // Save snapshot for rollback
-    const snapshot = [...payrollEntries];
     setPayrollEntries((prev) =>
       prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Paid' } : p))
     );
@@ -329,7 +327,9 @@ function PayrollPageInner() {
       });
       if (!res.ok) {
         console.error('[handlePublish] Bulk PATCH failed:', res.status);
-        setPayrollEntries(snapshot);
+        setPayrollEntries((prev) =>
+          prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
+        );
         toast(`Payroll failed to save — rolled back`, 'error');
       } else {
         const data = await res.json();
@@ -342,7 +342,9 @@ function PayrollPageInner() {
       }
     } catch (err) {
       console.error('[handlePublish] Network error:', err);
-      setPayrollEntries(snapshot);
+      setPayrollEntries((prev) =>
+        prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
+      );
       toast(`Payroll failed to save — rolled back`, 'error');
     } finally {
       setPublishingPayroll(false);
@@ -846,19 +848,19 @@ function PayrollPageInner() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         {/* Draft */}
         <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
           <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft').length} entries</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
           <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending').length} entries</p>
         </div>
         {/* Total */}
         <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
           <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Paid').length} entries</p>
         </div>
