@@ -45,7 +45,7 @@ export function SubDealerDashboard({
   // Filter to sub-dealer's own deals
   const myProjects = projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId);
   const myPayroll = payroll.filter((p) => p.repId === currentRepId);
-  const activeProjects = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  const activeProjects = allProjects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId).filter((p) => ACTIVE_PHASES.includes(p.phase));
 
   // Stats
   const totalDeals = myProjects.length;

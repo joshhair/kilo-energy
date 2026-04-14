@@ -1012,22 +1012,6 @@ export default function DashboardPage() {
   const mtdDeals = mtdProjects.length;
   const mtdKW = mtdProjects.reduce((s, p) => s + p.kWSize, 0);
 
-  // All-time denominators used for MTD ring-chart ratios (period-independent)
-  const allTimeDeals = projects.filter(
-    (p) => p.repId === effectiveRepId || p.setterId === effectiveRepId
-  ).length;
-  const allTimeKW = projects
-    .filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId)
-    .reduce((s, p) => s + p.kWSize, 0);
-  const allTimeEstPay = myProjects
-    .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-    .reduce((s, p) => {
-      const closerM1 = p.m1Amount ?? 0;
-      return s + (p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
-    }, 0);
-
-  // Circumference for the 48×48 SVG ring (r=20): 2π×20 ≈ 125.66
-  const RING_CIRC = 125.66;
 
   // Next Payout: Pending entries dated for the upcoming Friday (matches Earnings page).
   const nextFridayDate = (() => {

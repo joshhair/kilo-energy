@@ -21,12 +21,12 @@ export function PMDashboard({
   PERIODS: { value: Period; label: string }[];
   totalReps: number;
 }) {
-  const activeProjects = projects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  const activeProjects = allProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
   const phaseCounts = ACTIVE_PHASES.reduce((acc, phase) => {
-    acc[phase] = projects.filter((p) => p.phase === phase).length;
+    acc[phase] = allProjects.filter((p) => p.phase === phase).length;
     return acc;
   }, {} as Record<string, number>);
-  const flaggedCount = projects.filter((p) => p.flagged).length;
+  const flaggedCount = allProjects.filter((p) => p.flagged).length;
   const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
 
   return (
