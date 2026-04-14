@@ -91,8 +91,9 @@ export default function MobileEarnings() {
   const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus' && matchesPeriod(p.date, period));
   const myReimbs = reimbursements.filter((r) => r.repId === effectiveRepId && matchesPeriod(r.date, period));
 
+  const todayStr = new Date().toISOString().slice(0, 10);
   const totalEarned = myPayroll
-    .filter((p) => p.status === 'Paid' && matchesPeriod(p.date, period))
+    .filter((p) => p.status === 'Paid' && p.date <= todayStr && matchesPeriod(p.date, period))
     .reduce((s, p) => s + p.amount, 0);
 
   const sortedDeals = [...dealPayments].sort((a, b) => b.date.localeCompare(a.date));

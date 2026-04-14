@@ -866,7 +866,7 @@ export default function DashboardPage() {
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + closerM2Net + closerM3Net
       : p.setterId === effectiveRepId
-        ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        ? (p.setterM1Amount ?? 0) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
         : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
@@ -915,7 +915,7 @@ export default function DashboardPage() {
   const totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
 
   // Only count as "paid" once the pay date has actually passed
-  const totalPaid = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.amount > 0).reduce((sum, p) => sum + p.amount, 0);
+  const totalPaid = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
   const totalChargebacks = Math.abs(myPayroll.filter((p) => p.amount < 0).reduce((sum, p) => sum + p.amount, 0));
   const chargebackCount = myPayroll.filter((p) => p.amount < 0).length;
   const totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
