@@ -616,6 +616,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     doSaveAdminNotes(adminNotes);
   };
 
+  // Cancel debounce timer on unmount
+  useEffect(() => {
+    return () => { if (adminNotesDebounce.current) clearTimeout(adminNotesDebounce.current); };
+  }, []);
+
   // Warn on navigation if notes are dirty
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -849,13 +854,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const newM3 = installPayPct < 100 && !project.subDealerId
         ? Math.round(val * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0;
-      const scale = (project.m2Amount ?? 0) > 0 ? val / project.m2Amount! : 1;
+      const originalM2 = project.m2Amount ?? 0;
+      const scale = originalM2 > 0 ? val / originalM2 : 1;
       const newSetterM2 = Math.round((project.setterM2Amount ?? 0) * scale * 100) / 100;
       const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
         ? Math.round(newSetterM2 * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0;
       updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
-      toast('M2 amount updated', 'success');
+      if (originalM2 === 0 && project.setterId) {
+        toast('M2 updated — setter M2 was $0 and could not be auto-adjusted. Use Edit Deal to recalculate setter amounts.', 'error');
+      } else {
+        toast('M2 amount updated', 'success');
+      }
       setEditM2(false);
     } else { toast('Invalid amount', 'error'); }
   };
@@ -1715,9 +1725,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   );
                 }
+                const overrideSetter = parseFloat(editVals.overrideSetterPerW);
                 previewBaseline = {
                   closerPerW: overrideCloser,
                   kiloPerW: overrideKilo,
+                  ...(!isNaN(overrideSetter) ? { setterPerW: overrideSetter } : {}),
                 };
               } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
                 previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW, solarTechProducts);

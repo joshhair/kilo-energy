@@ -11,6 +11,7 @@ import { PHASE_COLORS, PHASE_PILL, StaleBadge, type ProjectList } from './shared
 export default function KanbanView({
   projects,
   isAdmin,
+  canEditPhase = isAdmin,
   currentRepId,
   dealScope,
   onPhaseChange,
@@ -19,6 +20,7 @@ export default function KanbanView({
 }: {
   projects: ProjectList;
   isAdmin: boolean;
+  canEditPhase?: boolean;
   currentRepId: string | null;
   dealScope: 'mine' | 'all';
   onPhaseChange: (id: string, phase: Phase) => void;
@@ -279,8 +281,8 @@ export default function KanbanView({
                           )}
                         </div>
 
-                        {/* Phase navigation — admin only; 44px touch targets */}
-                        {isAdmin && (prevPhase || nextPhase) && (
+                        {/* Phase navigation — admin/PM; 44px touch targets */}
+                        {canEditPhase && (prevPhase || nextPhase) && (
                           <div className="mr-3 flex gap-1.5 flex-shrink-0">
                             {prevPhase && (
                               <button
@@ -505,8 +507,8 @@ export default function KanbanView({
                           </div>
                         )}
 
-                        {/* Phase navigation — admin only, shows on hover */}
-                        {isAdmin && (prevPhase || nextPhase) && (
+                        {/* Phase navigation — admin/PM, shows on hover */}
+                        {canEditPhase && (prevPhase || nextPhase) && (
                           <div className="flex gap-1 justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {prevPhase && (
                               <button

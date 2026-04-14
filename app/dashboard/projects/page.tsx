@@ -367,6 +367,7 @@ function ProjectsPageInner() {
         <KanbanView
           projects={filtered}
           isAdmin={effectiveRole === 'admin'}
+          canEditPhase={effectiveRole === 'admin' || isPM}
           currentRepId={effectiveRepId}
           dealScope={dealScope}
           onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
