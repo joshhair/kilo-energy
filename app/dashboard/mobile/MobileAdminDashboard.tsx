@@ -146,6 +146,9 @@ export default function MobileAdminDashboard() {
 
   // Payroll — draft/pending counts use unfiltered payrollEntries so the Needs Attention badge
   // stays consistent with flagged/stalled counts, which are also period-independent.
+  // Unflagged On Hold projects — mirrors desktop AdminDashboard.tsx lines 249-252.
+  const onHoldCount = useMemo(() => projects.filter((p) => p.phase === 'On Hold' && !p.flagged).length, [projects]);
+
   const draftCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Draft').length, [payrollEntries]);
   const pendingCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').length, [payrollEntries]);
   const pendingTotal = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0), [payrollEntries]);
@@ -182,7 +185,7 @@ export default function MobileAdminDashboard() {
   const animatedProfit = useCountUp(Math.round(totalProfit), 300);
   const animatedPaid = useCountUp(Math.round(totalPaid), 300);
 
-  const needsAttention = flaggedCount + draftCount + pendingCount + stalledProjects.length;
+  const needsAttention = flaggedCount + draftCount + pendingCount + stalledProjects.length + onHoldCount;
 
   // ── Skeleton while data hydrates (prevents stale-number flash) ──────────
   if (!dbReady) {

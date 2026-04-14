@@ -624,9 +624,9 @@ export function AdminDashboard({
                         {/* 6 */}<td className="px-6 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
                         {/* 7 */}<td className="px-6 py-3 text-[var(--text-secondary)]">${(proj.netPPW ?? 0).toFixed(2)}</td>
                         {/* 8 */}<td className="px-6 py-3 text-[var(--accent-green)] font-medium">${estPay.toLocaleString()}</td>
-                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount ?? 0} /></td>
-                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount ?? 0} /></td>
-                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={proj.m3Amount ?? 0} /></td>}
+                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={(proj.m1Amount ?? 0) + (proj.setterM1Amount ?? 0)} /></td>
+                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={(proj.m2Amount ?? 0) + (proj.setterM2Amount ?? 0)} /></td>
+                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={(proj.m3Amount ?? 0) + (proj.setterM3Amount ?? 0)} /></td>}
                       </tr>
                       );
                     })}

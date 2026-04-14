@@ -1287,7 +1287,7 @@ export default function DashboardPage() {
             activeProjects={projects.filter(
               (p) =>
                 (p.repId === effectiveRepId || p.setterId === effectiveRepId) &&
-                (ACTIVE_PHASES.includes(p.phase) || p.phase === 'On Hold')
+                ((ACTIVE_PHASES.includes(p.phase) && p.phase !== 'Completed') || p.phase === 'On Hold')
             )}
             mentions={dashMentions}
           />
