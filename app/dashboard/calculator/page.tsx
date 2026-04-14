@@ -856,7 +856,9 @@ function CalculatorPage() {
                       />
                     </div>
                     <div className="text-right min-w-[100px]">
-                      {targetEarning.trim() !== '' && requiredPPW > 0 ? (
+                      {targetEarning.trim() !== '' && closerPerW === 0 ? (
+                        <p style={{ color: 'var(--accent-amber)', fontSize: 12 }}>Baseline unknown</p>
+                      ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
                         <>
                           <p style={{ color: 'var(--accent-blue)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
                           <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>required PPW</p>
