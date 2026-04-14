@@ -217,7 +217,7 @@ export default function BlitzDetailPage() {
   // Available reps (not already participants)
   const availableReps = useMemo(() => {
     if (!blitz?.participants) return reps;
-    const participantIds = new Set(blitz.participants.map((p: any) => p.user.id));
+    const participantIds = new Set(blitz.participants.filter((p: any) => p.joinStatus !== 'declined').map((p: any) => p.user.id));
     return reps.filter((r) => r.active && !participantIds.has(r.id));
   }, [reps, blitz?.participants]);
 
@@ -522,7 +522,7 @@ export default function BlitzDetailPage() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'participants', label: `Participants (${approvedParticipants.length})` },
+    { key: 'participants', label: `Participants (${blitz.participants?.length ?? 0})` },
     { key: 'deals', label: `Deals (${totalDeals})` },
     ...(isAdmin ? [
       { key: 'costs' as TabKey, label: `Costs (${blitz.costs?.length ?? 0})` },

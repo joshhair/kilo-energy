@@ -1432,7 +1432,7 @@ function NewDealPage() {
                         const blitz = availableBlitzes.find((b) => b.id === blitzId);
                         if (blitz?.startDate && blitz?.endDate) {
                           const today = new Date().toLocaleDateString('en-CA');
-                          if (form.soldDate === today) {
+                          if (!touched.has('soldDate')) {
                             if (today >= blitz.startDate && today <= blitz.endDate) {
                               // Today is within the blitz range — keep today
                               update('soldDate', today);
