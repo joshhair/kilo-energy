@@ -10,7 +10,7 @@ import {
   getProductCatalogBaselineVersioned,
   getInstallerRatesForDeal,
 } from '../../../lib/data';
-import { type Period, PERIODS, isInPeriod } from '../components/dashboard-utils';
+import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
 import { AlertTriangle, TrendingUp, Users, Zap, CreditCard, FolderKanban, ChevronRight, Flag, Clock } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBadge from './shared/MobileBadge';
@@ -64,15 +64,7 @@ function useCountUp(target: number, duration = 350): number {
   return displayed;
 }
 
-const PHASE_STUCK_THRESHOLDS: Record<string, number> = {
-  'New':             5,
-  'Acceptance':      10,
-  'Site Survey':     20,
-  'Design':          30,
-  'Permitting':      50,
-  'Pending Install': 65,
-  'Installed':       75,
-};
+const PHASE_STUCK_THRESHOLDS = getPhaseStuckThresholds();
 
 export default function MobileAdminDashboard() {
   const {
@@ -116,7 +108,7 @@ export default function MobileAdminDashboard() {
   }
 
   // ── Computations (period-filtered) ───────────────────────────────────────
-  const active = useMemo(() => periodProjects.filter((p) => ACTIVE_PHASES.includes(p.phase) && p.phase !== 'Completed'), [periodProjects]);
+  const active = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold'), [periodProjects]);
 
   const { totalPaid, totalRevenue, totalProfit } = useMemo(() => {
     let paid = 0, rev = 0, prof = 0;
