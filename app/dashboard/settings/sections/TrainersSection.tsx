@@ -46,6 +46,7 @@ export function TrainersSection({
       setTrainerSortKey(key);
       setTrainerSortDir('asc');
     }
+    setTrainerPage(1);
   };
 
   // "/" shortcut to focus trainer search

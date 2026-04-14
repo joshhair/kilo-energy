@@ -419,9 +419,7 @@ function RepEarningsView() {
   const sortedDealsBase = useMemo((): DealRow[] => {
     const allPayrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
     const payrollRows = monthFilter ? allPayrollRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allPayrollRows;
-    const allReimbRows: DealRow[] = myReimbs.map((e) => ({ kind: 'reimb' as const, entry: e }));
-    const reimbRows = monthFilter ? allReimbRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allReimbRows;
-    return [...payrollRows, ...reimbRows].sort((a, b) => {
+    return payrollRows.sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
       const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
       const aName = a.kind === 'payroll' ? (a.entry.customerName ?? '') : a.entry.description;
@@ -442,7 +440,7 @@ function RepEarningsView() {
       }
       return dealSortDir === 'asc' ? cmp : -cmp;
     });
-  }, [payrollEntries, myReimbs, effectiveRepId, dealSortKey, dealSortDir, monthFilter]);
+  }, [payrollEntries, effectiveRepId, dealSortKey, dealSortDir, monthFilter]);
 
   const sortedDeals = useMemo(() =>
     sortedDealsBase.filter((row) => {
@@ -531,7 +529,7 @@ function RepEarningsView() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ repId: data.repId, amount: data.amount, description: data.description, date: data.date, receiptName: data.receiptName }),
-          }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement request submitted', 'success'); setShowReimbModal(false); })
+          }).then(async (res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); const created = await res.json(); setReimbursements((prev) => prev.map((r) => r.id === tempId ? { ...r, id: created.id } : r)); toast('Reimbursement request submitted', 'success'); setShowReimbModal(false); })
             .catch((err) => { console.error(err); setReimbursements((prev) => prev.filter((r) => r.id !== tempId)); toast('Failed to save reimbursement', 'error'); });
         }}
       />
@@ -1349,7 +1347,7 @@ function AdminFinancialsView() {
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
           {pendingReimbCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingReimbCount} requests</p>}
-          {reimbFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{reimbFilterLabel}</p>}
+          {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
       </div>
 
