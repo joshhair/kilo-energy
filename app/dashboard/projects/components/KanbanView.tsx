@@ -431,7 +431,7 @@ export default function KanbanView({
                   {!hideFinancials && (
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       ${phaseProjects.reduce((sum, p) => {
-                        if (!isAdmin && dealScope === 'mine') {
+                        if (dealScope === 'mine') {
                           if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
                           if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                           return sum;
@@ -607,7 +607,7 @@ export default function KanbanView({
                 {!hideFinancials && (
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
                     ${phaseProjects.reduce((sum, p) => {
-                      if (!isAdmin && dealScope === 'mine') {
+                      if (dealScope === 'mine') {
                         if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
                         if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         return sum;

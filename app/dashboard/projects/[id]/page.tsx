@@ -1149,7 +1149,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
             )}
-            {project.phase !== 'Cancelled' && (
+            {(currentRepId === project.repId) && project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
                 className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
