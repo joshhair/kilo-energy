@@ -405,7 +405,7 @@ export function createMilestonePayroll(
         const setterTraineeDeals = updatedProjects.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((deps.installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
         const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
         const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-        const setterTrainerAlreadyExists = prevEntries.some(
+        const setterTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
           (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId
         );
         if (m2SetterTrainerAmount > 0 && !setterTrainerAlreadyExists) {
@@ -584,7 +584,7 @@ export function createM3Payroll(
   // Setter's trainer — guarded by !old.subDealerId to match closer's trainer
   if (old.setterId && !old.subDealerId) {
     const setterTrainerAssignment = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.setterId);
-    const setterTrainerM3AlreadyExists = setterTrainerAssignment ? prevEntries.some(
+    const setterTrainerM3AlreadyExists = setterTrainerAssignment ? [...prevEntries, ...newEntries].some(
       (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === setterTrainerAssignment.trainerId
     ) : false;
     if (setterTrainerAssignment && !setterTrainerM3AlreadyExists) {
@@ -639,6 +639,8 @@ export function syncPayrollAmounts(
   closerM3TrainerDeduction = 0,
   kWSize = 0,
   installPayPct = 100,
+  setterM2TrainerDeduction = 0,
+  setterM3TrainerDeduction = 0,
 ): AmountSyncResult {
   const stageAmountUpdates: Array<{ stage: 'M1' | 'M2' | 'M3'; setter: boolean; newAmount: number }> = [];
   if (updates.m1Amount !== undefined) stageAmountUpdates.push({ stage: 'M1', setter: false, newAmount: updates.m1Amount });
@@ -675,12 +677,10 @@ export function syncPayrollAmounts(
       (u) => u.stage === e.paymentStage && u.setter === (e.notes ?? '').startsWith('Setter')
     );
     if (!match) return e;
-    const adjustedAmount = (!match.setter && (
-      (match.stage === 'M2' && closerM2TrainerDeduction > 0) ||
-      (match.stage === 'M3' && closerM3TrainerDeduction > 0)
-    ))
-      ? Math.max(0, match.newAmount - (match.stage === 'M3' ? closerM3TrainerDeduction : closerM2TrainerDeduction))
-      : match.newAmount;
+    const deduction = match.setter
+      ? (match.stage === 'M2' ? setterM2TrainerDeduction : match.stage === 'M3' ? setterM3TrainerDeduction : 0)
+      : (match.stage === 'M2' ? closerM2TrainerDeduction : match.stage === 'M3' ? closerM3TrainerDeduction : 0);
+    const adjustedAmount = deduction > 0 ? Math.max(0, match.newAmount - deduction) : match.newAmount;
     if (adjustedAmount === e.amount) return e;
     patches.push({ id: e.id, newAmount: adjustedAmount });
     return { ...e, amount: adjustedAmount };

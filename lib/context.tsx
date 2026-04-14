@@ -788,11 +788,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
       }
+      // Re-compute setter M2 trainer deduction, mirroring createMilestonePayroll's deduction logic.
+      let setterM2TrainerDeduction = 0;
+      if (updates.setterM2Amount !== undefined && old && old.setterId) {
+        const sta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.setterId);
+        if (sta) {
+          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+          const stDeals = projects.filter((p) =>
+            (p.repId === sta.traineeId || p.setterId === sta.traineeId) &&
+            ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
+              ? p.m3Paid === true : p.m2Paid === true)
+          ).length;
+          setterM2TrainerDeduction = Math.round(getTrainerOverrideRate(sta, stDeals) * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+        }
+      }
+      // Re-compute setter M3 trainer deduction, mirroring createM3Payroll's deduction logic.
+      let setterM3TrainerDeduction = 0;
+      if (updates.setterM3Amount !== undefined && old && old.setterId) {
+        const sta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.setterId);
+        if (sta) {
+          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+          if (installPayPct < 100) {
+            const stDeals = projects.filter((p) =>
+              (p.repId === sta.traineeId || p.setterId === sta.traineeId) &&
+              ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
+                ? p.m3Paid === true : p.m2Paid === true)
+            ).length;
+            setterM3TrainerDeduction = Math.round(getTrainerOverrideRate(sta, stDeals) * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+          }
+        }
+      }
       const effectiveKWSize = old ? (updates.kWSize ?? old.kWSize) : 0;
       const effectiveInstallPayPct = old ? (installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) : 100;
       const pendingPatches: Array<{ id: string; newAmount: number }> = [];
       setPayrollEntries((prev) => {
-        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction, closerM3TrainerDeduction, effectiveKWSize, effectiveInstallPayPct);
+        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction, closerM3TrainerDeduction, effectiveKWSize, effectiveInstallPayPct, setterM2TrainerDeduction, setterM3TrainerDeduction);
         pendingPatches.push(...result.patches);
         return result.patches.length > 0 ? result.updatedEntries : prev;
       });

@@ -641,11 +641,12 @@ function UsersPageInner() {
   });
 
   // ── Pre-compute paid totals & rank order across ALL reps ──────────────────
+  const today = new Date().toISOString().slice(0, 10);
   const repPaidAmounts = useMemo(() => new Map(
     reps.map((rep) => [
       rep.id,
       payrollEntries
-        .filter((p) => p.repId === rep.id && p.status === 'Paid')
+        .filter((p) => p.repId === rep.id && p.status === 'Paid' && p.date <= today)
         .reduce((s, p) => s + p.amount, 0),
     ])
   ), [reps, payrollEntries]);
@@ -698,7 +699,7 @@ function UsersPageInner() {
         arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
         break;
       }
-      case 'name':   arr.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case 'name':   arr.sort((a, b) => b.name.localeCompare(a.name)); break;
     }
     if (sortDir === 'asc') arr.reverse();
     return arr;
