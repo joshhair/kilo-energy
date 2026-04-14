@@ -61,6 +61,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (caller.role !== 'admin' && caller.id !== blitz.ownerId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+  if (body.userId === blitz.ownerId && body.joinStatus !== undefined && body.joinStatus !== 'approved') {
+    return NextResponse.json({ error: 'Cannot change the blitz owner\'s join status to non-approved' }, { status: 400 });
+  }
 
   const existing = await prisma.blitzParticipant.findUnique({
     where: { blitzId_userId: { blitzId, userId: body.userId } },

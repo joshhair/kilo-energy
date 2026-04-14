@@ -540,6 +540,16 @@ export function createInstallerActions(deps: InstallerDeps) {
     if (instId) {
       const res = await fetch(`/api/installers/${instId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`Failed to delete installer: ${res.status}`);
+    } else {
+      // idMap not yet populated (e.g. POST response still in-flight) — look up by name
+      const lookupRes = await fetch(`/api/installers?name=${encodeURIComponent(name)}`);
+      if (lookupRes.ok) {
+        const { id } = await lookupRes.json();
+        if (id) {
+          const delRes = await fetch(`/api/installers/${id}`, { method: 'DELETE' });
+          if (!delRes.ok) throw new Error(`Failed to delete installer: ${delRes.status}`);
+        }
+      }
     }
 
     setInstallers((prev) => prev.filter((i) => i.name !== name));
@@ -573,10 +583,9 @@ export function createInstallerActions(deps: InstallerDeps) {
 
   const deleteFinancer = async (name: string) => {
     const finId = getIdMaps().financerNameToId[name];
-    if (finId) {
-      const res = await fetch(`/api/financers/${finId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`Failed to delete financer: ${res.status}`);
-    }
+    if (!finId) throw new Error(`Financer ID not found for: ${name}`);
+    const res = await fetch(`/api/financers/${finId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Failed to delete financer: ${res.status}`);
     setFinancers((prev) => prev.filter((f) => f.name !== name));
     setIdMaps((prev) => {
       const next = { ...prev, financerNameToId: { ...prev.financerNameToId } };

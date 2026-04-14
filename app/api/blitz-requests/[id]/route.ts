@@ -19,11 +19,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       include: { requestedBy: true, blitz: true },
     });
 
-    // If approving a cancellation request, also cancel the blitz
+    // If approving a cancellation request, also cancel the blitz and unlink projects
     if (body.status === 'approved' && updated.type === 'cancel' && updated.blitzId) {
       await tx.blitz.update({
         where: { id: updated.blitzId },
         data: { status: 'cancelled' },
+      });
+      await tx.project.updateMany({
+        where: { blitzId: updated.blitzId },
+        data: { blitzId: null },
       });
     }
 
