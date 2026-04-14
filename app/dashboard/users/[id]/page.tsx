@@ -703,8 +703,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     if (p.repId === id) {
       // Closer: gets $0 M1 when a setter exists (setter takes M1); otherwise earns m1Amount
       const closerM1 = p.setterId ? 0 : p.m1Amount;
-      // Self-gen: rep is also the setter, so include setterM1Amount too
-      const selfGenM1 = p.setterId === id ? (p.setterM1Amount ?? 0) : 0;
+      // Self-gen: rep is also the setter; m1Amount holds the full M1 (setterM1Amount is 0 for self-gen)
+      const selfGenM1 = p.setterId === id ? (p.m1Amount ?? 0) : 0;
       return s + closerM1 + selfGenM1 + p.m2Amount + (p.m3Amount ?? 0) + (p.setterId === id ? (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
     } else {
       // Setter: earns setterM1Amount + setter's M2/M3
@@ -1172,7 +1172,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 {!isPM && (
                   <td className="px-5 py-3 text-right text-[var(--accent-green)] font-semibold tabular-nums">
                     ${(proj.repId === id
-                        ? (proj.setterId === id ? (proj.setterM1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
+                        ? (proj.setterId === id ? (proj.m1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
                         : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                       ).toLocaleString()}
                   </td>
