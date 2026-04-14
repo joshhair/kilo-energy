@@ -204,7 +204,7 @@ function SettingsPageInner() {
       if (!isEditActive) return;
 
       const tag = (e.target as HTMLElement)?.tagName;
-      const inInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+      const inInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON';
 
       if (e.key === 'Escape') {
         e.preventDefault();
