@@ -887,7 +887,7 @@ function UsersPageInner() {
               </div>
             )}
 
-            {/* ── Inactive reps expander (all-users view only) ────────── */}
+            {/* ── Inactive reps expander ──────────────────────────────── */}
             {canManageReps && roleFilter === 'all' && inactiveReps.length > 0 && (
               <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
                 <button

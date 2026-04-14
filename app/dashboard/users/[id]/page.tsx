@@ -120,6 +120,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // `rep` is `let` so we can reassign to a sub-dealer/fetched user before
   // falling through to the existing rep-detail JSX (which reads .name + .email).
   let rep = reps.find((r) => r.id === id);
+  // Stable const — captures whether this id was found in context BEFORE the
+  // `rep` variable is potentially reassigned to resolvedUser later in render.
+  // Used in saveEdit so updateRepContact is only called when the rep actually
+  // lives in context (preventing a silent no-op against a stale context array).
+  const repInContext = rep;
   const subDealer = !rep ? subDealers.find((s) => s.id === id) : null;
 
   // For admin + project_manager users (which aren't in context), fetch by id.
@@ -245,7 +250,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         setFetchedUser({ ...fetchedUser, ...body, name: `${body.firstName ?? fetchedUser.firstName} ${body.lastName ?? fetchedUser.lastName}` });
       }
       // Sync context so rep/sub-dealer profiles update immediately across the app.
-      if (rep) updateRepContact(id, body);
+      if (repInContext) updateRepContact(id, body);
       else if (subDealer) updateSubDealerContact(id, body);
       setMetaRefreshKey((k) => k + 1);
       toast('Saved', 'success');
@@ -853,7 +858,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <button
                 onClick={() => {
                   const snapshot = assignment;
-                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
+                  let snapshotIndex = -1;
+                  setTrainerAssignments((prev) => {
+                    snapshotIndex = prev.findIndex((a) => a.id === snapshot.id);
+                    return prev.filter((a) => a.id !== snapshot.id);
+                  });
                   fetch('/api/trainer-assignments', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
@@ -861,7 +870,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   }).then((res) => {
                     if (!res.ok) throw new Error();
                   }).catch(() => {
-                    setTrainerAssignments((prev) => [...prev, snapshot]);
+                    setTrainerAssignments((prev) => {
+                      const next = [...prev];
+                      const idx = snapshotIndex >= 0 ? snapshotIndex : next.length;
+                      next.splice(idx, 0, snapshot);
+                      return next;
+                    });
                     toast('Failed to remove trainer assignment', 'error');
                   });
                 }}
