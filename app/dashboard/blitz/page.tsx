@@ -589,7 +589,7 @@ function BlitzPageInner() {
       case 'kw': {
         const scopedKW = (blitz: BlitzData) => {
           const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-          return (isAdmin || effectiveRepId === blitz.owner.id) ? active : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId);
+          return (isAdmin || effectiveRepId === blitz.owner.id) ? active : active.filter((p) => p.closer?.id === effectiveRepId);
         };
         sorted.sort((a, b) => scopedKW(b).reduce((s, p) => s + p.kWSize, 0) - scopedKW(a).reduce((s, p) => s + p.kWSize, 0));
         break;
