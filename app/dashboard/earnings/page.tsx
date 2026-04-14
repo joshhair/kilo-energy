@@ -400,7 +400,7 @@ function RepEarningsView() {
   const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date <= todayStr)),    [payrollEntries, effectiveRepId, todayStr]);
   const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')), [payrollEntries, effectiveRepId]);
   const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved')), [reimbursements, effectiveRepId]);
-  const thisMonthPaidData  = useMemo(() => payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).sort((a, b) => a.date.localeCompare(b.date)).map((p) => p.amount), [payrollEntries, effectiveRepId, currentYYYYMM]);
+  const thisMonthPaidData  = useMemo(() => payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date.startsWith(currentYYYYMM) && p.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date)).map((p) => p.amount), [payrollEntries, effectiveRepId, currentYYYYMM, todayStr]);
 
   // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
   const monthlyBarData = useMemo(
@@ -1215,7 +1215,8 @@ function AdminFinancialsView() {
 
   // Stats — computed from rep-filtered (not status-filtered) data so status breakdown is always accurate
   const repFilteredPayroll = repFilter ? payrollEntries.filter((e) => e.repId === repFilter) : payrollEntries;
-  const totalPaid     = repFilteredPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const todayStr      = new Date().toISOString().slice(0, 10);
+  const totalPaid     = repFilteredPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending  = repFilteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const totalDraft    = repFilteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
   const repFilteredReimbs = repFilter ? reimbursements.filter((r) => r.repId === repFilter) : reimbursements;
@@ -1277,14 +1278,14 @@ function AdminFinancialsView() {
   const repSummary = useMemo(() => {
     return reps.map((rep) => {
       const entries = payrollEntries.filter((e) => e.repId === rep.id);
-      const paid    = entries.filter((e) => e.status === 'Paid').reduce((s, e) => s + e.amount, 0);
+      const paid    = entries.filter((e) => e.status === 'Paid' && e.date <= todayStr).reduce((s, e) => s + e.amount, 0);
       const pending = entries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0);
       const draft   = entries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0);
       const reimbs  = reimbursements.filter((r) => r.repId === rep.id);
       const reimbPending = reimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
       return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft };
     }).sort((a, b) => b.total - a.total);
-  }, [reps, payrollEntries, reimbursements]);
+  }, [reps, payrollEntries, reimbursements, todayStr]);
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
@@ -1634,7 +1635,8 @@ function SubDealerEarningsView() {
     (p) => p.repId === effectiveRepId && (p.paymentStage === 'M2' || p.paymentStage === 'M3')
   );
 
-  const totalEarned = myPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const totalEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
 
   const sorted = [...myPayroll].sort((a, b) => b.date.localeCompare(a.date));
