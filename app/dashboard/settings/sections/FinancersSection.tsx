@@ -103,12 +103,12 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
             <div className="flex items-center gap-2 mb-2 px-1">
               <button
                 onClick={() => {
-                  if (selectedFinancers.size === filteredActiveFinancers.length) setSelectedFinancers(new Set());
+                  if (filteredActiveFinancers.every((f) => selectedFinancers.has(f.name))) setSelectedFinancers(new Set());
                   else setSelectedFinancers(new Set(filteredActiveFinancers.map((f) => f.name)));
                 }}
                 className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
               >
-                {selectedFinancers.size === filteredActiveFinancers.length
+                {filteredActiveFinancers.every((f) => selectedFinancers.has(f.name))
                   ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-green)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all

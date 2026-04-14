@@ -267,6 +267,7 @@ function SettingsPageInner() {
       const assignment = trainerAssignments.find((a) => a.id === id);
       if (assignment) {
         deletedEntityRef.current = { type: 'trainer', assignment };
+        const savedAssignment = assignment;
         setTrainerAssignments((prev) => prev.filter((a) => a.id !== id));
         fetch('/api/trainer-assignments', {
           method: 'DELETE',
@@ -276,16 +277,16 @@ function SettingsPageInner() {
         toast(`Trainer assignment removed`, 'info', {
           label: 'Undo',
           onClick: () => {
-            const saved = deletedEntityRef.current;
-            if (saved?.type === 'trainer') {
-              setTrainerAssignments((prev) => [...prev, saved.assignment]);
+            const saved = savedAssignment;
+            if (saved) {
+              setTrainerAssignments((prev) => [...prev, saved]);
               fetch('/api/trainer-assignments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  trainerId: saved.assignment.trainerId,
-                  traineeId: saved.assignment.traineeId,
-                  tiers: saved.assignment.tiers,
+                  trainerId: saved.trainerId,
+                  traineeId: saved.traineeId,
+                  tiers: saved.tiers,
                 }),
               })
                 .then((r) => r.json())
@@ -293,7 +294,7 @@ function SettingsPageInner() {
                   if (created?.id) {
                     setTrainerAssignments((prev) =>
                       prev.map((a) =>
-                        a.id === saved.assignment.id ? { ...a, id: created.id } : a,
+                        a.id === saved.id ? { ...a, id: created.id } : a,
                       ),
                     );
                   }
