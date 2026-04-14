@@ -494,6 +494,7 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
 
   const fetchActivities = useCallback((skip: number, append: boolean) => {
     setLoading(true);
+    if (!append) setActivities([]);
     fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}`)
       .then((res) => res.json())
       .then((data) => {

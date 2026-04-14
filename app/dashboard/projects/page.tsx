@@ -83,14 +83,14 @@ function ProjectsPageInner() {
     const idx = VIEW_TABS.indexOf(tab);
     const el = viewTabRefs.current[idx];
     if (el) setViewIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tab]);
+  }, [tab, isHydrated]);
 
   useEffect(() => {
     const STATUS_FILTER_TABS: StatusFilter[] = ['active', 'all', 'completed', 'cancelled', 'on-hold', 'inactive'];
     const idx = STATUS_FILTER_TABS.indexOf(statusFilter);
     const el = statusFilterRefs.current[idx];
     if (el) setStatusFilterIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [statusFilter]);
+  }, [statusFilter, isHydrated]);
 
   // Debounce searchInput → debouncedSearch (300ms; 0ms when cleared for instant feedback).
   useEffect(() => {
@@ -364,6 +364,18 @@ function ProjectsPageInner() {
                 onClick={() => setQaOnly(false)}
                 className="text-[var(--text-secondary)] hover:text-white transition-colors"
                 aria-label="Clear QA filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {!isRep && dealScope === 'mine' && (
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+              My Deals only
+              <button
+                onClick={() => setDealScope('all')}
+                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                aria-label="Clear deal scope filter"
               >
                 <X className="w-3 h-3" />
               </button>

@@ -233,8 +233,12 @@ export default function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = !isAdmin && dealScope === 'mine'
-                      ? (myRole === 'Closer' ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
+                    const commissionTotal = dealScope === 'mine'
+                      ? (proj.repId === currentRepId
+                          ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
+                          : proj.setterId === currentRepId
+                            ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                            : 0)
                       : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -480,8 +484,12 @@ export default function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = !isAdmin && dealScope === 'mine'
-                      ? (myRole === 'Closer' ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0))
+                    const commissionTotal = dealScope === 'mine'
+                      ? (proj.repId === currentRepId
+                          ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
+                          : proj.setterId === currentRepId
+                            ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                            : 0)
                       : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
