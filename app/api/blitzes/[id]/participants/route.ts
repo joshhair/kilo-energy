@@ -76,6 +76,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data,
     include: { user: true },
   });
+
+  // If the participant is no longer approved, unlink their orphaned deals (same logic as DELETE).
+  if (body.joinStatus !== undefined && body.joinStatus !== 'approved' && existing.joinStatus === 'approved') {
+    const remaining = await prisma.blitzParticipant.findMany({ where: { blitzId, joinStatus: 'approved' }, select: { userId: true } });
+    const remainingIds = new Set(remaining.map(p => p.userId));
+
+    const closerProjects = await prisma.project.findMany({
+      where: { blitzId, closerId: body.userId },
+      select: { id: true, setterId: true },
+    });
+    const closerUnlink = closerProjects
+      .filter(p => !p.setterId || !remainingIds.has(p.setterId))
+      .map(p => p.id);
+    if (closerUnlink.length > 0) {
+      await prisma.project.updateMany({ where: { id: { in: closerUnlink } }, data: { blitzId: null } });
+    }
+
+    const setterProjects = await prisma.project.findMany({
+      where: { blitzId, setterId: body.userId },
+      select: { id: true, closerId: true },
+    });
+    const setterUnlink = setterProjects
+      .filter(p => !p.closerId || !remainingIds.has(p.closerId))
+      .map(p => p.id);
+    if (setterUnlink.length > 0) {
+      await prisma.project.updateMany({ where: { id: { in: setterUnlink } }, data: { blitzId: null } });
+    }
+  }
+
   return NextResponse.json(updated);
 }
 

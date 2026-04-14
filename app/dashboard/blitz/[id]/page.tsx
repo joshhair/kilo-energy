@@ -144,21 +144,6 @@ export default function BlitzDetailPage() {
     return blitz.projects.filter((p: any) => (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
-  const sortedDeals = useMemo(() => {
-    const arr = [...visibleProjects];
-    arr.sort((a: any, b: any) => {
-      let av: number | string, bv: number | string;
-      if (dealsSort.col === 'customer') { av = a.customerName ?? ''; bv = b.customerName ?? ''; }
-      else if (dealsSort.col === 'kw') { av = a.kWSize; bv = b.kWSize; }
-      else if (dealsSort.col === 'ppw') { av = a.netPPW; bv = b.netPPW; }
-      else { av = (a.m1Amount ?? 0) + (a.m2Amount ?? 0) + (a.m3Amount ?? 0) + (a.setterM1Amount ?? 0) + (a.setterM2Amount ?? 0) + (a.setterM3Amount ?? 0); bv = (b.m1Amount ?? 0) + (b.m2Amount ?? 0) + (b.m3Amount ?? 0) + (b.setterM1Amount ?? 0) + (b.setterM2Amount ?? 0) + (b.setterM3Amount ?? 0); }
-      if (av < bv) return dealsSort.dir === 'asc' ? -1 : 1;
-      if (av > bv) return dealsSort.dir === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return arr;
-  }, [visibleProjects, dealsSort]);
-
   const approvedParticipantIds = useMemo(
     () => new Set((blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved').map((p: any) => p.user.id)),
     [blitz?.participants],
@@ -170,6 +155,21 @@ export default function BlitzDetailPage() {
     [visibleProjects, isAdmin, isOwner, approvedParticipantIds],
   );
   const totalDeals = approvedVisibleProjects.length;
+
+  const sortedDeals = useMemo(() => {
+    const arr = [...approvedVisibleProjects];
+    arr.sort((a: any, b: any) => {
+      let av: number | string, bv: number | string;
+      if (dealsSort.col === 'customer') { av = a.customerName ?? ''; bv = b.customerName ?? ''; }
+      else if (dealsSort.col === 'kw') { av = a.kWSize; bv = b.kWSize; }
+      else if (dealsSort.col === 'ppw') { av = a.netPPW; bv = b.netPPW; }
+      else { av = (a.m1Amount ?? 0) + (a.m2Amount ?? 0) + (a.m3Amount ?? 0) + (a.setterM1Amount ?? 0) + (a.setterM2Amount ?? 0) + (a.setterM3Amount ?? 0); bv = (b.m1Amount ?? 0) + (b.m2Amount ?? 0) + (b.m3Amount ?? 0) + (b.setterM1Amount ?? 0) + (b.setterM2Amount ?? 0) + (b.setterM3Amount ?? 0); }
+      if (av < bv) return dealsSort.dir === 'asc' ? -1 : 1;
+      if (av > bv) return dealsSort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
     () => approvedVisibleProjects.reduce((s: number, p: any) => s + (isAdmin || isOwner ? p.kWSize : (p.closer?.id === effectiveRepId ? p.kWSize : 0)), 0),
     [approvedVisibleProjects, isAdmin, isOwner, effectiveRepId],
