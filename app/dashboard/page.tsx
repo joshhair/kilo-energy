@@ -862,7 +862,7 @@ export default function DashboardPage() {
       ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
-    return sum + projects
+    return sum + periodProjects
       .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
       .reduce((pSum, p) => {
         const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;

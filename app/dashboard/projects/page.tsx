@@ -56,6 +56,7 @@ function ProjectsPageInner() {
   });
   const [installerFilter, setInstallerFilter] = useState(() => searchParams.get('installer') ?? '');
   const [phaseFilter, setPhaseFilter] = useState(() => searchParams.get('phase') ?? '');
+  const [qaOnly, setQaOnly] = useState(() => searchParams.get('qa') === '1');
   const isHydrated = useIsHydrated();
 
   // Sync filters to URL searchParams
@@ -65,10 +66,11 @@ function ProjectsPageInner() {
     if (statusFilter !== 'active') params.set('status', statusFilter); else params.delete('status');
     if (installerFilter) params.set('installer', installerFilter); else params.delete('installer');
     if (phaseFilter) params.set('phase', phaseFilter); else params.delete('phase');
+    if (qaOnly) params.set('qa', '1'); else params.delete('qa');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, statusFilter, installerFilter, phaseFilter]);
+  }, [tab, statusFilter, installerFilter, phaseFilter, qaOnly]);
 
   // Sliding tab indicators
   const viewTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -119,7 +121,8 @@ function ProjectsPageInner() {
       p.installer.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchInstaller = !installerFilter || p.installer === installerFilter;
     const matchPhase = !phaseFilter || p.phase === phaseFilter;
-    return matchSearch && matchInstaller && matchPhase;
+    const matchQa = !qaOnly || p.customerName.startsWith('[QA]');
+    return matchSearch && matchInstaller && matchPhase && matchQa;
   });
 
   // Destructive phase change confirmation
@@ -174,7 +177,7 @@ function ProjectsPageInner() {
     setCancelReasonModal(null);
   };
 
-  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '';
+  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '' || qaOnly;
 
   const clearAllFilters = () => {
     setStatusFilter('active');
@@ -182,6 +185,7 @@ function ProjectsPageInner() {
     setSearchInput('');
     setDebouncedSearch('');
     setPhaseFilter('');
+    setQaOnly(false);
     toast('Filters cleared', 'info');
   };
 
@@ -283,6 +287,20 @@ function ProjectsPageInner() {
           <option value="">All Installers</option>
           {activeInstallers.map((i) => <option key={i} value={i}>{i}</option>)}
         </select>
+
+        {/* [QA] filter — admin only, shows only agent-generated test deals */}
+        {effectiveRole === 'admin' && (
+          <button
+            onClick={() => setQaOnly((v) => !v)}
+            className="rounded-xl px-3 py-1.5 min-h-[36px] text-xs font-semibold transition-colors w-full md:w-auto"
+            style={qaOnly
+              ? { background: 'var(--accent-green)', color: '#000' }
+              : { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
+            title="Show only agent-generated test deals ([QA] prefix)"
+          >
+            [QA] only
+          </button>
+        )}
       </div>
 
       {/* Active filter chips */}

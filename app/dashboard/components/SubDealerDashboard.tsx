@@ -186,7 +186,7 @@ export function SubDealerDashboard({
           </Link>
         </div>
         <div className="divider-gradient-animated" />
-        {allProjects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId).length === 0 ? (
+        {myProjects.length === 0 ? (
           <div className="mx-6 my-6 border border-dashed border-[var(--border-subtle)] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">

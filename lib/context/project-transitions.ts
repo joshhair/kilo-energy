@@ -267,7 +267,7 @@ export function createMilestonePayroll(
     return [];
   }
   const alreadyExists = prevEntries.some(
-    (e) => e.projectId === projectId && (e.paymentStage === stage || (stage === 'M2' && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))
+    (e) => e.projectId === projectId && e.paymentStage === stage
   );
   if (alreadyExists) return [];
 
@@ -337,7 +337,10 @@ export function createMilestonePayroll(
       const traineeDeals = updatedProjects.filter(p => (p.repId === closerTrainerAssignment.traineeId || p.setterId === closerTrainerAssignment.traineeId) && ((deps.installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
       const overrideRate = getTrainerOverrideRate(closerTrainerAssignment, traineeDeals);
       const m2TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-      if (m2TrainerAmount > 0) {
+      const closerTrainerAlreadyExists = prevEntries.some(
+        (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId && e.status !== 'Draft'
+      );
+      if (m2TrainerAmount > 0 && !closerTrainerAlreadyExists) {
         newEntries.push({
           id: `pay_${ts}_m2_trainer_c`,
           repId: closerTrainerAssignment.trainerId,
@@ -362,7 +365,10 @@ export function createMilestonePayroll(
         const setterTraineeDeals = updatedProjects.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((deps.installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
         const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
         const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-        if (m2SetterTrainerAmount > 0) {
+        const setterTrainerAlreadyExists = prevEntries.some(
+          (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId && e.status !== 'Draft'
+        );
+        if (m2SetterTrainerAmount > 0 && !setterTrainerAlreadyExists) {
           const setterRep = deps.repsRef.current.find(r => r.id === old.setterId);
           newEntries.push({
             id: `pay_${ts}_m2_trainer_s`,
@@ -406,10 +412,14 @@ export function createM3Payroll(
   const { installerPayConfigs } = deps;
   const proj = updatedProjects.find((p) => p.id === projectId);
 
-  const alreadyExists = prevEntries.some(
-    (e) => e.projectId === projectId && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))
+  const m3AlreadyExists = prevEntries.some(
+    (e) => e.projectId === projectId && e.paymentStage === 'M3'
   );
-  if (alreadyExists) return [];
+  if (m3AlreadyExists) return [];
+
+  const trainerM3AlreadyExists = prevEntries.some(
+    (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')
+  );
 
   // Guard: only draft M3 if M2 was previously created for this project.
   const hasM2Entry = prevEntries.some(
@@ -475,7 +485,7 @@ export function createM3Payroll(
   // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
   // Closer's trainer — gated by m3 > 0, which is 0 for sub-dealer deals
   const closerTrainerAssignment = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.repId);
-  if (closerTrainerAssignment && m3 > 0) {
+  if (closerTrainerAssignment && m3 > 0 && !trainerM3AlreadyExists) {
     const trainerRep = deps.repsRef.current.find(r => r.id === closerTrainerAssignment.trainerId);
     // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
     const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerTrainerAssignment.trainerId);
@@ -503,7 +513,7 @@ export function createM3Payroll(
   }
 
   // Setter's trainer — guarded by !old.subDealerId to match closer's trainer
-  if (old.setterId && !old.subDealerId) {
+  if (old.setterId && !old.subDealerId && !trainerM3AlreadyExists) {
     const setterTrainerAssignment = deps.trainerAssignmentsRef.current.find(a => a.traineeId === old.setterId);
     if (setterTrainerAssignment) {
       const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterTrainerAssignment.trainerId);

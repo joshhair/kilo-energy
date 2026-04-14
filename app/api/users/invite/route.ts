@@ -22,6 +22,10 @@ import { requireAdmin } from '../../../../lib/api-auth';
 export async function POST(req: NextRequest) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
 
+  if (process.env.DISABLE_INVITES === 'true') {
+    return NextResponse.json({ error: 'invites_disabled' }, { status: 503 });
+  }
+
   const body = await req.json();
   const firstName = (body.firstName ?? '').trim();
   const lastName = (body.lastName ?? '').trim();
