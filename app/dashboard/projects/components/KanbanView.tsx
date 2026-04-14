@@ -60,7 +60,7 @@ export default function KanbanView({
   // Determine the "current" phase: first active phase that has at least one project,
   // falling back to the first phase in the pipeline.
   const currentPhase =
-    activePhasesForKanban.find((phase) => projects.some((p) => p.phase === phase)) ??
+    activePhasesForKanban.find((phase) => kanbanFiltered.some((p) => p.phase === phase)) ??
     activePhasesForKanban[0];
 
   // Accordion open/close state — only used on mobile.

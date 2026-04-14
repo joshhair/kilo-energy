@@ -1325,7 +1325,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   <div className="text-right">
                     <p className="text-[var(--text-secondary)] text-xs">Expected M1</p>
-                    <p className="text-[var(--accent-green)] font-bold text-sm">${(project.setterM1Amount ?? 0).toLocaleString()}</p>
+                    <p className="text-[var(--accent-green)] font-bold text-sm mb-1">${(project.setterM1Amount ?? 0).toLocaleString()}</p>
+                    <p className="text-[var(--text-secondary)] text-xs">Expected M2</p>
+                    <p className="text-[var(--accent-green)] font-bold text-sm mb-1">${(project.setterM2Amount ?? 0).toLocaleString()}</p>
+                    {(project.setterM3Amount ?? 0) > 0 && (
+                      <>
+                        <p className="text-[var(--text-secondary)] text-xs">Expected M3</p>
+                        <p className="text-[var(--accent-green)] font-bold text-sm">${(project.setterM3Amount ?? 0).toLocaleString()}</p>
+                      </>
+                    )}
                   </div>
                 </div>
                 {setterEntries.length > 0 ? (
@@ -1575,7 +1583,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <SearchableSelect
                   value={editVals.financer}
                   onChange={(val) => setEditVals((v) => ({ ...v, financer: val }))}
-                  options={activeFinancers.map((fin) => ({ value: fin, label: fin }))}
+                  options={(activeFinancers.includes(editVals.financer) || !editVals.financer ? activeFinancers : [editVals.financer, ...activeFinancers]).map((fin) => ({ value: fin, label: fin }))}
                   placeholder="Select financer…"
                 />
               </div>
@@ -1726,10 +1734,36 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const closerM2 = Math.round(Math.max(0, closerTotal - closerM1) * (previewInstallPayPct / 100) * 100) / 100;
               const kiloMargin = Math.round((previewBaseline.closerPerW - previewBaseline.kiloPerW) * previewKW * 1000 * 100) / 100;
               const belowBaseline = previewPPW < previewBaseline.closerPerW;
+              const previewSetterPerW = 'setterPerW' in previewBaseline && (previewBaseline as any).setterPerW != null
+                ? (previewBaseline as any).setterPerW
+                : Math.round((previewBaseline.closerPerW + 0.10) * 100) / 100;
+              const setterTotal = editVals.setterId ? calculateCommission(previewPPW, previewSetterPerW, previewKW) : 0;
+              const setterM1 = editVals.setterId ? Math.min(editM1Flat, Math.max(0, setterTotal)) : 0;
+              const setterM2 = editVals.setterId ? Math.round(Math.max(0, setterTotal - setterM1) * (previewInstallPayPct / 100) * 100) / 100 : 0;
 
               return (
                 <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-amber-900/20 border border-amber-500/30' : 'bg-[var(--surface-card)]/60 border border-[var(--border)]/40'}`}>
                   <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
+                  {editVals.setterId ? (
+                    <div className="grid grid-cols-4 gap-3 text-center">
+                      <div>
+                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M1</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM1.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M2</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM2.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM2.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
+                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M1</p>
@@ -1744,6 +1778,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
                     </div>
                   </div>
+                  )}
                   {belowBaseline && (
                     <p className="text-amber-400 text-xs mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> PPW is below the installer baseline (${previewBaseline.closerPerW}/W)
