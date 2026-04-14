@@ -1242,7 +1242,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex gap-4 mb-4">
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
-                  <p className="text-[var(--accent-green)] font-bold">${(project.setterId === currentRepId ? (project.setterM1Amount ?? 0) : project.m1Amount).toLocaleString()}</p>
+                  <p className="text-[var(--accent-green)] font-bold">${(project.setterId === currentRepId ? (project.setterM1Amount ?? 0) : (project.m1Amount ?? 0)).toLocaleString()}</p>
                 </div>
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
@@ -1752,12 +1752,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const setterTotal = editVals.setterId ? calculateCommission(previewPPW, previewSetterPerW, previewKW) : 0;
               const setterM1 = editVals.setterId ? Math.min(editM1Flat, Math.max(0, setterTotal)) : 0;
               const setterM2 = editVals.setterId ? Math.round(Math.max(0, setterTotal - setterM1) * (previewInstallPayPct / 100) * 100) / 100 : 0;
+              const previewHasM3 = previewInstallPayPct < 100 && !project.subDealerId;
+              const closerM3 = previewHasM3 ? Math.round(Math.max(0, closerTotal - closerM1) * ((100 - previewInstallPayPct) / 100) * 100) / 100 : 0;
+              const setterM3 = editVals.setterId && previewHasM3 ? Math.round(Math.max(0, setterTotal - setterM1) * ((100 - previewInstallPayPct) / 100) * 100) / 100 : 0;
 
               return (
                 <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-amber-900/20 border border-amber-500/30' : 'bg-[var(--surface-card)]/60 border border-[var(--border)]/40'}`}>
                   <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
                   {editVals.setterId ? (
-                    <div className="grid grid-cols-4 gap-3 text-center">
+                    <div className={`grid ${previewHasM3 ? 'grid-cols-6' : 'grid-cols-4'} gap-3 text-center`}>
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M1</p>
                         <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM1.toLocaleString()}</p>
@@ -1766,17 +1769,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M2</p>
                         <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM2.toLocaleString()}</p>
                       </div>
+                      {previewHasM3 && (
+                        <div>
+                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M3</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM3.toLocaleString()}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
                         <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM2.toLocaleString()}</p>
                       </div>
+                      {previewHasM3 && (
+                        <div>
+                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM3.toLocaleString()}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
                         <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
                       </div>
                     </div>
                   ) : (
-                  <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className={`grid ${previewHasM3 ? 'grid-cols-4' : 'grid-cols-3'} gap-3 text-center`}>
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M1</p>
                       <p className="text-white font-bold text-sm">${closerM1.toLocaleString()}</p>
@@ -1785,6 +1800,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
                       <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM2.toLocaleString()}</p>
                     </div>
+                    {previewHasM3 && (
+                      <div>
+                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM3.toLocaleString()}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
                       <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
