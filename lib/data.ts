@@ -1127,7 +1127,7 @@ export function getSolarTechBaseline(
   const tier = product.tiers.find(
     (t) => kW >= t.minKW && (t.maxKW === null || kW < t.maxKW)
   );
-  if (!tier) throw new Error(`getSolarTechBaseline: no tier found for product "${productId}" at ${kW} kW`);
+  if (!tier) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0 };
   return { closerPerW: tier.closerPerW, setterPerW: tier.setterPerW, kiloPerW: tier.kiloPerW };
 }
 

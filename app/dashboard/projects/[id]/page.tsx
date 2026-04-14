@@ -1426,9 +1426,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[var(--accent-green)] font-semibold">${project.m1Amount.toLocaleString()}</p>
+                      <p className="text-[var(--accent-green)] font-semibold">${project.m1Amount != null ? project.m1Amount.toLocaleString() : '—'}</p>
                       <button
-                        onClick={() => { setM1Val(String(project.m1Amount)); setEditM1(true); }}
+                        onClick={() => { setM1Val(String(project.m1Amount ?? 0)); setEditM1(true); }}
                         className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-xs"
                       >
                         Edit
@@ -1469,9 +1469,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[var(--accent-green)] font-semibold">${project.m2Amount.toLocaleString()}</p>
+                      <p className="text-[var(--accent-green)] font-semibold">${(project.m2Amount ?? 0).toLocaleString()}</p>
                       <button
-                        onClick={() => { setM2Val(String(project.m2Amount)); setEditM2(true); }}
+                        onClick={() => { setM2Val(String(project.m2Amount ?? 0)); setEditM2(true); }}
                         className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-xs"
                       >
                         Edit
