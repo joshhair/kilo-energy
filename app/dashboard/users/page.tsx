@@ -246,6 +246,12 @@ function UsersPageInner() {
   const [showInactiveSubDealers, setShowInactiveSubDealers] = useState(false);
   const [reactivatingSubDealerId, setReactivatingSubDealerId] = useState<string | null>(null);
 
+  // Inactive admins/PMs — same pattern.
+  const [showInactivePMs, setShowInactivePMs] = useState(false);
+  const [showInactiveAdmins, setShowInactiveAdmins] = useState(false);
+  const [reactivatingPmId, setReactivatingPmId] = useState<string | null>(null);
+  const [reactivatingAdminId, setReactivatingAdminId] = useState<string | null>(null);
+
   // ── Pending Clerk invitations (admin view) ────────────────────────────
   type PendingInvitation = {
     id: string;
@@ -325,8 +331,6 @@ function UsersPageInner() {
     }
 
     setIsAddingRep(true);
-    const ts = Date.now();
-    const repId = `rep_${ts}`;
     // Trainer assignment only applies to rep-role accounts.
     const trainerIdSnapshot = newUserRole === 'rep' ? newTrainerId : '';
     const isRepRole = newUserRole === 'rep';

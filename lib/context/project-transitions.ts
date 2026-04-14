@@ -223,7 +223,7 @@ export function handlePhaseRollback(
 
   return prevEntries
     .filter((e) => {
-      if (e.projectId !== projectId || e.status !== 'Draft') return false;
+      if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending')) return false;
       if (rollBackM1 && e.paymentStage === 'M1') return true;
       if (rollBackM2 && (e.paymentStage === 'M2' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2')))) return true;
       if (rollBackM3 && (e.paymentStage === 'M3' || (e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3')))) return true;

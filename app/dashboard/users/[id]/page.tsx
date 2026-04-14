@@ -206,8 +206,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const startEdit = (field: 'name' | 'email' | 'phone') => {
     setEditFirstName(resolvedUser.firstName);
     setEditLastName(resolvedUser.lastName);
-    setEditEmail(resolvedUser.email);
-    setEditPhone(resolvedUser.phone);
+    setEditEmail(resolvedUser.email ?? '');
+    setEditPhone(resolvedUser.phone ?? '');
     setEditingField(field);
   };
   startEditRef.current = startEdit;
