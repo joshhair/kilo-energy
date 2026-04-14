@@ -11,7 +11,9 @@ interface BeforeInstallPromptEvent extends Event {
 export default function InstallPrompt() {
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [bannerHeight, setBannerHeight] = useState(0);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   const dismiss = useCallback(() => {
     setShow(false);
@@ -82,10 +84,29 @@ export default function InstallPrompt() {
     deferredPrompt.current = null;
   };
 
+  // When banner is visible, add extra bottom padding to the main scroll
+  // container so fixed banner does not overlap page content. Removed on dismiss.
+  useEffect(() => {
+    const main = document.querySelector('main');
+    if (!main || !(main instanceof HTMLElement)) return;
+    if (!show || !bannerRef.current) {
+      main.style.removeProperty('padding-bottom');
+      setBannerHeight(0);
+      return;
+    }
+    const height = bannerRef.current.offsetHeight;
+    setBannerHeight(height);
+    main.style.setProperty('padding-bottom', `${height}px`);
+    return () => {
+      main.style.removeProperty('padding-bottom');
+    };
+  }, [show, isIOS]);
+
   if (!show) return null;
 
   return (
     <div
+      ref={bannerRef}
       className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up safe-area-bottom"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >

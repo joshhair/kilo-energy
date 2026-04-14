@@ -279,6 +279,8 @@ function ProjectsPageInner() {
 
         {/* Installer filter */}
         <select
+          aria-label="Installer"
+          name="installer"
           value={installerFilter}
           onChange={(e) => setInstallerFilter(e.target.value)}
           className="rounded-xl px-3 py-1.5 min-h-[36px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] w-full md:w-auto"
