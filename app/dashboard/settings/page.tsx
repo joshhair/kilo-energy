@@ -218,10 +218,6 @@ function SettingsPageInner() {
 
       if (e.key === 'Enter' && !inInput) {
         e.preventDefault();
-        if (editingInstaller) {
-          // Save is handled inside BaselinesSection
-          setEditingInstaller(null);
-        }
         if (editingAssignmentId) {
           setTrainerAssignments((prev) =>
             prev.map((x) => (x.id === editingAssignmentId ? { ...x, tiers: editingTiers } : x))

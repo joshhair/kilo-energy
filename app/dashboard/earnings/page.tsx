@@ -1275,7 +1275,7 @@ function AdminFinancialsView() {
       const draft   = entries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0);
       const reimbs  = reimbursements.filter((r) => r.repId === rep.id);
       const reimbPending = reimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
-      return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft + reimbPending };
+      return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft };
     }).sort((a, b) => b.total - a.total);
   }, [reps, payrollEntries, reimbursements]);
 

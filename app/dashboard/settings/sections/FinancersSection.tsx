@@ -25,7 +25,9 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
 
   const [newFinancer, setNewFinancer] = useState('');
   const [financerSearch, setFinancerSearch] = useState('');
-  const [archivedFinancersOpen, setArchivedFinancersOpen] = useState(false);
+  const [archivedFinancersOpen, setArchivedFinancersOpen] = useState(
+    () => financers.length > 0 && !financers.some((f) => f.active)
+  );
 
   return (
     <div key="financers" className="animate-tab-enter max-w-xl">
