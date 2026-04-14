@@ -320,31 +320,30 @@ export default function IncentivesPage() {
       )
     );
     // Persist milestone change
-    if (updatedMilestones) {
-      const previousMilestones = updatedMilestones.map((m) =>
-        m.id === milestoneId ? { ...m, achieved: !achieved } : m
-      );
-      fetch(`/api/incentives/${incId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ milestones: updatedMilestones }),
+    if (updatedMilestones.length === 0) return;
+    const previousMilestones = updatedMilestones.map((m) =>
+      m.id === milestoneId ? { ...m, achieved: !achieved } : m
+    );
+    fetch(`/api/incentives/${incId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ milestones: updatedMilestones }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const saved = await res.json();
+        setIncentives((prev) =>
+          prev.map((inc) => (inc.id === incId ? { ...inc, milestones: saved.milestones } : inc))
+        );
+        if (achieved) toast('Milestone marked as achieved!', 'success');
       })
-        .then(async (res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const saved = await res.json();
-          setIncentives((prev) =>
-            prev.map((inc) => (inc.id === incId ? { ...inc, milestones: saved.milestones } : inc))
-          );
-          if (achieved) toast('Milestone marked as achieved!', 'success');
-        })
-        .catch((err) => {
-          console.error(err);
-          setIncentives((prev) =>
-            prev.map((inc) => (inc.id === incId ? { ...inc, milestones: previousMilestones } : inc))
-          );
-          toast('Failed to persist milestone update', 'error');
-        });
-    }
+      .catch((err) => {
+        console.error(err);
+        setIncentives((prev) =>
+          prev.map((inc) => (inc.id === incId ? { ...inc, milestones: previousMilestones } : inc))
+        );
+        toast('Failed to persist milestone update', 'error');
+      });
   };
 
   // ── Edit handler ──

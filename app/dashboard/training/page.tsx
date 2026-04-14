@@ -191,7 +191,7 @@ function TrainingPageInner() {
       // Earnings from this trainee — match by projectId across closer and setter roles
       const traineeProjectIds = new Set(traineeDeals.map((p) => p.id));
       const earningsFromTrainee = trainerEntries
-        .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId)
+        .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId && e.status === 'Paid')
         .reduce((s, e) => s + e.amount, 0);
 
       return {
@@ -677,7 +677,7 @@ function TrainingPageInner() {
         <div key="rates" className="animate-tab-enter space-y-4">
           {traineeData.map((t, idx) => (
             <div
-              key={t.traineeId}
+              key={t.assignment.id}
               className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}
             >
               <div className="flex items-center gap-3 mb-4">
