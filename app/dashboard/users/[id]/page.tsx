@@ -171,7 +171,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   if (currentRole !== 'admin' && currentRole !== 'project_manager' && id !== currentRepId) {
     return (
-      <div className="p-8 text-center text-[#8891a8] text-sm">
+      <div className="p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this page.
       </div>
     );
@@ -182,9 +182,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   if (!resolvedUser) {
     return (
-      <div className="p-8 text-[#8891a8] text-center">
+      <div className="p-8 text-[var(--text-muted)] text-center">
         User not found.{' '}
-        <Link href="/dashboard/users" className="text-[#00e07a] hover:underline">
+        <Link href="/dashboard/users" className="text-[var(--accent-green)] hover:underline">
           Back to Users
         </Link>
       </div>
@@ -373,8 +373,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       : resolvedUser.role === 'project_manager' ? 'Project Manager'
       : 'Sub-Dealer';
     const badgeColor =
-      resolvedUser.role === 'admin' ? '#ffb020'
-      : resolvedUser.role === 'project_manager' ? '#00c4f0'
+      resolvedUser.role === 'admin' ? 'var(--accent-amber)'
+      : resolvedUser.role === 'project_manager' ? 'var(--accent-cyan)'
       : '#b47dff'; // sub-dealer purple
     const badgeBg =
       resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)'
@@ -385,16 +385,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     return (
       <div className="p-4 md:p-8 animate-fade-in-up">
         {/* Breadcrumb */}
-        <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[#8891a8] mb-6">
-          <Link href="/dashboard" className="hover:text-[#c2c8d8] transition-colors">Dashboard</Link>
+        <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-6">
+          <Link href="/dashboard" className="hover:text-[var(--text-secondary)] transition-colors">Dashboard</Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <Link href="/dashboard/users" className="hover:text-[#c2c8d8] transition-colors">Users</Link>
+          <Link href="/dashboard/users" className="hover:text-[var(--text-secondary)] transition-colors">Users</Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-[#c2c8d8]">{resolvedUser.firstName} {resolvedUser.lastName}</span>
+          <span className="text-[var(--text-secondary)]">{resolvedUser.firstName} {resolvedUser.lastName}</span>
         </nav>
 
         {/* Header card */}
-        <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35', borderLeft: `3px solid ${badgeColor}`, opacity: isInactive ? 0.75 : 1 }}>
+        <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `3px solid ${badgeColor}`, opacity: isInactive ? 0.75 : 1 }}>
           <div className="flex items-start gap-5">
             <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black shrink-0" style={{ background: badgeBg, color: badgeColor }}>
               {initials}
@@ -408,8 +408,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     value={editFirstName}
                     onChange={(e) => setEditFirstName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
-                    className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
-                    style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', maxWidth: 180 }}
+                    className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50"
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', maxWidth: 180 }}
                     autoFocus
                   />
                   <input
@@ -417,13 +417,13 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     value={editLastName}
                     onChange={(e) => setEditLastName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
-                    className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
-                    style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', maxWidth: 180 }}
+                    className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50"
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', maxWidth: 180 }}
                   />
-                  <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50">
+                  <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-sm transition-colors disabled:opacity-50">
                     <Check className="w-4 h-4" /> Save
                   </button>
-                  <button onClick={cancelEdit} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
+                  <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
                     <X className="w-4 h-4" /> Cancel
                   </button>
                 </div>
@@ -436,23 +436,23 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     {roleLabel}
                   </span>
                   {isInactive && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide" style={{ background: '#272b35', color: '#8891a8', border: '1px solid #525c72' }}>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide" style={{ background: 'var(--border)', color: 'var(--text-muted)', border: '1px solid var(--text-dim)' }}>
                       Inactive
                     </span>
                   )}
                   {isAdminViewer && (
                     <span className="group relative">
-                      <button onClick={() => startEdit('name')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit name (E)">
+                      <button onClick={() => startEdit('name')} className="text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors" title="Edit name (E)">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <span className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-[#272b35] text-[#c2c8d8] text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap">Press E</span>
+                      <span className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-[var(--border)] text-[var(--text-secondary)] text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap">Press E</span>
                     </span>
                   )}
                 </div>
               )}
 
               {/* Email (editable) */}
-              <div className="text-sm mb-1" style={{ color: '#c2c8d8' }}>
+              <div className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                 {editingField === 'email' ? (
                   <div className="flex items-center gap-2 flex-wrap">
                     <input
@@ -460,22 +460,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
-                      className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50"
-                      style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', minWidth: 280 }}
+                      className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50"
+                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', minWidth: 280 }}
                       autoFocus
                     />
-                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50">
+                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-sm transition-colors disabled:opacity-50">
                       <Check className="w-3.5 h-3.5" /> Save
                     </button>
-                    <button onClick={cancelEdit} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
+                    <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
                       <X className="w-3.5 h-3.5" /> Cancel
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span>{resolvedUser.email || <span style={{ color: '#525c72' }}>No email</span>}</span>
+                    <span>{resolvedUser.email || <span style={{ color: 'var(--text-dim)' }}>No email</span>}</span>
                     {isAdminViewer && (
-                      <button onClick={() => startEdit('email')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit email">
+                      <button onClick={() => startEdit('email')} className="text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors" title="Edit email">
                         <Pencil className="w-3 h-3" />
                       </button>
                     )}
@@ -484,7 +484,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               </div>
 
               {/* Phone (editable) */}
-              <div className="text-sm" style={{ color: '#c2c8d8' }}>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 {editingField === 'phone' ? (
                   <div className="flex items-center gap-2 flex-wrap">
                     <input
@@ -493,22 +493,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       onChange={(e) => setEditPhone(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                       placeholder="(555) 000-0000"
-                      className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 placeholder-slate-500"
-                      style={{ background: '#1d2028', border: '1px solid #333849', color: '#fff', minWidth: 200 }}
+                      className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 placeholder-slate-500"
+                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', minWidth: 200 }}
                       autoFocus
                     />
-                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50">
+                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-sm transition-colors disabled:opacity-50">
                       <Check className="w-3.5 h-3.5" /> Save
                     </button>
-                    <button onClick={cancelEdit} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
+                    <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
                       <X className="w-3.5 h-3.5" /> Cancel
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span>{resolvedUser.phone || <span style={{ color: '#525c72' }}>No phone</span>}</span>
+                    <span>{resolvedUser.phone || <span style={{ color: 'var(--text-dim)' }}>No phone</span>}</span>
                     {isAdminViewer && (
-                      <button onClick={() => startEdit('phone')} className="text-[#525c72] hover:text-[#c2c8d8] transition-colors" title="Edit phone">
+                      <button onClick={() => startEdit('phone')} className="text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors" title="Edit phone">
                         <Pencil className="w-3 h-3" />
                       </button>
                     )}
@@ -521,29 +521,29 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* Permissions card (PM only) */}
         {resolvedUser.role === 'project_manager' && currentRole === 'admin' && (
-          <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35' }}>
+          <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <h2 className="text-white font-bold text-base mb-4">Permissions</h2>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2">
-                <span style={{ color: '#c2c8d8' }}>Can create deals</span>
-                <span className={resolvedUser.canCreateDeals ? 'text-[#00e07a] font-semibold' : 'text-[#525c72]'}>
+                <span style={{ color: 'var(--text-secondary)' }}>Can create deals</span>
+                <span className={resolvedUser.canCreateDeals ? 'text-[var(--accent-green)] font-semibold' : 'text-[var(--text-dim)]'}>
                   {resolvedUser.canCreateDeals ? 'Yes' : 'No'}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-2 border-t border-[#272b35]">
-                <span style={{ color: '#c2c8d8' }}>Can access blitz</span>
-                <span className={resolvedUser.canAccessBlitz ? 'text-[#00e07a] font-semibold' : 'text-[#525c72]'}>
+              <div className="flex items-center justify-between py-2 border-t border-[var(--border)]">
+                <span style={{ color: 'var(--text-secondary)' }}>Can access blitz</span>
+                <span className={resolvedUser.canAccessBlitz ? 'text-[var(--accent-green)] font-semibold' : 'text-[var(--text-dim)]'}>
                   {resolvedUser.canAccessBlitz ? 'Yes' : 'No'}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-2 border-t border-[#272b35]">
-                <span style={{ color: '#c2c8d8' }}>Can export</span>
-                <span className={resolvedUser.canExport ? 'text-[#00e07a] font-semibold' : 'text-[#525c72]'}>
+              <div className="flex items-center justify-between py-2 border-t border-[var(--border)]">
+                <span style={{ color: 'var(--text-secondary)' }}>Can export</span>
+                <span className={resolvedUser.canExport ? 'text-[var(--accent-green)] font-semibold' : 'text-[var(--text-dim)]'}>
                   {resolvedUser.canExport ? 'Yes' : 'No'}
                 </span>
               </div>
             </div>
-            <p className="text-[11px] mt-4 pt-4 border-t border-[#272b35]" style={{ color: '#525c72' }}>
+            <p className="text-[11px] mt-4 pt-4 border-t border-[var(--border)]" style={{ color: 'var(--text-dim)' }}>
               Toggle these flags from Settings → Project Managers. Inline editing will move here in a follow-up.
             </p>
           </div>
@@ -553,7 +553,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         {/* Three buttons: Deactivate/Reactivate, Send/Resend invite,
             Delete permanently. Visible only to admins. */}
         {isAdminViewer && (
-          <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: '#161920', border: '1px solid #272b35' }}>
+          <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <h2 className="text-white font-bold text-base mb-4">Account actions</h2>
             <div className="flex flex-wrap gap-3">
               {/* Deactivate / Reactivate */}
@@ -562,7 +562,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={handleReactivate}
                   disabled={isReactivating}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+                  style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
                 >
                   {isReactivating ? 'Reactivating…' : 'Reactivate'}
                 </button>
@@ -571,7 +571,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={() => setConfirmDeactivate(true)}
                   disabled={isDeactivating}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(255,176,32,0.12)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }}
+                  style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)' }}
                 >
                   {isDeactivating ? 'Deactivating…' : 'Deactivate'}
                 </button>
@@ -594,7 +594,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={handleSendInvite}
                   disabled={isSendingInvite}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(0,196,240,0.12)', color: '#00c4f0', border: '1px solid rgba(0,196,240,0.3)' }}
+                  style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,196,240,0.3)' }}
                 >
                   {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
                 </button>
@@ -616,14 +616,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 );
               })()}
             </div>
-            <p className="text-[11px] mt-4" style={{ color: '#525c72' }}>
+            <p className="text-[11px] mt-4" style={{ color: 'var(--text-dim)' }}>
               Deactivation locks the user out of Clerk and revokes any pending invitation. Their history is preserved. Hard delete is only allowed when the user has zero related records.
             </p>
           </div>
         )}
 
-        <div className="card-surface rounded-2xl p-5" style={{ background: '#161920', border: '1px solid #272b35' }}>
-          <p className="text-xs" style={{ color: '#8891a8' }}>
+        <div className="card-surface rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {resolvedUser.role === 'sub-dealer'
               ? 'Sub-dealer accounts route deals through their own pricing. Project history lives on the projects they sourced.'
               : 'Admin and project manager accounts don\u2019t have commission, projects, or payroll data. Use Settings for permission management.'}
@@ -747,12 +747,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="p-4 md:p-8 animate-fade-in-up">
       {/* Breadcrumb */}
-      <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[#8891a8] mb-6">
-        <Link href="/dashboard" className="hover:text-[#c2c8d8] transition-colors">Dashboard</Link>
+      <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-6">
+        <Link href="/dashboard" className="hover:text-[var(--text-secondary)] transition-colors">Dashboard</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <Link href="/dashboard/users" className="hover:text-[#c2c8d8] transition-colors">Users</Link>
+        <Link href="/dashboard/users" className="hover:text-[var(--text-secondary)] transition-colors">Users</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-[#c2c8d8]">{rep.name}</span>
+        <span className="text-[var(--text-secondary)]">{rep.name}</span>
       </nav>
 
       {/* Two-column layout at xl+ */}
@@ -772,22 +772,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-lg bg-[#00e07a]/15">
-              <UserCheck className="w-5 h-5 text-[#00e07a]" />
+            <span className="p-2 rounded-lg bg-[var(--accent-green)]/15">
+              <UserCheck className="w-5 h-5 text-[var(--accent-green)]" />
             </span>
             <h1 className="text-3xl font-black tracking-tight text-gradient-brand">{rep.name}</h1>
           </div>
-          <p className="text-[#c2c8d8] text-sm mt-1">{rep.email}</p>
+          <p className="text-[var(--text-secondary)] text-sm mt-1">{rep.email}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-4 mb-8">
         {[
-          { label: 'Total Deals',    value: repProjects.length,              color: 'text-[#00e07a]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[#00e07a]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Total Deals',    value: repProjects.length,              color: 'text-[var(--accent-green)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[var(--accent-green)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
           { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[#00e07a]', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: '#00e07a' }] : []),
+          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[var(--accent-green)]', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: 'var(--accent-green)' }] : []),
         ].map((s) => (
           <div
             key={s.label}
@@ -795,11 +795,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             style={{ '--card-accent': s.accentColor } as CSSProperties}
           >
             <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r mb-2 ${s.accentGradient}`} />
-            <p className="text-[#c2c8d8] text-xs uppercase tracking-wider mb-1">{s.label}</p>
+            <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider mb-1">{s.label}</p>
             <div className="flex items-center gap-2">
               <p className={`stat-value stat-value-glow ${s.glowClass} text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
               {s.trend !== null && s.trend > 0 && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#00e07a]/15 text-[#00e07a]">
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-green)]/15 text-[var(--accent-green)]">
                   <TrendingUp className="w-2.5 h-2.5" /> +{s.label === 'Total kW' ? s.trend.toFixed(1) : s.trend}
                 </span>
               )}
@@ -825,7 +825,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             {!assignment && !showTrainerPicker && (
               <button
                 onClick={() => setShowTrainerPicker(true)}
-                className="flex items-center gap-1.5 text-sm font-medium text-[#00e07a] hover:text-[#00c4f0] transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Assign Trainer
               </button>
@@ -834,7 +834,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* Already assigned — show trainer name + remove */}
           {assignment && (
-            <div className="flex items-center justify-between mt-3 bg-[#1d2028]/50 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between mt-3 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
               <div className="flex items-center gap-3">
                 {trainerRep ? (
                   <>
@@ -843,11 +843,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     </span>
                     <div>
                       <p className="text-white text-sm font-medium">{trainerRep.name}</p>
-                      <p className="text-[#8891a8] text-xs">Trainer &middot; ${currentOverrideRate.toFixed(2)}/W</p>
+                      <p className="text-[var(--text-muted)] text-xs">Trainer &middot; ${currentOverrideRate.toFixed(2)}/W</p>
                     </div>
                   </>
                 ) : (
-                  <p className="text-[#8891a8] text-sm italic">Trainer no longer exists — remove stale assignment</p>
+                  <p className="text-[var(--text-muted)] text-sm italic">Trainer no longer exists — remove stale assignment</p>
                 )}
               </div>
               <button
@@ -865,7 +865,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     toast('Failed to remove trainer assignment', 'error');
                   });
                 }}
-                className="text-[#8891a8] hover:text-red-400 transition-colors text-xs font-medium flex items-center gap-1"
+                className="text-[var(--text-muted)] hover:text-red-400 transition-colors text-xs font-medium flex items-center gap-1"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Remove
               </button>
@@ -932,7 +932,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* No assignment and picker not shown — info message */}
           {!assignment && !showTrainerPicker && (
-            <p className="text-[#8891a8] text-xs mt-2">No trainer assigned to this rep.</p>
+            <p className="text-[var(--text-muted)] text-xs mt-2">No trainer assigned to this rep.</p>
           )}
         </div>
       )}
@@ -960,10 +960,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <h2 className="text-white font-semibold mb-4">Commission by Role</h2>
         <table className="w-full text-sm">
           <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-            <tr className="border-b border-[#333849]">
-              <th className="text-left py-2 text-[#c2c8d8] font-medium">Role</th>
-              <th className="text-left py-2 text-[#c2c8d8] font-medium">Deals</th>
-              <th className="text-left py-2 text-[#c2c8d8] font-medium">Total Earned</th>
+            <tr className="border-b border-[var(--border-subtle)]">
+              <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Role</th>
+              <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Deals</th>
+              <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Total Earned</th>
             </tr>
           </thead>
           <tbody>
@@ -985,28 +985,28 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 .reduce((s, e) => s + e.amount, 0);
               return (
                 <>
-                  <tr className="table-row-enter row-stagger-0 relative border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                  <tr className="table-row-enter row-stagger-0 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                     <td className="py-2.5 text-white">Closer</td>
-                    <td className="py-2.5 text-[#c2c8d8]">{closerDeals.length}</td>
-                    <td className="py-2.5 text-[#00e07a] font-semibold">${closerPay.toLocaleString()}</td>
+                    <td className="py-2.5 text-[var(--text-secondary)]">{closerDeals.length}</td>
+                    <td className="py-2.5 text-[var(--accent-green)] font-semibold">${closerPay.toLocaleString()}</td>
                   </tr>
-                  <tr className="table-row-enter row-stagger-1 relative border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                  <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                     <td className="py-2.5 text-white">Setter</td>
-                    <td className="py-2.5 text-[#c2c8d8]">{setterDeals.length}</td>
-                    <td className="py-2.5 text-[#00e07a] font-semibold">${setterPay.toLocaleString()}</td>
+                    <td className="py-2.5 text-[var(--text-secondary)]">{setterDeals.length}</td>
+                    <td className="py-2.5 text-[var(--accent-green)] font-semibold">${setterPay.toLocaleString()}</td>
                   </tr>
-                  <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[#333849]/50' : ''} even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
+                  <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[var(--border-subtle)]/50' : ''} even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
                     <td className="py-2.5 text-white">Trainer</td>
-                    <td className="py-2.5 text-[#c2c8d8]">
+                    <td className="py-2.5 text-[var(--text-secondary)]">
                       {trainerDeals.length > 0 ? `${trainerDeals.length} trainee(s)` : '0'}
                     </td>
-                    <td className="py-2.5 text-[#00e07a] font-semibold">${trainerPay.toLocaleString()}</td>
+                    <td className="py-2.5 text-[var(--accent-green)] font-semibold">${trainerPay.toLocaleString()}</td>
                   </tr>
                   {bonusPay > 0 && (
-                    <tr className="table-row-enter row-stagger-3 relative even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                    <tr className="table-row-enter row-stagger-3 relative even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                       <td className="py-2.5 text-white">Bonus / Other</td>
-                      <td className="py-2.5 text-[#c2c8d8]">—</td>
-                      <td className="py-2.5 text-[#00e07a] font-semibold">${bonusPay.toLocaleString()}</td>
+                      <td className="py-2.5 text-[var(--text-secondary)]">—</td>
+                      <td className="py-2.5 text-[var(--accent-green)] font-semibold">${bonusPay.toLocaleString()}</td>
                     </tr>
                   )}
                 </>
@@ -1024,31 +1024,31 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* Payment history */}
       {!isPM && <div className="card-surface rounded-2xl overflow-clip mb-6">
-        <div className="px-5 py-4 border-b border-[#333849] flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
           <h2 className="text-white font-semibold">Payment History</h2>
           <div className="flex gap-4 text-sm">
-            <span className="text-[#00e07a]">Paid: ${totalPaid.toLocaleString()}</span>
+            <span className="text-[var(--accent-green)]">Paid: ${totalPaid.toLocaleString()}</span>
             <span className="text-yellow-400">Pending: ${totalPending.toLocaleString()}</span>
           </div>
         </div>
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-[#161920]/95 backdrop-blur-sm border-b border-[#333849] table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-            <tr className="border-b border-[#333849]">
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Customer / Notes</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Type</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Stage</th>
+          <thead className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+            <tr className="border-b border-[var(--border-subtle)]">
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Customer / Notes</th>
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Type</th>
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Stage</th>
               <th className="text-right px-5 py-3 font-medium">
-                <button onClick={() => togglePaySort('amount')} className={`flex items-center gap-1 ml-auto transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[#00e07a]' : 'text-[#c2c8d8] hover:text-white'}`}>
+                <button onClick={() => togglePaySort('amount')} className={`flex items-center gap-1 ml-auto transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
                   Amount <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'amount' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
               <th className="text-left px-5 py-3 font-medium">
-                <button onClick={() => togglePaySort('status')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'status' ? 'text-[#00e07a]' : 'text-[#c2c8d8] hover:text-white'}`}>
+                <button onClick={() => togglePaySort('status')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'status' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
                   Status <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'status' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
               <th className="text-left px-5 py-3 font-medium">
-                <button onClick={() => togglePaySort('date')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'date' ? 'text-[#00e07a]' : 'text-[#c2c8d8] hover:text-white'}`}>
+                <button onClick={() => togglePaySort('date')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'date' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
                   Date <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'date' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
@@ -1056,34 +1056,34 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </thead>
           <tbody>
             {pagedPayroll.map((entry, i) => (
-              <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
+              <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
                 <td className="px-5 py-3 text-white">
                   {entry.customerName || entry.notes || '—'}
                 </td>
                 <td className="px-5 py-3">
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                    entry.type === 'Bonus' ? 'bg-blue-900/50 text-[#00e07a]' : 'bg-[#272b35] text-[#c2c8d8]'
+                    entry.type === 'Bonus' ? 'bg-blue-900/50 text-[var(--accent-green)]' : 'bg-[var(--border)] text-[var(--text-secondary)]'
                   }`}>
                     {entry.type}
                   </span>
                 </td>
                 <td className="px-5 py-3">
-                  <span className="bg-[#272b35] text-[#c2c8d8] text-xs px-2 py-0.5 rounded font-medium">
+                  <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">
                     {entry.paymentStage}
                   </span>
                 </td>
-                <td className={`px-5 py-3 text-right text-[#00e07a] font-semibold tabular-nums${paySortCol === 'amount' ? ' bg-[#00e07a]/[0.015]' : ''}`}>
+                <td className={`px-5 py-3 text-right text-[var(--accent-green)] font-semibold tabular-nums${paySortCol === 'amount' ? ' bg-[var(--accent-green)]/[0.015]' : ''}`}>
                   ${entry.amount.toLocaleString()}
                 </td>
-                <td className={`px-5 py-3${paySortCol === 'status' ? ' bg-[#00e07a]/[0.015]' : ''}`}>
+                <td className={`px-5 py-3${paySortCol === 'status' ? ' bg-[var(--accent-green)]/[0.015]' : ''}`}>
                   <StatusBadge status={entry.status} />
                 </td>
-                <td className={`px-5 py-3 text-[#8891a8]${paySortCol === 'date' ? ' bg-[#00e07a]/[0.015]' : ''}`}>{formatDate(entry.date)}</td>
+                <td className={`px-5 py-3 text-[var(--text-muted)]${paySortCol === 'date' ? ' bg-[var(--accent-green)]/[0.015]' : ''}`}>{formatDate(entry.date)}</td>
               </tr>
             ))}
             {repPayroll.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-[#8891a8]">
+                <td colSpan={6} className="px-5 py-8 text-center text-[var(--text-muted)]">
                   No payment history.
                 </td>
               </tr>
@@ -1099,31 +1099,31 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* Projects table */}
       <div className="card-surface rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#333849]">
+        <div className="px-5 py-4 border-b border-[var(--border-subtle)]">
           <h2 className="text-white font-semibold">All Projects</h2>
         </div>
         <table className="w-full text-sm">
           <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-            <tr className="border-b border-[#333849]">
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Customer</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Role</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Phase</th>
-              <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium">Installer</th>
-              <th className="hidden xl:table-cell text-right px-5 py-3 text-[#c2c8d8] font-medium">Sold</th>
-              <th className="text-right px-5 py-3 text-[#c2c8d8] font-medium tabular-nums">kW</th>
-              {!isPM && <th className="text-right px-5 py-3 text-[#c2c8d8] font-medium tabular-nums">Est. Pay</th>}
+            <tr className="border-b border-[var(--border-subtle)]">
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Customer</th>
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Role</th>
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Phase</th>
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Installer</th>
+              <th className="hidden xl:table-cell text-right px-5 py-3 text-[var(--text-secondary)] font-medium">Sold</th>
+              <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium tabular-nums">kW</th>
+              {!isPM && <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium tabular-nums">Est. Pay</th>}
             </tr>
           </thead>
           <tbody>
             {pagedProjects.map((proj, i) => (
-              <tr key={proj.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
+              <tr key={proj.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
                 <td className="px-5 py-3">
-                  <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[#00e07a] transition-colors">
+                  <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[var(--accent-green)] transition-colors">
                     {proj.customerName}
                   </Link>
                 </td>
                 <td className="px-5 py-3">
-                  <span className="text-xs text-[#c2c8d8]">
+                  <span className="text-xs text-[var(--text-secondary)]">
                     {proj.repId === id && proj.setterId === id ? 'Self-gen' : proj.repId === id ? 'Closer' : 'Setter'}
                   </span>
                 </td>
@@ -1131,9 +1131,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <div className="flex flex-col gap-1.5">
                     <PhaseBadge phase={proj.phase} />
                     {!['Cancelled', 'On Hold'].includes(proj.phase) && (
-                      <div className="h-[3px] w-full rounded-full bg-[#272b35] overflow-hidden">
+                      <div className="h-[3px] w-full rounded-full bg-[var(--border)] overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[#00c4f0] to-[#00e07a] motion-safe:transition-[width] motion-safe:duration-700 motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
+                          className="h-full rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-green)] motion-safe:transition-[width] motion-safe:duration-700 motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
                           style={{
                             width: barsMounted
                               ? `${Math.round(((PIPELINE_PHASES.indexOf(proj.phase as typeof PIPELINE_PHASES[number]) + 1) / PIPELINE_PHASES.length) * 100)}%`
@@ -1151,11 +1151,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     )}
                   </div>
                 </td>
-                <td className="px-5 py-3 text-[#c2c8d8]">{proj.installer}</td>
-                <td className="hidden xl:table-cell text-right px-5 py-3 text-[#8891a8] tabular-nums">{formatDate(proj.soldDate)}</td>
-                <td className="px-5 py-3 text-right text-[#c2c8d8] tabular-nums">{proj.kWSize}</td>
+                <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.installer}</td>
+                <td className="hidden xl:table-cell text-right px-5 py-3 text-[var(--text-muted)] tabular-nums">{formatDate(proj.soldDate)}</td>
+                <td className="px-5 py-3 text-right text-[var(--text-secondary)] tabular-nums">{proj.kWSize}</td>
                 {!isPM && (
-                  <td className="px-5 py-3 text-right text-[#00e07a] font-semibold tabular-nums">
+                  <td className="px-5 py-3 text-right text-[var(--accent-green)] font-semibold tabular-nums">
                     ${(proj.repId === id
                         ? (proj.setterId === id ? (proj.setterM1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
                         : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
@@ -1168,11 +1168,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <tr>
                 <td colSpan={isPM ? 6 : 7} className="px-5 py-14 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center">
-                      <FolderKanban className="w-6 h-6 text-[#525c72] animate-pulse" />
+                    <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center">
+                      <FolderKanban className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
                     </div>
-                    <p className="text-[#c2c8d8] text-sm font-medium">This rep has no deals yet</p>
-                    <p className="text-[#525c72] text-xs">Projects assigned to this rep will appear here.</p>
+                    <p className="text-[var(--text-secondary)] text-sm font-medium">This rep has no deals yet</p>
+                    <p className="text-[var(--text-dim)] text-xs">Projects assigned to this rep will appear here.</p>
                   </div>
                 </td>
               </tr>
@@ -1192,7 +1192,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* ── Action footer ────────────────────────────────────────── */}
       {/* Same three-button footer as the admin/PM/SD shell — admin only. */}
       {isAdminViewer && (
-        <div className="card-surface rounded-2xl p-6 mt-6" style={{ background: '#161920', border: '1px solid #272b35' }}>
+        <div className="card-surface rounded-2xl p-6 mt-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <h2 className="text-white font-bold text-base mb-4">Account actions</h2>
           <div className="flex flex-wrap gap-3">
             {isInactive ? (
@@ -1200,7 +1200,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={handleReactivate}
                 disabled={isReactivating}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+                style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
               >
                 {isReactivating ? 'Reactivating…' : 'Reactivate'}
               </button>
@@ -1209,7 +1209,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={() => setConfirmDeactivate(true)}
                 disabled={isDeactivating}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(255,176,32,0.12)', color: '#ffb020', border: '1px solid rgba(255,176,32,0.3)' }}
+                style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)' }}
               >
                 {isDeactivating ? 'Deactivating…' : 'Deactivate'}
               </button>
@@ -1219,7 +1219,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={handleSendInvite}
                 disabled={isSendingInvite}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(0,196,240,0.12)', color: '#00c4f0', border: '1px solid rgba(0,196,240,0.3)' }}
+                style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,196,240,0.3)' }}
               >
                 {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
               </button>
@@ -1249,7 +1249,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               );
             })()}
           </div>
-          <p className="text-[11px] mt-4" style={{ color: '#525c72' }}>
+          <p className="text-[11px] mt-4" style={{ color: 'var(--text-dim)' }}>
             Deactivation locks the user out of Clerk and revokes any pending invitation. Their history is preserved. Hard delete is only allowed when the user has zero related records.
           </p>
         </div>
@@ -1360,22 +1360,22 @@ function TrainerOverrideCard({
   );
 
   return (
-    <div className="bg-[#161920] border border-amber-500/30 rounded-2xl p-5 mb-6">
+    <div className="bg-[var(--surface)] border border-amber-500/30 rounded-2xl p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-white font-semibold">Trainer Override</h2>
-          <p className="text-[#c2c8d8] text-sm mt-0.5">
+          <p className="text-[var(--text-secondary)] text-sm mt-0.5">
             Trainer: <span className="text-amber-400">{trainerName}</span>
-            <span className="text-[#525c72] mx-2">·</span>
+            <span className="text-[var(--text-dim)] mx-2">·</span>
             Current rate: <span className="text-amber-400 font-semibold">${currentRate.toFixed(2)}/W</span>
-            <span className="text-[#525c72] mx-2">·</span>
+            <span className="text-[var(--text-dim)] mx-2">·</span>
             {completedDeals} deal{completedDeals !== 1 ? 's' : ''} completed
           </p>
         </div>
         {isAdmin && !editing && (
           <button
             onClick={() => { setDraftTiers([...assignment.tiers]); setEditing(true); }}
-            className="flex items-center gap-1.5 text-[#c2c8d8] hover:text-white text-sm transition-colors"
+            className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-white text-sm transition-colors"
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit
@@ -1383,11 +1383,11 @@ function TrainerOverrideCard({
         )}
         {editing && (
           <div className="flex gap-2">
-            <button onClick={save} disabled={saving} className="flex items-center gap-1 text-[#00e07a] hover:text-[#00c4f0] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={save} disabled={saving} className="flex items-center gap-1 text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               <Check className="w-3.5 h-3.5" />
               {saving ? 'Saving…' : 'Save'}
             </button>
-            <button onClick={cancel} className="flex items-center gap-1 text-[#8891a8] hover:text-[#c2c8d8] text-sm transition-colors">
+            <button onClick={cancel} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
               <X className="w-3.5 h-3.5" />
               Cancel
             </button>
@@ -1411,15 +1411,15 @@ function TrainerOverrideCard({
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
                 isActive && !editing
                   ? 'bg-amber-500/10 border border-amber-500/30'
-                  : 'bg-[#1d2028]/50'
+                  : 'bg-[var(--surface-card)]/50'
               }`}
             >
               {!editing ? (
                 <>
-                  <span className={`text-sm flex-1 ${isActive ? 'text-amber-300' : 'text-[#c2c8d8]'}`}>
+                  <span className={`text-sm flex-1 ${isActive ? 'text-amber-300' : 'text-[var(--text-secondary)]'}`}>
                     {dealRange}
                   </span>
-                  <span className={`font-semibold text-sm ${isActive ? 'text-amber-400' : 'text-[#c2c8d8]'}`}>
+                  <span className={`font-semibold text-sm ${isActive ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
                     ${tier.ratePerW.toFixed(2)}/W
                   </span>
                   {isActive && (
@@ -1430,9 +1430,9 @@ function TrainerOverrideCard({
                 </>
               ) : (
                 <>
-                  <span className="text-[#8891a8] text-xs w-16">Tier {i + 1}</span>
+                  <span className="text-[var(--text-muted)] text-xs w-16">Tier {i + 1}</span>
                   <div className="flex items-center gap-2 flex-1">
-                    <span className="text-[#8891a8] text-xs">Up to deal</span>
+                    <span className="text-[var(--text-muted)] text-xs">Up to deal</span>
                     <input
                       type="number"
                       min="1"
@@ -1440,28 +1440,28 @@ function TrainerOverrideCard({
                       value={tier.upToDeal ?? ''}
                       onChange={(e) => updateTier(i, 'upToDeal', e.target.value)}
                       disabled={i === draftTiers.length - 1}
-                      className="w-20 bg-[#272b35] border border-[#272b35] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
+                      className="w-20 bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
                     />
                     {i === draftTiers.length - 1 && (
-                      <span className="text-[#8891a8] text-xs">(perpetual)</span>
+                      <span className="text-[var(--text-muted)] text-xs">(perpetual)</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[#8891a8] text-xs">$</span>
+                    <span className="text-[var(--text-muted)] text-xs">$</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       value={tier.ratePerW}
                       onChange={(e) => updateTier(i, 'ratePerW', e.target.value)}
-                      className="w-20 bg-[#272b35] border border-[#272b35] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      className="w-20 bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
-                    <span className="text-[#8891a8] text-xs">/W</span>
+                    <span className="text-[var(--text-muted)] text-xs">/W</span>
                   </div>
                   <button
                     onClick={() => removeTier(i)}
                     disabled={draftTiers.length <= 1}
-                    className="text-[#525c72] hover:text-red-400 transition-colors disabled:opacity-30"
+                    className="text-[var(--text-dim)] hover:text-red-400 transition-colors disabled:opacity-30"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1474,7 +1474,7 @@ function TrainerOverrideCard({
         {editing && (
           <button
             onClick={addTier}
-            className="flex items-center gap-1.5 text-[#c2c8d8] hover:text-white text-xs mt-2 transition-colors"
+            className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-white text-xs mt-2 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add tier
@@ -1492,20 +1492,20 @@ function RepDetailSkeleton() {
     <div className="p-4 md:p-8 max-w-4xl">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 mb-6">
-        <div className="h-3 w-16 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '0ms' }} />
-        <div className="h-3 w-3 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '25ms' }} />
-        <div className="h-3 w-10 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '50ms' }} />
-        <div className="h-3 w-3 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
-        <div className="h-3 w-24 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '100ms' }} />
+        <div className="h-3 w-16 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '0ms' }} />
+        <div className="h-3 w-3 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '25ms' }} />
+        <div className="h-3 w-10 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '50ms' }} />
+        <div className="h-3 w-3 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+        <div className="h-3 w-24 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '100ms' }} />
       </div>
 
       {/* Header — avatar + name */}
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 rounded-full bg-[#1d2028] animate-skeleton flex-shrink-0" style={{ animationDelay: '100ms' }} />
+        <div className="w-14 h-14 rounded-full bg-[var(--surface-card)] animate-skeleton flex-shrink-0" style={{ animationDelay: '100ms' }} />
         <div>
-          <div className="h-[3px] w-12 rounded-full bg-[#272b35] animate-skeleton mb-3" style={{ animationDelay: '150ms' }} />
-          <div className="h-7 w-48 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '200ms' }} />
-          <div className="h-4 w-56 bg-[#1d2028]/60 rounded animate-skeleton mt-1.5" style={{ animationDelay: '250ms' }} />
+          <div className="h-[3px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3" style={{ animationDelay: '150ms' }} />
+          <div className="h-7 w-48 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '200ms' }} />
+          <div className="h-4 w-56 bg-[var(--surface-card)]/60 rounded animate-skeleton mt-1.5" style={{ animationDelay: '250ms' }} />
         </div>
       </div>
 
@@ -1515,9 +1515,9 @@ function RepDetailSkeleton() {
           const base = 300 + cardIdx * 50;
           return (
             <div key={cardIdx} className="card-surface rounded-2xl p-4">
-              <div className="h-[2px] w-8 rounded-full bg-[#272b35] animate-skeleton mb-2" style={{ animationDelay: `${base}ms` }} />
-              <div className="h-3 w-20 bg-[#1d2028]/80 rounded animate-skeleton mb-2" style={{ animationDelay: `${base + 30}ms` }} />
-              <div className="h-6 w-24 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${base + 60}ms` }} />
+              <div className="h-[2px] w-8 rounded-full bg-[var(--border)] animate-skeleton mb-2" style={{ animationDelay: `${base}ms` }} />
+              <div className="h-3 w-20 bg-[var(--surface-card)]/80 rounded animate-skeleton mb-2" style={{ animationDelay: `${base + 30}ms` }} />
+              <div className="h-6 w-24 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: `${base + 60}ms` }} />
             </div>
           );
         })}
@@ -1525,26 +1525,26 @@ function RepDetailSkeleton() {
 
       {/* Table skeleton — Payment History */}
       <div className="card-surface rounded-2xl overflow-hidden mb-6">
-        <div className="px-5 py-4 border-b border-[#333849] flex items-center justify-between">
-          <div className="h-5 w-36 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '550ms' }} />
+        <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
+          <div className="h-5 w-36 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '550ms' }} />
           <div className="flex gap-4">
-            <div className="h-4 w-24 bg-[#1d2028]/60 rounded animate-skeleton" style={{ animationDelay: '575ms' }} />
-            <div className="h-4 w-28 bg-[#1d2028]/60 rounded animate-skeleton" style={{ animationDelay: '600ms' }} />
+            <div className="h-4 w-24 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ animationDelay: '575ms' }} />
+            <div className="h-4 w-28 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ animationDelay: '600ms' }} />
           </div>
         </div>
         {/* Header row */}
-        <div className="border-b border-[#333849] px-5 py-3 flex gap-4">
+        <div className="border-b border-[var(--border-subtle)] px-5 py-3 flex gap-4">
           {[96, 56, 56, 64, 56, 64].map((w, i) => (
-            <div key={i} className="h-4 bg-[#272b35]/70 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${625 + i * 30}ms` }} />
+            <div key={i} className="h-4 bg-[var(--border)]/70 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${625 + i * 30}ms` }} />
           ))}
         </div>
         {/* 6 placeholder rows */}
         {[0, 1, 2, 3, 4, 5].map((rowIdx) => {
           const delay = 700 + rowIdx * 40;
           return (
-            <div key={rowIdx} className={`border-b border-[#333849]/50 px-5 py-3.5 flex gap-4 items-center ${rowIdx % 2 !== 0 ? 'bg-[#1d2028]/20' : ''}`}>
+            <div key={rowIdx} className={`border-b border-[var(--border-subtle)]/50 px-5 py-3.5 flex gap-4 items-center ${rowIdx % 2 !== 0 ? 'bg-[var(--surface-card)]/20' : ''}`}>
               {[120, 48, 48, 56, 52, 56].map((w, colIdx) => (
-                <div key={colIdx} className="h-4 bg-[#1d2028]/60 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 20}ms` }} />
+                <div key={colIdx} className="h-4 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 20}ms` }} />
               ))}
             </div>
           );
@@ -1553,22 +1553,22 @@ function RepDetailSkeleton() {
 
       {/* Table skeleton — All Projects */}
       <div className="card-surface rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#333849]">
-          <div className="h-5 w-28 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '950ms' }} />
+        <div className="px-5 py-4 border-b border-[var(--border-subtle)]">
+          <div className="h-5 w-28 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '950ms' }} />
         </div>
         {/* Header row */}
-        <div className="border-b border-[#333849] px-5 py-3 flex gap-4">
+        <div className="border-b border-[var(--border-subtle)] px-5 py-3 flex gap-4">
           {[80, 48, 56, 72, 40, 64].map((w, i) => (
-            <div key={i} className="h-4 bg-[#272b35]/70 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${975 + i * 30}ms` }} />
+            <div key={i} className="h-4 bg-[var(--border)]/70 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${975 + i * 30}ms` }} />
           ))}
         </div>
         {/* 6 placeholder rows */}
         {[0, 1, 2, 3, 4, 5].map((rowIdx) => {
           const delay = 1050 + rowIdx * 40;
           return (
-            <div key={rowIdx} className={`border-b border-[#333849]/50 px-5 py-3.5 flex gap-4 items-center ${rowIdx % 2 !== 0 ? 'bg-[#1d2028]/20' : ''}`}>
+            <div key={rowIdx} className={`border-b border-[var(--border-subtle)]/50 px-5 py-3.5 flex gap-4 items-center ${rowIdx % 2 !== 0 ? 'bg-[var(--surface-card)]/20' : ''}`}>
               {[100, 44, 56, 64, 36, 56].map((w, colIdx) => (
-                <div key={colIdx} className="h-4 bg-[#1d2028]/60 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 20}ms` }} />
+                <div key={colIdx} className="h-4 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 20}ms` }} />
               ))}
             </div>
           );
@@ -1593,7 +1593,7 @@ const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: str
 };
 
 function PhaseBadge({ phase }: { phase: string }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[#272b35]/30', shadow: '', text: 'text-[#c2c8d8]', dot: 'bg-[#8891a8]' };
+  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
   return (
     <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
@@ -1603,9 +1603,9 @@ function PhaseBadge({ phase }: { phase: string }) {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  Paid:    { bg: 'bg-[#00e07a]/10 border-[#00e07a]/20', text: 'text-[#00e07a]', dot: 'bg-emerald-400' },
+  Paid:    { bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20', text: 'text-[var(--accent-green)]', dot: 'bg-emerald-400' },
   Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-yellow-400',  dot: 'bg-yellow-400'  },
-  Draft:   { bg: 'bg-[#8891a8]/10 border-[#333849]/20',     text: 'text-[#c2c8d8]',   dot: 'bg-[#8891a8]'   },
+  Draft:   { bg: 'bg-[var(--text-muted)]/10 border-[var(--border-subtle)]/20',     text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 
 function StatusBadge({ status }: { status: string }) {

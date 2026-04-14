@@ -16,21 +16,21 @@ export default function ReimbursementRedirectPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Receipt className="w-5 h-5 text-[#00e07a]" />
+            <Receipt className="w-5 h-5 text-[var(--accent-green)]" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Reimbursements</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Reimbursements</h1>
         </div>
-        <p className="text-[#c2c8d8]/80 text-sm font-medium ml-12">This page has moved</p>
+        <p className="text-[var(--text-secondary)]/80 text-sm font-medium ml-12">This page has moved</p>
       </div>
 
-      <div className="bg-[#161920] border border-[#333849] rounded-2xl p-8 max-w-lg">
+      <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-2xl p-8 max-w-lg">
         <div className="flex items-start gap-4">
           <div className="shrink-0 mt-0.5 p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Receipt className="w-5 h-5 text-[#00e07a]" />
+            <Receipt className="w-5 h-5 text-[var(--accent-green)]" />
           </div>
           <div>
             <h2 className="text-white font-bold text-base mb-2">Reimbursements have moved</h2>
-            <p className="text-[#c2c8d8] text-sm leading-relaxed mb-5">
+            <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-5">
               Expense reimbursements are now part of the unified <strong className="text-white">My Pay</strong> hub,
               giving you one place to view commissions, bonuses, and reimbursements together.
             </p>

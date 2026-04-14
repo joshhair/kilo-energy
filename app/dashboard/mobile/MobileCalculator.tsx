@@ -148,7 +148,7 @@ export default function MobileCalculator() {
       <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="Calculator" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
+          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -156,13 +156,13 @@ export default function MobileCalculator() {
 
   // ── Select styles ────────────────────────────────────────────────────────
   const selectStyle: React.CSSProperties = {
-    background: 'var(--m-card, #0d1525)',
-    border: '1px solid var(--m-border, #1a2840)',
+    background: 'var(--m-card, var(--surface-mobile-card))',
+    border: '1px solid var(--m-border, var(--border-mobile))',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
   const inputStyle: React.CSSProperties = {
-    background: 'var(--m-card, #0d1525)',
-    border: '1px solid var(--m-border, #1a2840)',
+    background: 'var(--m-card, var(--surface-mobile-card))',
+    border: '1px solid var(--m-border, var(--border-mobile))',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
   const selectCls = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 appearance-none transition-transform duration-75 active:scale-[0.985]';
@@ -176,7 +176,7 @@ export default function MobileCalculator() {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Calculator" />
-        <div className="rounded-2xl p-5 h-64 animate-pulse" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }} />
+        <div className="rounded-2xl p-5 h-64 animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }} />
       </div>
     );
   }
@@ -200,7 +200,7 @@ export default function MobileCalculator() {
               setPcSelectedFamily('');
             }}
             className={selectCls}
-            style={{ ...selectStyle, '--tw-ring-color': '#00e5a0' } as React.CSSProperties}
+            style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
           >
             <option value="">-- Select installer --</option>
             {activeInstallers.map((i) => (
@@ -218,7 +218,7 @@ export default function MobileCalculator() {
                 value={solarTechFamily}
                 onChange={(e) => { setSolarTechFamily(e.target.value); setSolarTechProductId(''); }}
                 className={selectCls}
-                style={{ ...selectStyle, '--tw-ring-color': '#00e5a0' } as React.CSSProperties}
+                style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
               >
                 <option value="">-- Select family --</option>
                 {SOLARTECH_FAMILIES.map((f) => (
@@ -233,7 +233,7 @@ export default function MobileCalculator() {
                   value={solarTechProductId}
                   onChange={(e) => setSolarTechProductId(e.target.value)}
                   className={selectCls}
-                  style={{ ...selectStyle, '--tw-ring-color': '#00e5a0' } as React.CSSProperties}
+                  style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
                 >
                   <option value="">-- Select package --</option>
                   {solarTechFamilyProducts.map((p) => (
@@ -254,7 +254,7 @@ export default function MobileCalculator() {
                 value={pcSelectedFamily}
                 onChange={(e) => { setPcSelectedFamily(e.target.value); setPcProductId(''); }}
                 className={selectCls}
-                style={{ ...selectStyle, '--tw-ring-color': '#00e5a0' } as React.CSSProperties}
+                style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
               >
                 <option value="">-- Select family --</option>
                 {pcConfig.families.map((f) => (
@@ -269,7 +269,7 @@ export default function MobileCalculator() {
                   value={pcProductId}
                   onChange={(e) => setPcProductId(e.target.value)}
                   className={selectCls}
-                  style={{ ...selectStyle, '--tw-ring-color': '#00e5a0' } as React.CSSProperties}
+                  style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
                 >
                   <option value="">-- Select package --</option>
                   {pcFamilyProducts.map((p) => (
@@ -296,7 +296,7 @@ export default function MobileCalculator() {
               value={kWSize}
               onChange={(e) => setKWSize(e.target.value)}
               className={inputCls}
-              style={{ ...inputStyle, '--tw-ring-color': '#00e5a0' } as React.CSSProperties}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
             />
           </div>
           <div>
@@ -312,7 +312,7 @@ export default function MobileCalculator() {
               value={netPPW}
               onChange={(e) => setNetPPW(e.target.value)}
               className={inputCls}
-              style={{ ...inputStyle, '--tw-ring-color': '#00e5a0' } as React.CSSProperties}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
             />
           </div>
         </div>
@@ -322,32 +322,32 @@ export default function MobileCalculator() {
       {resultMounted && (
         <MobileCard key="result" hero className={resultExiting ? 'result-exit' : 'result-enter'}>
           <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
-          <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
+          <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
             {fmt$(displayTotal)}
           </p>
 
           <div className="mt-5 space-y-2.5">
             <div className="calc-row-1 flex items-center justify-between">
-              <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
+              <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
               <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
             </div>
             {setterTotal > 0 && (
               <div className="calc-row-2 flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
+                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
               </div>
             )}
             {currentRole === 'admin' && (
               <div className="calc-row-2 flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
+                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloTotal)}</span>
               </div>
             )}
           </div>
 
           {/* Baseline info */}
-          <div className="calc-row-3 mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
-            <p className="text-xs" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <div className="calc-row-3 mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Baseline: ${closerPerW.toFixed(2)}/W &middot; Sold: ${soldPPW.toFixed(2)}/W &middot; {kW.toFixed(1)} kW
             </p>
           </div>
@@ -358,7 +358,7 @@ export default function MobileCalculator() {
       {(!hasInput || soldPPW <= 0) && (
         <MobileCard key="empty">
           <div className="py-6 text-center">
-            <p className="text-sm" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
+            <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
           </div>
         </MobileCard>
       )}

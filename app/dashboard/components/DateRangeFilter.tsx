@@ -78,7 +78,7 @@ export function DateRangeFilter({ from, to, onFromChange, onToChange, onClear }:
   };
 
   const inputCls =
-    'bg-[#1d2028] border border-[#272b35] text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none input-focus-glow';
+    'bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none input-focus-glow';
 
   return (
     <div className="flex flex-col gap-2">
@@ -93,8 +93,8 @@ export function DateRangeFilter({ from, to, onFromChange, onToChange, onClear }:
               onClick={() => applyPreset(p)}
               className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
                 isActive
-                  ? 'bg-[#00e07a]/20 text-[#00e07a] border-[#00e07a]/30'
-                  : 'bg-[#1d2028] text-[#c2c8d8] border-[#272b35] hover:border-[#333849] hover:text-white'
+                  ? 'bg-[var(--accent-green)]/20 text-[var(--accent-green)] border-[var(--accent-green)]/30'
+                  : 'bg-[var(--surface-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--border-subtle)] hover:text-white'
               }`}
             >
               {p.label}
@@ -105,7 +105,7 @@ export function DateRangeFilter({ from, to, onFromChange, onToChange, onClear }:
           <button
             type="button"
             onClick={onClear}
-            className="px-2.5 py-1 text-xs rounded-lg border bg-[#1d2028] text-[#c2c8d8] border-[#272b35] hover:border-red-500/50 hover:text-red-400 transition-colors"
+            className="px-2.5 py-1 text-xs rounded-lg border bg-[var(--surface-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-red-500/50 hover:text-red-400 transition-colors"
           >
             Clear
           </button>
@@ -114,14 +114,14 @@ export function DateRangeFilter({ from, to, onFromChange, onToChange, onClear }:
 
       {/* Date inputs */}
       <div className="flex items-center gap-2">
-        <label className="text-xs text-[#8891a8] whitespace-nowrap">From</label>
+        <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">From</label>
         <input
           type="date"
           value={from}
           onChange={(e) => onFromChange(e.target.value)}
           className={inputCls}
         />
-        <label className="text-xs text-[#8891a8] whitespace-nowrap">To</label>
+        <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">To</label>
         <input
           type="date"
           value={to}
@@ -132,7 +132,7 @@ export function DateRangeFilter({ from, to, onFromChange, onToChange, onClear }:
           <button
             type="button"
             onClick={onClear}
-            className="p-1 rounded-md text-[#8891a8] hover:text-white hover:bg-[#272b35] transition-colors"
+            className="p-1 rounded-md text-[var(--text-muted)] hover:text-white hover:bg-[var(--border)] transition-colors"
             title="Clear dates"
           >
             <X className="w-3.5 h-3.5" />

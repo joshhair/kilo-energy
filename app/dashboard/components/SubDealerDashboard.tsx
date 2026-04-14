@@ -57,10 +57,10 @@ export function SubDealerDashboard({
     .reduce((sum, e) => sum + e.amount, 0);
 
   const stats = [
-    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[#00e07a]', accentGradient: 'from-blue-500 to-blue-400' },
+    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[var(--accent-green)]', accentGradient: 'from-blue-500 to-blue-400' },
     { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400' },
     { label: 'Total kW', value: formatCompactKW(totalKW), icon: Zap, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
-    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[#00e07a]', accentGradient: 'from-emerald-500 to-emerald-400' },
+    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[var(--accent-green)]', accentGradient: 'from-emerald-500 to-emerald-400' },
   ];
 
   return (
@@ -69,11 +69,11 @@ export function SubDealerDashboard({
       <div className="card-surface rounded-2xl mb-6">
         <div className="px-6 py-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">{getGreeting(currentRepName)}</p>
+            <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide mb-1">{getGreeting(currentRepName)}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
-              <span style={{ color: '#f0f2f7' }}>Sub-Dealer Dashboard</span>
+              <span style={{ color: 'var(--text-primary)' }}>Sub-Dealer Dashboard</span>
             </p>
-            <p className="text-[#8891a8] text-xs mt-1">Submit deals, track your pipeline and pay</p>
+            <p className="text-[var(--text-muted)] text-xs mt-1">Submit deals, track your pipeline and pay</p>
           </div>
           <div className="relative inline-flex shrink-0">
             <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 opacity-[0.06] blur-[2px] animate-pulse" />
@@ -90,7 +90,7 @@ export function SubDealerDashboard({
 
       {/* Period tabs */}
       <div className="flex justify-end mb-6">
-        <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 tab-bar-container">
+        <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
           {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
           {PERIODS.map((p, i) => (
             <button
@@ -98,7 +98,7 @@ export function SubDealerDashboard({
               ref={(el) => { periodTabRefs.current[i] = el; }}
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-                period === p.value ? 'text-black font-bold' : 'text-[#c2c8d8] hover:text-white'
+                period === p.value ? 'text-black font-bold' : 'text-[var(--text-secondary)] hover:text-white'
               }`}
             >
               {p.label}
@@ -119,7 +119,7 @@ export function SubDealerDashboard({
             >
               <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">{stat.label}</span>
+                <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{stat.label}</span>
                 <Icon className={`w-4 h-4 ${stat.color}`} />
               </div>
               <p className={`stat-value text-3xl font-black tabular-nums tracking-tight ${stat.color}`}>{stat.value}</p>
@@ -155,12 +155,12 @@ export function SubDealerDashboard({
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-              <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
-                <FolderKanban className="w-4 h-4 text-[#00e07a]" />
+              <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
+                <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
               </div>
               <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
             </div>
-            <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
+            <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
               View All &rarr;
             </Link>
           </div>
@@ -176,24 +176,24 @@ export function SubDealerDashboard({
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-            <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
-              <FolderKanban className="w-4 h-4 text-[#00e07a]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
+              <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
             View All &rarr;
           </Link>
         </div>
         <div className="divider-gradient-animated" />
         {allProjects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId).length === 0 ? (
-          <div className="mx-6 my-6 border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
+          <div className="mx-6 my-6 border border-dashed border-[var(--border-subtle)] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
-                <FolderKanban className="w-6 h-6 text-[#525c72] animate-pulse" />
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
+                <FolderKanban className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
               <p className="text-white font-bold text-sm mb-1">No projects yet</p>
-              <p className="text-[#8891a8] text-xs mb-4">Submit your first deal to see it here</p>
+              <p className="text-[var(--text-muted)] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
                 className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
@@ -222,18 +222,18 @@ export function SubDealerDashboard({
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-[#00e07a]/[0.03] transition-colors">
+                  <div className="px-5 py-3.5 hover:bg-[var(--accent-green)]/[0.03] transition-colors">
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-[#00c4f0] transition-colors">{proj.customerName}</span>
+                        <span className="text-white font-medium text-sm truncate group-hover:text-[var(--accent-cyan)] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
-                      <span className="text-[#8891a8] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
+                      <span className="text-[var(--text-muted)] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs">
-                      <span className="text-[#8891a8]">{proj.kWSize} kW</span>
-                      <span className="text-[#525c72]">&middot;</span>
-                      <span className="text-[#00e07a] font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[var(--text-muted)]">{proj.kWSize} kW</span>
+                      <span className="text-[var(--text-dim)]">&middot;</span>
+                      <span className="text-[var(--accent-green)] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         {proj.setterId === currentRepId ? (
                           <>

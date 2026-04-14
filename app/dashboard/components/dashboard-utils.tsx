@@ -177,7 +177,7 @@ export function TrendBadge({ pctChange }: { pctChange: number | null | undefined
 
   if (pctChange === null) {
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#8891a8]/15 text-[#c2c8d8]">
+      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--text-muted)]/15 text-[var(--text-secondary)]">
         —
       </span>
     );
@@ -185,7 +185,7 @@ export function TrendBadge({ pctChange }: { pctChange: number | null | undefined
 
   if (pctChange > 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#00e07a]/15 text-[#00e07a]">
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-green)]/15 text-[var(--accent-green)]">
         <TrendingUp className="w-2.5 h-2.5" />
         +{Math.round(pctChange)}%
       </span>
@@ -203,7 +203,7 @@ export function TrendBadge({ pctChange }: { pctChange: number | null | undefined
 
   // Exactly 0% — neutral dash
   return (
-    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#8891a8]/15 text-[#c2c8d8]">
+    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--text-muted)]/15 text-[var(--text-secondary)]">
       —
     </span>
   );

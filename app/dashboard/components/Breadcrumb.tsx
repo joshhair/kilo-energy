@@ -19,13 +19,13 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
         {previous.href ? (
           <Link
             href={previous.href}
-            className="inline-flex items-center gap-1 text-xs text-[#8891a8] hover:text-[#c2c8d8] transition-colors"
+            className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
           >
             <ChevronLeft className="w-3 h-3" />
             Back to {previous.label}
           </Link>
         ) : (
-          <span className="text-xs text-[#8891a8]">{previous.label}</span>
+          <span className="text-xs text-[var(--text-muted)]">{previous.label}</span>
         )}
       </nav>
 
@@ -35,15 +35,15 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
           const isLast = i === items.length - 1;
           return (
             <span key={i} className="inline-flex items-center gap-1.5">
-              {i > 0 && <ChevronRight className="w-3 h-3 text-[#525c72]" />}
+              {i > 0 && <ChevronRight className="w-3 h-3 text-[var(--text-dim)]" />}
               {isLast || !item.href ? (
-                <span className={`text-xs ${isLast ? 'text-[#c2c8d8]' : 'text-[#8891a8]'}`}>
+                <span className={`text-xs ${isLast ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)]'}`}>
                   {item.label}
                 </span>
               ) : (
                 <Link
                   href={item.href}
-                  className="text-xs text-[#8891a8] hover:text-[#c2c8d8] transition-colors"
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
                 >
                   {item.label}
                 </Link>

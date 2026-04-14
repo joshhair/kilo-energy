@@ -54,11 +54,11 @@ function getGreeting(name: string): string {
 
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
-const ACCENT = 'var(--m-accent, #00e5a0)';
-const ACCENT2 = 'var(--m-accent2, #00b4d8)';
-const MUTED = 'var(--m-text-muted, #8899aa)';
+const ACCENT = 'var(--m-accent, var(--accent-emerald))';
+const ACCENT2 = 'var(--m-accent2, var(--accent-cyan2))';
+const MUTED = 'var(--m-text-muted, var(--text-mobile-muted))';
 const DIM = 'var(--m-text-dim, #445577)';
-const DANGER = 'var(--m-danger, #ff6b6b)';
+const DANGER = 'var(--m-danger, var(--accent-danger))';
 
 function relativeTime(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -223,7 +223,7 @@ export default function MobileDashboard() {
                   className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
                     i < flaggedProjects.length - 1 ? 'border-b' : ''
                   }`}
-                  style={{ borderColor: 'var(--m-border, #1a2840)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                  style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
@@ -253,7 +253,7 @@ export default function MobileDashboard() {
                     className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
                       i < arr.length - 1 ? 'border-b' : ''
                     }`}
-                    style={{ borderColor: 'var(--m-border, #1a2840)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                    style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
                     <div className="min-w-0 flex items-center gap-2">
                       <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
@@ -373,14 +373,14 @@ export default function MobileDashboard() {
           ) : (
             <div className="space-y-2">
               {recentProjects.map((p) => {
-                const accent = PHASE_COLORS[p.phase]?.text ?? '#8899aa';
+                const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-mobile-muted)';
                 return (
                   <button
                     key={p.id}
                     onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                     className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
                     style={{
-                      background: 'var(--m-card, #0d1525)',
+                      background: 'var(--m-card, var(--surface-mobile-card))',
                       border: '1px solid #2a3858',
                       transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}
@@ -527,7 +527,7 @@ export default function MobileDashboard() {
                 fontFamily: FONT_BODY,
                 color: period === p.value ? '#000' : MUTED,
                 fontWeight: period === p.value ? 700 : undefined,
-                border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
+                border: period === p.value ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                 position: 'relative',
                 zIndex: 1,
                 transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -559,7 +559,7 @@ export default function MobileDashboard() {
               {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
             </p>
             {/* Next Payout — secondary */}
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
               <div className="flex items-baseline justify-between">
                 <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
                 <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></p>
@@ -576,7 +576,7 @@ export default function MobileDashboard() {
         )}
 
         {/* Stats inside hero card */}
-        <div key={period} className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }}>
+        <div key={period} className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both' }}>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
@@ -609,7 +609,7 @@ export default function MobileDashboard() {
               key={p.id}
               onClick={() => router.push(`/dashboard/projects/${p.id}`)}
               className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
-              style={{ borderColor: 'var(--m-border, #1a2840)', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+              style={{ borderColor: 'var(--m-border, var(--border-mobile))', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
@@ -626,14 +626,14 @@ export default function MobileDashboard() {
         <MobileSection title="Recent">
           <div className="space-y-2">
             {recentProjects.map((p, i) => {
-              const accent = PHASE_COLORS[p.phase]?.text ?? '#8899aa';
+              const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-mobile-muted)';
               return (
                 <button
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                   className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150 mobile-list-item"
                   style={{
-                    background: 'var(--m-card, #0d1525)',
+                    background: 'var(--m-card, var(--surface-mobile-card))',
                     border: '1px solid #2a3858',
                     animationDelay: `${i * 45}ms`,
                     transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',

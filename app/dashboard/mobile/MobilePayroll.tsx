@@ -206,7 +206,7 @@ export default function MobilePayroll() {
             onClick={() => setShowAddPayment(true)}
             className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
             style={{
-              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
@@ -220,19 +220,19 @@ export default function MobilePayroll() {
       {/* ── Hero ── */}
       <div>
         <p className="text-4xl font-black tabular-nums" style={{ color: '#f5a623', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(pendingTotal)}</p>
-        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>pending approval</p>
+        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>pending approval</p>
       </div>
 
       {/* ── Status tabs ── */}
-      <div className="flex" style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}>
+      <div className="flex" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
         {STATUS_TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setStatusTab(tab)}
             className="flex-1 min-h-[48px] text-base font-semibold transition-colors"
             style={{
-              color: statusTab === tab ? '#fff' : 'var(--m-text-muted, #8899aa)',
-              borderBottom: statusTab === tab ? '2px solid var(--m-accent, #00e5a0)' : '2px solid transparent',
+              color: statusTab === tab ? '#fff' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              borderBottom: statusTab === tab ? '2px solid var(--m-accent, var(--accent-emerald))' : '2px solid transparent',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -243,11 +243,11 @@ export default function MobilePayroll() {
 
       {/* ── Grouped entry list ── */}
       {groupedByRep.length === 0 ? (
-        <p className="text-base text-center py-8" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No {statusTab.toLowerCase()} entries.</p>
+        <p className="text-base text-center py-8" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No {statusTab.toLowerCase()} entries.</p>
       ) : (
         <div className="space-y-6">
           {groupedByRep.map((group) => (
-            <div key={group.repName} className="rounded-2xl p-4" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+            <div key={group.repName} className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
               {/* Rep group header */}
               <div className="flex items-center justify-between mb-2">
                 <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{group.repName}</p>
@@ -261,14 +261,14 @@ export default function MobilePayroll() {
                     key={entry.id}
                     onClick={() => setSelectedEntry(entry)}
                     className="w-full flex items-center justify-between py-3 text-left active:opacity-80 transition-colors"
-                    style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}
+                    style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}
                   >
                     <span className="text-base text-white truncate mr-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-lg font-bold tabular-nums text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(entry.amount)}</span>
-                      <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)' }}>{entry.paymentStage}</span>
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{entry.paymentStage}</span>
                     </div>
                   </button>
                 ))}
@@ -285,7 +285,7 @@ export default function MobilePayroll() {
             onClick={handlePublishOrApproveAll}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.3)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
@@ -308,7 +308,7 @@ export default function MobilePayroll() {
             }}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
@@ -367,7 +367,7 @@ export default function MobilePayroll() {
               value={paymentForm.repId}
               onChange={(e) => setPaymentForm((f) => ({ ...f, repId: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             >
               <option value="">Select rep...</option>
               {reps.map((r) => (
@@ -385,9 +385,9 @@ export default function MobilePayroll() {
                   onClick={() => setPaymentForm((f) => ({ ...f, type: t, stage: t === 'Bonus' ? 'Bonus' : 'M1' }))}
                   className="flex-1 min-h-[48px] rounded-xl text-base font-medium transition-colors"
                   style={{
-                    background: paymentForm.type === t ? '#00e5a0' : 'var(--m-card, #0d1525)',
-                    color: paymentForm.type === t ? '#000' : 'var(--m-text-muted, #8899aa)',
-                    border: paymentForm.type === t ? 'none' : '1px solid var(--m-border, #1a2840)',
+                    background: paymentForm.type === t ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                    color: paymentForm.type === t ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                    border: paymentForm.type === t ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -407,9 +407,9 @@ export default function MobilePayroll() {
                     onClick={() => setPaymentForm((f) => ({ ...f, stage: s }))}
                     className="flex-1 min-h-[44px] rounded-xl text-base font-medium transition-colors"
                     style={{
-                      background: paymentForm.stage === s ? '#00e5a0' : 'var(--m-card, #0d1525)',
-                      color: paymentForm.stage === s ? '#000' : 'var(--m-text-muted, #8899aa)',
-                      border: paymentForm.stage === s ? 'none' : '1px solid var(--m-border, #1a2840)',
+                      background: paymentForm.stage === s ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                      color: paymentForm.stage === s ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                      border: paymentForm.stage === s ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
@@ -429,7 +429,7 @@ export default function MobilePayroll() {
               onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0.00"
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <div>
@@ -439,7 +439,7 @@ export default function MobilePayroll() {
               value={paymentForm.date}
               onChange={(e) => setPaymentForm((f) => ({ ...f, date: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <div>
@@ -450,14 +450,14 @@ export default function MobilePayroll() {
               onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Optional note"
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <button
             type="submit"
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}

@@ -111,7 +111,7 @@ export default function MobileSettings() {
         <button
           onClick={handleBack}
           className="flex items-center gap-1.5 min-h-[48px] text-base font-medium active:opacity-70 transition-colors"
-          style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" />
           Settings
@@ -138,7 +138,7 @@ export default function MobileSettings() {
           <MobileCard>
             {items.map((item, idx) => (
               <div key={item.id}>
-                {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }} />}
+                {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
                 <MobileListItem
                   title={item.label}
                   onTap={() => setActiveSection(item.id)}
@@ -180,9 +180,9 @@ function SettingsSkeleton({ rows = 3 }: { rows?: number }) {
           100% { background-position:  200% 0; }
         }
         .sk { background: linear-gradient(90deg,
-          var(--m-border,#1a2840) 25%,
+          var(--m-border,var(--border-mobile)) 25%,
           rgba(255,255,255,0.04) 50%,
-          var(--m-border,#1a2840) 75%);
+          var(--m-border,var(--border-mobile)) 75%);
           background-size: 200% 100%;
           animation: sk-shimmer 1.4s linear infinite;
           border-radius: 6px;
@@ -192,7 +192,7 @@ function SettingsSkeleton({ rows = 3 }: { rows?: number }) {
       <MobileCard>
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i}>
-            {i > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border,#1a2840)' }} />}
+            {i > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border,var(--border-mobile))' }} />}
             <div className="flex items-center gap-3 min-h-[56px] py-3 px-1">
               <div className="flex-1 space-y-2">
                 <div className="sk h-3.5 w-32" />
@@ -215,7 +215,7 @@ function Toggle({ value, onChange, color }: { value: boolean; onChange: (v: bool
       onClick={() => onChange(!value)}
       className="w-11 h-6 rounded-full relative active:scale-[0.88] transition-transform duration-100 ease-out p-1 -m-1"
       style={{
-        background: value ? (color ?? '#00e5a0') : 'var(--m-border, #1a2840)',
+        background: value ? (color ?? 'var(--accent-emerald)') : 'var(--m-border, var(--border-mobile))',
         transition: 'background-color 200ms ease',
       }}
     >
@@ -238,7 +238,7 @@ function InstallersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage installer companies. Full editing available on desktop.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage installer companies. Full editing available on desktop.</p>
       {installers.length === 0 ? (
         <MobileEmptyState icon={Building2} title="No installers" />
       ) : (
@@ -250,14 +250,14 @@ function InstallersSection() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inst.name}</p>
-                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{Math.round(installPct * 100)}%</span></p>
+                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{Math.round(installPct * 100)}%</span></p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span
                     className="text-base font-medium px-2 py-0.5 rounded-lg"
                     style={{
-                      background: inst.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, #0d1525)',
-                      color: inst.active ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                      background: inst.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                      color: inst.active ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
@@ -266,7 +266,7 @@ function InstallersSection() {
                   <Toggle
                     value={inst.active}
                     onChange={() => setInstallerActive(inst.name, !inst.active)}
-                    color="#00e5a0"
+                    color="var(--accent-emerald)"
                   />
                 </div>
               </div>
@@ -285,7 +285,7 @@ function FinancersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
       {financers.length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
@@ -299,8 +299,8 @@ function FinancersSection() {
                 <span
                   className="text-base font-medium px-2 py-0.5 rounded-lg"
                   style={{
-                    background: fin.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, #0d1525)',
-                    color: fin.active ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                    background: fin.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                    color: fin.active ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -309,7 +309,7 @@ function FinancersSection() {
                 <Toggle
                   value={fin.active}
                   onChange={() => setFinancerActive(fin.name, !fin.active)}
-                  color="#00e5a0"
+                  color="var(--accent-emerald)"
                 />
               </div>
             </div>
@@ -377,7 +377,7 @@ function AdminUsersSection() {
     <div className="space-y-4">
       {/* Add form */}
       <MobileCard>
-        <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Add a new admin user</p>
+        <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Add a new admin user</p>
         <div className="space-y-2">
           <input
             value={newName}
@@ -388,10 +388,10 @@ function AdminUsersSection() {
             inputMode="text"
             className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
             style={{
-              background: 'var(--m-card, #0d1525)',
-              border: '1px solid var(--m-border, #1a2840)',
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              '--tw-ring-color': '#00e5a0',
+              '--tw-ring-color': 'var(--accent-emerald)',
             } as React.CSSProperties}
           />
           <input
@@ -406,10 +406,10 @@ function AdminUsersSection() {
             spellCheck={false}
             className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
             style={{
-              background: 'var(--m-card, #0d1525)',
-              border: '1px solid var(--m-border, #1a2840)',
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              '--tw-ring-color': '#00e5a0',
+              '--tw-ring-color': 'var(--accent-emerald)',
             } as React.CSSProperties}
           />
           <button
@@ -417,7 +417,7 @@ function AdminUsersSection() {
             disabled={!newName.trim() || !newEmail.trim()}
             className="w-full min-h-[48px] rounded-2xl text-black text-base font-semibold disabled:opacity-40 active:opacity-80 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 0 20px rgba(0,229,160,0.3)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
@@ -434,16 +434,16 @@ function AdminUsersSection() {
         <MobileCard>
           {admins.map((admin, idx) => (
             <div key={admin.id}>
-              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }} />}
+              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.name}</p>
-                  <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.email}</p>
+                  <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.email}</p>
                 </div>
                 <button
                   onClick={() => handleDelete(admin.id)}
                   className="p-2 active:opacity-70 transition-colors"
-                  style={{ color: 'var(--m-text-muted, #8899aa)' }}
+                  style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -496,7 +496,7 @@ function ProjectManagersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project managers can view projects and reps but not payroll or settings.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project managers can view projects and reps but not payroll or settings.</p>
       {pms.length === 0 ? (
         <MobileEmptyState icon={Users} title="No project managers" />
       ) : (
@@ -505,12 +505,12 @@ function ProjectManagersSection() {
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
                 <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.firstName} {pm.lastName}</p>
-                <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.email}</p>
+                <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.email}</p>
               </div>
               <button
                 onClick={() => handleDelete(pm.id)}
                 className="p-2 active:opacity-70 transition-colors shrink-0"
-                style={{ color: 'var(--m-text-muted, #8899aa)' }}
+                style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -526,9 +526,9 @@ function ProjectManagersSection() {
                   onClick={() => togglePerm(pm.id, field, pm[field])}
                   className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-colors min-h-[44px] active:scale-[0.95] transition-transform duration-100"
                   style={{
-                    background: pm[field] ? 'rgba(0,229,160,0.15)' : 'var(--m-card, #0d1525)',
-                    color: pm[field] ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
-                    borderColor: pm[field] ? 'rgba(0,229,160,0.3)' : 'var(--m-border, #1a2840)',
+                    background: pm[field] ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                    color: pm[field] ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                    borderColor: pm[field] ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -571,7 +571,7 @@ function BlitzPermissionsSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Control which reps can request or create blitzes.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Control which reps can request or create blitzes.</p>
       {reps.length === 0 ? (
         <MobileEmptyState icon={Tent} title="No reps" />
       ) : (
@@ -580,23 +580,23 @@ function BlitzPermissionsSection() {
           return (
             <MobileCard key={rep.id}>
               <p className="text-base font-semibold text-white mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
-              <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.repType || 'Rep'}</p>
+              <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.repType || 'Rep'}</p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canRequestBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canRequestBlitz', v)}
-                    color="var(--m-accent2, #00b4d8)"
+                    color="var(--m-accent2, var(--accent-cyan2))"
                   />
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Request</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Request</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canCreateBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canCreateBlitz', v)}
-                    color="#00e5a0"
+                    color="var(--accent-emerald)"
                   />
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Create</span>
+                  <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Create</span>
                 </div>
               </div>
             </MobileCard>
@@ -614,20 +614,20 @@ function SubDealersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Sub-dealer accounts. Full editing available on desktop.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Sub-dealer accounts. Full editing available on desktop.</p>
       {!subDealers || subDealers.length === 0 ? (
         <MobileEmptyState icon={Handshake} title="No sub-dealers" subtitle="Add sub-dealers from the desktop view." />
       ) : (
         <MobileCard>
           {subDealers.map((sd: any, idx: number) => (
             <div key={sd.id ?? idx}>
-              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, #1a2840)' }} />}
+              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {sd.firstName ?? ''} {sd.lastName ?? ''}
                   </p>
-                  {sd.email && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
+                  {sd.email && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
                 </div>
               </div>
             </div>
@@ -682,7 +682,7 @@ function ExportSection() {
         }
         @media(prefers-reduced-motion:reduce){ .export-shimmer{ display:none; } .export-pulse{ animation:none; } }
       `}</style>
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button
           key={type}
@@ -690,11 +690,11 @@ function ExportSection() {
           disabled={getStatus(type) === 'loading'}
           className="w-full min-h-[56px] rounded-2xl px-5 text-left flex items-center gap-3 relative overflow-hidden"
           style={{
-            background: getStatus(type) === 'done' ? 'rgba(0,229,160,0.1)' : 'var(--m-card, #0d1525)',
+            background: getStatus(type) === 'done' ? 'rgba(0,229,160,0.1)' : 'var(--m-card, var(--surface-mobile-card))',
             border: `1px solid ${
               getStatus(type) === 'done' ? 'rgba(0,229,160,0.4)'
               : getStatus(type) === 'loading' ? 'rgba(255,255,255,0.08)'
-              : 'var(--m-border, #1a2840)'
+              : 'var(--m-border, var(--border-mobile))'
             }`,
             transition: 'background 300ms ease, border-color 300ms ease',
             animation: getStatus(type) === 'done' ? 'exportPulse 600ms cubic-bezier(0.16,1,0.3,1) both' : 'none',
@@ -712,7 +712,7 @@ function ExportSection() {
           <Download
             className="w-5 h-5 shrink-0"
             style={{
-              color: getStatus(type) === 'done' ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+              color: getStatus(type) === 'done' ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
               transition: 'color 300ms ease',
               animation: getStatus(type) === 'loading' ? 'exportSpin 600ms linear infinite' : 'none',
             }}
@@ -720,7 +720,7 @@ function ExportSection() {
           <span
             className="text-base font-semibold capitalize"
             style={{
-              color: getStatus(type) === 'done' ? 'var(--m-accent, #00e5a0)' : 'white',
+              color: getStatus(type) === 'done' ? 'var(--m-accent, var(--accent-emerald))' : 'white',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               transition: 'color 300ms ease',
             }}
@@ -736,8 +736,8 @@ function ExportSection() {
 function ReadOnlyListSection({ title, description }: { title: string; description: string }) {
   return (
     <MobileCard>
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{description}</p>
-      <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Open the desktop version for full access to {title.toLowerCase()}.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{description}</p>
+      <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Open the desktop version for full access to {title.toLowerCase()}.</p>
     </MobileCard>
   );
 }

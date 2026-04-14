@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{ background: 'rgba(255,107,107,0.12)', border: '1px solid rgba(255,107,107,0.25)' }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <h2 className="text-white text-lg font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Something went wrong
           </h2>
-          <p className="text-[#8891a8] text-sm max-w-sm">
+          <p className="text-[var(--text-muted)] text-sm max-w-sm">
             An unexpected error occurred. Your data is safe — try refreshing the page.
           </p>
           <button
@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
             className="mt-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors"
             style={{
               background: 'rgba(0,229,160,0.12)',
-              color: '#00e5a0',
+              color: 'var(--accent-emerald)',
               border: '1px solid rgba(0,229,160,0.25)',
             }}
           >

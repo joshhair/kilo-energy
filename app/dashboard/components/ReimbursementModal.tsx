@@ -51,7 +51,7 @@ function FieldError({ field, errors }: { field: string; errors: Record<string, s
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const labelCls = 'block text-xs font-medium text-[#c2c8d8] mb-1.5 uppercase tracking-wider';
+const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
   };
 
   const inputCls = (field: string) =>
-    `w-full bg-[#1d2028] border ${errors[field] ? 'border-red-500' : 'border-[#272b35]'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500 text-sm`;
+    `w-full bg-[var(--surface-card)] border ${errors[field] ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500 text-sm`;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,13 +120,13 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div ref={panelRef} className="bg-[#161920] border border-[#272b35] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#333849]">
+      <div ref={panelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-2">
             <Receipt className="w-4 h-4 text-violet-400" />
             <h2 className="text-white font-bold text-base">Request Reimbursement</h2>
           </div>
-          <button onClick={onClose} aria-label="Close reimbursement modal" className="text-[#c2c8d8] hover:text-white transition-colors rounded-lg p-1 hover:bg-[#1d2028]">
+          <button onClick={onClose} aria-label="Close reimbursement modal" className="text-[var(--text-secondary)] hover:text-white transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -157,17 +157,17 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
             <FieldError field="description" errors={errors} />
           </div>
           <div>
-            <label className={labelCls}>Receipt <span className="text-[#525c72] font-normal normal-case">(optional)</span></label>
-            <label className="flex items-center gap-2 bg-[#1d2028] border border-[#272b35] border-dashed rounded-xl px-4 py-2.5 cursor-pointer hover:border-[#272b35] transition-colors overflow-hidden">
-              <Upload className="w-3.5 h-3.5 text-[#8891a8] flex-shrink-0" />
-              <span className="text-[#8891a8] text-sm truncate">{form.fileName || 'Attach file…'}</span>
+            <label className={labelCls}>Receipt <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span></label>
+            <label className="flex items-center gap-2 bg-[var(--surface-card)] border border-[var(--border)] border-dashed rounded-xl px-4 py-2.5 cursor-pointer hover:border-[var(--border)] transition-colors overflow-hidden">
+              <Upload className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" />
+              <span className="text-[var(--text-muted)] text-sm truncate">{form.fileName || 'Attach file…'}</span>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
                 onChange={(e) => updateForm('fileName', e.target.files?.[0]?.name ?? '')} />
             </label>
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] text-[#c2c8d8] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
+              className="flex-1 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
               Cancel
             </button>
             <button type="submit"

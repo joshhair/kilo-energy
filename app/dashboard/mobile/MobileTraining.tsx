@@ -34,7 +34,7 @@ export default function MobileTraining() {
       <div className="px-5 pt-4 pb-24">
         <MobilePageHeader title="Training" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
+          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -91,41 +91,41 @@ export default function MobileTraining() {
         <MobilePageHeader title="Training" />
 
         {/* Section header skeleton */}
-        <div className="h-4 w-28 rounded-full animate-pulse" style={{ background: 'var(--m-border, #1a2840)' }} />
+        <div className="h-4 w-28 rounded-full animate-pulse" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
 
         {/* Trainee rows skeleton */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           {[0, 1].map((i) => (
             <div
               key={i}
               className="px-4 py-3 flex items-center justify-between gap-3 min-h-[56px] animate-pulse"
-              style={{ borderBottom: i === 0 ? '1px solid var(--m-border, #1a2840)' : 'none', animationDelay: `${i * 80}ms` }}
+              style={{ borderBottom: i === 0 ? '1px solid var(--m-border, var(--border-mobile))' : 'none', animationDelay: `${i * 80}ms` }}
             >
               <div className="flex-1 space-y-1.5">
-                <div className="h-4 w-32 rounded-full" style={{ background: 'var(--m-border, #1a2840)' }} />
-                <div className="h-3 w-24 rounded-full" style={{ background: 'var(--m-border, #1a2840)', opacity: 0.6 }} />
+                <div className="h-4 w-32 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
+                <div className="h-3 w-24 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))', opacity: 0.6 }} />
               </div>
-              <div className="h-4 w-4 rounded-full" style={{ background: 'var(--m-border, #1a2840)' }} />
+              <div className="h-4 w-4 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
             </div>
           ))}
         </div>
 
         {/* Override payments section header skeleton */}
-        <div className="h-4 w-40 rounded-full animate-pulse" style={{ background: 'var(--m-border, #1a2840)', animationDelay: '160ms' }} />
+        <div className="h-4 w-40 rounded-full animate-pulse" style={{ background: 'var(--m-border, var(--border-mobile))', animationDelay: '160ms' }} />
 
         {/* Override payment rows skeleton */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           {[0, 1, 2].map((i) => (
             <div
               key={i}
               className="px-4 py-3 flex items-center justify-between gap-3 min-h-[52px] animate-pulse"
-              style={{ borderBottom: i < 2 ? '1px solid var(--m-border, #1a2840)' : 'none', animationDelay: `${200 + i * 60}ms` }}
+              style={{ borderBottom: i < 2 ? '1px solid var(--m-border, var(--border-mobile))' : 'none', animationDelay: `${200 + i * 60}ms` }}
             >
               <div className="flex-1 space-y-1.5">
-                <div className="h-4 w-36 rounded-full" style={{ background: 'var(--m-border, #1a2840)' }} />
-                <div className="h-3 w-16 rounded-full" style={{ background: 'var(--m-border, #1a2840)', opacity: 0.6 }} />
+                <div className="h-4 w-36 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
+                <div className="h-3 w-16 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))', opacity: 0.6 }} />
               </div>
-              <div className="h-5 w-16 rounded-full" style={{ background: 'var(--m-border, #1a2840)' }} />
+              <div className="h-5 w-16 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
             </div>
           ))}
         </div>
@@ -140,7 +140,7 @@ export default function MobileTraining() {
         <MobilePageHeader title="Training" />
         <MobileCard>
           <div className="py-8 text-center">
-            <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have any trainees</p>
+            <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have any trainees</p>
           </div>
         </MobileCard>
       </div>
@@ -153,11 +153,11 @@ export default function MobileTraining() {
 
       {/* ── My Trainees ─────────────────────────────────────────────────── */}
       <MobileSection title="My Trainees" count={traineeData.length}>
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           {traineeData.map((td, idx) => {
             const isOpen = expandedTrainee === td.traineeId;
             return (
-              <div key={td.traineeId} style={{ borderBottom: idx < traineeData.length - 1 ? '1px solid var(--m-border, #1a2840)' : 'none' }}>
+              <div key={td.traineeId} style={{ borderBottom: idx < traineeData.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}>
                 <button
                   onClick={() => setExpandedTrainee(isOpen ? null : td.traineeId)}
                   className="w-full px-4 py-3 flex items-center justify-between gap-3 min-h-[48px]
@@ -169,7 +169,7 @@ export default function MobileTraining() {
                 >
                   <div className="min-w-0 flex-1 text-left">
                     <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>
-                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{td.dealCount}</span> deals &middot; <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${td.currentRate.toFixed(2)}/W</span>
                     </p>
                   </div>
@@ -177,7 +177,7 @@ export default function MobileTraining() {
                     className={`w-4 h-4 flex-shrink-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
                       isOpen ? 'rotate-180' : 'rotate-0'
                     }`}
-                    style={{ color: 'var(--m-text-muted, #8899aa)' }}
+                    style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
                   />
                 </button>
 
@@ -201,7 +201,7 @@ export default function MobileTraining() {
                             <tr
                               key={i}
                               className="motion-safe:animate-[fadeSlideIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]"
-                              style={{ animationDelay: `${i * 40}ms`, color: i === td.activeTierIndex ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)' }}
+                              style={{ animationDelay: `${i * 40}ms`, color: i === td.activeTierIndex ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))' }}
                             >
                               <td className="py-1">{tier.upToDeal === null ? 'Unlimited' : tier.upToDeal}</td>
                               <td className="py-1 text-right tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${tier.ratePerW.toFixed(2)}</td>
@@ -221,16 +221,16 @@ export default function MobileTraining() {
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
         {sortedOverrides.length === 0 ? (
-          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No override payments yet</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No override payments yet</p>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
             {sortedOverrides.map((entry, idx) => (
               <div
                 key={entry.id}
                 className="px-4 py-3 flex items-center justify-between gap-3
                            motion-safe:animate-[fadeUpIn_280ms_cubic-bezier(0.16,1,0.3,1)_both]"
                 style={{
-                  borderBottom: idx < sortedOverrides.length - 1 ? '1px solid var(--m-border, #1a2840)' : 'none',
+                  borderBottom: idx < sortedOverrides.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none',
                   animationDelay: `${Math.min(idx, 5) * 45}ms`,
                 }}
               >
@@ -238,9 +238,9 @@ export default function MobileTraining() {
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {entry.customerName || entry.notes || 'Override'}
                   </p>
-                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</p>
+                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</p>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>

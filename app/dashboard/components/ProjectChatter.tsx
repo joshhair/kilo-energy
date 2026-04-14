@@ -53,8 +53,8 @@ function getInitials(name: string): string {
 }
 
 const ROLE_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  admin:        { bg: 'bg-emerald-900/40', text: 'text-[#00e07a]', label: 'Admin' },
-  rep:          { bg: 'bg-blue-900/40',    text: 'text-[#00e07a]',    label: 'Rep' },
+  admin:        { bg: 'bg-emerald-900/40', text: 'text-[var(--accent-green)]', label: 'Admin' },
+  rep:          { bg: 'bg-blue-900/40',    text: 'text-[var(--accent-green)]',    label: 'Rep' },
   'sub-dealer': { bg: 'bg-amber-900/40',   text: 'text-amber-400',  label: 'Sub-Dealer' },
 };
 
@@ -82,7 +82,7 @@ function renderMessageText(text: string, knownNames: string[]): React.ReactNode[
   return parts.map((part, i) => {
     if (part.startsWith('@')) {
       return (
-        <span key={i} className="text-[#00e07a] font-medium">{part}</span>
+        <span key={i} className="text-[var(--accent-green)] font-medium">{part}</span>
       );
     }
     return <span key={i}>{part}</span>;
@@ -118,16 +118,16 @@ function MentionDropdown({ query, anchorRect, reps, onSelect, onClose, highlight
   };
 
   return createPortal(
-    <div style={style} className="bg-[#1d2028] border border-[#272b35] rounded-xl shadow-2xl shadow-black/40 py-1 overflow-hidden">
+    <div style={style} className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl shadow-2xl shadow-black/40 py-1 overflow-hidden">
       {filtered.map((rep, idx) => (
         <button
           key={rep.id}
           onMouseDown={(e) => { e.preventDefault(); onSelect(rep); }}
           className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
-            idx === highlightIdx ? 'bg-[#00e07a]/20 text-white' : 'text-[#c2c8d8] hover:bg-[#272b35]/60 hover:text-white'
+            idx === highlightIdx ? 'bg-[var(--accent-green)]/20 text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--border)]/60 hover:text-white'
           }`}
         >
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[#00c4f0] flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan)] flex-shrink-0">
             {getInitials(rep.name)}
           </div>
           <span className="truncate">{rep.name}</span>
@@ -508,14 +508,14 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     <div className="card-surface rounded-2xl p-6 mt-5">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <MessageSquare className="w-4 h-4 text-[#c2c8d8]" />
+        <MessageSquare className="w-4 h-4 text-[var(--text-secondary)]" />
         <h2 className="text-white font-semibold">Chatter</h2>
         {unreadCount > 0 && (
-          <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-white bg-[#00e07a] shadow-sm shadow-blue-500/30">
+          <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-white bg-[var(--accent-green)] shadow-sm shadow-blue-500/30">
             {unreadCount}
           </span>
         )}
-        <span className="text-[#8891a8] text-xs">({totalMessages})</span>
+        <span className="text-[var(--text-muted)] text-xs">({totalMessages})</span>
       </div>
 
       {/* Message List */}
@@ -529,7 +529,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             <button
               onClick={loadEarlierMessages}
               disabled={loadingEarlier}
-              className="text-xs text-[#00e07a] hover:text-[#00c4f0] font-medium transition-colors disabled:opacity-50"
+              className="text-xs text-[var(--accent-green)] hover:text-[var(--accent-cyan)] font-medium transition-colors disabled:opacity-50"
             >
               {loadingEarlier ? (
                 <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3 h-3 animate-spin" /> Loading...</span>
@@ -540,15 +540,15 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
           </div>
         )}
         {loading && messages.length === 0 ? (
-          <div className="flex items-center gap-2 text-[#8891a8] text-sm py-8 justify-center">
+          <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-8 justify-center">
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
             Loading messages...
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-8">
-            <MessageSquare className="w-8 h-8 text-[#525c72] mx-auto mb-2" />
-            <p className="text-[#8891a8] text-sm">No messages yet</p>
-            <p className="text-[#525c72] text-xs mt-1">Start a conversation about this project</p>
+            <MessageSquare className="w-8 h-8 text-[var(--text-dim)] mx-auto mb-2" />
+            <p className="text-[var(--text-muted)] text-sm">No messages yet</p>
+            <p className="text-[var(--text-dim)] text-xs mt-1">Start a conversation about this project</p>
           </div>
         ) : (
           messages.map((msg, idx) => {
@@ -558,13 +558,13 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
               <div
                 key={msg.id}
                 className={`rounded-xl p-4 transition-all animate-fade-in-up ${
-                  isOwn ? 'bg-[#00e07a]/[0.05] border border-[#00e07a]/10' : 'bg-[#1d2028]/40 border border-[#333849]/60'
+                  isOwn ? 'bg-[var(--accent-green)]/[0.05] border border-[var(--accent-green)]/10' : 'bg-[var(--surface-card)]/40 border border-[var(--border-subtle)]/60'
                 }`}
                 style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
               >
                 {/* Author row */}
                 <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[#00c4f0] flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan)] flex-shrink-0">
                     {getInitials(msg.authorName)}
                   </div>
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -573,11 +573,11 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                       {badge.label}
                     </span>
                   </div>
-                  <span className="text-[#525c72] text-xs flex-shrink-0">{relativeTime(msg.createdAt)}</span>
+                  <span className="text-[var(--text-dim)] text-xs flex-shrink-0">{relativeTime(msg.createdAt)}</span>
                 </div>
 
                 {/* Message text */}
-                <div className="text-[#c2c8d8] text-sm leading-relaxed whitespace-pre-wrap pl-[38px]">
+                <div className="text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap pl-[38px]">
                   {renderMessageText(msg.text, mentionableUsers.map((u) => u.name))}
                 </div>
 
@@ -593,13 +593,13 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                             type="checkbox"
                             checked={ci.completed}
                             onChange={() => toggleCheckItem(msg.id, ci.id, !ci.completed)}
-                            className={`w-4 h-4 md:w-4 md:h-4 rounded border-[#272b35] bg-[#1d2028] focus:ring-offset-0 cursor-pointer flex-shrink-0 min-w-[20px] min-h-[20px] ${
+                            className={`w-4 h-4 md:w-4 md:h-4 rounded border-[var(--border)] bg-[var(--surface-card)] focus:ring-offset-0 cursor-pointer flex-shrink-0 min-w-[20px] min-h-[20px] ${
                               ci.completed
-                                ? 'text-[#00e07a] focus:ring-emerald-500/30 accent-[#00e07a]'
-                                : 'text-[#00e07a] focus:ring-[#00e07a]/30 accent-[#00e07a]'
+                                ? 'text-[var(--accent-green)] focus:ring-emerald-500/30 accent-[var(--accent-green)]'
+                                : 'text-[var(--accent-green)] focus:ring-[var(--accent-green)]/30 accent-[var(--accent-green)]'
                             }`}
                           />
-                          <span className={`text-sm ${ci.completed ? 'text-[#8891a8] line-through' : overdue ? 'text-red-300' : 'text-[#c2c8d8] group-hover:text-white'}`}>
+                          <span className={`text-sm ${ci.completed ? 'text-[var(--text-muted)] line-through' : overdue ? 'text-red-300' : 'text-[var(--text-secondary)] group-hover:text-white'}`}>
                             {ci.text}
                           </span>
                           {ci.dueDate && !ci.completed && (
@@ -607,14 +607,14 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                               className={`text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ${
                                 overdue
                                   ? 'bg-red-500/15 text-red-400 border border-red-500/20'
-                                  : 'bg-[#272b35]/50 text-[#c2c8d8] border border-[#272b35]/30'
+                                  : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'
                               }`}
                             >
                               {overdue ? 'Overdue' : `Due ${formatDueDate(ci.dueDate)}`}
                             </span>
                           )}
                           {ci.completed && ci.completedByName && (
-                            <span className="text-[#525c72] text-[10px] ml-1 flex-shrink-0">
+                            <span className="text-[var(--text-dim)] text-[10px] ml-1 flex-shrink-0">
                               completed by {ci.completedByName}
                             </span>
                           )}
@@ -624,10 +624,10 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                               <button
                                 type="button"
                                 onClick={() => setEditingDueDate(isEditingThis ? null : { messageId: msg.id, checkItemId: ci.id })}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-[#272b35]/60 flex-shrink-0"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]/60 flex-shrink-0"
                                 title="Set due date"
                               >
-                                <Calendar className="w-3 h-3 text-[#8891a8] hover:text-[#c2c8d8]" />
+                                <Calendar className="w-3 h-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)]" />
                               </button>
                               {isEditingThis && (
                                 <input
@@ -637,7 +637,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                                     const val = e.target.value;
                                     setCheckItemDueDate(msg.id, ci.id, val || null);
                                   }}
-                                  className="bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] text-xs rounded px-1.5 py-0.5 focus:outline-none focus:border-[#00e07a] flex-shrink-0"
+                                  className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs rounded px-1.5 py-0.5 focus:outline-none focus:border-[var(--accent-green)] flex-shrink-0"
                                   autoFocus
                                   onBlur={() => setEditingDueDate(null)}
                                 />
@@ -657,7 +657,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
       </div>
 
       {/* Compose Area */}
-      <div className="bg-[#1d2028] border border-[#272b35] rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden">
         <textarea
           ref={textareaRef}
           value={composeText}
@@ -665,16 +665,16 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
           onKeyDown={handleKeyDown}
           placeholder="Write a message... Use @ to mention a rep"
           rows={3}
-          className="w-full bg-transparent text-[#c2c8d8] text-sm placeholder:text-[#525c72] px-4 py-3 resize-none focus:outline-none"
+          className="w-full bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-4 py-3 resize-none focus:outline-none"
         />
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-3 py-2 border-t border-[#272b35]/60">
+        <div className="flex items-center justify-between px-3 py-2 border-t border-[var(--border)]/60">
           <div className="flex items-center gap-1">
             <button
               onClick={addChecklistLine}
               title="Add checklist item"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[#c2c8d8] hover:text-white hover:bg-[#272b35]/60 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-white hover:bg-[var(--border)]/60 transition-colors"
             >
               <CheckSquare className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Add Checklist Item</span>
@@ -682,13 +682,13 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[#525c72] text-[10px] hidden sm:inline">
+            <span className="text-[var(--text-dim)] text-[10px] hidden sm:inline">
               {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
             </span>
             <button
               onClick={handleSend}
               disabled={!composeText.trim() || sending}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#00e07a] hover:bg-[#00e07a] text-black disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-green)] hover:bg-[var(--accent-green)] text-black disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
             >
               <Send className="w-3.5 h-3.5" />
               Send

@@ -68,10 +68,10 @@ export function AdminDashboard({
   };
 
   const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ChevronDown className="w-3 h-3 text-[#525c72] inline ml-1" />;
+    if (sortKey !== col) return <ChevronDown className="w-3 h-3 text-[var(--text-dim)] inline ml-1" />;
     return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 text-[#00e07a] inline ml-1" />
-      : <ChevronDown className="w-3 h-3 text-[#00e07a] inline ml-1" />;
+      ? <ChevronUp className="w-3 h-3 text-[var(--accent-green)] inline ml-1" />
+      : <ChevronDown className="w-3 h-3 text-[var(--accent-green)] inline ml-1" />;
   };
 
   // Sliding pill for admin period tabs
@@ -178,12 +178,12 @@ export function AdminDashboard({
   } = allProjectAggregations;
 
   const topStats = [
-    { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
-    { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, accentHex: '#00c4f0', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
-    { label: 'Total Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Total commission disbursed to all reps via payroll' },
+    { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
+    { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, accentHex: 'var(--accent-cyan)', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
+    { label: 'Total Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Total commission disbursed to all reps via payroll' },
     { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/users', tooltip: 'Number of active sales reps in the system' },
     { label: 'Total kW Sold', value: formatCompactKW(totalKWSold), raw: Math.round(totalKWSold * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
-    { label: 'Total kW Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#ff5252', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status' },
+    { label: 'Total kW Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: 'var(--accent-red)', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status' },
   ];
 
   // Period-filtered pipeline counts for the stat cards
@@ -215,16 +215,16 @@ export function AdminDashboard({
   const periodMaxInstallerDeals = Math.max(1, ...periodInstallerRanking.map((i) => i.deals));
 
   const pipelineStats = [
-    { label: 'Active Projects', value: periodActiveCount, raw: periodActiveCount, format: (n: number) => n.toString(), accentHex: '#00c4f0', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
-    { label: 'Inactive Projects', value: periodInactiveCount, raw: periodInactiveCount, format: (n: number) => n.toString(), accentHex: '#525c72', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?status=inactive', tooltip: 'Projects that are cancelled or on hold' },
-    { label: 'Completed Projects', value: periodCompletedCount, raw: periodCompletedCount, format: (n: number) => n.toString(), accentHex: '#00e07a', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
+    { label: 'Active Projects', value: periodActiveCount, raw: periodActiveCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-cyan)', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
+    { label: 'Inactive Projects', value: periodInactiveCount, raw: periodInactiveCount, format: (n: number) => n.toString(), accentHex: 'var(--text-dim)', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?status=inactive', tooltip: 'Projects that are cancelled or on hold' },
+    { label: 'Completed Projects', value: periodCompletedCount, raw: periodCompletedCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
   // Inline pipeline phase hex colors for the segmented bar
   const PHASE_HEX: Record<string, string> = {
     'New': '#38bdf8', 'Acceptance': '#818cf8', 'Site Survey': '#a78bfa',
     'Design': '#e879f9', 'Permitting': '#fbbf24', 'Pending Install': '#fb923c',
-    'Installed': '#2dd4bf', 'PTO': '#00c4f0',
+    'Installed': '#2dd4bf', 'PTO': 'var(--accent-cyan)',
   };
 
   // Attention items count (used for All Clear vs Needs Attention)
@@ -254,12 +254,12 @@ export function AdminDashboard({
 
   // GradCard color config for the 6 stat cards
   const gradCardConfig: Record<string, { color: string; grad: string }> = {
-    'Kilo Revenue':      { color: '#00e07a', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
-    'Gross Profit':      totalProfit < 0 ? { color: '#ff5252', grad: 'linear-gradient(135deg, #160000 0%, #1a0000 100%)' } : { color: '#00c4f0', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
-    'Total Paid Out':    { color: '#ffb020', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
+    'Kilo Revenue':      { color: 'var(--accent-green)', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
+    'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red)', grad: 'linear-gradient(135deg, #160000 0%, #1a0000 100%)' } : { color: 'var(--accent-cyan)', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
+    'Total Paid Out':    { color: 'var(--accent-amber)', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
     'Total Users':       { color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a 0%, #0e0820 100%)' },
     'Total kW Sold':     { color: '#00d4c8', grad: 'linear-gradient(135deg, #001210 0%, #001614 100%)' },
-    'Total kW Installed': { color: '#8891a8', grad: 'linear-gradient(135deg, #101012 0%, #141416 100%)' },
+    'Total kW Installed': { color: 'var(--text-muted)', grad: 'linear-gradient(135deg, #101012 0%, #141416 100%)' },
   };
 
   // PhaseBadge and StatusDot are imported from page.tsx
@@ -270,11 +270,11 @@ export function AdminDashboard({
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, #00e07a, #00c4f0)' }} />
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: '#f0f2f7', letterSpacing: '-0.03em' }}>{getGreeting(currentRepName)}</h1>
-          <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard · Overview of all reps and deals</p>
+          <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, var(--accent-green), var(--accent-cyan))' }} />
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{getGreeting(currentRepName)}</h1>
+          <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard · Overview of all reps and deals</p>
         </div>
-        <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 tab-bar-container">
+        <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
           {adminPeriodIndicator && <div className="tab-indicator" style={adminPeriodIndicator} />}
           {PERIODS.map((p, i) => (
             <button
@@ -284,7 +284,7 @@ export function AdminDashboard({
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
                   ? 'text-black'
-                  : 'text-[#c2c8d8] hover:text-white'
+                  : 'text-[var(--text-secondary)] hover:text-white'
               }`}
             >
               {p.label}
@@ -296,10 +296,10 @@ export function AdminDashboard({
       {/* Quick-action toolbar */}
       <div className="grid grid-cols-4 gap-2.5 mb-7">
         {[
-          { label: 'Run Payroll', Icon: Banknote,   bgClass: 'bg-[#00160d]',  hoverBg: 'hover:bg-[#001e12]', borderCls: 'border-[#00e07a]/25', textCls: 'text-[#00e07a]', href: '/dashboard/payroll'   },
+          { label: 'Run Payroll', Icon: Banknote,   bgClass: 'bg-[#00160d]',  hoverBg: 'hover:bg-[#001e12]', borderCls: 'border-[var(--accent-green)]/25', textCls: 'text-[var(--accent-green)]', href: '/dashboard/payroll'   },
           { label: 'Add User',   Icon: UserPlus,   bgClass: 'bg-[#0a061a]',  hoverBg: 'hover:bg-[#0e0820]', borderCls: 'border-[#b47dff]/25', textCls: 'text-[#b47dff]', href: '/dashboard/users'     },
-          { label: 'New Deal',   Icon: PlusCircle, bgClass: 'bg-[#000e16]',  hoverBg: 'hover:bg-[#001218]', borderCls: 'border-[#00c4f0]/25', textCls: 'text-[#00c4f0]', href: '/dashboard/new-deal'  },
-          { label: 'Settings',  Icon: Settings,   bgClass: 'bg-[#120b00]',  hoverBg: 'hover:bg-[#180e00]', borderCls: 'border-[#ffb020]/25', textCls: 'text-[#ffb020]', href: '/dashboard/settings'  },
+          { label: 'New Deal',   Icon: PlusCircle, bgClass: 'bg-[#000e16]',  hoverBg: 'hover:bg-[#001218]', borderCls: 'border-[var(--accent-cyan)]/25', textCls: 'text-[var(--accent-cyan)]', href: '/dashboard/new-deal'  },
+          { label: 'Settings',  Icon: Settings,   bgClass: 'bg-[#120b00]',  hoverBg: 'hover:bg-[#180e00]', borderCls: 'border-[var(--accent-amber)]/25', textCls: 'text-[var(--accent-amber)]', href: '/dashboard/settings'  },
         ].map(({ label, Icon, bgClass, hoverBg, borderCls, textCls, href }) => (
           <Link
             key={label}
@@ -331,7 +331,7 @@ export function AdminDashboard({
               }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${gc.color}, transparent 70%)` }} />
                 <div style={{ position: 'absolute', top: -24, right: -24, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${gc.color}15 0%, transparent 70%)` }} />
-                <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 14 }}>{stat.label}</p>
+                <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 14 }}>{stat.label}</p>
                 <AnimatedStatValue raw={stat.raw} format={stat.format} style={{ fontSize: 36, fontWeight: 700, color: gc.color, fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: `0 0 20px ${gc.color}50` }} />
               </div>
             </Link>
@@ -342,21 +342,21 @@ export function AdminDashboard({
       {/* Pipeline stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {pipelineStats.map((s, i) => (
-          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-[#00e07a]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${s.accentHex}14` } as CSSProperties}>
+          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-[var(--accent-green)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${s.accentHex}14` } as CSSProperties}>
             <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: s.accentHex }} />
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: '#525c72', fontFamily: "'DM Sans', sans-serif" }}>
+              <p className="text-xs font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>
                 {s.label}
                 {'tooltip' in s && s.tooltip && (
                   <span className="relative group/tip">
-                    <HelpCircle className="w-3 h-3 text-[#525c72] hover:text-[#c2c8d8] transition-colors cursor-help" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-[#1d2028] border border-[#272b35]/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#c2c8d8] shadow-xl leading-snug">
+                    <HelpCircle className="w-3 h-3 text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors cursor-help" />
+                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-[var(--surface-card)] border border-[var(--border)]/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[var(--text-secondary)] shadow-xl leading-snug">
                       {s.tooltip}
                     </span>
                   </span>
                 )}
               </p>
-              <ChevronRight className="w-3.5 h-3.5 text-[#525c72] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ChevronRight className="w-3.5 h-3.5 text-[var(--text-dim)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <AnimatedStatValue raw={s.raw} format={s.format} className="stat-value text-3xl font-black tabular-nums animate-count-up" style={{ color: s.accentHex, fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: `0 0 20px ${s.accentHex}50` }} />
           </Link>
@@ -364,11 +364,11 @@ export function AdminDashboard({
       </div>
 
       {/* Pipeline Overview — inline segmented bar */}
-      <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: '22px 26px', marginBottom: 32 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 26px', marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00e07a', boxShadow: '0 0 8px #00e07a', flexShrink: 0 }} />
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>Pipeline Overview</h2>
-          <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{periodPipelineTotal} active deal{periodPipelineTotal !== 1 ? 's' : ''}</span>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)', flexShrink: 0 }} />
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>Pipeline Overview</h2>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{periodPipelineTotal} active deal{periodPipelineTotal !== 1 ? 's' : ''}</span>
         </div>
         {periodPipelineTotal > 0 ? (
           <>
@@ -378,7 +378,7 @@ export function AdminDashboard({
                   key={phase}
                   style={{
                     width: `${(periodPipelinePhaseCounts[phase] / periodPipelineTotal) * 100}%`,
-                    background: PHASE_HEX[phase] ?? '#525c72',
+                    background: PHASE_HEX[phase] ?? 'var(--text-dim)',
                     transition: 'width 0.7s ease-out',
                   }}
                 />
@@ -387,31 +387,31 @@ export function AdminDashboard({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
               {periodPipelineNonEmpty.map((phase) => (
                 <Link key={phase} href={`/dashboard/projects?phase=${encodeURIComponent(phase)}`} style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: PHASE_HEX[phase] ?? '#525c72', flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>{phase}</span>
-                  <span style={{ fontSize: 12, color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{periodPipelinePhaseCounts[phase]}</span>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: PHASE_HEX[phase] ?? 'var(--text-dim)', flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{phase}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{periodPipelinePhaseCounts[phase]}</span>
                 </Link>
               ))}
             </div>
           </>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 0', gap: 8 }}>
-            <FolderKanban style={{ width: 32, height: 32, color: '#525c72' }} />
-            <p style={{ color: '#f0f2f7', fontWeight: 700, fontSize: 14 }}>No active projects</p>
-            <p style={{ color: '#525c72', fontSize: 12 }}>Your pipeline will appear here once you close a deal.</p>
+            <FolderKanban style={{ width: 32, height: 32, color: 'var(--text-dim)' }} />
+            <p style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 14 }}>No active projects</p>
+            <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>Your pipeline will appear here once you close a deal.</p>
           </div>
         )}
       </div>
 
       {/* Needs Attention / All Clear */}
       {attentionItemCount === 0 ? (
-        <div style={{ background: '#161920', border: '1px solid #272b35', borderLeft: '3px solid #00e07a', borderRadius: 16, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent-green)', borderRadius: 16, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,224,122,0.13)', border: '1px solid rgba(0,224,122,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CheckCircle style={{ width: 16, height: 16, color: '#00e07a' }} />
+            <CheckCircle style={{ width: 16, height: 16, color: 'var(--accent-green)' }} />
           </div>
           <div>
-            <p style={{ color: '#00e07a', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
-            <p style={{ color: '#8891a8', fontSize: 12, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>No items need attention right now.</p>
+            <p style={{ color: 'var(--accent-green)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>No items need attention right now.</p>
           </div>
         </div>
       ) : (
@@ -438,8 +438,8 @@ export function AdminDashboard({
               </div>
               <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Installer Insights</h2>
               {insightsExpanded
-                ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
-                : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+                ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
               }
             </button>
             <div className={`collapsible-panel ${insightsExpanded ? 'open' : ''}`}>
@@ -447,32 +447,32 @@ export function AdminDashboard({
                 <div className="overflow-x-auto mt-4">
                   <table className="w-full text-sm">
                     <thead className="table-header-frost">
-                      <tr className="border-b border-[#333849]">
-                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Installer</th>
-                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Deals</th>
-                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Total kW</th>
-                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs">Cancelled</th>
-                        <th className="text-left px-4 py-2 text-[#c2c8d8] font-medium text-xs w-40">Volume</th>
+                      <tr className="border-b border-[var(--border-subtle)]">
+                        <th className="text-left px-4 py-2 text-[var(--text-secondary)] font-medium text-xs">Installer</th>
+                        <th className="text-left px-4 py-2 text-[var(--text-secondary)] font-medium text-xs">Deals</th>
+                        <th className="text-left px-4 py-2 text-[var(--text-secondary)] font-medium text-xs">Total kW</th>
+                        <th className="text-left px-4 py-2 text-[var(--text-secondary)] font-medium text-xs">Cancelled</th>
+                        <th className="text-left px-4 py-2 text-[var(--text-secondary)] font-medium text-xs w-40">Volume</th>
                       </tr>
                     </thead>
                     <tbody>
                       {periodInstallerRanking.map((inst, i) => (
-                        <tr key={inst.name} className="border-b border-[#333849]/50 hover:bg-[#1d2028]/30 transition-colors">
+                        <tr key={inst.name} className="border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 transition-colors">
                           <td className="px-4 py-2.5 text-white font-medium flex items-center gap-2">
                             {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-white`}>#{i + 1}</span>}
                             {inst.name}
                           </td>
-                          <td className="px-4 py-2.5 text-[#c2c8d8] tabular-nums">{inst.deals}</td>
-                          <td className="px-4 py-2.5 text-[#c2c8d8] tabular-nums">{inst.kW.toFixed(1)}</td>
+                          <td className="px-4 py-2.5 text-[var(--text-secondary)] tabular-nums">{inst.deals}</td>
+                          <td className="px-4 py-2.5 text-[var(--text-secondary)] tabular-nums">{inst.kW.toFixed(1)}</td>
                           <td className="px-4 py-2.5">
                             {inst.cancelled > 0 ? (
                               <span className="text-red-400 text-xs font-medium">{inst.cancelled}</span>
                             ) : (
-                              <span className="text-[#525c72] text-xs">0</span>
+                              <span className="text-[var(--text-dim)] text-xs">0</span>
                             )}
                           </td>
                           <td className="px-4 py-2.5">
-                            <div className="w-full h-3 rounded-full bg-[#1d2028] overflow-hidden">
+                            <div className="w-full h-3 rounded-full bg-[var(--surface-card)] overflow-hidden">
                               <div className="h-full rounded-full bg-amber-500/70 transition-all duration-500" style={{ width: `${(inst.deals / maxDeals) * 100}%` }} />
                             </div>
                           </td>
@@ -507,18 +507,18 @@ export function AdminDashboard({
                 <AlertCircle className="w-4 h-4 text-red-400" />
               </div>
               <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons</h2>
-              <span className="text-[#8891a8] text-xs mr-2">{cancelledProjects.length} cancelled</span>
+              <span className="text-[var(--text-muted)] text-xs mr-2">{cancelledProjects.length} cancelled</span>
               {cancellationExpanded
-                ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
-                : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+                ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
               }
             </button>
             <div className={`collapsible-panel ${cancellationExpanded ? 'open' : ''}`}>
               <div className="collapsible-inner">
                 <div className="space-y-2 mt-4">
                   {reasonList.map(([reason, count]) => (
-                    <div key={reason} className="flex items-center justify-between bg-[#1d2028]/40 rounded-lg px-4 py-2">
-                      <span className="text-[#c2c8d8] text-sm">{reason}</span>
+                    <div key={reason} className="flex items-center justify-between bg-[var(--surface-card)]/40 rounded-lg px-4 py-2">
+                      <span className="text-[var(--text-secondary)] text-sm">{reason}</span>
                       <span className="text-red-400 text-sm font-semibold tabular-nums">{count}</span>
                     </div>
                   ))}
@@ -557,8 +557,8 @@ export function AdminDashboard({
         const thCls = (col: SortKey) =>
           `text-left px-6 py-3 text-xs font-medium select-none cursor-pointer transition-colors ${
             sortKey === col
-              ? 'text-[#00e07a] bg-[#00e07a]/[0.04]'
-              : 'text-[#c2c8d8] hover:text-white'
+              ? 'text-[var(--accent-green)] bg-[var(--accent-green)]/[0.04]'
+              : 'text-[var(--text-secondary)] hover:text-white'
           }`;
 
         return (
@@ -570,8 +570,8 @@ export function AdminDashboard({
           >
             <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Projects</h2>
             {recentExpanded
-              ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
-              : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+              ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+              : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
             }
           </button>
           <div className="flex items-center gap-2">
@@ -580,49 +580,49 @@ export function AdminDashboard({
               placeholder="Search customer or rep..."
               value={recentSearch}
               onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-              className="bg-[#1d2028] border border-[#272b35] text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-[#00e07a] transition-colors"
+              className="bg-[var(--surface-card)] border border-[var(--border)] text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] transition-colors"
             />
             {recentSearch.trim() && (
-              <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
             )}
           </div>
         </div>
         <div className={`collapsible-panel ${recentExpanded ? 'open' : ''}`}>
           <div className="collapsible-inner">
-            <div className="border-t border-[#333849]">
+            <div className="border-t border-[var(--border-subtle)]">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="table-header-frost sticky top-0 z-10 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                    <tr className="border-b border-[#333849]">
+                    <tr className="border-b border-[var(--border-subtle)]">
                       {/* 1 */}<th className={thCls('customerName')} onClick={() => toggleSort('customerName')}>Customer<SortIcon col="customerName" /></th>
-                      {/* 2 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">Rep</th>
+                      {/* 2 */}<th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium">Rep</th>
                       {/* 3 */}<th className={thCls('installer')} onClick={() => toggleSort('installer')}>Installer<SortIcon col="installer" /></th>
                       {/* 4 */}<th className={thCls('soldDate')} onClick={() => toggleSort('soldDate')}>Sold<SortIcon col="soldDate" /></th>
                       {/* 5 */}<th className={thCls('phase')} onClick={() => toggleSort('phase')}>Phase<SortIcon col="phase" /></th>
                       {/* 6 */}<th className={thCls('kWSize')} onClick={() => toggleSort('kWSize')}>kW<SortIcon col="kWSize" /></th>
                       {/* 7 */}<th className={thCls('netPPW')} onClick={() => toggleSort('netPPW')}>$/W<SortIcon col="netPPW" /></th>
-                      {/* 8 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">Est. Pay</th>
-                      {/* 9 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M1</th>
-                      {/* 10 */}<th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M2</th>
-                      {/* 11 */}{showM3 && <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium">M3</th>}
+                      {/* 8 */}<th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium">Est. Pay</th>
+                      {/* 9 */}<th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium">M1</th>
+                      {/* 10 */}<th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium">M2</th>
+                      {/* 11 */}{showM3 && <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium">M3</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
                       const estPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
                       return (
-                      <tr key={proj.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/20 hover:bg-[#00e07a]/[0.03] transition-colors duration-150">
+                      <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
-                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[#00e07a] transition-colors">{proj.customerName}</Link>
+                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[var(--accent-green)] transition-colors">{proj.customerName}</Link>
                           {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Sub-Dealer</span>}
                         </td>
-                        {/* 2 */}<td className="px-6 py-3 text-[#c2c8d8] text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-[#525c72]"> / {proj.setterName}</span> : ''}</td>
-                        {/* 3 */}<td className="px-6 py-3 text-[#c2c8d8] text-xs whitespace-nowrap">{proj.installer}</td>
-                        {/* 4 */}<td className="px-6 py-3 text-[#c2c8d8] text-xs whitespace-nowrap">{formatDate(proj.soldDate)}</td>
+                        {/* 2 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-[var(--text-dim)]"> / {proj.setterName}</span> : ''}</td>
+                        {/* 3 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs whitespace-nowrap">{proj.installer}</td>
+                        {/* 4 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs whitespace-nowrap">{formatDate(proj.soldDate)}</td>
                         {/* 5 */}<td className="px-6 py-3"><PhaseBadge phase={proj.phase} /></td>
-                        {/* 6 */}<td className="px-6 py-3 text-[#c2c8d8]">{proj.kWSize}</td>
-                        {/* 7 */}<td className="px-6 py-3 text-[#c2c8d8]">${(proj.netPPW ?? 0).toFixed(2)}</td>
-                        {/* 8 */}<td className="px-6 py-3 text-[#00e07a] font-medium">${estPay.toLocaleString()}</td>
+                        {/* 6 */}<td className="px-6 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
+                        {/* 7 */}<td className="px-6 py-3 text-[var(--text-secondary)]">${(proj.netPPW ?? 0).toFixed(2)}</td>
+                        {/* 8 */}<td className="px-6 py-3 text-[var(--accent-green)] font-medium">${estPay.toLocaleString()}</td>
                         {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount ?? 0} /></td>
                         {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount ?? 0} /></td>
                         {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={proj.m3Amount ?? 0} /></td>}
@@ -631,7 +631,7 @@ export function AdminDashboard({
                     })}
                     {sorted.length === 0 && (
                       <tr>
-                        <td colSpan={showM3 ? 11 : 10} className="px-6 py-10 text-center text-[#8891a8]">
+                        <td colSpan={showM3 ? 11 : 10} className="px-6 py-10 text-center text-[var(--text-muted)]">
                           No projects found for this period.
                         </td>
                       </tr>
@@ -677,7 +677,7 @@ const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: str
 };
 
 function PhaseBadge({ phase }: { phase: string }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[#272b35]/30', shadow: '', text: 'text-[#c2c8d8]', dot: 'bg-[#8891a8]' };
+  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
   return (
     <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
@@ -687,10 +687,10 @@ function PhaseBadge({ phase }: { phase: string }) {
 }
 
 function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
-  if (amount === 0) return <span className="text-[#525c72] text-xs">—</span>;
+  if (amount === 0) return <span className="text-[var(--text-dim)] text-xs">—</span>;
   return (
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-      paid ? 'bg-emerald-900/50 text-[#00e07a]' : 'bg-yellow-900/50 text-yellow-400'
+      paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
     }`}>
       {paid ? fmt$(amount) : 'Unpaid'}
     </span>

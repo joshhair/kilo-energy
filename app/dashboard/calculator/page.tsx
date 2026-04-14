@@ -117,13 +117,13 @@ function FieldTooltip({ text }: { text: string }) {
       // stopPropagation prevents toggling a parent label's control (e.g. the setter switch)
       onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
     >
-      <HelpCircle className="w-3.5 h-3.5 text-[#8891a8] group-hover:text-[#c2c8d8] cursor-pointer transition-colors flex-shrink-0" />
+      <HelpCircle className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] cursor-pointer transition-colors flex-shrink-0" />
       {/* Tooltip bubble — hidden by default, revealed via group-hover (CSS) or open state (mobile tap) */}
       <span
         role="tooltip"
         className={[
           'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2',
-          'w-56 bg-[#272b35] border border-[#272b35] text-[#c2c8d8]',
+          'w-56 bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)]',
           'text-xs font-normal normal-case tracking-normal leading-relaxed',
           'rounded-lg px-3 py-2 shadow-xl z-50 transition-opacity duration-150',
           open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
@@ -165,15 +165,15 @@ function CommissionBar({
   const pct = (v: number) => `${(v / total) * 100}%`;
 
   const segments = [
-    { key: 'closer',  value: closer,  colorClass: 'bg-[#00e07a]',    label: 'Closer'   },
-    { key: 'setter',  value: setter,  colorClass: 'bg-[#00c4f0]', label: 'Setter'   },
+    { key: 'closer',  value: closer,  colorClass: 'bg-[var(--accent-green)]',    label: 'Closer'   },
+    { key: 'setter',  value: setter,  colorClass: 'bg-[var(--accent-cyan)]', label: 'Setter'   },
     { key: 'trainer', value: trainer, colorClass: 'bg-amber-500',   label: 'Trainer'  },
-    ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-[#8891a8]', label: 'Kilo Rev' }] : []),
+    ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-[var(--text-muted)]', label: 'Kilo Rev' }] : []),
   ].filter((s) => s.value > 0);
 
   return (
     <div className="mt-4 space-y-2">
-      <div className="h-3 rounded-full bg-[#1d2028] overflow-hidden flex">
+      <div className="h-3 rounded-full bg-[var(--surface-card)] overflow-hidden flex">
         {segments.map((seg) => (
           <div
             key={seg.key}
@@ -186,7 +186,7 @@ function CommissionBar({
         {segments.map((seg) => (
           <div key={seg.key} className="flex items-center gap-1.5">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${seg.colorClass}`} />
-            <span className="text-[#8891a8] text-xs">{seg.label}</span>
+            <span className="text-[var(--text-muted)] text-xs">{seg.label}</span>
           </div>
         ))}
       </div>
@@ -599,10 +599,10 @@ function CalculatorPage() {
 
 
   const inputCls = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all duration-200 placeholder-slate-500';
-  const inputStyle: CSSProperties = { background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7', fontFamily: "'DM Sans', sans-serif" };
-  const inputFocusRing = 'focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a]';
+  const inputStyle: CSSProperties = { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" };
+  const inputFocusRing = 'focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)]';
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
-  const labelStyle: CSSProperties = { color: '#8891a8', fontFamily: "'DM Sans', sans-serif" };
+  const labelStyle: CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
 
   // Animated dollar counters — always called (hook rules), values are 0 when not shown
   const animatedCloserTotal  = useCountUp(closerTotal);
@@ -615,7 +615,7 @@ function CalculatorPage() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[var(--text-muted)] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }
@@ -630,11 +630,11 @@ function CalculatorPage() {
 
   // Bar segment data for the stacked breakdown bar
   const breakdownSegments = [
-    { key: 'closer', label: 'Closer', value: closerTotal, color: '#00e07a' },
-    ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: '#00c4f0' }] : []),
+    { key: 'closer', label: 'Closer', value: closerTotal, color: 'var(--accent-green)' },
+    ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan)' }] : []),
     ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
     ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: '#b47dff' }] : []),
-    ...(currentRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: kiloTotal, color: '#ffb020' }] : []),
+    ...(currentRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: kiloTotal, color: 'var(--accent-amber)' }] : []),
   ].filter(s => s.value > 0);
   const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
 
@@ -645,11 +645,11 @@ function CalculatorPage() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Calculator className="w-5 h-5 text-[#00e07a]" />
+            <Calculator className="w-5 h-5 text-[var(--accent-green)]" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
         </div>
-        <p className="text-sm font-medium ml-12 tracking-wide" style={{ color: '#8891a8' }}>Run numbers before you close — know your earning before you pitch.</p>
+        <p className="text-sm font-medium ml-12 tracking-wide" style={{ color: 'var(--text-muted)' }}>Run numbers before you close — know your earning before you pitch.</p>
       </div>
 
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
@@ -657,10 +657,10 @@ function CalculatorPage() {
         <div style={{ flex: '0 0 420px' }}>
           {/* Quick Fill card */}
           {recentDeals.length > 0 && (
-            <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#00c4f0' }} />
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#00c4f0', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
+                <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan)' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-cyan)', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
               </div>
               <div className="flex items-center gap-2">
                 <SearchableSelect
@@ -678,7 +678,7 @@ function CalculatorPage() {
                   onClick={handleReset}
                   title="Clear all fields"
                   className="flex-shrink-0 p-2 rounded-lg hover:text-white transition-colors"
-                  style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
                 >
                   <RotateCcw className="w-4 h-4" />
                 </button>
@@ -687,7 +687,7 @@ function CalculatorPage() {
           )}
 
           {/* Main form card */}
-          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 24, marginBottom: 12 }} className="space-y-5 overflow-visible relative z-20">
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 12 }} className="space-y-5 overflow-visible relative z-20">
             <div>
               <label className={labelCls} style={labelStyle}>
                 Installer
@@ -807,11 +807,11 @@ function CalculatorPage() {
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <div
                   onClick={() => { setHasSetter((v) => { if (v) setSelectedSetterId(''); return !v; }); }}
-                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[#00e07a]' : 'bg-[#272b35]'}`}
+                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[var(--accent-green)]' : 'bg-[var(--border)]'}`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hasSetter ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
-                <span className="text-[#c2c8d8] text-sm">Include setter</span>
+                <span className="text-[var(--text-secondary)] text-sm">Include setter</span>
               </label>
 
               {hasSetter && (
@@ -842,9 +842,9 @@ function CalculatorPage() {
             {/* Target earnings tool */}
             {hasInput && (
               <>
-                <div style={{ height: 1, background: 'linear-gradient(to right, transparent, #333849, transparent)' }} />
+                <div style={{ height: 1, background: 'linear-gradient(to right, transparent, var(--border-subtle), transparent)' }} />
                 <div>
-                  <p className="text-xs uppercase tracking-wider mb-3" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>PPW Needed for Target Earning</p>
+                  <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>PPW Needed for Target Earning</p>
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <input
@@ -858,11 +858,11 @@ function CalculatorPage() {
                     <div className="text-right min-w-[100px]">
                       {targetEarning.trim() !== '' && requiredPPW > 0 ? (
                         <>
-                          <p style={{ color: '#4d9fff', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: '#525c72', fontSize: 12, fontWeight: 400 }}>/W</span></p>
-                          <p style={{ color: '#525c72', fontSize: 12 }}>required PPW</p>
+                          <p style={{ color: 'var(--accent-blue)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
+                          <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>required PPW</p>
                         </>
                       ) : (
-                        <p style={{ color: '#525c72', fontSize: 14 }}>--</p>
+                        <p style={{ color: 'var(--text-dim)', fontSize: 14 }}>--</p>
                       )}
                     </div>
                   </div>
@@ -873,21 +873,21 @@ function CalculatorPage() {
 
           {/* Recent Calcs card */}
           {calcHistory.length > 0 && (
-            <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16 }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16 }}>
               <button
                 type="button"
                 onClick={() => setHistoryOpen((v) => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 text-left"
               >
                 <div className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5" style={{ color: '#525c72' }} />
-                  <span style={{ color: '#525c72', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>Recent Calcs</span>
-                  <span style={{ color: '#525c72', fontSize: 12 }}>({calcHistory.length})</span>
+                  <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-dim)' }} />
+                  <span style={{ color: 'var(--text-dim)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>Recent Calcs</span>
+                  <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>({calcHistory.length})</span>
                 </div>
                 {historyOpen ? (
-                  <ChevronUp className="w-4 h-4" style={{ color: '#525c72' }} />
+                  <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-dim)' }} />
                 ) : (
-                  <ChevronDown className="w-4 h-4" style={{ color: '#525c72' }} />
+                  <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-dim)' }} />
                 )}
               </button>
               {historyOpen && (
@@ -896,13 +896,13 @@ function CalculatorPage() {
                     <div
                       key={`${entry.timestamp}-${i}`}
                       className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
-                      style={{ background: '#1d2028', border: '1px solid #272b35' }}
+                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}
                     >
                       <div className="min-w-0 flex-1">
-                        <p style={{ color: '#f0f2f7', fontSize: 14, fontWeight: 500 }} className="truncate">
+                        <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 500 }} className="truncate">
                           {entry.installer} -- {entry.kW.toFixed(1)} kW @ ${entry.ppw.toFixed(2)}/W
                         </p>
-                        <p style={{ color: '#525c72', fontSize: 12 }}>
+                        <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>
                           Closer: ${entry.closerTotal.toLocaleString()}
                           {entry.hasSetter && entry.setterTotal > 0 ? ` · Setter: $${entry.setterTotal.toLocaleString()}` : ''}
                           {entry.trainerTotal > 0 ? ` · Trainer: $${entry.trainerTotal.toLocaleString()}` : ''}
@@ -912,7 +912,7 @@ function CalculatorPage() {
                         type="button"
                         onClick={() => handleLoadHistory(entry)}
                         className="flex-shrink-0 text-xs font-medium rounded-md px-2.5 py-1 transition-colors"
-                        style={{ color: '#4d9fff', background: 'rgba(77,159,255,0.1)' }}
+                        style={{ color: 'var(--accent-blue)', background: 'rgba(77,159,255,0.1)' }}
                       >
                         Load
                       </button>
@@ -922,7 +922,7 @@ function CalculatorPage() {
                     type="button"
                     onClick={handleClearHistory}
                     className="flex items-center gap-1.5 text-xs transition-colors mt-1"
-                    style={{ color: '#525c72' }}
+                    style={{ color: 'var(--text-dim)' }}
                   >
                     <Trash2 className="w-3 h-3" />
                     Clear History
@@ -935,29 +935,29 @@ function CalculatorPage() {
 
         {/* Right: live breakdown — flex:1, sticky */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 24, position: 'sticky', top: 16 }}>
-            <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 20 }}>Live Breakdown</p>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, position: 'sticky', top: 16 }}>
+            <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 20 }}>Live Breakdown</p>
 
             {hasData ? (
               <div key={resultHash}>
                 {/* System Value */}
-                <p style={{ fontSize: 32, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4 }}>
+                <p style={{ fontSize: 32, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4 }}>
                   ${Math.round(systemValue).toLocaleString()}
                 </p>
-                <p style={{ fontSize: 11, color: '#525c72', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
+                <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
                   {kW.toFixed(1)} kW x ${soldPPW.toFixed(2)} PPW x 1,000
                 </p>
 
                 {/* Below-baseline warning */}
                 {soldPPW <= closerPerW && (
-                  <div style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', borderLeft: '3px solid #ff5252', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#ff5252' }}>
+                  <div style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', borderLeft: '3px solid var(--accent-red)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red)' }}>
                     PPW is at or below baseline -- no commission earned at this price.
                   </div>
                 )}
 
                 {/* Tier gap warning — baselines couldn't be resolved for this kW size */}
                 {closerPerW === 0 && soldPPW > 0 && (
-                  <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid #ffb020', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#ffb020' }}>
+                  <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid var(--accent-amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber)' }}>
                     No pricing tier found for {kW.toFixed(1)} kW — baselines could not be resolved. Results below are unreliable. Select a product or check that a tier covers this system size.
                   </div>
                 )}
@@ -972,18 +972,18 @@ function CalculatorPage() {
                 )}
 
                 {/* Baseline rates row */}
-                <div style={{ display: 'flex', gap: 16, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #272b35' }}>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
                   <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerPerW.toFixed(2)}<span style={{ fontSize: 11, color: '#525c72', fontWeight: 400 }}>/W</span></p>
-                    <p style={{ fontSize: 11, color: '#8891a8' }}>Closer Baseline</p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerPerW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Closer Baseline</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterBaselinePerW.toFixed(2)}<span style={{ fontSize: 11, color: '#525c72', fontWeight: 400 }}>/W</span></p>
-                    <p style={{ fontSize: 11, color: '#8891a8' }}>Setter Baseline</p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterBaselinePerW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Setter Baseline</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${breakEvenPPW.toFixed(2)}<span style={{ fontSize: 11, color: '#525c72', fontWeight: 400 }}>/W</span></p>
-                    <p style={{ fontSize: 11, color: '#8891a8' }}>Break-Even</p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${breakEvenPPW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Break-Even</p>
                   </div>
                 </div>
 
@@ -992,27 +992,27 @@ function CalculatorPage() {
                   {/* Closer */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00e07a', flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</span>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-green)', flexShrink: 0 }} />
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedCloserTotal.toLocaleString()}</span>
-                      {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((closerTotal / breakdownTotal) * 100)}%</span>}
+                      <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${animatedCloserTotal.toLocaleString()}</span>
+                      {breakdownTotal > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>{Math.round((closerTotal / breakdownTotal) * 100)}%</span>}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                    <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00e07a', borderRadius: 7, padding: '5px 8px' }}>
-                      <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerM1.toLocaleString()}</p>
+                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-green)', borderRadius: 7, padding: '5px 8px' }}>
+                      <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM1.toLocaleString()}</p>
                     </div>
-                    <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00e07a', borderRadius: 7, padding: '5px 8px' }}>
-                      <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerM2.toLocaleString()}</p>
+                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-green)', borderRadius: 7, padding: '5px 8px' }}>
+                      <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM2.toLocaleString()}</p>
                     </div>
                     {hasM3Split && (
-                      <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #8891a8', borderRadius: 7, padding: '5px 8px' }}>
-                        <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${closerM3.toLocaleString()}</p>
+                      <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--text-muted)', borderRadius: 7, padding: '5px 8px' }}>
+                        <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM3.toLocaleString()}</p>
                       </div>
                     )}
                   </div>
@@ -1022,27 +1022,27 @@ function CalculatorPage() {
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c4f0', flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Setter Pay{selectedSetterRep ? ` -- ${selectedSetterRep.name}` : ''}</span>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan)', flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Setter Pay{selectedSetterRep ? ` -- ${selectedSetterRep.name}` : ''}</span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedSetterTotal.toLocaleString()}</span>
-                          {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((setterTotal / breakdownTotal) * 100)}%</span>}
+                          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${animatedSetterTotal.toLocaleString()}</span>
+                          {breakdownTotal > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>{Math.round((setterTotal / breakdownTotal) * 100)}%</span>}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                        <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00c4f0', borderRadius: 7, padding: '5px 8px' }}>
-                          <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
-                          <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterM1.toLocaleString()}</p>
+                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan)', borderRadius: 7, padding: '5px 8px' }}>
+                          <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM1.toLocaleString()}</p>
                         </div>
-                        <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #00c4f0', borderRadius: 7, padding: '5px 8px' }}>
-                          <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
-                          <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterM2.toLocaleString()}</p>
+                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan)', borderRadius: 7, padding: '5px 8px' }}>
+                          <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM2.toLocaleString()}</p>
                         </div>
                         {hasM3Split && (
-                          <div style={{ flex: 1, background: '#1d2028', border: '1px solid #272b35', borderLeft: '2px solid #8891a8', borderRadius: 7, padding: '5px 8px' }}>
-                            <p style={{ fontSize: 10, color: '#525c72', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
-                            <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${setterM3.toLocaleString()}</p>
+                          <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--text-muted)', borderRadius: 7, padding: '5px 8px' }}>
+                            <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM3.toLocaleString()}</p>
                           </div>
                         )}
                       </div>
@@ -1054,11 +1054,11 @@ function CalculatorPage() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {trainerRep.name}</span>
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {trainerRep.name}</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedTrainerTotal.toLocaleString()}</span>
-                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((trainerTotal / breakdownTotal) * 100)}%</span>}
+                        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${animatedTrainerTotal.toLocaleString()}</span>
+                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>{Math.round((trainerTotal / breakdownTotal) * 100)}%</span>}
                       </div>
                     </div>
                   )}
@@ -1068,11 +1068,11 @@ function CalculatorPage() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {closerTrainerRep.name}</span>
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {closerTrainerRep.name}</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedCloserTrainerTotal.toLocaleString()}</span>
-                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((closerTrainerTotal / breakdownTotal) * 100)}%</span>}
+                        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${animatedCloserTrainerTotal.toLocaleString()}</span>
+                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>{Math.round((closerTrainerTotal / breakdownTotal) * 100)}%</span>}
                       </div>
                     </div>
                   )}
@@ -1081,12 +1081,12 @@ function CalculatorPage() {
                   {currentRole === 'admin' && kiloTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffb020', flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, color: '#c2c8d8', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</span>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-amber)', flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Serif Display', serif" }}>${animatedKiloTotal.toLocaleString()}</span>
-                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: '#525c72', marginLeft: 6 }}>{Math.round((kiloTotal / breakdownTotal) * 100)}%</span>}
+                        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${animatedKiloTotal.toLocaleString()}</span>
+                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>{Math.round((kiloTotal / breakdownTotal) * 100)}%</span>}
                       </div>
                     </div>
                   )}
@@ -1101,22 +1101,22 @@ function CalculatorPage() {
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #00e07a, transparent 70%)' }} />
-                  <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8891a8', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
-                  <p style={{ fontSize: 44, fontWeight: 700, color: '#00e07a', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-green), transparent 70%)' }} />
+                  <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
+                  <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
                     ${(currentRole === 'rep' && hasSetter && reps.find(r => r.id === currentRepId)?.repType === 'setter' ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>
 
                 {/* Share actions */}
                 <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                  <button type="button" onClick={handleCopyResult} title="Copy deal summary" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#1d2028', border: '1px solid #333849', color: '#8891a8', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
+                  <button type="button" onClick={handleCopyResult} title="Copy deal summary" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
                     <ClipboardCopy className="w-3.5 h-3.5" /> Copy
                   </button>
-                  <button type="button" onClick={handleShareResult} title="Copy share summary" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#1d2028', border: '1px solid #333849', color: '#8891a8', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
+                  <button type="button" onClick={handleShareResult} title="Copy share summary" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
                     <Share2 className="w-3.5 h-3.5" /> Share
                   </button>
-                  <button type="button" onClick={handleShareURL} title="Copy shareable URL" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#1d2028', border: '1px solid #333849', color: '#8891a8', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
+                  <button type="button" onClick={handleShareURL} title="Copy shareable URL" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}>
                     <Link2 className="w-3.5 h-3.5" /> Link
                   </button>
                 </div>
@@ -1124,20 +1124,20 @@ function CalculatorPage() {
             ) : hasInput && soldPPW <= 0 ? (
               /* Has inputs but no PPW */
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0', gap: 12, textAlign: 'center' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#1d2028', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Zap className="w-6 h-6 animate-pulse" style={{ color: '#525c72' }} />
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--surface-card)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap className="w-6 h-6 animate-pulse" style={{ color: 'var(--text-dim)' }} />
                 </div>
-                <p style={{ color: '#8891a8', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Enter a sold PPW to see your commission breakdown</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Enter a sold PPW to see your commission breakdown</p>
               </div>
             ) : (
               /* Empty state */
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0', gap: 12, textAlign: 'center' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#1d2028', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Calculator className="w-6 h-6" style={{ color: '#525c72' }} />
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--surface-card)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Calculator className="w-6 h-6" style={{ color: 'var(--text-dim)' }} />
                 </div>
                 <div>
-                  <p style={{ color: '#c2c8d8', fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>Enter system size and PPW</p>
-                  <p style={{ color: '#525c72', fontSize: 12, fontFamily: "'DM Sans', sans-serif", marginTop: 4 }}>Your live commission breakdown will appear here</p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>Enter system size and PPW</p>
+                  <p style={{ color: 'var(--text-dim)', fontSize: 12, fontFamily: "'DM Sans', sans-serif", marginTop: 4 }}>Your live commission breakdown will appear here</p>
                 </div>
               </div>
             )}
@@ -1155,19 +1155,19 @@ function CalculatorSkeleton() {
     <div className="p-4 md:p-8 max-w-2xl">
       {/* Page header shimmer */}
       <div className="mb-8">
-        <div className="h-[3px] w-12 rounded-full bg-[#272b35] animate-skeleton mb-3" />
+        <div className="h-[3px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3" />
         <div className="flex items-center gap-3 mb-1">
           <div
-            className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton"
+            className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton"
             style={{ animationDelay: '50ms' }}
           />
           <div
-            className="h-8 w-56 bg-[#1d2028] rounded animate-skeleton"
+            className="h-8 w-56 bg-[var(--surface-card)] rounded animate-skeleton"
             style={{ animationDelay: '100ms' }}
           />
         </div>
         <div
-          className="h-3 w-72 bg-[#1d2028]/70 rounded animate-skeleton ml-12 mt-1"
+          className="h-3 w-72 bg-[var(--surface-card)]/70 rounded animate-skeleton ml-12 mt-1"
           style={{ animationDelay: '150ms' }}
         />
       </div>
@@ -1182,11 +1182,11 @@ function CalculatorSkeleton() {
         ].map(({ labelW, delay }, i) => (
           <div key={i}>
             <div
-              className={`h-3 ${labelW} bg-[#272b35]/70 rounded animate-skeleton mb-2`}
+              className={`h-3 ${labelW} bg-[var(--border)]/70 rounded animate-skeleton mb-2`}
               style={{ animationDelay: `${delay}ms` }}
             />
             <div
-              className="h-10 w-full bg-[#1d2028] rounded-xl animate-skeleton"
+              className="h-10 w-full bg-[var(--surface-card)] rounded-xl animate-skeleton"
               style={{ animationDelay: `${delay + 30}ms` }}
             />
           </div>
@@ -1206,12 +1206,12 @@ function CalculatorSkeleton() {
           >
             {/* Card label row */}
             <div
-              className="h-3 w-28 bg-[#272b35]/50 rounded animate-skeleton mb-4"
+              className="h-3 w-28 bg-[var(--border)]/50 rounded animate-skeleton mb-4"
               style={{ animationDelay: `${delay}ms` }}
             />
             {/* Card body shimmer */}
             <div
-              className={`${bodyH} w-full bg-[#1d2028]/70 rounded-xl animate-skeleton`}
+              className={`${bodyH} w-full bg-[var(--surface-card)]/70 rounded-xl animate-skeleton`}
               style={{ animationDelay: `${delay + 50}ms` }}
             />
           </div>

@@ -50,7 +50,7 @@ function roleLabel(repType: Rep['repType']): string {
 /** Tailwind colour class for the role badge. */
 function roleBadgeClass(repType: Rep['repType']): string {
   if (repType === 'closer') return 'text-purple-400';
-  if (repType === 'setter') return 'text-[#00e07a]';
+  if (repType === 'setter') return 'text-[var(--accent-green)]';
   return 'text-teal-400';
 }
 
@@ -154,7 +154,7 @@ export function RepSelector({
         onClick={() => (open ? closePopover() : setOpen(true))}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#1d2028] border border-[#272b35] hover:border-indigo-500/60 hover:bg-[#272b35]/80 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 active:scale-[0.99]"
+        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] hover:border-indigo-500/60 hover:bg-[var(--border)]/80 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 active:scale-[0.99]"
       >
         {currentRep ? (
           <>
@@ -170,13 +170,13 @@ export function RepSelector({
           </>
         ) : (
           <>
-            <UserCircle2 className="w-4 h-4 text-[#8891a8] flex-shrink-0" />
-            <span className="flex-1 text-sm text-[#c2c8d8]">{placeholder}</span>
+            <UserCircle2 className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
+            <span className="flex-1 text-sm text-[var(--text-secondary)]">{placeholder}</span>
           </>
         )}
         {/* Chevron indicator */}
         <svg
-          className={`w-4 h-4 text-[#8891a8] flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-[var(--text-muted)] flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -191,15 +191,15 @@ export function RepSelector({
       {open && typeof document !== 'undefined' && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[9999] min-w-[220px] bg-[#1d2028] border border-[#272b35] rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel"
+          className="fixed z-[9999] min-w-[220px] bg-[var(--surface-card)] border border-[var(--border)] rounded-xl shadow-xl shadow-black/40 overflow-hidden animate-modal-panel"
           style={{ top: dropdownPos.top, left: dropdownPos.left, width: Math.max(dropdownPos.width, 220) }}
           role="listbox"
           aria-label="Select rep"
         >
           {/* Search input */}
-          <div className="p-1.5 border-b border-[#272b35]/60">
+          <div className="p-1.5 border-b border-[var(--border)]/60">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8] pointer-events-none" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)] pointer-events-none" />
               <input
                 ref={searchRef}
                 type="text"
@@ -207,7 +207,7 @@ export function RepSelector({
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-[#161920] border border-[#272b35] text-white rounded-lg pl-7 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] text-white rounded-lg pl-7 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
               />
             </div>
           </div>
@@ -222,22 +222,22 @@ export function RepSelector({
               className={`w-full text-left px-3 py-1.5 flex items-center gap-2 transition-colors ${
                 !value
                   ? 'bg-indigo-600/10 hover:bg-indigo-600/20'
-                  : 'hover:bg-[#272b35]/50'
+                  : 'hover:bg-[var(--border)]/50'
               }`}
             >
-              <span className="w-6 h-6 rounded-full bg-[#272b35] border border-[#272b35] flex items-center justify-center flex-shrink-0">
-                <X className="w-3 h-3 text-[#c2c8d8]" />
+              <span className="w-6 h-6 rounded-full bg-[var(--border)] border border-[var(--border)] flex items-center justify-center flex-shrink-0">
+                <X className="w-3 h-3 text-[var(--text-secondary)]" />
               </span>
-              <span className="flex-1 text-sm text-[#c2c8d8] truncate">{clearLabel}</span>
+              <span className="flex-1 text-sm text-[var(--text-secondary)] truncate">{clearLabel}</span>
               {!value && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
             </button>
 
             {/* Divider */}
-            <div className="mx-3 border-t border-[#272b35]/60" />
+            <div className="mx-3 border-t border-[var(--border)]/60" />
 
             {/* ── Rep list ── */}
             {filteredReps.length === 0 ? (
-              <div className="px-3 py-3 text-center text-[#8891a8] text-xs">
+              <div className="px-3 py-3 text-center text-[var(--text-muted)] text-xs">
                 No reps found
               </div>
             ) : (
@@ -251,14 +251,14 @@ export function RepSelector({
                   className={`w-full text-left px-3 py-1.5 flex items-center gap-2 transition-colors ${
                     rep.id === value
                       ? 'bg-indigo-600/10 hover:bg-indigo-600/20'
-                      : 'hover:bg-[#272b35]/50'
+                      : 'hover:bg-[var(--border)]/50'
                   }`}
                 >
                   {/* Initials avatar */}
                   <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">
                     {getInitials(rep.name)}
                   </span>
-                  <span className="flex-1 text-sm text-[#c2c8d8] truncate">{rep.name}</span>
+                  <span className="flex-1 text-sm text-[var(--text-secondary)] truncate">{rep.name}</span>
                   {/* Extra content from caller */}
                   {renderExtra && renderExtra(rep)}
                   {/* Role badge */}

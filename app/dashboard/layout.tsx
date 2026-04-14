@@ -107,11 +107,11 @@ function NavGroup({
         title={sidebarCollapsed ? label : undefined}
         className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-[background] w-full ${sidebarCollapsed ? 'justify-center' : ''}`}
         style={isAnyChildActive
-          ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
-          : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500, ...(open && !sidebarCollapsed ? { background: 'rgba(0,224,122,0.05)' } : {}) }
+          ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: 'var(--accent-green)', fontWeight: 700 }
+          : { color: 'var(--d-sub, var(--text-secondary))', fontWeight: 500, ...(open && !sidebarCollapsed ? { background: 'rgba(0,224,122,0.05)' } : {}) }
         }
       >
-        <span style={{ opacity: isAnyChildActive ? 1 : 0.5, color: isAnyChildActive ? '#00e07a' : 'inherit', display: 'flex' }}><Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${iconPop ? ' nav-group-icon-pop' : ''}`} /></span>
+        <span style={{ opacity: isAnyChildActive ? 1 : 0.5, color: isAnyChildActive ? 'var(--accent-green)' : 'inherit', display: 'flex' }}><Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${iconPop ? ' nav-group-icon-pop' : ''}`} /></span>
         {!sidebarCollapsed && (
           <>
             <span className="truncate flex-1 text-left">{label}</span>
@@ -131,7 +131,7 @@ function NavGroup({
           style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
         >
           <div className="overflow-hidden">
-            <ul className="ml-5 mt-0.5 space-y-0.5 border-l nav-sublist-border" style={{ borderColor: isAnyChildActive ? 'rgba(0,224,122,0.4)' : 'var(--d-border, #272b35)' }}>
+            <ul className="ml-5 mt-0.5 space-y-0.5 border-l nav-sublist-border" style={{ borderColor: isAnyChildActive ? 'rgba(0,224,122,0.4)' : 'var(--d-border, var(--border))' }}>
               {items.map(({ href, label: childLabel, icon: ChildIcon }, idx) => {
                 const isActive = pathname.startsWith(href);
                 // Clamp stagger index to the 6 utility classes we have defined.
@@ -142,11 +142,11 @@ function NavGroup({
                       href={href}
                       className="group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm"
                       style={isActive
-                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
-                        : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500 }
+                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: 'var(--accent-green)', fontWeight: 700 }
+                        : { color: 'var(--d-sub, var(--text-secondary))', fontWeight: 500 }
                       }
                     >
-                      <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? '#00e07a' : 'inherit', display: 'flex' }}><ChildIcon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
+                      <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? 'var(--accent-green)' : 'inherit', display: 'flex' }}><ChildIcon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
                       <span className="truncate">{childLabel}</span>
                     </Link>
                   </li>
@@ -210,41 +210,41 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
     <div ref={containerRef} className="px-3 pb-2">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[#1d2028]"
-        style={{ color: 'var(--d-muted, #8891a8)' }}
+        className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[var(--surface-card)]"
+        style={{ color: 'var(--d-muted, var(--text-muted))' }}
       >
         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
         <span>{open ? 'Close' : 'View As...'}</span>
       </button>
       {open && (
-        <div className="mt-1 bg-[#161920] border border-[#272b35] rounded-lg overflow-hidden shadow-xl">
-          <div className="flex items-center border-b border-[#333849]">
+        <div className="mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg overflow-hidden shadow-xl">
+          <div className="flex items-center border-b border-[var(--border-subtle)]">
             <input
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search reps..."
-              className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-[#525c72]"
+              className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-[var(--text-dim)]"
             />
             <button
               onClick={close}
               aria-label="Close View As selector"
-              className="px-2 py-2 text-[#525c72] hover:text-white transition-colors"
+              className="px-2 py-2 text-[var(--text-dim)] hover:text-white transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-xs text-[#525c72] p-3 text-center">No matches</p>
+              <p className="text-xs text-[var(--text-dim)] p-3 text-center">No matches</p>
             ) : filtered.map((u) => (
               <button
                 key={u.id}
                 onClick={() => { onSelect(u); close(); }}
-                className="w-full text-left px-3 py-2 text-xs text-[#c2c8d8] hover:bg-[#1d2028] hover:text-white transition-colors flex items-center justify-between"
+                className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors flex items-center justify-between"
               >
                 <span>{u.name}</span>
-                <span className="text-[10px] text-[#525c72] capitalize">{u.role}</span>
+                <span className="text-[10px] text-[var(--text-dim)] capitalize">{u.role}</span>
               </button>
             ))}
           </div>
@@ -446,7 +446,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: 'rgba(0,229,160,0.15)' }} />
           <div
             className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-            style={{ borderTopColor: '#00e5a0' }}
+            style={{ borderTopColor: 'var(--accent-emerald)' }}
           />
         </div>
       </div>
@@ -500,7 +500,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       >
         <div className="flex items-center gap-1.5">
-          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#00e5a0', boxShadow: '0 0 10px #00e5a0', flexShrink: 0 }} />
+          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 10px var(--accent-emerald)', flexShrink: 0 }} />
           <div className="flex items-baseline gap-0.5">
             <span className="text-white font-black tracking-tighter text-xl leading-none" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kilo</span>
             <span className="tracking-[0.2em] uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '10px', fontWeight: 400 }}>energy</span>
@@ -532,37 +532,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           // Reset to in-flow on desktop
           'md:relative md:inset-auto md:z-auto md:translate-x-0',
           // Force full width on mobile regardless of collapsed state
-          'max-md:!w-[220px] max-md:border-[#333849]/60',
+          'max-md:!w-[220px] max-md:border-[var(--border-subtle)]/60',
           // Slide in / out on mobile
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
         style={{
           width: collapsed ? '64px' : '220px',
           backgroundColor: 'var(--navy-card)',
-          borderColor: 'var(--d-border, #272b35)',
+          borderColor: 'var(--d-border, var(--border))',
           fontFamily: "'DM Sans', sans-serif",
         }}
       >
         {/* Logo + collapse/close toggle */}
-        <div className="flex items-center justify-between px-4 py-4 h-[60px]" style={{ borderBottom: '1px solid var(--d-border, #272b35)' }}>
+        <div className="flex items-center justify-between px-4 py-4 h-[60px]" style={{ borderBottom: '1px solid var(--d-border, var(--border))' }}>
           {!showCollapsed && (
             <div className="flex items-center gap-2 overflow-hidden min-w-0">
               <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
-                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#00e07a', boxShadow: '0 0 10px #00e07a', flexShrink: 0 }} />
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 10px var(--accent-green)', flexShrink: 0 }} />
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-white font-bold tracking-tighter text-xl leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
-                  <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--d-muted, #8891a8)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
+                  <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--d-muted, var(--text-muted))', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
                 </div>
               </div>
               {/* ⌘K hint badge — opens command palette on click */}
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Open command palette (⌘K)"
-                className="flex-shrink-0 hover:text-[#c2c8d8] transition-colors"
-                style={{ color: 'var(--d-muted, #8891a8)' }}
+                className="flex-shrink-0 hover:text-[var(--text-secondary)] transition-colors"
+                style={{ color: 'var(--d-muted, var(--text-muted))' }}
                 aria-label="Open command palette"
               >
-                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, #1d2028)', border: '1px solid var(--d-border2, #333849)' }}>
+                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, var(--surface-card))', border: '1px solid var(--d-border2, var(--border-subtle))' }}>
                   ⌘K
                 </kbd>
               </button>
@@ -570,11 +570,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 onClick={() => setShortcutsOpen(true)}
                 title="Keyboard shortcuts (?)"
-                className="flex-shrink-0 hover:text-[#c2c8d8] transition-colors"
-                style={{ color: 'var(--d-muted, #8891a8)' }}
+                className="flex-shrink-0 hover:text-[var(--text-secondary)] transition-colors"
+                style={{ color: 'var(--d-muted, var(--text-muted))' }}
                 aria-label="Open keyboard shortcuts"
               >
-                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, #1d2028)', border: '1px solid var(--d-border2, #333849)' }}>
+                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, var(--surface-card))', border: '1px solid var(--d-border2, var(--border-subtle))' }}>
                   ?
                 </kbd>
               </button>
@@ -584,8 +584,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1d2028] flex-shrink-0"
-            style={{ color: 'var(--d-muted, #8891a8)' }}
+            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
+            style={{ color: 'var(--d-muted, var(--text-muted))' }}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -593,7 +593,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation menu"
-            className="md:hidden text-[#8891a8] hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1d2028] flex-shrink-0"
+            className="md:hidden text-[var(--text-muted)] hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -613,7 +613,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Fragment key={item.label}>
                     {/* 'TOOLS' section divider — only in expanded sidebar */}
                     {!showCollapsed && isFirstGroup && (
-                      <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, #525c72)', letterSpacing: '0.14em' }}>
+                      <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, var(--text-dim))', letterSpacing: '0.14em' }}>
                         TOOLS
                       </li>
                     )}
@@ -639,7 +639,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Fragment key={href}>
                   {/* 'MAIN' section divider before the very first item — expanded only */}
                   {!showCollapsed && index === 0 && (
-                    <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, #525c72)', letterSpacing: '0.14em' }}>
+                    <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, var(--text-dim))', letterSpacing: '0.14em' }}>
                       MAIN
                     </li>
                   )}
@@ -649,13 +649,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       title={showCollapsed ? label : undefined}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${showCollapsed ? 'justify-center' : ''}`}
                       style={isActive
-                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: '#00e07a', fontWeight: 700 }
-                        : { color: 'var(--d-sub, #c2c8d8)', fontWeight: 500, border: '1px solid transparent' }
+                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: 'var(--accent-green)', fontWeight: 700 }
+                        : { color: 'var(--d-sub, var(--text-secondary))', fontWeight: 500, border: '1px solid transparent' }
                       }
                     >
                       {/* Icon bounces once whenever this route becomes active */}
                       <span className="relative flex-shrink-0">
-                        <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? '#00e07a' : 'inherit', display: 'inline-flex' }}><Icon className={`w-4 h-4 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
+                        <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? 'var(--accent-green)' : 'inherit', display: 'inline-flex' }}><Icon className={`w-4 h-4 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
                         {(() => {
                           const badgeCount = (navBadges[label] ?? 0) + (label === 'Projects' ? unreadMentionCount : 0);
                           if (badgeCount <= 0) return null;
@@ -671,7 +671,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {/* Tooltip popover — only shown when sidebar is collapsed */}
                     {showCollapsed && (
                       <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 nav-tooltip-popover">
-                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-[#1d2028]/90 border border-[#272b35]/40 px-2.5 py-1.5 text-xs font-medium text-white shadow-xl">
+                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-[var(--surface-card)]/90 border border-[var(--border)]/40 px-2.5 py-1.5 text-xs font-medium text-white shadow-xl">
                           {label}
                         </span>
                       </div>
@@ -693,8 +693,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setShortcutsOpen(true)}
             title="Keyboard shortcuts"
-            className="flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[#1d2028]"
-            style={{ color: 'var(--d-muted, #8891a8)' }}
+            className="flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[var(--surface-card)]"
+            style={{ color: 'var(--d-muted, var(--text-muted))' }}
             aria-label="Keyboard shortcuts"
           >
             <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -704,11 +704,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* User + Logout */}
         <div>
-          <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--d-border, #272b35), transparent)' }} />
+          <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--d-border, var(--border)), transparent)' }} />
         <div className="px-3 py-4">
           {!showCollapsed ? (
-            <div className="flex items-center gap-3 mb-3 p-2 rounded-lg" style={{ background: 'var(--d-card, #1d2028)', border: '1px solid var(--d-border2, #333849)' }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #4d9fff, #b47dff)' }}>
+            <div className="flex items-center gap-3 mb-3 p-2 rounded-lg" style={{ background: 'var(--d-card, var(--surface-card))', border: '1px solid var(--d-border2, var(--border-subtle))' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--accent-blue), #b47dff)' }}>
                 {initials}
               </div>
               <div className="overflow-hidden">
@@ -720,7 +720,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           ) : (
             <div className="flex justify-center mb-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: 'linear-gradient(135deg, #4d9fff, #b47dff)' }} title={currentRepName ?? ''}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: 'linear-gradient(135deg, var(--accent-blue), #b47dff)' }} title={currentRepName ?? ''}>
                 {initials}
               </div>
             </div>
@@ -731,7 +731,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className={`flex items-center gap-2 text-xs transition-colors w-full ${
               showCollapsed ? 'justify-center' : ''
             }`}
-            style={{ color: 'var(--d-red, #ff5252)' }}
+            style={{ color: 'var(--d-red, var(--accent-red))' }}
           >
             <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
             {!showCollapsed && 'Logout'}
@@ -779,7 +779,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <button
           onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Back to top"
-          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#1d2028] border border-[#272b35]/60 text-[#c2c8d8] hover:text-white hover:border-[#272b35] shadow-lg shadow-black/30 transition-all duration-300 ${
+          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] shadow-lg shadow-black/30 transition-all duration-300 ${
             showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
         >

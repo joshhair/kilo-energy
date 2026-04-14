@@ -89,7 +89,7 @@ export default function InstallPrompt() {
       className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up safe-area-bottom"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="mx-3 mb-3 rounded-2xl bg-[#161920] border border-[#272b35] shadow-2xl shadow-black/50 p-4">
+      <div className="mx-3 mb-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl shadow-black/50 p-4">
         <div className="flex items-start gap-3">
           {/* App icon */}
           <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
@@ -102,12 +102,12 @@ export default function InstallPrompt() {
               Add Kilo Energy to your home screen
             </p>
             {isIOS ? (
-              <p className="text-[#c2c8d8] text-xs mt-1 leading-relaxed">
-                Tap <Share className="inline w-3.5 h-3.5 -mt-0.5 text-[#00e07a]" /> then{' '}
+              <p className="text-[var(--text-secondary)] text-xs mt-1 leading-relaxed">
+                Tap <Share className="inline w-3.5 h-3.5 -mt-0.5 text-[var(--accent-green)]" /> then{' '}
                 <span className="text-white font-medium">&quot;Add to Home Screen&quot;</span>
               </p>
             ) : (
-              <p className="text-[#c2c8d8] text-xs mt-1">
+              <p className="text-[var(--text-secondary)] text-xs mt-1">
                 Install for quick access and a full-screen experience
               </p>
             )}
@@ -117,7 +117,7 @@ export default function InstallPrompt() {
           <button
             onClick={dismiss}
             aria-label="Dismiss install prompt"
-            className="flex-shrink-0 text-[#8891a8] hover:text-white transition-colors p-1 -mt-1 -mr-1"
+            className="flex-shrink-0 text-[var(--text-muted)] hover:text-white transition-colors p-1 -mt-1 -mr-1"
           >
             <X className="w-4 h-4" />
           </button>
@@ -127,7 +127,7 @@ export default function InstallPrompt() {
         {!isIOS && (
           <button
             onClick={handleInstall}
-            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#00e07a] hover:bg-[#00e07a] text-black text-sm font-semibold transition-colors"
+            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent-green)] hover:bg-[var(--accent-green)] text-black text-sm font-semibold transition-colors"
           >
             <Download className="w-4 h-4" />
             Install

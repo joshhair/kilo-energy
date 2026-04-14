@@ -198,8 +198,8 @@ function ProfileDrawer({
       <div
         className="fixed left-0 right-0 bottom-0 z-[70] md:hidden"
         style={{
-          background: '#0d1525',
-          borderTop: '1px solid #1a2840',
+          background: 'var(--surface-mobile-card)',
+          borderTop: '1px solid var(--border-mobile)',
           borderRadius: '20px 20px 0 0',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           animation: dragY > 0 ? 'none' : (isExiting ? 'slideDown 0.28s cubic-bezier(0.4, 0, 1, 1) forwards' : 'slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both'),
@@ -241,20 +241,20 @@ function ProfileDrawer({
           <div
             className={`h-1 rounded-full ${dragY > 20 ? 'w-12' : 'w-10'}`}
             style={{
-              background: dragY > 20 ? '#2a3860' : '#1a2840',
+              background: dragY > 20 ? '#2a3860' : 'var(--border-mobile)',
               transition: 'background 120ms ease, width 120ms ease',
             }}
           />
         </div>
 
         {/* Profile header */}
-        <div className="px-6 pb-4" style={{ borderBottom: '1px solid #1a2840' }}>
+        <div className="px-6 pb-4" style={{ borderBottom: '1px solid var(--border-mobile)' }}>
           <div className="flex items-center gap-4">
             {/* Avatar */}
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
               style={{
-                background: 'linear-gradient(135deg, #00e5a0 0%, #00b4d8 100%)',
+                background: 'linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-cyan2) 100%)',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1.2rem',
                 fontWeight: 700,
@@ -269,7 +269,7 @@ function ProfileDrawer({
                 className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold mt-1"
                 style={{
                   background: 'rgba(0,229,160,0.15)',
-                  color: '#00e5a0',
+                  color: 'var(--accent-emerald)',
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               >
@@ -282,14 +282,14 @@ function ProfileDrawer({
             <div className="mt-3 space-y-1.5">
               {userEmail && (
                 <div className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5" style={{ color: '#8899aa' }} />
-                  <span className="text-sm truncate" style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{userEmail}</span>
+                  <Mail className="w-3.5 h-3.5" style={{ color: 'var(--text-mobile-muted)' }} />
+                  <span className="text-sm truncate" style={{ color: 'var(--text-mobile-muted)', fontFamily: "'DM Sans', sans-serif" }}>{userEmail}</span>
                 </div>
               )}
               {userPhone && (
                 <div className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5" style={{ color: '#8899aa' }} />
-                  <span className="text-sm" style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif" }}>{userPhone}</span>
+                  <Phone className="w-3.5 h-3.5" style={{ color: 'var(--text-mobile-muted)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text-mobile-muted)', fontFamily: "'DM Sans', sans-serif" }}>{userPhone}</span>
                 </div>
               )}
             </div>
@@ -315,7 +315,7 @@ function ProfileDrawer({
                     : 'none',
                 }}
               >
-                <span style={{ color: '#8899aa' }}><Icon className="w-5 h-5" /></span>
+                <span style={{ color: 'var(--text-mobile-muted)' }}><Icon className="w-5 h-5" /></span>
                 <span>{label}</span>
               </Link>
             ))}
@@ -324,7 +324,7 @@ function ProfileDrawer({
 
         {/* View As (admin only) */}
         {isAdmin && onViewAs && (
-          <div className="px-2 py-2" style={{ borderTop: '1px solid #1a2840' }}>
+          <div className="px-2 py-2" style={{ borderTop: '1px solid var(--border-mobile)' }}>
             {isViewingAs && viewAsName && onClearViewAs ? (
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-2">
@@ -346,22 +346,22 @@ function ProfileDrawer({
                 <button
                   onClick={() => setViewAsOpen(!viewAsOpen)}
                   className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
-                  style={{ color: '#8899aa', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem', WebkitTapHighlightColor: 'transparent', animation: !isExiting && !reduceMotion ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${items.length * 45}ms both` : 'none' }}
+                  style={{ color: 'var(--text-mobile-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem', WebkitTapHighlightColor: 'transparent', animation: !isExiting && !reduceMotion ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${items.length * 45}ms both` : 'none' }}
                 >
                   <Eye className="w-5 h-5" />
                   <span>View As Rep...</span>
                 </button>
                 {viewAsOpen && (
-                  <div className="mx-2 mb-2 rounded-xl overflow-hidden" style={{ background: '#161920', border: '1px solid #1a2840' }}>
+                  <div className="mx-2 mb-2 rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-mobile)' }}>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#8899aa' }} />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text-mobile-muted)' }} />
                       <input
                         autoFocus
                         value={viewAsSearch}
                         onChange={(e) => setViewAsSearch(e.target.value)}
                         placeholder="Search reps..."
                         className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-white outline-none"
-                        style={{ borderBottom: '1px solid #1a2840', fontFamily: "'DM Sans', sans-serif" }}
+                        style={{ borderBottom: '1px solid var(--border-mobile)', fontFamily: "'DM Sans', sans-serif" }}
                       />
                     </div>
                     <div className="max-h-48 overflow-y-auto">
@@ -372,10 +372,10 @@ function ProfileDrawer({
                             key={u.id}
                             onClick={() => { onViewAs(u); setViewAsOpen(false); setViewAsSearch(''); onClose(); }}
                             className="w-full text-left px-4 py-3 text-sm text-white active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
-                            style={{ borderBottom: '1px solid #1a2840', fontFamily: "'DM Sans', sans-serif", WebkitTapHighlightColor: 'transparent' }}
+                            style={{ borderBottom: '1px solid var(--border-mobile)', fontFamily: "'DM Sans', sans-serif", WebkitTapHighlightColor: 'transparent' }}
                           >
                             <span>{u.name}</span>
-                            <span className="text-xs capitalize" style={{ color: '#8899aa' }}>{u.role}</span>
+                            <span className="text-xs capitalize" style={{ color: 'var(--text-mobile-muted)' }}>{u.role}</span>
                           </button>
                         ))}
                     </div>
@@ -388,12 +388,12 @@ function ProfileDrawer({
 
         {/* Sign Out */}
         {onLogout && (
-          <div className="px-2 pt-1" style={{ borderTop: '1px solid #1a2840' }}>
+          <div className="px-2 pt-1" style={{ borderTop: '1px solid var(--border-mobile)' }}>
             <button
               onClick={() => { onClose(); onLogout(); }}
               className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
               style={{
-                color: '#ff6b6b',
+                color: 'var(--accent-danger)',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1rem',
                 WebkitTapHighlightColor: 'transparent',
@@ -497,7 +497,7 @@ export default function BottomNav({
                 style={{
                   width: `${100 / navItems.length}%`,
                   left: 0,
-                  background: 'linear-gradient(90deg, #00e5a0, #00b4d8)',
+                  background: 'linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan2))',
                   transform: `translateX(${activeIdx * 100}%)`,
                   transition: 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                   boxShadow: '0 0 8px rgba(0,229,160,0.6)',
@@ -521,10 +521,10 @@ export default function BottomNav({
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                    style={{ background: 'linear-gradient(135deg, #00e5a0 0%, #00b4d8 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-cyan2) 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
                     <span className="text-2xl font-light text-black leading-none">+</span>
                   </div>
-                  <span className="text-[10px] font-medium mt-1" style={{ color: '#00e5a0', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                  <span className="text-[10px] font-medium mt-1" style={{ color: 'var(--accent-emerald)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
                 </Link>
               );
             }
@@ -542,7 +542,7 @@ export default function BottomNav({
                     <MoreHorizontal
                       className="w-[18px] h-[18px] absolute inset-0"
                       style={{
-                        color: active ? '#00e5a0' : '#fff',
+                        color: active ? 'var(--accent-emerald)' : '#fff',
                         opacity: active ? 0 : 1,
                         transform: active ? 'scale(0.5) rotate(-30deg)' : 'scale(1) rotate(0deg)',
                         transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -551,7 +551,7 @@ export default function BottomNav({
                     <X
                       className="w-[18px] h-[18px] absolute inset-0"
                       style={{
-                        color: '#00e5a0',
+                        color: 'var(--accent-emerald)',
                         opacity: active ? 1 : 0,
                         transform: active ? 'scale(1) rotate(0deg)' : 'scale(0.5) rotate(30deg)',
                         transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -559,7 +559,7 @@ export default function BottomNav({
                     />
                   </span>
                   <span className="text-[10px] tracking-wide" style={{
-                    color: active ? '#00e5a0' : '#8899aa',
+                    color: active ? 'var(--accent-emerald)' : 'var(--text-mobile-muted)',
                     fontFamily: "'DM Sans', sans-serif",
                     transform: active ? 'translateY(0px)' : 'translateY(2px)',
                     opacity: active ? 1 : 0.65,
@@ -582,7 +582,7 @@ export default function BottomNav({
                   key={active ? 'on' : 'off'}
                   className="nav-icon-pop inline-block"
                   style={{
-                    color: active ? '#00e5a0' : '#fff',
+                    color: active ? 'var(--accent-emerald)' : '#fff',
                     animation: active ? 'navIconPop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
                     transform: active ? undefined : 'scale(1)',
                     transition: active ? 'none' : 'color 200ms ease, transform 200ms ease',
@@ -591,7 +591,7 @@ export default function BottomNav({
                   <Icon className="w-[18px] h-[18px]" />
                 </span>
                 <span className="text-[10px] tracking-wide" style={{
-                  color: active ? '#00e5a0' : '#8899aa',
+                  color: active ? 'var(--accent-emerald)' : 'var(--text-mobile-muted)',
                   fontFamily: "'DM Sans', sans-serif",
                   transform: active ? 'translateY(0px)' : 'translateY(2px)',
                   opacity: active ? 1 : 0.65,

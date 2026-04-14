@@ -21,13 +21,13 @@ function SheetItem({
       onClick={onTap}
       className="w-full flex items-center gap-3 min-h-[52px] px-5 py-3 text-left active:opacity-70 transition-opacity"
       style={{
-        color: active ? '#00e5a0' : danger ? 'var(--m-danger, #ff6b6b)' : '#fff',
+        color: active ? 'var(--accent-emerald)' : danger ? 'var(--m-danger, var(--accent-danger))' : '#fff',
         background: active ? 'rgba(0,229,160,0.06)' : undefined,
       }}
     >
       {Icon && <Icon className="w-5 h-5 shrink-0 opacity-60" />}
       <span className="text-base flex-1" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
-      {active && <Check className="w-4 h-4 shrink-0" style={{ color: '#00e5a0' }} />}
+      {active && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-emerald)' }} />}
     </button>
   );
 }
@@ -61,10 +61,10 @@ export default function MobileBottomSheet({
       <div className="fixed inset-0 bg-black/50 z-[60]" onClick={onClose} />
       <div
         className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-2xl"
-        style={{ background: 'var(--m-card, #0d1525)', borderTop: '1px solid var(--m-border, #1a2840)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ background: 'var(--m-card, var(--surface-mobile-card))', borderTop: '1px solid var(--m-border, var(--border-mobile))', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--m-border, #1a2840)' }} />
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
         </div>
         {title && (
           <div className="flex items-center justify-between px-5 py-2">

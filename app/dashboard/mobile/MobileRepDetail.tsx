@@ -12,9 +12,9 @@ import MobileListItem from './shared/MobileListItem';
 import MobileEmptyState from './shared/MobileEmptyState';
 
 const STATUS_AMOUNT_COLORS: Record<string, string> = {
-  Paid: '#00e5a0',
+  Paid: 'var(--accent-emerald)',
   Pending: '#f5a623',
-  Draft: '#8899aa',
+  Draft: 'var(--text-mobile-muted)',
 };
 
 const REP_TYPE_LABELS: Record<string, string> = {
@@ -70,9 +70,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   if (!hydrated) {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
-        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
-        <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)', opacity: 0.6 }} />
+        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
+        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
+        <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))', opacity: 0.6 }} />
       </div>
     );
   }
@@ -85,8 +85,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   if (!resolvedUser && !lookupFailed) {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
-        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, #0d1525)' }} />
+        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
+        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
       </div>
     );
   }
@@ -97,11 +97,11 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         <button
           onClick={() => router.push('/dashboard/users')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
-          style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" /> Users
         </button>
-        <p className="text-base text-center" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>User not found.</p>
+        <p className="text-base text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>User not found.</p>
       </div>
     );
   }
@@ -109,7 +109,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   // ─── Early branch: admin / project_manager → simple detail card ───
   if (resolvedUser.role === 'admin' || resolvedUser.role === 'project_manager') {
     const roleLabel = resolvedUser.role === 'admin' ? 'Admin' : 'Project Manager';
-    const badgeColor = resolvedUser.role === 'admin' ? '#ffb020' : '#00c4f0';
+    const badgeColor = resolvedUser.role === 'admin' ? 'var(--accent-amber)' : 'var(--accent-cyan)';
     const badgeBg = resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)' : 'rgba(0,196,240,0.12)';
     const initials = `${resolvedUser.firstName[0] ?? ''}${resolvedUser.lastName[0] ?? ''}`.toUpperCase();
     const fu = fetchedUser; // PM permission flags only available from fetched payload
@@ -119,12 +119,12 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         <button
           onClick={() => router.push('/dashboard/users')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
-          style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" /> Users
         </button>
 
-        <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', borderLeft: `3px solid ${badgeColor}` }}>
+        <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', borderLeft: `3px solid ${badgeColor}` }}>
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black shrink-0" style={{ background: badgeBg, color: badgeColor }}>
               {initials}
@@ -138,27 +138,27 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   {roleLabel}
                 </span>
               </div>
-              {resolvedUser.email && <p className="text-sm mt-2 truncate" style={{ color: 'var(--m-text-muted, #8899aa)' }}>{resolvedUser.email}</p>}
-              {resolvedUser.phone && <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, #8899aa)' }}>{resolvedUser.phone}</p>}
+              {resolvedUser.email && <p className="text-sm mt-2 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{resolvedUser.email}</p>}
+              {resolvedUser.phone && <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{resolvedUser.phone}</p>}
             </div>
           </div>
         </div>
 
         {resolvedUser.role === 'project_manager' && fu && currentRole === 'admin' && (
-          <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)' }}>
+          <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
             <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)' }}>Permissions</p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Can create deals</span>
-                <span className={fu.canCreateDeals ? 'text-[#00e5a0] font-bold' : 'text-[#525c72]'}>{fu.canCreateDeals ? 'Yes' : 'No'}</span>
+                <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Can create deals</span>
+                <span className={fu.canCreateDeals ? 'text-[var(--accent-emerald)] font-bold' : 'text-[var(--text-dim)]'}>{fu.canCreateDeals ? 'Yes' : 'No'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Can access blitz</span>
-                <span className={fu.canAccessBlitz ? 'text-[#00e5a0] font-bold' : 'text-[#525c72]'}>{fu.canAccessBlitz ? 'Yes' : 'No'}</span>
+                <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Can access blitz</span>
+                <span className={fu.canAccessBlitz ? 'text-[var(--accent-emerald)] font-bold' : 'text-[var(--text-dim)]'}>{fu.canAccessBlitz ? 'Yes' : 'No'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span style={{ color: 'var(--m-text-muted, #8899aa)' }}>Can export</span>
-                <span className={fu.canExport ? 'text-[#00e5a0] font-bold' : 'text-[#525c72]'}>{fu.canExport ? 'Yes' : 'No'}</span>
+                <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Can export</span>
+                <span className={fu.canExport ? 'text-[var(--accent-emerald)] font-bold' : 'text-[var(--text-dim)]'}>{fu.canExport ? 'Yes' : 'No'}</span>
               </div>
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       <button
         onClick={() => router.push('/dashboard/users')}
         className="flex items-center gap-1.5 text-base min-h-[48px]"
-        style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >
         <ArrowLeft className="w-4 h-4" /> Reps
       </button>
@@ -205,18 +205,18 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         <div className="mt-1.5">
           <MobileBadge value={repType} variant="status" />
         </div>
-        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
+        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
       </div>
 
       {/* Inline stats */}
-      <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.length}</span> deal{repProjects.length !== 1 ? 's' : ''}
         {' \u00B7 '}
         <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
         {!isPM && (
           <>
             {' \u00B7 '}
-            <span className="text-lg font-bold" style={{ color: 'var(--m-accent, #00e5a0)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
+            <span className="text-lg font-bold" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
           </>
         )}
       </p>
@@ -226,7 +226,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         {activeProjects.length === 0 ? (
           <MobileEmptyState icon={FolderKanban} title="No active projects" />
         ) : (
-          <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, #0d1525)', border: '1px solid var(--m-border, #1a2840)', borderColor: 'var(--m-border, #1a2840)' }}>
+          <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', borderColor: 'var(--m-border, var(--border-mobile))' }}>
             {activeProjects.map((proj) => (
               <MobileListItem
                 key={proj.id}
@@ -250,20 +250,20 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 <div
                   key={entry.id}
                   className="flex items-center justify-between min-h-[48px] py-3 last:border-b-0"
-                  style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}
+                  style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || entry.notes || '\u2014'}
                     </p>
-                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.paymentStage} &middot; {formatDate(entry.date)}
                     </p>
                   </div>
                   <span
                     className="text-lg font-bold tabular-nums ml-3"
                     style={{
-                      color: STATUS_AMOUNT_COLORS[entry.status] ?? 'var(--m-text-muted, #8899aa)',
+                      color: STATUS_AMOUNT_COLORS[entry.status] ?? 'var(--m-text-muted, var(--text-mobile-muted))',
                       fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                     }}
                   >

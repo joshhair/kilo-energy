@@ -53,10 +53,10 @@ interface BlitzRequestData {
 }
 
 const STATUS_INLINE: Record<BlitzStatus, { bg: string; color: string; dotBg: string; border: string }> = {
-  upcoming:  { bg: 'rgba(77,159,255,0.12)', color: '#4d9fff', dotBg: '#4d9fff', border: '1px solid rgba(77,159,255,0.3)' },
-  active:    { bg: 'rgba(0,224,122,0.12)',  color: '#00e07a', dotBg: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' },
-  completed: { bg: 'rgba(136,145,168,0.12)', color: '#8891a8', dotBg: '#8891a8', border: '1px solid rgba(136,145,168,0.3)' },
-  cancelled: { bg: 'rgba(255,82,82,0.12)',  color: '#ff5252', dotBg: '#ff5252', border: '1px solid rgba(255,82,82,0.3)' },
+  upcoming:  { bg: 'rgba(77,159,255,0.12)', color: 'var(--accent-blue)', dotBg: 'var(--accent-blue)', border: '1px solid rgba(77,159,255,0.3)' },
+  active:    { bg: 'rgba(0,224,122,0.12)',  color: 'var(--accent-green)', dotBg: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' },
+  completed: { bg: 'rgba(136,145,168,0.12)', color: 'var(--text-muted)', dotBg: 'var(--text-muted)', border: '1px solid rgba(136,145,168,0.3)' },
+  cancelled: { bg: 'rgba(255,82,82,0.12)',  color: 'var(--accent-red)', dotBg: 'var(--accent-red)', border: '1px solid rgba(255,82,82,0.3)' },
 };
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
@@ -124,7 +124,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>
-      <div className={`group relative card-surface rounded-2xl p-5 overflow-hidden hover:border-[#272b35] hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer animate-slide-in-scale stagger-${Math.min(index, 6)}`}>
+      <div className={`group relative card-surface rounded-2xl p-5 overflow-hidden hover:border-[var(--border)] hover:-translate-y-0.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer animate-slide-in-scale stagger-${Math.min(index, 6)}`}>
         {/* Status badge + timing */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -136,17 +136,17 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
               {blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1)}
             </span>
             {timingLabel && (
-              <span className="text-[11px] font-medium" style={{ color: '#8891a8' }}>{timingLabel}</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>{timingLabel}</span>
             )}
           </div>
-          <ChevronRight className="w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
+          <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors" />
         </div>
 
         {/* Name */}
-        <h3 className="text-lg font-bold mb-1 group-hover:text-[#00c4f0] transition-colors" style={{ color: '#f0f2f7' }}>{blitz.name}</h3>
+        <h3 className="text-lg font-bold mb-1 group-hover:text-[var(--accent-cyan)] transition-colors" style={{ color: 'var(--text-primary)' }}>{blitz.name}</h3>
 
         {/* Location + dates */}
-        <div className="flex flex-col gap-1 text-sm mb-4" style={{ color: '#c2c8d8' }}>
+        <div className="flex flex-col gap-1 text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
           {blitz.location && (
             <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>
           )}
@@ -159,38 +159,38 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         {/* Progress bar for active blitzes */}
         {progress && (
           <div className="mb-4">
-            <div className="flex items-center justify-between text-[11px] mb-1" style={{ color: '#8891a8' }}>
+            <div className="flex items-center justify-between text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>
               <span>Day {progress.dayNum} of {progress.totalDays}</span>
               <span>{progress.pct}%</span>
             </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#272b35' }}>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progress.pct}%`, background: 'linear-gradient(90deg, #00e07a, #00c4f0)' }}
+                style={{ width: `${progress.pct}%`, background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan))' }}
               />
             </div>
           </div>
         )}
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 pt-3" style={{ borderTop: '1px solid #272b35' }}>
+        <div className="grid grid-cols-3 gap-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="text-center">
-            <p className="text-xs mb-0.5" style={{ color: '#8891a8' }}>Reps</p>
-            <p className="text-sm font-bold" style={{ color: '#f0f2f7' }}>{approvedParticipants}</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Reps</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{approvedParticipants}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs mb-0.5" style={{ color: '#8891a8' }}>Deals</p>
-            <p className="text-sm font-bold" style={{ color: '#f0f2f7' }}>{totalDeals}</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Deals</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{totalDeals}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs mb-0.5" style={{ color: '#8891a8' }}>kW</p>
-            <p className="text-sm font-bold" style={{ color: '#f0f2f7' }}>{totalKW.toFixed(1)}</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>kW</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{totalKW.toFixed(1)}</p>
           </div>
         </div>
 
         {/* Cost efficiency metrics — admin only, when costs exist */}
         {isAdmin && totalCosts > 0 && (
-          <div className="mt-2 text-[11px]" style={{ color: '#8891a8' }}>
+          <div className="mt-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
             {' | '}
             Cost/kW: ${totalKW > 0 ? (totalCosts / totalKW).toFixed(2) : '--'}
@@ -199,11 +199,11 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
 
         {/* Owner tag + join action */}
         <div className="mt-3 flex items-center justify-between">
-          <div className="text-xs" style={{ color: '#8891a8' }}>
-            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[#00c4f0] transition-colors" style={{ color: '#c2c8d8' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
+          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[var(--accent-cyan)] transition-colors" style={{ color: 'var(--text-secondary)' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
           {isOwner && (
-            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[#00e07a] border border-[#00e07a]/20">
+            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[var(--accent-green)] border border-[var(--accent-green)]/20">
               <Tent className="w-3 h-3" /> Leading
             </span>
           )}
@@ -211,20 +211,20 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             <button
               disabled={joining}
               onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setJoining(true); try { await onJoin(blitz.id); } catch {} finally { setJoining(false); } }}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[#00e07a]/20 text-[#00e07a] border border-[#00e07a]/30 rounded-lg hover:bg-[#00e07a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[var(--accent-green)]/20 text-[var(--accent-green)] border border-[var(--accent-green)]/30 rounded-lg hover:bg-[var(--accent-green)]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />} {joining ? 'Joining...' : 'Join'}
             </button>
           )}
           {!isOwner && myParticipation && (
-            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-[#00e07a] border border-[#00e07a]/20' : myParticipation.joinStatus === 'declined' ? 'bg-red-900/30 text-red-400 border border-red-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
+            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-[var(--accent-green)] border border-[var(--accent-green)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-red-900/30 text-red-400 border border-red-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
               <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : 'Pending'}
             </span>
           )}
         </div>
 
         {/* Hover glow bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(90deg, #00e07a, #00c4f0, #00e07a)' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan), var(--accent-green))' }} />
       </div>
     </Link>
   );
@@ -276,54 +276,54 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
-      <div ref={modalPanelRef} className="bg-[#161920] border border-[#272b35] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[#00e07a]" /> New Blitz</h2>
+      <div ref={modalPanelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[var(--accent-green)]" /> New Blitz</h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[#272b35]'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Name *</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
             {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Blitz name is required</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Location / Market</label>
-            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Location / Market</label>
+            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Housing / Address</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 123 Main St, Apt 4" />
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Housing / Address</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 123 Main St, Apt 4" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[#272b35]'}`} />
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
               {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
             </div>
           </div>
           {isAdmin && (
             <div>
-              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Leader</label>
-              <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Leader</label>
+              <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
                 <option value={userId}>Me</option>
                 {reps.filter((r) => r.id !== userId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" />
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#c2c8d8] hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-[#00e07a] text-black rounded-xl hover:bg-[#00e07a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-[var(--accent-green)] text-black rounded-xl hover:bg-[var(--accent-green)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
           </button>
@@ -379,51 +379,51 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
-      <div ref={requestPanelRef} className="bg-[#161920] border border-[#272b35] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
+      <div ref={requestPanelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-amber-400" /> Request a Blitz</h2>
-        <p className="text-sm text-[#8891a8] mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
+        <p className="text-sm text-[var(--text-muted)] mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[#272b35]'}`} placeholder="e.g. Austin Spring Blitz" />
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Name *</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Austin Spring Blitz" />
             {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Name is required</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Location</label>
-              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Location</label>
+              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Expected Headcount</label>
-              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 8" />
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Expected Headcount</label>
+              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 8" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[#272b35]'}`} />
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#c2c8d8] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[#1d2028] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[#272b35]'}`} />
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
               {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Housing Preferences</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Airbnb near downtown" />
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Housing Preferences</label>
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Airbnb near downtown" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#c2c8d8] mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" placeholder="Why this blitz, what's the opportunity..." />
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" placeholder="Why this blitz, what's the opportunity..." />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#c2c8d8] hover:text-white transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white transition-colors">Cancel</button>
           <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-amber-600 text-white rounded-xl hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Tent className="w-4 h-4" />}
             {saving ? 'Submitting...' : 'Submit Request'}
@@ -713,19 +713,19 @@ function BlitzPageInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-2.5" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>
-            <Tent className="w-7 h-7" style={{ color: '#00c4f0' }} /> Blitz
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-2.5" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            <Tent className="w-7 h-7" style={{ color: 'var(--accent-cyan)' }} /> Blitz
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Manage blitzes, track participation and profitability</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Manage blitzes, track participation and profitability</p>
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
               <Plus className="w-4 h-4" /> New Blitz
             </button>
           )}
           {!isAdmin && !userPerms.canCreateBlitz && userPerms.canRequestBlitz && (
-            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#1d2028] text-[#c2c8d8] text-sm font-semibold rounded-xl border border-[#272b35] hover:bg-[#272b35] hover:text-white transition-colors">
+            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-card)] text-[var(--text-secondary)] text-sm font-semibold rounded-xl border border-[var(--border)] hover:bg-[var(--border)] hover:text-white transition-colors">
               <Plus className="w-4 h-4" /> Request Blitz
             </button>
           )}
@@ -734,62 +734,62 @@ function BlitzPageInner() {
 
       {/* Summary cards */}
       <div className={`grid grid-cols-2 ${isAdmin ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4`}>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': '#00e07a' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': 'var(--accent-green)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Active</span>
-            <CheckCircle className="w-4 h-4 text-[#00e07a]" />
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Active</span>
+            <CheckCircle className="w-4 h-4 text-[var(--accent-green)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>{activeBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-green)' }}>{activeBlitzes}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': '#00c4f0' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-cyan)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Upcoming</span>
-            <Clock className="w-4 h-4 text-[#00e07a]" />
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Upcoming</span>
+            <Clock className="w-4 h-4 text-[var(--accent-green)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#4d9fff' }}>{upcomingBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue)' }}>{upcomingBlitzes}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': '#a855f7' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Deals</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Deals</span>
             <TrendingUp className="w-4 h-4 text-purple-400" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{totalDeals}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{totalDeals}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': '#06b6d4' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Total kW</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total kW</span>
             <Zap className="w-4 h-4 text-cyan-400" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7' }}>{formatCompactKW(totalKW)}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{formatCompactKW(totalKW)}</p>
         </div>
         {isAdmin && (
           <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
             <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 mb-3" />
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Costs</span>
+              <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Costs</span>
               <DollarSign className="w-4 h-4 text-amber-400" />
             </div>
-            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#ffb020' }}>{formatCurrency(totalCosts)}</p>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber)' }}>{formatCurrency(totalCosts)}</p>
           </div>
         )}
       </div>
 
       {/* Tabs — Blitzes / Requests with sliding pill */}
       {(isAdmin || userPerms.canRequestBlitz) && (
-        <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: '#161920', border: '1px solid #272b35' }}>
+        <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           {(['blitzes', 'requests'] as TabKey[]).map((t, i) => (
             <button
               key={t}
               ref={(el) => { adminTabRefs.current[i] = el; }}
               onClick={() => setTab(t)}
               className="relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-              style={tab === t ? { background: '#00e07a', color: '#000' } : { color: '#c2c8d8' }}
+              style={tab === t ? { background: 'var(--accent-green)', color: '#000' } : { color: 'var(--text-secondary)' }}
             >
-              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: '#ff5252', color: '#fff' }}>{pendingRequests.length}</span>}</>}
+              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: 'var(--accent-red)', color: '#fff' }}>{pendingRequests.length}</span>}</>}
             </button>
           ))}
         </div>
@@ -801,7 +801,7 @@ function BlitzPageInner() {
           <div className="flex flex-wrap items-center gap-3">
             {/* Search with keyboard shortcut */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8891a8]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
               <input
                 ref={searchRef}
                 value={search}
@@ -814,16 +814,16 @@ function BlitzPageInner() {
                 }}
                 placeholder="Search blitzes...  /"
                 className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none input-focus-glow"
-                style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
               {search && (
-                <button onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8891a8] hover:text-[#c2c8d8] transition-colors">
+                <button onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
             {search && (
-              <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full">{sortedBlitzes.length} result{sortedBlitzes.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full">{sortedBlitzes.length} result{sortedBlitzes.length !== 1 ? 's' : ''}</span>
             )}
 
             {/* Sort dropdown */}
@@ -832,17 +832,17 @@ function BlitzPageInner() {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
                 className="appearance-none rounded-xl pl-3 pr-8 py-2 text-sm focus:outline-none input-focus-glow cursor-pointer transition-colors"
-                style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.key} value={opt.key}>{opt.label}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8891a8] pointer-events-none" />
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)] pointer-events-none" />
             </div>
 
             {/* Status filter tabs with sliding pill */}
-            <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: '#161920', border: '1px solid #272b35' }}>
+            <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               {STATUS_FILTER_OPTIONS.map((s, i) => {
                 const count = s === 'all' ? searchOnlyBlitzes.length : searchOnlyBlitzes.filter((b) => b.status === s).length;
                 const isActive = statusFilter === s;
@@ -853,12 +853,12 @@ function BlitzPageInner() {
                     onClick={() => setStatusFilter(s)}
                     className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
                     style={isActive
-                      ? { background: '#00e07a', color: '#000' }
-                      : { background: '#1d2028', color: '#c2c8d8', border: '1px solid #333849' }
+                      ? { background: 'var(--accent-green)', color: '#000' }
+                      : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }
                     }
                   >
                     {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-                    {count > 0 && <span className="ml-1" style={{ color: isActive ? 'rgba(0,0,0,0.6)' : '#525c72' }}>{count}</span>}
+                    {count > 0 && <span className="ml-1" style={{ color: isActive ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)' }}>{count}</span>}
                   </button>
                 );
               })}
@@ -869,22 +869,22 @@ function BlitzPageInner() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="relative w-10 h-10">
-                <div className="absolute inset-0 rounded-full border-2 border-[#272b35]/40" />
+                <div className="absolute inset-0 rounded-full border-2 border-[var(--border)]/40" />
                 <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
               </div>
-              <p className="text-sm text-[#8891a8] font-medium">Loading blitzes...</p>
+              <p className="text-sm text-[var(--text-muted)] font-medium">Loading blitzes...</p>
             </div>
           ) : isAdmin ? (
             /* Admin sees all blitzes in one grid */
             paginatedAdminBlitzes.length === 0 && sortedBlitzes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
-                <Tent className="w-16 h-16" style={{ color: '#525c72' }} />
+              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+                <Tent className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />
                 <div className="text-center">
-                  <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No blitzes found</p>
-                  <p className="text-sm mt-1" style={{ color: '#8891a8' }}>{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
+                  <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitzes found</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
                 </div>
                 {!search && statusFilter === 'all' && (
-                  <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors" style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}>
+                  <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors" style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}>
                     Create a Blitz
                   </button>
                 )}
@@ -914,7 +914,7 @@ function BlitzPageInner() {
               {/* My Blitzes */}
               {myBlitzes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[#c2c8d8] uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <UserCheck className="w-4 h-4" /> My Blitzes
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -926,7 +926,7 @@ function BlitzPageInner() {
               {/* Pending join requests */}
               {pendingBlitzes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[#c2c8d8] uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-400" /> Pending Approval
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -938,7 +938,7 @@ function BlitzPageInner() {
               {/* Browse available */}
               {browseBlitzes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[#c2c8d8] uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Search className="w-4 h-4" /> Browse Available
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -948,11 +948,11 @@ function BlitzPageInner() {
               )}
 
               {myBlitzes.length === 0 && pendingBlitzes.length === 0 && browseBlitzes.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
-                  <Tent className="w-16 h-16" style={{ color: '#525c72' }} />
+                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+                  <Tent className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />
                   <div className="text-center">
-                    <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No blitzes available</p>
-                    <p className="text-sm mt-1" style={{ color: '#8891a8' }}>{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Check back soon for upcoming blitzes'}</p>
+                    <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitzes available</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Check back soon for upcoming blitzes'}</p>
                   </div>
                 </div>
               )}
@@ -964,33 +964,33 @@ function BlitzPageInner() {
       {tab === 'requests' && !isAdmin && userPerms.canRequestBlitz && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
-              <Inbox className="w-14 h-14" style={{ color: '#525c72' }} />
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+              <Inbox className="w-14 h-14" style={{ color: 'var(--text-dim)' }} />
               <div className="text-center">
-                <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No requests submitted</p>
-                <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Your blitz requests will appear here after submission</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No requests submitted</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your blitz requests will appear here after submission</p>
               </div>
             </div>
           ) : (
             requests.map((req) => (
-              <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: '#161920', border: '1px solid #272b35' }}>
+              <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       {req.type === 'cancel' ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[#00c4f0] border border-[#00e07a]/20">New Blitz</span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan)] border border-[var(--accent-green)]/20">New Blitz</span>
                       )}
                       <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
                     </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[#c2c8d8]">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[var(--text-secondary)]">
                       {req.type !== 'cancel' && req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
                       {req.type !== 'cancel' && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>}
                     </div>
-                    {req.notes && <p className="text-sm text-[#8891a8] mt-2 line-clamp-2">{req.notes}</p>}
+                    {req.notes && <p className="text-sm text-[var(--text-muted)] mt-2 line-clamp-2">{req.notes}</p>}
                   </div>
-                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[#00e07a]/20' : req.status === 'denied' ? 'bg-red-900/30 text-red-300 border border-red-500/20' : 'bg-amber-900/30 text-amber-300 border border-amber-500/20'}`}>
+                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : req.status === 'denied' ? 'bg-red-900/30 text-red-300 border border-red-500/20' : 'bg-amber-900/30 text-amber-300 border border-amber-500/20'}`}>
                     {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : req.status === 'denied' ? <XCircle className="w-3 h-3" /> : <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                     {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                   </span>
@@ -1004,40 +1004,40 @@ function BlitzPageInner() {
       {tab === 'requests' && isAdmin && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed #272b35' }}>
-              <Inbox className="w-14 h-14" style={{ color: '#525c72' }} />
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+              <Inbox className="w-14 h-14" style={{ color: 'var(--text-dim)' }} />
               <div className="text-center">
-                <p className="text-lg font-semibold" style={{ color: '#f0f2f7' }}>No blitz requests</p>
-                <p className="text-sm mt-1" style={{ color: '#8891a8' }}>Requests from reps will appear here for approval</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitz requests</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Requests from reps will appear here for approval</p>
               </div>
             </div>
           ) : (
             <>
               {paginatedRequests.map((req) => (
-                <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: '#161920', border: '1px solid #272b35' }}>
+                <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         {req.type === 'cancel' ? (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[#00c4f0] border border-[#00e07a]/20">New Blitz</span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan)] border border-[var(--accent-green)]/20">New Blitz</span>
                         )}
                         <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
                         {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                       </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[#c2c8d8]">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[var(--text-secondary)]">
                         {req.type !== 'cancel' && req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
                         {req.type !== 'cancel' && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>}
                         {req.type !== 'cancel' && <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>}
                       </div>
-                      {req.notes && <p className="text-sm text-[#8891a8] mt-2 line-clamp-2">{req.notes}</p>}
-                      <p className="text-xs text-[#525c72] mt-2">Requested by <span className="text-[#c2c8d8]">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
+                      {req.notes && <p className="text-sm text-[var(--text-muted)] mt-2 line-clamp-2">{req.notes}</p>}
+                      <p className="text-xs text-[var(--text-dim)] mt-2">Requested by <span className="text-[var(--text-secondary)]">{req.requestedBy.firstName} {req.requestedBy.lastName}</span></p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {req.status === 'pending' ? (
                         <>
-                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#00e07a] text-black rounded-lg hover:bg-[#00e07a] disabled:opacity-50 transition-colors">
+                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">
                             {processingRequest === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>
                           <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest === req.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
@@ -1045,7 +1045,7 @@ function BlitzPageInner() {
                           </button>
                         </>
                       ) : (
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[#00e07a]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
                           {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                           {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                         </span>
@@ -1103,29 +1103,29 @@ function BlitzSkeleton() {
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 bg-[#1d2028] rounded animate-skeleton" />
-            <div className="h-8 w-24 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+            <div className="h-7 w-7 bg-[var(--surface-card)] rounded animate-skeleton" />
+            <div className="h-8 w-24 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
           </div>
-          <div className="h-3 w-64 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: '150ms' }} />
+          <div className="h-3 w-64 bg-[var(--surface-card)]/70 rounded animate-skeleton" style={{ animationDelay: '150ms' }} />
         </div>
-        <div className="h-10 w-28 bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
+        <div className="h-10 w-28 bg-[var(--surface-card)] rounded-xl animate-skeleton" style={{ animationDelay: '100ms' }} />
       </div>
 
       {/* Stat cards row — 4 cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="card-surface rounded-2xl p-5 space-y-3">
-            <div className="h-[2px] w-12 bg-[#272b35] rounded-full animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
-            <div className="h-3 w-16 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
-            <div className="h-8 w-20 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 40}ms` }} />
+            <div className="h-[2px] w-12 bg-[var(--border)] rounded-full animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+            <div className="h-3 w-16 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+            <div className="h-8 w-20 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: `${i * 75 + 40}ms` }} />
           </div>
         ))}
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="h-9 w-24 bg-[#1d2028] rounded-lg animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
+          <div key={i} className="h-9 w-24 bg-[var(--surface-card)] rounded-lg animate-skeleton" style={{ animationDelay: `${i * 75}ms` }} />
         ))}
       </div>
 
@@ -1137,20 +1137,20 @@ function BlitzSkeleton() {
             <div key={i} className="card-surface rounded-2xl p-5 space-y-4">
               {/* Title + badge row */}
               <div className="flex items-center justify-between">
-                <div className="h-5 w-36 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
-                <div className="h-5 w-16 bg-[#1d2028] rounded-full animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+                <div className="h-5 w-36 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+                <div className="h-5 w-16 bg-[var(--surface-card)] rounded-full animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
               </div>
               {/* Location + dates */}
               <div className="space-y-2">
-                <div className="h-3 w-44 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 40}ms` }} />
-                <div className="h-3 w-32 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 80}ms` }} />
+                <div className="h-3 w-44 bg-[var(--surface-card)]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 40}ms` }} />
+                <div className="h-3 w-32 bg-[var(--surface-card)]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + 80}ms` }} />
               </div>
               {/* Stats row */}
               <div className="flex gap-6">
                 {[...Array(3)].map((_, si) => (
                   <div key={si} className="space-y-1">
-                    <div className="h-4 w-8 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
-                    <div className="h-3 w-12 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
+                    <div className="h-4 w-8 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
+                    <div className="h-3 w-12 bg-[var(--surface-card)]/70 rounded animate-skeleton" style={{ animationDelay: `${delay + si * 40}ms` }} />
                   </div>
                 ))}
               </div>

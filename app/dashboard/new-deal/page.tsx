@@ -67,7 +67,7 @@ function PpwHint({ soldPPW, closerPerW, hasError }: { soldPPW: number; closerPer
   const above = soldPPW >= closerPerW;
   const diff = Math.abs(soldPPW - closerPerW).toFixed(2);
   return (
-    <p id="netPPW-hint" className={`text-xs mt-1 ${above ? 'text-[#00e07a]' : 'text-amber-400'}`}>
+    <p id="netPPW-hint" className={`text-xs mt-1 ${above ? 'text-[var(--accent-green)]' : 'text-amber-400'}`}>
       {above ? `$${diff}/W above baseline ✓` : `$${diff}/W below baseline — no commission`}
     </p>
   );
@@ -78,11 +78,11 @@ function PpwHint({ soldPPW, closerPerW, hasError }: { soldPPW: number; closerPer
 function SectionHeader({ step, label }: { step: number; label: string }) {
   return (
     <div className="flex items-center gap-2.5 mb-4">
-      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: 'rgba(0,224,122,0.15)', border: '1px solid rgba(0,224,122,0.3)', color: '#00e07a' }}>
+      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: 'rgba(0,224,122,0.15)', border: '1px solid rgba(0,224,122,0.3)', color: 'var(--accent-green)' }}>
         {step}
       </span>
-      <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-      <div className="flex-1 h-px" style={{ background: '#272b35' }} />
+      <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+      <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
     </div>
   );
 }
@@ -94,8 +94,8 @@ const DEAL_STEPS = ['People', 'Deal Details', 'Review & Notes'] as const;
 function SkeletonField({ delay }: { delay: number }) {
   return (
     <div className="space-y-1.5">
-      <div className="h-3 w-24 bg-[#1d2028]/70 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
-      <div className="h-10 w-full bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+      <div className="h-3 w-24 bg-[var(--surface-card)]/70 rounded animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
+      <div className="h-10 w-full bg-[var(--surface-card)] rounded-xl animate-skeleton" style={{ animationDelay: `${delay}ms` }} />
     </div>
   );
 }
@@ -105,7 +105,7 @@ function NewDealSkeleton() {
     <div>
       {/* Stepper bar skeleton — mirrors the sticky FormStepper (3 steps + connecting lines) */}
       <div
-        className="sticky top-[60px] md:top-0 z-20 border-b border-[#333849]/60"
+        className="sticky top-[60px] md:top-0 z-20 border-b border-[var(--border-subtle)]/60"
         style={{ backgroundColor: 'var(--navy-base)' }}
       >
         {/* Desktop stepper (md+): 3 dots connected by 2 lines */}
@@ -114,17 +114,17 @@ function NewDealSkeleton() {
             <div key={i} className={`flex items-center ${i < 2 ? 'flex-1' : ''}`}>
               <div className="flex flex-col items-center shrink-0">
                 <div
-                  className="w-7 h-7 rounded-full bg-[#1d2028] animate-skeleton"
+                  className="w-7 h-7 rounded-full bg-[var(--surface-card)] animate-skeleton"
                   style={{ animationDelay: `${i * 60}ms` }}
                 />
                 <div
-                  className="mt-1 h-2 w-14 bg-[#1d2028]/60 rounded animate-skeleton"
+                  className="mt-1 h-2 w-14 bg-[var(--surface-card)]/60 rounded animate-skeleton"
                   style={{ animationDelay: `${i * 60 + 30}ms` }}
                 />
               </div>
               {i < 2 && (
                 <div
-                  className="flex-1 mx-3 h-[2px] bg-[#272b35]/60 rounded-full mt-[-10px] animate-skeleton"
+                  className="flex-1 mx-3 h-[2px] bg-[var(--border)]/60 rounded-full mt-[-10px] animate-skeleton"
                   style={{ animationDelay: `${i * 60 + 50}ms` }}
                 />
               )}
@@ -133,20 +133,20 @@ function NewDealSkeleton() {
         </div>
         {/* Mobile stepper: progress bar + step label */}
         <div className="md:hidden h-12 flex items-center px-4 gap-3">
-          <div className="h-1.5 flex-1 bg-[#1d2028] rounded-full animate-skeleton" />
-          <div className="h-3 w-20 bg-[#1d2028]/60 rounded animate-skeleton" style={{ animationDelay: '50ms' }} />
+          <div className="h-1.5 flex-1 bg-[var(--surface-card)] rounded-full animate-skeleton" />
+          <div className="h-3 w-20 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ animationDelay: '50ms' }} />
         </div>
       </div>
 
       {/* Page header + form */}
       <div className="p-4 md:p-8 max-w-2xl">
         <div className="mb-8">
-          <div className="h-[3px] w-12 rounded-full bg-[#272b35] animate-skeleton mb-3" />
+          <div className="h-[3px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3" />
           <div className="flex items-center gap-3 mb-1">
-            <div className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton" />
-            <div className="h-8 w-32 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+            <div className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton" />
+            <div className="h-8 w-32 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
           </div>
-          <div className="h-3 w-72 bg-[#1d2028]/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
+          <div className="h-3 w-72 bg-[var(--surface-card)]/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
         </div>
 
         {/* Form card — 2-column grid with 6 field placeholders */}
@@ -200,73 +200,73 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <PlusCircle className="w-5 h-5 text-[#00e07a]" />
+            <PlusCircle className="w-5 h-5 text-[var(--accent-green)]" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>New Deal</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>New Deal</h1>
         </div>
       </div>
 
       {/* Success card */}
       <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.04))', border: '1px solid rgba(0,224,122,0.25)', boxShadow: '0 0 40px rgba(0,224,122,0.08)' }}>
         {/* Green top bar */}
-        <div className="h-1" style={{ background: 'linear-gradient(90deg, #00e07a, #00c4f0)' }} />
+        <div className="h-1" style={{ background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan))' }} />
 
         <div className="p-8">
           {/* Icon + message */}
           <div className="flex flex-col items-center text-center mb-8">
             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.3)' }}>
-              <CheckCircle2 className="w-8 h-8" style={{ color: '#00e07a' }} strokeWidth={1.5} />
+              <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--accent-green)' }} strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-black mb-1" style={{ color: '#f0f2f7' }}>Deal Submitted!</h2>
-            <p className="text-[#c2c8d8] text-sm">
+            <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--text-primary)' }}>Deal Submitted!</h2>
+            <p className="text-[var(--text-secondary)] text-sm">
               <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
             </p>
           </div>
 
           {/* Deal summary */}
-          <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
-            <p className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider mb-3">Deal Summary</p>
+          <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
+            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Deal Summary</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
               <div>
-                <p className="text-[#8891a8] text-xs mb-0.5">Installer</p>
+                <p className="text-[var(--text-muted)] text-xs mb-0.5">Installer</p>
                 <p className="text-white font-medium">{deal.installer}</p>
               </div>
               <div>
-                <p className="text-[#8891a8] text-xs mb-0.5">Financer</p>
+                <p className="text-[var(--text-muted)] text-xs mb-0.5">Financer</p>
                 <p className="text-white font-medium">{deal.financer || '—'}</p>
               </div>
               <div>
-                <p className="text-[#8891a8] text-xs mb-0.5">Product Type</p>
+                <p className="text-[var(--text-muted)] text-xs mb-0.5">Product Type</p>
                 <p className="text-white font-medium">{deal.productType}</p>
               </div>
               <div>
-                <p className="text-[#8891a8] text-xs mb-0.5">System Size</p>
+                <p className="text-[var(--text-muted)] text-xs mb-0.5">System Size</p>
                 <p className="text-white font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</p>
               </div>
             </div>
           </div>
 
           {/* Commission summary */}
-          <div className="rounded-xl p-4 mb-6 space-y-2.5" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
-            <p className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider mb-3">Commission</p>
+          <div className="rounded-xl p-4 mb-6 space-y-2.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
+            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Commission</p>
             {deal.closerTotal > 0 ? (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[#c2c8d8] text-sm font-medium">{deal.repName} (Closer)</p>
-                  <p className="text-[#8891a8] text-xs">M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}{deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}</p>
+                  <p className="text-[var(--text-secondary)] text-sm font-medium">{deal.repName} (Closer)</p>
+                  <p className="text-[var(--text-muted)] text-xs">M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}{deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}</p>
                 </div>
-                <p className="text-2xl font-black" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a', textShadow: '0 0 20px #00e07a50' }}>${deal.closerTotal.toLocaleString()}</p>
+                <p className="text-2xl font-black" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-green)', textShadow: '0 0 20px #00e07a50' }}>${deal.closerTotal.toLocaleString()}</p>
               </div>
             ) : (
-              <p className="text-[#8891a8] text-sm">Commission will be calculated once pricing is confirmed.</p>
+              <p className="text-[var(--text-muted)] text-sm">Commission will be calculated once pricing is confirmed.</p>
             )}
             {deal.setterTotal > 0 && (
-              <div className="flex items-center justify-between border-t border-[#272b35] pt-2.5">
+              <div className="flex items-center justify-between border-t border-[var(--border)] pt-2.5">
                 <div>
-                  <p className="text-[#c2c8d8] text-sm font-medium">{deal.setterName} (Setter)</p>
-                  <p className="text-[#8891a8] text-xs">M1: ${deal.setterM1.toLocaleString()} · M2: ${deal.setterM2.toLocaleString()}{deal.setterM3 > 0 && ` · M3: $${deal.setterM3.toLocaleString()}`}</p>
+                  <p className="text-[var(--text-secondary)] text-sm font-medium">{deal.setterName} (Setter)</p>
+                  <p className="text-[var(--text-muted)] text-xs">M1: ${deal.setterM1.toLocaleString()} · M2: ${deal.setterM2.toLocaleString()}{deal.setterM3 > 0 && ` · M3: $${deal.setterM3.toLocaleString()}`}</p>
                 </div>
-                <p className="text-lg font-bold text-[#00e07a]">${deal.setterTotal.toLocaleString()}</p>
+                <p className="text-lg font-bold text-[var(--accent-green)]">${deal.setterTotal.toLocaleString()}</p>
               </div>
             )}
           </div>
@@ -276,14 +276,14 @@ function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => 
             <button
               onClick={() => router.push('/dashboard/projects')}
               className="flex-1 inline-flex items-center justify-center gap-2 font-bold px-5 py-2.5 rounded-xl text-sm transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
             >
               View Projects <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={onReset}
               className="flex-1 inline-flex items-center justify-center gap-2 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors hover:brightness-125"
-              style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
+              style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
             >
               <RotateCcw className="w-4 h-4" /> Submit Another
             </button>
@@ -341,14 +341,14 @@ function DealEntryPage({ onStart, projects, currentRepId }: { onStart: () => voi
           {/* Icon + heading */}
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <PlusCircle className="w-6 h-6 text-[#00e07a]" />
+              <PlusCircle className="w-6 h-6 text-[var(--accent-green)]" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
               New Deal
             </h1>
           </div>
 
-          <p className="text-[#c2c8d8] text-[15px] mb-8 max-w-sm leading-relaxed ml-[52px]">
+          <p className="text-[var(--text-secondary)] text-[15px] mb-8 max-w-sm leading-relaxed ml-[52px]">
             Log a closed solar deal and track commissions in seconds.
           </p>
 
@@ -357,12 +357,12 @@ function DealEntryPage({ onStart, projects, currentRepId }: { onStart: () => voi
             <div className="flex items-center gap-6 mb-8 ml-[52px]">
               <div>
                 <p className="text-2xl font-black text-white tabular-nums">{todayCount}</p>
-                <p className="text-[11px] text-[#8891a8] uppercase tracking-widest mt-0.5">Today</p>
+                <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Today</p>
               </div>
-              <div className="w-px h-8 bg-[#272b35]/70" />
+              <div className="w-px h-8 bg-[var(--border)]/70" />
               <div>
                 <p className="text-2xl font-black text-white tabular-nums">{monthCount}</p>
-                <p className="text-[11px] text-[#8891a8] uppercase tracking-widest mt-0.5">This Month</p>
+                <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">This Month</p>
               </div>
             </div>
           )}
@@ -370,18 +370,18 @@ function DealEntryPage({ onStart, projects, currentRepId }: { onStart: () => voi
           {/* CTA — matches dashboard glow style */}
           <div className="ml-[52px]">
             <div className="relative inline-flex">
-              <div className="absolute -inset-0.5 rounded-2xl opacity-[0.15] blur-[3px] animate-pulse" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)' }} />
+              <div className="absolute -inset-0.5 rounded-2xl opacity-[0.15] blur-[3px] animate-pulse" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))' }} />
               <button
                 onClick={onStart}
                 className="relative inline-flex items-center gap-2.5 font-bold px-8 py-4 rounded-2xl text-base active:scale-[0.97] transition-all hover:brightness-110"
-                style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
               >
                 <PlusCircle className="w-5 h-5" />
                 Submit a Deal
               </button>
             </div>
           </div>
-          <span className="text-[#525c72] text-xs hidden sm:block">or press ⌘↵ on the form</span>
+          <span className="text-[var(--text-dim)] text-xs hidden sm:block">or press ⌘↵ on the form</span>
         </div>
       </div>
     </div>
@@ -573,7 +573,7 @@ function NewDealPage() {
   const fieldCheck = (field: string, value?: string) => {
     const v = value ?? form[field as keyof typeof form] ?? '';
     if (!touched.has(field) || errors[field] || !v) return null;
-    return <Check className="w-3.5 h-3.5 text-[#00e07a] shrink-0" />;
+    return <Check className="w-3.5 h-3.5 text-[var(--accent-green)] shrink-0" />;
   };
 
   const handleInstallerChange = (value: string) => {
@@ -697,7 +697,7 @@ function NewDealPage() {
   // It goes to the setter. Closer only receives M1 if self-gen (no setter).
   // Trainers are paid post-installation — M2 stage only, no M1.
   const m1Flat = kW >= 5 ? 1000 : 500;
-  const isSelfGen = !form.setterId;
+  const isSelfGen = !form.setterId || setterBaselinePerW === 0;
   const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
   const closerM2Full = Math.max(0, closerTotal - closerM1);
   const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
@@ -970,20 +970,20 @@ function NewDealPage() {
   // ── Style helpers ──────────────────────────────────────────────────────────
 
   const inputCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00e07a]/50 focus-visible:border-[#00e07a] transition-all duration-200 placeholder-slate-500`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200 placeholder-slate-500`;
 
   const inputFieldStyle = (field: string): React.CSSProperties => ({
-    background: '#1d2028',
-    border: `1px solid ${errors[field] ? '#ff5252' : '#333849'}`,
-    color: '#f0f2f7',
+    background: 'var(--surface-card)',
+    border: `1px solid ${errors[field] ? 'var(--accent-red)' : 'var(--border-subtle)'}`,
+    color: 'var(--text-primary)',
     fontFamily: "'DM Sans', sans-serif",
   });
 
   const selectCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00e07a]/50 focus-visible:border-[#00e07a] transition-all duration-200`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200`;
 
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
-  const labelStyle: React.CSSProperties = { color: '#8891a8', fontFamily: "'DM Sans', sans-serif" };
+  const labelStyle: React.CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -1026,17 +1026,17 @@ function NewDealPage() {
         {/* ── Left panel — 220px ── */}
         <div style={{ flex: '0 0 220px' }}>
           {/* Your Deals card */}
-          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 24, marginBottom: 16 }}>
-            <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Your Deals</p>
-            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: todayCount > 0 ? '#00e07a' : '#f0f2f7', letterSpacing: '-0.04em', lineHeight: 1, textShadow: todayCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{todayCount}</p>
-            <p style={{ color: '#8891a8', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>Today</p>
-            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: monthCount > 0 ? '#00e07a' : '#f0f2f7', letterSpacing: '-0.04em', lineHeight: 1, marginTop: 16, textShadow: monthCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{monthCount}</p>
-            <p style={{ color: '#8891a8', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>This Month</p>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 16 }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Your Deals</p>
+            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: todayCount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1, textShadow: todayCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{todayCount}</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>Today</p>
+            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: monthCount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1, marginTop: 16, textShadow: monthCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{monthCount}</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>This Month</p>
           </div>
 
           {/* Step guide card */}
-          <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 16, padding: 20 }}>
-            <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Steps</p>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Steps</p>
             {DEAL_STEPS.map((step, i) => {
               const n = i + 1;
               const done = !!submitted || currentStep > i;
@@ -1045,15 +1045,15 @@ function NewDealPage() {
                 <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < 2 ? 14 : 0 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    background: done ? '#00e07a' : active ? 'rgba(0,224,122,0.1)' : '#1d2028',
-                    border: `1.5px solid ${done || active ? '#00e07a' : '#333849'}`,
+                    background: done ? 'var(--accent-green)' : active ? 'rgba(0,224,122,0.1)' : 'var(--surface-card)',
+                    border: `1.5px solid ${done || active ? 'var(--accent-green)' : 'var(--border-subtle)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? '#00e07a' : '#8891a8',
+                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? 'var(--accent-green)' : 'var(--text-muted)',
                     boxShadow: active ? '0 0 20px rgba(0,224,122,0.25)' : 'none',
                   }}>
                     {done ? '\u2713' : n}
                   </div>
-                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? '#f0f2f7' : done ? '#00e07a' : '#8891a8', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
+                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
                 </div>
               );
             })}
@@ -1064,23 +1064,23 @@ function NewDealPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Page header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#1d2028', border: '1px solid #333849', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{'\u2295'}</div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{'\u2295'}</div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>New Deal</h1>
-              <p style={{ color: '#c2c8d8', fontSize: 13, fontFamily: "'DM Sans',sans-serif", fontWeight: 500, marginTop: 5 }}>Log a closed solar deal and track commissions in seconds.</p>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>New Deal</h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 13, fontFamily: "'DM Sans',sans-serif", fontWeight: 500, marginTop: 5 }}>Log a closed solar deal and track commissions in seconds.</p>
             </div>
           </div>
 
       {/* Duplicate info badge */}
       {duplicateCustomerName && (
-        <div className="mb-4 flex items-center gap-2 bg-[#00e07a]/10 border border-[#00e07a]/20 rounded-xl px-4 py-2.5">
-          <RotateCcw className="w-4 h-4 text-[#00e07a] flex-shrink-0" />
-          <p className="text-[#00c4f0] text-sm">Duplicating from <span className="font-semibold text-white">{duplicateCustomerName}</span></p>
+        <div className="mb-4 flex items-center gap-2 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 rounded-xl px-4 py-2.5">
+          <RotateCcw className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" />
+          <p className="text-[var(--accent-cyan)] text-sm">Duplicating from <span className="font-semibold text-white">{duplicateCustomerName}</span></p>
         </div>
       )}
 
       {/* Form card */}
-      <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: 20, padding: 32 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 32 }}>
 
         {/* Step indicator (bar style) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 }}>
@@ -1090,10 +1090,10 @@ function NewDealPage() {
             return (
               <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? '#00e07a' : '#272b35', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
-                  <span style={{ fontSize: 12, color: active ? '#f0f2f7' : done ? '#00e07a' : '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
+                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-green)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
+                  <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
                 </div>
-                {i < DEAL_STEPS.length - 1 && <span style={{ color: '#525c72', fontSize: 11 }}>{'\u203A'}</span>}
+                {i < DEAL_STEPS.length - 1 && <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{'\u203A'}</span>}
               </div>
             );
           })}
@@ -1107,7 +1107,7 @@ function NewDealPage() {
         {/* ── Section 1: People ── */}
         {currentStep === 0 && (
         <div id="section-people" className="overflow-visible relative z-10">
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>Who&apos;s the customer?</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>Who&apos;s the customer?</p>
 
           <div className="space-y-4">
             {/* Closer / Setter card — hidden for sub-dealers */}
@@ -1129,7 +1129,7 @@ function NewDealPage() {
 
               <div className="transition-all duration-200">
                 <label className={labelCls} style={labelStyle}>
-                  Setter <span className="text-[#525c72] font-normal normal-case">(optional)</span>
+                  Setter <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span>
                 </label>
                 <SetterPickerPopover
                   setterId={form.setterId}
@@ -1179,7 +1179,7 @@ function NewDealPage() {
         {/* ── Section 2: Deal Details ── */}
         {currentStep === 1 && (
         <div id="section-deal" className="overflow-visible">
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: '#00c4f0', fontWeight: 500 }}>for {form.customerName}</span>}</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: 'var(--accent-cyan)', fontWeight: 500 }}>for {form.customerName}</span>}</p>
 
           <div className="space-y-4">
             {/* ── Card 1: Installer / Financer / Product selects ── */}
@@ -1226,8 +1226,8 @@ function NewDealPage() {
                       }}
                       className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
                         form.productType === pt
-                          ? 'bg-[#00e07a] border-[#00e07a] text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]'
-                          : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                       }`}
                     >
                       {pt}
@@ -1240,8 +1240,8 @@ function NewDealPage() {
 
             {/* Cash product type — no financer needed indicator */}
             {form.installer && form.productType === 'Cash' && (
-              <div className="flex items-center gap-2 bg-[#1d2028]/60 border border-[#272b35]/50 rounded-xl px-4 py-2.5 text-sm text-[#c2c8d8]">
-                <Check className="w-3.5 h-3.5 text-[#00e07a]" />
+              <div className="flex items-center gap-2 bg-[var(--surface-card)]/60 border border-[var(--border)]/50 rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)]">
+                <Check className="w-3.5 h-3.5 text-[var(--accent-green)]" />
                 Cash deal — no financer required
               </div>
             )}
@@ -1269,13 +1269,13 @@ function NewDealPage() {
                             onClick={() => !disabled && handleSolarTechFamilyChange(family)}
                             className={`py-2.5 px-3 rounded-xl text-sm font-medium border transition-all text-left leading-tight ${
                               disabled
-                                ? 'bg-[#1d2028]/40 border-[#272b35]/40 text-[#525c72] cursor-not-allowed opacity-50'
+                                ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                 : selected
-                                  ? 'bg-[#00e07a]/20 border-[#00e07a]/60 text-[#00c4f0] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
-                                  : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                                  ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                             }`}
                           >
-                            <span className={`text-xs font-semibold ${disabled ? 'text-[#525c72]' : selected ? 'text-[#00e07a]' : 'text-[#8891a8]'}`}>
+                            <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>
                               {isPrepaid ? 'Prepaid' : family}
                             </span>
                           </button>
@@ -1283,7 +1283,7 @@ function NewDealPage() {
                       })}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && (
-                      <p className="text-xs text-[#8891a8] mt-1">Only Prepaid family is compatible with {form.productType} deals</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Only Prepaid family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="solarTechFamily" />
                   </div>
@@ -1303,7 +1303,7 @@ function NewDealPage() {
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
                                 ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                             }`}
                           >
                             {opt}
@@ -1371,20 +1371,20 @@ function NewDealPage() {
                               onClick={() => !disabled && handlePcFamilyChange(family)}
                               className={`py-2.5 px-3 rounded-xl text-sm font-medium border transition-all text-left leading-tight ${
                                 disabled
-                                  ? 'bg-[#1d2028]/40 border-[#272b35]/40 text-[#525c72] cursor-not-allowed opacity-50'
+                                  ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                   : selected
-                                    ? 'bg-[#00e07a]/20 border-[#00e07a]/60 text-[#00c4f0] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
-                                    : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                                    ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                    : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                               }`}
                             >
-                              <span className={`text-xs font-semibold ${disabled ? 'text-[#525c72]' : selected ? 'text-[#00e07a]' : 'text-[#8891a8]'}`}>{family}</span>
+                              <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>{family}</span>
                             </button>
                           );
                         });
                       })()}
                     </div>
                     {(form.productType === 'Cash' || form.productType === 'Loan') && pcConfig.prepaidFamily && (
-                      <p className="text-xs text-[#8891a8] mt-1">Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Only {pcConfig.prepaidFamily} family is compatible with {form.productType} deals</p>
                     )}
                     <FieldError errors={errors} field="pcFamily" />
                   </div>
@@ -1405,7 +1405,7 @@ function NewDealPage() {
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
                                 ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                             }`}
                           >
                             {opt}
@@ -1486,7 +1486,7 @@ function NewDealPage() {
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
                                 ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                             }`}
                           >
                             {opt}
@@ -1514,7 +1514,7 @@ function NewDealPage() {
                       className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} style={inputFieldStyle('kWSize')} />
                     {kW > 0 && !errors.kWSize && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[#00e07a]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1531,7 +1531,7 @@ function NewDealPage() {
                       className={inputCls('netPPW') + (soldPPW > 0 && !errors.netPPW ? ' pr-9' : '')} style={inputFieldStyle('netPPW')} />
                     {soldPPW > 0 && !errors.netPPW && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[#00e07a]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1543,45 +1543,45 @@ function NewDealPage() {
               {/* Commission preview */}
               <div style={{ maxHeight: showPreview || (isSubDealer && subDealerCommission > 0) ? '400px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s ease-in-out' }}>
                 <div className="rounded-xl p-4 text-sm space-y-2" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.05))', border: '1px solid rgba(0,224,122,0.2)' }}>
-                  <p className="font-medium text-xs uppercase tracking-wider mb-2" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Commission Preview</p>
+                  <p className="font-medium text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Commission Preview</p>
                   {isSubDealer ? (
                     <>
-                      <div className="flex justify-between text-xs text-[#8891a8] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
+                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
                       {subDealerRate > 0 && (
-                        <div className="flex justify-between text-xs text-[#8891a8] mb-1">
+                        <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
                           <span>Sub-dealer rate</span>
                           <span>${subDealerRate.toFixed(2)}/W</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-xs text-[#8891a8] mb-1">
+                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
                         <span>M1</span>
-                        <span className="text-[#525c72]">N/A &mdash; paid at install</span>
+                        <span className="text-[var(--text-dim)]">N/A &mdash; paid at install</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[#c2c8d8]">M2 commission</span>
-                        <span className="text-[#00e07a] font-semibold">
+                        <span className="text-[var(--text-secondary)]">M2 commission</span>
+                        <span className="text-[var(--accent-green)] font-semibold">
                           <TickerAmount amount={subDealerCommission} />
                         </span>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="flex justify-between text-xs text-[#8891a8] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
-                      <div className="flex justify-between text-xs text-[#8891a8] mb-1">
+                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
+                      <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
                         <span>Your redline</span>
                         <span>${closerPerW.toFixed(2)}/W</span>
                       </div>
                       {currentRole === 'admin' && (
-                        <div className="flex justify-between text-xs text-[#8891a8] mb-1">
+                        <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
                           <span>Kilo baseline</span>
                           <span>${kiloPerW.toFixed(2)}/W</span>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span style={{ color: '#8891a8' }}>Closer commission</span>
-                        <span className="font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Closer commission</span>
+                        <span className="font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
                           <TickerAmount amount={closerTotal} />
-                          <span className="text-[#8891a8] font-normal">
+                          <span className="text-[var(--text-muted)] font-normal">
                             {' '}(M1: <TickerAmount amount={closerM1} className="tabular-nums" /> · M2: <TickerAmount amount={closerM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={closerM3} className="tabular-nums" /></>})
                           </span>
                         </span>
@@ -1593,10 +1593,10 @@ function NewDealPage() {
                       )}
                       {form.setterId && setterTotal > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-[#c2c8d8]">Setter commission</span>
-                          <span className="text-[#00e07a] font-semibold">
+                          <span className="text-[var(--text-secondary)]">Setter commission</span>
+                          <span className="text-[var(--accent-green)] font-semibold">
                             <TickerAmount amount={setterTotal} />
-                            <span className="text-[#8891a8] font-normal">
+                            <span className="text-[var(--text-muted)] font-normal">
                               {' '}(M1: <TickerAmount amount={setterM1} className="tabular-nums" /> · M2: <TickerAmount amount={setterM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={setterM3} className="tabular-nums" /></>})
                             </span>
                           </span>
@@ -1604,26 +1604,26 @@ function NewDealPage() {
                       )}
                       {trainerRep && trainerTotal > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-[#c2c8d8]">Trainer override ({trainerRep.name})</span>
+                          <span className="text-[var(--text-secondary)]">Trainer override ({trainerRep.name})</span>
                           <span className="text-amber-400 font-semibold">
                             <TickerAmount amount={trainerTotal} />
-                            <span className="text-[#8891a8] font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
+                            <span className="text-[var(--text-muted)] font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
                           </span>
                         </div>
                       )}
                       {closerTrainerRep && closerTrainerTotal > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-[#c2c8d8]">Trainer override ({closerTrainerRep.name})</span>
+                          <span className="text-[var(--text-secondary)]">Trainer override ({closerTrainerRep.name})</span>
                           <span className="text-amber-400 font-semibold">
                             <TickerAmount amount={closerTrainerTotal} />
-                            <span className="text-[#8891a8] font-normal"> (${closerTrainerOverrideRate.toFixed(2)}/W)</span>
+                            <span className="text-[var(--text-muted)] font-normal"> (${closerTrainerOverrideRate.toFixed(2)}/W)</span>
                           </span>
                         </div>
                       )}
                       {currentRole === 'admin' && (
-                        <div className="flex justify-between border-t border-[#272b35] pt-2">
-                          <span className="text-[#c2c8d8]">Kilo revenue</span>
-                          <TickerAmount amount={kiloTotal} className="text-[#c2c8d8] font-semibold" />
+                        <div className="flex justify-between border-t border-[var(--border)] pt-2">
+                          <span className="text-[var(--text-secondary)]">Kilo revenue</span>
+                          <TickerAmount amount={kiloTotal} className="text-[var(--text-secondary)] font-semibold" />
                         </div>
                       )}
                     </>
@@ -1639,55 +1639,55 @@ function NewDealPage() {
         {/* ── Section 3: Review & Notes ── */}
         {currentStep === 2 && (
         <div id="section-review">
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f2f7', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>Review &amp; submit</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>Review &amp; submit</p>
 
           <div className="space-y-4">
 
             {/* ── Deal summary card — card-surface with top gradient accent ── */}
             <div className="relative card-surface rounded-2xl p-5 mb-4 overflow-hidden animate-slide-in-scale stagger-1 after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent">
-              <p className="text-xs font-semibold text-[#8891a8] uppercase tracking-wider mb-3">Deal Summary</p>
+              <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Deal Summary</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
                 <div>
-                  <p className="text-[#8891a8] text-xs mb-0.5">Customer</p>
-                  <p className="text-white font-medium truncate">{form.customerName || <span className="text-[#525c72] italic">—</span>}</p>
+                  <p className="text-[var(--text-muted)] text-xs mb-0.5">Customer</p>
+                  <p className="text-white font-medium truncate">{form.customerName || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
-                  <p className="text-[#8891a8] text-xs mb-0.5">Sold Date</p>
-                  <p className="text-white font-medium">{form.soldDate || <span className="text-[#525c72] italic">—</span>}</p>
+                  <p className="text-[var(--text-muted)] text-xs mb-0.5">Sold Date</p>
+                  <p className="text-white font-medium">{form.soldDate || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 {currentRole === 'admin' && (
                   <div>
-                    <p className="text-[#8891a8] text-xs mb-0.5">Closer</p>
+                    <p className="text-[var(--text-muted)] text-xs mb-0.5">Closer</p>
                     <p className="text-white font-medium truncate">
-                      {reps.find((r) => r.id === form.repId)?.name || <span className="text-[#525c72] italic">—</span>}
+                      {reps.find((r) => r.id === form.repId)?.name || <span className="text-[var(--text-dim)] italic">—</span>}
                     </p>
                   </div>
                 )}
                 {form.setterId && (
                   <div>
-                    <p className="text-[#8891a8] text-xs mb-0.5">Setter</p>
+                    <p className="text-[var(--text-muted)] text-xs mb-0.5">Setter</p>
                     <p className="text-white font-medium truncate">
-                      {reps.find((r) => r.id === form.setterId)?.name || <span className="text-[#525c72] italic">—</span>}
+                      {reps.find((r) => r.id === form.setterId)?.name || <span className="text-[var(--text-dim)] italic">—</span>}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p className="text-[#8891a8] text-xs mb-0.5">Installer</p>
-                  <p className="text-white font-medium truncate">{form.installer || <span className="text-[#525c72] italic">—</span>}</p>
+                  <p className="text-[var(--text-muted)] text-xs mb-0.5">Installer</p>
+                  <p className="text-white font-medium truncate">{form.installer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
-                  <p className="text-[#8891a8] text-xs mb-0.5">Financer</p>
-                  <p className="text-white font-medium truncate">{form.financer || <span className="text-[#525c72] italic">—</span>}</p>
+                  <p className="text-[var(--text-muted)] text-xs mb-0.5">Financer</p>
+                  <p className="text-white font-medium truncate">{form.financer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
-                  <p className="text-[#8891a8] text-xs mb-0.5">Product Type</p>
-                  <p className="text-white font-medium">{form.productType || <span className="text-[#525c72] italic">—</span>}</p>
+                  <p className="text-[var(--text-muted)] text-xs mb-0.5">Product Type</p>
+                  <p className="text-white font-medium">{form.productType || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
-                  <p className="text-[#8891a8] text-xs mb-0.5">System Size</p>
+                  <p className="text-[var(--text-muted)] text-xs mb-0.5">System Size</p>
                   <p className="text-white font-medium">
-                    {kW > 0 ? `${kW.toFixed(1)} kW` : <span className="text-[#525c72] italic">—</span>}
-                    {kW > 0 && soldPPW > 0 && <span className="text-[#c2c8d8]"> @ ${soldPPW.toFixed(2)}/W</span>}
+                    {kW > 0 ? `${kW.toFixed(1)} kW` : <span className="text-[var(--text-dim)] italic">—</span>}
+                    {kW > 0 && soldPPW > 0 && <span className="text-[var(--text-secondary)]"> @ ${soldPPW.toFixed(2)}/W</span>}
                   </p>
                 </div>
               </div>
@@ -1696,7 +1696,7 @@ function NewDealPage() {
             {/* Notes */}
             <div className="transition-all duration-200">
               <label htmlFor="field-notes" className={labelCls} style={labelStyle}>
-                Notes <span className="text-[#525c72] font-normal normal-case">(optional)</span>
+                Notes <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span>
               </label>
               <textarea
                 id="field-notes"
@@ -1713,11 +1713,11 @@ function NewDealPage() {
                 className={inputCls('') + ' min-h-[80px] max-h-[200px] overflow-y-auto resize-none'} style={inputFieldStyle('')}
               />
               <div className="flex items-center justify-between mt-1 mb-4">
-                <p className="text-xs italic text-[#525c72]">Internal notes only — not visible to customer</p>
+                <p className="text-xs italic text-[var(--text-dim)]">Internal notes only — not visible to customer</p>
                 <p className={`text-xs transition-colors duration-200 ${
                   form.notes.length >= 500 ? 'text-red-400' :
                   form.notes.length >= 400 ? 'text-amber-400' :
-                  'text-[#8891a8]'
+                  'text-[var(--text-muted)]'
                 }`}>
                   {form.notes.length}/500
                 </p>
@@ -1725,9 +1725,9 @@ function NewDealPage() {
             </div>
 
             {/* Lead Source + Blitz Attribution */}
-            <div className="transition-all duration-200 pt-2 border-t border-[#333849]/60">
+            <div className="transition-all duration-200 pt-2 border-t border-[var(--border-subtle)]/60">
               <label className={labelCls} style={labelStyle}>
-                Lead Source <span className="text-[#525c72] font-normal normal-case">(optional)</span>
+                Lead Source <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {([
@@ -1752,8 +1752,8 @@ function NewDealPage() {
                     }}
                     className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                       form.leadSource === value
-                        ? 'bg-[#00e07a] border-[#00e07a] text-black shadow-[0_0_10px_rgba(0,224,122,0.25)]'
-                        : 'bg-[#1d2028] border-[#272b35] text-[#c2c8d8] hover:border-[#333849] hover:text-white'
+                        ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(0,224,122,0.25)]'
+                        : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                     }`}
                   >
                     {label}
@@ -1816,7 +1816,7 @@ function NewDealPage() {
               type="button"
               onClick={handlePrev}
               disabled={submitting}
-              style={{ background: 'transparent', border: '1px solid #272b35', borderRadius: 10, padding: '9px 20px', color: '#8891a8', fontSize: 13, cursor: 'pointer' }}
+              style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 10, padding: '9px 20px', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}
             >
               Previous
             </button>
@@ -1829,7 +1829,7 @@ function NewDealPage() {
               type="button"
               onClick={handleNext}
               className="inline-flex items-center gap-2 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', borderRadius: 10, padding: '9px 20px', color: '#000', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#000', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Next
             </button>
@@ -1841,7 +1841,7 @@ function NewDealPage() {
               type="submit"
               disabled={submitting}
               className="inline-flex items-center gap-2 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', borderRadius: 10, padding: '9px 20px', color: '#000', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#000', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>
@@ -1856,7 +1856,7 @@ function NewDealPage() {
 
           {currentStep === DEAL_STEPS.length - 1 && !submitting && (
             <kbd
-              className="font-mono text-[9px] text-[#8891a8] bg-[#1d2028]/80 border border-[#272b35]/60 rounded px-1.5 py-0.5 leading-none select-none"
+              className="font-mono text-[9px] text-[var(--text-muted)] bg-[var(--surface-card)]/80 border border-[var(--border)]/60 rounded px-1.5 py-0.5 leading-none select-none"
               aria-hidden="true"
               title="Press ⌘Enter (or Ctrl+Enter) to submit"
             >
@@ -1873,13 +1873,13 @@ function NewDealPage() {
 
       {/* ── Sticky mobile commission preview bar (step 2 only) ── */}
       {currentStep === 1 && (showPreview || (isSubDealer && subDealerCommission > 0)) && (
-        <div className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-[#161920]/95 backdrop-blur-sm border-t border-[#333849] px-4 py-3">
+        <div className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-[var(--surface)]/95 backdrop-blur-sm border-t border-[var(--border-subtle)] px-4 py-3">
           <div className="flex items-center justify-between max-w-2xl mx-auto">
             <div className="flex flex-col">
-              <span className="text-[10px] text-[#8891a8] uppercase tracking-wider leading-none mb-0.5">
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider leading-none mb-0.5">
                 {form.installer}{kW > 0 ? ` \u00B7 ${kW.toFixed(1)} kW` : ''}
               </span>
-              <span className="text-lg font-black text-[#00e07a]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <span className="text-lg font-black text-[var(--accent-green)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 Est. Commission: ${(isSubDealer ? subDealerCommission : closerTotal).toLocaleString()}
               </span>
             </div>

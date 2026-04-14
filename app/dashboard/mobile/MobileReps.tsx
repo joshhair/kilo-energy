@@ -35,10 +35,10 @@ type SimpleUser = {
 };
 
 const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  rep:              { label: 'Rep',      color: '#00e5a0', bg: 'rgba(0,229,160,0.12)' },
+  rep:              { label: 'Rep',      color: 'var(--accent-emerald)', bg: 'rgba(0,229,160,0.12)' },
   'sub-dealer':     { label: 'SD',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
-  project_manager:  { label: 'PM',       color: '#00c4f0', bg: 'rgba(0,196,240,0.12)' },
-  admin:            { label: 'Admin',    color: '#ffb020', bg: 'rgba(255,176,32,0.12)' },
+  project_manager:  { label: 'PM',       color: 'var(--accent-cyan)', bg: 'rgba(0,196,240,0.12)' },
+  admin:            { label: 'Admin',    color: 'var(--accent-amber)', bg: 'rgba(255,176,32,0.12)' },
 };
 
 export default function MobileReps() {
@@ -145,7 +145,7 @@ export default function MobileReps() {
             <button
               onClick={() => setShowAddRep(true)}
               className="flex items-center justify-center w-10 h-10 rounded-2xl text-black active:opacity-80 transition-colors"
-              style={{ background: 'linear-gradient(135deg, #00e5a0, #00b4d8)', boxShadow: '0 0 20px rgba(0,229,160,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))', boxShadow: '0 0 20px rgba(0,229,160,0.3)' }}
               aria-label="Add rep"
             >
               <Plus className="w-5 h-5" />
@@ -164,9 +164,9 @@ export default function MobileReps() {
               onClick={() => setRoleFilter(rf.value)}
               className={`shrink-0 min-h-[40px] px-4 rounded-xl text-sm font-semibold transition-colors`}
               style={{
-                background: active ? '#00e5a0' : 'var(--m-card, #0d1525)',
-                color: active ? '#000' : 'var(--m-text-muted, #8899aa)',
-                border: active ? 'none' : '1px solid var(--m-border, #1a2840)',
+                background: active ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                color: active ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -178,7 +178,7 @@ export default function MobileReps() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
         <input
           type="text"
           placeholder={roleFilter === 'rep' ? 'Search reps...' : 'Search users...'}
@@ -186,8 +186,8 @@ export default function MobileReps() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-2xl text-base text-white focus:outline-none focus:ring-1 transition-colors"
           style={{
-            background: 'var(--m-card, #0d1525)',
-            border: '1px solid var(--m-border, #1a2840)',
+            background: 'var(--m-card, var(--surface-mobile-card))',
+            border: '1px solid var(--m-border, var(--border-mobile))',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         />
@@ -220,7 +220,7 @@ export default function MobileReps() {
         return (
           <div className="space-y-3">
             {filteredPool.map((u) => {
-              const badge = ROLE_BADGE[u.role] ?? { label: u.role, color: '#8891a8', bg: 'rgba(136,145,168,0.12)' };
+              const badge = ROLE_BADGE[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'rgba(136,145,168,0.12)' };
               const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
               return (
                 <MobileCard key={u.id} onTap={() => router.push(`/dashboard/users/${u.id}`)}>
@@ -234,7 +234,7 @@ export default function MobileReps() {
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
                       {u.email && (
-                        <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>
+                        <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>
                       )}
                     </div>
                     <MobileBadge value={badge.label} />
@@ -261,21 +261,21 @@ export default function MobileReps() {
                 <div className="flex items-center gap-3">
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-black text-base font-bold shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #00b4d8, #00e5a0)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--accent-cyan2), var(--accent-emerald))' }}
                   >
                     {getInitials(rep.name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
                     {rep.email && (
-                      <p className="text-base truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
+                      <p className="text-base truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
                     )}
                   </div>
                   <MobileBadge value={REP_TYPE_LABELS[rep.repType] ?? rep.repType} />
                 </div>
 
                 {isAdmin && (
-                  <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{deals}</span> deals</span>
                     <span>&middot;</span>
                     <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{kw.toFixed(1)}</span> kW</span>
@@ -336,10 +336,10 @@ export default function MobileReps() {
               placeholder="First name"
               className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, #0d1525)',
-                border: '1px solid var(--m-border, #1a2840)',
+                background: 'var(--m-card, var(--surface-mobile-card))',
+                border: '1px solid var(--m-border, var(--border-mobile))',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': '#00e5a0',
+                '--tw-ring-color': 'var(--accent-emerald)',
               } as React.CSSProperties}
             />
           </div>
@@ -353,10 +353,10 @@ export default function MobileReps() {
               placeholder="Last name"
               className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, #0d1525)',
-                border: '1px solid var(--m-border, #1a2840)',
+                background: 'var(--m-card, var(--surface-mobile-card))',
+                border: '1px solid var(--m-border, var(--border-mobile))',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': '#00e5a0',
+                '--tw-ring-color': 'var(--accent-emerald)',
               } as React.CSSProperties}
             />
           </div>
@@ -369,10 +369,10 @@ export default function MobileReps() {
               placeholder="email@example.com"
               className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, #0d1525)',
-                border: '1px solid var(--m-border, #1a2840)',
+                background: 'var(--m-card, var(--surface-mobile-card))',
+                border: '1px solid var(--m-border, var(--border-mobile))',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': '#00e5a0',
+                '--tw-ring-color': 'var(--accent-emerald)',
               } as React.CSSProperties}
             />
           </div>
@@ -386,9 +386,9 @@ export default function MobileReps() {
                   onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
                   className="flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors"
                   style={{
-                    background: addForm.repType === type ? '#00e5a0' : 'var(--m-card, #0d1525)',
-                    color: addForm.repType === type ? '#000' : 'var(--m-text-muted, #8899aa)',
-                    border: addForm.repType === type ? '1px solid #00e5a0' : '1px solid var(--m-border, #1a2840)',
+                    background: addForm.repType === type ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                    color: addForm.repType === type ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                    border: addForm.repType === type ? '1px solid var(--accent-emerald)' : '1px solid var(--m-border, var(--border-mobile))',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -401,7 +401,7 @@ export default function MobileReps() {
             type="submit"
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 0 20px rgba(0,229,160,0.3)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}

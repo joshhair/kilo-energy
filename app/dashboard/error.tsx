@@ -19,11 +19,11 @@ export default function DashboardError({
 
         <div className="space-y-2">
           <h2 className="text-white text-lg font-bold">Something went wrong</h2>
-          <p className="text-[#c2c8d8] text-sm leading-relaxed">
+          <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
             {error.message || 'An unexpected error occurred.'}
           </p>
           {error.digest && (
-            <p className="text-[#525c72] text-xs font-mono">ID: {error.digest}</p>
+            <p className="text-[var(--text-dim)] text-xs font-mono">ID: {error.digest}</p>
           )}
         </div>
 
@@ -36,7 +36,7 @@ export default function DashboardError({
           </button>
           <Link
             href="/dashboard"
-            className="py-2.5 px-6 rounded-xl text-sm font-semibold text-[#c2c8d8] hover:text-white border border-[#272b35]/40 hover:border-[#272b35] transition-all"
+            className="py-2.5 px-6 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:text-white border border-[var(--border)]/40 hover:border-[var(--border)] transition-all"
           >
             Back to Dashboard
           </Link>

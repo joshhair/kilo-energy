@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateCommission,
+  splitCloserSetterPay,
   getBaselineRate,
   getSolarTechBaseline,
   getNonSolarTechBaseline,
@@ -132,11 +133,8 @@ describe('getSolarTechBaseline', () => {
     expect(rate.kiloPerW).toBe(2.35);
   });
 
-  it('returns zeros for unknown product', () => {
-    const rate = getSolarTechBaseline('nonexistent', 8);
-    expect(rate.closerPerW).toBe(0);
-    expect(rate.setterPerW).toBe(0);
-    expect(rate.kiloPerW).toBe(0);
+  it('throws for unknown product', () => {
+    expect(() => getSolarTechBaseline('nonexistent', 8)).toThrow('unknown product');
   });
 
   it('setter baseline is always closer + $0.10', () => {
@@ -476,5 +474,186 @@ describe('Data integrity', () => {
         expect(product.tiers[i].closerPerW).toBeGreaterThanOrEqual(product.tiers[i + 1].closerPerW);
       }
     }
+  });
+});
+
+// ─── splitCloserSetterPay ──────────────────────────────────────────────────
+
+describe('splitCloserSetterPay', () => {
+  // Common test values
+  const closerPerW = 2.90;
+  const setterPerW = 3.00; // closer + $0.10
+  const kW = 8;
+  const installPayPct80 = 80; // 80% M2, 20% M3
+  const installPayPct100 = 100; // 100% M2, 0% M3 (SolarTech)
+
+  // ── Self-gen deals (no setter) ───────────────────────────────────
+  describe('self-gen (no setter)', () => {
+    it('closer gets all commission, setter gets zero', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, kW, installPayPct80);
+      expect(result.closerTotal).toBeGreaterThan(0);
+      expect(result.setterTotal).toBe(0);
+      expect(result.setterM1).toBe(0);
+      expect(result.setterM2).toBe(0);
+      expect(result.setterM3).toBe(0);
+    });
+
+    it('closer gets M1 ($1000 for kW >= 5)', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, kW, installPayPct80);
+      expect(result.closerM1).toBe(1000);
+    });
+
+    it('closer gets M1 ($500 for kW < 5)', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, 4, installPayPct80);
+      expect(result.closerM1).toBe(500);
+    });
+
+    it('total = (soldPPW - closerPerW) × kW × 1000', () => {
+      // 3.50 - 2.90 = 0.60 × 8 × 1000 = 4800
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, kW, installPayPct80);
+      expect(result.closerTotal).toBe(4800);
+    });
+
+    it('M2 = (total - M1) × installPayPct/100', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, kW, installPayPct80);
+      // total = 4800, M1 = 1000, remaining = 3800, M2 = 3800 × 0.80 = 3040
+      expect(result.closerM2).toBe(3040);
+    });
+
+    it('M3 = remaining × (1 - installPayPct/100)', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, kW, installPayPct80);
+      // remaining = 3800, M3 = 3800 × 0.20 = 760
+      expect(result.closerM3).toBe(760);
+    });
+
+    it('no M3 when installPayPct is 100 (SolarTech)', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, kW, installPayPct100);
+      expect(result.closerM3).toBe(0);
+      // M2 gets the full remaining after M1
+      expect(result.closerM2).toBe(result.closerTotal - result.closerM1);
+    });
+
+    it('M1 + M2 + M3 = closerTotal', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, kW, installPayPct80);
+      expect(result.closerM1 + result.closerM2 + result.closerM3).toBe(result.closerTotal);
+    });
+  });
+
+  // ── Split deals (with setter) ────────────────────────────────────
+  describe('split deal (with setter)', () => {
+    it('closer gets NO M1, setter gets M1', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      expect(result.closerM1).toBe(0);
+      expect(result.setterM1).toBe(1000); // kW=8 >= 5
+    });
+
+    it('setter M1 is $500 for kW < 5', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, 4, installPayPct80);
+      expect(result.setterM1).toBe(500);
+    });
+
+    it('closer gets the differential (setterPerW - closerPerW) × kW × 1000', () => {
+      // Differential: (3.00 - 2.90) × 8 × 1000 = 800
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      // Above the setter baseline: (3.50 - 3.00) × 8 × 1000 = 4000, split 50/50 = 2000 each
+      // Closer total = 800 + 2000 = 2800
+      expect(result.closerTotal).toBe(2800);
+    });
+
+    it('amount above setter baseline is split 50/50', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      // Above setter: (3.50 - 3.00) × 8 × 1000 = 4000
+      // Closer half = 2000, setter gets the other 2000
+      // Setter total = 2000 (their half of the split)
+      expect(result.setterTotal).toBe(2000);
+    });
+
+    it('closerTotal + setterTotal = total commission above closerPerW', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      const totalCommission = calculateCommission(3.50, closerPerW, kW);
+      expect(result.closerTotal + result.setterTotal).toBe(totalCommission);
+    });
+
+    it('setter M2/M3 split matches installPayPct', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      const setterAfterM1 = result.setterTotal - result.setterM1;
+      expect(result.setterM2).toBe(Math.round(setterAfterM1 * 0.80 * 100) / 100);
+      expect(result.setterM3).toBe(Math.round(setterAfterM1 * 0.20 * 100) / 100);
+    });
+
+    it('setter milestones sum to setterTotal', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      expect(result.setterM1 + result.setterM2 + result.setterM3).toBe(result.setterTotal);
+    });
+
+    it('closer milestones sum to closerTotal', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      expect(result.closerM1 + result.closerM2 + result.closerM3).toBe(result.closerTotal);
+    });
+  });
+
+  // ── Trainer rate offset ──────────────────────────────────────────
+  describe('trainer rate offset', () => {
+    it('trainer rate shifts the split point higher, reducing both closer and setter', () => {
+      const noTrainer = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0, kW, installPayPct80);
+      const withTrainer = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0.10, kW, installPayPct80);
+      // Trainer rate raises the split point → less "above split" to share
+      expect(withTrainer.closerTotal).toBeLessThan(noTrainer.closerTotal);
+      expect(withTrainer.setterTotal).toBeLessThan(noTrainer.setterTotal);
+    });
+
+    it('closer still gets the differential below setter baseline', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, setterPerW, 0.10, kW, installPayPct80);
+      // Differential is (setterPerW - closerPerW) × kW × 1000 = 800 regardless of trainer
+      // Split point = 3.00 + 0.10 = 3.10
+      // Above split: (3.50 - 3.10) × 8 × 1000 = 3200, half = 1600
+      // Closer = 800 + 1600 = 2400
+      expect(result.closerTotal).toBe(2400);
+    });
+  });
+
+  // ── Edge cases ───────────────────────────────────────────────────
+  describe('edge cases', () => {
+    it('zero commission when soldPPW <= closerPerW (self-gen)', () => {
+      const result = splitCloserSetterPay(2.50, closerPerW, 0, 0, kW, installPayPct80);
+      expect(result.closerTotal).toBe(0);
+      expect(result.closerM1).toBe(0);
+      expect(result.closerM2).toBe(0);
+      expect(result.closerM3).toBe(0);
+    });
+
+    it('soldPPW between closer and setter baseline — closer gets differential only', () => {
+      // soldPPW = 2.95, closerPerW = 2.90, setterPerW = 3.00
+      // Closer differential = min(3.00-2.90, 2.95-2.90) = 0.05 × 8 × 1000 = 400
+      // Above setter: max(0, 2.95 - 3.00) = 0 → no 50/50 split
+      const result = splitCloserSetterPay(2.95, closerPerW, setterPerW, 0, kW, installPayPct80);
+      expect(result.closerTotal).toBe(400);
+      expect(result.setterTotal).toBe(0);
+    });
+
+    it('very small system (1 kW, M1 capped by total commission)', () => {
+      // 3.50 - 2.90 = 0.60 × 1 × 1000 = 600. M1 flat = 500 (kW < 5). M1 = min(500, 600) = 500
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, 1, installPayPct80);
+      expect(result.closerM1).toBe(500);
+      expect(result.closerTotal).toBe(600);
+    });
+
+    it('M1 capped at closerTotal when commission is tiny', () => {
+      // 2.95 - 2.90 = 0.05 × 1 × 1000 = 50. M1 flat would be 500 but cap at 50
+      const result = splitCloserSetterPay(2.95, closerPerW, 0, 0, 1, installPayPct80);
+      expect(result.closerM1).toBe(50);
+      expect(result.closerM2).toBe(0);
+      expect(result.closerM3).toBe(0);
+    });
+
+    it('exactly at 5kW boundary gets $1000 M1', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, 5, installPayPct80);
+      expect(result.closerM1).toBe(1000);
+    });
+
+    it('just below 5kW boundary gets $500 M1', () => {
+      const result = splitCloserSetterPay(3.50, closerPerW, 0, 0, 4.99, installPayPct80);
+      expect(result.closerM1).toBe(500);
+    });
   });
 });

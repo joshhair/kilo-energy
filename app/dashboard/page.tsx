@@ -52,7 +52,7 @@ const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: st
   'Permitting':      { bar: 'bg-amber-500',    text: 'text-amber-300',   dot: 'bg-amber-400',   chipBg: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      chipBorder: 'border-amber-700/30'    },
   'Pending Install': { bar: 'bg-orange-500',   text: 'text-orange-300',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
   'Installed':       { bar: 'bg-teal-500',     text: 'text-teal-300',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
-  'PTO':             { bar: 'bg-[#00e07a]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
+  'PTO':             { bar: 'bg-[var(--accent-green)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
 };
 
 // ─── Needs Attention ──────────────────────────────────────────────────────────
@@ -198,20 +198,20 @@ export function NeedsAttentionSection({
     <div
       ref={sectionRef}
       className={`card-surface rounded-2xl mb-6 ${sectionVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
-      style={items.length === 0 ? { borderLeft: '3px solid #00e07a' } : undefined}
+      style={items.length === 0 ? { borderLeft: '3px solid var(--accent-green)' } : undefined}
     >
       {/* Collapsible header */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-[#1d2028]/30 transition-colors rounded-2xl"
+        className="w-full px-6 py-4 flex items-center justify-between hover:bg-[var(--surface-card)]/30 transition-colors rounded-2xl"
       >
         <div className="flex items-center gap-3">
           <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${items.length > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
-          <div className={`p-1.5 rounded-lg ${items.length > 0 ? 'bg-amber-500/15' : 'bg-[#00e07a]/15'}`}>
+          <div className={`p-1.5 rounded-lg ${items.length > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-green)]/15'}`}>
             {items.length > 0
               ? <AlertCircle className="w-4 h-4 text-amber-400" />
-              : <CheckCircle className="w-4 h-4" style={{ color: '#00e07a' }} />
+              : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
             }
           </div>
           <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -224,8 +224,8 @@ export function NeedsAttentionSection({
           )}
         </div>
         {open
-          ? <ChevronUp className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
-          : <ChevronDown className="w-4 h-4 text-[#c2c8d8] group-hover:text-white transition-colors" />
+          ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+          : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
         }
       </button>
 
@@ -237,16 +237,16 @@ export function NeedsAttentionSection({
             /* ── Empty / all-clear state ── */
             <div className="flex items-center gap-3 px-6 py-6">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
-                <CheckCircle className="w-4 h-4" style={{ color: '#00e07a' }} />
+                <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
               </div>
-              <p className="text-[#c2c8d8] text-sm">All clear! No items need attention right now.</p>
+              <p className="text-[var(--text-secondary)] text-sm">All clear! No items need attention right now.</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-800/60">
               {capped.map((item) => (
                 <div
                   key={item.uid}
-                  className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[#1d2028]/40 transition-colors group"
+                  className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[var(--surface-card)]/40 transition-colors group"
                 >
                   <Link
                     href={`/dashboard/projects/${item.projectId}`}
@@ -296,7 +296,7 @@ export function NeedsAttentionSection({
                       <p className="text-white text-sm font-medium truncate">{item.customerName}</p>
                       <p className={`text-xs ${
                         (() => {
-                          if (item.kind !== 'stuck') return 'text-[#8891a8]';
+                          if (item.kind !== 'stuck') return 'text-[var(--text-muted)]';
                           const threshold = item.stuckPhase ? (PHASE_STUCK_THRESHOLDS[item.stuckPhase] ?? 14) : 14;
                           const ratio = (item.staleDays ?? 0) / threshold;
                           if (ratio >= 2) return 'text-red-400';
@@ -322,7 +322,7 @@ export function NeedsAttentionSection({
                             e.stopPropagation();
                             onUnflag(item.projectId);
                           }}
-                          className="px-2 py-0.5 text-xs rounded-md bg-[#1d2028] hover:bg-[#272b35] text-[#c2c8d8] hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-white transition-colors"
                         >
                           Unflag
                         </button>
@@ -330,7 +330,7 @@ export function NeedsAttentionSection({
                       {item.kind === 'on-hold' && (
                         <Link
                           href={`/dashboard/projects/${item.projectId}?action=resume`}
-                          className="px-2 py-0.5 text-xs rounded-md bg-[#1d2028] hover:bg-[#272b35] text-[#c2c8d8] hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-white transition-colors"
                         >
                           Resume
                         </Link>
@@ -339,7 +339,7 @@ export function NeedsAttentionSection({
                   )}
 
                   <Link href={`/dashboard/projects/${item.projectId}`} className="flex-shrink-0">
-                    <ChevronRight className="w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors" />
                   </Link>
                 </div>
               ))}
@@ -347,10 +347,10 @@ export function NeedsAttentionSection({
               {/* View all link when capped */}
               {hasMore && (
                 <div className="px-6 py-3 flex items-center justify-between">
-                  <span className="text-[#8891a8] text-xs">{items.length - 5} more item{items.length - 5 !== 1 ? 's' : ''} hidden</span>
+                  <span className="text-[var(--text-muted)] text-xs">{items.length - 5} more item{items.length - 5 !== 1 ? 's' : ''} hidden</span>
                   <Link
                     href="/dashboard/projects"
-                    className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors"
+                    className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors"
                   >
                     View all projects →
                   </Link>
@@ -427,11 +427,11 @@ export function MyTasksSection({
     <div className="card-surface rounded-2xl mb-6">
       <div className="px-6 py-4 flex items-center gap-3">
         <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-        <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
-          <CheckSquare className="w-4 h-4 text-[#00e07a]" />
+        <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
+          <CheckSquare className="w-4 h-4 text-[var(--accent-green)]" />
         </div>
         <h2 className="text-white font-bold tracking-tight text-base">My Tasks</h2>
-        <span className="bg-[#00e07a]/20 border border-[#00e07a]/30 text-[#00e07a] text-xs font-bold px-2 py-0.5 rounded-full">
+        <span className="bg-[var(--accent-green)]/20 border border-[var(--accent-green)]/30 text-[var(--accent-green)] text-xs font-bold px-2 py-0.5 rounded-full">
           {tasks.length}
         </span>
       </div>
@@ -442,7 +442,7 @@ export function MyTasksSection({
           return (
             <div
               key={task.checkItemId}
-              className="flex items-center gap-3 px-6 py-3 min-h-[44px] hover:bg-[#1d2028]/40 transition-colors group"
+              className="flex items-center gap-3 px-6 py-3 min-h-[44px] hover:bg-[var(--surface-card)]/40 transition-colors group"
             >
               <input
                 type="checkbox"
@@ -467,27 +467,27 @@ export function MyTasksSection({
                     });
                   }
                 }}
-                className="w-4 h-4 rounded border-[#272b35] bg-[#1d2028] text-[#00e07a] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[#00e07a] flex-shrink-0"
+                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-green)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-green)] flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-[#c2c8d8]'}`}>
+                <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-[var(--text-secondary)]'}`}>
                   {task.text}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <Link
                     href={`/dashboard/projects/${task.projectId}#chatter`}
-                    className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors truncate max-w-[140px]"
+                    className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors truncate max-w-[140px]"
                   >
                     {task.projectName}
                   </Link>
-                  <span className="text-[#525c72] text-[10px]">from {task.authorName}</span>
-                  <span className="text-[#525c72] text-[10px]">{relativeTimeShort(task.createdAt)}</span>
+                  <span className="text-[var(--text-dim)] text-[10px]">from {task.authorName}</span>
+                  <span className="text-[var(--text-dim)] text-[10px]">{relativeTimeShort(task.createdAt)}</span>
                   {task.dueDate && (
                     <span
                       className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                         overdue
                           ? 'bg-red-500/15 text-red-400 border border-red-500/20'
-                          : 'bg-[#272b35]/50 text-[#c2c8d8] border border-[#272b35]/30'
+                          : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'
                       }`}
                     >
                       {overdue ? 'Overdue' : `Due ${formatDueDate(task.dueDate)}`}
@@ -496,7 +496,7 @@ export function MyTasksSection({
                 </div>
               </div>
               <Link href={`/dashboard/projects/${task.projectId}#chatter`} className="flex-shrink-0">
-                <ChevronRight className="w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors" />
               </Link>
             </div>
           );
@@ -535,10 +535,10 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
 
   if (total === 0) {
     return (
-      <div className="border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
-        <FolderKanban className="w-8 h-8 text-[#525c72] mx-auto mb-3" />
+      <div className="border border-dashed border-[var(--border-subtle)] rounded-2xl px-5 py-12 text-center">
+        <FolderKanban className="w-8 h-8 text-[var(--text-dim)] mx-auto mb-3" />
         <p className="text-white font-bold text-sm mb-1">No active projects — submit your first deal</p>
-        <p className="text-[#8891a8] text-xs mt-1">Your pipeline will appear here once you close a deal.</p>
+        <p className="text-[var(--text-muted)] text-xs mt-1">Your pipeline will appear here once you close a deal.</p>
       </div>
     );
   }
@@ -547,10 +547,10 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
     <>
       {/* Stacked bar — overflow-hidden clips segment edges cleanly at the rounded corners */}
       <div className="relative mb-4" ref={barRef}>
-        <div className="flex h-10 md:h-8 rounded-xl bg-[#1d2028] overflow-hidden">
+        <div className="flex h-10 md:h-8 rounded-xl bg-[var(--surface-card)] overflow-hidden">
           {nonEmpty.map((phase) => {
             const count = phaseCounts[phase];
-            const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-[#8891a8]', text: '', dot: '', chipBg: '', chipBorder: '' };
+            const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-[var(--text-muted)]', text: '', dot: '', chipBg: '', chipBorder: '' };
             return (
               <Link
                 key={phase}
@@ -573,7 +573,7 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
         {/* Floating tooltip — rendered outside overflow-hidden bar, relative to wrapper */}
         {tooltip && (
           <div
-            className="pointer-events-none absolute -top-8 bg-[#1d2028] border border-[#272b35] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
+            className="pointer-events-none absolute -top-8 bg-[var(--surface-card)] border border-[var(--border)] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
             style={{ left: tooltip.x }}
           >
             {tooltip.phase}: {phaseCounts[tooltip.phase]} project{phaseCounts[tooltip.phase] !== 1 ? 's' : ''}
@@ -585,7 +585,7 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
       <div className="flex flex-wrap gap-2">
         {nonEmpty.map((phase) => {
           const count = phaseCounts[phase];
-          const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-[#8891a8]', text: 'text-[#c2c8d8]', dot: 'bg-[#8891a8]', chipBg: '', chipBorder: '' };
+          const s = PIPELINE_PHASE_COLORS[phase] ?? { bar: 'bg-[var(--text-muted)]', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]', chipBg: '', chipBorder: '' };
           return (
             <Link
               key={phase}
@@ -618,7 +618,7 @@ const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: str
 };
 
 export function PhaseBadge({ phase }: { phase: string }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[#272b35]/30', shadow: '', text: 'text-[#c2c8d8]', dot: 'bg-[#8891a8]' };
+  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
   return (
     <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
@@ -628,10 +628,10 @@ export function PhaseBadge({ phase }: { phase: string }) {
 }
 
 export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
-  if (amount === 0) return <span className="text-[#525c72] text-xs">—</span>;
+  if (amount === 0) return <span className="text-[var(--text-dim)] text-xs">—</span>;
   return (
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-      paid ? 'bg-emerald-900/50 text-[#00e07a]' : 'bg-yellow-900/50 text-yellow-400'
+      paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
     }`}>
       {paid ? fmt$(amount) : 'Unpaid'}
     </span>
@@ -639,8 +639,8 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
 }
 
 export function MilestoneDot({ label, paid, amount }: { label: string; paid: boolean; amount: number }) {
-  if (amount === 0) return <span className="text-[#525c72]">{label}</span>;
-  const color = paid ? 'text-[#00e07a]' : 'text-yellow-400';
+  if (amount === 0) return <span className="text-[var(--text-dim)]">{label}</span>;
+  const color = paid ? 'text-[var(--accent-green)]' : 'text-yellow-400';
   const dotColor = paid ? 'bg-emerald-400' : 'bg-yellow-400';
   return (
     <span className="flex items-center gap-1">
@@ -1040,11 +1040,11 @@ export default function DashboardPage() {
       value: fmt$(totalPaid),
       sub: 'Deposited to you',
       icon: CheckCircle,
-      color: 'text-[#00e07a]',
+      color: 'text-[var(--accent-green)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: paidSparkData,
-      sparkStroke: '#00e07a',
+      sparkStroke: 'var(--accent-green)',
       pctChange: computePctChange(totalPaid, prevTotalPaid),
       href: '/dashboard/my-pay',
       tooltip: 'Total commission disbursed to you across all payment stages',
@@ -1054,11 +1054,11 @@ export default function DashboardPage() {
       value: fmt$(inPipeline),
       sub: `${activeProjects.length} active projects`,
       icon: TrendingUp,
-      color: 'text-[#00e07a]',
+      color: 'text-[var(--accent-green)]',
       accentGradient: 'from-blue-500 to-blue-400',
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
-      sparkStroke: '#00c4f0',
+      sparkStroke: 'var(--accent-cyan)',
       pctChange: computePctChange(inPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
@@ -1082,11 +1082,11 @@ export default function DashboardPage() {
       value: `${totalKWInstalled.toFixed(1)} kW`,
       sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
       icon: Zap,
-      color: 'text-[#00e07a]',
+      color: 'text-[var(--accent-green)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: installedSparkData,
-      sparkStroke: '#00e07a',
+      sparkStroke: 'var(--accent-green)',
       pctChange: computePctChange(totalKWInstalled, prevTotalKWInstalled),
       href: '/dashboard/projects',
       tooltip: 'Total kilowatts from projects that have been physically installed',
@@ -1114,13 +1114,13 @@ export default function DashboardPage() {
       <div className="card-surface rounded-xl md:rounded-2xl mb-6">
         <div className="px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide mb-1">{getGreeting(effectiveRepName)}</p>
+            <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide mb-1">{getGreeting(effectiveRepName)}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
-              <span style={{ color: '#f0f2f7' }}>Next Payout:</span> <span style={{ color: '#00e07a' }}>${pendingPayrollTotal.toLocaleString()}</span>
+              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-green)' }}>${pendingPayrollTotal.toLocaleString()}</span>
             </p>
-            <p className="text-[#8891a8] text-xs mt-1 flex items-center gap-2">
+            <p className="text-[var(--text-muted)] text-xs mt-1 flex items-center gap-2">
               {nextFridayLabel}
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[#00e07a]/15 text-[#00e07a] border border-[#00e07a]/20' : 'bg-[#272b35]/50 text-[#c2c8d8] border border-[#272b35]/30'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-green)]/15 text-[var(--accent-green)] border border-[var(--accent-green)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
                 {paydayCountdownLabel}
               </span>
             </p>
@@ -1141,7 +1141,7 @@ export default function DashboardPage() {
 
       {/* Period tabs — compact row, flush right */}
       <div className="flex justify-end mb-6">
-        <div className="flex gap-1 bg-[#161920] border border-[#333849] rounded-xl p-1 tab-bar-container">
+        <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
           {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
           {PERIODS.map((p, i) => (
             <button
@@ -1151,7 +1151,7 @@ export default function DashboardPage() {
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
                   ? 'text-black'
-                  : 'text-[#c2c8d8] hover:text-white'
+                  : 'text-[var(--text-secondary)] hover:text-white'
               }`}
             >
               {p.label}
@@ -1175,7 +1175,7 @@ export default function DashboardPage() {
               aria-hidden="true"
             >
               {/* Panel body */}
-              <rect x="4" y="14" width="52" height="32" rx="3" fill="#1d2028" stroke="#334155" strokeWidth="1.5" />
+              <rect x="4" y="14" width="52" height="32" rx="3" fill="var(--surface-card)" stroke="#334155" strokeWidth="1.5" />
               {/* Grid lines — horizontal */}
               <line x1="4" y1="25" x2="56" y2="25" stroke="#334155" strokeWidth="1" />
               <line x1="4" y1="36" x2="56" y2="36" stroke="#334155" strokeWidth="1" />
@@ -1184,13 +1184,13 @@ export default function DashboardPage() {
               <line x1="38" y1="14" x2="38" y2="46" stroke="#334155" strokeWidth="1" />
               {/* Cell shimmer fills */}
               <rect x="5" y="15" width="15" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="15" width="15" height="10" rx="1" fill="#00e07a" fillOpacity="0.5" />
+              <rect x="22" y="15" width="15" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
               <rect x="39" y="15" width="16" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="5" y="26" width="15" height="10" rx="1" fill="#00e07a" fillOpacity="0.5" />
-              <rect x="22" y="26" width="15" height="10" rx="1" fill="#00c4f0" fillOpacity="0.45" />
-              <rect x="39" y="26" width="16" height="10" rx="1" fill="#00e07a" fillOpacity="0.5" />
+              <rect x="5" y="26" width="15" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
+              <rect x="22" y="26" width="15" height="10" rx="1" fill="var(--accent-cyan)" fillOpacity="0.45" />
+              <rect x="39" y="26" width="16" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
               <rect x="5" y="37" width="15" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="37" width="15" height="8" rx="1" fill="#00e07a" fillOpacity="0.5" />
+              <rect x="22" y="37" width="15" height="8" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
               <rect x="39" y="37" width="16" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
               {/* Mount legs */}
               <line x1="20" y1="46" x2="16" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
@@ -1198,7 +1198,7 @@ export default function DashboardPage() {
               <line x1="13" y1="55" x2="47" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
               {/* Plus badge — top-right corner */}
               <circle cx="49" cy="15" r="9" fill="#0f172a" />
-              <circle cx="49" cy="15" r="8" fill="#00e07a" />
+              <circle cx="49" cy="15" r="8" fill="var(--accent-green)" />
               <line x1="49" y1="10" x2="49" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <line x1="44" y1="15" x2="54" y2="15" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
@@ -1206,7 +1206,7 @@ export default function DashboardPage() {
 
           <div className="space-y-2 max-w-sm">
             <h2 className="text-2xl font-black text-white tracking-tight">Submit your first deal</h2>
-            <p className="text-[#c2c8d8] text-sm leading-relaxed">
+            <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
               Once you close a deal, your pipeline, commissions, and earnings will appear here.
             </p>
           </div>
@@ -1221,7 +1221,7 @@ export default function DashboardPage() {
             </Link>
             <Link
               href="/dashboard/calculator"
-              className="inline-flex items-center gap-1 text-[#c2c8d8] hover:text-[#c2c8d8] text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--text-secondary)] text-sm font-medium transition-colors"
             >
               Explore the calculator →
             </Link>
@@ -1239,15 +1239,15 @@ export default function DashboardPage() {
             {stats.map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-[#00e07a]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
+                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-[var(--accent-green)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
                   <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider flex items-center gap-1">
+                    <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider flex items-center gap-1">
                       {stat.label}
                       {'tooltip' in stat && stat.tooltip && (
                         <span className="relative group/tip">
-                          <HelpCircle className="w-3 h-3 text-[#525c72] hover:text-[#c2c8d8] transition-colors cursor-help" />
-                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-[#1d2028] border border-[#272b35]/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#c2c8d8] shadow-xl leading-snug">
+                          <HelpCircle className="w-3 h-3 text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors cursor-help" />
+                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover/tip:block whitespace-normal w-48 rounded-lg bg-[var(--surface-card)] border border-[var(--border)]/60 px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[var(--text-secondary)] shadow-xl leading-snug">
                             {stat.tooltip}
                           </span>
                         </span>
@@ -1255,12 +1255,12 @@ export default function DashboardPage() {
                     </span>
                     <div className="flex items-center gap-1">
                       <Icon className={`w-4 h-4 ${stat.color}`} />
-                      <ChevronRight className="w-3.5 h-3.5 text-[#525c72] opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ChevronRight className="w-3.5 h-3.5 text-[var(--text-dim)] opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                   <p className={`stat-value stat-value-glow ${stat.glowClass} text-3xl font-black tabular-nums tracking-tight animate-count-up ${'gradient' in stat && stat.gradient ? stat.gradient : stat.color}`}>{stat.value}</p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <p className="text-[#8891a8] text-xs">{stat.sub}</p>
+                    <p className="text-[var(--text-muted)] text-xs">{stat.sub}</p>
                     <TrendBadge pctChange={stat.pctChange} />
                   </div>
                   <Sparkline data={stat.sparkData} stroke={stat.sparkStroke} />
@@ -1315,12 +1315,12 @@ export default function DashboardPage() {
             <div className="px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-                <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
-                  <FolderKanban className="w-4 h-4 text-[#00e07a]" />
+                <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
+                  <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
                 </div>
                 <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
               </div>
-              <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
+              <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
                 View All →
               </Link>
             </div>
@@ -1333,7 +1333,7 @@ export default function DashboardPage() {
       )}
 
       {/* Keyboard shortcut hint bar — desktop only */}
-      <div className="hidden md:flex items-center gap-6 bg-[#161920]/60 border border-[#333849] rounded-xl px-4 py-2.5 mb-6 select-none">
+      <div className="hidden md:flex items-center gap-6 bg-[var(--surface)]/60 border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 mb-6 select-none">
         {[
           { key: 'N', label: 'New Deal' },
           { key: 'P', label: 'Projects' },
@@ -1341,10 +1341,10 @@ export default function DashboardPage() {
           { key: '⌘K', label: 'Search' },
         ].map(({ key, label }) => (
           <span key={key} className="inline-flex items-center gap-2">
-            <kbd className="bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] text-xs px-1.5 py-0.5 rounded font-mono">
+            <kbd className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs px-1.5 py-0.5 rounded font-mono">
               {key}
             </kbd>
-            <span className="text-[#8891a8] text-xs">{label}</span>
+            <span className="text-[var(--text-muted)] text-xs">{label}</span>
           </span>
         ))}
       </div>
@@ -1358,12 +1358,12 @@ export default function DashboardPage() {
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-              <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
-                <Target className="w-4 h-4 text-[#00e07a]" />
+              <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
+                <Target className="w-4 h-4 text-[var(--accent-green)]" />
               </div>
               <h2 className="text-white font-bold tracking-tight text-base">Active Incentives</h2>
             </div>
-            <Link href="/dashboard/incentives" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
+            <Link href="/dashboard/incentives" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1377,7 +1377,7 @@ export default function DashboardPage() {
                 .filter((m) => !m.achieved && m.threshold > progress)
                 .sort((a, b) => a.threshold - b.threshold)[0];
               return (
-                <div key={incentive.id} className="bg-[#1d2028]/50 rounded-xl p-4">
+                <div key={incentive.id} className="bg-[var(--surface-card)]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <p className="text-white text-sm font-medium">{incentive.title}</p>
@@ -1385,19 +1385,19 @@ export default function DashboardPage() {
                         <span className="text-xs text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">Personal</span>
                       )}
                     </div>
-                    <p className="text-[#00e07a] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
+                    <p className="text-[var(--accent-green)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
                   </div>
-                  <div className="w-full bg-[#272b35] rounded-full h-1.5 mb-1.5">
+                  <div className="w-full bg-[var(--border)] rounded-full h-1.5 mb-1.5">
                     <div
                       className="h-1.5 rounded-full transition-all"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 100 ? 'linear-gradient(90deg,#00e07a,#00c4f0)' : 'linear-gradient(90deg,#00e07a,#00c4f0)',
+                        background: pct >= 100 ? 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))' : 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))',
                       }}
                     />
                   </div>
                   {nextMilestone && (
-                    <p className="text-[#8891a8] text-xs">
+                    <p className="text-[var(--text-muted)] text-xs">
                       Next: {nextMilestone.reward} at {formatIncentiveMetric(incentive.metric, nextMilestone.threshold)}
                     </p>
                   )}
@@ -1413,29 +1413,29 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
-            <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
-              <DollarSign className="w-4 h-4 text-[#00e07a]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
+              <DollarSign className="w-4 h-4 text-[var(--accent-green)]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">This Week&apos;s Pay</h2>
           </div>
           <div className="flex items-center gap-3">
             {thisWeekTotal > 0 && (
-              <span className="text-[#00e07a] font-bold">${thisWeekTotal.toLocaleString()}</span>
+              <span className="text-[var(--accent-green)] font-bold">${thisWeekTotal.toLocaleString()}</span>
             )}
-            <Link href="/dashboard/my-pay" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
+            <Link href="/dashboard/my-pay" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
               View All →
             </Link>
           </div>
         </div>
         <div className="divider-gradient-animated" />
         {thisWeekPayroll.length === 0 ? (
-          <div className="mx-6 my-6 border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
+          <div className="mx-6 my-6 border border-dashed border-[var(--border-subtle)] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
-                <DollarSign className="w-6 h-6 text-[#525c72] animate-pulse" />
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
+                <DollarSign className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
               <p className="text-white font-bold text-sm mb-1">No payments this week</p>
-              <p className="text-[#8891a8] text-xs mb-4">Payments will appear here once marked for payroll.</p>
+              <p className="text-[var(--text-muted)] text-xs mb-4">Payments will appear here once marked for payroll.</p>
               <Link
                 href="/dashboard/my-pay"
                 className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
@@ -1449,24 +1449,24 @@ export default function DashboardPage() {
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-              <tr className="border-b border-[#333849]">
-                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Customer</th>
-                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Stage</th>
-                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Amount</th>
-                <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Date</th>
+              <tr className="border-b border-[var(--border-subtle)]">
+                <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Customer</th>
+                <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Stage</th>
+                <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Amount</th>
+                <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Date</th>
               </tr>
             </thead>
             <tbody>
               {thisWeekPayroll.map((entry) => (
-                <tr key={entry.id} className="relative border-b border-[#333849]/50 even:bg-[#1d2028]/[0.15] hover:bg-[#00e07a]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00e07a] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                  <td className="px-6 py-3 text-[#c2c8d8]">{entry.customerName || '—'}</td>
+                <tr key={entry.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                  <td className="px-6 py-3 text-[var(--text-secondary)]">{entry.customerName || '—'}</td>
                   <td className="px-6 py-3">
-                    <span className="bg-[#272b35] text-[#c2c8d8] text-xs px-2 py-0.5 rounded font-medium">
+                    <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">
                       {entry.paymentStage}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-[#00e07a] font-semibold">${entry.amount.toLocaleString()}</td>
-                  <td className="px-6 py-3 text-[#8891a8] text-xs">{entry.date}</td>
+                  <td className="px-6 py-3 text-[var(--accent-green)] font-semibold">${entry.amount.toLocaleString()}</td>
+                  <td className="px-6 py-3 text-[var(--text-muted)] text-xs">{entry.date}</td>
                 </tr>
               ))}
             </tbody>
@@ -1480,24 +1480,24 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-            <div className="p-1.5 rounded-lg bg-[#00e07a]/15">
-              <FolderKanban className="w-4 h-4 text-[#00e07a]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
+              <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-[#00e07a] hover:text-[#00c4f0] text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
             View All →
           </Link>
         </div>
         <div className="divider-gradient-animated" />
         {myProjects.length === 0 ? (
-          <div className="mx-6 my-6 border border-dashed border-[#333849] rounded-2xl px-5 py-12 text-center">
+          <div className="mx-6 my-6 border border-dashed border-[var(--border-subtle)] rounded-2xl px-5 py-12 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-[#1d2028]/80 flex items-center justify-center mx-auto mb-3">
-                <FolderKanban className="w-6 h-6 text-[#525c72] animate-pulse" />
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
+                <FolderKanban className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
               <p className="text-white font-bold text-sm mb-1">No projects yet</p>
-              <p className="text-[#8891a8] text-xs mb-4">Submit your first deal to see it here</p>
+              <p className="text-[var(--text-muted)] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
                 className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
@@ -1530,20 +1530,20 @@ export default function DashboardPage() {
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-[#00e07a]/[0.03] transition-colors">
+                  <div className="px-5 py-3.5 hover:bg-[var(--accent-green)]/[0.03] transition-colors">
                     {/* Row 1: Customer + Phase + Date */}
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-[#00c4f0] transition-colors">{proj.customerName}</span>
+                        <span className="text-white font-medium text-sm truncate group-hover:text-[var(--accent-cyan)] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
-                      <span className="text-[#8891a8] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
+                      <span className="text-[var(--text-muted)] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
                     </div>
                     {/* Row 2: kW | Est Pay | Milestones */}
                     <div className="flex items-center gap-3 text-xs">
-                      <span className="text-[#8891a8]">{proj.kWSize} kW</span>
-                      <span className="text-[#525c72]">·</span>
-                      <span className="text-[#00e07a] font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[var(--text-muted)]">{proj.kWSize} kW</span>
+                      <span className="text-[var(--text-dim)]">·</span>
+                      <span className="text-[var(--accent-green)] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
                         <MilestoneDot label="M2" paid={proj.m2Paid} amount={m2DisplayAmount} />

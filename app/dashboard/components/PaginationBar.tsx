@@ -19,28 +19,28 @@ export interface PaginationBarProps {
 
 export function PaginationBar({ totalResults, startIdx, endIdx, currentPage, totalPages, rowsPerPage, onPageChange, onRowsPerPageChange }: PaginationBarProps) {
   return (
-    <div className="bg-[#161920] border-t border-[#333849] px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
-      <div className="flex items-center gap-2 text-sm text-[#c2c8d8]">
+    <div className="bg-[var(--surface)] border-t border-[var(--border-subtle)] px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
         <span>Rows per page:</span>
         <select value={rowsPerPage} onChange={(e) => { onRowsPerPageChange(Number(e.target.value)); onPageChange(1); }}
-          className="bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] rounded-lg px-2 py-1 text-xs focus:outline-none transition-all duration-200 input-focus-glow">
+          className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] rounded-lg px-2 py-1 text-xs focus:outline-none transition-all duration-200 input-focus-glow">
           {[10, 25, 50].map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
       </div>
-      <span className="text-[#8891a8] text-sm">
+      <span className="text-[var(--text-muted)] text-sm">
         {totalResults === 0 ? 'No results' : `Showing ${startIdx + 1}\u2013${endIdx} of ${totalResults}`}
       </span>
       <div className="flex items-center gap-1">
         <button onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1}
-          className="p-1.5 rounded-lg text-[#c2c8d8] hover:text-white hover:bg-[#1d2028] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
           <ChevronLeft className="w-4 h-4" />
         </button>
         {buildPageRange(currentPage, totalPages).map((page, idx) =>
           page === '...' ? (
-            <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-[#525c72] text-sm select-none">&hellip;</span>
+            <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-[var(--text-dim)] text-sm select-none">&hellip;</span>
           ) : (
             <button key={page} onClick={() => onPageChange(page)}
-              className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${page === currentPage ? 'text-white' : 'text-[#c2c8d8] hover:text-white hover:bg-[#1d2028]'}`}
+              className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${page === currentPage ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'}`}
               style={page === currentPage ? { backgroundColor: 'var(--brand)' } : {}}
               aria-label={`Page ${page}`} aria-current={page === currentPage ? 'page' : undefined}>
               {page}
@@ -48,7 +48,7 @@ export function PaginationBar({ totalResults, startIdx, endIdx, currentPage, tot
           )
         )}
         <button onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}
-          className="p-1.5 rounded-lg text-[#c2c8d8] hover:text-white hover:bg-[#1d2028] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

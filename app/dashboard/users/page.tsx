@@ -60,9 +60,9 @@ const ROLE_BADGE_CLS = {
   both:   'border',
 } as const;
 const ROLE_BADGE_STYLES = {
-  closer: { background: 'rgba(77,159,255,0.1)', color: '#4d9fff', borderColor: 'rgba(77,159,255,0.25)' },
+  closer: { background: 'rgba(77,159,255,0.1)', color: 'var(--accent-blue)', borderColor: 'rgba(77,159,255,0.25)' },
   setter: { background: 'rgba(180,125,255,0.1)', color: '#b47dff', borderColor: 'rgba(180,125,255,0.25)' },
-  both:   { background: 'rgba(0,196,240,0.1)', color: '#00c4f0', borderColor: 'rgba(0,196,240,0.25)' },
+  both:   { background: 'rgba(0,196,240,0.1)', color: 'var(--accent-cyan)', borderColor: 'rgba(0,196,240,0.25)' },
 } as const;
 const ROLE_BADGE_HOVER = {
   closer: 'hover:brightness-125',
@@ -125,7 +125,7 @@ function GradCard({ label, rawValue, formatter, gradient, borderColor, valueColo
   const animated = useCountUp(rawValue, 900, delay);
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: gradient, border: `1px solid ${borderColor}` }}>
-      <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+      <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
       <span className="text-2xl font-bold" style={{ fontFamily: "'DM Serif Display', serif", color: valueColor, textShadow: `0 0 20px ${valueColor}50` }}>
         {formatter(animated)}
       </span>
@@ -699,12 +699,12 @@ function UsersPageInner() {
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <Users className="w-5 h-5 text-[#00e07a]" />
+              <Users className="w-5 h-5 text-[var(--accent-green)]" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Users</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Users</h1>
           </div>
         </div>
-        <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">Reps, sub-dealers, project managers, and admins</p>
+        <p className="text-[var(--text-secondary)] text-sm font-medium ml-12 tracking-wide">Reps, sub-dealers, project managers, and admins</p>
       </div>
 
       {/* Admin: add rep button */}
@@ -713,7 +713,7 @@ function UsersPageInner() {
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -722,7 +722,7 @@ function UsersPageInner() {
 
       {/* Admin: pending invitations panel (only shown when there are any) */}
       {canManageReps && currentRole === 'admin' && pendingInvitations.length > 0 && (
-        <div className="card-surface rounded-2xl p-5 mb-6" style={{ background: '#1d2028', border: '1px solid #333849' }}>
+        <div className="card-surface rounded-2xl p-5 mb-6" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,176,32,0.15)' }}>
               <Mail className="w-4 h-4 text-amber-400" />
@@ -732,7 +732,7 @@ function UsersPageInner() {
               {pendingInvitations.length}
             </span>
           </div>
-          <p className="text-xs mb-4" style={{ color: '#8891a8' }}>
+          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
             These users have been invited but haven&apos;t completed sign-up yet.
           </p>
           <div className="space-y-2">
@@ -740,13 +740,13 @@ function UsersPageInner() {
               <div
                 key={inv.id}
                 className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg"
-                style={{ background: '#0f1117', border: '1px solid #272b35' }}
+                style={{ background: '#0f1117', border: '1px solid var(--border)' }}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Clock className="w-4 h-4 text-amber-400/60 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-white font-medium truncate">{inv.emailAddress}</p>
-                    <p className="text-[11px]" style={{ color: '#525c72' }}>
+                    <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
                       Invited {new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
@@ -775,8 +775,8 @@ function UsersPageInner() {
               onClick={() => setRoleFilter(rf.value)}
               className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all border ${
                 active
-                  ? 'border-[#00e07a] text-[#00e07a] bg-[#00e07a]/10'
-                  : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:text-[#c2c8d8]'
+                  ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'
+                  : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'
               }`}
             >
               {rf.label}
@@ -808,40 +808,40 @@ function UsersPageInner() {
           : pool;
 
         const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
-          rep:              { label: 'Rep',              color: '#00e07a', bg: 'rgba(0,224,122,0.12)' },
+          rep:              { label: 'Rep',              color: 'var(--accent-green)', bg: 'rgba(0,224,122,0.12)' },
           'sub-dealer':     { label: 'Sub-Dealer',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
-          project_manager:  { label: 'Project Manager',  color: '#00c4f0', bg: 'rgba(0,196,240,0.12)' },
-          admin:            { label: 'Admin',            color: '#ffb020', bg: 'rgba(255,176,32,0.12)' },
+          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan)', bg: 'rgba(0,196,240,0.12)' },
+          admin:            { label: 'Admin',            color: 'var(--accent-amber)', bg: 'rgba(255,176,32,0.12)' },
         };
 
         return (
           <div>
             {/* Search bar */}
             <div className="relative mb-4 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#525c72] pointer-events-none" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] pointer-events-none" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${roleFilter === 'all' ? 'all users' : roleBadge[roleFilter]?.label.toLowerCase() + 's'}…`}
-                className="w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 placeholder-[#525c72]"
+                className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 placeholder-[var(--text-dim)]"
               />
             </div>
 
-            <div className="mb-3 text-xs" style={{ color: '#8891a8' }}>
+            <div className="mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
               {filtered.length} {filtered.length === 1 ? 'user' : 'users'}
             </div>
 
             {filtered.length === 0 ? (
-              <div className="card-surface rounded-2xl p-8 text-center" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
-                <p className="text-sm" style={{ color: '#8891a8' }}>
+              <div className="card-surface rounded-2xl p-8 text-center" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   {q ? 'No users match your search.' : 'No users in this category yet.'}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {filtered.map((u, i) => {
-                  const badge = roleBadge[u.role] ?? { label: u.role, color: '#8891a8', bg: 'rgba(136,145,168,0.12)' };
+                  const badge = roleBadge[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'rgba(136,145,168,0.12)' };
                   const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
                   // Cascade entrance animation.
                   //
@@ -865,8 +865,8 @@ function UsersPageInner() {
                       href={`/dashboard/users/${u.id}`}
                       className={`card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98] ${shouldAnimate ? 'animate-slide-in-scale' : ''}`}
                       style={{
-                        background: '#161920',
-                        border: '1px solid #272b35',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
                         borderLeft: `3px solid ${badge.color}`,
                         ...(shouldAnimate ? { animationDelay: `${delayMs}ms` } : {}),
                       }}
@@ -876,7 +876,7 @@ function UsersPageInner() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{u.firstName} {u.lastName}</p>
-                        {u.email && <p className="text-xs truncate" style={{ color: '#8891a8' }}>{u.email}</p>}
+                        {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>}
                       </div>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0" style={{ background: badge.bg, color: badge.color }}>
                         {badge.label}
@@ -889,23 +889,23 @@ function UsersPageInner() {
 
             {/* ── Inactive reps expander (all-users view only) ────────── */}
             {canManageReps && roleFilter === 'all' && inactiveReps.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-dashed border-[#272b35]">
+              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setShowInactive((v) => !v)}
-                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[#1d2028]/60"
-                  style={{ background: '#161920', border: '1px solid #272b35' }}
+                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                 >
                   <div className="flex items-center gap-3">
                     <ChevronRight
                       className={`w-4 h-4 transition-transform ${showInactive ? 'rotate-90' : ''}`}
-                      style={{ color: '#525c72' }}
+                      style={{ color: 'var(--text-dim)' }}
                     />
-                    <span className="text-sm font-semibold" style={{ color: '#c2c8d8' }}>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                       Show inactive reps ({inactiveReps.length})
                     </span>
                   </div>
-                  <span className="text-[11px]" style={{ color: '#525c72' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
                     Deactivated reps — click to {showInactive ? 'hide' : 'view'}
                   </span>
                 </button>
@@ -915,7 +915,7 @@ function UsersPageInner() {
                       <div
                         key={rep.id}
                         className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                        style={{ background: '#161920', border: '1px solid #272b35', opacity: 0.7 }}
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
                       >
                         <Link
                           href={`/dashboard/users/${rep.id}`}
@@ -923,18 +923,18 @@ function UsersPageInner() {
                         >
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ background: '#272b35', color: '#8891a8' }}
+                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                           >
                             {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
                           </div>
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
+                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
                               {rep.name}
-                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: '#525c72' }}>
+                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
                                 (inactive)
                               </span>
                             </div>
-                            <div className="text-[11px]" style={{ color: '#525c72' }}>
+                            <div className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
                               {ROLE_LABELS[rep.repType]}
                             </div>
                           </div>
@@ -953,7 +953,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+                          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
                         >
                           {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -966,23 +966,23 @@ function UsersPageInner() {
 
             {/* ── Inactive sub-dealers expander ───────────────────────── */}
             {canManageReps && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-dashed border-[#272b35]">
+              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setShowInactiveSubDealers((v) => !v)}
-                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[#1d2028]/60"
-                  style={{ background: '#161920', border: '1px solid #272b35' }}
+                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                 >
                   <div className="flex items-center gap-3">
                     <ChevronRight
                       className={`w-4 h-4 transition-transform ${showInactiveSubDealers ? 'rotate-90' : ''}`}
-                      style={{ color: '#525c72' }}
+                      style={{ color: 'var(--text-dim)' }}
                     />
-                    <span className="text-sm font-semibold" style={{ color: '#c2c8d8' }}>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                       Show inactive sub-dealers ({inactiveSubDealers.length})
                     </span>
                   </div>
-                  <span className="text-[11px]" style={{ color: '#525c72' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
                     Deactivated sub-dealers — click to {showInactiveSubDealers ? 'hide' : 'view'}
                   </span>
                 </button>
@@ -992,7 +992,7 @@ function UsersPageInner() {
                       <div
                         key={sd.id}
                         className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                        style={{ background: '#161920', border: '1px solid #272b35', opacity: 0.7 }}
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
                       >
                         <Link
                           href={`/dashboard/users/${sd.id}`}
@@ -1000,18 +1000,18 @@ function UsersPageInner() {
                         >
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ background: '#272b35', color: '#8891a8' }}
+                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                           >
                             {sd.firstName[0] ?? ''}{sd.lastName[0] ?? ''}
                           </div>
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
+                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
                               {sd.firstName} {sd.lastName}
-                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: '#525c72' }}>
+                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
                                 (inactive)
                               </span>
                             </div>
-                            {sd.email && <div className="text-[11px] truncate" style={{ color: '#525c72' }}>{sd.email}</div>}
+                            {sd.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{sd.email}</div>}
                           </div>
                         </Link>
                         <button
@@ -1112,7 +1112,7 @@ function UsersPageInner() {
           formatter={(v) => String(Math.round(v))}
           gradient="linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))"
           borderColor="rgba(77,159,255,0.3)"
-          valueColor="#4d9fff"
+          valueColor="var(--accent-blue)"
           delay={0}
         />
         <GradCard
@@ -1121,7 +1121,7 @@ function UsersPageInner() {
           formatter={(v) => String(Math.round(v))}
           gradient="linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))"
           borderColor="rgba(0,196,240,0.3)"
-          valueColor="#00c4f0"
+          valueColor="var(--accent-cyan)"
           delay={80}
         />
         <GradCard
@@ -1130,7 +1130,7 @@ function UsersPageInner() {
           formatter={formatCompactKW}
           gradient="linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))"
           borderColor="rgba(255,176,32,0.3)"
-          valueColor="#ffb020"
+          valueColor="var(--accent-amber)"
           delay={160}
         />
         {!isPM && (
@@ -1140,22 +1140,22 @@ function UsersPageInner() {
             formatter={(v) => '$' + Math.round(v).toLocaleString()}
             gradient="linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))"
             borderColor="rgba(0,224,122,0.3)"
-            valueColor="#00e07a"
+            valueColor="var(--accent-green)"
             delay={240}
           />
         )}
       </div>
 
       {/* ── Role filter tabs ──────────────────────────────────────────────── */}
-      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#161920', border: '1px solid #272b35' }}>
-        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: '#00e07a' }} />}
+      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: 'var(--accent-green)' }} />}
         {FILTER_TABS.map((t, i) => (
           <button
             key={t.value}
             ref={(el) => { filterTabRefs.current[i] = el; }}
             onClick={() => setFilterTab(t.value)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97]`}
-            style={{ color: filterTab === t.value ? '#000' : '#8891a8' }}
+            style={{ color: filterTab === t.value ? '#000' : 'var(--text-muted)' }}
           >
             {t.label}
           </button>
@@ -1163,7 +1163,7 @@ function UsersPageInner() {
       </div>
 
       <div className="relative max-w-xs mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#525c72' }} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-dim)' }} />
         <input
           ref={searchRef}
           type="text"
@@ -1172,14 +1172,14 @@ function UsersPageInner() {
           onChange={(e) => setSearch(e.target.value)}
           onFocus={() => setSearchFocused(true)}
           onBlur={() => setSearchFocused(false)}
-          className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500"
-          style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+          className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500"
+          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
         />
         {/* Clear button — shown when there is a search query */}
         {search ? (
           <button
             onClick={() => setSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#c2c8d8] hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-white transition-colors"
             aria-label="Clear search input"
           >
             <X className="w-4 h-4" />
@@ -1188,7 +1188,7 @@ function UsersPageInner() {
           /* '/' shortcut hint — shown when input is empty and not focused */
           !searchFocused && (
             <kbd
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-[#272b35] bg-[#272b35]/60 text-[#c2c8d8] font-mono text-[11px] leading-none select-none"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded border border-[var(--border)] bg-[var(--border)]/60 text-[var(--text-secondary)] font-mono text-[11px] leading-none select-none"
               aria-hidden="true"
             >
               /
@@ -1197,7 +1197,7 @@ function UsersPageInner() {
         )}
       </div>
       {debouncedSearch && (
-        <span className="text-xs text-[#8891a8] bg-[#1d2028] px-2 py-0.5 rounded-full mb-4 inline-block">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full mb-4 inline-block">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
       )}
 
       {/* ── Compare Reps ──────────────────────────────────────────────────── */}
@@ -1205,19 +1205,19 @@ function UsersPageInner() {
         <div className="mb-6">
           <button
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-[#00e07a] text-black' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white border border-[#272b35]'}`}
+            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-[var(--accent-green)] text-black' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)]'}`}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Click to exit` : 'Compare Reps'}
           </button>
           {compareMode && compareIds.size === 0 && (
-            <p className="text-xs text-[#8891a8] mt-2">Select 2-3 reps below to compare side by side.</p>
+            <p className="text-xs text-[var(--text-muted)] mt-2">Select 2-3 reps below to compare side by side.</p>
           )}
         </div>
       )}
 
       {/* ── Sort Controls ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-xs text-[#525c72] font-medium">Sort:</span>
+        <span className="text-xs text-[var(--text-dim)] font-medium">Sort:</span>
         {([['paid','Top Paid'],['active','Most Active'],['deals','Most Deals'],['kw','Most kW'],['name','Name']] as [SortBy, string][]).map(([val, label]) => (
           <button
             key={val}
@@ -1230,7 +1230,7 @@ function UsersPageInner() {
               }
             }}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              sortBy === val ? 'bg-[#00e07a]/15 text-[#00e07a] border border-[#00e07a]/30' : 'bg-[#161920] text-[#8891a8] border border-[#272b35] hover:text-white'
+              sortBy === val ? 'bg-[var(--accent-green)]/15 text-[var(--accent-green)] border border-[var(--accent-green)]/30' : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] hover:text-white'
             }`}
           >
             {label}
@@ -1254,12 +1254,12 @@ function UsersPageInner() {
             <div className="flex flex-col gap-3 mb-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold text-base">Rep Comparison</h3>
-                {ranges.prev && <span className="text-xs text-[#8891a8]">vs {ranges.prev.label}</span>}
+                {ranges.prev && <span className="text-xs text-[var(--text-muted)]">vs {ranges.prev.label}</span>}
               </div>
               <div className="flex flex-wrap gap-1">
                 {PERIOD_OPTIONS.map((opt) => (
                   <button key={opt.value} onClick={() => setComparePeriod(opt.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-[#00e07a] text-black' : 'bg-[#1d2028] text-[#c2c8d8] hover:text-white'}`}>
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-[var(--accent-green)] text-black' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white'}`}>
                     {opt.label}
                   </button>
                 ))}
@@ -1267,10 +1267,10 @@ function UsersPageInner() {
               {comparePeriod === 'custom' && (
                 <div className="flex items-center gap-2">
                   <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-                    className="bg-[#1d2028] border border-[#272b35] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]" />
-                  <span className="text-[#8891a8] text-xs">to</span>
+                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />
+                  <span className="text-[var(--text-muted)] text-xs">to</span>
                   <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-                    className="bg-[#1d2028] border border-[#272b35] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]" />
+                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />
                 </div>
               )}
             </div>
@@ -1297,7 +1297,7 @@ function UsersPageInner() {
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
 
                 return (
-                  <div key={rep.id} className="bg-[#1d2028]/40 rounded-xl p-4 text-center">
+                  <div key={rep.id} className="bg-[var(--surface-card)]/40 rounded-xl p-4 text-center">
                     <div className="flex justify-center mb-2">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 p-[2px]">
                         <div className="w-full h-full rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: 'var(--brand-dark)' }}>
@@ -1306,23 +1306,23 @@ function UsersPageInner() {
                       </div>
                     </div>
                     <p className="text-white font-semibold text-sm mb-1">{rep.name}</p>
-                    <p className="text-[#8891a8] text-[10px] mb-3">{ranges.current.label}</p>
+                    <p className="text-[var(--text-muted)] text-[10px] mb-3">{ranges.current.label}</p>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-[#c2c8d8]">Deals Closed</span>
+                        <span className="text-[var(--text-secondary)]">Deals Closed</span>
                         <span className="text-white font-semibold flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
-                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[#00e07a]' : 'text-red-400'}`}>
+                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>
                               {deltaDeals > 0 ? '+' : ''}{deltaDeals}
                             </span>
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between"><span className="text-[#c2c8d8]">kW Sold</span><span className="text-white font-semibold">{formatCompactKW(kwSold)}</span></div>
-                      <div className="flex justify-between"><span className="text-[#c2c8d8]">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
-                      <div className="flex justify-between"><span className="text-[#c2c8d8]">Earned</span><span className="text-[#00e07a] font-semibold">${commissionEarned.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-[#c2c8d8]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[#c2c8d8]'}`}>{cancelRate.toFixed(0)}%</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">kW Sold</span><span className="text-white font-semibold">{formatCompactKW(kwSold)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Earned</span><span className="text-[var(--accent-green)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[var(--text-secondary)]'}`}>{cancelRate.toFixed(0)}%</span></div>
                     </div>
                   </div>
                 );
@@ -1358,17 +1358,17 @@ function UsersPageInner() {
                     checked={compareIds.has(rep.id)}
                     onChange={() => toggleCompareId(rep.id)}
                     disabled={!compareIds.has(rep.id) && compareIds.size >= 3}
-                    className="w-4 h-4 accent-[#00e07a] rounded cursor-pointer"
+                    className="w-4 h-4 accent-[var(--accent-green)] rounded cursor-pointer"
                   />
                 </div>
               )}
             <Link href={`/dashboard/users/${rep.id}`}>
               <div
-                className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[#00e07a]/40' : ''}`}
+                className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[var(--accent-green)]/40' : ''}`}
                 style={{
-                  background: '#161920',
-                  border: '1px solid #272b35',
-                  borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? '#272b35'}`,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderLeft: `3px solid ${ROLE_BADGE_STYLES[rep.repType]?.color ?? 'var(--border)'}`,
                   // Inline continuous stagger — same pattern as the non-rep
                   // cards grid (40ms per card, soft cap at 600ms). Fixes the
                   // "cards 5+ all pop at once" tail issue the old stagger-N
@@ -1392,7 +1392,7 @@ function UsersPageInner() {
                           id={`repRingGrad-${rep.id}`}
                           x1="0%" y1="0%" x2="100%" y2="0%"
                         >
-                          <stop offset="0%"   stopColor="#00c4f0" />
+                          <stop offset="0%"   stopColor="var(--accent-cyan)" />
                           <stop offset="100%" stopColor="#60a5fa" />
                         </linearGradient>
                       </defs>
@@ -1419,10 +1419,10 @@ function UsersPageInner() {
                     </svg>
 
                     {/* Avatar circle — inset so it sits inside the ring */}
-                    <div className="absolute inset-[3px] rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #4d9fff, #b47dff)' }}>
+                    <div className="absolute inset-[3px] rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, var(--accent-blue), #b47dff)' }}>
                       <div
                         className="w-full h-full rounded-full flex items-center justify-center text-white text-sm font-bold"
-                        style={{ backgroundColor: '#161920' }}
+                        style={{ backgroundColor: 'var(--surface)' }}
                       >
                         {initials}
                       </div>
@@ -1441,7 +1441,7 @@ function UsersPageInner() {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-semibold group-hover:text-[#00e07a] transition-colors">
+                      <p className="text-white font-semibold group-hover:text-[var(--accent-green)] transition-colors">
                         {rep.name}
                       </p>
                       {canManageReps ? (
@@ -1460,12 +1460,12 @@ function UsersPageInner() {
                       )}
                       {/* Active deals badge */}
                       {(activeDealsByRep.get(rep.id) ?? 0) > 0 && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#00e07a]/10 text-[#00e07a] border border-[#00e07a]/20">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--accent-green)]/10 text-[var(--accent-green)] border border-[var(--accent-green)]/20">
                           {activeDealsByRep.get(rep.id)} active
                         </span>
                       )}
                     </div>
-                    <p className="text-[#8891a8] text-xs">{rep.email}</p>
+                    <p className="text-[var(--text-muted)] text-xs">{rep.email}</p>
                   </div>
                 </div>
 
@@ -1478,9 +1478,9 @@ function UsersPageInner() {
                     style={{ transitionDelay: '0ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#f0f2f7', fontFamily: "'DM Serif Display', serif", background: 'rgba(240,242,247,0.05)' }}>{repProjects.length}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif", background: 'rgba(240,242,247,0.05)' }}>{repProjects.length}</span>
                     </p>
-                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>Total Deals</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Total Deals</p>
                   </div>
 
                   {/* Active */}
@@ -1489,9 +1489,9 @@ function UsersPageInner() {
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#00c4f0', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeCount}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeCount}</span>
                     </p>
-                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>Active</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Active</p>
                   </div>
 
                   {/* kW */}
@@ -1500,9 +1500,9 @@ function UsersPageInner() {
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: '#ffb020', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber)', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
                     </p>
-                    <p className="text-xs mt-1" style={{ color: '#525c72' }}>Total kW</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Total kW</p>
                   </div>
 
                   {/* Last Deal */}
@@ -1511,7 +1511,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '190ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="text-[#c2c8d8] bg-[#8891a8]/10 rounded-lg px-2 py-0.5 text-xs">
+                      <span className="text-[var(--text-secondary)] bg-[var(--text-muted)]/10 rounded-lg px-2 py-0.5 text-xs">
                         {(() => {
                           if (repProjects.length === 0) return 'No deals yet';
                           const withDate = repProjects.filter(p => p.soldDate);
@@ -1523,7 +1523,7 @@ function UsersPageInner() {
                         })()}
                       </span>
                     </p>
-                    <p className="text-[#8891a8] text-xs mt-1">Last Deal</p>
+                    <p className="text-[var(--text-muted)] text-xs mt-1">Last Deal</p>
                   </div>
 
                   {/* Paid */}
@@ -1533,18 +1533,18 @@ function UsersPageInner() {
                       style={{ transitionDelay: '225ms' }}
                     >
                       <p className="font-semibold">
-                        <span className="rounded-lg px-2 py-0.5" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
+                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
                       </p>
-                      <p className="text-xs mt-1" style={{ color: '#525c72' }}>Paid Out</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Paid Out</p>
                     </div>
                   )}
 
-                  <ChevronRight className="hidden md:block w-4 h-4 text-[#525c72] group-hover:text-[#c2c8d8] transition-colors" />
+                  <ChevronRight className="hidden md:block w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors" />
                   {canManageReps && (
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } setConfirmAction(null); } }); }}
                       title="Deactivate rep"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[#525c72] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1558,24 +1558,24 @@ function UsersPageInner() {
 
         {filtered.length === 0 && (debouncedSearch || filterTab !== 'all') && (
           <div className="flex justify-center py-4">
-            <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3 text-center">
+            <div className="animate-fade-in w-60 border border-dashed border-[var(--border-subtle)] rounded-2xl px-6 py-8 flex flex-col items-center gap-3 text-center">
               {/* Illustration — magnifying glass with question mark */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Outer lens ring */}
-                <circle cx="34" cy="34" r="20" stroke="#00c4f0" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
+                <circle cx="34" cy="34" r="20" stroke="var(--accent-cyan)" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
                 {/* Inner lens ring */}
-                <circle cx="34" cy="34" r="13" stroke="#00c4f0" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
+                <circle cx="34" cy="34" r="13" stroke="var(--accent-cyan)" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
                 {/* Handle */}
-                <line x1="49" y1="49" x2="70" y2="70" stroke="#00c4f0" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
+                <line x1="49" y1="49" x2="70" y2="70" stroke="var(--accent-cyan)" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
                 {/* Question mark stem */}
                 <path d="M31 38 Q31 35 34 35 Q37 35 37 32 Q37 29 34 29 Q31 29 31 32" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" strokeOpacity="0.7"/>
                 {/* Question mark dot */}
                 <circle cx="34" cy="40" r="1.2" fill="#94a3b8" fillOpacity="0.7"/>
               </svg>
-              <p className="text-[#c2c8d8] text-sm font-bold leading-snug">No reps match</p>
-              <p className="text-[#8891a8] text-xs leading-relaxed">
+              <p className="text-[var(--text-secondary)] text-sm font-bold leading-snug">No reps match</p>
+              <p className="text-[var(--text-muted)] text-xs leading-relaxed">
                 {debouncedSearch
-                  ? <>No results for &ldquo;<span className="text-[#c2c8d8]">{debouncedSearch}</span>&rdquo;. Try adjusting your query.</>
+                  ? <>No results for &ldquo;<span className="text-[var(--text-secondary)]">{debouncedSearch}</span>&rdquo;. Try adjusting your query.</>
                   : <>No reps match the selected filter. Try a different role.</>}
               </p>
               <button
@@ -1592,23 +1592,23 @@ function UsersPageInner() {
         {/* ── Inactive reps expander ──────────────────────────────────── */}
         {/* Admins only — non-admins never see deactivated users at all.  */}
         {canManageReps && inactiveReps.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-dashed border-[#272b35]">
+          <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
             <button
               type="button"
               onClick={() => setShowInactive((v) => !v)}
-              className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[#1d2028]/60"
-              style={{ background: '#161920', border: '1px solid #272b35' }}
+              className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-3">
                 <ChevronRight
                   className={`w-4 h-4 transition-transform ${showInactive ? 'rotate-90' : ''}`}
-                  style={{ color: '#525c72' }}
+                  style={{ color: 'var(--text-dim)' }}
                 />
-                <span className="text-sm font-semibold" style={{ color: '#c2c8d8' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                   Show inactive ({inactiveReps.length})
                 </span>
               </div>
-              <span className="text-[11px]" style={{ color: '#525c72' }}>
+              <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
                 Deactivated reps — click to {showInactive ? 'hide' : 'view'}
               </span>
             </button>
@@ -1618,7 +1618,7 @@ function UsersPageInner() {
                   <div
                     key={rep.id}
                     className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: '#161920', border: '1px solid #272b35', opacity: 0.7 }}
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
                   >
                     <Link
                       href={`/dashboard/users/${rep.id}`}
@@ -1626,18 +1626,18 @@ function UsersPageInner() {
                     >
                       <div
                         className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: '#272b35', color: '#8891a8' }}
+                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                       >
                         {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: '#c2c8d8' }}>
+                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
                           {rep.name}
-                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: '#525c72' }}>
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
                             (inactive)
                           </span>
                         </div>
-                        <div className="text-[11px]" style={{ color: '#525c72' }}>
+                        <div className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
                           {ROLE_LABELS[rep.repType]}
                         </div>
                       </div>
@@ -1656,7 +1656,7 @@ function UsersPageInner() {
                         }
                       }}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'rgba(0,224,122,0.12)', color: '#00e07a', border: '1px solid rgba(0,224,122,0.3)' }}
+                      style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
                     >
                       {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                     </button>
@@ -1676,17 +1676,17 @@ function UsersPageInner() {
           role="dialog"
           aria-modal="true"
         >
-          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" style={{ background: '#1d2028', border: '1px solid #333849' }}>
+          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-white font-bold text-lg">Add New User</h3>
-              <button onClick={resetAddModal} className="text-[#8891a8] hover:text-white transition-colors">
+              <button onClick={resetAddModal} className="text-[var(--text-muted)] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Account role selector */}
             <div className="mb-4">
-              <label className="text-xs font-medium mb-2 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Account type</label>
+              <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Account type</label>
               <div className="grid grid-cols-2 gap-2">
                 {(['rep', 'sub-dealer', 'project_manager', 'admin'] as const).map((r) => (
                   <button
@@ -1695,8 +1695,8 @@ function UsersPageInner() {
                     onClick={() => setNewUserRole(r)}
                     className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
                       newUserRole === r
-                        ? 'border-[#00e07a] text-[#00e07a] bg-[#00e07a]/10'
-                        : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:text-[#c2c8d8]'
+                        ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'
+                        : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'
                     }`}
                   >
                     {ROLE_LABELS_BY_ROLE[r]}
@@ -1704,7 +1704,7 @@ function UsersPageInner() {
                 ))}
               </div>
               {(newUserRole === 'admin' || newUserRole === 'project_manager') && (
-                <p className="text-[11px] mt-2" style={{ color: '#8891a8' }}>
+                <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
                   {ROLE_LABELS_BY_ROLE[newUserRole]} accounts are always invited by email — no dormant creation.
                 </p>
               )}
@@ -1713,49 +1713,49 @@ function UsersPageInner() {
             {/* First Name + Last Name */}
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>First Name</label>
+                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>First Name</label>
                 <input
                   type="text"
                   placeholder="First name"
                   value={newFirstName}
                   onChange={(e) => setNewFirstName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Last Name</label>
+                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Last Name</label>
                 <input
                   type="text"
                   placeholder="Last name"
                   value={newLastName}
                   onChange={(e) => setNewLastName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                 />
               </div>
             </div>
 
             {/* Email */}
             <div className="mb-3">
-              <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Email</label>
+              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Email</label>
               <input
                 type="email"
                 placeholder="rep@kiloenergy.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
 
             {/* Phone */}
             <div className="mb-4">
-              <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Phone</label>
+              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Phone</label>
               <input
                 type="tel"
                 placeholder="(555) 000-0000"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00e07a]/50 focus:border-[#00e07a] placeholder-slate-500" style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
 
@@ -1764,7 +1764,7 @@ function UsersPageInner() {
               <>
                 {/* Closer/Setter/Both selector */}
                 <div className="mb-4">
-                  <label className="text-xs font-medium mb-2 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Rep type</label>
+                  <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Rep type</label>
                   <div className="flex gap-2">
                     {(['closer', 'setter', 'both'] as const).map((rt) => (
                       <button
@@ -1774,7 +1774,7 @@ function UsersPageInner() {
                         className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border ${
                           newRepType === rt
                             ? `${ROLE_BADGE_CLS[rt]} bg-opacity-100`
-                            : 'border-[#272b35] text-[#8891a8] bg-[#1d2028] hover:border-[#272b35] hover:text-[#c2c8d8]'
+                            : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:border-[var(--border)] hover:text-[var(--text-secondary)]'
                         }`}
                         style={newRepType === rt ? ROLE_BADGE_STYLES[rt] : undefined}
                       >
@@ -1786,7 +1786,7 @@ function UsersPageInner() {
 
                 {/* Optional Trainer Assignment */}
                 <div className="mb-4">
-                  <label className="text-xs font-medium mb-1 block" style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}>Trainer (optional)</label>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Trainer (optional)</label>
                   <RepSelector
                     value={newTrainerId}
                     onChange={setNewTrainerId}
@@ -1809,11 +1809,11 @@ function UsersPageInner() {
                   checked={sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager'}
                   onChange={(e) => setSendInvite(e.target.checked)}
                   disabled={newUserRole === 'admin' || newUserRole === 'project_manager'}
-                  className="w-4 h-4 rounded border-[#333849] accent-[#00e07a] cursor-pointer disabled:cursor-not-allowed"
+                  className="w-4 h-4 rounded border-[var(--border-subtle)] accent-[var(--accent-green)] cursor-pointer disabled:cursor-not-allowed"
                 />
                 <div className="flex-1">
                   <div className="text-sm font-medium text-white">Send invitation email</div>
-                  <div className="text-[11px]" style={{ color: '#8891a8' }}>
+                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                     {(newUserRole === 'admin' || newUserRole === 'project_manager')
                       ? 'Required for this role — admin and project manager accounts must receive an invite to access the app.'
                       : 'Emails the rep a sign-up link. Leave off to add them without giving app access yet.'}
@@ -1827,7 +1827,7 @@ function UsersPageInner() {
               <button
                 onClick={resetAddModal}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors hover:brightness-125"
-                style={{ background: 'transparent', border: '1px solid #333849', color: '#c2c8d8' }}
+                style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
               >
                 Cancel
               </button>
@@ -1835,7 +1835,7 @@ function UsersPageInner() {
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
               >
                 {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>
@@ -1865,15 +1865,15 @@ function RepsSkeleton() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <div className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton" />
-          <div className="h-8 w-20 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
+          <div className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton" />
+          <div className="h-8 w-20 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
         </div>
-        <div className="h-3 w-44 bg-[#1d2028]/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
+        <div className="h-3 w-44 bg-[var(--surface-card)]/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
       </div>
 
       {/* Search bar placeholder */}
       <div className="relative max-w-xs mb-6">
-        <div className="h-9 w-full bg-[#1d2028] rounded-xl animate-skeleton" style={{ animationDelay: '75ms' }} />
+        <div className="h-9 w-full bg-[var(--surface-card)] rounded-xl animate-skeleton" style={{ animationDelay: '75ms' }} />
       </div>
 
       {/* 6 rep card skeletons */}
@@ -1888,16 +1888,16 @@ function RepsSkeleton() {
               {/* Avatar + name/email */}
               <div className="flex items-center gap-4">
                 <div
-                  className="w-12 h-12 rounded-full bg-[#1d2028] flex-shrink-0 animate-skeleton"
+                  className="w-12 h-12 rounded-full bg-[var(--surface-card)] flex-shrink-0 animate-skeleton"
                   style={{ animationDelay: `${delay}ms` }}
                 />
                 <div className="space-y-2">
                   <div
-                    className="h-4 w-32 bg-[#1d2028] rounded animate-skeleton"
+                    className="h-4 w-32 bg-[var(--surface-card)] rounded animate-skeleton"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                   <div
-                    className="h-3 w-44 bg-[#1d2028]/70 rounded animate-skeleton"
+                    className="h-3 w-44 bg-[var(--surface-card)]/70 rounded animate-skeleton"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                 </div>
@@ -1908,11 +1908,11 @@ function RepsSkeleton() {
                 {[...Array(4)].map((_, si) => (
                   <div key={si} className="text-center space-y-1.5">
                     <div
-                      className="h-4 w-10 bg-[#1d2028] rounded animate-skeleton mx-auto"
+                      className="h-4 w-10 bg-[var(--surface-card)] rounded animate-skeleton mx-auto"
                       style={{ animationDelay: `${delay + si * 30}ms` }}
                     />
                     <div
-                      className="h-3 w-14 bg-[#1d2028]/70 rounded animate-skeleton mx-auto"
+                      className="h-3 w-14 bg-[var(--surface-card)]/70 rounded animate-skeleton mx-auto"
                       style={{ animationDelay: `${delay + si * 30}ms` }}
                     />
                   </div>

@@ -159,14 +159,14 @@ function IncentiveCard({
     : null;
 
   const typeBadgeStyle: React.CSSProperties = incentive.type === 'company'
-    ? { background: 'rgba(0,180,216,0.15)', color: 'var(--m-accent2, #00b4d8)' }
-    : { background: 'rgba(0,229,160,0.15)', color: 'var(--m-accent, #00e5a0)' };
+    ? { background: 'rgba(0,180,216,0.15)', color: 'var(--m-accent2, var(--accent-cyan2))' }
+    : { background: 'rgba(0,229,160,0.15)', color: 'var(--m-accent, var(--accent-emerald))' };
 
   const barFill = expired
     ? 'var(--m-text-dim, #445577)'
     : pct >= 100
-      ? 'var(--m-accent, #00e5a0)'
-      : 'var(--m-accent2, #00b4d8)';
+      ? 'var(--m-accent, var(--accent-emerald))'
+      : 'var(--m-accent2, var(--accent-cyan2))';
 
   return (
     <MobileCard className={expired ? 'opacity-60' : ''}>
@@ -183,11 +183,11 @@ function IncentiveCard({
 
       {/* Target rep for personal incentives */}
       {targetRepName && (
-        <p className="text-base mb-1" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{targetRepName}</p>
+        <p className="text-base mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{targetRepName}</p>
       )}
 
       {/* Metric + Period */}
-      <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         {metricLabel(incentive.metric)} &middot; {getPeriodLabel(incentive)}
       </p>
 
@@ -197,11 +197,11 @@ function IncentiveCard({
           <p className="text-base font-medium text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
             {formatIncentiveMetric(incentive.metric, progress)}
           </p>
-          <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
             / {formatIncentiveMetric(incentive.metric, maxThreshold)}
           </p>
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, #1a2840)' }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${pct}%`, background: barFill }}
@@ -223,25 +223,25 @@ function IncentiveCard({
                       ? 'rgba(0,229,160,0.2)'
                       : reached
                         ? 'rgba(245,166,35,0.2)'
-                        : 'var(--m-border, #1a2840)',
+                        : 'var(--m-border, var(--border-mobile))',
                   }}
                 >
                   {ms.achieved ? (
-                    <Gift className="w-3 h-3" style={{ color: 'var(--m-accent, #00e5a0)' }} />
+                    <Gift className="w-3 h-3" style={{ color: 'var(--m-accent, var(--accent-emerald))' }} />
                   ) : reached ? (
                     <Target className="w-3 h-3" style={{ color: 'var(--m-warning, #f5a623)' }} />
                   ) : (
-                    <Target className="w-3 h-3" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
+                    <Target className="w-3 h-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
                   )}
                 </div>
                 <p
                   className={`text-base flex-1 ${ms.achieved ? 'line-through' : ''}`}
                   style={{
                     color: ms.achieved
-                      ? 'var(--m-accent, #00e5a0)'
+                      ? 'var(--m-accent, var(--accent-emerald))'
                       : reached
                         ? 'var(--m-warning, #f5a623)'
-                        : 'var(--m-text-muted, #8899aa)',
+                        : 'var(--m-text-muted, var(--text-mobile-muted))',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >

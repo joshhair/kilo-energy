@@ -303,7 +303,7 @@ function PayrollPageInner() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[var(--text-muted)] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }
@@ -477,9 +477,9 @@ function PayrollPageInner() {
     persistPayrollEntry(newEntry);
   };
 
-  const inputCls = 'w-full bg-[#1d2028] border border-[#272b35] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
+  const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
 
-  const labelCls = 'block text-xs font-medium text-[#c2c8d8] mb-1.5 uppercase tracking-wider';
+  const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
 
   if (!isHydrated) {
     return <PayrollSkeleton />;
@@ -501,40 +501,40 @@ function PayrollPageInner() {
       <div className="p-4 md:p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-[#00e07a]" />
+            <CreditCard className="w-5 h-5 text-[var(--accent-green)]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>My Payroll</h1>
-            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide">Your commission and bonus payment history</p>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>My Payroll</h1>
+            <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide">Your commission and bonus payment history</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <StatCard label="Draft" value={myDraft} color="text-[#c2c8d8]" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
+          <StatCard label="Draft" value={myDraft} color="text-[var(--text-secondary)]" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
           <StatCard label="Pending" value={myPending} color="text-yellow-400" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
-          <StatCard label="Paid" value={myPaid} color="text-[#00e07a]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
+          <StatCard label="Paid" value={myPaid} color="text-[var(--accent-green)]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
         </div>
         {/* Type and status filters */}
         <div className="flex flex-wrap gap-3 mb-4">
-          <div className="flex gap-1 rounded-xl p-1" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
+          <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
             {(['All', 'Deal', 'Bonus'] as const).map((t) => (
               <button key={t} onClick={() => setRepTypeFilter(t)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
-                style={repTypeFilter === t ? { background: '#2563eb', color: '#fff' } : { color: '#8891a8' }}>
+                style={repTypeFilter === t ? { background: '#2563eb', color: '#fff' } : { color: 'var(--text-muted)' }}>
                 {t}
               </button>
             ))}
           </div>
-          <div className="flex gap-1 rounded-xl p-1" style={{ background: '#1d2028', border: '1px solid #272b35' }}>
+          <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
             {(['All', 'Draft', 'Pending', 'Paid'] as const).map((s) => (
               <button key={s} onClick={() => setRepStatusFilter(s)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
                 style={repStatusFilter === s
-                  ? s === 'Paid' ? { background: 'rgba(0,224,122,0.2)', color: '#00e07a' }
-                    : s === 'Pending' ? { background: 'rgba(255,176,32,0.2)', color: '#ffb020' }
-                    : s === 'Draft' ? { background: 'rgba(77,159,255,0.2)', color: '#4d9fff' }
+                  ? s === 'Paid' ? { background: 'rgba(0,224,122,0.2)', color: 'var(--accent-green)' }
+                    : s === 'Pending' ? { background: 'rgba(255,176,32,0.2)', color: 'var(--accent-amber)' }
+                    : s === 'Draft' ? { background: 'rgba(77,159,255,0.2)', color: 'var(--accent-blue)' }
                     : { background: '#2563eb', color: '#fff' }
-                  : { color: '#8891a8' }}>
+                  : { color: 'var(--text-muted)' }}>
                 {s}
               </button>
             ))}
@@ -542,7 +542,7 @@ function PayrollPageInner() {
         </div>
         {myEntries.length === 0 ? (
           <div className="flex justify-center py-10">
-            <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+            <div className="animate-fade-in w-60 border border-dashed border-[var(--border-subtle)] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
               {/* Illustration — wallet with coins (no earnings yet) */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Wallet body */}
@@ -550,37 +550,37 @@ function PayrollPageInner() {
                 <rect x="10" y="30" width="52" height="4" fill="#334155"/>
                 {/* Coin pocket */}
                 <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                <circle cx="53" cy="42" r="4" fill="#1d2028" stroke="#00c4f0" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <circle cx="53" cy="42" r="4" fill="var(--surface-card)" stroke="var(--accent-cyan)" strokeWidth="1.5" strokeOpacity="0.5"/>
                 {/* Dashed lines — empty content indicator */}
                 <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                 <line x1="17" y1="46" x2="30" y2="46" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                 {/* Dollar sign badge */}
-                <circle cx="60" cy="22" r="9" fill="#1d2028" stroke="#00e07a" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <circle cx="60" cy="22" r="9" fill="var(--surface-card)" stroke="var(--accent-green)" strokeWidth="1.5" strokeOpacity="0.5"/>
                 <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
               </svg>
-              <p className="text-[#c2c8d8] text-sm font-semibold leading-snug text-center">No payroll entries yet</p>
-              <p className="text-[#8891a8] text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
+              <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug text-center">No payroll entries yet</p>
+              <p className="text-[var(--text-muted)] text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
             </div>
           </div>
         ) : myFiltered.length === 0 ? (
-          <p className="text-center text-sm py-10" style={{ color: '#8891a8' }}>No entries match the selected filters.</p>
+          <p className="text-center text-sm py-10" style={{ color: 'var(--text-muted)' }}>No entries match the selected filters.</p>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: '#1d2028', borderBottom: '1px solid #333849' }}>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Customer / Note</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Type</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Stage</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Amount</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Status</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>Date</th>
+                <tr style={{ background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Customer / Note</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Type</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Stage</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Amount</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Status</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Date</th>
                 </tr>
               </thead>
               <tbody>
                 {myFiltered.map((entry, i) => (
-                  <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid #272b35', background: i % 2 === 0 ? '#161920' : '#191c24' }}>
-                    <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>
+                  <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
+                    <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
                       {entry.type === 'Deal' ? entry.customerName : (entry.notes || '—')}
                     </td>
                     <td className="px-5 py-3">
@@ -589,23 +589,23 @@ function PayrollPageInner() {
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: '#1d2028', color: '#c2c8d8' }}>
+                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: 'var(--surface-card)', color: 'var(--text-secondary)' }}>
                         {entry.paymentStage}
                       </span>
                     </td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded`} style={
                         entry.status === 'Paid'
-                          ? { background: 'rgba(0,224,122,0.12)', color: '#00e07a' }
+                          ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)' }
                           : entry.status === 'Pending'
-                          ? { background: 'rgba(255,176,32,0.12)', color: '#ffb020' }
-                          : { background: '#1d2028', color: '#4d9fff' }
+                          ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)' }
+                          : { background: 'var(--surface-card)', color: 'var(--accent-blue)' }
                       }>
                         {entry.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-xs" style={{ color: '#525c72' }}><RelativeDate date={entry.date} /></td>
+                    <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-dim)' }}><RelativeDate date={entry.date} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -630,12 +630,12 @@ function PayrollPageInner() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-[#00e07a]" />
+            <CreditCard className="w-5 h-5 text-[var(--accent-green)]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Financials</h1>
-            <p className="text-[#c2c8d8] text-sm font-medium tracking-wide">Payroll and reimbursement management</p>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Financials</h1>
+            <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide">Payroll and reimbursement management</p>
           </div>
         </div>
         {pageView === 'payroll' && (
@@ -643,14 +643,14 @@ function PayrollPageInner() {
             <button
               onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }}
               className="font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] whitespace-nowrap transition-colors"
-              style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
             >
               + Add Payment
             </button>
             <button
               onClick={() => { bonusSubmitting.current = false; setShowBonusModal(true); }}
               className="font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] whitespace-nowrap transition-colors"
-              style={{ background: '#1d2028', border: '1px solid #333849', color: '#c2c8d8' }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
             >
               + Add Bonus
             </button>
@@ -658,7 +658,7 @@ function PayrollPageInner() {
               onClick={() => setShowPublishConfirm(true)}
               disabled={filteredByDateRep.filter((e) => e.status === 'Pending').length === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
             >
               Publish {typeTab} Payroll
             </button>
@@ -679,7 +679,7 @@ function PayrollPageInner() {
               }}
               disabled={filtered.length === 0}
               className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-              style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
               title="Download filtered payroll as CSV"
             >
               <Download className="w-3.5 h-3.5" /> CSV
@@ -688,7 +688,7 @@ function PayrollPageInner() {
               onClick={() => window.print()}
               disabled={filtered.length === 0}
               className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap print:hidden"
-              style={{ background: '#1d2028', border: '1px solid #333849', color: '#8891a8' }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
               title="Print payroll summary"
             >
               <Printer className="w-3.5 h-3.5" /> Print
@@ -698,7 +698,7 @@ function PayrollPageInner() {
       </div>
 
       {/* Top-level page view switcher */}
-      <div className="flex gap-1 mb-8 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
+      <div className="flex gap-1 mb-8 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
         {pageViewIndicator && <div className="tab-indicator" style={pageViewIndicator} />}
         {(['payroll', 'reimbursements'] as PageView[]).map((v, i) => (
           <button
@@ -707,8 +707,8 @@ function PayrollPageInner() {
             onClick={() => setPageView(v)}
             className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={pageView === v
-              ? { background: '#00e07a', color: '#000', fontWeight: 700 }
-              : { color: '#c2c8d8' }
+              ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+              : { color: 'var(--text-secondary)' }
             }
           >
             {v === 'payroll' ? (
@@ -729,12 +729,12 @@ function PayrollPageInner() {
         <div key={pageView} className="animate-tab-enter">
           {/* Date + status filter */}
           <div className="flex items-center gap-3 mb-5">
-            <Filter className="w-4 h-4 text-[#8891a8] flex-shrink-0" />
+            <Filter className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
             <select
               value={reimFilterStatus}
               onChange={(e) => setReimFilterStatus(e.target.value as 'All' | 'Pending' | 'Approved' | 'Denied')}
-              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
-              style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
             >
               <option value="Pending">Pending</option>
               <option value="Approved">Approved</option>
@@ -742,57 +742,57 @@ function PayrollPageInner() {
               <option value="All">All</option>
             </select>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-[#8891a8] whitespace-nowrap">From</label>
+              <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">From</label>
               <input
                 type="date"
                 value={reimFilterFrom}
                 onChange={(e) => setReimFilterFrom(e.target.value)}
-                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
-                style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-[#8891a8] whitespace-nowrap">To</label>
+              <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">To</label>
               <input
                 type="date"
                 value={reimFilterTo}
                 onChange={(e) => setReimFilterTo(e.target.value)}
-                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00e07a]"
-                style={{ background: '#1d2028', border: '1px solid #333849', color: '#f0f2f7' }}
+                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
             {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending') && (
               <button
                 onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); }}
-                className="text-xs text-[#8891a8] hover:text-white underline transition-colors"
+                className="text-xs text-[var(--text-muted)] hover:text-white underline transition-colors"
               >
                 Clear
               </button>
             )}
-            <span className="text-[#525c72] text-xs ml-auto">{filteredReimbursements.length} request{filteredReimbursements.length !== 1 ? 's' : ''}</span>
+            <span className="text-[var(--text-dim)] text-xs ml-auto">{filteredReimbursements.length} request{filteredReimbursements.length !== 1 ? 's' : ''}</span>
           </div>
 
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #272b35' }}>
+          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: '#1d2028', borderBottom: '1px solid #333849' }}>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Rep</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Description</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Amount</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Date</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Receipt</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Status</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: '#8891a8' }}>Actions</th>
+                <tr style={{ background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rep</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Description</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Amount</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Date</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Receipt</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Status</th>
+                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredReimbursements.map((r, i) => (
-                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid #272b35', background: i % 2 === 0 ? '#161920' : '#191c24' }}>
-                    <td className="px-5 py-3 font-medium" style={{ color: '#f0f2f7' }}>{r.repName}</td>
-                    <td className="px-5 py-3" style={{ color: '#c2c8d8' }}>{r.description}</td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: '#00e07a', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
-                    <td className="px-5 py-3 text-[#8891a8] text-xs">{formatDate(r.date)}</td>
-                    <td className="px-5 py-3 text-[#c2c8d8] text-xs">{r.receiptName || '—'}</td>
+                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
+                    <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{r.repName}</td>
+                    <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{r.description}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
+                    <td className="px-5 py-3 text-[var(--text-muted)] text-xs">{formatDate(r.date)}</td>
+                    <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                     <td className="px-5 py-3">
                       <ReimBadge status={r.status} />
                     </td>
@@ -810,7 +810,7 @@ function PayrollPageInner() {
                                 .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
                                 .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
                             }}
-                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[#00e07a] px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[var(--accent-green)] px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Check className="w-3 h-3" /> Approve
                           </button>
@@ -831,7 +831,7 @@ function PayrollPageInner() {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[#525c72] text-xs">—</span>
+                        <span className="text-[var(--text-dim)] text-xs">—</span>
                       )}
                     </td>
                   </tr>
@@ -840,9 +840,9 @@ function PayrollPageInner() {
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
-                        <Receipt className="w-10 h-10 text-[#525c72]" />
+                        <Receipt className="w-10 h-10 text-[var(--text-dim)]" />
                         <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected filters'}</p>
-                        <p className="text-xs text-[#8891a8]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the status or date filters to find what you need'}</p>
+                        <p className="text-xs text-[var(--text-muted)]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the status or date filters to find what you need'}</p>
                       </div>
                     </td>
                   </tr>
@@ -860,25 +860,25 @@ function PayrollPageInner() {
         {/* Draft */}
         <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#4d9fff', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
           <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft').length} entries</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#ffb020', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
           <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending').length} entries</p>
         </div>
         {/* Total */}
         <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: '#00e07a', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
           <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Paid').length} entries</p>
         </div>
       </div>
 
       {/* Status tabs */}
-      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
+      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
         {statusIndicator && <div className="tab-indicator" style={statusIndicator} />}
         {(['Draft', 'Pending', 'Paid'] as StatusTab[]).map((s, i) => (
           <button
@@ -887,8 +887,8 @@ function PayrollPageInner() {
             onClick={() => changeStatusTab(s)}
             className="relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={statusTab === s
-              ? { background: '#00e07a', color: '#000', fontWeight: 700 }
-              : { color: '#c2c8d8' }
+              ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+              : { color: 'var(--text-secondary)' }
             }
           >
             {s}
@@ -900,7 +900,7 @@ function PayrollPageInner() {
       </div>
 
       {/* Type tabs */}
-      <div className="flex gap-1 mb-6 rounded-xl p-1 w-fit tab-bar-container" style={{ background: '#1d2028', border: '1px solid #333849' }}>
+      <div className="flex gap-1 mb-6 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
         {typeIndicator && <div className="tab-indicator" style={typeIndicator} />}
         {(['Deal', 'Bonus'] as TypeTab[]).map((t, i) => (
           <button
@@ -909,8 +909,8 @@ function PayrollPageInner() {
             onClick={() => changeTypeTab(t)}
             className="relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
             style={typeTab === t
-              ? { background: '#00e07a', color: '#000', fontWeight: 700 }
-              : { color: '#8891a8' }
+              ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+              : { color: 'var(--text-muted)' }
             }
           >
             {t} Payments
@@ -919,7 +919,7 @@ function PayrollPageInner() {
       </div>
 
       {/* ── Filter bar — top of table card ── */}
-      <div style={{ background: '#161920', border: '1px solid #272b35', borderRadius: '14px 14px 0 0', padding: '14px 18px', borderBottom: 'none' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px 14px 0 0', padding: '14px 18px', borderBottom: 'none' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Rep filter */}
           <div style={{ flex: '0 0 180px' }}>
@@ -944,20 +944,20 @@ function PayrollPageInner() {
             <button
               onClick={selectAll}
               className="text-xs hover:text-white underline transition-colors"
-              style={{ color: '#8891a8' }}
+              style={{ color: 'var(--text-muted)' }}
             >
               {allPageSelected ? 'Deselect All on Page' : 'Select All on Page'}
             </button>
           )}
           {/* Entry count */}
-          <span style={{ color: '#525c72', fontSize: 12, fontFamily: "'DM Sans',sans-serif", marginLeft: 'auto' }}>{filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}</span>
+          <span style={{ color: 'var(--text-dim)', fontSize: 12, fontFamily: "'DM Sans',sans-serif", marginLeft: 'auto' }}>{filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}</span>
         </div>
         {/* Keyboard hints */}
         <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
           {([['Enter','Mark for Payroll'],['Shift+A','Select All on Page'],['Esc','Clear']] as [string,string][]).map(([k,d]) => (
             <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ background: '#1d2028', border: '1px solid #333849', borderRadius: 5, padding: '2px 6px', fontSize: 10, fontFamily: 'monospace', color: '#c2c8d8' }}>{k}</span>
-              <span style={{ color: '#525c72', fontSize: 11, fontFamily: "'DM Sans',sans-serif" }}>{d}</span>
+              <span style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '2px 6px', fontSize: 10, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{k}</span>
+              <span style={{ color: 'var(--text-dim)', fontSize: 11, fontFamily: "'DM Sans',sans-serif" }}>{d}</span>
             </div>
           ))}
         </div>
@@ -966,19 +966,19 @@ function PayrollPageInner() {
       {/* ── Data table ── */}
       <div key={statusTab} className="animate-tab-enter">
       {filtered.length === 0 ? (
-        <div style={{ background: '#161920', border: '1px solid #272b35', borderTop: 'none', borderRadius: '0 0 14px 14px', padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 14px 14px', padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#f0f2f7', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No {statusTab.toLowerCase()} {typeTab.toLowerCase()} payments</p>
-            <p style={{ color: '#525c72', fontSize: 12 }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No {statusTab.toLowerCase()} {typeTab.toLowerCase()} payments</p>
+            <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>
               {statusTab === 'Draft' ? (typeTab === 'Deal' ? 'Draft entries are auto-created when projects hit milestones' : 'Create a bonus entry for any rep') : statusTab === 'Pending' ? 'Select Draft entries and mark them for payroll' : 'Publish pending payroll to move entries here'}
             </p>
             {statusTab === 'Draft' && typeTab === 'Deal' && (
-              <button onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
+              <button onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}>
                 <ArrowRight className="w-3.5 h-3.5" /> Add Payment
               </button>
             )}
             {statusTab === 'Draft' && typeTab === 'Bonus' && (
-              <button onClick={() => setShowBonusModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #00e07a, #00c4f0)', color: '#000' }}>
+              <button onClick={() => setShowBonusModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}>
                 Add Bonus
               </button>
             )}
@@ -986,47 +986,47 @@ function PayrollPageInner() {
         </div>
       ) : (
         <>
-        <div style={{ background: '#161920', border: '1px solid #272b35', borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 {statusTab === 'Draft' && (
-                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const, width: 40 }}>
-                    <input type="checkbox" checked={allPageSelected} onChange={selectAll} style={{ accentColor: '#00e07a', cursor: 'pointer' }} />
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const, width: 40 }}>
+                    <input type="checkbox" checked={allPageSelected} onChange={selectAll} style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }} />
                   </th>
                 )}
-                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Rep</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Type</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Customer</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Amount</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Date</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#8891a8', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: '#1d2028', borderBottom: '1px solid #333849', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Status</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Rep</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Type</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Customer</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Amount</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Date</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Status</th>
               </tr>
             </thead>
             <tbody>
               {paginatedFiltered.map((entry, i) => (
                 <tr key={entry.id} style={{
-                  background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? '#161920' : '#191c24',
-                  borderBottom: '1px solid #272b35',
+                  background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? 'var(--surface)' : '#191c24',
+                  borderBottom: '1px solid var(--border)',
                   cursor: 'pointer',
                 }} onClick={() => statusTab === 'Draft' && toggleEntry(entry.id)}>
                   {statusTab === 'Draft' && (
                     <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
-                      <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleEntry(entry.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: '#00e07a', cursor: 'pointer' }} />
+                      <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleEntry(entry.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }} />
                     </td>
                   )}
-                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#f0f2f7', fontWeight: 600 }}>{entry.repName}</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#c2c8d8' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#8891a8' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: '#00e07a', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: '#8891a8' }}><RelativeDate date={entry.date} /></span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{entry.repName}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: 'var(--accent-green)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}><RelativeDate date={entry.date} /></span></td>
                   <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
                     <span style={
                       entry.status === 'Paid'
-                        ? { background: 'rgba(0,224,122,0.12)', color: '#00e07a', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                        ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
                         : entry.status === 'Pending'
-                        ? { background: 'rgba(255,176,32,0.12)', color: '#ffb020', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
-                        : { background: 'rgba(77,159,255,0.12)', color: '#4d9fff', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                        ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                        : { background: 'rgba(77,159,255,0.12)', color: 'var(--accent-blue)', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
                     }>{entry.status}</span>
                   </td>
                 </tr>
@@ -1072,15 +1072,15 @@ function PayrollPageInner() {
 
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-            <div className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
+            <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 rounded-lg bg-yellow-900/30">
                   <AlertTriangle className="w-5 h-5 text-yellow-400" />
                 </div>
                 <h2 className="text-white font-semibold text-lg">Publish Payroll?</h2>
               </div>
-              <p className="text-[#c2c8d8] text-sm mb-3">
-                This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[#00e07a] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
+              <p className="text-[var(--text-secondary)] text-sm mb-3">
+                This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-green)] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
               </p>
               {filterRepId && (() => {
                 const filteredRepName = reps.find((r) => r.id === filterRepId)?.name ?? 'selected rep';
@@ -1105,24 +1105,24 @@ function PayrollPageInner() {
 
               {/* Per-rep breakdown */}
               {repSummary.length > 0 && (
-                <div className="bg-[#1d2028]/60 border border-[#272b35]/60 rounded-xl mb-5 overflow-hidden">
-                  <div className="px-4 py-2 border-b border-[#272b35]/60 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#c2c8d8] uppercase tracking-wider">Payout Breakdown</span>
-                    <span className="text-xs text-[#8891a8]">{repSummary.length} rep{repSummary.length !== 1 ? 's' : ''}</span>
+                <div className="bg-[var(--surface-card)]/60 border border-[var(--border)]/60 rounded-xl mb-5 overflow-hidden">
+                  <div className="px-4 py-2 border-b border-[var(--border)]/60 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Payout Breakdown</span>
+                    <span className="text-xs text-[var(--text-muted)]">{repSummary.length} rep{repSummary.length !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="divide-y divide-slate-800/60 max-h-48 overflow-y-auto">
                     {repSummary.map((rep) => (
                       <div key={rep.id} className="flex items-center justify-between px-4 py-2.5">
                         <div>
                           <p className="text-white text-sm font-medium">{rep.name}</p>
-                          <p className="text-[#8891a8] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
+                          <p className="text-[var(--text-muted)] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
                         </div>
-                        <span className="text-[#00e07a] font-bold tabular-nums">${rep.total.toLocaleString()}</span>
+                        <span className="text-[var(--accent-green)] font-bold tabular-nums">${rep.total.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="px-4 py-2.5 border-t border-[#272b35]/60 flex items-center justify-between bg-[#1d2028]/40">
-                    <span className="text-[#c2c8d8] text-xs font-semibold uppercase tracking-wider">Total</span>
+                  <div className="px-4 py-2.5 border-t border-[var(--border)]/60 flex items-center justify-between bg-[var(--surface-card)]/40">
+                    <span className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Total</span>
                     <span className="text-white font-black tabular-nums">${pendingEntries.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
                   </div>
                 </div>
@@ -1132,14 +1132,14 @@ function PayrollPageInner() {
                 <button
                   onClick={handlePublish}
                   disabled={publishingPayroll}
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   {publishingPayroll ? 'Publishing…' : 'Publish Payroll'}
                 </button>
                 <button
                   onClick={() => setShowPublishConfirm(false)}
-                  className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Cancel
                 </button>
@@ -1152,12 +1152,12 @@ function PayrollPageInner() {
       {/* Bonus Modal */}
       {showBonusModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div ref={bonusPanelRef} className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+          <div ref={bonusPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Bonus Payment</h2>
               <button
                 onClick={() => { setShowBonusModal(false); setBonusForm({ repId: '', amount: '', notes: '', date: '' }); }}
-                className="text-[#8891a8] hover:text-white transition-colors"
+                className="text-[var(--text-muted)] hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1208,7 +1208,7 @@ function PayrollPageInner() {
               <div className="flex gap-3 pt-1">
                 <button
                   type="submit"
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   Add Bonus
@@ -1216,7 +1216,7 @@ function PayrollPageInner() {
                 <button
                   type="button"
                   onClick={() => { setShowBonusModal(false); setBonusForm({ repId: '', amount: '', notes: '', date: '' }); }}
-                  className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Cancel
                 </button>
@@ -1232,10 +1232,10 @@ function PayrollPageInner() {
       {/* Manual Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div ref={paymentPanelRef} className="bg-[#161920] border border-[#272b35]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+          <div ref={paymentPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-white font-semibold text-lg">Add Deal Payment</h2>
-              <button onClick={() => { setShowPaymentModal(false); setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' }); }} className="text-[#8891a8] hover:text-white transition-colors">
+              <button onClick={() => { setShowPaymentModal(false); setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' }); }} className="text-[var(--text-muted)] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1305,7 +1305,7 @@ function PayrollPageInner() {
                   Add Payment
                 </button>
                 <button type="button" onClick={() => { setShowPaymentModal(false); setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' }); }}
-                  className="btn-secondary flex-1 bg-[#272b35] hover:bg-[#525c72] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>
               </div>
@@ -1322,7 +1322,7 @@ function PayrollPageInner() {
            selection.                                                            */}
       {actionBarMounted && (
         <div
-          className="fixed bottom-6 left-1/2 z-30 backdrop-blur-xl bg-[#161920]/80 border border-[#272b35]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40"
+          className="fixed bottom-6 left-1/2 z-30 backdrop-blur-xl bg-[var(--surface)]/80 border border-[var(--border)]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40"
           role="toolbar"
           aria-label="Batch actions for selected entries"
           style={{
@@ -1334,26 +1334,26 @@ function PayrollPageInner() {
           <div className="flex items-center gap-3">
 
             {/* Selection count badge — blue accent pill */}
-            <span className="flex items-center gap-1.5 bg-[#00e07a]/15 border border-[#00e07a]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+            <span className="flex items-center gap-1.5 bg-[var(--accent-green)]/15 border border-[var(--accent-green)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
               <span key={selectedIds.size} className="text-white font-bold tabular-nums animate-badge-pop">{selectedIds.size}</span>
-              <span className="text-[#00e07a] font-medium">selected</span>
+              <span className="text-[var(--accent-green)] font-medium">selected</span>
               {selectedTotal > 0 && (
                 <>
-                  <span className="text-[#525c72] mx-0.5">·</span>
-                  <span key={selectedTotal} className="text-[#00e07a] font-semibold tabular-nums animate-badge-pop">${selectedTotal.toLocaleString()}</span>
+                  <span className="text-[var(--text-dim)] mx-0.5">·</span>
+                  <span key={selectedTotal} className="text-[var(--accent-green)] font-semibold tabular-nums animate-badge-pop">${selectedTotal.toLocaleString()}</span>
                 </>
               )}
             </span>
 
             {/* Visual divider */}
-            <div className="h-5 w-px bg-[#272b35]/80 flex-shrink-0" />
+            <div className="h-5 w-px bg-[var(--border)]/80 flex-shrink-0" />
 
             {/* Mark for Payroll — primary action (always Draft context when bar is visible) */}
             {statusTab === 'Draft' && (
               <button
                 onClick={handleMarkForPayroll}
                 disabled={markingForPayroll}
-                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[#00e07a] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 Mark for Payroll →
@@ -1364,7 +1364,7 @@ function PayrollPageInner() {
             <button
               onClick={() => setSelectedIds(new Set())}
               aria-label="Deselect all and dismiss toolbar"
-              className="btn-secondary p-1.5 rounded-lg bg-[#272b35]/60 hover:bg-[#525c72]/80 border border-[#272b35]/40 text-[#c2c8d8] hover:text-white transition-colors flex-shrink-0"
+              className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-white transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1378,21 +1378,21 @@ function PayrollPageInner() {
 
 function ReimBadge({ status }: { status: string }) {
   const st =
-    status === 'Approved' ? { background: 'rgba(0,224,122,0.12)', color: '#00e07a' }
-    : status === 'Pending'  ? { background: 'rgba(255,176,32,0.12)', color: '#ffb020' }
-    : { background: 'rgba(255,82,82,0.12)', color: '#ff5252' };
+    status === 'Approved' ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)' }
+    : status === 'Pending'  ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)' }
+    : { background: 'rgba(255,82,82,0.12)', color: 'var(--accent-red)' };
   return <span className="px-2 py-0.5 rounded text-xs font-medium" style={st}>{status}</span>;
 }
 
 const STAT_CARD_STYLES: Record<string, { bg: string; border: string; accent: string; textColor: string }> = {
-  'from-blue-500 to-blue-400':       { bg: 'linear-gradient(135deg, #040c1c, #060e22)', border: '#4d9fff30', accent: '#4d9fff', textColor: '#4d9fff' },
-  'from-yellow-500 to-yellow-400':   { bg: 'linear-gradient(135deg, #120b00, #180e00)', border: '#ffb02030', accent: '#ffb020', textColor: '#ffb020' },
-  'from-emerald-500 to-emerald-400': { bg: 'linear-gradient(135deg, #00160d, #001c10)', border: '#00e07a30', accent: '#00e07a', textColor: '#00e07a' },
+  'from-blue-500 to-blue-400':       { bg: 'linear-gradient(135deg, #040c1c, #060e22)', border: 'var(--accent-blue)30', accent: 'var(--accent-blue)', textColor: 'var(--accent-blue)' },
+  'from-yellow-500 to-yellow-400':   { bg: 'linear-gradient(135deg, #120b00, #180e00)', border: 'var(--accent-amber)30', accent: 'var(--accent-amber)', textColor: 'var(--accent-amber)' },
+  'from-emerald-500 to-emerald-400': { bg: 'linear-gradient(135deg, #00160d, #001c10)', border: '#00e07a30', accent: 'var(--accent-green)', textColor: 'var(--accent-green)' },
 };
 
 function StatCard({ label, value, color, accentGradient, className, entryCount }: { label: string; value: number; color: string; border?: string; accentGradient?: string; className?: string; entryCount?: number }) {
   const accent = accentGradient ?? 'from-blue-500 to-blue-400';
-  const s = STAT_CARD_STYLES[accent] ?? { bg: '#1d2028', border: '#272b35', accent: '#4d9fff', textColor: '#4d9fff' };
+  const s = STAT_CARD_STYLES[accent] ?? { bg: 'var(--surface-card)', border: 'var(--border)', accent: 'var(--accent-blue)', textColor: 'var(--accent-blue)' };
   return (
     <div
       className={`rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] ${className ?? ''}`}
@@ -1400,9 +1400,9 @@ function StatCard({ label, value, color, accentGradient, className, entryCount }
     >
       <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: s.accent }} />
       <div className="flex items-center justify-between mb-1">
-        <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#8891a8' }}>{label}</p>
+        <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
         {entryCount !== undefined && (
-          <span className="text-xs font-medium tabular-nums" style={{ color: '#525c72' }}>{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</span>
+          <span className="text-xs font-medium tabular-nums" style={{ color: 'var(--text-dim)' }}>{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</span>
         )}
       </div>
       <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ color: s.textColor, fontFamily: "'DM Serif Display', serif", textShadow: `0 0 20px ${s.accent}40` }}>${value.toLocaleString()}</p>
@@ -1419,17 +1419,17 @@ function PayrollSkeleton() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           {/* Icon placeholder */}
-          <div className="h-9 w-9 bg-[#1d2028] rounded-lg animate-skeleton" />
+          <div className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton" />
           <div className="space-y-2">
             {/* Accent bar + title */}
-            <div className="h-[3px] w-12 bg-[#272b35] rounded-full animate-skeleton" />
+            <div className="h-[3px] w-12 bg-[var(--border)] rounded-full animate-skeleton" />
             <div
-              className="h-8 w-36 bg-[#1d2028] rounded animate-skeleton"
+              className="h-8 w-36 bg-[var(--surface-card)] rounded animate-skeleton"
               style={{ animationDelay: '75ms' }}
             />
             {/* Subtitle */}
             <div
-              className="h-3 w-56 bg-[#1d2028]/70 rounded animate-skeleton"
+              className="h-3 w-56 bg-[var(--surface-card)]/70 rounded animate-skeleton"
               style={{ animationDelay: '100ms' }}
             />
           </div>
@@ -1437,11 +1437,11 @@ function PayrollSkeleton() {
         {/* Action buttons — Add Bonus + Publish Payroll */}
         <div className="flex gap-3">
           <div
-            className="h-9 w-24 bg-[#1d2028] rounded-xl animate-skeleton"
+            className="h-9 w-24 bg-[var(--surface-card)] rounded-xl animate-skeleton"
             style={{ animationDelay: '50ms' }}
           />
           <div
-            className="h-9 w-32 bg-[#1d2028] rounded-xl animate-skeleton"
+            className="h-9 w-32 bg-[var(--surface-card)] rounded-xl animate-skeleton"
             style={{ animationDelay: '100ms' }}
           />
         </div>
@@ -1452,15 +1452,15 @@ function PayrollSkeleton() {
         {[...Array(3)].map((_, i) => (
           <div key={i} className="card-surface rounded-2xl p-5 space-y-3">
             <div
-              className="h-[2px] w-12 bg-[#272b35] rounded-full animate-skeleton"
+              className="h-[2px] w-12 bg-[var(--border)] rounded-full animate-skeleton"
               style={{ animationDelay: `${i * 75}ms` }}
             />
             <div
-              className="h-3 w-16 bg-[#1d2028] rounded animate-skeleton"
+              className="h-3 w-16 bg-[var(--surface-card)] rounded animate-skeleton"
               style={{ animationDelay: `${i * 75}ms` }}
             />
             <div
-              className="h-8 w-28 bg-[#1d2028] rounded animate-skeleton"
+              className="h-8 w-28 bg-[var(--surface-card)] rounded animate-skeleton"
               style={{ animationDelay: `${i * 75 + 40}ms` }}
             />
           </div>
@@ -1468,11 +1468,11 @@ function PayrollSkeleton() {
       </div>
 
       {/* Tab-bar skeleton — two pill placeholders matching the Payroll / Reimbursements switcher */}
-      <div className="flex gap-1 mb-8 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit">
+      <div className="flex gap-1 mb-8 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit">
         {[...Array(2)].map((_, i) => (
           <div
             key={i}
-            className="h-9 w-32 bg-[#1d2028] rounded-lg animate-skeleton"
+            className="h-9 w-32 bg-[var(--surface-card)] rounded-lg animate-skeleton"
             style={{ animationDelay: `${i * 60}ms` }}
           />
         ))}
@@ -1483,31 +1483,31 @@ function PayrollSkeleton() {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className={`flex items-center gap-4 px-5 py-4 border-b border-[#333849]/50 ${i % 2 === 1 ? 'opacity-60' : ''}`}
+            className={`flex items-center gap-4 px-5 py-4 border-b border-[var(--border-subtle)]/50 ${i % 2 === 1 ? 'opacity-60' : ''}`}
           >
             {/* Customer / rep name placeholder */}
             <div
-              className="h-4 w-40 bg-[#1d2028] rounded animate-skeleton"
+              className="h-4 w-40 bg-[var(--surface-card)] rounded animate-skeleton"
               style={{ animationDelay: `${i * 60}ms` }}
             />
             {/* Stage badge placeholder */}
             <div
-              className="h-5 w-20 bg-[#1d2028]/80 rounded animate-skeleton"
+              className="h-5 w-20 bg-[var(--surface-card)]/80 rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 30}ms` }}
             />
             {/* Amount placeholder */}
             <div
-              className="ml-auto h-4 w-16 bg-[#1d2028] rounded animate-skeleton"
+              className="ml-auto h-4 w-16 bg-[var(--surface-card)] rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 50}ms` }}
             />
             {/* Status badge placeholder */}
             <div
-              className="h-5 w-14 bg-[#1d2028]/70 rounded animate-skeleton"
+              className="h-5 w-14 bg-[var(--surface-card)]/70 rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 70}ms` }}
             />
             {/* Date placeholder */}
             <div
-              className="h-3 w-20 bg-[#1d2028]/50 rounded animate-skeleton"
+              className="h-3 w-20 bg-[var(--surface-card)]/50 rounded animate-skeleton"
               style={{ animationDelay: `${i * 60 + 90}ms` }}
             />
           </div>

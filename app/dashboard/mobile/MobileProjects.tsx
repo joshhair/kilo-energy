@@ -13,9 +13,9 @@ import { myCommissionOnProject, type CommissionStatus } from '../../../lib/commi
 
 // Color per commission status — aligns with hero colors used elsewhere.
 const COMMISSION_COLORS: Record<CommissionStatus, { fg: string; bg: string; label: string }> = {
-  paid:      { fg: '#00e5a0', bg: 'rgba(0,229,160,0.12)',  label: 'Paid' },
-  partial:   { fg: '#ffb020', bg: 'rgba(255,176,32,0.12)', label: 'Partial' },
-  projected: { fg: '#c2c8d8', bg: 'rgba(194,200,216,0.08)', label: 'Projected' },
+  paid:      { fg: 'var(--accent-emerald)', bg: 'rgba(0,229,160,0.12)',  label: 'Paid' },
+  partial:   { fg: 'var(--accent-amber)', bg: 'rgba(255,176,32,0.12)', label: 'Partial' },
+  projected: { fg: 'var(--text-secondary)', bg: 'rgba(194,200,216,0.08)', label: 'Projected' },
 };
 
 const PHASE_FILTERS: (Phase | 'All')[] = [
@@ -131,7 +131,7 @@ export default function MobileProjects() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, #8899aa)' }} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
         <input
           type="text"
           value={search}
@@ -139,8 +139,8 @@ export default function MobileProjects() {
           placeholder="Search customers..."
           className="w-full min-h-[48px] rounded-2xl px-4 pl-10 text-base text-white outline-none transition-colors"
           style={{
-            background: 'var(--m-card, #0d1525)',
-            border: '1px solid var(--m-border, #1a2840)',
+            background: 'var(--m-card, var(--surface-mobile-card))',
+            border: '1px solid var(--m-border, var(--border-mobile))',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         />
@@ -161,7 +161,7 @@ export default function MobileProjects() {
               // the wrong button.
               left: 0,
               height: 36,
-              background: '#00e5a0',
+              background: 'var(--accent-emerald)',
               transform: `translateX(${spotlight.left}px)`,
               width: spotlight.width,
               transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), width 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -179,8 +179,8 @@ export default function MobileProjects() {
               className="relative z-10 shrink-0 min-h-[44px] px-4 rounded-xl text-sm font-medium active:scale-[0.92]"
               style={{
                 background: 'transparent',
-                color: isActive ? '#000' : 'var(--m-text-muted, #8899aa)',
-                border: isActive ? 'none' : '1px solid var(--m-border, #1a2840)',
+                color: isActive ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: isActive ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 transition: 'color 200ms ease, transform 75ms cubic-bezier(0.34,1.56,0.64,1)',
               }}
@@ -188,8 +188,8 @@ export default function MobileProjects() {
               {phase}
               {phase !== 'All' && (phaseCounts[phase] ?? 0) > 0 && (
                 <span style={{
-                  background: isActive ? 'rgba(0,0,0,0.2)' : 'var(--m-border, #1a2840)',
-                  color: isActive ? '#000' : 'var(--m-text-muted, #8899aa)',
+                  background: isActive ? 'rgba(0,0,0,0.2)' : 'var(--m-border, var(--border-mobile))',
+                  color: isActive ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
                   borderRadius: 999,
                   fontSize: '0.68rem',
                   fontWeight: 700,
@@ -209,7 +209,7 @@ export default function MobileProjects() {
       <div key={listKey} className="space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-base" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No projects found</p>
+            <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No projects found</p>
           </div>
         ) : (
           filtered.map((project, index) => {
@@ -234,7 +234,7 @@ export default function MobileProjects() {
                   <MobileBadge value={project.phase} />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-base min-w-0 truncate" style={{ color: 'var(--m-text-muted, #8899aa)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-base min-w-0 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {project.installer} &middot; {project.kWSize} kW &middot; {relativeTime(project.soldDate)}
                   </p>
                   {pill && (

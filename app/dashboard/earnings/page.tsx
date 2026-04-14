@@ -21,7 +21,7 @@ import { PaginationBar } from '../components/PaginationBar';
 
 // ── Shared constants ───────────────────────────────────────────────────────────
 
-const labelCls = 'block text-xs font-medium text-[#c2c8d8] mb-1.5 uppercase tracking-wider';
+const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
 
 /** Maps Tailwind accent-gradient class strings to an RGBA radial glow for --card-accent */
 const ACCENT_COLOR_MAP: Record<string, string> = {
@@ -40,7 +40,7 @@ type BonusSortKey = 'notes' | 'amount' | 'status' | 'date';
 // ── Shared sort icon ───────────────────────────────────────────────────────────
 
 function SortIcon<K extends string>({ colKey, sortKey, sortDir }: { colKey: K; sortKey: K; sortDir: SortDir }) {
-  if (sortKey !== colKey) return <ChevronsUpDown className="w-3.5 h-3.5 ml-1 inline-block text-[#525c72]" />;
+  if (sortKey !== colKey) return <ChevronsUpDown className="w-3.5 h-3.5 ml-1 inline-block text-[var(--text-dim)]" />;
   if (sortDir === 'asc') return <ChevronUp className="w-3.5 h-3.5 ml-1 inline-block" />;
   return <ChevronDown className="w-3.5 h-3.5 ml-1 inline-block" />;
 }
@@ -53,7 +53,7 @@ type PillStyle = { gradient: string; border: string; shadow: string; text: strin
 const PAYROLL_PILL: Record<string, PillStyle> = {
   'Paid':    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
   'Pending': { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',   border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
-  'Draft':   { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20',     border: 'border-[#272b35]/30',   shadow: '',                                        text: 'text-[#c2c8d8]',   dot: 'bg-[#8891a8]'   },
+  'Draft':   { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20',     border: 'border-[var(--border)]/30',   shadow: '',                                        text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 
 const REIMB_PILL: Record<string, PillStyle> = {
@@ -62,7 +62,7 @@ const REIMB_PILL: Record<string, PillStyle> = {
   'Denied':   { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',         border: 'border-red-700/30',     shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',  text: 'text-red-300',     dot: 'bg-red-400'     },
 };
 
-const DEFAULT_PILL: PillStyle = { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[#272b35]/30', shadow: '', text: 'text-[#c2c8d8]', dot: 'bg-[#8891a8]' };
+const DEFAULT_PILL: PillStyle = { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
 
 function StatusPill({ label, pillMap }: { label: string; pillMap: Record<string, PillStyle> }) {
   const s = pillMap[label] ?? DEFAULT_PILL;
@@ -81,7 +81,7 @@ function ReimbStatusBadge({ status }: { status: string }) { return <StatusPill l
 
 /** Maps a payroll status to the matching PAYROLL_PILL accent colour hex value. */
 function getPayrollRowAccent(status: string): string {
-  if (status === 'Paid')    return '#00e07a'; // emerald-500
+  if (status === 'Paid')    return 'var(--accent-green)'; // emerald-500
   if (status === 'Pending') return '#eab308'; // yellow-500
   return '#64748b';                            // slate-500  (Draft / fallback)
 }
@@ -99,7 +99,7 @@ function SparklineWithTooltip({ data, stroke }: { data: number[]; stroke: string
     >
       <Sparkline data={data} stroke={stroke} />
       {hovered && lastVal !== null && (
-        <div className="absolute -top-7 right-0 bg-[#1d2028] border border-[#272b35] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10">
+        <div className="absolute -top-7 right-0 bg-[var(--surface-card)] border border-[var(--border)] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10">
           ${lastVal.toLocaleString()}
         </div>
       )}
@@ -224,7 +224,7 @@ function MonthlyEarningsBarChart({
           <h3 className="text-white font-bold text-sm tracking-wide">Monthly Earnings</h3>
         </div>
         {/* Legend */}
-        <div className="flex items-center gap-4 text-xs text-[#c2c8d8]">
+        <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" />Paid</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400" />Pending</span>
           {hasReimb && <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-violet-400" />Reimb.</span>}
@@ -255,7 +255,7 @@ function MonthlyEarningsBarChart({
             const startX = groupX + (groupW - groupBarW) / 2;
 
             const bars = [
-              { value: d.paid, color: '#00e07a', hoverColor: '#00c4f0' },
+              { value: d.paid, color: 'var(--accent-green)', hoverColor: 'var(--accent-cyan)' },
               { value: d.pending, color: '#eab308', hoverColor: '#facc15' },
               ...(hasReimb ? [{ value: d.reimbursement, color: '#8b5cf6', hoverColor: '#a78bfa' }] : []),
             ];
@@ -316,15 +316,15 @@ function MonthlyEarningsBarChart({
         {/* Tooltip */}
         {tooltip && (
           <div
-            className="absolute z-20 pointer-events-none bg-[#1d2028] border border-[#272b35] rounded-xl px-3 py-2 shadow-xl text-xs whitespace-nowrap"
+            className="absolute z-20 pointer-events-none bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 shadow-xl text-xs whitespace-nowrap"
             style={{
               left: tooltip.x,
               top: -4,
               transform: 'translateX(-50%)',
             }}
           >
-            <p className="text-[#c2c8d8] font-semibold mb-1">{tooltip.datum.label}</p>
-            <p className="text-[#00e07a]">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
+            <p className="text-[var(--text-secondary)] font-semibold mb-1">{tooltip.datum.label}</p>
+            <p className="text-[var(--accent-green)]">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
             <p className="text-yellow-400">Pending: ${tooltip.datum.pending.toLocaleString()}</p>
             {tooltip.datum.reimbursement > 0 && (
               <p className="text-violet-400">Reimb: ${tooltip.datum.reimbursement.toLocaleString()}</p>
@@ -542,11 +542,11 @@ function RepEarningsView() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <DollarSign className="w-5 h-5 text-[#00e07a]" />
+              <DollarSign className="w-5 h-5 text-[var(--accent-green)]" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Earnings</h1>
-              <p className="text-[#c2c8d8] text-sm font-medium mt-0.5 tracking-wide">Your commission, bonus, and reimbursement history</p>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Earnings</h1>
+              <p className="text-[var(--text-secondary)] text-sm font-medium mt-0.5 tracking-wide">Your commission, bonus, and reimbursement history</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -575,14 +575,14 @@ function RepEarningsView() {
                 }
               }}
               disabled={tab === 'bonus' ? sortedBonuses.length === 0 : tab === 'reimbursements' ? filteredReimbs.length === 0 : sortedDeals.length === 0}
-              className="flex items-center gap-1.5 text-xs text-[#c2c8d8] hover:text-white bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download earnings as CSV"
             >
               <Download className="w-3.5 h-3.5" /> CSV
             </button>
             <button
               onClick={() => setShowReimbModal(true)}
-              className="flex items-center gap-2 bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] text-[#c2c8d8] hover:text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
+              className="flex items-center gap-2 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
             >
               <Receipt className="w-4 h-4 text-violet-400" />
               Request Reimbursement
@@ -603,22 +603,22 @@ function RepEarningsView() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
             {/* Left — amount + labels */}
             <div>
-              <p className="text-[#c2c8d8] text-xs font-medium uppercase tracking-widest mb-2">Next Payout</p>
-              <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: '#00e07a' }}>
+              <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-widest mb-2">Next Payout</p>
+              <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-green)' }}>
                 ${nextPayoutTotal.toLocaleString()}
               </p>
-              <p className="text-[#c2c8d8] text-sm mt-2.5">
+              <p className="text-[var(--text-secondary)] text-sm mt-2.5">
                 Expected Friday,{' '}
-                <span className="text-[#c2c8d8] font-medium">{nextFridayStr}</span>
+                <span className="text-[var(--text-secondary)] font-medium">{nextFridayStr}</span>
               </p>
-              <p className="text-[#8891a8] text-xs mt-1">
+              <p className="text-[var(--text-muted)] text-xs mt-1">
                 {nextPayoutCount} pending {nextPayoutCount === 1 ? 'entry' : 'entries'}
               </p>
             </div>
 
             {/* Right — countdown badge */}
             <div className="sm:pb-1">
-              <span className="inline-flex items-center gap-1.5 bg-[#00e07a]/10 border border-[#00e07a]/20 text-[#00e07a] text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
+              <span className="inline-flex items-center gap-1.5 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 text-[var(--accent-green)] text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
                 <Clock className="w-3.5 h-3.5 shrink-0" />
                 {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days away`}
               </span>
@@ -632,12 +632,12 @@ function RepEarningsView() {
         >
           <div className="h-[3px] w-16 rounded-full bg-gradient-to-r from-emerald-500/30 to-emerald-400/30 mb-5" />
           <div className="flex flex-col items-center py-3 text-center gap-3">
-            <p className="text-[#c2c8d8] text-sm font-medium leading-relaxed">
+            <p className="text-[var(--text-secondary)] text-sm font-medium leading-relaxed">
               No pending payouts — close a deal to start earning
             </p>
             <Link
               href="/dashboard/new-deal"
-              className="inline-flex items-center gap-1.5 text-[#00e07a] hover:text-emerald-300 text-sm font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 text-[var(--accent-green)] hover:text-emerald-300 text-sm font-semibold transition-colors"
             >
               Close a deal <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -655,13 +655,13 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Total Earned</span>
-            <DollarSign className="w-4 h-4 text-[#00e07a] shrink-0" />
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total Earned</span>
+            <DollarSign className="w-4 h-4 text-[var(--accent-green)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[#00e07a] animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-green)] animate-count-up">
             ${totalPaid.toLocaleString()}
           </p>
-          <SparklineWithTooltip data={earnedMonthlyData} stroke="#00e07a" />
+          <SparklineWithTooltip data={earnedMonthlyData} stroke="var(--accent-green)" />
         </div>
 
         {/* 2 — Pending (yellow) */}
@@ -671,7 +671,7 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Pending</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Pending</span>
             <TrendingUp className="w-4 h-4 text-yellow-400 shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-yellow-400 animate-count-up">
@@ -687,13 +687,13 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">This Month</span>
-            <DollarSign className="w-4 h-4 text-[#00e07a] shrink-0" />
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">This Month</span>
+            <DollarSign className="w-4 h-4 text-[var(--accent-green)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[#00e07a] animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-green)] animate-count-up">
             ${thisMonthEarned.toLocaleString()}
           </p>
-          <SparklineWithTooltip data={thisMonthPaidData} stroke="#00c4f0" />
+          <SparklineWithTooltip data={thisMonthPaidData} stroke="var(--accent-cyan)" />
         </div>
 
         {/* 4 — Reimbursements approved (violet) */}
@@ -703,7 +703,7 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider">Reimbursements</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Reimbursements</span>
             <Receipt className="w-4 h-4 text-violet-400 shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-violet-400 animate-count-up">
@@ -722,11 +722,11 @@ function RepEarningsView() {
       />
 
       {/* Tab bar */}
-      <div className="flex flex-wrap gap-1 mb-5 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit tab-bar-container">
+      <div className="flex flex-wrap gap-1 mb-5 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container">
         {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[#c2c8d8] hover:text-white'}`}>
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
             {t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}
           </button>
         ))}
@@ -735,7 +735,7 @@ function RepEarningsView() {
       {/* Active month filter chip */}
       {monthFilter && (
         <div className="flex items-center gap-2 mb-3 animate-fade-in">
-          <span className="inline-flex items-center gap-1.5 text-xs bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] px-3 py-1.5 rounded-full font-medium">
+          <span className="inline-flex items-center gap-1.5 text-xs bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] px-3 py-1.5 rounded-full font-medium">
             Showing
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs bg-blue-500/10 border border-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full font-medium">
@@ -744,7 +744,7 @@ function RepEarningsView() {
               <X className="w-3 h-3" />
             </button>
           </span>
-          <span className="text-xs text-[#525c72]">
+          <span className="text-xs text-[var(--text-dim)]">
             {tab === 'deal' ? `${sortedDeals.length} entries` : tab === 'reimbursements' ? `${filteredReimbs.length} entries` : `${sortedBonuses.length} entries`}
           </span>
         </div>
@@ -757,7 +757,7 @@ function RepEarningsView() {
         {tab === 'deal' && (
           <div key="deal" className="animate-tab-enter relative card-surface rounded-2xl overflow-hidden">
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
-            <div className="flex items-center gap-1.5 px-5 py-3 border-b border-[#333849]/50 flex-wrap">
+            <div className="flex items-center gap-1.5 px-5 py-3 border-b border-[var(--border-subtle)]/50 flex-wrap">
               {[
                 { key: null,       label: 'All' },
                 { key: 'Closer',   label: `Closer (${closerCount})` },
@@ -769,8 +769,8 @@ function RepEarningsView() {
                 <button key={key ?? 'all'} onClick={() => { setDealRoleFilter(key); setDealPage(1); }}
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
                     dealRoleFilter === key
-                      ? 'bg-[#272b35] text-white border border-[#333849]'
-                      : 'text-[#8891a8] hover:text-[#c2c8d8] border border-transparent'
+                      ? 'bg-[var(--border)] text-white border border-[var(--border-subtle)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] border border-transparent'
                   }`}>
                   {label}
                 </button>
@@ -779,7 +779,7 @@ function RepEarningsView() {
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
                 <thead className="table-header-frost">
-                  <tr className="border-b border-[#333849]">
+                  <tr className="border-b border-[var(--border-subtle)]">
                     {([
                       { key: 'customerName' as DealSortKey, label: 'Customer' },
                       { key: 'paymentStage' as DealSortKey, label: 'Stage' },
@@ -789,7 +789,7 @@ function RepEarningsView() {
                       { key: 'date'         as DealSortKey, label: 'Date' },
                     ] as { key: DealSortKey; label: string }[]).map(({ key, label }) => (
                       <th key={key} onClick={() => handleDealSort(key)}
-                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${dealSortKey === key ? 'text-white' : 'text-[#c2c8d8]'}`}>
+                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${dealSortKey === key ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
                         {label}<SortIcon colKey={key} sortKey={dealSortKey} sortDir={dealSortDir} />
                       </th>
                     ))}
@@ -808,26 +808,26 @@ function RepEarningsView() {
                       <tr
                         key={row.entry.id}
                         style={!isReim ? ({ '--row-accent': getPayrollRowAccent(status) } as React.CSSProperties) : undefined}
-                        className={`table-row-enter row-stagger-${i % 25} relative border-b border-[#333849]/50 ${isReim ? 'bg-violet-900/5' : 'odd:bg-[#161920]/30 even:bg-[#1d2028]/30'} hover:bg-[#1d2028]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}
+                        className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 ${isReim ? 'bg-violet-900/5' : 'odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30'} hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}
                       >
                         <td className="px-5 py-3 text-white">{name}</td>
-                        <td className="px-5 py-3"><span className="bg-[#272b35] text-[#c2c8d8] text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap">{stage}</span></td>
+                        <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap">{stage}</span></td>
                         <td className="px-5 py-3 text-xs">
                           {isReim ? <span className="text-violet-400">Reimb.</span>
-                            : role === 'Setter' ? <span className="text-[#00e07a]">Setter</span>
+                            : role === 'Setter' ? <span className="text-[var(--accent-green)]">Setter</span>
                             : role.startsWith('Trainer override') ? <span className="text-amber-400">Trainer</span>
-                            : <span className="text-[#00e07a]">Closer</span>}
+                            : <span className="text-[var(--accent-green)]">Closer</span>}
                         </td>
-                        <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-[var(--accent-green)] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
                         <td className="px-5 py-3">{isReim ? <ReimbStatusBadge status={status} /> : <PayrollStatusBadge status={status} />}</td>
-                        <td className="px-5 py-3 text-[#8891a8] whitespace-nowrap">{formatDate(date)}</td>
+                        <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap">{formatDate(date)}</td>
                       </tr>
                     );
                   })}
                   {sortedDeals.length === 0 && (
                     <tr><td colSpan={6} className="px-5 py-10 text-center">
                       <div className="flex justify-center">
-                        <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                        <div className="animate-fade-in w-60 border border-dashed border-[var(--border-subtle)] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
                           {/* Illustration — empty wallet / coin stack */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Wallet body */}
@@ -835,16 +835,16 @@ function RepEarningsView() {
                             <rect x="10" y="30" width="52" height="4" fill="#334155"/>
                             {/* Coin pocket */}
                             <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                            <circle cx="53" cy="42" r="4" fill="#1d2028" stroke="#00c4f0" strokeWidth="1.5" strokeOpacity="0.5"/>
+                            <circle cx="53" cy="42" r="4" fill="var(--surface-card)" stroke="var(--accent-cyan)" strokeWidth="1.5" strokeOpacity="0.5"/>
                             {/* Dashed lines — empty content indicator */}
                             <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                             <line x1="17" y1="46" x2="30" y2="46" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                             {/* Dollar sign badge */}
-                            <circle cx="60" cy="22" r="9" fill="#1d2028" stroke="#00e07a" strokeWidth="1.5" strokeOpacity="0.5"/>
+                            <circle cx="60" cy="22" r="9" fill="var(--surface-card)" stroke="var(--accent-green)" strokeWidth="1.5" strokeOpacity="0.5"/>
                             <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
                           </svg>
-                          <p className="text-[#c2c8d8] text-sm font-semibold leading-snug">Your earnings will appear here</p>
-                          <p className="text-[#8891a8] text-xs leading-relaxed">Earnings will appear here once deals are processed and commissions are recorded.</p>
+                          <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug">Your earnings will appear here</p>
+                          <p className="text-[var(--text-muted)] text-xs leading-relaxed">Earnings will appear here once deals are processed and commissions are recorded.</p>
                           <Link
                             href="/dashboard/projects"
                             className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
@@ -875,7 +875,7 @@ function RepEarningsView() {
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
                 <thead className="table-header-frost">
-                  <tr className="border-b border-[#333849]">
+                  <tr className="border-b border-[var(--border-subtle)]">
                     {([
                       { key: 'notes'  as BonusSortKey, label: 'Description' },
                       { key: 'amount' as BonusSortKey, label: 'Amount' },
@@ -883,7 +883,7 @@ function RepEarningsView() {
                       { key: 'date'   as BonusSortKey, label: 'Date' },
                     ] as { key: BonusSortKey; label: string }[]).map(({ key, label }) => (
                       <th key={key} onClick={() => handleBonusSort(key)}
-                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${bonusSortKey === key ? 'text-white' : 'text-[#c2c8d8]'}`}>
+                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${bonusSortKey === key ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
                         {label}<SortIcon colKey={key} sortKey={bonusSortKey} sortDir={bonusSortDir} />
                       </th>
                     ))}
@@ -891,17 +891,17 @@ function RepEarningsView() {
                 </thead>
                 <tbody>
                   {pagedBonuses.map((b, i) => (
-                    <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-[#333849]/50 odd:bg-[#161920]/30 even:bg-[#1d2028]/30 hover:bg-[#1d2028]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}>
+                    <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-white">{b.notes || '—'}</td>
-                      <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
+                      <td className="px-5 py-3 text-[var(--accent-green)] font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
                       <td className="px-5 py-3"><PayrollStatusBadge status={b.status} /></td>
-                      <td className="px-5 py-3 text-[#8891a8] whitespace-nowrap"><RelativeDate date={b.date} /></td>
+                      <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={b.date} /></td>
                     </tr>
                   ))}
                   {sortedBonuses.length === 0 && (
                     <tr><td colSpan={4} className="px-5 py-10 text-center">
                       <div className="flex justify-center">
-                        <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                        <div className="animate-fade-in w-60 border border-dashed border-[var(--border-subtle)] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
                           {/* Illustration — trophy / award */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Trophy cup */}
@@ -914,10 +914,10 @@ function RepEarningsView() {
                             {/* Base */}
                             <rect x="28" y="64" width="24" height="4" rx="2" fill="#334155"/>
                             {/* Star inside */}
-                            <path d="M40 26 L41.8 31.6 L47.7 31.6 L43 35 L44.8 40.6 L40 37.2 L35.2 40.6 L37 35 L32.3 31.6 L38.2 31.6 Z" fill="#1d2028" stroke="#00c4f0" strokeWidth="1" strokeOpacity="0.5"/>
+                            <path d="M40 26 L41.8 31.6 L47.7 31.6 L43 35 L44.8 40.6 L40 37.2 L35.2 40.6 L37 35 L32.3 31.6 L38.2 31.6 Z" fill="var(--surface-card)" stroke="var(--accent-cyan)" strokeWidth="1" strokeOpacity="0.5"/>
                           </svg>
-                          <p className="text-[#c2c8d8] text-sm font-semibold leading-snug">Your earnings will appear here</p>
-                          <p className="text-[#8891a8] text-xs leading-relaxed">Bonus payments will appear here once deals are processed and your admin awards them.</p>
+                          <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug">Your earnings will appear here</p>
+                          <p className="text-[var(--text-muted)] text-xs leading-relaxed">Bonus payments will appear here once deals are processed and your admin awards them.</p>
                           <Link
                             href="/dashboard/projects"
                             className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
@@ -944,10 +944,10 @@ function RepEarningsView() {
         {/* Reimbursements History tab */}
         {tab === 'reimbursements' && (
           <div key="reimbursements" className="animate-tab-enter card-surface rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#333849] flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
               <h2 className="text-white font-bold tracking-tight text-base">Submission History</h2>
               <button onClick={() => setShowReimbModal(true)}
-                className="flex items-center gap-1.5 text-xs text-[#c2c8d8] hover:text-white bg-[#1d2028] hover:bg-[#272b35] border border-[#272b35] px-3 py-1.5 rounded-lg transition-colors">
+                className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition-colors">
                 <Receipt className="w-3.5 h-3.5 text-violet-400" />
                 New Request
               </button>
@@ -955,28 +955,28 @@ function RepEarningsView() {
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
                 <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                  <tr className="border-b border-[#333849]">
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Description</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Amount</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Date</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Receipt</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Status</th>
+                  <tr className="border-b border-[var(--border-subtle)]">
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Description</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Amount</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Date</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Receipt</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredReimbs.map((r, i) => (
-                    <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[#333849]/50 odd:bg-[#161920]/30 even:bg-[#1d2028]/30 hover:bg-[#1d2028]/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
+                    <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-white">{r.description}</td>
-                      <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
-                      <td className="px-5 py-3 text-[#8891a8] whitespace-nowrap"><RelativeDate date={r.date} /></td>
-                      <td className="px-5 py-3 text-[#c2c8d8] text-xs">{r.receiptName || '—'}</td>
+                      <td className="px-5 py-3 text-[var(--accent-green)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
+                      <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                       <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
                     </tr>
                   ))}
                   {filteredReimbs.length === 0 && (
                     <tr><td colSpan={5} className="px-5 py-10 text-center">
                       <div className="flex justify-center">
-                        <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                        <div className="animate-fade-in w-60 border border-dashed border-[var(--border-subtle)] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
                           {/* Illustration — receipt / document */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Receipt body */}
@@ -986,13 +986,13 @@ function RepEarningsView() {
                             <line x1="26" y1="34" x2="54" y2="34" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
                             <line x1="26" y1="42" x2="42" y2="42" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
                             {/* Amount line */}
-                            <line x1="26" y1="50" x2="54" y2="50" stroke="#1d2028" strokeWidth="2.5" strokeLinecap="round"/>
+                            <line x1="26" y1="50" x2="54" y2="50" stroke="var(--surface-card)" strokeWidth="2.5" strokeLinecap="round"/>
                             {/* Dollar badge */}
-                            <circle cx="58" cy="22" r="9" fill="#1d2028" stroke="#7c3aed" strokeWidth="1.5" strokeOpacity="0.5"/>
+                            <circle cx="58" cy="22" r="9" fill="var(--surface-card)" stroke="#7c3aed" strokeWidth="1.5" strokeOpacity="0.5"/>
                             <text x="58" y="26.5" textAnchor="middle" fill="#a78bfa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
                           </svg>
-                          <p className="text-[#c2c8d8] text-sm font-semibold leading-snug">Your earnings will appear here</p>
-                          <p className="text-[#8891a8] text-xs leading-relaxed">Submit a reimbursement request and it will appear here for tracking once processed.</p>
+                          <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug">Your earnings will appear here</p>
+                          <p className="text-[var(--text-muted)] text-xs leading-relaxed">Submit a reimbursement request and it will appear here for tracking once processed.</p>
                           <button
                             onClick={() => setShowReimbModal(true)}
                             className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
@@ -1022,17 +1022,17 @@ function EarningsSkeleton() {
     <div className="p-4 md:p-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="h-[3px] w-12 rounded-full bg-[#1d2028] animate-skeleton mb-3" style={{ animationDelay: '0ms' }} />
+        <div className="h-[3px] w-12 rounded-full bg-[var(--surface-card)] animate-skeleton mb-3" style={{ animationDelay: '0ms' }} />
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#1d2028] animate-skeleton flex-shrink-0" style={{ animationDelay: '50ms' }} />
+            <div className="w-9 h-9 rounded-lg bg-[var(--surface-card)] animate-skeleton flex-shrink-0" style={{ animationDelay: '50ms' }} />
             <div>
-              <div className="h-8 w-48 bg-[#1d2028] rounded animate-skeleton" style={{ animationDelay: '100ms' }} />
-              <div className="h-4 w-64 bg-[#1d2028]/60 rounded animate-skeleton mt-1.5" style={{ animationDelay: '150ms' }} />
+              <div className="h-8 w-48 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '100ms' }} />
+              <div className="h-4 w-64 bg-[var(--surface-card)]/60 rounded animate-skeleton mt-1.5" style={{ animationDelay: '150ms' }} />
             </div>
           </div>
           {/* Request Reimbursement button placeholder */}
-          <div className="h-10 w-48 bg-[#1d2028] rounded-xl animate-skeleton flex-shrink-0" style={{ animationDelay: '200ms' }} />
+          <div className="h-10 w-48 bg-[var(--surface-card)] rounded-xl animate-skeleton flex-shrink-0" style={{ animationDelay: '200ms' }} />
         </div>
       </div>
 
@@ -1044,22 +1044,22 @@ function EarningsSkeleton() {
             <div key={cardIdx} className="card-surface rounded-2xl p-5">
               {/* Accent bar */}
               <div
-                className="h-[2px] w-12 rounded-full bg-[#272b35] animate-skeleton mb-3"
+                className="h-[2px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3"
                 style={{ animationDelay: `${base}ms` }}
               />
               {/* Label row */}
               <div
-                className="h-3 w-24 bg-[#1d2028]/80 rounded animate-skeleton mb-3"
+                className="h-3 w-24 bg-[var(--surface-card)]/80 rounded animate-skeleton mb-3"
                 style={{ animationDelay: `${base + 50}ms` }}
               />
               {/* Value bar */}
               <div
-                className="h-10 w-32 bg-[#1d2028] rounded animate-skeleton"
+                className="h-10 w-32 bg-[var(--surface-card)] rounded animate-skeleton"
                 style={{ animationDelay: `${base + 100}ms` }}
               />
               {/* Sparkline bar */}
               <div
-                className="h-4 w-full bg-[#1d2028]/50 rounded animate-skeleton mt-2"
+                className="h-4 w-full bg-[var(--surface-card)]/50 rounded animate-skeleton mt-2"
                 style={{ animationDelay: `${base + 150}ms` }}
               />
             </div>
@@ -1068,11 +1068,11 @@ function EarningsSkeleton() {
       </div>
 
       {/* Tab bar — 3 pill shapes */}
-      <div className="flex gap-1 mb-5 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit">
+      <div className="flex gap-1 mb-5 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-9 w-36 bg-[#1d2028] rounded-lg animate-skeleton"
+            className="h-9 w-36 bg-[var(--surface-card)] rounded-lg animate-skeleton"
             style={{ animationDelay: `${500 + i * 50}ms` }}
           />
         ))}
@@ -1081,11 +1081,11 @@ function EarningsSkeleton() {
       {/* Table skeleton */}
       <div className="card-surface rounded-2xl overflow-hidden">
         {/* Frosted header row */}
-        <div className="table-header-frost border-b border-[#333849] px-5 py-3 flex gap-4">
+        <div className="table-header-frost border-b border-[var(--border-subtle)] px-5 py-3 flex gap-4">
           {[96, 72, 64, 56, 80, 64].map((w, i) => (
             <div
               key={i}
-              className={`h-4 bg-[#272b35]/70 rounded animate-skeleton`}
+              className={`h-4 bg-[var(--border)]/70 rounded animate-skeleton`}
               style={{ width: `${w}px`, animationDelay: `${650 + i * 50}ms` }}
             />
           ))}
@@ -1107,12 +1107,12 @@ function EarningsSkeleton() {
           return (
             <div
               key={rowIdx}
-              className={`border-b border-[#333849]/50 px-5 py-3.5 flex gap-4 items-center ${isEven ? '' : 'bg-[#1d2028]/20'}`}
+              className={`border-b border-[var(--border-subtle)]/50 px-5 py-3.5 flex gap-4 items-center ${isEven ? '' : 'bg-[var(--surface-card)]/20'}`}
             >
               {colWidths.map((w, colIdx) => (
                 <div
                   key={colIdx}
-                  className={`h-4 bg-[#1d2028] rounded animate-skeleton ${isEven ? 'opacity-100' : 'opacity-70'}`}
+                  className={`h-4 bg-[var(--surface-card)] rounded animate-skeleton ${isEven ? 'opacity-100' : 'opacity-70'}`}
                   style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 30}ms` }}
                 />
               ))}
@@ -1278,7 +1278,7 @@ function AdminFinancialsView() {
   const pendingPayrollCount = repFilteredPayroll.filter((e) => e.status === 'Pending').length;
   const pendingReimbCount   = reimbursements.filter((r) => r.status === 'Pending').length;
 
-  const selectCls = 'bg-[#1d2028] border border-[#272b35] text-[#c2c8d8] rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-all input-focus-glow';
+  const selectCls = 'bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-all input-focus-glow';
 
   return (
     <div className="p-4 md:p-8 animate-fade-in-up">
@@ -1287,11 +1287,11 @@ function AdminFinancialsView() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Building2 className="w-5 h-5 text-[#00e07a]" />
+            <Building2 className="w-5 h-5 text-[var(--accent-green)]" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Financials</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Financials</h1>
         </div>
-        <p className="text-[#c2c8d8] text-sm font-medium ml-12 tracking-wide">Company payroll, reimbursements, and rep summaries</p>
+        <p className="text-[var(--text-secondary)] text-sm font-medium ml-12 tracking-wide">Company payroll, reimbursements, and rep summaries</p>
       </div>
 
       {/* Stat cards — 4 across */}
@@ -1299,45 +1299,45 @@ function AdminFinancialsView() {
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-1" style={{ '--card-accent': 'rgba(16,185,129,0.12)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[#c2c8d8] text-xs uppercase tracking-wider">Total Paid</span>
-            <DollarSign className="w-4 h-4 text-[#00e07a]" />
+            <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Total Paid</span>
+            <DollarSign className="w-4 h-4 text-[var(--accent-green)]" />
           </div>
-          <p className="text-2xl font-black tabular-nums tracking-tight text-[#00e07a]">${totalPaid.toLocaleString()}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent-green)]">${totalPaid.toLocaleString()}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-2" style={{ '--card-accent': 'rgba(234,179,8,0.12)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[#c2c8d8] text-xs uppercase tracking-wider">Pending Payroll</span>
+            <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Pending Payroll</span>
             <TrendingUp className="w-4 h-4 text-yellow-400" />
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-yellow-400">${totalPending.toLocaleString()}</p>
-          {pendingPayrollCount > 0 && <p className="text-xs text-[#8891a8] mt-1">{pendingPayrollCount} entries</p>}
+          {pendingPayrollCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingPayrollCount} entries</p>}
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-3" style={{ '--card-accent': 'rgba(100,116,139,0.12)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-slate-500 to-slate-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[#c2c8d8] text-xs uppercase tracking-wider">Draft</span>
-            <DollarSign className="w-4 h-4 text-[#c2c8d8]" />
+            <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Draft</span>
+            <DollarSign className="w-4 h-4 text-[var(--text-secondary)]" />
           </div>
-          <p className="text-2xl font-black tabular-nums tracking-tight text-[#c2c8d8]">${totalDraft.toLocaleString()}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--text-secondary)]">${totalDraft.toLocaleString()}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-4" style={{ '--card-accent': 'rgba(139,92,246,0.12)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[#c2c8d8] text-xs uppercase tracking-wider">Reimbs Pending</span>
+            <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Reimbs Pending</span>
             <Receipt className="w-4 h-4 text-violet-400" />
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
-          {pendingReimbCount > 0 && <p className="text-xs text-[#8891a8] mt-1">{pendingReimbCount} requests</p>}
+          {pendingReimbCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingReimbCount} requests</p>}
         </div>
       </div>
 
       {/* Tab bar */}
-      <div className="flex flex-wrap gap-1 mb-5 bg-[#161920] border border-[#333849] rounded-xl p-1 w-fit tab-bar-container">
+      <div className="flex flex-wrap gap-1 mb-5 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container">
         {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
         {(['payroll', 'reimbursements', 'by-rep'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[#c2c8d8] hover:text-white'}`}>
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
             {t === 'payroll' ? `Payroll (${filteredPayroll.length})` : t === 'reimbursements' ? `Reimbursements (${filteredReimbs.length})` : 'By Rep'}
           </button>
         ))}
@@ -1374,7 +1374,7 @@ function AdminFinancialsView() {
               <div className="overflow-x-auto scroll-smooth">
                 <table className="w-full text-sm">
                   <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                    <tr className="border-b border-[#333849]">
+                    <tr className="border-b border-[var(--border-subtle)]">
                       {([
                         { key: 'repName' as const,      label: 'Rep' },
                         { key: 'customerName' as const, label: 'Customer' },
@@ -1384,26 +1384,26 @@ function AdminFinancialsView() {
                         { key: 'date' as const,         label: 'Date' },
                       ]).map(({ key, label }) => (
                         <th key={key} onClick={() => handlePayrollSort(key)}
-                          className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${payrollSortKey === key ? 'text-white' : 'text-[#c2c8d8]'}`}>
+                          className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${payrollSortKey === key ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
                           {label}<SortIcon colKey={key} sortKey={payrollSortKey} sortDir={payrollSortDir} />
                         </th>
                       ))}
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Action</th>
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pagedPayroll.map((e, i) => (
-                      <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[#333849]/50 odd:bg-[#161920]/30 even:bg-[#1d2028]/30 hover:bg-[#00e07a]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
+                      <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-green)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
                         <td className="px-5 py-3 text-white font-medium">{e.repName}</td>
-                        <td className="px-5 py-3 text-[#c2c8d8]">{e.customerName || '—'}</td>
-                        <td className="px-5 py-3"><span className="bg-[#272b35] text-[#c2c8d8] text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage || e.type}</span></td>
-                        <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">{fmt$(e.amount)}</td>
+                        <td className="px-5 py-3 text-[var(--text-secondary)]">{e.customerName || '—'}</td>
+                        <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage || e.type}</span></td>
+                        <td className="px-5 py-3 text-[var(--accent-green)] font-semibold whitespace-nowrap">{fmt$(e.amount)}</td>
                         <td className="px-5 py-3"><PayrollStatusBadge status={e.status} /></td>
-                        <td className="px-5 py-3 text-[#8891a8] whitespace-nowrap"><RelativeDate date={e.date} /></td>
+                        <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={e.date} /></td>
                         <td className="px-5 py-3">
                           {e.status === 'Pending' && (
                             <button onClick={() => markPaid(e.id)}
-                              className="flex items-center gap-1 text-xs text-[#00e07a] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
+                              className="flex items-center gap-1 text-xs text-[var(--accent-green)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Mark Paid
                             </button>
@@ -1414,7 +1414,7 @@ function AdminFinancialsView() {
                     {filteredPayroll.length === 0 && (
                       <tr><td colSpan={7} className="px-5 py-10 text-center">
                         <div className="flex justify-center">
-                          <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                          <div className="animate-fade-in w-60 border border-dashed border-[var(--border-subtle)] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
                             {/* Illustration — filter funnel with empty list */}
                             <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                               {/* Funnel */}
@@ -1426,8 +1426,8 @@ function AdminFinancialsView() {
                               <line x1="35" y1="28" x2="45" y2="38" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
                               <line x1="45" y1="28" x2="35" y2="38" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
                             </svg>
-                            <p className="text-[#c2c8d8] text-sm font-semibold leading-snug">No entries match your filters</p>
-                            <p className="text-[#8891a8] text-xs leading-relaxed">Try adjusting the rep or status filters to find the payroll entries you need.</p>
+                            <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug">No entries match your filters</p>
+                            <p className="text-[var(--text-muted)] text-xs leading-relaxed">Try adjusting the rep or status filters to find the payroll entries you need.</p>
                           </div>
                         </div>
                       </td></tr>
@@ -1465,30 +1465,30 @@ function AdminFinancialsView() {
               <div className="overflow-x-auto scroll-smooth">
                 <table className="w-full text-sm">
                   <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                    <tr className="border-b border-[#333849]">
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Rep</th>
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Description</th>
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Amount</th>
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Date</th>
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Receipt</th>
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Status</th>
-                      <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Actions</th>
+                    <tr className="border-b border-[var(--border-subtle)]">
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Rep</th>
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Description</th>
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Amount</th>
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Date</th>
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Receipt</th>
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Status</th>
+                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pagedReimbs.map((r, i) => (
-                      <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[#333849]/50 odd:bg-[#161920]/30 even:bg-[#1d2028]/30 hover:bg-[#00e07a]/[0.03] hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150`}>
+                      <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-green)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150`}>
                         <td className="px-5 py-3 text-white font-medium">{r.repName}</td>
-                        <td className="px-5 py-3 text-[#c2c8d8]">{r.description}</td>
-                        <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
-                        <td className="px-5 py-3 text-[#8891a8] whitespace-nowrap"><RelativeDate date={r.date} /></td>
-                        <td className="px-5 py-3 text-[#c2c8d8] text-xs">{r.receiptName || '—'}</td>
+                        <td className="px-5 py-3 text-[var(--text-secondary)]">{r.description}</td>
+                        <td className="px-5 py-3 text-[var(--accent-green)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                        <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
+                        <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                         <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
                         <td className="px-5 py-3">
                           {r.status === 'Pending' && (
                             <div className="flex items-center gap-1.5">
                               <button onClick={() => approveReim(r.id)}
-                                className="flex items-center gap-1 text-xs text-[#00e07a] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
+                                className="flex items-center gap-1 text-xs text-[var(--accent-green)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 Approve
                               </button>
@@ -1505,7 +1505,7 @@ function AdminFinancialsView() {
                     {filteredReimbs.length === 0 && (
                       <tr><td colSpan={7} className="px-5 py-10 text-center">
                         <div className="flex justify-center">
-                          <div className="animate-fade-in w-60 border border-dashed border-[#333849] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
+                          <div className="animate-fade-in w-60 border border-dashed border-[var(--border-subtle)] rounded-2xl px-6 py-8 flex flex-col items-center gap-3">
                             {/* Illustration — filter funnel with empty receipt */}
                             <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                               {/* Funnel */}
@@ -1518,8 +1518,8 @@ function AdminFinancialsView() {
                               <line x1="28" y1="23" x2="36" y2="31" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
                               <line x1="36" y1="23" x2="28" y2="31" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
                             </svg>
-                            <p className="text-[#c2c8d8] text-sm font-semibold leading-snug">No reimbursements match your filters</p>
-                            <p className="text-[#8891a8] text-xs leading-relaxed">Try adjusting the rep or status filters to find the reimbursement requests you need.</p>
+                            <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug">No reimbursements match your filters</p>
+                            <p className="text-[var(--text-muted)] text-xs leading-relaxed">Try adjusting the rep or status filters to find the reimbursement requests you need.</p>
                           </div>
                         </div>
                       </td></tr>
@@ -1542,27 +1542,27 @@ function AdminFinancialsView() {
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
                 <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-                  <tr className="border-b border-[#333849]">
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Rep</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Paid</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Pending</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Draft</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Reimbs Pending</th>
-                    <th className="text-left px-5 py-3 text-[#c2c8d8] font-medium whitespace-nowrap">Total Pipeline</th>
+                  <tr className="border-b border-[var(--border-subtle)]">
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Rep</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Paid</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Pending</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Draft</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Reimbs Pending</th>
+                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Total Pipeline</th>
                   </tr>
                 </thead>
                 <tbody>
                   {repSummary.map((s, i) => (
-                    <tr key={s.rep.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} border-b border-[#333849]/50 odd:bg-[#161920]/30 even:bg-[#1d2028]/30 hover:bg-[#00e07a]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
+                    <tr key={s.rep.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-green)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
                       <td className="px-5 py-3">
                         <div>
                           <p className="text-white font-medium">{s.rep.name}</p>
-                          <p className="text-[#8891a8] text-xs capitalize">{s.rep.repType}</p>
+                          <p className="text-[var(--text-muted)] text-xs capitalize">{s.rep.repType}</p>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-[#00e07a] font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
+                      <td className="px-5 py-3 text-[var(--accent-green)] font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
                       <td className="px-5 py-3 text-yellow-400 font-medium whitespace-nowrap">{fmt$(s.pending)}</td>
-                      <td className="px-5 py-3 text-[#c2c8d8] whitespace-nowrap">{fmt$(s.draft)}</td>
+                      <td className="px-5 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmt$(s.draft)}</td>
                       <td className="px-5 py-3 text-violet-400 whitespace-nowrap">{s.reimbPending > 0 ? fmt$(s.reimbPending) : '—'}</td>
                       <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">{fmt$(s.total)}</td>
                     </tr>
@@ -1570,9 +1570,9 @@ function AdminFinancialsView() {
                   {repSummary.length === 0 && (
                     <tr><td colSpan={6} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
-                        <Users className="w-10 h-10 text-[#525c72]" />
+                        <Users className="w-10 h-10 text-[var(--text-dim)]" />
                         <p className="text-sm font-semibold text-white">No reps found</p>
-                        <p className="text-xs text-[#8891a8]">Rep earnings will appear here once deals are submitted and payroll is processed</p>
+                        <p className="text-xs text-[var(--text-muted)]">Rep earnings will appear here once deals are submitted and payroll is processed</p>
                       </div>
                     </td></tr>
                   )}
@@ -1616,61 +1616,61 @@ function SubDealerEarningsView() {
     <div className="p-4 md:p-8 animate-fade-in-up">
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
-        <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: '#f0f2f7', letterSpacing: '-0.03em' }}>Earnings</h1>
-        <p className="text-[#c2c8d8] text-sm font-medium mt-1">Your M2 and M3 commission payments</p>
+        <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Earnings</h1>
+        <p className="text-[var(--text-secondary)] text-sm font-medium mt-1">Your M2 and M3 commission payments</p>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="card-surface rounded-2xl p-5">
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
-          <p className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider mb-1">Total Earned</p>
-          <p className="text-3xl font-black text-[#00e07a] tabular-nums">{fmt$(totalEarned)}</p>
-          <p className="text-[#8891a8] text-xs mt-1">{myPayroll.filter((p) => p.status === 'Paid').length} paid entries</p>
+          <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider mb-1">Total Earned</p>
+          <p className="text-3xl font-black text-[var(--accent-green)] tabular-nums">{fmt$(totalEarned)}</p>
+          <p className="text-[var(--text-muted)] text-xs mt-1">{myPayroll.filter((p) => p.status === 'Paid').length} paid entries</p>
         </div>
         <div className="card-surface rounded-2xl p-5">
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
-          <p className="text-[#c2c8d8] text-xs font-medium uppercase tracking-wider mb-1">Pending</p>
+          <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider mb-1">Pending</p>
           <p className="text-3xl font-black text-yellow-400 tabular-nums">{fmt$(totalPending)}</p>
-          <p className="text-[#8891a8] text-xs mt-1">{myPayroll.filter((p) => p.status !== 'Paid').length} pending entries</p>
+          <p className="text-[var(--text-muted)] text-xs mt-1">{myPayroll.filter((p) => p.status !== 'Paid').length} pending entries</p>
         </div>
       </div>
 
       {/* Earnings table */}
       <div className="card-surface rounded-2xl">
-        <div className="px-6 py-4 border-b border-[#333849]">
+        <div className="px-6 py-4 border-b border-[var(--border-subtle)]">
           <h2 className="text-white font-bold tracking-tight text-base">Payment History</h2>
         </div>
         {sorted.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <DollarSign className="w-8 h-8 text-[#525c72] mx-auto mb-3" />
+            <DollarSign className="w-8 h-8 text-[var(--text-dim)] mx-auto mb-3" />
             <p className="text-white font-bold text-sm mb-1">No earnings yet</p>
-            <p className="text-[#8891a8] text-xs">Earnings will appear once your deals reach the Installed phase.</p>
+            <p className="text-[var(--text-muted)] text-xs">Earnings will appear once your deals reach the Installed phase.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="table-header-frost">
-                <tr className="border-b border-[#333849]">
-                  <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Customer</th>
-                  <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Stage</th>
-                  <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Amount</th>
-                  <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Status</th>
-                  <th className="text-left px-6 py-3 text-[#c2c8d8] font-medium text-xs">Date</th>
+                <tr className="border-b border-[var(--border-subtle)]">
+                  <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Customer</th>
+                  <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Stage</th>
+                  <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Amount</th>
+                  <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Status</th>
+                  <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Date</th>
                 </tr>
               </thead>
               <tbody>
                 {sorted.map((entry) => (
-                  <tr key={entry.id} className="border-b border-[#333849]/50 even:bg-[#1d2028]/[0.15] hover:bg-[#00e07a]/[0.03] transition-colors">
+                  <tr key={entry.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-green)]/[0.03] transition-colors">
                     <td className="px-6 py-3 text-white">{entry.customerName || '\u2014'}</td>
                     <td className="px-6 py-3">
-                      <span className="bg-[#272b35] text-[#c2c8d8] text-xs px-2 py-0.5 rounded font-medium">{entry.paymentStage}</span>
+                      <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{entry.paymentStage}</span>
                     </td>
-                    <td className="px-6 py-3 text-[#00e07a] font-semibold">{fmt$(entry.amount)}</td>
+                    <td className="px-6 py-3 text-[var(--accent-green)] font-semibold">{fmt$(entry.amount)}</td>
                     <td className="px-6 py-3">
                       <PayrollStatusBadge status={entry.status} />
                     </td>
-                    <td className="px-6 py-3 text-[#8891a8] text-xs">{formatDate(entry.date)}</td>
+                    <td className="px-6 py-3 text-[var(--text-muted)] text-xs">{formatDate(entry.date)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1693,7 +1693,7 @@ function EarningsPageInner() {
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-[#8891a8] text-sm">You don&apos;t have permission to view this page.</p>
+        <p className="text-[var(--text-muted)] text-sm">You don&apos;t have permission to view this page.</p>
       </div>
     );
   }

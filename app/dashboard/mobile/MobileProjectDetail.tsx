@@ -62,13 +62,13 @@ function relativeTime(dateStr: string): string {
 // ── Activity type styling ──
 
 const ACTIVITY_STYLES: Record<string, string> = {
-  phase_change:    'var(--m-accent2, #00b4d8)',
+  phase_change:    'var(--m-accent2, var(--accent-cyan2))',
   flagged:         '#ef4444',
   unflagged:       '#f87171',
   m1_paid:         '#10b981',
   m2_paid:         '#10b981',
   note_edit:       '#f59e0b',
-  field_edit:      'var(--m-text-muted, #8899aa)',
+  field_edit:      'var(--m-text-muted, var(--text-mobile-muted))',
   created:         '#a855f7',
   setter_assigned: '#22d3ee',
 };
@@ -124,7 +124,7 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
         <p className="text-base text-slate-400">No activity yet</p>
       ) : (
         <div className="relative pl-6">
-          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--m-border, #1a2840)' }} />
+          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
           {activities.map((entry) => {
             const dotColor = ACTIVITY_STYLES[entry.type] ?? 'var(--m-text-dim, #445577)';
             return (
@@ -337,7 +337,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 style={{
                   width: isCurrent ? 14 : 10,
                   height: isCurrent ? 14 : 10,
-                  background: isCompleted ? '#00e5a0' : isCurrent ? '#00b4d8' : 'var(--m-border, #1a2840)',
+                  background: isCompleted ? 'var(--accent-emerald)' : isCurrent ? 'var(--accent-cyan2)' : 'var(--m-border, var(--border-mobile))',
                   willChange: 'transform',
                   animation: `dotPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 40}ms both`,
                   transition: 'width 300ms cubic-bezier(0.34, 1.56, 0.64, 1), height 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -345,7 +345,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 title={step}
               />
               {index < PIPELINE_STEPS.length - 1 && (
-                <div className="w-3 h-px" style={{ background: isCompleted ? '#00e5a0' : 'var(--m-border, #1a2840)' }} />
+                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))' }} />
               )}
             </div>
           );
@@ -357,7 +357,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         style={{
           color: isOffTrack
             ? (project.phase === 'Cancelled' ? '#ef4444' : '#f59e0b')
-            : 'var(--m-accent2, #00b4d8)',
+            : 'var(--m-accent2, var(--accent-cyan2))',
           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           letterSpacing: '0.02em',
           fontSize: '1rem',
@@ -401,10 +401,10 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               fontSize: 'clamp(2.5rem, 13vw, 3.5rem)',
               color:
                 myCommission.status === 'paid'
-                  ? '#00e5a0'
+                  ? 'var(--accent-emerald)'
                   : myCommission.status === 'partial'
-                  ? '#ffb020'
-                  : 'var(--m-accent, #00e5a0)',
+                  ? 'var(--accent-amber)'
+                  : 'var(--m-accent, var(--accent-emerald))',
               lineHeight: 1.05,
             }}
           >
@@ -412,7 +412,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           </p>
           <p
             style={{
-              color: 'var(--m-text-muted, #8899aa)',
+              color: 'var(--m-text-muted, var(--text-mobile-muted))',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               fontSize: '0.85rem',
               marginTop: '0.35rem',
@@ -430,7 +430,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Info rows — no card wrapper, thin separators */}
       <div className="space-y-0">
         {infoRows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--m-border, #1a2840)' }}>
+          <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
             <span className="text-base" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
             <span className="text-base font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
           </div>
@@ -484,12 +484,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             <div className="relative flex items-start justify-between pt-2 pb-4">
               {visibleStages.length > 1 && (
                 <>
-                  <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--m-border, #1a2840)' }} />
+                  <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
                   <div
                     className="absolute top-[18px] left-[14px] h-0.5 milestone-track-fill"
                     style={{
                       width: `calc(${Math.min(100, Math.max(0, fillPct))}% - 28px)`,
-                      background: 'linear-gradient(90deg, #00e5a0, #00b4d8)',
+                      background: 'linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan2))',
                       animation: 'trackFill 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
                     }}
                   />
@@ -500,16 +500,16 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   <div
                     className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
                     style={{
-                      background: stage.paid ? 'linear-gradient(135deg, #00e5a0, #00b4d8)' : 'var(--m-card, #0d1525)',
-                      border: `2px solid ${stage.paid ? '#00e5a0' : 'var(--m-border, #1a2840)'}`,
-                      color: stage.paid ? '#000' : 'var(--m-text-muted, #8899aa)',
+                      background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' : 'var(--m-card, var(--surface-mobile-card))',
+                      border: `2px solid ${stage.paid ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
+                      color: stage.paid ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
                       animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
                     }}
                   >{stage.key}</div>
                   <span
                     className="milestone-amount text-sm font-bold tabular-nums"
                     style={{
-                      color: stage.paid ? 'var(--m-accent, #00e5a0)' : 'var(--m-text-muted, #8899aa)',
+                      color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
                       fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                       animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
                     }}
@@ -538,13 +538,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <MobileActivityTimeline projectId={projectId} />
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--m-card, #0d1525)', borderTop: '1px solid var(--m-border, #1a2840)' }}>
+      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--m-card, var(--surface-mobile-card))', borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
             className="flex-1 min-h-[48px] text-black text-base font-medium rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
-              background: 'linear-gradient(135deg, #00e5a0, #00b4d8)',
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
@@ -556,9 +556,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           onClick={() => setMoreSheetOpen(true)}
           className="min-h-[48px] px-5 text-base font-medium rounded-xl active:scale-[0.95] transition-transform duration-75 ease-out"
           style={{
-            background: 'var(--m-card, #0d1525)',
-            border: '1px solid var(--m-border, #1a2840)',
-            color: 'var(--m-text-muted, #8899aa)',
+            background: 'var(--m-card, var(--surface-mobile-card))',
+            border: '1px solid var(--m-border, var(--border-mobile))',
+            color: 'var(--m-text-muted, var(--text-mobile-muted))',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >

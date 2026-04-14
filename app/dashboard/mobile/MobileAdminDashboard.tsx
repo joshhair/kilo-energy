@@ -19,11 +19,11 @@ import MobileStatCard from './shared/MobileStatCard';
 // ── Design tokens ────────────────────────────────────────────────────────────
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
-const ACCENT = 'var(--m-accent, #00e5a0)';
-const ACCENT2 = 'var(--m-accent2, #00b4d8)';
-const MUTED = 'var(--m-text-muted, #8899aa)';
+const ACCENT = 'var(--m-accent, var(--accent-emerald))';
+const ACCENT2 = 'var(--m-accent2, var(--accent-cyan2))';
+const MUTED = 'var(--m-text-muted, var(--text-mobile-muted))';
 const DIM = 'var(--m-text-dim, #445577)';
-const DANGER = 'var(--m-danger, #ff6b6b)';
+const DANGER = 'var(--m-danger, var(--accent-danger))';
 const WARNING = 'var(--m-warning, #f5a623)';
 
 function getGreeting(name: string): string {
@@ -229,7 +229,7 @@ export default function MobileAdminDashboard() {
             <div key={i} className="shrink-0 h-10 w-24 rounded-full bg-[#1a2235] animate-skeleton" style={{ animationDelay: `${i * 60}ms` }} />
           ))}
         </div>
-        <div className="rounded-2xl p-5 bg-[#0d1525] border border-[#1a2840] space-y-3">
+        <div className="rounded-2xl p-5 bg-[var(--surface-mobile-card)] border border-[var(--border-mobile)] space-y-3">
           <div className="h-4 w-20 rounded bg-[#1a2235] animate-skeleton" />
           <div className="h-10 w-40 rounded-lg bg-[#1a2235] animate-skeleton" style={{ animationDelay: '80ms' }} />
           <div className="flex gap-4 mt-2">
@@ -239,7 +239,7 @@ export default function MobileAdminDashboard() {
         </div>
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl p-4 bg-[#0d1525] border border-[#1a2840]">
+            <div key={i} className="rounded-2xl p-4 bg-[var(--surface-mobile-card)] border border-[var(--border-mobile)]">
               <div className="h-3 w-12 rounded bg-[#1a2235] animate-skeleton mb-2" style={{ animationDelay: `${i * 60}ms` }} />
               <div className="h-7 w-10 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: `${i * 60 + 30}ms` }} />
             </div>
@@ -277,7 +277,7 @@ export default function MobileAdminDashboard() {
                 fontFamily: FONT_BODY,
                 color: period === p.value ? '#000' : MUTED,
                 fontWeight: period === p.value ? 700 : undefined,
-                border: period === p.value ? 'none' : '1px solid var(--m-border, #1a2840)',
+                border: period === p.value ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                 position: 'relative',
                 zIndex: 1,
                 transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -301,7 +301,7 @@ export default function MobileAdminDashboard() {
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(animatedProfit)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Profit</p>
           </div>
-          <div className="h-8" style={{ width: '1px', background: 'var(--m-border, #1a2840)' }} />
+          <div className="h-8" style={{ width: '1px', background: 'var(--m-border, var(--border-mobile))' }} />
           <div>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(animatedPaid)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid to Reps</p>
@@ -329,7 +329,7 @@ export default function MobileAdminDashboard() {
             <button
               onClick={() => router.push('/dashboard/payroll')}
               className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
-              style={{ borderColor: 'var(--m-border, #1a2840)' }}
+              style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: MUTED }} />
@@ -343,7 +343,7 @@ export default function MobileAdminDashboard() {
             <button
               onClick={() => router.push('/dashboard/payroll')}
               className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
-              style={{ borderColor: 'var(--m-border, #1a2840)' }}
+              style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: WARNING }} />
@@ -357,7 +357,7 @@ export default function MobileAdminDashboard() {
             <button
               onClick={() => router.push('/dashboard/projects')}
               className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
-              style={{ borderColor: 'var(--m-border, #1a2840)' }}
+              style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
             >
               <div className="flex items-center gap-3">
                 <Flag className="w-4 h-4" style={{ color: DANGER }} />
@@ -447,7 +447,7 @@ export default function MobileAdminDashboard() {
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                   className={`w-full flex items-center justify-between min-h-[48px] py-2.5 text-left active:opacity-70 transition-opacity ${i < recentDeals.length - 1 ? 'border-b' : ''}`}
-                  style={{ borderColor: 'var(--m-border, #1a2840)' }}
+                  style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
                 >
                   <div className="min-w-0 flex-1 mr-3">
                     <p className="text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
