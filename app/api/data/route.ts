@@ -173,12 +173,10 @@ export async function GET() {
   const installerNames = installers.map((i) => ({ name: i.name, active: i.active }));
   const financerNames = financers.map((f) => ({ name: f.name, active: f.active }));
 
-  // installPayPct reveals internal M1/M2 payment split — admin-only
+  // installPayPct needed by all users to compute correct M2/M3 split at deal submission
   const installerPayConfigs: Record<string, { installPayPct: number }> = {};
-  if (isAdmin) {
-    for (const inst of installers) {
-      installerPayConfigs[inst.name] = { installPayPct: inst.installPayPct };
-    }
+  for (const inst of installers) {
+    installerPayConfigs[inst.name] = { installPayPct: inst.installPayPct };
   }
 
   const instIdToName: Record<string, string> = {};

@@ -862,7 +862,7 @@ export default function DashboardPage() {
       ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
-    return sum + periodProjects
+    return sum + projects
       .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
       .reduce((pSum, p) => {
         const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
@@ -907,6 +907,31 @@ export default function DashboardPage() {
   const installedPhases = ['Installed', 'PTO', 'Completed'];
   const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
+
+  // Period-scoped pipeline value for the trend badge — apples-to-apples vs prevInPipeline
+  const periodInPipeline = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase)).reduce((sum, p) => {
+    const closerM1 = p.m1Amount ?? 0;
+    const totalExpected = p.repId === effectiveRepId
+      ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
+      : p.setterId === effectiveRepId
+        ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        : 0;
+    const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
+    return sum + Math.max(0, totalExpected - alreadyPaid);
+  }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+    const completedDeals = projects.filter(p =>
+      (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+      ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+    ).length;
+    const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
+    return sum + periodProjects
+      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+      .reduce((pSum, p) => {
+        const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
+        const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
+        return pSum + Math.max(0, expected - alreadyPaid);
+      }, 0);
+  }, 0);
 
   // ── Previous-period equivalents for trend-badge percentage changes ──────────
   const prevActiveProjects = myPrevProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
@@ -1062,7 +1087,7 @@ export default function DashboardPage() {
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
       sparkStroke: 'var(--accent-cyan)',
-      pctChange: computePctChange(inPipeline, prevInPipeline),
+      pctChange: computePctChange(periodInPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
     },
