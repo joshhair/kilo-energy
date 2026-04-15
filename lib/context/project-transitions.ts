@@ -301,7 +301,8 @@ export function createMilestonePayroll(
   }
 
   // Closer entry (skip M1 when a setter exists — M1 goes entirely to the setter)
-  if ((fullAmount ?? 0) > 0 && !(isAcceptance && old.setterId)) {
+  // Use freshProject.setterId (post-update) so a simultaneously-added setter suppresses the closer M1.
+  if ((fullAmount ?? 0) > 0 && !(isAcceptance && freshProject.setterId)) {
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_c`,
       repId: old.repId,

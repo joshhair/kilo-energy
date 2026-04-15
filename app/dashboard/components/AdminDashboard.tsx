@@ -118,7 +118,7 @@ export function AdminDashboard({
     const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
 
     return { totalRevenue, totalProfit, totalPaid, totalKWSold, totalKWInstalled };
-  }, [projects, payroll]);
+  }, [projects, payroll, solarTechProducts, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions]);
   const totalUsers = totalReps;
 
   // ── Single-pass project aggregations ──────────────────────────────────
