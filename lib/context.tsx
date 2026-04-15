@@ -148,6 +148,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const [payrollEntries, setPayrollEntries] = useState<PayrollEntry[]>(PAYROLL_ENTRIES);
+  const payrollEntriesRef = useRef(payrollEntries);
+  payrollEntriesRef.current = payrollEntries;
   const [reimbursements, setReimbursements] = useState<Reimbursement[]>(REIMBURSEMENTS);
   const [trainerAssignments, setTrainerAssignments] = useState<TrainerAssignment[]>(TRAINER_ASSIGNMENTS);
   const [incentives, setIncentives] = useState<Incentive[]>(INCENTIVES);
@@ -516,8 +518,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (pastPTO) {
               const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const hasM2Entry = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
-              const setterM3 = (effectiveSetterM3 ?? 0) > 0
-                ? (effectiveSetterM3 ?? 0)
+              const setterM3 = effectiveSetterM3 != null
+                ? effectiveSetterM3
                 : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
                   ? Math.round((effectiveSetterM2 ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
                   : 0;
@@ -744,27 +746,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
             updated = updated.map((p) => p.id === id ? { ...p, m3Amount: m3AtInstalled! } : p);
           }
 
-          setPayrollEntries((prevEntries) => {
-            const entries = createMilestonePayroll({
-              projectId: id, old, updatedProjects: updated,
-              stage: isAcceptance ? 'M1' : 'M2',
-              isAcceptance, isInstalled, installPayPct,
-              computedM3Amount: m3AtInstalled, deps: transitionDeps,
-            }, prevEntries);
-            entries.forEach((entry) => persistPayrollEntry(entry));
-            return entries.length > 0 ? [...prevEntries, ...entries] : prevEntries;
-          });
+          const m1m2Entries = createMilestonePayroll({
+            projectId: id, old, updatedProjects: updated,
+            stage: isAcceptance ? 'M1' : 'M2',
+            isAcceptance, isInstalled, installPayPct,
+            computedM3Amount: m3AtInstalled, deps: transitionDeps,
+          }, payrollEntriesRef.current);
+          if (m1m2Entries.length > 0) {
+            m1m2Entries.forEach((entry) => persistPayrollEntry(entry));
+            setPayrollEntries((prevEntries) => [...prevEntries, ...m1m2Entries]);
+          }
         }
 
         // M3: Auto-draft at PTO
         if (isPTO) {
-          setPayrollEntries((prevEntries) => {
-            const entries = createM3Payroll({
-              projectId: id, old, updatedProjects: updated, deps: transitionDeps,
-            }, prevEntries);
-            entries.forEach((entry) => persistPayrollEntry(entry));
-            return entries.length > 0 ? [...prevEntries, ...entries] : prevEntries;
-          });
+          const m3Entries = createM3Payroll({
+            projectId: id, old, updatedProjects: updated, deps: transitionDeps,
+          }, payrollEntriesRef.current);
+          if (m3Entries.length > 0) {
+            m3Entries.forEach((entry) => persistPayrollEntry(entry));
+            setPayrollEntries((prevEntries) => [...prevEntries, ...m3Entries]);
+          }
         }
       }
 

@@ -699,7 +699,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const pagedProjects = repProjects.slice(projStart, projEnd);
 
   const totalKW = repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
-  const totalEst = repProjects.reduce((s, p) => {
+  const totalEst = repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => {
     if (p.repId === id) {
       // Closer: gets $0 M1 when a setter exists (setter takes M1); otherwise earns m1Amount
       const closerM1 = p.setterId ? 0 : p.m1Amount;
@@ -1168,10 +1168,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 <td className="px-5 py-3 text-right text-[var(--text-secondary)] tabular-nums">{proj.kWSize}</td>
                 {!isPM && (
                   <td className="px-5 py-3 text-right text-[var(--accent-green)] font-semibold tabular-nums">
-                    ${(proj.repId === id
+                    {(proj.phase === 'Cancelled' || proj.phase === 'On Hold') ? '$0' : `$${(proj.repId === id
                         ? (proj.setterId === id ? (proj.m1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
                         : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                      ).toLocaleString()}
+                      ).toLocaleString()}`}
                   </td>
                 )}
               </tr>

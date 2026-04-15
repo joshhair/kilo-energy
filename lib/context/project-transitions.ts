@@ -465,8 +465,8 @@ export function createM3Payroll(
 
   // Guard against m3Amount being null in DB due to a failed persist at Installed time.
   const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-  const m3 = (proj?.m3Amount ?? 0) > 0 && installPayPct < 100
-    ? proj!.m3Amount!
+  const m3 = proj?.m3Amount != null && installPayPct < 100
+    ? proj.m3Amount
     : installPayPct > 0 && installPayPct < 100
       ? Math.round((proj?.m2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
       : 0;
@@ -524,8 +524,8 @@ export function createM3Payroll(
   }
 
   const setterM3 = old.setterId
-    ? (proj?.setterM3Amount ?? 0) > 0 && installPayPct < 100
-      ? proj!.setterM3Amount!
+    ? proj?.setterM3Amount != null && installPayPct < 100
+      ? proj.setterM3Amount
       : installPayPct > 0 && installPayPct < 100
         ? Math.round((proj?.setterM2Amount ?? 0) * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0
