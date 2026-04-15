@@ -259,10 +259,10 @@ function MyPayPageInner() {
     return myProjects
       .filter((p) => preAcceptance.includes(p.phase))
       .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0)), 0);
-  }, [myProjects]);
+  }, [myProjects, effectiveRepId]);
 
   const projectedM2 = useMemo(() => {
-    const preInstalled = ['Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
+    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
     return myProjects
       .filter((p) => preInstalled.includes(p.phase))
       .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
