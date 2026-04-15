@@ -102,8 +102,20 @@ export default function MobileAdminDashboard() {
   // ── Baseline helper ─────────────────────────────────────────────────────
   function getBaselines(p: (typeof projects)[number]) {
     if (p.baselineOverride) return p.baselineOverride;
-    if (p.installer === 'SolarTech' && p.solarTechProductId) return getSolarTechBaseline(p.solarTechProductId, p.kWSize, solarTechProducts);
-    if (p.installerProductId) return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
+    if (p.installer === 'SolarTech' && p.solarTechProductId) {
+      try {
+        return getSolarTechBaseline(p.solarTechProductId, p.kWSize, solarTechProducts);
+      } catch {
+        return { closerPerW: 0, kiloPerW: 0 };
+      }
+    }
+    if (p.installerProductId) {
+      try {
+        return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
+      } catch {
+        return { closerPerW: 0, kiloPerW: 0 };
+      }
+    }
     return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
   }
 
@@ -281,7 +293,7 @@ export default function MobileAdminDashboard() {
       {/* ── Quick stats row ── */}
       <div className="grid grid-cols-3 gap-3">
         <MobileStatCard label="Active" value={active.length} color={ACCENT} />
-        <MobileStatCard label="Reps" value={reps.length} color={ACCENT2} />
+        <MobileStatCard label="Reps" value={reps.filter(r => r.active).length} color={ACCENT2} />
         <MobileStatCard label="kW" value={formatCompactKW(totalKW)} color={WARNING} />
       </div>
 
