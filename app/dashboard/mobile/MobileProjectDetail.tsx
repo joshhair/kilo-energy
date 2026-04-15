@@ -154,6 +154,13 @@ function MobileActivityTimeline({ projectId }: { projectId: string }) {
 // ── Main Component ──
 
 export default function MobileProjectDetail({ projectId }: { projectId: string }) {
+  // Reset scroll on every project navigation. Without this the App Router
+  // restores the parent (Projects list) scroll position, dropping users into
+  // the middle of the detail page.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [projectId]);
+
   const {
     currentRole, effectiveRole, projects, currentRepId, payrollEntries,
     updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts,
@@ -303,7 +310,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+    <div className="px-5 pt-4 pb-40 space-y-4 animate-mobile-slide-in">
 
       {/* Back button */}
       <button
