@@ -226,7 +226,7 @@ function NewDealPage() {
 
   const handleInstallerChange = (value: string) => {
     setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
-    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '' }));
+    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
   };
 
   const handleFinancerChange = (value: string) => {
