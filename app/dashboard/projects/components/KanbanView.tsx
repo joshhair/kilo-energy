@@ -75,7 +75,7 @@ export default function KanbanView({
   // shift to a different phase. Sync openPhases so the accordion auto-opens
   // the correct phase instead of keeping an empty one open.
   useEffect(() => {
-    setOpenPhases((prev) => new Set([...prev, currentPhase]));
+    setOpenPhases(new Set([currentPhase]));
   }, [currentPhase]);
 
   // Kanban column card limit — columns show up to KANBAN_CARD_LIMIT cards

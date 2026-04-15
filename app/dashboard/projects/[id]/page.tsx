@@ -902,6 +902,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // Validate required fields before saving
     const errs: Record<string, string> = {};
     if (!editVals.installer) errs.installer = 'Installer is required';
+    if (editVals.installer === 'SolarTech' && !project.solarTechProductId) errs.installer = 'SolarTech requires a product — select a SolarTech product before changing the installer';
     if (!editVals.soldDate) errs.soldDate = 'Sold date is required';
     if (!editVals.kWSize || isNaN(kw) || kw <= 0) errs.kWSize = 'Must be a number greater than 0';
     if (!editVals.netPPW || isNaN(ppw) || ppw <= 0) errs.netPPW = 'Must be a number greater than 0';
@@ -1738,6 +1739,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   kiloPerW: overrideKilo,
                   ...(!isNaN(overrideSetter) ? { setterPerW: overrideSetter } : {}),
                 };
+              } else if (editVals.installer === 'SolarTech' && !project.solarTechProductId) {
+                return (
+                  <div className="mt-4 rounded-xl p-4 bg-amber-900/20 border border-amber-500/30">
+                    <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
+                    <p className="text-amber-400 text-xs flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> A SolarTech product selection is required to preview commission.
+                    </p>
+                  </div>
+                );
               } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
                 previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW, solarTechProducts);
               } else if (project.installerProductId && editVals.installer === project.installer) {
