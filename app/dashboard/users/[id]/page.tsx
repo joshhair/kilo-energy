@@ -250,8 +250,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         setFetchedUser({ ...fetchedUser, ...body, name: `${body.firstName ?? fetchedUser.firstName} ${body.lastName ?? fetchedUser.lastName}` });
       }
       // Sync context so rep/sub-dealer profiles update immediately across the app.
-      if (repInContext) updateRepContact(id, body);
-      else if (subDealer) updateSubDealerContact(id, body);
+      if (repInContext) updateRepContact(id, body, true);
+      else if (subDealer) updateSubDealerContact(id, body, true);
       setMetaRefreshKey((k) => k + 1);
       toast('Saved', 'success');
       setEditingField(null);

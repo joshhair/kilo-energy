@@ -64,7 +64,7 @@ interface AppContextType {
   /** Hard delete — removes the row entirely. Server enforces zero-relations gate (returns 409 if user has any history). */
   deleteRepPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
   updateRepType: (id: string, repType: 'closer' | 'setter' | 'both') => void;
-  updateRepContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => void;
+  updateRepContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipPersist?: boolean) => void;
   // Sub-dealer management
   subDealers: SubDealer[];
   addSubDealer: (firstName: string, lastName: string, email: string, phone: string, id?: string) => Promise<{ id: string } | undefined>;
@@ -73,7 +73,7 @@ interface AppContextType {
   deactivateSubDealer: (id: string) => Promise<void>;
   reactivateSubDealer: (id: string) => Promise<void>;
   deleteSubDealerPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
-  updateSubDealerContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => void;
+  updateSubDealerContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipFetch?: boolean) => void;
   // Project editing
   updateProject: (id: string, updates: Partial<Project>) => void;
   // Editable baselines (derived from active pricing versions for backward compat)

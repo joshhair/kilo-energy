@@ -116,10 +116,11 @@ export function createUserActions(deps: UserDeps) {
     }
   };
 
-  const updateRepContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
+  const updateRepContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipPersist = false) => {
     const reps = getReps();
     const snapshot = reps.find((r) => r.id === id);
     setReps((prev) => prev.map((r) => r.id === id ? { ...r, ...updates, name: `${updates.firstName ?? r.firstName} ${updates.lastName ?? r.lastName}` } : r));
+    if (skipPersist) return;
     persistFetch(`/api/reps/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -199,17 +200,19 @@ export function createUserActions(deps: UserDeps) {
     }
   };
 
-  const updateSubDealerContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
+  const updateSubDealerContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipFetch?: boolean) => {
     const subDealers = getSubDealers();
     const snapshot = subDealers.find((s) => s.id === id);
     setSubDealers((prev) => prev.map((s) => s.id === id ? { ...s, ...updates, name: `${updates.firstName ?? s.firstName} ${updates.lastName ?? s.lastName}` } : s));
-    persistFetch(`/api/users/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    }, 'Failed to update sub-dealer contact').catch(() => {
-      if (snapshot) setSubDealers((prev) => prev.map((s) => s.id === id ? snapshot : s));
-    });
+    if (!skipFetch) {
+      persistFetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      }, 'Failed to update sub-dealer contact').catch(() => {
+        if (snapshot) setSubDealers((prev) => prev.map((s) => s.id === id ? snapshot : s));
+      });
+    }
   };
 
   const removeSubDealer = (id: string) => {
