@@ -217,11 +217,14 @@ export default function BlitzDetailPage() {
 
   const kiloMargin = useMemo(() => {
     return approvedVisibleProjects.reduce((s: number, p: any) => {
+      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+      if (!isSelfGen && !closerApproved) return s;
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
       const setterCost = (p.setterId && p.setterId !== p.closerId) ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
     }, 0);
-  }, [approvedVisibleProjects, installerPricingVersions, productCatalogProducts, solarTechProducts]);
+  }, [approvedVisibleProjects, approvedParticipantIds, installerPricingVersions, productCatalogProducts, solarTechProducts]);
   const netProfit = kiloMargin - totalCosts;
   const roi = totalCosts > 0 ? ((netProfit / totalCosts) * 100) : 0;
 
@@ -458,7 +461,8 @@ export default function BlitzDetailPage() {
       setCostDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
       setShowAddCost(false);
       loadBlitz();
-    } finally { setAddingCost(false); }
+    } catch { toast('Failed to add cost', 'error'); }
+    finally { setAddingCost(false); }
   };
 
   const handleDeleteCost = async (costId: string) => {
@@ -641,8 +645,9 @@ export default function BlitzDetailPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:text-white hover:border-[var(--border)] transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
                 {isAdmin && <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); }, confirmLabel: 'Delete' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>}
+                {isOwner && canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && <button disabled={cancelRequesting} onClick={() => { setCancelReason(''); setShowCancelDialog(true); }} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors disabled:opacity-50"><XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}</button>}
               </div>
-            ) : canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && (blitz.ownerId === effectiveRepId || blitz.createdById === effectiveRepId) && (
+            ) : canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && blitz.createdById === effectiveRepId && (
               <button
                 disabled={cancelRequesting}
                 onClick={() => { setCancelReason(''); setShowCancelDialog(true); }}
