@@ -1169,7 +1169,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Period tabs — compact row, flush right */}
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-end mb-6 overflow-x-auto">
         <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
           {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
           {PERIODS.map((p, i) => (
@@ -1263,7 +1263,7 @@ export default function DashboardPage() {
         <>
           <div
             ref={statsRef}
-            className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-4 mb-6 ${statsVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
+            className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-4 mb-6 pb-20 md:pb-0 ${statsVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
           >
             {stats.map((stat, i) => {
               const Icon = stat.icon;
