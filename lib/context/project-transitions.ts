@@ -405,11 +405,12 @@ export function createMilestonePayroll(
         const setterTraineeDeals = updatedProjects.filter(p => (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) && ((deps.installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)).length;
         const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
         const m2SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+        const setterRep = deps.repsRef.current.find(r => r.id === old.setterId);
+        const setterTraineeNotesPrefix = `Trainer override M2 — ${setterRep?.name ?? old.setterName ?? ''}`;
         const setterTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
-          (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterTrainerAssignment.trainerId
+          (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterTrainerAssignment.trainerId
         );
         if (m2SetterTrainerAmount > 0 && !setterTrainerAlreadyExists) {
-          const setterRep = deps.repsRef.current.find(r => r.id === old.setterId);
           newEntries.push({
             id: `pay_${ts}_m2_trainer_s`,
             repId: setterTrainerAssignment.trainerId,

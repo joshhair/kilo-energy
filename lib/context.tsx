@@ -647,7 +647,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Guard: abort the entire transition if m2Amount is missing at Installed
     if (updates.phase === 'Installed' && old && old.phase !== 'Installed' && !old.subDealerId) {
       if ((updates.m2Amount ?? old.m2Amount) == null) {
-        emitPersistError(`M2 payroll skipped for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate.`);
+        emitPersistError(`Phase change to Installed blocked for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate commission first.`);
         return;
       }
     }
@@ -660,7 +660,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         (updates.m1Amount ?? old.m1Amount) == null ||
         (effectiveSetterId != null && effectiveSetterM1 == null)
       ) {
-        emitPersistError(`M1 payroll skipped for ${old.customerName} — m1Amount is missing. Re-save the project to recalculate.`);
+        emitPersistError(`Phase change to Acceptance blocked for ${old.customerName} — m1Amount is missing. Re-save the project to recalculate commission first.`);
         return;
       }
     }
