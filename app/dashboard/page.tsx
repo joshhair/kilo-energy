@@ -89,16 +89,12 @@ type AttentionItem = {
   stuckPhase?: string;
   holdDays?: number;
   repName?: string;
-  mentionSnippet?: string;
-  mentionAuthor?: string;
-  mentionPendingTasks?: number;
 };
 
 export function NeedsAttentionSection({
   activeProjects,
   isAdmin = false,
   onUnflag,
-  mentions = [],
 }: {
   activeProjects: Array<{
     id: string;
@@ -112,7 +108,6 @@ export function NeedsAttentionSection({
   }>;
   isAdmin?: boolean;
   onUnflag?: (projectId: string) => void;
-  mentions?: MentionItem[];
 }) {
   const [sectionRef, sectionVisible] = useScrollReveal<HTMLDivElement>();
   const PHASE_STUCK_THRESHOLDS = getPhaseStuckThresholds();
@@ -670,8 +665,14 @@ export default function DashboardPage() {
 
   // Keyboard shortcuts (N/P/E/D) handled globally in layout.tsx
 
-  const periodProjects = projects.filter((p) => isInPeriod(p.soldDate, period));
-  const periodPayroll = payrollEntries.filter((p) => isInPeriod(p.date, period));
+  const periodProjects = useMemo(
+    () => projects.filter((p) => isInPeriod(p.soldDate, period)),
+    [projects, period],
+  );
+  const periodPayroll = useMemo(
+    () => payrollEntries.filter((p) => isInPeriod(p.date, period)),
+    [payrollEntries, period],
+  );
 
   const myProjects =
     effectiveRole === 'admin'
@@ -1307,7 +1308,6 @@ export default function DashboardPage() {
                 (p.repId === effectiveRepId || p.setterId === effectiveRepId) &&
                 ((ACTIVE_PHASES.includes(p.phase) && p.phase !== 'Completed') || p.phase === 'On Hold')
             )}
-            mentions={dashMentions}
           />
 
           {/* My Tasks — aggregated uncompleted check items from chatter mentions */}

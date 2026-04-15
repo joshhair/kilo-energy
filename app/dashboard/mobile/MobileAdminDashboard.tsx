@@ -297,8 +297,8 @@ export default function MobileAdminDashboard() {
           {draftCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
-              style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
+              style={pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: MUTED }} />
@@ -311,8 +311,8 @@ export default function MobileAdminDashboard() {
           {pendingCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
-              style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
+              style={flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: WARNING }} />
@@ -325,8 +325,8 @@ export default function MobileAdminDashboard() {
           {flaggedCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity border-b"
-              style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
+              style={stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <Flag className="w-4 h-4" style={{ color: DANGER }} />

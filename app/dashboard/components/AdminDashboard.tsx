@@ -121,31 +121,15 @@ export function AdminDashboard({
   }, [projects, payroll, solarTechProducts, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions]);
   const totalUsers = totalReps;
 
-  // ── Single-pass project aggregations ──────────────────────────────────
-  const allProjectAggregations = useMemo(() => {
+  // ── Single-pass project aggregations (all-time, for attention + installer ranking) ──
+  const { attentionActiveProjects, installerRanking, maxInstallerDeals } = useMemo(() => {
     const activeSet = new Set(['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO']);
-    const inactiveSet = new Set(['Cancelled', 'On Hold']);
     const attentionSet = new Set([...activeSet, 'On Hold']);
 
-    let activeCount = 0;
-    let inactiveCount = 0;
-    let completedCount = 0;
-    const pipelinePhaseCounts: Record<string, number> = {};
-    for (const phase of ACTIVE_PHASES) pipelinePhaseCounts[phase] = 0;
-    const pipelineActive: typeof projects = [];
     const attentionActiveProjects: typeof projects = [];
     const installerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
 
     for (const p of allProjects) {
-      if (activeSet.has(p.phase)) {
-        activeCount++;
-        pipelineActive.push(p);
-        if (pipelinePhaseCounts[p.phase] !== undefined) pipelinePhaseCounts[p.phase]++;
-      } else if (inactiveSet.has(p.phase)) {
-        inactiveCount++;
-      } else if (p.phase === 'Completed') {
-        completedCount++;
-      }
       if (attentionSet.has(p.phase)) attentionActiveProjects.push(p);
 
       // Installer rollup
@@ -156,31 +140,13 @@ export function AdminDashboard({
       installerMap.set(p.installer, prev);
     }
 
-    const pipelineNonEmpty = ACTIVE_PHASES.filter((ph) => pipelinePhaseCounts[ph] > 0);
     const installerRanking = [...installerMap.entries()]
       .map(([name, data]) => ({ name, ...data }))
       .sort((a, b) => b.deals - a.deals);
     const maxInstallerDeals = Math.max(1, ...installerRanking.map((i) => i.deals));
 
-    return {
-      activeCount,
-      inactiveCount,
-      completedCount,
-      pipelineActive,
-      pipelinePhaseCounts,
-      pipelineNonEmpty,
-      pipelineTotal: pipelineActive.length,
-      attentionActiveProjects,
-      installerRanking,
-      maxInstallerDeals,
-    };
+    return { attentionActiveProjects, installerRanking, maxInstallerDeals };
   }, [allProjects]);
-
-  const {
-    attentionActiveProjects,
-    installerRanking,
-    maxInstallerDeals,
-  } = allProjectAggregations;
 
   const topStats = [
     { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
@@ -191,34 +157,61 @@ export function AdminDashboard({
     { label: 'Total kW Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: 'var(--accent-red)', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed or PTO status' },
   ];
 
-  // Period-filtered pipeline counts for the stat cards
-  const periodActiveCount = projects.filter((p) => ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO'].includes(p.phase)).length;
-  const periodInactiveCount = projects.filter((p) => p.phase === 'Cancelled' || p.phase === 'On Hold').length;
-  const periodCompletedCount = projects.filter((p) => p.phase === 'Completed').length;
+  // Period-filtered aggregations (stat cards, pipeline bar, installer ranking)
+  const {
+    periodActiveCount,
+    periodInactiveCount,
+    periodCompletedCount,
+    periodPipelinePhaseCounts,
+    periodPipelineNonEmpty,
+    periodPipelineTotal,
+    periodInstallerRanking,
+    periodMaxInstallerDeals,
+  } = useMemo(() => {
+    const PIPELINE_PHASES = ACTIVE_PHASES.filter((ph) => ph !== 'Completed');
 
-  // Period-filtered pipeline bar data
-  const PIPELINE_PHASES = ACTIVE_PHASES.filter((ph) => ph !== 'Completed');
-  const periodPipelinePhaseCounts: Record<string, number> = {};
-  for (const phase of PIPELINE_PHASES) periodPipelinePhaseCounts[phase] = 0;
-  for (const p of projects) {
-    if (periodPipelinePhaseCounts[p.phase] !== undefined) periodPipelinePhaseCounts[p.phase]++;
-  }
-  const periodPipelineNonEmpty = PIPELINE_PHASES.filter((ph) => periodPipelinePhaseCounts[ph] > 0);
-  const periodPipelineTotal = periodPipelineNonEmpty.reduce((sum, ph) => sum + periodPipelinePhaseCounts[ph], 0);
+    let periodActiveCount = 0;
+    let periodInactiveCount = 0;
+    let periodCompletedCount = 0;
+    const periodPipelinePhaseCounts: Record<string, number> = {};
+    for (const phase of PIPELINE_PHASES) periodPipelinePhaseCounts[phase] = 0;
+    const periodInstallerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
 
-  // Installer rollup scoped to the period filter
-  const periodInstallerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
-  for (const p of projects) {
-    const prev = periodInstallerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
-    prev.deals++;
-    prev.kW += p.kWSize;
-    if (p.phase === 'Cancelled') prev.cancelled++;
-    periodInstallerMap.set(p.installer, prev);
-  }
-  const periodInstallerRanking = [...periodInstallerMap.entries()]
-    .map(([name, data]) => ({ name, ...data }))
-    .sort((a, b) => b.deals - a.deals);
-  const periodMaxInstallerDeals = Math.max(1, ...periodInstallerRanking.map((i) => i.deals));
+    for (const p of projects) {
+      if (['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO'].includes(p.phase)) {
+        periodActiveCount++;
+      } else if (p.phase === 'Cancelled' || p.phase === 'On Hold') {
+        periodInactiveCount++;
+      } else if (p.phase === 'Completed') {
+        periodCompletedCount++;
+      }
+      if (periodPipelinePhaseCounts[p.phase] !== undefined) periodPipelinePhaseCounts[p.phase]++;
+
+      const prev = periodInstallerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
+      prev.deals++;
+      prev.kW += p.kWSize;
+      if (p.phase === 'Cancelled') prev.cancelled++;
+      periodInstallerMap.set(p.installer, prev);
+    }
+
+    const periodPipelineNonEmpty = PIPELINE_PHASES.filter((ph) => periodPipelinePhaseCounts[ph] > 0);
+    const periodPipelineTotal = periodPipelineNonEmpty.reduce((sum, ph) => sum + periodPipelinePhaseCounts[ph], 0);
+    const periodInstallerRanking = [...periodInstallerMap.entries()]
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.deals - a.deals);
+    const periodMaxInstallerDeals = Math.max(1, ...periodInstallerRanking.map((i) => i.deals));
+
+    return {
+      periodActiveCount,
+      periodInactiveCount,
+      periodCompletedCount,
+      periodPipelinePhaseCounts,
+      periodPipelineNonEmpty,
+      periodPipelineTotal,
+      periodInstallerRanking,
+      periodMaxInstallerDeals,
+    };
+  }, [projects]);
 
   const pipelineStats = [
     { label: 'Active Projects', value: periodActiveCount, raw: periodActiveCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-cyan)', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
