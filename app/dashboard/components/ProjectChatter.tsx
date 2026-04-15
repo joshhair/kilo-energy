@@ -211,7 +211,6 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
       })
       .finally(() => {
         setLoading(false);
-        initialLoadDone.current = true;
       });
   }, [projectId]);
 
@@ -237,12 +236,28 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Auto-scroll to bottom of messages — only after user sends (not on initial load)
-  const initialLoadDone = useRef(false);
+  // Auto-scroll to the latest message — only when the *last* message's id
+  // changes (i.e. someone appended a new message). This intentionally does
+  // NOT fire on:
+  //   - Initial fetch (last id was undefined → now defined; we treat the
+  //     first observation as a baseline, not a scroll trigger)
+  //   - loadEarlierMessages prepends (last message id is unchanged because
+  //     older messages get inserted at the front of the array)
+  //
+  // The previous attempts (initialLoadDone flag, count-grew check) all had
+  // race conditions or false-positives. Tracking the *last id* is race-free
+  // and semantically matches "did the user just send/receive a new message".
+  // On mobile, scrolling here would otherwise pull the entire page down
+  // because the chatter shares a scroll ancestor with the page (the layout
+  // <main> element with overflow-y-auto).
+  const lastMessageId = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!initialLoadDone.current) {
-      return;
-    }
+    const newest = messages[messages.length - 1]?.id;
+    const previous = lastMessageId.current;
+    lastMessageId.current = newest;
+    // Skip first observation — we're just recording the baseline.
+    if (previous === undefined) return;
+    if (newest === previous) return;
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
