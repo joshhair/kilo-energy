@@ -563,6 +563,18 @@ select {
   position: relative;
 }
 
+/* Shared "active filter" pill style. Use for segmented controls,
+   tabs, pagination, toggles — anywhere the button indicates "current
+   view" rather than "click to do something". For primary CTAs (Save,
+   Submit, Add), keep the solid bright fill with text-black. */
+.filter-tab-active {
+  background: linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18));
+  border: 1px solid rgba(0, 224, 122, 0.45);
+  box-shadow: 0 0 12px rgba(0, 224, 122, 0.12);
+  color: #fff;
+  font-weight: 600;
+}
+
 /* The sliding pill that animates behind the active tab button.
    Deliberately dark so the white button label overlaid by it stays
    readable — a solid bright-green fill here produced white-on-bright

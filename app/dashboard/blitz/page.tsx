@@ -826,7 +826,15 @@ function BlitzPageInner() {
               ref={(el) => { adminTabRefs.current[i] = el; }}
               onClick={() => setTab(t)}
               className="relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-              style={tab === t ? { background: 'var(--accent-green)', color: '#000' } : { color: 'var(--text-secondary)' }}
+              style={tab === t
+                ? {
+                    background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                    border: '1px solid rgba(0, 224, 122, 0.45)',
+                    boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                    color: '#fff',
+                    fontWeight: 600,
+                  }
+                : { color: 'var(--text-secondary)' }}
             >
               {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: 'var(--accent-red)', color: '#fff' }}>{pendingRequests.length}</span>}</>}
             </button>
@@ -892,7 +900,13 @@ function BlitzPageInner() {
                     onClick={() => setStatusFilter(s)}
                     className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
                     style={isActive
-                      ? { background: 'var(--accent-green)', color: '#000' }
+                      ? {
+                          background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                          border: '1px solid rgba(0, 224, 122, 0.45)',
+                          boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                          color: '#fff',
+                          fontWeight: 600,
+                        }
                       : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }
                     }
                   >

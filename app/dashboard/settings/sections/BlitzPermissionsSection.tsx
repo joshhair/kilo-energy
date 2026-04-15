@@ -158,7 +158,13 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
             onClick={() => setRoleFilter(role)}
             className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
             style={roleFilter === role
-              ? { background: 'var(--accent-green)', color: '#000' }
+              ? {
+                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                  border: '1px solid rgba(0, 224, 122, 0.45)',
+                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  color: '#fff',
+                  fontWeight: 600,
+                }
               : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }
             }
           >

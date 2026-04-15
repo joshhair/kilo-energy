@@ -733,7 +733,13 @@ function PayrollPageInner() {
             onClick={() => setPageView(v)}
             className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={pageView === v
-              ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+              ? {
+                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                  border: '1px solid rgba(0, 224, 122, 0.45)',
+                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  color: '#fff',
+                  fontWeight: 600,
+                }
               : { color: 'var(--text-secondary)' }
             }
           >
@@ -913,7 +919,13 @@ function PayrollPageInner() {
             onClick={() => changeStatusTab(s)}
             className="relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={statusTab === s
-              ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+              ? {
+                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                  border: '1px solid rgba(0, 224, 122, 0.45)',
+                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  color: '#fff',
+                  fontWeight: 600,
+                }
               : { color: 'var(--text-secondary)' }
             }
           >
@@ -935,7 +947,13 @@ function PayrollPageInner() {
             onClick={() => changeTypeTab(t)}
             className="relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
             style={typeTab === t
-              ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+              ? {
+                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                  border: '1px solid rgba(0, 224, 122, 0.45)',
+                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  color: '#fff',
+                  fontWeight: 600,
+                }
               : { color: 'var(--text-muted)' }
             }
           >

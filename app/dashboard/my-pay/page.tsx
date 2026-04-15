@@ -786,7 +786,7 @@ function MyPayPageInner() {
                 key={page}
                 onClick={() => setPeriodPage(page)}
                 className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  page === safePeriodPage ? 'text-black bg-[var(--accent-green)] font-bold' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'
+                  page === safePeriodPage ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'
                 }`}
               >
                 {page}
