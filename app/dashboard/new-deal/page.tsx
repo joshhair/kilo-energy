@@ -258,7 +258,8 @@ function NewDealPage() {
 
   // ── Derived values ─────────────────────────────────────────────────────────
 
-  const closerId = currentRole === 'admin' ? form.repId : (currentRepId ?? '');
+  const currentRep = reps.find((r) => r.id === currentRepId);
+  const closerId = currentRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (currentRepId ?? ''));
 
   // When a blitz is selected, only approved participants of that blitz may be setters.
   const setterPickerReps = useMemo(() => {
