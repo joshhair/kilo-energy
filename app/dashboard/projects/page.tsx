@@ -234,7 +234,13 @@ function ProjectsPageInner() {
               onClick={() => setTab(t)}
               className="relative z-10 px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-colors"
               style={tab === t
-                ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+                ? {
+                    background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                    border: '1px solid rgba(0, 224, 122, 0.45)',
+                    boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                    color: '#fff',
+                    fontWeight: 600,
+                  }
                 : { color: 'var(--text-secondary)' }
               }
             >
@@ -252,7 +258,13 @@ function ProjectsPageInner() {
                 onClick={() => setDealScope(scope)}
                 className="relative px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150"
                 style={dealScope === scope
-                  ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+                  ? {
+                      background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                      border: '1px solid rgba(0, 224, 122, 0.45)',
+                      boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                      color: '#fff',
+                      fontWeight: 600,
+                    }
                   : { color: 'var(--text-secondary)' }
                 }
               >
@@ -279,7 +291,7 @@ function ProjectsPageInner() {
               onClick={() => setStatusFilter(s.value)}
               className="relative z-10 px-4 py-1.5 min-h-[40px] rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap"
               style={statusFilter === s.value
-                ? { background: 'var(--accent-green)', color: '#000', fontWeight: 700 }
+                ? { color: '#fff', fontWeight: 600 }
                 : { color: 'var(--text-muted)' }
               }
             >
@@ -307,7 +319,13 @@ function ProjectsPageInner() {
             onClick={() => setQaOnly((v) => !v)}
             className="rounded-xl px-3 py-1.5 min-h-[36px] text-xs font-semibold transition-colors w-full md:w-auto"
             style={qaOnly
-              ? { background: 'var(--accent-green)', color: '#000' }
+              ? {
+                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                  border: '1px solid rgba(0, 224, 122, 0.45)',
+                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  color: '#fff',
+                  fontWeight: 600,
+                }
               : { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
             title="Show only agent-generated test deals ([QA] prefix)"
           >
