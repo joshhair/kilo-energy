@@ -230,7 +230,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         setSavingEdit(false);
         return;
       }
-      body.email = editEmail.trim();
+      body.email = editEmail.trim().toLowerCase();
     } else if (editingField === 'phone') {
       body.phone = editPhone.trim();
     }
@@ -753,7 +753,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   const assignment = trainerAssignments.find((a) => a.traineeId === id);
   const trainerRep = assignment ? reps.find((r) => r.id === assignment.trainerId) : null;
-  const completedDeals = repProjects.filter((p) => (p.repId === id || p.setterId === id) && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+  const completedDeals = repProjects.filter((p) => p.repId === id && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
   const currentOverrideRate = assignment ? getTrainerOverrideRate(assignment, completedDeals) : 0;
 
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
@@ -1376,7 +1376,12 @@ function TrainerOverrideCard({
   const cancel = () => { setDraftTiers([...assignment.tiers]); setEditing(false); };
 
   const activeTierSource = editing ? draftTiers : assignment.tiers;
-  const activeTierIndex = activeTierSource.findIndex(
+  const sortedTiers = [...activeTierSource].sort((a, b) => {
+    if (a.upToDeal === null) return 1;
+    if (b.upToDeal === null) return -1;
+    return a.upToDeal - b.upToDeal;
+  });
+  const activeTierIndex = sortedTiers.findIndex(
     (t) => t.upToDeal === null || completedDeals < t.upToDeal
   );
 

@@ -1453,7 +1453,11 @@ function UsersPageInner() {
           return dateStr >= from && dateStr <= to;
         };
         const compareReps = filtered.filter((r) => compareIds.has(r.id));
-        if (compareReps.length < 2) return null;
+        if (compareReps.length < 2) return (
+          <div className="card-surface rounded-2xl p-5 mb-6 flex items-center gap-3 text-sm text-[var(--text-secondary)]">
+            <span>Some selected reps are hidden by the current filter. Change the filter or re-select reps to compare.</span>
+          </div>
+        );
         return (
           <div className="card-surface rounded-2xl p-5 mb-6 animate-slide-in-scale">
             <div className="flex flex-col gap-3 mb-4">
