@@ -651,7 +651,7 @@ function UsersPageInner() {
           .reduce((s, p) => s + p.amount, 0),
       ])
     );
-  }, [reps, payrollEntries]);
+  }, [reps, payrollEntries, today]);
 
   const rankMap = new Map(
     [...reps]
@@ -1438,7 +1438,8 @@ function UsersPageInner() {
           if (!from || !to || !dateStr) return false;
           return dateStr >= from && dateStr <= to;
         };
-        const compareReps = reps.filter((r) => compareIds.has(r.id));
+        const compareReps = filtered.filter((r) => compareIds.has(r.id));
+        if (compareReps.length < 2) return null;
         return (
           <div className="card-surface rounded-2xl p-5 mb-6 animate-slide-in-scale">
             <div className="flex flex-col gap-3 mb-4">

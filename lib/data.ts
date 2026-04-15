@@ -1368,7 +1368,7 @@ export function getInstallerRatesForDeal(
   const { rates } = version;
   if (rates.type === 'tiered') {
     const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW));
-    if (!band) return { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35, versionId: null };
+    if (!band) return { closerPerW: 2.90, setterPerW: Math.round((2.90 + 0.10) * 100) / 100, kiloPerW: 2.35, versionId: version.id };
     const setter = band.setterPerW != null ? band.setterPerW : Math.round((band.closerPerW + 0.10) * 100) / 100;
     return { closerPerW: band.closerPerW, setterPerW: setter, kiloPerW: band.kiloPerW, subDealerPerW: band.subDealerPerW, versionId: version.id };
   }

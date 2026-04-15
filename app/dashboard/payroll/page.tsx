@@ -260,7 +260,7 @@ function PayrollPageInner() {
     }
 
     return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid };
-  }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId]);
+  }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId, today]);
 
   // Derived selection state — used by the floating action bar.
   const { selectedTotal } = useMemo(() => {
