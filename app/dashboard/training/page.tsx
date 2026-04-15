@@ -684,7 +684,7 @@ function TrainingPageInner() {
       {/* ─────────── RATE SCHEDULE TAB ─────────── */}
       {activeTab === 'rates' && (
         <div key="rates" className="animate-tab-enter space-y-4">
-          {traineeData.map((t, idx) => (
+          {filteredTrainees.map((t, idx) => (
             <div
               key={t.assignment.id}
               className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}

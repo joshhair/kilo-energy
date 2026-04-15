@@ -343,48 +343,33 @@ export default function BlitzDetailPage() {
     }
     setSaving(true);
     try {
-      const r = await fetch(`/api/blitzes/${blitzId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
-      });
-      if (!r.ok) { toast('Failed to update blitz', 'error'); setEditing(false); loadBlitz(true); return; }
-      const savedBlitz = await r.json();
-      // If the owner changed, ensure they are an approved participant
+      // If the owner is changing, ensure the new owner is an approved participant BEFORE
+      // updating ownership — the participants route auth checks blitz.ownerId in the DB,
+      // so doing this first (while the old owner is still recorded) avoids a 403.
       if (editForm.ownerId && blitz?.owner?.id !== editForm.ownerId) {
-        const revertOwner = async () => {
-          const rv = await fetch(`/api/blitzes/${blitzId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ownerId: blitz?.owner?.id ?? null }),
-          });
-          if (!rv.ok) throw new Error('revert_failed');
-        };
-        const existingParticipant = (savedBlitz.participants ?? []).find((p: any) => p.user.id === editForm.ownerId);
+        const existingParticipant = (blitz?.participants ?? []).find((p: any) => p.user.id === editForm.ownerId);
         if (!existingParticipant) {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) {
-            try { await revertOwner(); toast('Failed to add owner as participant — owner change reverted', 'error'); }
-            catch { toast('Failed to add owner as participant — owner revert also failed, blitz is in inconsistent state', 'error'); }
-            setEditing(false); loadBlitz(true); return;
-          }
+          if (!pr.ok) { toast('Failed to add new owner as participant', 'error'); setEditing(false); loadBlitz(true); return; }
         } else if (existingParticipant.joinStatus !== 'approved') {
           const pr = await fetch(`/api/blitzes/${blitzId}/participants`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: editForm.ownerId, joinStatus: 'approved' }),
           });
-          if (!pr.ok) {
-            try { await revertOwner(); toast('Failed to approve owner as participant — owner change reverted', 'error'); }
-            catch { toast('Failed to approve owner as participant — owner revert also failed, blitz is in inconsistent state', 'error'); }
-            setEditing(false); loadBlitz(true); return;
-          }
+          if (!pr.ok) { toast('Failed to approve new owner as participant', 'error'); setEditing(false); loadBlitz(true); return; }
         }
       }
+      const r = await fetch(`/api/blitzes/${blitzId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      if (!r.ok) { toast('Failed to update blitz', 'error'); setEditing(false); loadBlitz(true); return; }
       toast('Blitz updated');
       setEditing(false);
       loadBlitz(true);
@@ -1055,7 +1040,7 @@ export default function BlitzDetailPage() {
                       </td>
                       <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{p.kWSize.toFixed(1)}</td>
                       <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'ppw' ? ' bg-[var(--surface-card)]/20' : '')}>${p.netPPW.toFixed(2)}</td>
-                      {isAdmin && <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{formatCurrency((p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0))}</td>}
+                      {isAdmin && <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{(() => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id); return formatCurrency((closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0) + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); })()}</td>}
                     </tr>
                   ))}
                 </tbody>

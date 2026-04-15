@@ -252,8 +252,7 @@ export default function IncentivesPage() {
       if (end >= today && (!soonest || inc.endDate < soonest)) soonest = inc.endDate;
     }
     return soonest;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeVisible, incentiveFilter]);
+  }, [activeVisible, visible, incentiveFilter]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
   if (isMobile) return <MobileIncentives />;
