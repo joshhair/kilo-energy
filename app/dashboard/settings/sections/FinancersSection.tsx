@@ -20,7 +20,13 @@ export interface FinancersSectionProps {
 }
 
 export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConfirm, financerSelectMode, setFinancerSelectMode, selectedFinancers, setSelectedFinancers }: FinancersSectionProps) {
-  const { financers, setFinancerActive, addFinancer, projects } = useApp();
+  const ctx = useApp();
+  const { setFinancerActive, addFinancer, projects } = ctx;
+  // Hide the 'Cash' financer from this admin section. It's a system-managed
+  // record used for productType=Cash auto-resolve in /api/projects POST and
+  // should never be archived or deleted by an admin (doing so breaks Cash
+  // deal saves). Removed from the listing entirely so it can't be touched.
+  const financers = ctx.financers.filter((f) => f.name !== 'Cash');
   const { toast } = useToast();
 
   const [newFinancer, setNewFinancer] = useState('');

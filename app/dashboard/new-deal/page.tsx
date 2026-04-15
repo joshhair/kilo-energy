@@ -1039,7 +1039,7 @@ function NewDealPage() {
                       <SearchableSelect
                         value={form.financer}
                         onChange={(val) => handleFinancerChange(val)}
-                        options={activeFinancers.map((f) => ({ value: f, label: f }))}
+                        options={activeFinancers.filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
                         label="Financer"
                         error={!!errors.financer}
@@ -1148,7 +1148,7 @@ function NewDealPage() {
                               ? activeFinancers.filter((f) => f === pcConfig.familyFinancerMap![form.pcFamily])
                               : activeFinancers)
                           : activeFinancers
-                        ).map((f) => ({ value: f, label: f }))}
+                        ).filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
                         label="Financer"
                         error={!!errors.financer}
@@ -1186,7 +1186,7 @@ function NewDealPage() {
                       <SearchableSelect
                         value={form.financer}
                         onChange={(val) => handleFinancerChange(val)}
-                        options={activeFinancers.map((f) => ({ value: f, label: f }))}
+                        options={activeFinancers.filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
                         label="Financer"
                         error={!!errors.financer}

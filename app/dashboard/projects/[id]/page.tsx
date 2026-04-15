@@ -1601,7 +1601,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <SearchableSelect
                   value={editVals.financer}
                   onChange={(val) => setEditVals((v) => ({ ...v, financer: val }))}
-                  options={(activeFinancers.includes(editVals.financer) || !editVals.financer ? activeFinancers : [editVals.financer, ...activeFinancers]).map((fin) => ({ value: fin, label: fin }))}
+                  options={(activeFinancers.includes(editVals.financer) || !editVals.financer ? activeFinancers : [editVals.financer, ...activeFinancers]).filter((fin) => fin !== 'Cash').map((fin) => ({ value: fin, label: fin }))}
                   placeholder="Select financer…"
                 />
               </div>
