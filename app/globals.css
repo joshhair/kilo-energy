@@ -121,24 +121,11 @@ body {
   background-color: var(--navy-base);
   color: var(--d-text, #f0f2f7);
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* NOTE: -webkit-font-smoothing: antialiased is Mac-retina optimized. On
-     Windows it produces lighter/fuzzier text vs the default subpixel render.
-     Scope to Mac-only below. */
-}
-
-/* Only apply antialiased smoothing on Apple devices. Windows keeps the
-   default subpixel rendering, which is sharper on most 1080p monitors. */
-@supports (-webkit-touch-callout: none) {
-  body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
-  body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+  /* No font-smoothing override: let the browser + OS pick. Chrome on
+     Windows 1080p gets its default subpixel (sharp). Chrome/Safari on
+     Mac retina already antialias by default. A previous attempt to
+     scope antialiased via @supports (-webkit-touch-callout) matched
+     Chrome desktop too, which was exactly the wrong outcome. */
 }
 
 /* Mobile: bump base font size so all rem/text-* classes render larger.

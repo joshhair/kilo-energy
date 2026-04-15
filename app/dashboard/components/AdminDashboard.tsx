@@ -7,7 +7,7 @@ import {
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   Project, InstallerPricingVersion, ProductCatalogProduct, ProductCatalogPricingVersion, ACTIVE_PHASES,
 } from '../../../lib/data';
-import { formatDate, fmt$, formatCompactKW } from '../../../lib/utils';
+import { formatDate, fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
 import { DollarSign, CheckCircle, Zap, Users, BarChart2, FolderKanban, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, AlertCircle, HelpCircle } from 'lucide-react';
 import { PaginationBar } from './PaginationBar';
 import { type Period, getGreeting, getPhaseStuckThresholds, AnimatedStatValue } from './dashboard-utils';
@@ -156,10 +156,13 @@ export function AdminDashboard({
     return { attentionActiveProjects, installerRanking, maxInstallerDeals };
   }, [allProjects]);
 
+  // Compact money format for 6-column admin stat cards — prevents overflow
+  // when values hit 8+ digits (e.g. $53,869,792 → $53.87M). Tooltip on
+  // hover still shows the exact number via the card's title attr.
   const topStats = [
-    { label: 'Kilo Revenue', value: fmt$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmt$(n), icon: DollarSign, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: 'Total revenue from installer baselines across all deals' },
-    { label: 'Gross Profit', value: fmt$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmt$(n), icon: BarChart2, accentHex: 'var(--accent-cyan)', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Revenue minus Kilo cost basis (closer baseline minus Kilo baseline)' },
-    { label: 'Paid Out', value: fmt$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmt$(n), icon: CheckCircle, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: 'Commission disbursed to reps via payroll in the selected period' },
+    { label: 'Kilo Revenue', value: fmtCompact$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmtCompact$(n), icon: DollarSign, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: `Total revenue from installer baselines across all deals · ${fmt$(Math.round(totalRevenue))}` },
+    { label: 'Gross Profit', value: fmtCompact$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmtCompact$(n), icon: BarChart2, accentHex: 'var(--accent-cyan)', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: `Revenue minus Kilo cost basis (closer baseline minus Kilo baseline) · ${fmt$(Math.round(totalProfit))}` },
+    { label: 'Paid Out', value: fmtCompact$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmtCompact$(n), icon: CheckCircle, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: `Commission disbursed to reps via payroll in the selected period · ${fmt$(Math.round(totalPaid))}` },
     { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/users', tooltip: 'Number of active sales reps in the system' },
     { label: 'Total kW Sold', value: formatCompactKW(totalKWSold), raw: Math.round(totalKWSold * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size in kilowatts from all deals' },
     { label: 'Total kW Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: 'var(--accent-red)', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Kilowatts from projects with Installed, PTO, or Completed status' },
