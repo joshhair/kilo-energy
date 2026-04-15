@@ -285,6 +285,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error ?? 'Failed to deactivate');
         }
+        // Invalidate the router cache so the users list page refetches
+        // adminUsers/pmUsers when the user navigates back (they live in
+        // local state there, not in the shared context).
+        router.refresh();
       }
       setMetaRefreshKey((k) => k + 1);
       toast(`${resolvedUser.firstName} deactivated`, 'success');
@@ -312,6 +316,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error ?? 'Failed to reactivate');
         }
+        // Invalidate the router cache so the users list page refetches
+        // adminUsers/pmUsers when the user navigates back (they live in
+        // local state there, not in the shared context).
+        router.refresh();
       }
       setMetaRefreshKey((k) => k + 1);
       toast(`${resolvedUser.firstName} reactivated`, 'success');

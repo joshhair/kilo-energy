@@ -359,12 +359,12 @@ function NewDealPage() {
   const installPayPct = installerPayConfigs[form.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
   const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
-  const closerM3 = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+  const closerM3 = hasM3 ? Math.round((closerM2Full - closerM2) * 100) / 100 : 0;
   const setterM2 = Math.round(setterM2Full * (installPayPct / 100) * 100) / 100;
-  const setterM3 = hasM3 ? Math.round(setterM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+  const setterM3 = hasM3 ? Math.round((setterM2Full - setterM2) * 100) / 100 : 0;
 
   const currentTierIndex = setterAssignment
-    ? setterAssignment.tiers.findIndex((t) => t.upToDeal === null || setterCompletedDeals < t.upToDeal)
+    ? setterAssignment.tiers.findIndex((t) => t.upToDeal === null || setterCompletedDeals <= t.upToDeal)
     : -1;
   const currentTier = currentTierIndex >= 0 ? setterAssignment!.tiers[currentTierIndex] : null;
   const nextTier = currentTierIndex >= 0 ? setterAssignment!.tiers[currentTierIndex + 1] : null;

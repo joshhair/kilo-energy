@@ -183,7 +183,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const repPayroll = payrollEntries.filter((p) => p.repId === repId);
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
   const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
-  const totalPaid = repPayroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
   const repType = REP_TYPE_LABELS[rep.repType ?? ''] ?? rep.repType ?? 'Rep';
