@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createProjectSchema } from '../../../lib/schemas/project';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -21,7 +23,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const body = await req.json();
+  const parsed = await parseJsonBody(req, createProjectSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   // ─── Ownership check: reps + SDs can only create deals they're on ───
   if (user.role === 'rep') {
@@ -57,100 +61,82 @@ export async function POST(req: NextRequest) {
     if (sold < start || sold > end) {
       return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
     }
-  }
 
-  if (body.blitzId && body.closerId) {
-    const participation = await prisma.blitzParticipant.findFirst({
-      where: { blitzId: body.blitzId, userId: body.closerId, joinStatus: 'approved' },
-    });
-    if (!participation) {
-      return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
+    if (body.closerId) {
+      const participation = await prisma.blitzParticipant.findFirst({
+        where: { blitzId: body.blitzId, userId: body.closerId, joinStatus: 'approved' },
+      });
+      if (!participation) {
+        return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
+      }
     }
-  }
-  if (body.blitzId && body.setterId) {
-    const setterParticipation = await prisma.blitzParticipant.findFirst({
-      where: { blitzId: body.blitzId, userId: body.setterId, joinStatus: 'approved' },
-    });
-    if (!setterParticipation) {
-      return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
-    }
-  }
-
-  // ─── Numeric field validation ───
-  const kWSize = Number(body.kWSize);
-  const netPPW = Number(body.netPPW);
-  if (!Number.isFinite(kWSize) || kWSize <= 0) {
-    return NextResponse.json({ error: 'kWSize must be a positive number' }, { status: 400 });
-  }
-  if (!Number.isFinite(netPPW) || netPPW <= 0) {
-    return NextResponse.json({ error: 'netPPW must be a positive number' }, { status: 400 });
-  }
-  const numericAmountFields = ['m1Amount', 'm2Amount', 'm3Amount', 'setterM1Amount', 'setterM2Amount', 'setterM3Amount'];
-  for (const field of numericAmountFields) {
-    if (body[field] !== undefined && body[field] !== null) {
-      const val = Number(body[field]);
-      if (!Number.isFinite(val) || val < 0) {
-        return NextResponse.json({ error: `${field} must be a non-negative number` }, { status: 400 });
+    if (body.setterId) {
+      const setterParticipation = await prisma.blitzParticipant.findFirst({
+        where: { blitzId: body.blitzId, userId: body.setterId, joinStatus: 'approved' },
+      });
+      if (!setterParticipation) {
+        return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
       }
     }
   }
 
   // ─── FK existence checks ───
-  if (body.installerId) {
-    const installer = await prisma.installer.findUnique({ where: { id: body.installerId }, select: { id: true, active: true } });
-    if (!installer) {
-      return NextResponse.json({ error: 'Installer not found' }, { status: 400 });
-    }
-    if (!installer.active) {
-      return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
-    }
+  const installer = await prisma.installer.findUnique({ where: { id: body.installerId }, select: { id: true, active: true } });
+  if (!installer) {
+    return NextResponse.json({ error: 'Installer not found' }, { status: 400 });
   }
+  if (!installer.active) {
+    return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
+  }
+
   // For Cash deals, auto-resolve the Cash financer so clients don't need the ID
-  if (!body.financerId && (body.productType === 'Cash' || body.financer === 'Cash')) {
+  let financerId = body.financerId;
+  if (!financerId && (body.productType === 'Cash' || body.financer === 'Cash')) {
     const cashFinancer = await prisma.financer.upsert({
       where: { name: 'Cash' },
       update: {},
       create: { name: 'Cash' },
     });
-    body.financerId = cashFinancer.id;
+    financerId = cashFinancer.id;
   }
-  if (body.financerId) {
-    const financer = await prisma.financer.findUnique({ where: { id: body.financerId }, select: { id: true, active: true } });
-    if (!financer) {
-      return NextResponse.json({ error: 'Financer not found' }, { status: 400 });
-    }
-    if (!financer.active) {
-      return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
-    }
+  if (!financerId) {
+    return NextResponse.json({ error: 'financerId is required (unless productType=Cash)' }, { status: 400 });
+  }
+  const financer = await prisma.financer.findUnique({ where: { id: financerId }, select: { id: true, active: true } });
+  if (!financer) {
+    return NextResponse.json({ error: 'Financer not found' }, { status: 400 });
+  }
+  if (!financer.active) {
+    return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
   }
 
   const project = await prisma.project.create({
     data: {
       customerName: body.customerName,
       closerId: body.closerId,
-      setterId: body.setterId || null,
+      setterId: body.setterId ?? null,
       soldDate: body.soldDate,
       installerId: body.installerId,
-      financerId: body.financerId,
+      financerId,
       productType: body.productType,
-      kWSize,
-      netPPW,
-      phase: body.phase || 'New',
-      m1Amount: body.m1Amount || 0,
-      m2Amount: body.m2Amount || 0,
-      m3Amount: body.m3Amount || 0,
-      setterM1Amount: body.setterM1Amount || 0,
-      setterM2Amount: body.setterM2Amount || 0,
-      setterM3Amount: body.setterM3Amount || 0,
-      notes: body.notes || '',
-      installerPricingVersionId: body.installerPricingVersionId || null,
-      productId: body.productId || null,
-      productPricingVersionId: body.productPricingVersionId || null,
-      baselineOverrideJson: body.baselineOverrideJson || null,
-      prepaidSubType: body.prepaidSubType || null,
-      leadSource: body.leadSource || null,
-      blitzId: body.blitzId || null,
-      subDealerId: body.subDealerId || null,
+      kWSize: body.kWSize,
+      netPPW: body.netPPW,
+      phase: body.phase,
+      m1Amount: body.m1Amount ?? 0,
+      m2Amount: body.m2Amount ?? 0,
+      m3Amount: body.m3Amount ?? 0,
+      setterM1Amount: body.setterM1Amount ?? 0,
+      setterM2Amount: body.setterM2Amount ?? 0,
+      setterM3Amount: body.setterM3Amount ?? 0,
+      notes: body.notes ?? '',
+      installerPricingVersionId: body.installerPricingVersionId ?? null,
+      productId: body.productId ?? null,
+      productPricingVersionId: body.productPricingVersionId ?? null,
+      baselineOverrideJson: body.baselineOverrideJson ?? null,
+      prepaidSubType: body.prepaidSubType ?? null,
+      leadSource: body.leadSource ?? null,
+      blitzId: body.blitzId ?? null,
+      subDealerId: body.subDealerId ?? null,
     },
     include: { closer: true, setter: true, subDealer: true, installer: true, financer: true },
   });

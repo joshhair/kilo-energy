@@ -9,6 +9,8 @@ import {
   assertNoRelations,
   countUserRelations,
 } from '../../../../lib/user-guardrails';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchUserSchema } from '../../../../lib/schemas/user';
 
 /**
  * GET /api/users/[id] — Single user (admin only). Includes PII (email,
@@ -64,21 +66,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let viewer;
   try { viewer = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchUserSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const data: Record<string, unknown> = {};
 
-  // Contact info
-  if (typeof body.firstName === 'string') data.firstName = body.firstName.trim();
-  if (typeof body.lastName === 'string') data.lastName = body.lastName.trim();
-  if (typeof body.email === 'string') data.email = body.email.trim().toLowerCase();
-  if (typeof body.phone === 'string') data.phone = body.phone.trim();
+  // Contact info (already trimmed + lowercased by Zod)
+  if (body.firstName !== undefined) data.firstName = body.firstName;
+  if (body.lastName !== undefined) data.lastName = body.lastName;
+  if (body.email !== undefined) data.email = body.email;
+  if (body.phone !== undefined) data.phone = body.phone;
   if (body.repType !== undefined) data.repType = body.repType;
 
-  // Permission flags (existing behavior)
+  // Permission flags
   if (body.canRequestBlitz !== undefined) data.canRequestBlitz = body.canRequestBlitz;
   if (body.canCreateBlitz !== undefined) data.canCreateBlitz = body.canCreateBlitz;
   if (body.canExport !== undefined) data.canExport = body.canExport;
@@ -88,7 +93,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Active flag — handles the deactivation / reactivation workflow with
   // full Clerk lifecycle ops. Done after guardrails so we don't touch
   // Clerk if the rules reject the operation.
-  const activeChanged = typeof body.active === 'boolean' && body.active !== existing.active;
+  const activeChanged = body.active !== undefined && body.active !== existing.active;
   if (activeChanged) {
     if (body.active === false) {
       // Deactivation — guardrails first
