@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireInternalUser, userCanAccessProject } from '../../../../lib/api-auth';
 import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/schemas/project';
 
-// Financial fields that project managers must NOT be able to modify
-const PM_BLOCKED_FIELDS = ['m1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid', 'setterM1Amount', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson'];
+// Financial fields project managers must NOT be able to modify
+const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
+  'm1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid',
+  'setterM1Amount', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson',
+];
 
 // Fields reps/sub-dealers are NEVER allowed to modify on their own deals —
 // they can change notes, flag, and customer-facing info but not money,
 // phase (admin/PM only), or ownership.
-const REP_BLOCKED_FIELDS = [
-  'm1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid',
-  'setterM1Amount', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson',
-  'phase', 'closerId', 'setterId', 'subDealerId',
+const REP_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
+  ...PM_BLOCKED_FIELDS,
+  'phase', 'closerId', 'setterId',
 ];
 
 // PATCH /api/projects/[id] — Update a project (phase change, notes, flag, etc.)
@@ -20,7 +24,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let user;
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchProjectSchema);
+  if (!parsed.ok) return parsed.response;
+  const body: PatchProjectInput = { ...parsed.data };
 
   // ─── Project ownership check ───
   // Reps + sub-dealers can only modify deals they're on.
@@ -79,31 +86,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  // Build update data, only including fields that were sent
+  // Build update data, only including fields that were sent.
+  // Zod has already validated types + bounds at the boundary.
   const data: Record<string, unknown> = {};
-  if (body.phase !== undefined) data.phase = body.phase;
-  if (body.notes !== undefined) data.notes = body.notes;
-  if (body.flagged !== undefined) data.flagged = body.flagged;
-  if (body.m1Paid !== undefined) data.m1Paid = body.m1Paid;
-  if (body.m1Amount !== undefined) data.m1Amount = body.m1Amount;
-  if (body.m2Paid !== undefined) data.m2Paid = body.m2Paid;
-  if (body.m2Amount !== undefined) data.m2Amount = body.m2Amount;
-  if (body.m3Amount !== undefined) data.m3Amount = body.m3Amount;
-  if (body.m3Paid !== undefined) data.m3Paid = body.m3Paid;
-  if (body.setterM1Amount !== undefined) data.setterM1Amount = body.setterM1Amount;
-  if (body.setterM2Amount !== undefined) data.setterM2Amount = body.setterM2Amount;
-  if (body.setterM3Amount !== undefined) data.setterM3Amount = body.setterM3Amount;
-  if (body.cancellationReason !== undefined) data.cancellationReason = body.cancellationReason;
-  if (body.cancellationNotes !== undefined) data.cancellationNotes = body.cancellationNotes;
-  if (body.baselineOverrideJson !== undefined) data.baselineOverrideJson = body.baselineOverrideJson;
-  if (body.leadSource !== undefined) data.leadSource = body.leadSource;
-  if (body.blitzId !== undefined) data.blitzId = body.blitzId;
-  if (body.productType !== undefined) data.productType = body.productType;
-  if (body.kWSize !== undefined) data.kWSize = body.kWSize;
-  if (body.netPPW !== undefined) data.netPPW = body.netPPW;
+  const passthrough: Array<keyof PatchProjectInput> = [
+    'phase', 'notes', 'flagged',
+    'm1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid',
+    'setterM1Amount', 'setterM2Amount', 'setterM3Amount',
+    'cancellationReason', 'cancellationNotes', 'baselineOverrideJson',
+    'leadSource', 'blitzId', 'productType', 'kWSize', 'netPPW', 'soldDate',
+  ];
+  for (const key of passthrough) {
+    if (body[key] !== undefined) data[key] = body[key];
+  }
+  // Nullable FK fields: empty string → null
   if (body.closerId !== undefined) data.closerId = body.closerId || null;
   if (body.setterId !== undefined) data.setterId = body.setterId || null;
-  if (body.soldDate !== undefined) data.soldDate = body.soldDate;
+
   // FK resolution: installer/financer name → ID
   if (body.installer !== undefined) {
     const inst = await prisma.installer.findFirst({ where: { name: body.installer } });
@@ -119,9 +118,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // Snapshot before-state for audit diff (only fields we care about).
+  const auditSelect: Record<string, true> = {};
+  for (const f of AUDITED_FIELDS.Project) auditSelect[f] = true;
   const before = await prisma.project.findUnique({
     where: { id },
-    select: Object.fromEntries(AUDITED_FIELDS.Project.map((f) => [f, true])) as any,
+    select: auditSelect,
   });
 
   const project = await prisma.project.update({
@@ -131,7 +132,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
 
   // Audit: record diff of audited fields (no-op if nothing changed in them).
-  const phaseChanged = before && (before as any).phase !== project.phase;
+  const phaseChanged = before && (before as Record<string, unknown>).phase !== project.phase;
   await logChange({
     actor: { id: user.id, email: user.email ?? null },
     action: phaseChanged ? 'phase_change' : 'project_update',

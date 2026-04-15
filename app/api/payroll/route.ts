@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
+import { logChange } from '../../../lib/audit';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createPayrollSchema, patchPayrollSchema } from '../../../lib/schemas/payroll';
 
 // POST /api/payroll — Create a payroll entry (admin or project manager).
 //
@@ -10,10 +13,14 @@ import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
 // or React StrictMode double-invocations. Clients should generate a fresh
 // key per logical submit attempt and reuse it on retry.
 export async function POST(req: NextRequest) {
-  try { await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
+  let actor;
+  try { actor = await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
 
-  if (typeof body.idempotencyKey === 'string' && body.idempotencyKey.length > 0) {
+  const parsed = await parseJsonBody(req, createPayrollSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
+  if (body.idempotencyKey) {
     const existing = await prisma.payrollEntry.findUnique({
       where: { idempotencyKey: body.idempotencyKey },
       include: { rep: true, project: true },
@@ -26,16 +33,30 @@ export async function POST(req: NextRequest) {
   const entry = await prisma.payrollEntry.create({
     data: {
       repId: body.repId,
-      projectId: body.projectId || null,
+      projectId: body.projectId ?? null,
       amount: body.amount,
       type: body.type,
       paymentStage: body.paymentStage,
-      status: body.status || 'Draft',
+      status: body.status,
       date: body.date,
-      notes: body.notes || '',
-      idempotencyKey: body.idempotencyKey || null,
+      notes: body.notes ?? '',
+      idempotencyKey: body.idempotencyKey ?? null,
     },
     include: { rep: true, project: true },
+  });
+
+  await logChange({
+    actor: { id: actor.id, email: actor.email ?? null },
+    action: 'payroll_create',
+    entityType: 'PayrollEntry',
+    entityId: entry.id,
+    detail: {
+      repId: entry.repId,
+      projectId: entry.projectId,
+      amount: entry.amount,
+      paymentStage: entry.paymentStage,
+      status: entry.status,
+    },
   });
 
   return NextResponse.json(entry, { status: 201 });
@@ -44,19 +65,21 @@ export async function POST(req: NextRequest) {
 // PATCH /api/payroll — Bulk update payroll entries (admin only)
 export async function PATCH(req: NextRequest) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
-  // body.ids: string[], body.status: string
-  if (body.ids && body.status) {
-    const allowedSource: Record<string, string> = { Pending: 'Draft', Paid: 'Pending' };
-    const sourceStatus = allowedSource[body.status];
-    if (!sourceStatus) {
-      return NextResponse.json({ error: 'Invalid target status' }, { status: 400 });
-    }
-    const result = await prisma.payrollEntry.updateMany({
-      where: { id: { in: body.ids }, status: sourceStatus },
-      data: { status: body.status },
-    });
-    return NextResponse.json({ success: true, updated: result.count });
-  }
-  return NextResponse.json({ error: 'ids and status required' }, { status: 400 });
+
+  const parsed = await parseJsonBody(req, patchPayrollSchema);
+  if (!parsed.ok) return parsed.response;
+  const { ids, status } = parsed.data;
+
+  // Only allow lawful transitions: Draft → Pending, Pending → Paid.
+  const sourceStatusMap: Record<'Pending' | 'Paid', 'Draft' | 'Pending'> = {
+    Pending: 'Draft',
+    Paid: 'Pending',
+  };
+  const sourceStatus = sourceStatusMap[status];
+
+  const result = await prisma.payrollEntry.updateMany({
+    where: { id: { in: ids }, status: sourceStatus },
+    data: { status },
+  });
+  return NextResponse.json({ success: true, updated: result.count });
 }
