@@ -121,6 +121,7 @@ export default function BlitzDetailPage() {
   const [canRequestBlitz, setCanRequestBlitz] = useState(false);
   const [processingParticipants, setProcessingParticipants] = useState<Set<string>>(new Set());
   const [updatingAttendance, setUpdatingAttendance] = useState<Set<string>>(new Set());
+  const [removingParticipants, setRemovingParticipants] = useState<Set<string>>(new Set());
   const [cancelRequesting, setCancelRequesting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -190,7 +191,13 @@ export default function BlitzDetailPage() {
   // Kilo profit = spread between closer baseline and kilo baseline per deal
   // kiloMargin per deal = (closerPerW - kiloPerW) × kW × 1000, minus $0.10/W setter cost for split deals
   const getBlitzProjectBaselines = (p: any): { closerPerW: number; kiloPerW: number } => {
-    if (p.baselineOverrideJson) return JSON.parse(p.baselineOverrideJson);
+    if (p.baselineOverrideJson) {
+      try {
+        return JSON.parse(p.baselineOverrideJson);
+      } catch {
+        // Fall through to normal baseline lookup on malformed JSON
+      }
+    }
     if (p.installer?.name === 'SolarTech' && p.productId) {
       return getSolarTechBaseline(p.productId, p.kWSize, solarTechProducts);
     }
@@ -204,7 +211,7 @@ export default function BlitzDetailPage() {
   const kiloMargin = useMemo(() => {
     return approvedVisibleProjects.reduce((s: number, p: any) => {
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
-      const setterCost = p.setterId ? 0.10 * p.kWSize * 1000 : 0;
+      const setterCost = (p.setterId && p.setterId !== p.closerId) ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
     }, 0);
   }, [approvedVisibleProjects, installerPricingVersions, productCatalogProducts, solarTechProducts]);
@@ -399,6 +406,8 @@ export default function BlitzDetailPage() {
   };
 
   const handleRemoveParticipant = async (userId: string) => {
+    if (removingParticipants.has(userId)) return;
+    setRemovingParticipants((s) => new Set(s).add(userId));
     try {
       const r = await fetch(`/api/blitzes/${blitzId}/participants?userId=${userId}`, { method: 'DELETE' });
       if (!r.ok) { toast('Failed to remove participant', 'error'); return; }
@@ -406,6 +415,8 @@ export default function BlitzDetailPage() {
       loadBlitz();
     } catch {
       toast('Failed to remove participant', 'error');
+    } finally {
+      setRemovingParticipants((s) => { const n = new Set(s); n.delete(userId); return n; });
     }
   };
 
@@ -953,7 +964,7 @@ export default function BlitzDetailPage() {
                               <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Decline</button>
                             </div>
                           ) : (
-                            p.user.id !== blitz.owner.id && <button onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will permanently remove them from the blitz. Deals where their co-participant (closer or setter) is also no longer in the blitz will be unlinked; deals where the co-participant remains will stay linked to the blitz. This cannot be undone.', onConfirm: () => { handleRemoveParticipant(p.user.id); setConfirmAction(null); } })} className="text-[var(--text-dim)] hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            p.user.id !== blitz.owner.id && <button disabled={removingParticipants.has(p.user.id)} onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will permanently remove them from the blitz. Deals where their co-participant (closer or setter) is also no longer in the blitz will be unlinked; deals where the co-participant remains will stay linked to the blitz. This cannot be undone.', onConfirm: () => { setConfirmAction(null); handleRemoveParticipant(p.user.id); } })} className="text-[var(--text-dim)] hover:text-red-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><Trash2 className="w-4 h-4" /></button>
                           )}
                         </td>
                       )}

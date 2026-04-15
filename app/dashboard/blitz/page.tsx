@@ -720,9 +720,9 @@ function BlitzPageInner() {
   if (isMobile) return <MobileBlitz />;
 
   // Summary stats
-  const activeBlitzes = filteredBlitzes.filter((b) => b.status === 'active').length;
-  const upcomingBlitzes = filteredBlitzes.filter((b) => b.status === 'upcoming').length;
-  const totalDeals = filteredBlitzes.reduce((s, b) => {
+  const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;
+  const upcomingBlitzes = blitzes.filter((b) => b.status === 'upcoming').length;
+  const totalDeals = blitzes.reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
     return s + b.projects.filter((p) =>
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
@@ -731,7 +731,7 @@ function BlitzPageInner() {
         : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)
     ).length;
   }, 0);
-  const totalKW = filteredBlitzes.reduce((s, b) => {
+  const totalKW = blitzes.reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
     const visibleProjects = b.projects.filter((p) =>
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
@@ -745,7 +745,7 @@ function BlitzPageInner() {
       return ps + (isSelfGen || closerApproved ? p.kWSize : 0);
     }, 0);
   }, 0);
-  const totalCosts = isAdmin ? filteredBlitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
+  const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
