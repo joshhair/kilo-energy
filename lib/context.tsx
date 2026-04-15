@@ -401,7 +401,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const PIPELINE_PHASES = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
           const effectiveIdx = PIPELINE_PHASES.indexOf(effectivePhase);
           const pastAcceptance = effectiveIdx >= PIPELINE_PHASES.indexOf('Acceptance');
-          const closerM1Amount = updates.m1Amount ?? old.m1Amount;
+          let closerM1Amount = updates.m1Amount ?? old.m1Amount;
+          // For set deals, old.m1Amount is 0 (closer had no M1 while a setter was
+          // present). Recompute self-gen M1 from the closer's total commission so the
+          // payroll entry is created with the correct amount.
+          if (closerM1Amount === 0) {
+            const closerTotal = (old.m2Amount ?? 0) + (old.m3Amount ?? 0);
+            if (closerTotal > 0) {
+              const m1Flat = old.kWSize >= 5 ? 1000 : 500;
+              closerM1Amount = Math.min(m1Flat, closerTotal);
+            }
+          }
 
           if (pastAcceptance && !old.subDealerId && (closerM1Amount ?? 0) > 0) {
             setPayrollEntries((prevEntries) => {

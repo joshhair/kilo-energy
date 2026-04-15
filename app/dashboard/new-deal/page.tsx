@@ -347,7 +347,7 @@ function NewDealPage() {
   const closerTrainerTotal = closerAssignment && closerTrainerOverrideRate > 0
     ? Math.round(closerTrainerOverrideRate * kW * 1000 * 100) / 100 : 0;
 
-  const kiloTotal = calculateCommission(closerPerW, kiloPerW, kW);
+  const kiloTotal = calculateCommission(soldPPW, kiloPerW, kW);
 
   const trainerM1 = 0;
   const trainerM2 = trainerTotal;

@@ -127,8 +127,8 @@ function ProfileDrawer({
   userEmail: string;
   userPhone: string;
   isAdmin?: boolean;
-  allReps?: Array<{ id: string; name: string }>;
-  allSubDealers?: Array<{ id: string; name: string }>;
+  allReps?: Array<{ id: string; name: string; active?: boolean }>;
+  allSubDealers?: Array<{ id: string; name: string; active?: boolean }>;
   onViewAs?: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
   isViewingAs?: boolean;
   viewAsName?: string;
@@ -365,7 +365,7 @@ function ProfileDrawer({
                       />
                     </div>
                     <div className="max-h-48 overflow-y-auto">
-                      {[...(allReps || []).map(r => ({ ...r, role: 'rep' as const })), ...(allSubDealers || []).map(sd => ({ ...sd, role: 'sub-dealer' as const }))]
+                      {[...(allReps || []).filter(r => r.active !== false).map(r => ({ ...r, role: 'rep' as const })), ...(allSubDealers || []).filter(sd => sd.active !== false).map(sd => ({ ...sd, role: 'sub-dealer' as const }))]
                         .filter(u => !viewAsSearch.trim() || u.name.toLowerCase().includes(viewAsSearch.toLowerCase()))
                         .map(u => (
                           <button
