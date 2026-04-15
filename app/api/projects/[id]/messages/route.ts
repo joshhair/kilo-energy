@@ -3,6 +3,7 @@ import { prisma } from '../../../../../lib/db';
 import { requireInternalUser, requireProjectAccess } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
 import { createProjectMessageSchema } from '../../../../../lib/schemas/business';
+import { enforceRateLimit } from '../../../../../lib/rate-limit';
 
 // GET /api/projects/[id]/messages — List messages for a project (paginated).
 // Access: admin, PM, or a rep/sub-dealer who is on the deal.
@@ -37,6 +38,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   try { await requireProjectAccess(user, id); } catch (r) { return r as NextResponse; }
+
+  // Chatter is per-user-per-project — 120/min is a generous upper bound
+  // for an engaged human reviewer; stops paste-loops and bot spam.
+  const limited = enforceRateLimit(`POST /api/projects/[id]/messages:${user.id}`, 120, 60_000);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createProjectMessageSchema);
   if (!parsed.ok) return parsed.response;

@@ -4,6 +4,7 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { createUserInviteSchema } from '../../../../lib/schemas/business';
+import { enforceRateLimit } from '../../../../lib/rate-limit';
 
 /**
  * POST /api/users/invite — Admin creates a new internal user AND sends
@@ -22,7 +23,14 @@ import { createUserInviteSchema } from '../../../../lib/schemas/business';
  * Admin only.
  */
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  // Invitations send an email via Clerk — tight cap to prevent inbox spam
+  // (accidental script, fat-fingered bulk). 20/min/admin is > any realistic
+  // manual flow.
+  const limited = enforceRateLimit(`POST /api/users/invite:${actor.id}`, 20, 60_000);
+  if (limited) return limited;
 
   if (process.env.DISABLE_INVITES === 'true') {
     return NextResponse.json({ error: 'invites_disabled' }, { status: 503 });

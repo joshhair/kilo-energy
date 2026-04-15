@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createProjectSchema } from '../../../lib/schemas/project';
+import { enforceRateLimit } from '../../../lib/rate-limit';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -12,6 +13,11 @@ import { createProjectSchema } from '../../../lib/schemas/project';
 export async function POST(req: NextRequest) {
   let user;
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
+
+  // 30 deal creations/minute/user — the form + idempotency handle double-
+  // clicks, so legit flow is nowhere near this. Catches runaway clients.
+  const limited = enforceRateLimit(`POST /api/projects:${user.id}`, 30, 60_000);
+  if (limited) return limited;
 
   if (user.role === 'project_manager') {
     const pm = await prisma.user.findUnique({

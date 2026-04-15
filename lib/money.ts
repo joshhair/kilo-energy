@@ -24,21 +24,27 @@
 
 export type Money = { readonly cents: number };
 
+// Normalize -0 → +0 so Money values are a canonical form. Downstream
+// equality checks (Object.is, toBe in vitest) treat -0 !== 0, which
+// bit us on property tests where a zero commission naturally arose
+// via multiplication of a negative near-zero.
+const norm = (n: number): number => (n === 0 ? 0 : n);
+
 /** Construct a Money from a dollar amount. Rounds half-up to the nearest cent. */
 export function fromDollars(dollars: number): Money {
   if (!Number.isFinite(dollars)) return { cents: 0 };
-  return { cents: Math.round(dollars * 100) };
+  return { cents: norm(Math.round(dollars * 100)) };
 }
 
 /** Construct a Money directly from an integer cent count. */
 export function fromCents(cents: number): Money {
   if (!Number.isFinite(cents)) return { cents: 0 };
-  return { cents: Math.round(cents) };
+  return { cents: norm(Math.round(cents)) };
 }
 
 /** Emit a float dollar amount. The only float-producing operation. */
 export function toDollars(m: Money): number {
-  return m.cents / 100;
+  return norm(m.cents / 100);
 }
 
 export const ZERO: Money = { cents: 0 };

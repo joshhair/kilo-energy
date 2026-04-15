@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAdmin } from '../../../../../lib/api-auth';
+import { enforceRateLimit } from '../../../../../lib/rate-limit';
 
 /**
  * POST /api/users/[id]/invite — Idempotent send/resend of a Clerk invitation
@@ -25,8 +26,14 @@ import { requireAdmin } from '../../../../../lib/api-auth';
  * if they already have a `clerkUserId` (they've accepted and signed in).
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  // Resend cap — each call triggers a Clerk email. 30/min/admin tolerates
+  // burst "resend all pending" flows; stops an accidental loop.
+  const limited = enforceRateLimit(`POST /api/users/[id]/invite:${actor.id}`, 30, 60_000);
+  if (limited) return limited;
 
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });

@@ -4,6 +4,7 @@ import { requireAdmin, requireInternalUser, userCanAccessProject } from '../../.
 import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/schemas/project';
+import { enforceRateLimit } from '../../../../lib/rate-limit';
 
 // Financial fields project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
@@ -24,6 +25,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let user;
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  // Higher ceiling on project patches — admins routinely click through many
+  // phase changes in a short window. 120/min covers that; legit Kanban
+  // drag-drops won't hit it.
+  const limited = enforceRateLimit(`PATCH /api/projects/[id]:${user.id}`, 120, 60_000);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, patchProjectSchema);
   if (!parsed.ok) return parsed.response;

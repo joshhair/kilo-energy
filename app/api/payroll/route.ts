@@ -4,6 +4,7 @@ import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
 import { logChange } from '../../../lib/audit';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createPayrollSchema, patchPayrollSchema } from '../../../lib/schemas/payroll';
+import { enforceRateLimit } from '../../../lib/rate-limit';
 
 // POST /api/payroll — Create a payroll entry (admin or project manager).
 //
@@ -15,6 +16,11 @@ import { createPayrollSchema, patchPayrollSchema } from '../../../lib/schemas/pa
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
+
+  // Rate limit: 60 payroll creates/minute/user — generous for legitimate
+  // bulk-publish workflows, tight enough to stop a runaway client loop.
+  const limited = enforceRateLimit(`POST /api/payroll:${actor.id}`, 60, 60_000);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createPayrollSchema);
   if (!parsed.ok) return parsed.response;
@@ -64,7 +70,12 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/payroll — Bulk update payroll entries (admin only)
 export async function PATCH(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  // Bulk publish can touch many rows per call; cap total calls per minute.
+  const limited = enforceRateLimit(`PATCH /api/payroll:${actor.id}`, 30, 60_000);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, patchPayrollSchema);
   if (!parsed.ok) return parsed.response;
