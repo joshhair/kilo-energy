@@ -109,6 +109,7 @@ function SettingsPageInner() {
   const [newVersionFor, setNewVersionFor] = useState<string | null>(null);
   const [pcNewVersionFor, setPcNewVersionFor] = useState<string | null>(null);
   const [dupAllOpen, setDupAllOpen] = useState<'solartech' | 'productcatalog' | null>(null);
+  const [payScheduleExpanded, setPayScheduleExpanded] = useState<string | null>(null);
   const [baselineTab, setBaselineTab] = useState<string>('standard');
 
   // ── Unified delete-confirm dialog state ─────────────────────────────────────
@@ -148,7 +149,8 @@ function SettingsPageInner() {
     editingProductName !== null ||
     newVersionFor !== null ||
     pcNewVersionFor !== null ||
-    dupAllOpen;
+    dupAllOpen ||
+    payScheduleExpanded !== null;
 
   // ── Unsaved-changes guard state ────────────────────────────────────────────
   const [pendingSection, setPendingSection] = useState<SettingsSection | null>(null);
@@ -172,6 +174,7 @@ function SettingsPageInner() {
     setNewVersionFor(null);
     setPcNewVersionFor(null);
     setDupAllOpen(null);
+    setPayScheduleExpanded(null);
     setSelectedInstallers(new Set());
     setSelectedFinancers(new Set());
     setInstallerSelectMode(false);
@@ -478,6 +481,8 @@ function SettingsPageInner() {
             setInstallerSelectMode={setInstallerSelectMode}
             selectedInstallers={selectedInstallers}
             setSelectedInstallers={setSelectedInstallers}
+            payScheduleExpanded={payScheduleExpanded}
+            setPayScheduleExpanded={setPayScheduleExpanded}
           />
         )}
 

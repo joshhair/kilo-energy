@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Plus, Pencil, Check, X, EyeOff, Eye, Trash2, Search,
   ChevronRight, ChevronDown, CreditCard, DollarSign,
@@ -21,6 +21,8 @@ export interface InstallersSectionProps {
   setInstallerSelectMode: React.Dispatch<React.SetStateAction<boolean>>;
   selectedInstallers: Set<string>;
   setSelectedInstallers: React.Dispatch<React.SetStateAction<Set<string>>>;
+  payScheduleExpanded: string | null;
+  setPayScheduleExpanded: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 export function InstallersSection({
@@ -29,6 +31,7 @@ export function InstallersSection({
   setBaselineTab,
   installerSelectMode, setInstallerSelectMode,
   selectedInstallers, setSelectedInstallers,
+  payScheduleExpanded, setPayScheduleExpanded,
 }: InstallersSectionProps) {
   const {
     installers, setInstallerActive, addInstaller, deleteInstaller,
@@ -51,9 +54,12 @@ export function InstallersSection({
   const [prepaidInstallerExpanded, setPrepaidInstallerExpanded] = useState<string | null>(null);
   const [newPrepaidOption, setNewPrepaidOption] = useState('');
   const [editPrepaidVal, setEditPrepaidVal] = useState('');
-  const [payScheduleExpanded, setPayScheduleExpanded] = useState<string | null>(null);
   const [editPayPct, setEditPayPct] = useState('');
   const payPctDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (payPctDebounceRef.current) clearTimeout(payPctDebounceRef.current); };
+  }, []);
 
   return (
     <div key="installers" className="animate-tab-enter max-w-xl">

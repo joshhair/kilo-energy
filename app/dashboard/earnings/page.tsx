@@ -1220,7 +1220,7 @@ function AdminFinancialsView() {
   const totalPaid     = repFilteredPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending  = repFilteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const totalDraft    = repFilteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-  const repFilteredReimbs = reimbRepFilter ? reimbursements.filter((r) => r.repId === reimbRepFilter) : reimbursements;
+  const repFilteredReimbs = repFilter ? reimbursements.filter((r) => r.repId === repFilter) : reimbursements;
   const pendingReimbs = repFilteredReimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
 
   const reimbTotal      = filteredReimbs.length;
@@ -1357,7 +1357,7 @@ function AdminFinancialsView() {
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
           {pendingReimbCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingReimbCount} requests</p>}
-          {reimbFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{reimbFilterLabel}</p>}
+          {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
       </div>
 
