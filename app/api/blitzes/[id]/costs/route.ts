@@ -8,16 +8,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id: blitzId } = await params;
   const body = await req.json();
 
-  const cost = await prisma.blitzCost.create({
-    data: {
-      blitzId,
-      category: body.category,
-      amount: body.amount,
-      description: body.description || '',
-      date: body.date,
-    },
-  });
-  return NextResponse.json(cost, { status: 201 });
+  const { category, amount, date } = body;
+  if (!category || typeof category !== 'string') {
+    return NextResponse.json({ error: 'category is required' }, { status: 400 });
+  }
+  if (typeof amount !== 'number' || isNaN(amount) || amount < 0) {
+    return NextResponse.json({ error: 'amount must be a non-negative number' }, { status: 400 });
+  }
+  if (!date) {
+    return NextResponse.json({ error: 'date is required' }, { status: 400 });
+  }
+
+  try {
+    const cost = await prisma.blitzCost.create({
+      data: {
+        blitzId,
+        category,
+        amount,
+        description: body.description || '',
+        date,
+      },
+    });
+    return NextResponse.json(cost, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to create cost' }, { status: 500 });
+  }
 }
 
 // DELETE /api/blitzes/[id]/costs — Delete a cost

@@ -589,6 +589,7 @@ export default function BlitzDetailPage() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {isAdmin && (
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Blitz Leader</label>
                 <select value={editForm.ownerId} onChange={(e) => setEditForm((f) => ({ ...f, ownerId: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none">
@@ -606,6 +607,7 @@ export default function BlitzDetailPage() {
                   })()}
                 </select>
               </div>
+              )}
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Notes</label>
                 <textarea value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none resize-none" />
@@ -1047,7 +1049,7 @@ export default function BlitzDetailPage() {
                 <tfoot>
                   <tr className="border-t border-[var(--border)] bg-[var(--surface-card)]/30">
                     <td colSpan={!isAdmin && !isOwner ? 4 : 3} className="px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]">{sortedDeals.length} deal{sortedDeals.length !== 1 ? 's' : ''}</td>
-                    <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{sortedDeals.reduce((s: number, p: any) => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); return s + (isSelfGen || closerApproved ? p.kWSize : 0); }, 0).toFixed(1)} kW</td>
+                    <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{sortedDeals.reduce((s: number, p: any) => s + p.kWSize, 0).toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[var(--text-muted)]">—</td>
                     {isAdmin && <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{formatCurrency(approvedVisibleProjects.reduce((s: number, p: any) => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id); return s + (closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0) + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0); }, 0))}</td>}
                   </tr>
