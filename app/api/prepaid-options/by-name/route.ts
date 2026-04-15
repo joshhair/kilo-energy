@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { renamePrepaidOptionSchema } from '../../../../lib/schemas/business';
 
 // PATCH /api/prepaid-options/by-name (admin only)
 export async function PATCH(req: NextRequest) {
@@ -9,13 +11,16 @@ export async function PATCH(req: NextRequest) {
   const name = req.nextUrl.searchParams.get('name');
   if (!installerId || !name) return NextResponse.json({ error: 'installerId and name required' }, { status: 400 });
 
-  const body = await req.json();
+  const parsed = await parseJsonBody(req, renamePrepaidOptionSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
   const existing = await prisma.installerPrepaidOption.findFirst({ where: { installerId, name } });
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
   const updated = await prisma.installerPrepaidOption.update({
     where: { id: existing.id },
-    data: { name: body.name.trim() },
+    data: { name: body.name },
   });
   return NextResponse.json(updated);
 }

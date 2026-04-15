@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createBlitzSchema } from '../../../lib/schemas/business';
 
 // GET /api/blitzes — List blitzes scoped to the current user's role.
 // Admin: all blitzes. PM: all blitzes if canAccessBlitz is true. Others:
@@ -49,17 +51,17 @@ export async function GET() {
   // Non-admins: strip other reps' financial data from projects + hide costs
   if (user.role !== 'admin') {
     for (const b of blitzes) {
-      (b as any).costs = [];
+      (b as { costs: unknown[] }).costs = [];
       for (const p of b.projects) {
         const isMyDeal = p.closerId === user.id || p.setterId === user.id;
         if (!isMyDeal) {
-          (p as any).netPPW = 0;
-          (p as any).m1Amount = 0;
-          (p as any).m2Amount = 0;
-          (p as any).m3Amount = 0;
-          (p as any).setterM1Amount = 0;
-          (p as any).setterM2Amount = 0;
-          (p as any).setterM3Amount = 0;
+          (p as { netPPW: number }).netPPW = 0;
+          (p as { m1Amount: number }).m1Amount = 0;
+          (p as { m2Amount: number }).m2Amount = 0;
+          (p as { m3Amount: number }).m3Amount = 0;
+          (p as { setterM1Amount: number }).setterM1Amount = 0;
+          (p as { setterM2Amount: number }).setterM2Amount = 0;
+          (p as { setterM3Amount: number }).setterM3Amount = 0;
         }
       }
     }
@@ -81,15 +83,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const body = await req.json();
-
-  if (!body.name || !body.name.trim()) {
-    return NextResponse.json({ error: 'name is required' }, { status: 400 });
-  }
-
-  if (!body.startDate || !body.endDate) {
-    return NextResponse.json({ error: 'startDate and endDate are required' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, createBlitzSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   // Force createdById + ownerId to the current user unless admin supplies an ownerId override.
   const ownerId = user.role === 'admin' && body.ownerId ? body.ownerId : user.id;
@@ -98,12 +94,12 @@ export async function POST(req: NextRequest) {
   const blitz = await prisma.blitz.create({
     data: {
       name: body.name,
-      location: body.location || '',
-      housing: body.housing || '',
+      location: body.location ?? '',
+      housing: body.housing ?? '',
       startDate: body.startDate,
       endDate: body.endDate,
-      notes: body.notes || '',
-      status: body.status || 'upcoming',
+      notes: body.notes ?? '',
+      status: body.status,
       createdById,
       ownerId,
       // Auto-add the owner as an approved participant

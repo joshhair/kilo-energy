@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchRepSchema } from '../../../../lib/schemas/business';
 
 // GET /api/reps/[id] — Fetch a single user by id, regardless of role.
 // Used by the unified Users detail page to look up admins / PMs who
@@ -43,7 +45,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchRepSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const data: Record<string, unknown> = {};
   if (body.repType !== undefined) data.repType = body.repType;

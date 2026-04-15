@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchIncentiveSchema } from '../../../../lib/schemas/business';
 
 // PATCH /api/incentives/[id] — Update an incentive (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchIncentiveSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const data: Record<string, unknown> = {};
   if (body.title !== undefined) data.title = body.title;
@@ -21,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   let incentive;
   if (body.milestones !== undefined) {
-    const milestones = body.milestones as { id?: string; threshold: number; reward: string; achieved?: boolean }[];
+    const milestones = body.milestones;
     const withId = milestones.filter((m) => m.id);
     const withoutId = milestones.filter((m) => !m.id);
     const keepIds = withId.map((m) => m.id as string);

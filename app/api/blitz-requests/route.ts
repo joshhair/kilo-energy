@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createBlitzRequestSchema } from '../../../lib/schemas/business';
 
 // GET /api/blitz-requests — List blitz requests scoped to role.
 // Admin: all requests. Everyone else: only their own requests.
@@ -29,26 +31,12 @@ export async function POST(req: NextRequest) {
   if (!internal?.canRequestBlitz) {
     return NextResponse.json({ error: 'Forbidden — blitz request permission required' }, { status: 403 });
   }
-  const body = await req.json();
-  const type = body.type || 'create';
 
-  if (type === 'cancel' && !body.blitzId) {
-    return NextResponse.json({ error: 'blitzId is required for cancel requests' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, createBlitzRequestSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
-  if (type === 'create') {
-    if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
-      return NextResponse.json({ error: 'name is required' }, { status: 400 });
-    }
-    if (!body.startDate || typeof body.startDate !== 'string' || !body.startDate.trim()) {
-      return NextResponse.json({ error: 'startDate is required' }, { status: 400 });
-    }
-    if (!body.endDate || typeof body.endDate !== 'string' || !body.endDate.trim()) {
-      return NextResponse.json({ error: 'endDate is required' }, { status: 400 });
-    }
-  }
-
-  if (type === 'cancel' && body.blitzId) {
+  if (body.type === 'cancel') {
     const blitz = await prisma.blitz.findUnique({ where: { id: body.blitzId }, select: { ownerId: true, createdById: true, status: true } });
     if (!blitz || (blitz.ownerId !== user.id && blitz.createdById !== user.id)) {
       return NextResponse.json({ error: 'Forbidden — you can only request cancellation of blitzes you own' }, { status: 403 });
@@ -61,15 +49,15 @@ export async function POST(req: NextRequest) {
   const request = await prisma.blitzRequest.create({
     data: {
       requestedById: user.id,
-      type,
-      blitzId: type === 'cancel' ? body.blitzId : null,
-      name: body.name || '',
-      location: body.location || '',
-      startDate: body.startDate || '',
-      endDate: body.endDate || '',
-      housing: body.housing || '',
-      notes: body.notes || '',
-      expectedHeadcount: body.expectedHeadcount || 0,
+      type: body.type,
+      blitzId: body.type === 'cancel' ? body.blitzId : null,
+      name: body.type === 'create' ? body.name : (body.name ?? ''),
+      location: body.location ?? '',
+      startDate: body.type === 'create' ? body.startDate : (body.startDate ?? ''),
+      endDate: body.type === 'create' ? body.endDate : (body.endDate ?? ''),
+      housing: body.housing ?? '',
+      notes: body.notes ?? '',
+      expectedHeadcount: body.expectedHeadcount ?? 0,
     },
     include: { requestedBy: true, blitz: true },
   });

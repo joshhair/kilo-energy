@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { renamePrepaidOptionSchema } from '../../../../lib/schemas/business';
 
 // PATCH /api/prepaid-options/[id] — Rename a prepaid option (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, renamePrepaidOptionSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
   const option = await prisma.installerPrepaidOption.update({
     where: { id },
-    data: { name: body.name.trim() },
+    data: { name: body.name },
   });
   return NextResponse.json(option);
 }

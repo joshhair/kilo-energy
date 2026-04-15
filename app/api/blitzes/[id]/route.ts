@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchBlitzSchema } from '../../../../lib/schemas/business';
 
 // GET /api/blitzes/[id] — Get a single blitz. Access:
 // - admin, project_manager: yes
@@ -77,15 +79,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (existing.ownerId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const body = await req.json();
+  const parsed = await parseJsonBody(req, patchBlitzSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const data: Record<string, unknown> = {};
-  if (body.name !== undefined) {
-    if (!body.name || !String(body.name).trim()) {
-      return NextResponse.json({ error: 'Blitz name is required' }, { status: 400 });
-    }
-    data.name = body.name;
-  }
+  if (body.name !== undefined) data.name = body.name;
   if (body.location !== undefined) data.location = body.location;
   if (body.housing !== undefined) data.housing = body.housing;
   if (body.startDate !== undefined) data.startDate = body.startDate;

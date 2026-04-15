@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAuth } from '../../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../../lib/api-validation';
+import {
+  createBlitzParticipantSchema,
+  patchBlitzParticipantSchema,
+} from '../../../../../lib/schemas/business';
 
 // POST /api/blitzes/[id]/participants — Add a participant
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +19,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const caller = await prisma.user.findFirst({ where: { email } });
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await req.json();
+  const parsed = await parseJsonBody(req, createBlitzParticipantSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
@@ -57,8 +64,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAuth(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
-  const body = await req.json();
-  // body: { userId, joinStatus?, attendanceStatus? }
+
+  const parsed = await parseJsonBody(req, patchBlitzParticipantSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   // Resolve caller's internal user record
   const clerkUser = await currentUser();

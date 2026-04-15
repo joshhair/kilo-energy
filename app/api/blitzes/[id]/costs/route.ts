@@ -1,32 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAdmin } from '../../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../../lib/api-validation';
+import { createBlitzCostSchema } from '../../../../../lib/schemas/business';
 
 // POST /api/blitzes/[id]/costs — Add a cost
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
-  const body = await req.json();
 
-  const { category, amount, date } = body;
-  if (!category || typeof category !== 'string') {
-    return NextResponse.json({ error: 'category is required' }, { status: 400 });
-  }
-  if (typeof amount !== 'number' || isNaN(amount) || amount < 0) {
-    return NextResponse.json({ error: 'amount must be a non-negative number' }, { status: 400 });
-  }
-  if (!date) {
-    return NextResponse.json({ error: 'date is required' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, createBlitzCostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   try {
     const cost = await prisma.blitzCost.create({
       data: {
         blitzId,
-        category,
-        amount,
-        description: body.description || '',
-        date,
+        category: body.category,
+        amount: body.amount,
+        description: body.description ?? '',
+        date: body.date,
       },
     });
     return NextResponse.json(cost, { status: 201 });

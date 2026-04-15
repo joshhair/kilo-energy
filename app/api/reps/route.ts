@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireAdmin, requireInternalUser } from '../../../lib/api-auth';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createRepSchema } from '../../../lib/schemas/business';
 
 // GET /api/reps — List users by role.
 // - admin: full records (PII included)
@@ -38,15 +40,19 @@ export async function GET(req: NextRequest) {
 // POST /api/reps — Create a new rep (admin only)
 export async function POST(req: NextRequest) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, createRepSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
   const user = await prisma.user.create({
     data: {
-      firstName: body.firstName.trim(),
-      lastName: body.lastName.trim(),
-      email: body.email.trim(),
-      phone: body.phone?.trim() || '',
-      role: body.role || 'rep',
-      repType: body.repType || 'both',
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      role: body.role,
+      repType: body.repType,
     },
   });
   return NextResponse.json({
