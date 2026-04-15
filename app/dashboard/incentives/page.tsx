@@ -255,19 +255,8 @@ export default function IncentivesPage() {
   }, [activeVisible, visible, incentiveFilter]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
-  if (isMobile) return <MobileIncentives />;
-
-  if (effectiveRole === 'project_manager') {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-[var(--text-muted)] text-sm">You don&apos;t have permission to view this page.</p>
-      </div>
-    );
-  }
-
-  if (!isHydrated) {
-    return <IncentivesSkeleton />;
-  }
+  // Mobile / PM / hydration dispatches are deferred until after all
+  // hooks below to satisfy rules-of-hooks.
 
   const handleDelete = (id: string) => {
     setConfirmAction({
@@ -605,6 +594,17 @@ export default function IncentivesPage() {
       )}
     </div>
   );
+
+  // ── Role / viewport dispatches (after all hooks — rules-of-hooks) ─────────
+  if (!isHydrated) return <IncentivesSkeleton />;
+  if (isMobile) return <MobileIncentives />;
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-[var(--text-muted)] text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 animate-fade-in-up">

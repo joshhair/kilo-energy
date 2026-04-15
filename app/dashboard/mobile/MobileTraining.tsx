@@ -28,19 +28,10 @@ export default function MobileTraining() {
 
   const [expandedTrainee, setExpandedTrainee] = useState<string | null>(null);
 
-  // ── PM guard ─────────────────────────────────────────────────────────────
-  if (effectiveRole === 'project_manager') {
-    return (
-      <div className="px-5 pt-4 pb-24">
-        <MobilePageHeader title="Training" />
-        <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
-        </div>
-      </div>
-    );
-  }
-
   // ── Derived data ─────────────────────────────────────────────────────────
+  // NOTE: every hook below must run unconditionally on every render — the
+  // PM guard return below this block would otherwise cause a rules-of-hooks
+  // violation (hooks called in different order depending on role).
   const myAssignments = trainerAssignments.filter((a) => a.trainerId === effectiveRepId);
   const isTrainer = myAssignments.length > 0;
 
@@ -128,6 +119,18 @@ export default function MobileTraining() {
               <div className="h-5 w-16 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── PM guard (moved below hooks to satisfy rules-of-hooks) ──────────────
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="px-5 pt-4 pb-24">
+        <MobilePageHeader title="Training" />
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );

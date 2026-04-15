@@ -137,7 +137,9 @@ export default function MobileDashboard() {
 
   useEffect(() => { setStatVersion(v => v + 1); }, [period]);
 
-  if (effectiveRole === 'admin') return <MobileAdminDashboard />;
+  // NOTE: admin dispatch is handled at the end of the component (after
+  // hooks) to satisfy rules-of-hooks. Keeping it here as a guard would
+  // cause useMemo/useCountUp below to be called conditionally.
 
   // ── Shared data derivations ────────────────────────────────────────────────
 
@@ -161,113 +163,7 @@ export default function MobileDashboard() {
     [myProjects],
   );
 
-  // ── PM Dashboard ──────────────────────────────────────────────────────────
-
-  if (effectiveRole === 'project_manager') {
-    const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
-    const phaseCounts = ACTIVE_PHASES.reduce(
-      (acc, phase) => {
-        acc[phase] = myProjects.filter((p) => p.phase === phase).length;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-        <MobilePageHeader title="Dashboard" />
-
-        {/* Stat grid — 2x2 */}
-        <div className="grid grid-cols-2 gap-3">
-          <MobileStatCard label="Active Projects" value={activeProjects.length} color={ACCENT} />
-          <MobileStatCard label="Total Projects" value={myProjects.length} color="#fff" />
-          <MobileStatCard label="Total kW" value={formatCompactKW(totalKW)} color={ACCENT2} />
-          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
-        </div>
-
-        {/* Pipeline phase bars */}
-        <MobileSection title="Pipeline">
-          <MobileCard>
-            <div className="space-y-1">
-              {ACTIVE_PHASES.map((phase) => {
-                const count = phaseCounts[phase] || 0;
-                const pct =
-                  myProjects.length > 0
-                    ? (count / myProjects.length) * 100
-                    : 0;
-                return (
-                  <div key={phase} className="flex items-center gap-3 py-2">
-                    <span className="w-28 shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{phase}</span>
-                    <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${pct}%`, background: ACCENT }}
-                      />
-                    </div>
-                    <span className="w-8 text-right tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </MobileCard>
-        </MobileSection>
-
-        {/* Needs Attention — hidden if 0 */}
-        {flaggedProjects.length > 0 && (
-          <MobileSection title="Needs Attention" collapsible count={flaggedProjects.length}>
-            <MobileCard>
-              {flaggedProjects.map((p, i) => (
-                <button
-                  key={p.id}
-                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
-                    i < flaggedProjects.length - 1 ? 'border-b' : ''
-                  }`}
-                  style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
-                    <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
-                    <MobileBadge value={p.phase} />
-                  </div>
-                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{stalledDays(p.soldDate) !== null ? `Stalled ${stalledDays(p.soldDate)}d` : '—'}</span>
-                </button>
-              ))}
-            </MobileCard>
-          </MobileSection>
-        )}
-
-        {/* Recent */}
-        <MobileSection title="Recent">
-          {myProjects.length === 0 ? (
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
-          ) : (
-            <MobileCard>
-              {[...myProjects]
-                .sort((a, b) => b.soldDate.localeCompare(a.soldDate))
-                .slice(0, 5)
-                .map((p, i, arr) => (
-                  <button
-                    key={p.id}
-                    onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                    className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${
-                      i < arr.length - 1 ? 'border-b' : ''
-                    }`}
-                    style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-                  >
-                    <div className="min-w-0 flex items-center gap-2">
-                      <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
-                      <MobileBadge value={p.phase} />
-                    </div>
-                    <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
-                  </button>
-                ))}
-            </MobileCard>
-          )}
-        </MobileSection>
-      </div>
-    );
-  }
+  // PM dispatch is rendered at the end, after all hooks — see rules-of-hooks.
 
   // ── Rep / Sub-dealer shared data ──────────────────────────────────────────
 
@@ -340,70 +236,7 @@ export default function MobileDashboard() {
 
   // ── Sub-dealer layout ─────────────────────────────────────────────────────
 
-  if (effectiveRole === 'sub-dealer') {
-    return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-        <MobilePageHeader title="Dashboard" />
-
-        {/* Hero — next payout */}
-        <MobileCard hero>
-          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
-          <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%`, background: ACCENT }}
-            />
-          </div>
-        </MobileCard>
-
-        {/* Stat grid — 2x2 */}
-        <div className="grid grid-cols-2 gap-3">
-          <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
-          <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color={ACCENT2} />
-          <MobileStatCard label="Active Deals" value={activeProjects.length} color="#fff" />
-          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
-        </div>
-
-        {/* Recent */}
-        <MobileSection title="Recent">
-          {recentProjects.length === 0 ? (
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {recentProjects.map((p) => {
-                const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-mobile-muted)';
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                    className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
-                    style={{
-                      background: 'var(--m-card, var(--surface-mobile-card))',
-                      border: '1px solid #2a3858',
-                      transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    }}
-                  >
-                    {/* Left-edge phase accent strip — turns a uniform stack
-                        of cards into something you can scan by color. */}
-                    <div className="shrink-0" style={{ width: 4, background: accent }} />
-                    <div className="flex-1 min-w-0 flex items-center justify-between gap-3 px-4 py-3">
-                      <div className="min-w-0 flex items-center gap-2">
-                        <span className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</span>
-                        <MobileBadge value={p.phase} />
-                      </div>
-                      <span className="shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </MobileSection>
-      </div>
-    );
-  }
+  // Sub-dealer dispatch is rendered at the end (after all hooks) — rules-of-hooks.
 
   // ── Period-filtered data ──────────────────────────────────────────────────
 
@@ -495,6 +328,162 @@ export default function MobileDashboard() {
   const animatedPayout = useCountUp(pendingPayrollTotal, 300);
   const animatedPaid = useCountUp(periodPaid, 300);
   const animatedPipeline = useCountUp(pipelineValue, 300);
+
+  // ── Admin dispatch (after all hooks — rules-of-hooks) ─────────────────────
+  if (effectiveRole === 'admin') return <MobileAdminDashboard />;
+
+  // ── Sub-dealer dispatch (after all hooks) ─────────────────────────────────
+  if (effectiveRole === 'sub-dealer') {
+    return (
+      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+        <MobilePageHeader title="Dashboard" />
+
+        {/* Hero — next payout */}
+        <MobileCard hero>
+          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
+          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
+          <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%`, background: ACCENT }} />
+          </div>
+        </MobileCard>
+
+        {/* Stat grid — 2x2 */}
+        <div className="grid grid-cols-2 gap-3">
+          <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
+          <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color={ACCENT2} />
+          <MobileStatCard label="Active Deals" value={activeProjects.length} color="#fff" />
+          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
+        </div>
+
+        {/* Recent */}
+        <MobileSection title="Recent">
+          {recentProjects.length === 0 ? (
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentProjects.map((p) => {
+                const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-mobile-muted)';
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                    className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
+                    style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid #2a3858', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                  >
+                    <div className="shrink-0" style={{ width: 4, background: accent }} />
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</span>
+                        <MobileBadge value={p.phase} />
+                      </div>
+                      <span className="shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </MobileSection>
+      </div>
+    );
+  }
+
+  // ── PM dispatch (after all hooks) ─────────────────────────────────────────
+  if (effectiveRole === 'project_manager') {
+    const totalKWPm = activeProjects.reduce((s, p) => s + p.kWSize, 0);
+    const phaseCounts = ACTIVE_PHASES.reduce(
+      (acc, phase) => {
+        acc[phase] = myProjects.filter((p) => p.phase === phase).length;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    return (
+      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+        <MobilePageHeader title="Dashboard" />
+
+        {/* Stat grid — 2x2 */}
+        <div className="grid grid-cols-2 gap-3">
+          <MobileStatCard label="Active Projects" value={activeProjects.length} color={ACCENT} />
+          <MobileStatCard label="Total Projects" value={myProjects.length} color="#fff" />
+          <MobileStatCard label="Total kW" value={formatCompactKW(totalKWPm)} color={ACCENT2} />
+          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
+        </div>
+
+        {/* Pipeline phase bars */}
+        <MobileSection title="Pipeline">
+          <MobileCard>
+            <div className="space-y-1">
+              {ACTIVE_PHASES.map((phase) => {
+                const count = phaseCounts[phase] || 0;
+                const pct = myProjects.length > 0 ? (count / myProjects.length) * 100 : 0;
+                return (
+                  <div key={phase} className="flex items-center gap-3 py-2">
+                    <span className="w-28 shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{phase}</span>
+                    <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: ACCENT }} />
+                    </div>
+                    <span className="w-8 text-right tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </MobileCard>
+        </MobileSection>
+
+        {/* Needs Attention — hidden if 0 */}
+        {flaggedProjects.length > 0 && (
+          <MobileSection title="Needs Attention" collapsible count={flaggedProjects.length}>
+            <MobileCard>
+              {flaggedProjects.map((p, i) => (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
+                  style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
+                    <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
+                    <MobileBadge value={p.phase} />
+                  </div>
+                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{stalledDays(p.soldDate) !== null ? `Stalled ${stalledDays(p.soldDate)}d` : '—'}</span>
+                </button>
+              ))}
+            </MobileCard>
+          </MobileSection>
+        )}
+
+        {/* Recent */}
+        <MobileSection title="Recent">
+          {myProjects.length === 0 ? (
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>No projects yet.</p>
+          ) : (
+            <MobileCard>
+              {[...myProjects]
+                .sort((a, b) => b.soldDate.localeCompare(a.soldDate))
+                .slice(0, 5)
+                .map((p, i, arr) => (
+                  <button
+                    key={p.id}
+                    onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                    className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < arr.length - 1 ? 'border-b' : ''}`}
+                    style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                  >
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
+                      <MobileBadge value={p.phase} />
+                    </div>
+                    <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
+                  </button>
+                ))}
+            </MobileCard>
+          )}
+        </MobileSection>
+      </div>
+    );
+  }
 
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
