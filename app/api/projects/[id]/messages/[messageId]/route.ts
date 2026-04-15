@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/db';
 import { requireInternalUser, requireProjectAccess } from '../../../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../../../lib/api-validation';
+import { patchProjectMessageSchema } from '../../../../../../lib/schemas/business';
 
 // PATCH /api/projects/[id]/messages/[messageId] — Update check items or mark mentions read
 export async function PATCH(
@@ -11,10 +13,13 @@ export async function PATCH(
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id, messageId } = await params;
   try { await requireProjectAccess(user, id); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
 
-  // Toggle check item completion — must be a user on the project.
-  if (body.checkItemId) {
+  const parsed = await parseJsonBody(req, patchProjectMessageSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
+  // Branch 1: toggle a check item.
+  if ('checkItemId' in body) {
     const data: Record<string, unknown> = {};
     if (body.completed !== undefined) {
       data.completed = body.completed;
@@ -32,14 +37,10 @@ export async function PATCH(
     return NextResponse.json(updated);
   }
 
-  // Mark mentions as read — force targetUserId to current user, ignore body.
-  if (body.markMentionRead) {
-    await prisma.projectMention.updateMany({
-      where: { messageId, userId: user.id, readAt: null },
-      data: { readAt: new Date() },
-    });
-    return NextResponse.json({ success: true });
-  }
-
-  return NextResponse.json({ error: 'No valid operation specified' }, { status: 400 });
+  // Branch 2: mark mentions as read — scoped to current user only.
+  await prisma.projectMention.updateMany({
+    where: { messageId, userId: user.id, readAt: null },
+    data: { readAt: new Date() },
+  });
+  return NextResponse.json({ success: true });
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
 import { requireInternalUser, requireProjectAccess } from '../../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../../lib/api-validation';
+import { createProjectMessageSchema } from '../../../../../lib/schemas/business';
 
 // GET /api/projects/[id]/messages — List messages for a project (paginated).
 // Access: admin, PM, or a rep/sub-dealer who is on the deal.
@@ -35,32 +37,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   try { await requireProjectAccess(user, id); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
 
-  // Force author to the current user — do not trust client-supplied authorId.
-  body.authorId = user.id;
-  body.authorName = `${user.firstName} ${user.lastName}`;
-  body.authorRole = user.role;
-
-  if (!body.authorId || !body.authorName || !body.authorRole || !body.text) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, createProjectMessageSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const message = await prisma.projectMessage.create({
     data: {
       projectId: id,
-      authorId: body.authorId,
-      authorName: body.authorName,
-      authorRole: body.authorRole,
+      // Force author fields from the session — never trust client-supplied values.
+      authorId: user.id,
+      authorName: `${user.firstName} ${user.lastName}`,
+      authorRole: user.role,
       text: body.text,
       checkItems: body.checkItems?.length
-        ? { create: body.checkItems.map((ci: any) => ({
+        ? { create: body.checkItems.map((ci) => ({
             text: typeof ci === 'string' ? ci : ci.text,
             dueDate: (typeof ci === 'object' && ci.dueDate) ? new Date(ci.dueDate) : null,
           })) }
         : undefined,
       mentions: body.mentionUserIds?.length
-        ? { create: body.mentionUserIds.map((userId: string) => ({ userId })) }
+        ? { create: body.mentionUserIds.map((userId) => ({ userId })) }
         : undefined,
     },
     include: { checkItems: true, mentions: true },

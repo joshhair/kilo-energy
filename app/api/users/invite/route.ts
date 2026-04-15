@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { createUserInviteSchema } from '../../../../lib/schemas/business';
 
 /**
  * POST /api/users/invite — Admin creates a new internal user AND sends
@@ -26,20 +28,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invites_disabled' }, { status: 503 });
   }
 
-  const body = await req.json();
-  const firstName = (body.firstName ?? '').trim();
-  const lastName = (body.lastName ?? '').trim();
-  const email = (body.email ?? '').trim().toLowerCase();
-  const phone = (body.phone ?? '').trim();
-  const role = body.role ?? 'rep';
-  const repType = body.repType ?? 'both';
-
-  if (!firstName || !lastName || !email) {
-    return NextResponse.json({ error: 'firstName, lastName, and email are required' }, { status: 400 });
-  }
-  if (!['rep', 'sub-dealer', 'admin', 'project_manager'].includes(role)) {
-    return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, createUserInviteSchema);
+  if (!parsed.ok) return parsed.response;
+  const { firstName, lastName, email, phone, role, repType } = parsed.data;
 
   // Refuse if an internal user with this email already exists
   const existing = await prisma.user.findFirst({ where: { email } });

@@ -162,3 +162,57 @@ export const renamePrepaidOptionSchema = z.object({
   name: z.string().trim().min(1).max(200),
 });
 export type RenamePrepaidOptionInput = z.infer<typeof renamePrepaidOptionSchema>;
+
+// ─── Project messages (chatter) ─────────────────────────────────────────────
+
+const checkItemInputSchema = z.union([
+  z.string().min(1).max(500),
+  z.object({
+    text: z.string().min(1).max(500),
+    dueDate: z.string().nullable().optional(),
+  }),
+]);
+
+export const createProjectMessageSchema = z.object({
+  text: z.string().min(1, 'message text is required').max(10_000),
+  checkItems: z.array(checkItemInputSchema).max(50).optional(),
+  mentionUserIds: z.array(idSchema).max(50).optional(),
+});
+export type CreateProjectMessageInput = z.infer<typeof createProjectMessageSchema>;
+
+/** PATCH /api/projects/[id]/messages/[messageId] — polymorphic.
+ *  Either toggles a check item OR marks mentions read. Exactly one branch. */
+export const patchProjectMessageSchema = z.union([
+  z.object({
+    checkItemId: idSchema,
+    completed: z.boolean().optional(),
+    dueDate: z.string().nullable().optional(),
+  }).refine((d) => d.completed !== undefined || d.dueDate !== undefined, {
+    message: 'completed or dueDate required',
+  }),
+  z.object({
+    markMentionRead: z.literal(true),
+  }),
+]);
+export type PatchProjectMessageInput = z.infer<typeof patchProjectMessageSchema>;
+
+// ─── Project activity ──────────────────────────────────────────────────────
+
+export const createProjectActivitySchema = z.object({
+  type: z.string().trim().min(1).max(50),
+  detail: z.string().trim().min(1).max(2000),
+  meta: z.string().max(5000).nullable().optional(),  // JSON-encoded on the client
+});
+export type CreateProjectActivityInput = z.infer<typeof createProjectActivitySchema>;
+
+// ─── User invite ────────────────────────────────────────────────────────────
+
+export const createUserInviteSchema = z.object({
+  firstName: z.string().trim().min(1).max(100),
+  lastName: z.string().trim().min(1).max(100),
+  email: z.string().trim().toLowerCase().email().max(200),
+  phone: z.string().trim().max(50).optional().default(''),
+  role: z.enum(['rep', 'sub-dealer', 'admin', 'project_manager']).optional().default('rep'),
+  repType: z.enum(['solo', 'self-gen', 'trainee', 'sub-dealer', 'both', 'closer', 'setter']).optional().default('both'),
+});
+export type CreateUserInviteInput = z.infer<typeof createUserInviteSchema>;

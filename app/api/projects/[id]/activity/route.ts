@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
 import { requireInternalUser, requireProjectAccess } from '../../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../../lib/api-validation';
+import { createProjectActivitySchema } from '../../../../../lib/schemas/business';
 
 // GET /api/projects/[id]/activity — List all activities for a project.
 // Access: admin, PM, or a rep/sub-dealer who is on the deal.
@@ -33,7 +35,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   try { await requireProjectAccess(user, id); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, createProjectActivitySchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const activity = await prisma.projectActivity.create({
     data: {
