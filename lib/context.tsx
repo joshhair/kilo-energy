@@ -655,7 +655,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Guard: abort the entire transition if m1Amount is missing at Acceptance
     if (updates.phase === 'Acceptance' && old && old.phase !== 'Acceptance' && !old.subDealerId) {
-      const effectiveSetterId = updates.setterId ?? old.setterId;
+      const effectiveSetterId = 'setterId' in updates ? updates.setterId : old.setterId;
       const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
       if (
         (updates.m1Amount ?? old.m1Amount) == null ||

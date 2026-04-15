@@ -149,8 +149,7 @@ function SettingsPageInner() {
     editingProductName !== null ||
     newVersionFor !== null ||
     pcNewVersionFor !== null ||
-    dupAllOpen ||
-    payScheduleExpanded !== null;
+    dupAllOpen;
 
   // ── Unsaved-changes guard state ────────────────────────────────────────────
   const [pendingSection, setPendingSection] = useState<SettingsSection | null>(null);

@@ -89,10 +89,18 @@ export function AdminDashboard({
   function getProjectBaselines(p: Project): { closerPerW: number; kiloPerW: number } {
     if (p.baselineOverride) return p.baselineOverride;
     if (p.installer === 'SolarTech' && p.solarTechProductId) {
-      return getSolarTechBaseline(p.solarTechProductId, p.kWSize, solarTechProducts);
+      try {
+        return getSolarTechBaseline(p.solarTechProductId, p.kWSize, solarTechProducts);
+      } catch {
+        return { closerPerW: 0, kiloPerW: 0 };
+      }
     }
     if (p.installerProductId) {
-      return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
+      try {
+        return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
+      } catch {
+        return { closerPerW: 0, kiloPerW: 0 };
+      }
     }
     return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
   }

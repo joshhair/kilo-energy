@@ -256,7 +256,7 @@ function PayrollPageInner() {
 
       // And it's in `filtered` (the visible table) only if its status
       // also matches the active status tab.
-      if (p.status === statusTab) filtered.push(p);
+      if (p.status === statusTab && (statusTab !== 'Paid' || p.date <= today)) filtered.push(p);
     }
 
     return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid };

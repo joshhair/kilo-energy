@@ -319,12 +319,13 @@ export function createMilestonePayroll(
   }
 
   // Setter entry (M1 goes to setter if one exists)
-  if (old.setterId && isAcceptance && (freshProject.setterM1Amount ?? 0) > 0) {
-    const setterRep = deps.repsRef.current.find((r) => r.id === old.setterId);
+  // Use freshProject.setterId (post-update) so a simultaneously-added setter is included.
+  if (freshProject.setterId && isAcceptance && (freshProject.setterM1Amount ?? 0) > 0) {
+    const setterRep = deps.repsRef.current.find((r) => r.id === freshProject.setterId);
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_s`,
-      repId: old.setterId,
-      repName: setterRep?.name ?? old.setterName ?? '',
+      repId: freshProject.setterId!,
+      repName: setterRep?.name ?? freshProject.setterName ?? '',
       projectId,
       customerName: old.customerName,
       amount: freshProject.setterM1Amount!,

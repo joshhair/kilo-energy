@@ -142,7 +142,7 @@ function ProjectsPageInner() {
 
   const doPhaseChange = (projectId: string, phase: Phase, silent?: boolean) => {
     const project = projects.find((p) => p.id === projectId);
-    if (isRep && project?.repId !== effectiveRepId) { toast('You can only update your own projects.', 'error'); return; }
+    if (isRep && project?.repId !== effectiveRepId && project?.setterId !== effectiveRepId) { toast('You can only update your own projects.', 'error'); return; }
     const previousPhase = project?.phase;
     updateProject(projectId, { phase });
     if (!silent && project) toast(
