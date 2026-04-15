@@ -566,6 +566,13 @@ function NewDealPage() {
       return;
     }
 
+    // Guard: setter-type reps cannot be the closer on a deal.
+    if (!closerId) {
+      toast('Setter accounts cannot submit deals directly. Please contact an admin.', 'error');
+      submittingRef.current = false;
+      return;
+    }
+
     // Guard: if a blitz is selected, both the closer and setter (if chosen) must
     // be approved participants of that blitz. The UI clears setterId on blitz
     // change, but this prevents stale IDs (e.g. approval revoked after selection)

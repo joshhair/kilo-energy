@@ -443,6 +443,7 @@ function PayrollPageInner() {
     setBonusForm({ repId: '', amount: '', notes: '', date: '' });
     setStatusTab('Draft');
     setTypeTab('Bonus');
+    changeFilterRepId('');
     setSelectedIds(new Set());
     setAdminPage(1);
     const bonusParams = new URLSearchParams(searchParams.toString());
@@ -488,6 +489,7 @@ function PayrollPageInner() {
     setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
     setStatusTab('Draft');
     setTypeTab('Deal');
+    changeFilterRepId('');
     setSelectedIds(new Set());
     setAdminPage(1);
     const paymentParams = new URLSearchParams(searchParams.toString());
@@ -1021,7 +1023,7 @@ function PayrollPageInner() {
                 )}
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Rep</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Type</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Customer</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>{typeTab === 'Deal' ? 'Customer' : 'Note'}</th>
                 <th style={{ padding: '10px 14px', textAlign: 'right' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Amount</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Date</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Status</th>
