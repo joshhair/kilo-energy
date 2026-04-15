@@ -763,7 +763,7 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
       const closerM1 = p.m1Amount ?? 0;
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0)) : 0;
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0)) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0)) : 0;
       return s + Math.max(0, totalExpected - (allMtdPayrollByProject.get(p.id) ?? 0));
     }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
@@ -958,12 +958,20 @@ export default function DashboardPage() {
     if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
+  // Net milestone amounts per project from prev-period payroll entries (mirrors payrollNetByProjectStage).
+  const prevPayrollNetByProjectStage = myPrevPayroll.reduce((map, e) => {
+    if (e.projectId && (e.paymentStage === 'M1' || e.paymentStage === 'M2' || e.paymentStage === 'M3')) {
+      const key = `${e.projectId}:${e.paymentStage}`;
+      map.set(key, (map.get(key) ?? 0) + e.amount);
+    }
+    return map;
+  }, new Map<string, number>());
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
     const closerM1 = p.m1Amount ?? 0;
     const totalExpected = p.repId === effectiveRepId
-      ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
+      ? closerM1 + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
       : p.setterId === effectiveRepId
-        ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        ? (p.setterM1Amount ?? 0) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
         : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
