@@ -30,6 +30,7 @@ interface SearchableSelectProps {
   error?: boolean;
   disabled?: boolean;
   id?: string;
+  label?: string;
 }
 
 export function SearchableSelect({
@@ -42,6 +43,7 @@ export function SearchableSelect({
   error,
   disabled,
   id,
+  label,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -179,6 +181,7 @@ export function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={() => (open ? closeDropdown() : setOpen(true))}
+        aria-label={label}
         aria-expanded={open}
         aria-haspopup="listbox"
         className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--surface-card)] border text-left transition-all text-sm

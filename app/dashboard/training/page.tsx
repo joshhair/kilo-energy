@@ -257,7 +257,7 @@ function TrainingPageInner() {
     if (paymentStatusFilter !== 'all') {
       list = list.filter((e) => e.status === paymentStatusFilter);
     }
-    return list.sort((a, b) => b.date.localeCompare(a.date));
+    return list.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
   }, [trainerEntries, paymentSearch, paymentStatusFilter, traineeData, projects]);
 
   // Overview stats

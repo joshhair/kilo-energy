@@ -923,6 +923,7 @@ function NewDealPage() {
                 onChange={(val) => handleInstallerChange(val)}
                 options={activeInstallers.map((i) => ({ value: i, label: i }))}
                 placeholder="— Select installer —"
+                label="Installer"
                 error={!!errors.installer}
               />
               <FieldError errors={errors} field="installer" />
@@ -1053,6 +1054,7 @@ function NewDealPage() {
                         onChange={(val) => handleFinancerChange(val)}
                         options={activeFinancers.map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
+                        label="Financer"
                         error={!!errors.financer}
                       />
                       <FieldError errors={errors} field="financer" />
@@ -1070,6 +1072,7 @@ function NewDealPage() {
                         onChange={(val) => update('solarTechProductId', val)}
                         options={solarTechProducts.filter((p) => p.family === solarTechFamily).map((p) => ({ value: p.id, label: p.name }))}
                         placeholder="— Select package —"
+                        label="Equipment Package"
                         error={!!errors.solarTechProductId}
                       />
                       <FieldError errors={errors} field="solarTechProductId" />
@@ -1159,6 +1162,7 @@ function NewDealPage() {
                           : activeFinancers
                         ).map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
+                        label="Financer"
                         error={!!errors.financer}
                       />
                       <FieldError errors={errors} field="financer" />
@@ -1176,6 +1180,7 @@ function NewDealPage() {
                         onChange={(val) => update('installerProductId', val)}
                         options={productCatalogProducts.filter((p) => p.installer === form.installer && p.family === pcFamily).map((p) => ({ value: p.id, label: p.name }))}
                         placeholder="— Select package —"
+                        label="Equipment Package"
                         error={!!errors.installerProductId}
                       />
                       <FieldError errors={errors} field="installerProductId" />
@@ -1195,6 +1200,7 @@ function NewDealPage() {
                         onChange={(val) => handleFinancerChange(val)}
                         options={activeFinancers.map((f) => ({ value: f, label: f }))}
                         placeholder="— Select financer —"
+                        label="Financer"
                         error={!!errors.financer}
                       />
                       <FieldError errors={errors} field="financer" />
