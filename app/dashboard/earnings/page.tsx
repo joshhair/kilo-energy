@@ -170,6 +170,7 @@ function computeMonthlyBarData(
 
   for (const e of payrollEntries) {
     if (e.repId !== repId) continue;
+    if (e.status === 'Draft') continue;
     if (e.status !== 'Pending' && e.date > today) continue;
     const key = e.date.slice(0, 7);
     if (!map.has(key)) {
@@ -1356,7 +1357,7 @@ function AdminFinancialsView() {
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
           {pendingReimbCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingReimbCount} requests</p>}
-          {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
+          {reimbFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{reimbFilterLabel}</p>}
         </div>
       </div>
 

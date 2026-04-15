@@ -487,6 +487,7 @@ function NewDealPage() {
       } else if (firstErrorField === 'soldDate') {
         soldDateInputRef.current?.focus();
       }
+      toast('Please fill in the required fields before continuing.', 'error');
       return;
     }
 
