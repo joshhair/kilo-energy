@@ -18,6 +18,7 @@ import {
   Clock, ArrowRight, Users, Download,
 } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // ── Shared constants ───────────────────────────────────────────────────────────
 
@@ -1170,6 +1171,7 @@ function AdminFinancialsView() {
   const [payrollPageSize, setPayrollPageSize] = useState(25);
   const [payrollSortKey, setPayrollSortKey] = useState<'repName' | 'customerName' | 'paymentStage' | 'amount' | 'status' | 'date'>('date');
   const [payrollSortDir, setPayrollSortDir] = useState<SortDir>('desc');
+  const [markAllConfirmOpen, setMarkAllConfirmOpen] = useState(false);
 
   const handlePayrollSort = (key: typeof payrollSortKey) => {
     setPayrollPage(1);
@@ -1391,7 +1393,7 @@ function AdminFinancialsView() {
                 <option value="Draft">Draft</option>
               </select>
               {filteredPayroll.some((e) => e.status === 'Pending') && (
-                <button onClick={markAllPendingPaid}
+                <button onClick={() => setMarkAllConfirmOpen(true)}
                   className="ml-auto flex items-center gap-1.5 bg-emerald-900/30 hover:bg-emerald-800/40 border border-emerald-700/40 text-emerald-300 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Mark All Pending Paid

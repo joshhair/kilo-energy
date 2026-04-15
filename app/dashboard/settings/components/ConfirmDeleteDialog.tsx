@@ -18,8 +18,9 @@ export function ConfirmDeleteDialog({
   // For no-cascade installer deletes and all other types (financer,
   // trainer), a simple click-to-confirm is still fine.
   const requiresTypeToConfirm = confirm.type === 'installer' && confirm.message.includes('PERMANENTLY delete');
+  const isDeletionBlocked = confirm.message.includes('cannot be deleted');
   const [typed, setTyped] = useState('');
-  const canConfirm = !requiresTypeToConfirm || typed === confirm.name;
+  const canConfirm = !isDeletionBlocked && (!requiresTypeToConfirm || typed === confirm.name);
 
   return (
     <div

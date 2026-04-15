@@ -39,7 +39,11 @@ function ProjectsPageInner() {
     const v = searchParams.get('view');
     return v === 'all' ? 'all' : 'phase';
   });
-  const [dealScope, setDealScope] = useState<'mine' | 'all'>(isRep ? 'mine' : 'all');
+  const [dealScope, setDealScope] = useState<'mine' | 'all'>(() => {
+    const v = searchParams.get('scope');
+    if (v === 'mine' || v === 'all') return v;
+    return isRep ? 'mine' : 'all';
+  });
   // Re-initialise dealScope once effectiveRole resolves from null (context not yet hydrated on first render).
   const didInitDealScope = useRef(false);
   useEffect(() => {
@@ -67,10 +71,11 @@ function ProjectsPageInner() {
     if (installerFilter) params.set('installer', installerFilter); else params.delete('installer');
     if (phaseFilter) params.set('phase', phaseFilter); else params.delete('phase');
     if (qaOnly) params.set('qa', '1'); else params.delete('qa');
+    if (dealScope === 'mine') params.set('scope', 'mine'); else params.delete('scope');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, statusFilter, installerFilter, phaseFilter, qaOnly]);
+  }, [tab, statusFilter, installerFilter, phaseFilter, qaOnly, dealScope]);
 
   // Sliding tab indicators
   const viewTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -135,7 +140,7 @@ function ProjectsPageInner() {
 
   const doPhaseChange = (projectId: string, phase: Phase, silent?: boolean) => {
     const project = projects.find((p) => p.id === projectId);
-    if (isRep && project?.repId !== effectiveRepId) return;
+    if (isRep && project?.repId !== effectiveRepId) { toast('You can only update your own projects.', 'error'); return; }
     const previousPhase = project?.phase;
     updateProject(projectId, { phase });
     if (!silent && project) toast(
@@ -170,7 +175,7 @@ function ProjectsPageInner() {
       return;
     }
     const cancelProject = projects.find((p) => p.id === cancelReasonModal.projectId);
-    if (isRep && cancelProject?.repId !== effectiveRepId) { setCancelReasonModal(null); return; }
+    if (isRep && cancelProject?.repId !== effectiveRepId) { toast('You can only update your own projects.', 'error'); setCancelReasonModal(null); return; }
     updateProject(cancelReasonModal.projectId, {
       phase: 'Cancelled',
       cancellationReason: cancelReason || undefined,
