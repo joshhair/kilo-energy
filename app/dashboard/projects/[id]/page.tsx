@@ -676,7 +676,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // ArrowLeft / ArrowRight keyboard shortcuts (only when no input is focused)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (showEditModal || showCancelConfirm || showDeleteConfirm || showCancelReasonModal || phaseConfirm) return;
+      if (showEditModal || showCancelConfirm || showDeleteConfirm || showCancelReasonModal || phaseConfirm || editM1 || editM2) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement)?.isContentEditable) return;
       if (e.key === 'ArrowLeft' && prevProjectId) {
@@ -689,7 +689,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [prevProjectId, nextProjectId, showEditModal, showCancelConfirm, showDeleteConfirm, showCancelReasonModal, phaseConfirm]);
+  }, [prevProjectId, nextProjectId, showEditModal, showCancelConfirm, showDeleteConfirm, showCancelReasonModal, phaseConfirm, editM1, editM2]);
 
   // Escape to close Edit Project modal
   useEffect(() => {
@@ -799,13 +799,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     toast(`Phase updated to ${phase}`, 'success', {
       label: 'Undo',
       onClick: () => {
-        if (previousPhase === 'Cancelled') {
-          setCancelReason('');
-          setCancelNotes('');
-          setShowCancelReasonModal(true);
-        } else {
-          updateProject({ phase: previousPhase });
-        }
+        updateProject({ phase: previousPhase });
       },
     });
   };

@@ -148,8 +148,8 @@ function ProjectsPageInner() {
     if (!silent && project) toast(
       `${project.customerName} moved to ${phase}`,
       'success',
-      previousPhase && previousPhase !== phase && previousPhase !== 'Cancelled'
-        ? { label: 'Undo', onClick: () => handlePhaseChange(projectId, previousPhase) }
+      previousPhase && previousPhase !== phase
+        ? { label: 'Undo', onClick: () => doPhaseChange(projectId, previousPhase, true) }
         : undefined,
     );
   };

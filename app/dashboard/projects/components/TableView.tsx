@@ -366,6 +366,8 @@ export default function TableView({
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement
       ) return;
+      // Skip when a dialog/modal is open (e.g. bulk phase confirm)
+      if (document.querySelector('[role="alertdialog"], [role="dialog"]')) return;
       if (e.key === 'ArrowLeft') {
         setCurrentPage((p) => Math.max(1, p - 1));
       } else if (e.key === 'ArrowRight') {
