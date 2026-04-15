@@ -252,7 +252,7 @@ function PayrollPageInner() {
       filteredByDateRep.push(p);
       if (p.status === 'Draft') totalDraft += p.amount;
       else if (p.status === 'Pending') totalPending += p.amount;
-      else if (p.status === 'Paid') totalPaid += p.amount;
+      else if (p.status === 'Paid' && p.date <= today) totalPaid += p.amount;
 
       // And it's in `filtered` (the visible table) only if its status
       // also matches the active status tab.
@@ -519,7 +519,7 @@ function PayrollPageInner() {
     const myPending = myTypeFiltered.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
     const myPaid = myTypeFiltered.filter((p) => p.status === 'Paid' && p.date <= today).reduce((s, p) => s + p.amount, 0);
     const myFiltered = myTypeFiltered
-      .filter((p) => repStatusFilter === 'All' || p.status === repStatusFilter)
+      .filter((p) => (repStatusFilter === 'All' || p.status === repStatusFilter) && (p.status !== 'Paid' || p.date <= today))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
     return (
       <div className="p-4 md:p-8">

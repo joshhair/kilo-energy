@@ -592,7 +592,7 @@ function UsersPageInner() {
     });
   };
 
-  const filtered = reps.filter((r) => {
+  const filtered = useMemo(() => reps.filter((r) => {
     // Hide deactivated reps from the main list — they live in the "Show
     // inactive" expander below so admins can find and reactivate them
     // without polluting the active roster.
@@ -604,7 +604,7 @@ function UsersPageInner() {
     if (filterTab === 'both') return r.repType === 'both';
     // 'closer' tab shows closer + both; 'setter' tab shows setter + both
     return r.repType === filterTab || r.repType === 'both';
-  });
+  }), [reps, debouncedSearch, filterTab]);
 
   // Inactive reps live below the main list in a collapsible expander.
   // Same search filter applies, but the role filter does NOT — admins
