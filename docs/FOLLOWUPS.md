@@ -1,34 +1,23 @@
-# Follow-ups — browser steps only you can do
+# Follow-ups
 
-Three tasks that require interactive web auth I can't do from CLI. Each takes ~2 minutes.
+## ✅ 1. Branch protection on `main` — DONE (2026-04-15)
 
----
+Active rules:
+- Force pushes: blocked
+- Branch deletions: blocked
+- Linear history: required (rebase/squash only)
+- Conversation resolution: required
 
-## 1. Enable branch protection on `main`
+Admin bypass is enabled (Josh can override), and PR/status-check gating is
+intentionally off so the agent team's direct-push flow still works.
 
-Prevents accidental force-push, requires CI green before merge.
-
-1. Open https://github.com/joshhair/kilo-energy/settings/branches
-2. Click **Add branch protection rule** (or edit existing)
-3. Branch name pattern: `main`
-4. Check these boxes:
-   - [x] **Require a pull request before merging** → minimum **1 approval** (even solo — forces the PR workflow so CI runs)
-   - [x] **Require status checks to pass before merging** → search and add:
-     - `Typecheck · Lint · Unit tests` (will appear once the first CI run completes)
-   - [x] **Require branches to be up to date before merging**
-   - [x] **Require conversation resolution before merging**
-   - [x] **Do not allow bypassing the above settings**
-5. **Save changes**
-
-Since Kilo uses auto-commit from the agent team direct to main, you may want to:
-- Either exempt the agent service account under "Allow specified actors to bypass"
-- Or have agents push to a `agents/auto` branch that opens PRs instead
-
-Flag me if you want me to refactor the agent orchestrator to PR-based flow.
+**Tighten later:** once agents are refactored to a PR-based flow, add:
+- `required_pull_request_reviews` with 1 approval
+- `required_status_checks` with the `Typecheck · Lint · Unit tests` context
 
 ---
 
-## 2. Install Renovate GitHub App
+## ⏳ 2. Install Renovate GitHub App
 
 Automates dependency PRs. Config already committed in `renovate.json`.
 
@@ -37,43 +26,35 @@ Automates dependency PRs. Config already committed in `renovate.json`.
 3. Choose **Only select repositories** → pick `kilo-energy`
 4. Confirm
 
-Renovate will read `renovate.json` and open its first "dependency dashboard" issue within ~5 minutes. First Monday morning after that, you'll get a batch of update PRs.
+Renovate will open its "dependency dashboard" issue within ~5 minutes.
 
 ---
 
-## 3. Create a Sentry project + add DSN to Vercel
+## ⏳ 3. Create a Sentry project + add DSN to Vercel
 
 Error tracking is scaffolded but dormant until the DSN env var is set.
 
 ### Create Sentry project
 1. Sign in (or sign up free) at https://sentry.io
 2. Create new project → platform **Next.js** → project name `kilo-energy`
-3. On the setup page, copy the **DSN** (looks like `https://abc123@o123.ingest.sentry.io/456`)
+3. Copy the **DSN** (looks like `https://abc123@o123.ingest.sentry.io/456`)
 
-### Add DSN to Vercel prod env
+### Add DSN to Vercel
 Run from `C:\Users\Jarvis\Projects\kilo-energy`:
 
 ```bash
 vercel env add NEXT_PUBLIC_SENTRY_DSN production
 # Paste the DSN when prompted
-```
-
-Then redeploy (or wait for next push):
-
-```bash
 vercel --prod
 ```
 
-### Verify it works
-Visit the deployed site and trigger an intentional error (open `/dashboard/does-not-exist` or throw in a dev component temporarily). Check https://sentry.io/issues — the error should appear within ~1 minute.
+### Verify
+Trigger an error in prod (e.g. throw in a test component or visit a
+nonexistent page). Check https://sentry.io/issues within ~1 minute.
 
 ---
 
-## Once all three are done
+## Once 2 and 3 are done
 
-Three green checks:
-- [ ] Branch protection active on `main`
-- [ ] Renovate opens its dependency dashboard issue
-- [ ] First error from prod appears in Sentry
-
-Tell me when you're done and I'll resume with the remaining plan phases (9.1 decimal money, 9.2 Zod, Phase 4 security, etc).
+Tell me. I'll resume with remaining plan phases (9.1 decimal money, 9.2
+Zod, Phase 4 security, etc).
