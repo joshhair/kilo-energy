@@ -1,19 +1,23 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useApp } from '../../../lib/context';
 import {
   computeIncentiveProgress,
   formatIncentiveMetric,
   Incentive,
   IncentiveMetric,
+  IncentivePeriod,
+  IncentiveType,
 } from '../../../lib/data';
-import { Trophy, Plus, Gift, Target } from 'lucide-react';
+import { useToast } from '../../../lib/toast';
+import { Trophy, Plus, Gift, Target, Loader2 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
+import MobileBottomSheet from './shared/MobileBottomSheet';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -55,6 +59,10 @@ function metricLabel(metric: IncentiveMetric): string {
   return metric;
 }
 
+function todayISO(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function MobileIncentives() {
@@ -63,12 +71,15 @@ export default function MobileIncentives() {
     effectiveRole,
     currentRepId,
     incentives,
+    setIncentives,
     projects,
     payrollEntries,
     reps,
   } = useApp();
+  const { toast } = useToast();
 
   const isAdmin = currentRole === 'admin';
+  const [showCreate, setShowCreate] = useState(false);
 
   // PM guard
   if (effectiveRole === 'project_manager') {
@@ -96,7 +107,22 @@ export default function MobileIncentives() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
-      <MobilePageHeader title="Incentives" />
+      <MobilePageHeader
+        title="Incentives"
+        right={isAdmin ? (
+          <button
+            onClick={() => setShowCreate(true)}
+            aria-label="Add incentive"
+            className="w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.92] transition-transform"
+            style={{
+              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+              boxShadow: '0 4px 14px rgba(0,229,160,0.3)',
+            }}
+          >
+            <Plus className="w-5 h-5 text-white" />
+          </button>
+        ) : undefined}
+      />
 
       {/* Active Incentives */}
       <MobileSection title="Active Incentives" count={activeIncentives.length}>
@@ -125,11 +151,221 @@ export default function MobileIncentives() {
           </div>
         </MobileSection>
       )}
+
+      {/* Admin: create-incentive bottom sheet */}
+      {isAdmin && (
+        <CreateIncentiveSheet
+          open={showCreate}
+          onClose={() => setShowCreate(false)}
+          reps={reps}
+          onCreated={(created) => {
+            setIncentives((prev) => [...prev, created]);
+            toast('Incentive created', 'success');
+            setShowCreate(false);
+          }}
+          onError={(msg) => toast(msg, 'error')}
+        />
+      )}
     </div>
   );
 }
 
-// ─── Incentive Card ─────────────────────────────────────────────────────────
+// ─── Create-Incentive Bottom Sheet ──────────────────────────────────────────
+
+function CreateIncentiveSheet({
+  open,
+  onClose,
+  reps,
+  onCreated,
+  onError,
+}: {
+  open: boolean;
+  onClose: () => void;
+  reps: { id: string; name: string; active?: boolean }[];
+  onCreated: (incentive: Incentive) => void;
+  onError: (msg: string) => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState<IncentiveType>('company');
+  const [metric, setMetric] = useState<IncentiveMetric>('deals');
+  const [period, setPeriod] = useState<IncentivePeriod>('month');
+  const [startDate, setStartDate] = useState<string>(todayISO());
+  const [endDate, setEndDate] = useState<string>('');
+  const [targetRepId, setTargetRepId] = useState<string>('');
+  const [threshold, setThreshold] = useState<string>('');
+  const [reward, setReward] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const reset = () => {
+    setTitle(''); setType('company'); setMetric('deals'); setPeriod('month');
+    setStartDate(todayISO()); setEndDate(''); setTargetRepId('');
+    setThreshold(''); setReward(''); setSubmitting(false);
+  };
+
+  const canSubmit =
+    title.trim().length > 0 &&
+    threshold.trim().length > 0 &&
+    Number(threshold) > 0 &&
+    reward.trim().length > 0 &&
+    (type === 'company' || !!targetRepId);
+
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    try {
+      const payload = {
+        title: title.trim(),
+        description: '',
+        type,
+        metric,
+        period,
+        startDate: period === 'alltime' ? todayISO() : startDate,
+        endDate: endDate || undefined,
+        targetRepId: type === 'personal' ? targetRepId : undefined,
+        active: true,
+        milestones: [{ threshold: Number(threshold), reward: reward.trim() }],
+      };
+      const res = await fetch('/api/incentives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body?.error) {
+            detail = body.error;
+            if (Array.isArray(body.issues) && body.issues.length > 0) {
+              detail += ' · ' + body.issues.map((i: { path: string; message: string }) => `${i.path}: ${i.message}`).join(', ');
+            }
+          }
+        } catch { /* keep status */ }
+        throw new Error(detail);
+      }
+      const created: Incentive = await res.json();
+      onCreated(created);
+      reset();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Failed to create incentive');
+      setSubmitting(false);
+    }
+  };
+
+  const inputCls = 'w-full px-3 py-2.5 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)]';
+  const inputStyle: React.CSSProperties = {
+    background: 'var(--m-surface, var(--surface))',
+    border: '1px solid var(--m-border, var(--border-mobile))',
+    color: '#fff',
+    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+  };
+  const labelCls = 'block text-xs font-medium uppercase tracking-wider mb-1.5 text-[var(--m-text-muted,var(--text-mobile-muted))]';
+
+  return (
+    <MobileBottomSheet
+      open={open}
+      onClose={() => { if (!submitting) { reset(); onClose(); } }}
+      title="New Incentive"
+    >
+      <div className="px-5 space-y-3 max-h-[70vh] overflow-y-auto pb-3">
+        {/* Title */}
+        <div>
+          <label className={labelCls}>Title</label>
+          <input className={inputCls} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Q2 Closer Bonus" />
+        </div>
+
+        {/* Type */}
+        <div>
+          <label className={labelCls}>Type</label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['company', 'personal'] as IncentiveType[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setType(t)}
+                className={`py-2.5 rounded-lg text-sm transition-colors ${type === t ? 'filter-tab-active' : ''}`}
+                style={type !== t ? inputStyle : undefined}
+              >
+                {t === 'company' ? 'Company-wide' : 'Personal'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Target rep (only for personal) */}
+        {type === 'personal' && (
+          <div>
+            <label className={labelCls}>Target Rep</label>
+            <select className={inputCls} style={inputStyle} value={targetRepId} onChange={(e) => setTargetRepId(e.target.value)}>
+              <option value="">— Select rep —</option>
+              {reps.filter((r) => r.active !== false).map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Metric */}
+        <div>
+          <label className={labelCls}>Metric</label>
+          <select className={inputCls} style={inputStyle} value={metric} onChange={(e) => setMetric(e.target.value as IncentiveMetric)}>
+            <option value="deals">Deals</option>
+            <option value="kw">kW Sold</option>
+            <option value="commission">Commission ($)</option>
+            <option value="revenue">Revenue ($)</option>
+          </select>
+        </div>
+
+        {/* Period */}
+        <div>
+          <label className={labelCls}>Period</label>
+          <select className={inputCls} style={inputStyle} value={period} onChange={(e) => setPeriod(e.target.value as IncentivePeriod)}>
+            <option value="month">Monthly</option>
+            <option value="quarter">Quarterly</option>
+            <option value="year">Yearly</option>
+            <option value="alltime">All Time</option>
+          </select>
+        </div>
+
+        {/* Dates (hide start when alltime) */}
+        {period !== 'alltime' && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelCls}>Start</label>
+              <input type="date" className={inputCls} style={inputStyle} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>End (optional)</label>
+              <input type="date" className={inputCls} style={inputStyle} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+          </div>
+        )}
+
+        {/* Single milestone (multi-milestone editing happens on desktop) */}
+        <div>
+          <label className={labelCls}>Goal</label>
+          <div className="grid grid-cols-[1fr_2fr] gap-2">
+            <input className={inputCls} style={inputStyle} type="number" min="0" placeholder="10" value={threshold} onChange={(e) => setThreshold(e.target.value)} />
+            <input className={inputCls} style={inputStyle} placeholder="Reward (e.g. $500)" value={reward} onChange={(e) => setReward(e.target.value)} />
+          </div>
+          <p className="text-[11px] text-[var(--m-text-dim,#445577)] mt-1">Need multiple goal tiers? Add them on the desktop view after creating.</p>
+        </div>
+
+        {/* Submit */}
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit || submitting}
+          className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-white active:scale-[0.97] transition-transform disabled:opacity-40"
+          style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' }}
+        >
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {submitting ? 'Creating…' : 'Create Incentive'}
+        </button>
+      </div>
+    </MobileBottomSheet>
+  );
+}
+
+// ─── Incentive Card (unchanged) ─────────────────────────────────────────────
 
 function IncentiveCard({
   incentive,
