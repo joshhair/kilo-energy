@@ -1189,7 +1189,7 @@ export default function DashboardPage() {
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
-                  ? 'text-black'
+                  ? 'text-white'
                   : 'text-[var(--text-secondary)] hover:text-white'
               }`}
             >
