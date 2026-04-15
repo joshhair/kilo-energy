@@ -563,12 +563,18 @@ select {
   position: relative;
 }
 
-/* The sliding pill that animates behind the active tab button */
+/* The sliding pill that animates behind the active tab button.
+   Deliberately dark so the white button label overlaid by it stays
+   readable — a solid bright-green fill here produced white-on-bright
+   contrast issues (Josh flagged 2026-04-15). Brand identity is kept
+   via the colored border + subtle glow. */
 .tab-indicator {
   position: absolute;
   top: 4px;
   bottom: 4px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-light));
+  background: linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18));
+  border: 1px solid rgba(0, 224, 122, 0.45);
+  box-shadow: 0 0 12px rgba(0, 224, 122, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   border-radius: 8px;
   transition: left 250ms cubic-bezier(0.4, 0, 0.2, 1),
               width 250ms cubic-bezier(0.4, 0, 0.2, 1);

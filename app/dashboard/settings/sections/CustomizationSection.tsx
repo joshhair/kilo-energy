@@ -45,7 +45,7 @@ export function CustomizationSection() {
               setThresholdsSaved(true);
               setTimeout(() => setThresholdsSaved(false), 2000);
             }}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-black transition-colors"
             style={{ backgroundColor: 'var(--brand)' }}
           >
             {thresholdsSaved ? 'Saved!' : 'Save Thresholds'}
