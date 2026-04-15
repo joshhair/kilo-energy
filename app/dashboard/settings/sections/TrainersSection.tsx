@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Layers, Plus, Pencil, Check, X, Trash2, Search, Users,
@@ -62,7 +62,7 @@ export function TrainersSection({
   }, []);
 
   // Build enriched rows once for stats + filtering + sorting + pagination
-  const enrichedRows = trainerAssignments.map((a) => {
+  const enrichedRows = useMemo(() => trainerAssignments.map((a) => {
     const trainee = reps.find((r) => r.id === a.traineeId);
     const trainer = reps.find((r) => r.id === a.trainerId);
     const completedDeals = projects.filter((p) => (p.repId === a.traineeId || p.setterId === a.traineeId) && ['Installed', 'PTO', 'Completed'].includes(p.phase)).length;
@@ -70,7 +70,7 @@ export function TrainersSection({
     const activeTierIndex = a.tiers.findIndex((t) => t.upToDeal === null || completedDeals < t.upToDeal);
     const tierLabel = activeTierIndex >= 0 ? `Tier ${activeTierIndex + 1} of ${a.tiers.length}` : `Tier ${a.tiers.length}`;
     return { a, trainee, trainer, completedDeals, currentRate, activeTierIndex, tierLabel };
-  });
+  }), [trainerAssignments, reps, projects]);
 
   // Stats
   const uniqueTrainers = new Set(trainerAssignments.map((a) => a.trainerId)).size;
@@ -244,6 +244,7 @@ export function TrainersSection({
                 const [key, dir] = e.target.value.split('-') as [TrainerSortKey, 'asc' | 'desc'];
                 setTrainerSortKey(key);
                 setTrainerSortDir(dir);
+                setTrainerPage(1);
               }}
               className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
             >

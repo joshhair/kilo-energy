@@ -373,7 +373,6 @@ function RepEarningsView() {
   }, [monthFilter]);
 
   const myPayroll     = payrollEntries.filter((p) => p.repId === effectiveRepId);
-  const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus');
 
   // Next-payout countdown (next Friday on or after today)
   const today          = new Date();
@@ -573,7 +572,7 @@ function RepEarningsView() {
                   const rows = sortedDeals.map((row) => {
                     if (row.kind === 'payroll') {
                       const e = row.entry as (typeof payrollEntries)[0];
-                      return [e.type, e.customerName || e.notes || '', e.paymentStage, `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
+                      return [e.type, e.customerName || e.notes || '', e.paymentStage || '', `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)];
                     }
                     const r = row.entry as (typeof myReimbs)[0];
                     return ['Reimbursement', r.description, 'Reimb', `$${r.amount.toFixed(2)}`, r.status, formatDate(r.date)];
