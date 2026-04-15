@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense, type CSSProperties } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
@@ -261,14 +261,14 @@ function CalculatorPage() {
   };
 
   // ── Recent deals for Quick Fill ──────────────────────────────────────────────
-  const recentDeals = (() => {
+  const recentDeals = useMemo(() => {
     const filtered = effectiveRole === 'admin'
       ? projects
       : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
     return [...filtered]
       .sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? ''))
       .slice(0, 10);
-  })();
+  }, [projects, currentRepId, effectiveRole]);
 
   const handleQuickFill = (projectId: string) => {
     setQuickFillValue(projectId);
