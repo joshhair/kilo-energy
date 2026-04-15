@@ -49,6 +49,12 @@ export function useScrollReveal<T extends HTMLElement = HTMLDivElement>(): [
 
     // Skip the observer entirely if the element is already near the top of the
     // page (i.e. above the fold on first paint) so it renders immediately.
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      setIsVisible(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {

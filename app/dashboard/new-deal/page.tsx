@@ -272,6 +272,18 @@ function NewDealPage() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
+  // When a blitz is selected, restrict the admin closer dropdown to approved blitz participants.
+  const closerPickerReps = useMemo(() => {
+    if (!form.blitzId) return reps.filter((r) => r.active && r.repType !== 'setter');
+    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+    const approvedIds = new Set(
+      (selectedBlitz?.participants ?? [])
+        .filter((p: any) => p.joinStatus === 'approved')
+        .map((p: any) => p.userId as string),
+    );
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && r.repType !== 'setter');
+  }, [form.blitzId, rawBlitzes, reps]);
+
   // Trainer override tier progression counts deals where the FINAL milestone
   // payment has actually been paid out. The "final" milestone depends on
   // the installer's payment model:
@@ -849,7 +861,7 @@ function NewDealPage() {
                   <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('blitzId', ''); }}
                     onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} aria-describedby={errors.repId ? 'repId-error' : undefined} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
-                    {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    {closerPickerReps.filter((r) => r.id !== form.setterId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
                   <FieldError errors={errors} field="repId" />
                 </div>
