@@ -707,7 +707,7 @@ function NewDealPage() {
   });
 
   const selectCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
   const labelStyle: React.CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
