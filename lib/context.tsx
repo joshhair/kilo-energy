@@ -1018,8 +1018,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
           blitzId: project.blitzId || null,
           subDealerId: project.subDealerId || null,
         }),
-      }).then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      }).then(async (res) => {
+        if (!res.ok) {
+          // Capture the server's error body so the user sees *why* it failed,
+          // not just "it failed". Validation issues come through as { error,
+          // issues: [{path, message}] }.
+          let detail = `HTTP ${res.status}`;
+          try {
+            const body = await res.json();
+            if (body?.error) {
+              detail = body.error;
+              if (Array.isArray(body.issues) && body.issues.length > 0) {
+                detail += ` · ${body.issues.map((i: { path: string; message: string }) => `${i.path}: ${i.message}`).join(', ')}`;
+              }
+            }
+          } catch { /* non-JSON body — keep the HTTP status */ }
+          throw new Error(detail);
+        }
         return res.json();
       }).then((created) => {
         // Update local state with the DB-assigned id
@@ -1033,7 +1048,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error('[addDeal] persist failed:', err);
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save new deal' }));
+          const msg = err instanceof Error ? err.message : 'Failed to save new deal';
+          window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: `Failed to save new deal — ${msg}` }));
         }
       });
     };
