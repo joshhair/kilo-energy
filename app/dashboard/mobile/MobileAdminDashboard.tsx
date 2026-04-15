@@ -126,7 +126,7 @@ export default function MobileAdminDashboard() {
   }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts]);
 
   const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
-  const flaggedCount = useMemo(() => projects.filter((p) => p.flagged).length, [projects]);
+  const flaggedCount = useMemo(() => projects.filter((p) => p.flagged && p.phase !== 'Cancelled' && p.phase !== 'Completed').length, [projects]);
 
   // Stalled projects — cumulative days-from-sold thresholds (intentional design: no phaseEnteredAt field exists).
   // A project still in a given phase after this many total days from soldDate is "stuck".
@@ -171,7 +171,6 @@ export default function MobileAdminDashboard() {
     const repDeals: Record<string, number> = {};
     for (const p of periodProjects) {
       repDeals[p.repId] = (repDeals[p.repId] || 0) + 1;
-      if (p.setterId && p.setterId !== p.repId) repDeals[p.setterId] = (repDeals[p.setterId] || 0) + 1;
     }
     return Object.entries(repDeals)
       .sort((a, b) => b[1] - a[1])

@@ -611,8 +611,8 @@ export function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const closerPay = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
-                      const setterPay = (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const closerPay = (!proj.m1Paid ? (proj.m1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.m2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.m3Amount ?? 0) : 0);
+                      const setterPay = (!proj.m1Paid ? (proj.setterM1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.setterM2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.setterM3Amount ?? 0) : 0);
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
