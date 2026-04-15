@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, type ComponentType } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Check } from 'lucide-react';
 
 function SheetItem({
@@ -43,6 +44,11 @@ export default function MobileBottomSheet({
   title?: string;
   children: React.ReactNode;
 }) {
+  // Render via portal to document.body so position:fixed anchors to the
+  // viewport regardless of any ancestor's transform/filter/perspective.
+  // (Without the portal, a parent with transform creates a new containing
+  // block and the sheet appears at the bottom of that parent — making it
+  // look like it opened "at the bottom of the page" instead of the screen.)
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -54,9 +60,9 @@ export default function MobileBottomSheet({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
+  const sheet = (
     <>
       <div className="fixed inset-0 bg-black/50 z-[60]" onClick={onClose} />
       <div
@@ -78,6 +84,8 @@ export default function MobileBottomSheet({
       </div>
     </>
   );
+
+  return createPortal(sheet, document.body);
 }
 
 MobileBottomSheet.Item = SheetItem;
