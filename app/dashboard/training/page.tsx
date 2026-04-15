@@ -710,8 +710,8 @@ function TrainingPageInner() {
                         tierIdx > 0 ? t.assignment.tiers[tierIdx - 1].upToDeal ?? 0 : 0;
                       const rangeLabel =
                         tier.upToDeal === null
-                          ? `${prevEnd}+ deals`
-                          : `${prevEnd} – ${tier.upToDeal} deals`;
+                          ? `${prevEnd + 1}+ deals`
+                          : `${tierIdx === 0 ? 0 : prevEnd + 1} – ${tier.upToDeal} deals`;
 
                       return (
                         <tr

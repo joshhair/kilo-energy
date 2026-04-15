@@ -1042,7 +1042,7 @@ export default function BlitzDetailPage() {
                 <tfoot>
                   <tr className="border-t border-[var(--border)] bg-[var(--surface-card)]/30">
                     <td colSpan={!isAdmin && !isOwner ? 4 : 3} className="px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]">{sortedDeals.length} deal{sortedDeals.length !== 1 ? 's' : ''}</td>
-                    <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{sortedDeals.reduce((s: number, p: any) => s + p.kWSize, 0).toFixed(1)} kW</td>
+                    <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{sortedDeals.reduce((s: number, p: any) => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); return s + (isSelfGen || closerApproved ? p.kWSize : 0); }, 0).toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[var(--text-muted)]">—</td>
                     {isAdmin && <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{formatCurrency(approvedVisibleProjects.reduce((s: number, p: any) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0), 0))}</td>}
                   </tr>

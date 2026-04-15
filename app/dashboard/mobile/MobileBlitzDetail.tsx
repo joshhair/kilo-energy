@@ -73,8 +73,26 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     return blitz.projects.filter((p: any) => (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
-  const totalDeals = visibleProjects.length;
-  const totalKW = visibleProjects.reduce((s: number, p: any) => s + (isAdmin || isOwner || p.closer?.id === effectiveRepId ? p.kWSize : 0), 0);
+  const approvedParticipantIds = useMemo(
+    () => new Set((blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved').map((p: any) => p.user.id)),
+    [blitz?.participants],
+  );
+  const approvedVisibleProjects = useMemo(
+    () => (isAdmin || isOwner)
+      ? visibleProjects.filter((p: any) => approvedParticipantIds.has(p.closer?.id) || approvedParticipantIds.has(p.setter?.id))
+      : visibleProjects,
+    [visibleProjects, isAdmin, isOwner, approvedParticipantIds],
+  );
+
+  const totalDeals = approvedVisibleProjects.length;
+  const totalKW = useMemo(
+    () => approvedVisibleProjects.reduce((s: number, p: any) => {
+      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+      return s + (isSelfGen || closerApproved ? p.kWSize : 0);
+    }, 0),
+    [approvedVisibleProjects, approvedParticipantIds],
+  );
   const totalCosts = blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0;
 
   const availableReps = useMemo(() => {
