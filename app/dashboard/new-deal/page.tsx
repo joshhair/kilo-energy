@@ -842,7 +842,7 @@ function NewDealPage() {
                   <label htmlFor="field-repId" className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">Closer (Rep) {fieldCheck('repId')}</span>
                   </label>
-                  <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('blitzId', ''); }}
+                  <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('blitzId', ''); update('setterId', ''); }}
                     onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} aria-describedby={errors.repId ? 'repId-error' : undefined} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
                     {closerPickerReps.filter((r) => r.id !== form.setterId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -1037,6 +1037,7 @@ function NewDealPage() {
                           </button>
                         ))}
                       </div>
+                      <FieldError errors={errors} field="prepaidSubType" />
                     </div>
                   )}
 
@@ -1140,6 +1141,7 @@ function NewDealPage() {
                           </button>
                         ))}
                       </div>
+                      <FieldError errors={errors} field="prepaidSubType" />
                     </div>
                   )}
 
@@ -1224,6 +1226,7 @@ function NewDealPage() {
                           </button>
                         ))}
                       </div>
+                      <FieldError errors={errors} field="prepaidSubType" />
                     </div>
                   )}
                 </>
