@@ -274,10 +274,18 @@ function TrainingPageInner() {
     [trainerEntries]
   );
   const activeTraineeCount = new Set(myAssignments.map((a) => a.traineeId)).size;
-  const uniqueTraineeData = [...new Map(traineeData.map((t) => [t.traineeId, t])).values()];
+  const uniqueTraineeData = [...traineeData.reduce((m, t) => {
+    const prev = m.get(t.traineeId);
+    if (!prev || t.currentRate > prev.currentRate) m.set(t.traineeId, t);
+    return m;
+  }, new Map<string, typeof traineeData[number]>()).values()];
   const totalTraineeDeals = uniqueTraineeData.reduce((s, t) => s + t.dealCount, 0);
   const avgOverrideRate = useMemo(() => {
-    const unique = [...new Map(traineeData.map((t) => [t.traineeId, t])).values()];
+    const unique = [...traineeData.reduce((m, t) => {
+      const prev = m.get(t.traineeId);
+      if (!prev || t.currentRate > prev.currentRate) m.set(t.traineeId, t);
+      return m;
+    }, new Map<string, typeof traineeData[number]>()).values()];
     if (unique.length === 0) return 0;
     return unique.reduce((s, t) => s + t.currentRate, 0) / unique.length;
   }, [traineeData]);
@@ -577,7 +585,7 @@ function TrainingPageInner() {
                       </span>
                       {t.nextThreshold && (
                         <span className="text-[var(--text-muted)] text-[10px]">
-                          {t.dealCount}/{t.nextThreshold} deals
+                          {t.dealCount}/{t.nextThreshold + 1} deals
                         </span>
                       )}
                       {!t.nextThreshold && (

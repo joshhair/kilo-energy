@@ -688,7 +688,7 @@ export default function IncentivesPage() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Active Incentives</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{incentiveFilter === 'expired' ? 'Expired Incentives' : incentiveFilter === 'ending_soon' ? 'Ending Soon' : 'Active Incentives'}</span>
             <Trophy className="w-4 h-4 text-[var(--accent-green)] shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue)' }}>
