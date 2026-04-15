@@ -177,6 +177,8 @@ export default function MobilePayroll() {
           status: newEntry.status,
           date: newEntry.date,
           notes: newEntry.notes,
+          // Idempotency key: use the optimistic clientId so retries dedupe.
+          idempotencyKey: newEntry.id,
         }),
       })
         .then((res) => {

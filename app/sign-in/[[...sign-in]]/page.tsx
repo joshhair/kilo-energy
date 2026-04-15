@@ -125,7 +125,7 @@ export default function SignInPage() {
             Track commission · pipeline · payouts
           </p>
           <p className="text-[11px]" style={{ color: '#3a4358' }}>
-            © {year} Kilo Energy
+            © {year} Kilo Energy · <a href="/legal/privacy" className="hover:text-white/70 transition-colors">Privacy</a> · <a href="/legal/terms" className="hover:text-white/70 transition-colors">Terms</a>
           </p>
         </div>
       </div>

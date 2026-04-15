@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { getInternalUser } from '../../../lib/api-auth';
+import { logger } from '../../../lib/logger';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
@@ -294,9 +295,9 @@ export async function GET() {
     const installerName = instIdToName[v.installerId] ?? v.installerId;
     const isTiered = v.rateType === 'tiered' || v.tiers.length > 1;
     if (!isTiered && v.tiers.length === 0) {
-      console.warn(
-        `[api/data] InstallerPricingVersion id=${v.id} (${installerName} "${v.label}") is flat-rate but has no tier rows — skipping to avoid wrong baseline`,
-      );
+      logger.warn('flat_pricing_version_missing_tiers', {
+        versionId: v.id, installer: installerName, label: v.label,
+      });
       return [];
     }
     return [{

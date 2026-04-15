@@ -16,6 +16,10 @@ export function createPayrollActions(deps: PayrollDeps) {
 
   const persistPayrollEntry = (entry: PayrollEntry) => {
     const clientId = entry.id;
+    // Use the optimistic clientId as the idempotency key. If this request is
+    // retried (network blip, React StrictMode double-invocation, etc.), the
+    // server will return the existing row instead of inserting a duplicate.
+    // See app/api/payroll/route.ts POST handler.
     const promise = fetch('/api/payroll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -28,6 +32,7 @@ export function createPayrollActions(deps: PayrollDeps) {
         status: entry.status,
         date: entry.date,
         notes: entry.notes,
+        idempotencyKey: clientId,
       }),
     })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })

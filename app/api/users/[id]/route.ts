@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { logger, errorContext } from '../../../../lib/logger';
 import {
   assertNotSelf,
   assertNotLastActiveAdmin,
@@ -100,7 +101,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           const client = await clerkClient();
           await client.users.lockUser(existing.clerkUserId);
         } catch (err) {
-          console.error('Failed to lock Clerk user during deactivation:', err);
+          logger.error('clerk_lock_user_failed', { userId: id, op: 'deactivate', ...errorContext(err) });
           // Non-fatal — proceed with DB update so the user is still marked
           // inactive in our system. Worst case the admin can manually lock
           // them in the Clerk dashboard.
@@ -117,7 +118,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           await client.invitations.revokeInvitation(inv.id).catch(() => {});
         }
       } catch (err) {
-        console.error('Failed to revoke pending invitations during deactivation:', err);
+        logger.error('clerk_revoke_invitations_failed', { userId: id, op: 'deactivate', ...errorContext(err) });
       }
     } else {
       // Reactivation — unlock Clerk user
@@ -126,7 +127,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           const client = await clerkClient();
           await client.users.unlockUser(existing.clerkUserId);
         } catch (err) {
-          console.error('Failed to unlock Clerk user during reactivation:', err);
+          logger.error('clerk_unlock_user_failed', { userId: id, op: 'reactivate', ...errorContext(err) });
         }
       }
     }
@@ -170,7 +171,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       const client = await clerkClient();
       await client.users.deleteUser(user.clerkUserId);
     } catch (err) {
-      console.error('Failed to delete Clerk user during hard delete:', err);
+      logger.error('clerk_delete_user_failed', { userId: id, op: 'hard_delete', ...errorContext(err) });
     }
   }
   try {
@@ -182,7 +183,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       await client.invitations.revokeInvitation(inv.id).catch(() => {});
     }
   } catch (err) {
-    console.error('Failed to revoke pending invitations during hard delete:', err);
+    logger.error('clerk_revoke_invitations_failed', { userId: id, op: 'hard_delete', ...errorContext(err) });
   }
 
   await prisma.user.delete({ where: { id } });
