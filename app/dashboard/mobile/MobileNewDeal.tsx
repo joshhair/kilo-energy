@@ -839,10 +839,11 @@ export default function MobileNewDeal() {
                 className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
                 style={{
                   background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+
                   borderRadius: 16,
                   padding: 18,
                   fontSize: 16,
-                  color: '#04342C',
+                  color: '#fff',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >
@@ -1333,10 +1334,11 @@ export default function MobileNewDeal() {
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                   style={{
                     background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+
                     borderRadius: 16,
                     padding: 18,
                     fontSize: 16,
-                    color: '#04342C',
+                    color: '#fff',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -1586,10 +1588,11 @@ export default function MobileNewDeal() {
                 className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
                 style={{
                   background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+
                   borderRadius: 16,
                   padding: 18,
                   fontSize: 16,
-                  color: '#04342C',
+                  color: '#fff',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >

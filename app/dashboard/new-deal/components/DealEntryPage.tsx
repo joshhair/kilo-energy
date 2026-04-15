@@ -48,7 +48,7 @@ export function DealEntryPage({ onStart, projects, currentRepId }: { onStart: ()
               <button
                 onClick={onStart}
                 className="relative inline-flex items-center gap-2.5 font-bold px-8 py-4 rounded-2xl text-base active:scale-[0.97] transition-all hover:brightness-110"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
               >
                 <PlusCircle className="w-5 h-5" />
                 Submit a Deal

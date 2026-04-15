@@ -542,7 +542,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[48px] text-black text-base font-medium rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
+            className="flex-1 min-h-[48px] text-white text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',

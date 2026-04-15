@@ -412,7 +412,7 @@ export default function MobileMyPay() {
           <button
             type="submit"
             className="w-full active:opacity-80 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '16px', padding: '18px', fontSize: '1rem', fontWeight: 500, color: '#04342C', fontFamily: FONT_BODY }}
+            style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '16px', padding: '18px', fontSize: '1rem', fontWeight: 500, color: '#fff', fontFamily: FONT_BODY }}
           >
             Submit Request
           </button>

@@ -750,7 +750,7 @@ function UsersPageInner() {
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -1409,7 +1409,7 @@ function UsersPageInner() {
         <div className="mb-6">
           <button
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'bg-[var(--accent-green)] text-black' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)]'}`}
+            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)]'}`}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Click to exit` : 'Compare Reps'}
           </button>
@@ -1468,7 +1468,7 @@ function UsersPageInner() {
               <div className="flex flex-wrap gap-1">
                 {PERIOD_OPTIONS.map((opt) => (
                   <button key={opt.value} onClick={() => setComparePeriod(opt.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'bg-[var(--accent-green)] text-black' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white'}`}>
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white'}`}>
                     {opt.label}
                   </button>
                 ))}
@@ -2045,7 +2045,7 @@ function UsersPageInner() {
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
               >
                 {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>

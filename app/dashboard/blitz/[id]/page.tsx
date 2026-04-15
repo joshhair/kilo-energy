@@ -619,7 +619,7 @@ export default function BlitzDetailPage() {
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: blitz.status, ownerId: blitz.owner?.id ?? '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white disabled:opacity-50 transition-colors">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}</button>
+              <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}</button>
             </div>
           </div>
         ) : (
@@ -896,7 +896,7 @@ export default function BlitzDetailPage() {
 
           {canManage && (
             <div className="flex justify-end">
-              <button onClick={() => setShowAddParticipant(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] transition-colors"><UserPlus className="w-4 h-4" /> Add Rep</button>
+              <button onClick={() => setShowAddParticipant(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] transition-colors"><UserPlus className="w-4 h-4" /> Add Rep</button>
             </div>
           )}
           {blitz.participants?.length === 0 ? (
@@ -959,7 +959,7 @@ export default function BlitzDetailPage() {
                         <td className="px-4 py-3 text-right">
                           {p.joinStatus === 'pending' ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-[var(--accent-green)] text-black rounded hover:bg-[var(--accent-green)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Approve</button>
+                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-[var(--accent-green)] text-white rounded hover:bg-[var(--accent-green)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Approve</button>
                               <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Decline</button>
                             </div>
                           ) : (
@@ -987,7 +987,7 @@ export default function BlitzDetailPage() {
                 </select>
                 <div className="flex justify-end gap-2">
                   <button onClick={() => { setShowAddParticipant(false); setSelectedRepId(''); }} className="px-3 py-2 text-sm text-[var(--text-secondary)]">Cancel</button>
-                  <button onClick={handleAddParticipant} disabled={!selectedRepId || addingParticipant} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-40 transition-colors">{addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingParticipant ? 'Adding...' : 'Add'}</button>
+                  <button onClick={handleAddParticipant} disabled={!selectedRepId || addingParticipant} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-40 transition-colors">{addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingParticipant ? 'Adding...' : 'Add'}</button>
                 </div>
               </div>
             </div>
@@ -1069,7 +1069,7 @@ export default function BlitzDetailPage() {
       {tab === 'costs' && isAdmin && (
         <div key="costs" className="animate-tab-enter space-y-4">
           <div className="flex justify-end">
-            <button onClick={() => setShowAddCost(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] transition-colors"><Plus className="w-4 h-4" /> Add Cost</button>
+            <button onClick={() => setShowAddCost(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] transition-colors"><Plus className="w-4 h-4" /> Add Cost</button>
           </div>
 
           {showAddCost && (
@@ -1084,7 +1084,7 @@ export default function BlitzDetailPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setShowAddCost(false)} className="px-3 py-1.5 text-sm text-[var(--text-secondary)]">Cancel</button>
-                <button onClick={handleAddCost} disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0} className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">{addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingCost ? 'Adding...' : 'Add Cost'}</button>
+                <button onClick={handleAddCost} disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0} className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">{addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingCost ? 'Adding...' : 'Add Cost'}</button>
               </div>
             </div>
           )}

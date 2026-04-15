@@ -326,7 +326,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
 
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-[var(--accent-green)] text-black rounded-xl hover:bg-[var(--accent-green)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-xl hover:bg-[var(--accent-green)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
           </button>
@@ -759,7 +759,7 @@ function BlitzPageInner() {
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
               <Plus className="w-4 h-4" /> New Blitz
             </button>
           )}
@@ -1090,7 +1090,7 @@ function BlitzPageInner() {
                     <div className="flex items-center gap-2 shrink-0">
                       {req.status === 'pending' ? (
                         <>
-                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[var(--accent-green)] text-black rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">
+                          <button onClick={() => handleApproveRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">
                             {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>
                           <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">

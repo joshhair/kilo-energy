@@ -34,7 +34,7 @@ export function PMDashboard({
       {/* Period filter */}
       <div className="flex items-center gap-2">
         {PERIODS.map((p) => (
-          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'bg-[var(--accent-green)] text-black font-bold' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'}`}>{p.label}</button>
+          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'}`}>{p.label}</button>
         ))}
       </div>
 

@@ -89,7 +89,7 @@ export function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset:
             <button
               onClick={() => router.push('/dashboard/projects')}
               className="flex-1 inline-flex items-center justify-center gap-2 font-bold px-5 py-2.5 rounded-xl text-sm transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#000' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
             >
               View Projects <ArrowRight className="w-4 h-4" />
             </button>
