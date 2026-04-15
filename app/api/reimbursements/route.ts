@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/db';
 import { requireAuth } from '../../../lib/api-auth';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createReimbursementSchema } from '../../../lib/schemas/reimbursement';
 
 // POST /api/reimbursements — Create a reimbursement request
 export async function POST(req: NextRequest) {
   try { await requireAuth(); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, createReimbursementSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
   const clerkUser = await currentUser();
   if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -27,7 +33,7 @@ export async function POST(req: NextRequest) {
       description: body.description,
       date: body.date,
       status: 'Pending',
-      receiptName: body.receiptName || null,
+      receiptName: body.receiptName ?? null,
     },
     include: { rep: true },
   });
