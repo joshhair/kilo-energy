@@ -796,7 +796,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     updateProject({ phase });
     toast(`Phase updated to ${phase}`, 'success', {
       label: 'Undo',
-      onClick: () => { updateProject({ phase: previousPhase }); },
+      onClick: () => {
+        if (previousPhase === 'Cancelled') {
+          setCancelReason('');
+          setCancelNotes('');
+          setShowCancelReasonModal(true);
+        } else {
+          updateProject({ phase: previousPhase });
+        }
+      },
     });
   };
 
@@ -1870,7 +1878,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             updateProject({ phase: phaseConfirm });
             toast(`Phase updated to ${phaseConfirm}`, 'success', {
               label: 'Undo',
-              onClick: () => { updateProject({ phase: previousPhase }); },
+              onClick: () => {
+                if (previousPhase === 'Cancelled') {
+                  setShowCancelReasonModal(true);
+                } else {
+                  updateProject({ phase: previousPhase });
+                }
+              },
             });
           }
           setPhaseConfirm(null);
