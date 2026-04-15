@@ -123,7 +123,7 @@ export default function MobileAdminDashboard() {
       prof += (closerPerW - kiloPerW) * w;
     }
     return { totalPaid: paid, totalRevenue: rev, totalProfit: prof };
-  }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts]);
+  }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts, todayStr]);
 
   const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
   const flaggedCount = useMemo(() => projects.filter((p) => p.flagged && p.phase !== 'Cancelled' && p.phase !== 'Completed').length, [projects]);

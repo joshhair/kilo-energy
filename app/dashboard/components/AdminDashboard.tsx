@@ -611,8 +611,9 @@ export function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const closerPay = (!proj.m1Paid ? (proj.m1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.m2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.m3Amount ?? 0) : 0);
-                      const setterPay = (!proj.m1Paid ? (proj.setterM1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.setterM2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.setterM3Amount ?? 0) : 0);
+                      const isCancelled = proj.phase === 'Cancelled';
+                      const closerPay = isCancelled ? 0 : ((!proj.m1Paid ? (proj.m1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.m2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.m3Amount ?? 0) : 0));
+                      const setterPay = isCancelled ? 0 : ((!proj.m1Paid ? (proj.setterM1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.setterM2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.setterM3Amount ?? 0) : 0));
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
@@ -629,9 +630,9 @@ export function AdminDashboard({
                           <span className="text-[var(--accent-green)] font-medium">${closerPay.toLocaleString()}</span>
                           {setterPay > 0 && <span className="block text-[var(--text-dim)] text-xs">+${setterPay.toLocaleString()} setter</span>}
                         </td>
-                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={proj.m1Amount ?? 0} /></td>
-                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={proj.m2Amount ?? 0} /></td>
-                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={proj.m3Amount ?? 0} /></td>}
+                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={isCancelled ? 0 : (proj.m1Amount ?? 0)} /></td>
+                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={isCancelled ? 0 : (proj.m2Amount ?? 0)} /></td>
+                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={isCancelled ? 0 : (proj.m3Amount ?? 0)} /></td>}
                       </tr>
                       );
                     })}
