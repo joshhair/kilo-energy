@@ -1,0 +1,34 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":prImmediately",
+    ":automergeMinor",
+    ":automergeDigest"
+  ],
+  "timezone": "America/Los_Angeles",
+  "schedule": ["after 9am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "description": "Group minor/patch updates for known-safe ecosystems",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackagePatterns": ["^@types/", "^eslint", "^@typescript-eslint/"],
+      "groupName": "dev dependencies (minor + patch)"
+    },
+    {
+      "description": "Framework majors never auto-merge — human review required",
+      "matchPackageNames": ["next", "react", "react-dom", "@prisma/client", "prisma", "@clerk/nextjs"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "addLabels": ["framework-major"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  }
+}
