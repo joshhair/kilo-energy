@@ -109,7 +109,10 @@ export default function KanbanView({
   // ── Save project nav list to sessionStorage on click ─────────────────────
   const saveProjectNav = () => {
     try {
-      const ids = kanbanFiltered.map((p) => p.id);
+      const orderedPhases = [...activePhasesForKanban, ...cancelledAndHold];
+      const ids = orderedPhases.flatMap((phase) =>
+        kanbanFiltered.filter((p) => p.phase === phase).map((p) => p.id)
+      );
       sessionStorage.setItem('kilo-project-nav', JSON.stringify(ids));
     } catch { /* quota / SSR guard */ }
   };

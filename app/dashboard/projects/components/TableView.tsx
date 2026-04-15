@@ -683,7 +683,7 @@ export default function TableView({
         <PaginationBar
           totalResults={totalResults} startIdx={startIdx} endIdx={endIdx}
           currentPage={safeCurrentPage} totalPages={totalPages} rowsPerPage={rowsPerPage}
-          onPageChange={setCurrentPage} onRowsPerPageChange={setRowsPerPage}
+          onPageChange={setCurrentPage} onRowsPerPageChange={(n) => { setRowsPerPage(n); setCurrentPage(1); }}
         />
       </div>
 
@@ -938,7 +938,7 @@ export default function TableView({
         <PaginationBar
           totalResults={totalResults} startIdx={startIdx} endIdx={endIdx}
           currentPage={safeCurrentPage} totalPages={totalPages} rowsPerPage={rowsPerPage}
-          onPageChange={setCurrentPage} onRowsPerPageChange={setRowsPerPage}
+          onPageChange={setCurrentPage} onRowsPerPageChange={(n) => { setRowsPerPage(n); setCurrentPage(1); }}
         />
       </div>
 
