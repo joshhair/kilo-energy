@@ -240,7 +240,12 @@ export default function IncentivesPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let soonest: string | null = null;
-    for (const inc of activeVisible.filter((i) => i.active)) {
+    const deadlineBase =
+      incentiveFilter === 'ending_soon' ? visible.filter((i) => isEndingSoon(i.endDate)) :
+      incentiveFilter === 'expired'     ? visible.filter((i) => isExpired(i.endDate)) :
+      incentiveFilter === 'active'      ? activeVisible.filter((i) => i.active) :
+                                          activeVisible.filter((i) => i.active);
+    for (const inc of deadlineBase) {
       if (!inc.endDate) continue;
       const [y, m, d] = inc.endDate.split('-').map(Number);
       const end = new Date(y, m - 1, d);
@@ -248,7 +253,7 @@ export default function IncentivesPage() {
     }
     return soonest;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeVisible]);
+  }, [activeVisible, incentiveFilter]);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
   if (isMobile) return <MobileIncentives />;
@@ -329,9 +334,13 @@ export default function IncentivesPage() {
       m.id === milestoneId ? { ...m, achieved } : m
     );
     setIncentives((prev) =>
-      prev.map((inc) =>
-        inc.id === incId ? { ...inc, milestones: updatedMilestones } : inc
-      )
+      prev.map((inc) => {
+        if (inc.id !== incId) return inc;
+        const freshMilestones = inc.milestones.map((m) =>
+          m.id === milestoneId ? { ...m, achieved } : m
+        );
+        return { ...inc, milestones: freshMilestones };
+      })
     );
     // Persist milestone change
     if (updatedMilestones.length === 0) return;
@@ -485,7 +494,7 @@ export default function IncentivesPage() {
       message: `Permanently delete ${count} incentive${count !== 1 ? 's' : ''}? This cannot be undone.`,
       onConfirm: () => {
         const ids = Array.from(selectedIds);
-        const snapshot = [...incentives];
+        const deletedItems = incentives.filter((i) => selectedIds.has(i.id));
         setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
         Promise.allSettled(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return id; })))
@@ -494,7 +503,8 @@ export default function IncentivesPage() {
             const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'));
             if (failedIds.size > 0) {
               toast('Failed to delete some incentives', 'error');
-              setIncentives(snapshot.filter((i) => !succeededIds.has(i.id)));
+              const itemsToRestore = deletedItems.filter((i) => failedIds.has(i.id));
+              setIncentives((prev) => [...prev, ...itemsToRestore]);
             }
             const succeeded = results.filter((r) => r.status === 'fulfilled').length;
             if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`);
@@ -535,7 +545,12 @@ export default function IncentivesPage() {
   };
 
   // ── Summary stats ──
-  const activeIncentives = activeVisible.filter((i) => i.active);
+  const statsFiltered: Incentive[] =
+    incentiveFilter === 'ending_soon' ? visible.filter((i) => isEndingSoon(i.endDate)) :
+    incentiveFilter === 'expired'     ? visible.filter((i) => isExpired(i.endDate)) :
+    incentiveFilter === 'active'      ? activeVisible.filter((i) => i.active) :
+                                        activeVisible.filter((i) => i.active);
+  const activeIncentives = statsFiltered;
   const totalMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.length, 0);
   const achievedMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.filter((m) => m.achieved).length, 0);
 

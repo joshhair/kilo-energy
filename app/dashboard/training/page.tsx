@@ -577,7 +577,7 @@ function TrainingPageInner() {
                       </span>
                       {t.nextThreshold && (
                         <span className="text-[var(--text-muted)] text-[10px]">
-                          {t.dealCount}/{t.nextThreshold + 1} deals
+                          {t.dealCount}/{t.nextThreshold} deals
                         </span>
                       )}
                       {!t.nextThreshold && (
