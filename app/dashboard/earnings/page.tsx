@@ -8,7 +8,7 @@ import { useIsHydrated, useMediaQuery, useSearchParamTab } from '../../../lib/ho
 import MobileEarnings from '../mobile/MobileEarnings';
 import { useToast } from '../../../lib/toast';
 import { Reimbursement } from '../../../lib/data';
-import { formatDate, downloadCSV, fmt$ } from '../../../lib/utils';
+import { formatDate, downloadCSV, fmt$, todayLocalDateStr, localDateString } from '../../../lib/utils';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import { RelativeDate } from '../components/RelativeDate';
 import { computeSparklineData, Sparkline } from '../../../lib/sparkline';
@@ -18,7 +18,6 @@ import {
   Clock, ArrowRight, Users, Download,
 } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
-import ConfirmDialog from '../components/ConfirmDialog';
 
 // ── Shared constants ───────────────────────────────────────────────────────────
 
@@ -165,7 +164,7 @@ function computeMonthlyBarData(
   reimbursements: { date: string; amount: number; status: string; repId: string }[],
   repId: string | null,
 ): MonthlyBarDatum[] {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalDateStr();
   const currentMonthKey = today.slice(0, 7);
   const map = new Map<string, MonthlyBarDatum>();
 
@@ -378,7 +377,7 @@ function RepEarningsView() {
 
   // Next-payout countdown (next Friday on or after today)
   const today          = new Date();
-  const todayStr        = today.toISOString().slice(0, 10);
+  const todayStr        = localDateString(today);
   const nextFriday     = getNextFriday(today);
   const nextFridayDate = `${nextFriday.getFullYear()}-${String(nextFriday.getMonth() + 1).padStart(2, '0')}-${String(nextFriday.getDate()).padStart(2, '0')}`;
 
@@ -1218,7 +1217,7 @@ function AdminFinancialsView() {
 
   // Stats — computed from rep-filtered (not status-filtered) data so status breakdown is always accurate
   const repFilteredPayroll = repFilter ? payrollEntries.filter((e) => e.repId === repFilter) : payrollEntries;
-  const todayStr      = new Date().toISOString().slice(0, 10);
+  const todayStr      = todayLocalDateStr();
   const totalPaid     = repFilteredPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending  = repFilteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const totalDraft    = repFilteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
@@ -1638,7 +1637,7 @@ function SubDealerEarningsView() {
     (p) => p.repId === effectiveRepId && (p.paymentStage === 'M2' || p.paymentStage === 'M3')
   );
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayLocalDateStr();
   const totalEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
 

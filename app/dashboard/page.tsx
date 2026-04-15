@@ -448,7 +448,8 @@ export function MyTasksSection({
                 type="checkbox"
                 checked={checkedIds.has(task.checkItemId)}
                 onChange={async () => {
-                  const newCompleted = !checkedIds.has(task.checkItemId);
+                  const wasCompleted = checkedIds.has(task.checkItemId);
+                  const newCompleted = !wasCompleted;
                   setCheckedIds((prev) => {
                     const next = new Set(prev);
                     if (newCompleted) next.add(task.checkItemId);
@@ -458,11 +459,11 @@ export function MyTasksSection({
                   try {
                     await onToggleTask(task.projectId, task.messageId, task.checkItemId, newCompleted);
                   } catch {
-                    // Revert optimistic update on API failure
+                    // Revert optimistic update on API failure using pre-toggle state
                     setCheckedIds((prev) => {
                       const next = new Set(prev);
-                      if (newCompleted) next.delete(task.checkItemId);
-                      else next.add(task.checkItemId);
+                      if (wasCompleted) next.add(task.checkItemId);
+                      else next.delete(task.checkItemId);
                       return next;
                     });
                   }
@@ -1033,7 +1034,7 @@ export default function DashboardPage() {
   // Next Payout: Pending entries dated for the upcoming Friday (matches Earnings page).
   const nextFridayDate = (() => {
     const today = new Date();
-    const d = today.getDay() <= 5 ? 5 - today.getDay() : 6;
+    const d = (5 - today.getDay() + 7) % 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
     const yyyy = nf.getFullYear();
@@ -1048,7 +1049,7 @@ export default function DashboardPage() {
   // Calculate days until next payday (Friday). Returns 0 if today is Friday.
   const daysUntilPayday = (() => {
     const today = new Date();
-    return today.getDay() <= 5 ? 5 - today.getDay() : 6;
+    return (5 - today.getDay() + 7) % 7;
   })();
   const nextFridayLabel = (() => {
     const today = new Date();
@@ -1541,6 +1542,9 @@ export default function DashboardPage() {
             {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
               const m2DisplayAmount = proj.m2Amount ?? 0;
               const closerM1 = proj.m1Amount ?? 0;
+              const setterM1Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M1' && e.status === 'Paid');
+              const setterM2Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M2' && e.status === 'Paid');
+              const setterM3Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M3' && e.status === 'Paid');
               const estPay = proj.repId === effectiveRepId
                 ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
                 : proj.setterId === effectiveRepId
@@ -1576,10 +1580,10 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2.5 ml-auto">
                         {proj.setterId === effectiveRepId ? (
                           <>
-                            <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.setterM1Amount ?? 0} />
-                            <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.setterM2Amount ?? 0} />
+                            <MilestoneDot label="M1" paid={setterM1Paid} amount={proj.setterM1Amount ?? 0} />
+                            <MilestoneDot label="M2" paid={setterM2Paid} amount={proj.setterM2Amount ?? 0} />
                             {(proj.setterM3Amount ?? 0) > 0 && (
-                              <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.setterM3Amount ?? 0} />
+                              <MilestoneDot label="M3" paid={setterM3Paid} amount={proj.setterM3Amount ?? 0} />
                             )}
                           </>
                         ) : (

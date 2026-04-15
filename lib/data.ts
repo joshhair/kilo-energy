@@ -1298,22 +1298,22 @@ export function getProductCatalogBaselineVersioned(
 }
 
 export const NON_SOLARTECH_BASELINES: Record<string, InstallerBaseline> = {
-  'ESP':           { closerPerW: 2.90, kiloPerW: 2.35 },
-  'EXO':           { closerPerW: 2.90, kiloPerW: 2.35 },
-  'GEG':           { closerPerW: 2.70, kiloPerW: 2.15 },
-  'SunPower':      { closerPerW: 2.00, kiloPerW: 1.50 },
-  'Complete Solar':{ closerPerW: 2.90, kiloPerW: 2.35 },
-  'Solrite':       { closerPerW: 2.90, kiloPerW: 2.35 },
-  'Solnova':       { closerPerW: 2.90, kiloPerW: 2.35 },
-  'EXO (OLD)':     { closerPerW: 2.90, kiloPerW: 2.35 },
-  'Bryton':        { closerPerW: 2.80, kiloPerW: 2.25 },
+  'ESP':           { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
+  'EXO':           { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
+  'GEG':           { closerPerW: 2.70, setterPerW: 2.80, kiloPerW: 2.15 },
+  'SunPower':      { closerPerW: 2.00, setterPerW: 2.10, kiloPerW: 1.50 },
+  'Complete Solar':{ closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
+  'Solrite':       { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
+  'Solnova':       { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
+  'EXO (OLD)':     { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
+  'Bryton':        { closerPerW: 2.80, setterPerW: 2.90, kiloPerW: 2.25 },
   // TODO: verify One Source and Pacific Coast baselines in Glide admin
-  'One Source':    { closerPerW: 2.90, kiloPerW: 2.35 },
-  'Pacific Coast': { closerPerW: 2.90, kiloPerW: 2.35 },
+  'One Source':    { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
+  'Pacific Coast': { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 },
 };
 
 export function getNonSolarTechBaseline(installer: string): InstallerBaseline {
-  return NON_SOLARTECH_BASELINES[installer] ?? { closerPerW: 2.90, kiloPerW: 2.35 };
+  return NON_SOLARTECH_BASELINES[installer] ?? { closerPerW: 2.90, setterPerW: 3.00, kiloPerW: 2.35 };
 }
 
 // ─── Installer Pricing Version Seed Data ─────────────────────────────────────

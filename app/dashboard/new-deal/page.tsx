@@ -342,38 +342,22 @@ function NewDealPage() {
   const closerTrainerTotal = closerAssignment && closerTrainerOverrideRate > 0
     ? Math.round(closerTrainerOverrideRate * kW * 1000 * 100) / 100 : 0;
 
-  const { closerTotal, setterTotal } = (() => {
-    if (!form.setterId || setterBaselinePerW === 0) {
-      return { closerTotal: calculateCommission(soldPPW, closerPerW, kW), setterTotal: 0 };
-    }
-    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.max(0, Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW)) * kW * 1000 * 100) / 100 : 0;
-    const splitPoint = setterBaselinePerW + trainerOverrideRate;
-    const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.floor(aboveSplit / 2 * 100) / 100;
-    return { closerTotal: closerDifferential + half, setterTotal: aboveSplit - half };
-  })();
-
   const kiloTotal = calculateCommission(closerPerW, kiloPerW, kW);
 
-  // M1 is a flat milestone payment: $500 if <5kW, $1000 if ≥5kW (only one M1 per project).
-  // It goes to the setter. Closer only receives M1 if self-gen (no setter).
-  // Trainers are paid post-installation — M2 stage only, no M1.
-  const m1Flat = kW >= 5 ? 1000 : 500;
-  const isSelfGen = !form.setterId || setterBaselinePerW === 0;
-  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
-  const closerM2Full = Math.max(0, closerTotal - closerM1);
-  const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
-  const setterM2Full = Math.max(0, setterTotal - setterM1);
   const trainerM1 = 0;
   const trainerM2 = trainerTotal;
 
   // M2/M3 split based on installer pay config
   const installPayPct = installerPayConfigs[form.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
-  const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
-  const closerM3 = hasM3 ? Math.round((closerM2Full - closerM2) * 100) / 100 : 0;
-  const setterM2 = Math.round(setterM2Full * (installPayPct / 100) * 100) / 100;
-  const setterM3 = hasM3 ? Math.round((setterM2Full - setterM2) * 100) / 100 : 0;
+  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } = splitCloserSetterPay(
+    soldPPW,
+    closerPerW,
+    !form.setterId ? 0 : setterBaselinePerW,
+    trainerOverrideRate,
+    kW,
+    installPayPct,
+  );
 
   const currentTierIndex = setterAssignment
     ? setterAssignment.tiers.findIndex((t) => t.upToDeal === null || setterCompletedDeals <= t.upToDeal)

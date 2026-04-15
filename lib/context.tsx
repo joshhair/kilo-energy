@@ -249,7 +249,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (dbReady && effectiveRepId) refreshMentionCount();
-  }, [dbReady, effectiveRepId]);
+  }, [dbReady, effectiveRepId, refreshMentionCount]);
 
   // ── Payroll actions (delegated to lib/context/payroll.ts) ──
   const payrollActions = useMemo(() => createPayrollActions({
@@ -675,103 +675,139 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     // ── 5. Update local project state + phase-transition payroll ──
-    setProjects((prev) => {
-      const old = prev.find((p) => p.id === id);
-      let updated = prev.map((p) => p.id === id ? { ...p, ...updates } : p);
+    // setPayrollEntries calls must NOT live inside the setProjects updater: React
+    // calls updater functions twice in StrictMode (purity check), which would fire
+    // each setPayrollEntries twice and produce duplicate payroll entries.
+    // Instead, compute `updated` eagerly from the already-snapshotted `old`
+    // (same value as prev.find(...) would return) and call all state setters at
+    // the same React batch level, outside any updater function.
+    let updated = projects.map((p) => p.id === id ? { ...p, ...updates } : p);
 
-      if (old && updates.phase && updates.phase !== old.phase) {
-        const newPhase = updates.phase as Phase;
+    if (old && updates.phase && updates.phase !== old.phase) {
+      const newPhase = updates.phase as Phase;
 
-        // Un-cancelling: remove orphaned chargebacks
-        if (old.phase === 'Cancelled' && newPhase !== 'Cancelled') {
-          setPayrollEntries((prevEntries) => {
-            const orphanIds = getOrphanedChargebackIds(id, prevEntries);
-            if (orphanIds.length > 0) deletePayrollEntriesFromDb(orphanIds);
-            return prevEntries.filter((e) => !orphanIds.includes(e.id));
-          });
-        }
-
-        // Cancellation: chargebacks
-        if (newPhase === 'Cancelled' && old.phase !== 'Cancelled') {
-          setPayrollEntries((prevEntries) => {
-            const result = handleChargebacks(id, old, prevEntries);
-            if (result.toDeleteIds.length > 0) deletePayrollEntriesFromDb(result.toDeleteIds);
-            const remaining = result.toDeleteIds.length > 0
-              ? prevEntries.filter((e) => !result.toDeleteIds.includes(e.id))
-              : prevEntries;
-            result.toAdd.forEach((cb) => persistPayrollEntry(cb));
-            return [...remaining, ...result.toAdd];
-          });
-        }
-
-        // Rollback: delete Draft entries for milestones we rolled past.
-        // PMs cannot delete Pending/Paid entries (server returns 403), so only
-        // remove entries from client state that the current actor can actually
-        // delete — otherwise the optimistic filter causes a permanent desync.
+      // Un-cancelling: remove orphaned chargebacks
+      if (old.phase === 'Cancelled' && newPhase !== 'Cancelled') {
         setPayrollEntries((prevEntries) => {
-          const toDelete = handlePhaseRollback(id, old.phase, newPhase, prevEntries);
-          const safeToDelete = effectiveRole === 'admin'
-            ? toDelete
-            : toDelete.filter((delId) => prevEntries.find((e) => e.id === delId)?.status === 'Draft');
-          if (safeToDelete.length > 0) {
-            deletePayrollEntriesFromDb(safeToDelete);
-            return prevEntries.filter((e) => !safeToDelete.includes(e.id));
-          }
-          return prevEntries;
+          const orphanIds = getOrphanedChargebackIds(id, prevEntries);
+          if (orphanIds.length > 0) deletePayrollEntriesFromDb(orphanIds);
+          return prevEntries.filter((e) => !orphanIds.includes(e.id));
         });
+      }
 
-        const isSubDealerDeal = !!old.subDealerId;
-        const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance';
-        const isInstalled = newPhase === 'Installed' && old.phase !== 'Installed';
-        const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
+      // Cancellation: chargebacks
+      if (newPhase === 'Cancelled' && old.phase !== 'Cancelled') {
+        setPayrollEntries((prevEntries) => {
+          const result = handleChargebacks(id, old, prevEntries);
+          if (result.toDeleteIds.length > 0) deletePayrollEntriesFromDb(result.toDeleteIds);
+          const remaining = result.toDeleteIds.length > 0
+            ? prevEntries.filter((e) => !result.toDeleteIds.includes(e.id))
+            : prevEntries;
+          result.toAdd.forEach((cb) => persistPayrollEntry(cb));
+          return [...remaining, ...result.toAdd];
+        });
+      }
 
-        // Sub-dealer deals skip M1 payroll entirely
-        if ((isAcceptance && !isSubDealerDeal) || isInstalled) {
-          const freshProject = updated.find((p) => p.id === id);
-          if (!freshProject) return updated;
+      // Rollback: delete Draft entries for milestones we rolled past.
+      // PMs cannot delete Pending/Paid entries (server returns 403), so only
+      // remove entries from client state that the current actor can actually
+      // delete — otherwise the optimistic filter causes a permanent desync.
+      // Pre-compute post-rollback entries synchronously so createMilestonePayroll
+      // below reads the correct snapshot — payrollEntriesRef.current won't update
+      // until after the pending setPayrollEntries re-render.
+      const rollbackToDelete = handlePhaseRollback(id, old.phase, newPhase, payrollEntriesRef.current);
+      const safeRollbackToDelete = effectiveRole === 'admin'
+        ? rollbackToDelete
+        : rollbackToDelete.filter((delId) => payrollEntriesRef.current.find((e) => e.id === delId)?.status === 'Draft');
+      const postRollbackEntries = safeRollbackToDelete.length > 0
+        ? payrollEntriesRef.current.filter((e) => !safeRollbackToDelete.includes(e.id))
+        : payrollEntriesRef.current;
+      setPayrollEntries((prevEntries) => {
+        if (safeRollbackToDelete.length > 0) {
+          deletePayrollEntriesFromDb(safeRollbackToDelete);
+          return prevEntries.filter((e) => !safeRollbackToDelete.includes(e.id));
+        }
+        return prevEntries;
+      });
+
+      const isSubDealerDeal = !!old.subDealerId;
+      const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance';
+      const skippedToInstalled = newPhase === 'PTO' && !['Installed', 'PTO', 'Completed'].includes(old.phase);
+      const isInstalled = (newPhase === 'Installed' && old.phase !== 'Installed') || skippedToInstalled;
+      const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
+      // True when a phase jump to Installed/PTO skips over Acceptance entirely (only
+      // possible from 'New', the sole pre-Acceptance phase in the pipeline).
+      const skippedAcceptance = isInstalled && old.phase === 'New' && !isSubDealerDeal;
+
+      // Tracks M2 entries created in this transition so createM3Payroll can see them
+      // even before payrollEntriesRef.current is updated (relevant on phase-skip to PTO).
+      let newlyCreatedM2Entries: PayrollEntry[] = [];
+
+      // Phase-skip recovery: New → Installed/PTO bypasses the Acceptance branch, so
+      // synthesize an M1 Draft now before M2 is created below.
+      if (skippedAcceptance) {
+        const freshProject = updated.find((p) => p.id === id);
+        if (freshProject) {
+          const m1Entries = createMilestonePayroll({
+            projectId: id, old, updatedProjects: updated,
+            stage: 'M1',
+            isAcceptance: true, isInstalled: false, installPayPct: 100,
+            computedM3Amount: null, deps: transitionDeps,
+          }, postRollbackEntries);
+          if (m1Entries.length > 0) {
+            m1Entries.forEach((entry) => persistPayrollEntry(entry));
+            setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
+          }
+        }
+      }
+
+      // Sub-dealer deals skip M1 payroll entirely
+      if ((isAcceptance && !isSubDealerDeal) || isInstalled) {
+        const freshProject = updated.find((p) => p.id === id);
+        if (freshProject) {
           const fullAmount = isAcceptance ? old.m1Amount : freshProject.m2Amount;
 
           // Guard: m2Amount must be present for M2 payroll
           if (isInstalled && fullAmount == null) {
             emitPersistError(`M2 payroll skipped for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate.`);
-            return updated;
-          }
+          } else {
+            const installPayPct = isInstalled
+              ? (installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT)
+              : 100;
 
-          const installPayPct = isInstalled
-            ? (installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT)
-            : 100;
+            // Apply computed M3 to local state
+            if (isInstalled && m3AtInstalled !== null) {
+              updated = updated.map((p) => p.id === id ? { ...p, m3Amount: m3AtInstalled! } : p);
+            }
 
-          // Apply computed M3 to local state
-          if (isInstalled && m3AtInstalled !== null) {
-            updated = updated.map((p) => p.id === id ? { ...p, m3Amount: m3AtInstalled! } : p);
-          }
-
-          const m1m2Entries = createMilestonePayroll({
-            projectId: id, old, updatedProjects: updated,
-            stage: isAcceptance ? 'M1' : 'M2',
-            isAcceptance, isInstalled, installPayPct,
-            computedM3Amount: m3AtInstalled, deps: transitionDeps,
-          }, payrollEntriesRef.current);
-          if (m1m2Entries.length > 0) {
-            m1m2Entries.forEach((entry) => persistPayrollEntry(entry));
-            setPayrollEntries((prevEntries) => [...prevEntries, ...m1m2Entries]);
-          }
-        }
-
-        // M3: Auto-draft at PTO
-        if (isPTO) {
-          const m3Entries = createM3Payroll({
-            projectId: id, old, updatedProjects: updated, deps: transitionDeps,
-          }, payrollEntriesRef.current);
-          if (m3Entries.length > 0) {
-            m3Entries.forEach((entry) => persistPayrollEntry(entry));
-            setPayrollEntries((prevEntries) => [...prevEntries, ...m3Entries]);
+            const m1m2Entries = createMilestonePayroll({
+              projectId: id, old, updatedProjects: updated,
+              stage: isAcceptance ? 'M1' : 'M2',
+              isAcceptance, isInstalled, installPayPct,
+              computedM3Amount: m3AtInstalled, deps: transitionDeps,
+            }, postRollbackEntries);
+            if (m1m2Entries.length > 0) {
+              m1m2Entries.forEach((entry) => persistPayrollEntry(entry));
+              setPayrollEntries((prevEntries) => [...prevEntries, ...m1m2Entries]);
+              if (isInstalled) newlyCreatedM2Entries = m1m2Entries;
+            }
           }
         }
       }
 
-      return updated;
-    });
+      // M3: Auto-draft at PTO
+      if (isPTO) {
+        const m3Entries = createM3Payroll({
+          projectId: id, old, updatedProjects: updated, deps: transitionDeps,
+        }, [...postRollbackEntries, ...newlyCreatedM2Entries]);
+        if (m3Entries.length > 0) {
+          m3Entries.forEach((entry) => persistPayrollEntry(entry));
+          setPayrollEntries((prevEntries) => [...prevEntries, ...m3Entries]);
+        }
+      }
+    }
+
+    setProjects(updated);
 
     // ── 6. Amount sync: patch Draft/Pending entries when amounts are edited ──
     const hasAmountUpdates = updates.m1Amount !== undefined || updates.m2Amount !== undefined

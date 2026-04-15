@@ -49,7 +49,7 @@ export function createPayrollActions(deps: PayrollDeps) {
       })
       .catch((err) => {
         setPayrollEntries((prev) => prev.filter((e) => e.id !== clientId));
-        window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save payroll entry' }));
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save payroll entry' }));
         payrollIdResolutionMap.current.delete(clientId);
         throw err;
       });

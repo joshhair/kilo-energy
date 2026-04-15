@@ -388,6 +388,32 @@ model PayrollEntry {
 }
 
 // ============================================================================
+// AUDIT LOG
+// ============================================================================
+
+/// Immutable log of sensitive mutations — phase changes, financial edits,
+/// role/active flips, payroll publishes. Admin-only viewer at
+/// /dashboard/admin/audit. Written by lib/audit.ts logChange() helper.
+///
+/// Retention: indefinite for now (pre-launch). Post-launch, rotate entries
+/// older than 2 years to cold storage or drop, per privacy policy.
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String?  /// Internal User.id of the actor (null for system / unauthenticated)
+  actorEmail   String?  /// Snapshot of actor email for display — scrubbed on user erasure
+  action       String   /// Verb: "phase_change" | "financial_edit" | "role_change" | "active_change" | "payroll_publish" | etc.
+  entityType   String   /// "Project" | "PayrollEntry" | "User"
+  entityId     String
+  oldValue     String?  /// JSON string of before state (for the changed fields only)
+  newValue     String?  /// JSON string of after state
+  createdAt    DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+  @@index([createdAt])
+}
+
+// ============================================================================
 // REIMBURSEMENTS
 // ============================================================================
 

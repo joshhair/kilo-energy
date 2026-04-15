@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
+import { logChange } from '../../../lib/audit';
 
 // POST /api/payroll — Create a payroll entry (admin or project manager).
 //
@@ -10,7 +11,8 @@ import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
 // or React StrictMode double-invocations. Clients should generate a fresh
 // key per logical submit attempt and reuse it on retry.
 export async function POST(req: NextRequest) {
-  try { await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdminOrPM(); } catch (r) { return r as NextResponse; }
   const body = await req.json();
 
   if (typeof body.idempotencyKey === 'string' && body.idempotencyKey.length > 0) {
@@ -37,6 +39,21 @@ export async function POST(req: NextRequest) {
     },
     include: { rep: true, project: true },
   });
+
+  await logChange({
+    actor: { id: actor.id, email: actor.email ?? null },
+    action: 'payroll_create',
+    entityType: 'PayrollEntry',
+    entityId: entry.id,
+    detail: {
+      repId: entry.repId,
+      projectId: entry.projectId,
+      amount: entry.amount,
+      paymentStage: entry.paymentStage,
+      status: entry.status,
+    },
+  });
+
   return NextResponse.json(entry, { status: 201 });
 }
 

@@ -49,9 +49,11 @@ function ProjectsPageInner() {
   useEffect(() => {
     if (!didInitDealScope.current && effectiveRole !== null) {
       didInitDealScope.current = true;
+      const scopeParam = searchParams.get('scope');
+      if (scopeParam === 'mine' || scopeParam === 'all') return;
       setDealScope(effectiveRole !== 'admin' && effectiveRole !== 'project_manager' ? 'mine' : 'all');
     }
-  }, [effectiveRole]);
+  }, [effectiveRole, searchParams]);
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
@@ -147,7 +149,7 @@ function ProjectsPageInner() {
       `${project.customerName} moved to ${phase}`,
       'success',
       previousPhase && previousPhase !== phase && previousPhase !== 'Cancelled'
-        ? { label: 'Undo', onClick: () => doPhaseChange(projectId, previousPhase) }
+        ? { label: 'Undo', onClick: () => handlePhaseChange(projectId, previousPhase) }
         : undefined,
     );
   };

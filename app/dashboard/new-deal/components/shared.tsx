@@ -58,7 +58,8 @@ export function validateField(field: string, value: string): string {
 }
 
 export function genId(prefix: string): string {
-  return `${prefix}_${Date.now()}`;
+  const rand = Math.random().toString(36).slice(2, 9);
+  return `${prefix}_${Date.now()}_${rand}`;
 }
 
 // ── Small UI Components ──────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileRepDetail from '../../mobile/MobileRepDetail';
 import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/data';
-import { formatDate, formatCompactKW } from '../../../../lib/utils';
+import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
 import { ChevronRight, ChevronLeft, ChevronDown, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';

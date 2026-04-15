@@ -63,7 +63,7 @@ export default function PayrollPage() {
 function PayrollPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements, installerPayConfigs } = useApp();
+  const { currentRole, effectiveRole, currentRepId, effectiveRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements, installerPayConfigs } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
@@ -252,7 +252,7 @@ function PayrollPageInner() {
       filteredByDateRep.push(p);
       if (p.status === 'Draft') totalDraft += p.amount;
       else if (p.status === 'Pending') totalPending += p.amount;
-      else if (p.status === 'Paid' && p.date <= today) totalPaid += p.amount;
+      else if (p.status === 'Paid') totalPaid += p.amount;
 
       // And it's in `filtered` (the visible table) only if its status
       // also matches the active status tab.
@@ -328,9 +328,24 @@ function PayrollPageInner() {
       });
       if (!res.ok) {
         console.error('[handlePublish] Bulk PATCH failed:', res.status);
-        setPayrollEntries((prev) =>
-          prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
-        );
+        // Re-fetch to get accurate DB state — some entries in ids may have already
+        // been Paid in DB (stale local state), so a blind rollback to 'Pending' would
+        // misrepresent those entries until page refresh.
+        const refreshRes = await fetch('/api/data').catch(() => null);
+        if (refreshRes?.ok) {
+          const refreshData = await refreshRes.json().catch(() => null);
+          if (refreshData?.payrollEntries) {
+            setPayrollEntries(refreshData.payrollEntries);
+          } else {
+            setPayrollEntries((prev) =>
+              prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
+            );
+          }
+        } else {
+          setPayrollEntries((prev) =>
+            prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
+          );
+        }
         toast(`Payroll failed to save — rolled back`, 'error');
       } else {
         const data = await res.json();
@@ -343,9 +358,22 @@ function PayrollPageInner() {
       }
     } catch (err) {
       console.error('[handlePublish] Network error:', err);
-      setPayrollEntries((prev) =>
-        prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
-      );
+      // Re-fetch to get accurate DB state rather than blindly rolling back to 'Pending'.
+      const refreshRes = await fetch('/api/data').catch(() => null);
+      if (refreshRes?.ok) {
+        const refreshData = await refreshRes.json().catch(() => null);
+        if (refreshData?.payrollEntries) {
+          setPayrollEntries(refreshData.payrollEntries);
+        } else {
+          setPayrollEntries((prev) =>
+            prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
+          );
+        }
+      } else {
+        setPayrollEntries((prev) =>
+          prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
+        );
+      }
       toast(`Payroll failed to save — rolled back`, 'error');
     } finally {
       setPublishingPayroll(false);
@@ -437,7 +465,8 @@ function PayrollPageInner() {
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const project = projects.find((p) => p.id === paymentForm.projectId);
     if (paymentForm.stage === 'M3') {
-      const installerName = project?.installer ?? '';
+      if (!paymentForm.projectId || !project) { paymentSubmitting.current = false; toast('M3 payments require a linked project', 'error'); return; }
+      const installerName = project.installer ?? '';
       const payPct = installerPayConfigs[installerName]?.installPayPct ?? 100;
       if (payPct >= 100) { paymentSubmitting.current = false; toast('M3 payments are only allowed for installers with a partial install payment percentage (installPayPct < 100)', 'error'); return; }
     }
@@ -484,7 +513,7 @@ function PayrollPageInner() {
   // Reps can view only their own entries in a read-only mode; no admin actions.
   const isAdmin = currentRole === 'admin';
   if (!isAdmin) {
-    const myEntries = payrollEntries.filter((p) => p.repId === currentRepId);
+    const myEntries = payrollEntries.filter((p) => p.repId === effectiveRepId);
     const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);
     const myDraft = myTypeFiltered.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
     const myPending = myTypeFiltered.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
