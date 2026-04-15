@@ -1,6 +1,8 @@
 export const metadata = { title: 'Privacy Policy | Kilo Energy' };
 
 const LAST_UPDATED = '2026-04-15';
+// Bumped when we added the self-service export/erasure endpoints and the
+// explicit subprocessor list.
 
 export default function PrivacyPage() {
   return (
@@ -31,26 +33,48 @@ export default function PrivacyPage() {
       </ul>
       <p>We do not sell your data, share it with advertisers, or use it to train AI models.</p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">Where it lives</h2>
+      <h2 className="text-xl font-bold text-white mt-8 mb-3">Where it lives (subprocessors)</h2>
       <p>
-        Application data is stored in <strong>Turso</strong> (libSQL, US region). Authentication is handled by{' '}
-        <strong>Clerk</strong>. Hosting is on <strong>Vercel</strong>. Each subprocessor is bound by their own DPA.
+        We use the following third parties to run Kilo Energy. Each is bound by their own DPA; click through for their
+        privacy policies.
       </p>
+      <ul className="list-disc pl-6 space-y-1 my-3">
+        <li><strong>Turso</strong> (libSQL) — application database (US region). <a href="https://turso.tech/privacy" className="text-emerald-400 hover:underline" rel="noopener noreferrer" target="_blank">Privacy policy</a>.</li>
+        <li><strong>Clerk</strong> — authentication, session management, invitations. <a href="https://clerk.com/legal/privacy" className="text-emerald-400 hover:underline" rel="noopener noreferrer" target="_blank">Privacy policy</a>.</li>
+        <li><strong>Vercel</strong> — hosting, serverless functions, edge routing. <a href="https://vercel.com/legal/privacy-policy" className="text-emerald-400 hover:underline" rel="noopener noreferrer" target="_blank">Privacy policy</a>.</li>
+        <li><strong>Sentry</strong> — error tracking (events are PII-scrubbed before send). <a href="https://sentry.io/privacy" className="text-emerald-400 hover:underline" rel="noopener noreferrer" target="_blank">Privacy policy</a>.</li>
+      </ul>
+      <p>We do not send your records to any other third party.</p>
 
       <h2 className="text-xl font-bold text-white mt-8 mb-3">How long we keep it</h2>
       <p>
-        Your records persist while you are an active member of a workspace. When your admin deactivates you, your record is
-        retained but inactive. On verified erasure request (see below), personal identifiers are anonymized — your historical
-        deal and payroll rows remain because they are required for the workspace's financial integrity, but no longer carry
-        your name or contact info.
+        Your records persist while you are an active member of a workspace. When your admin deactivates you, your record
+        is retained but inactive. On verified erasure request (see below), personal identifiers are anonymized — your
+        historical deal and payroll rows remain because they are required for the workspace&apos;s financial integrity,
+        but no longer carry your name or contact info.
+      </p>
+      <p>
+        Our audit log (a record of sensitive mutations) is pruned automatically after <strong>2 years</strong> via a
+        scheduled job. Longer-horizon records (deals, payroll) are kept for the life of the workspace or until
+        erasure.
       </p>
 
       <h2 className="text-xl font-bold text-white mt-8 mb-3">Your rights</h2>
       <ul className="list-disc pl-6 space-y-1 my-3">
-        <li><strong>Access</strong>: ask your workspace admin for an export of your records.</li>
+        <li>
+          <strong>Access / Portability</strong>: fetch a full JSON export of your own records via{' '}
+          <code className="text-emerald-300 bg-white/5 px-1.5 py-0.5 rounded">GET /api/users/&lt;your-id&gt;/export</code>
+          {' '}(authenticated). Admins can export any user&apos;s records for GDPR/CCPA response.
+        </li>
         <li><strong>Correction</strong>: edit your name or phone in Settings, or ask your admin.</li>
-        <li><strong>Erasure</strong>: email <a href="mailto:privacy@kilo-energy.com" className="text-emerald-400 hover:underline">privacy@kilo-energy.com</a> from the address on file. We anonymize within 30 days.</li>
-        <li><strong>Portability</strong>: admins can export workspace data via Settings → Export.</li>
+        <li>
+          <strong>Erasure</strong>: email{' '}
+          <a href="mailto:privacy@kilo-energy.com" className="text-emerald-400 hover:underline">privacy@kilo-energy.com</a>
+          {' '}from the address on file. An admin will anonymize your record via{' '}
+          <code className="text-emerald-300 bg-white/5 px-1.5 py-0.5 rounded">POST /api/users/&lt;id&gt;/erase</code>
+          {' '}within 30 days. Historical financial rows are retained (tax / commission audit), but no longer attributable
+          to you.
+        </li>
       </ul>
 
       <h2 className="text-xl font-bold text-white mt-8 mb-3">Security</h2>
