@@ -548,7 +548,7 @@ function BlitzPageInner() {
   // Fetch rep blitz permissions
   useEffect(() => {
     if (isAdmin) { setPermsLoaded(true); return; }
-    if (!effectiveRepId) return;
+    if (!effectiveRepId) { setPermsLoaded(true); return; }
     fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       if (u) setUserPerms({ canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false });
     }).catch(() => {}).finally(() => setPermsLoaded(true));
@@ -673,7 +673,7 @@ function BlitzPageInner() {
       });
       if (!r.ok) { toast('Failed to approve request', 'error'); return; }
       toast('Request approved');
-      loadData();
+      await loadData();
     } catch { toast('Failed to approve request', 'error'); }
     finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
   };
@@ -688,7 +688,7 @@ function BlitzPageInner() {
       });
       if (!r.ok) { toast('Failed to deny request', 'error'); return; }
       toast('Request denied');
-      loadData();
+      await loadData();
     } catch { toast('Failed to deny request', 'error'); }
     finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
   };
