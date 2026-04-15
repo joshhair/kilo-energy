@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idSchema, optionalString, finiteNumber, moneyAmount } from '../api-validation';
+import { idSchema, optionalId, optionalString, finiteNumber, moneyAmount } from '../api-validation';
 
 const phaseEnum = z.enum([
   'New',
@@ -17,12 +17,12 @@ const phaseEnum = z.enum([
 export const createProjectSchema = z.object({
   customerName: z.string().min(1).max(200),
   closerId: idSchema,
-  setterId: idSchema.nullable().optional(),
-  subDealerId: idSchema.nullable().optional(),
+  setterId: optionalId,
+  subDealerId: optionalId,
   soldDate: z.string().min(1),
   installerId: idSchema,
-  financerId: idSchema.optional(),    // Cash deals auto-resolve if absent
-  financer: z.string().optional(),    // legacy name fallback used by "Cash" auto-resolve
+  financerId: optionalId,            // Cash deals send "" or omit; auto-resolved server-side
+  financer: z.string().optional(),   // legacy name fallback used by "Cash" auto-resolve
   productType: z.string().min(1),
   kWSize: finiteNumber.positive().max(1000),
   netPPW: finiteNumber.positive().max(10),
@@ -37,13 +37,13 @@ export const createProjectSchema = z.object({
   setterM3Amount: moneyAmount.optional(),
 
   notes: optionalString,
-  installerPricingVersionId: idSchema.nullable().optional(),
-  productId: idSchema.nullable().optional(),
-  productPricingVersionId: idSchema.nullable().optional(),
+  installerPricingVersionId: optionalId,
+  productId: optionalId,
+  productPricingVersionId: optionalId,
   baselineOverrideJson: optionalString,
   prepaidSubType: optionalString,
   leadSource: optionalString,
-  blitzId: idSchema.nullable().optional(),
+  blitzId: optionalId,
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
@@ -71,14 +71,14 @@ export const patchProjectSchema = z.object({
   // Overrides + sourcing
   baselineOverrideJson: optionalString,
   leadSource: optionalString,
-  blitzId: idSchema.nullable().optional(),
+  blitzId: optionalId,
 
   // Core deal shape (affects commission math)
   productType: z.string().min(1).optional(),
   kWSize: finiteNumber.positive().max(1000).optional(),  // kW bound — 1MW residential cap
   netPPW: finiteNumber.min(0).max(10).optional(),        // $/W sanity bound
-  closerId: idSchema.nullable().optional(),
-  setterId: idSchema.nullable().optional(),
+  closerId: optionalId,
+  setterId: optionalId,
   soldDate: z.string().min(1).optional(),                 // ISO date
 
   // FK resolution via name (API resolves to installerId/financerId)

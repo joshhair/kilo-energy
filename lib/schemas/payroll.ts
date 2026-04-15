@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { idSchema, optionalString, moneyAmount } from '../api-validation';
+import { idSchema, optionalId, optionalString, moneyAmount } from '../api-validation';
 
 /** Request body for POST /api/payroll */
 export const createPayrollSchema = z.object({
   repId: idSchema,
-  projectId: idSchema.nullable().optional(),
+  projectId: optionalId,
   amount: moneyAmount,
   type: z.string().min(1),
   paymentStage: z.string().min(1),

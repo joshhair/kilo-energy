@@ -71,6 +71,14 @@ function formatIssues(error: ZodError): Array<{ path: string; message: string }>
 // ─── Shared atoms used across domain schemas ────────────────────────────────
 
 export const idSchema = z.string().min(1, 'id required').max(100);
+
+/** Optional ID that accepts "", null, or undefined (all normalized to undefined).
+ *  Use for fields where the client may send an empty-string placeholder
+ *  (e.g. financerId="" on Cash deals). */
+export const optionalId = z.preprocess(
+  (v) => (v === '' || v === null ? undefined : v),
+  z.string().min(1).max(100).optional(),
+);
 export const nonEmptyString = z.string().min(1);
 export const optionalString = z.string().optional().nullable();
 /** Finite, non-NaN number. */
