@@ -384,7 +384,7 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
       <div ref={requestPanelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-amber-400" /> Request a Blitz</h2>
-        <p className="text-sm text-[var(--text-muted)] mb-4">Submit a request for admin approval. You'll be notified when it's reviewed.</p>
+        <p className="text-sm text-[var(--text-muted)] mb-4">Submit a request for admin approval. You&apos;ll be notified when it&apos;s reviewed.</p>
 
         <div className="space-y-4">
           <div>

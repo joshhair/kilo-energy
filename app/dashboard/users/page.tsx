@@ -312,7 +312,7 @@ function UsersPageInner() {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') resetAddModal(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [showAddModal]);
 
   const handleAddRep = () => {

@@ -123,7 +123,7 @@ export function SetterPickerPopover({
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKey);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [open]);
 
   /** True if a rep appears as a trainee in any trainer assignment. */

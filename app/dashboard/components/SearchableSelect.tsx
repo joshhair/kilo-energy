@@ -129,7 +129,7 @@ export function SearchableSelect({
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKey);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [open]);
 
   // Filtered options

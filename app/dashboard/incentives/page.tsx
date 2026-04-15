@@ -188,7 +188,7 @@ export default function IncentivesPage() {
       : incentives.filter(
           (inc) => inc.active && (inc.type === 'company' || (currentRepId != null && inc.targetRepId === currentRepId))
         ),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   [incentives, isAdmin, currentRepId]);
 
   // ── Split active vs expired (past) incentives ──
@@ -233,7 +233,7 @@ export default function IncentivesPage() {
       }
     }
     return items;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [incentives, projects, payrollEntries, isAdmin]);
 
   const nextDeadline = useMemo(() => {
@@ -428,7 +428,7 @@ export default function IncentivesPage() {
   };
 
   // Clear selection when filter or sort changes to prevent bulk-actions on hidden incentives.
-  useEffect(() => { clearSelection(); }, [incentiveFilter, incentiveSort]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { clearSelection(); }, [incentiveFilter, incentiveSort]);  
 
   // ── Bulk archive expired ──
   const expiredActiveCount = useMemo(() => visible.filter((i) => isExpired(i.endDate) && i.active).length, [visible]);

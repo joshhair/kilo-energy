@@ -47,19 +47,30 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  // Non-admins: strip other reps' financial data from projects + hide costs
+  // Non-admins: strip other reps' financial data from projects + hide costs.
+  // Using `as unknown as` tightens the cast vs `any` — explicit about what
+  // shape we're forcing, and only the fields we actually mutate.
   if (user.role !== 'admin') {
-    (blitz as any).costs = [];
+    (blitz as unknown as { costs: unknown[] }).costs = [];
     for (const p of blitz.projects) {
       const isMyDeal = p.closerId === user.id || p.setterId === user.id;
       if (!isMyDeal) {
-        (p as any).netPPW = 0;
-        (p as any).m1Amount = 0;
-        (p as any).m2Amount = 0;
-        (p as any).m3Amount = 0;
-        (p as any).setterM1Amount = 0;
-        (p as any).setterM2Amount = 0;
-        (p as any).setterM3Amount = 0;
+        const mp = p as unknown as {
+          netPPW: number;
+          m1Amount: number;
+          m2Amount: number;
+          m3Amount: number;
+          setterM1Amount: number;
+          setterM2Amount: number;
+          setterM3Amount: number;
+        };
+        mp.netPPW = 0;
+        mp.m1Amount = 0;
+        mp.m2Amount = 0;
+        mp.m3Amount = 0;
+        mp.setterM1Amount = 0;
+        mp.setterM2Amount = 0;
+        mp.setterM3Amount = 0;
       }
     }
   }
@@ -123,19 +134,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
-  // Non-admins: strip other reps' financial data from projects + hide costs
+  // Non-admins: strip other reps' financial data from projects + hide costs.
+  // Using `as unknown as` tightens the cast vs `any` — explicit about what
+  // shape we're forcing, and only the fields we actually mutate.
   if (user.role !== 'admin') {
-    (blitz as any).costs = [];
+    (blitz as unknown as { costs: unknown[] }).costs = [];
     for (const p of blitz.projects) {
       const isMyDeal = p.closerId === user.id || p.setterId === user.id;
       if (!isMyDeal) {
-        (p as any).netPPW = 0;
-        (p as any).m1Amount = 0;
-        (p as any).m2Amount = 0;
-        (p as any).m3Amount = 0;
-        (p as any).setterM1Amount = 0;
-        (p as any).setterM2Amount = 0;
-        (p as any).setterM3Amount = 0;
+        const mp = p as unknown as {
+          netPPW: number;
+          m1Amount: number;
+          m2Amount: number;
+          m3Amount: number;
+          setterM1Amount: number;
+          setterM2Amount: number;
+          setterM3Amount: number;
+        };
+        mp.netPPW = 0;
+        mp.m1Amount = 0;
+        mp.m2Amount = 0;
+        mp.m3Amount = 0;
+        mp.setterM1Amount = 0;
+        mp.setterM2Amount = 0;
+        mp.setterM3Amount = 0;
       }
     }
   }

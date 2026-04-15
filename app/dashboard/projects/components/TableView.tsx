@@ -102,7 +102,7 @@ function SetterPopover({
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKey);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [open]);
 
   const handleAssign = (rep: Rep) => {

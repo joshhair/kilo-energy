@@ -306,7 +306,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     getIdMaps: () => idMaps,
     setIdMaps,
     pendingInstallerIdRef,
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }), [installers, idMaps, productCatalogProducts]);
   const {
     setInstallerActive, setFinancerActive, addInstaller, addFinancer,
