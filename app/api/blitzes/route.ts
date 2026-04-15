@@ -17,6 +17,8 @@ export async function GET() {
   }
 
   // ─── Build a where clause that limits non-admin/non-PM users ───
+  // Reps see: blitzes they're involved in (any status) OR upcoming/active
+  // blitzes they haven't joined yet (so the "Browse Available" section works).
   const where: Record<string, unknown> =
     user.role === 'admin' || user.role === 'project_manager'
       ? {}
@@ -25,6 +27,7 @@ export async function GET() {
             { ownerId: user.id },
             { createdById: user.id },
             { participants: { some: { userId: user.id, joinStatus: { in: ['approved', 'pending'] } } } },
+            { status: { in: ['upcoming', 'active'] } },
           ],
         };
 

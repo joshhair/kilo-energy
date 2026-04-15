@@ -644,8 +644,8 @@ function BlitzPageInner() {
   }, [sortedBlitzes, isAdmin, effectiveRepId, myBlitzes, pendingBlitzes]);
 
   // Reset pages when filters change
-  useEffect(() => { setBlitzPage(1); }, [statusFilter, search, sortBy]);
-  useEffect(() => { setRequestPage(1); }, []);
+  useEffect(() => { setBlitzPage(1); }, [statusFilter, search, sortBy, blitzPerPage]);
+  useEffect(() => { setRequestPage(1); }, [requestPerPage]);
 
   // Paginated admin blitzes
   const adminBlitzTotal = sortedBlitzes.length;

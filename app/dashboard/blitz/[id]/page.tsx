@@ -84,6 +84,13 @@ export default function BlitzDetailPage() {
   // Participant form
   const [showAddParticipant, setShowAddParticipant] = useState(false);
 
+  // Reset costDate to today each time the Add Cost panel opens
+  useEffect(() => {
+    if (!showAddCost) return;
+    const d = new Date();
+    setCostDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+  }, [showAddCost]);
+
   // Escape key closes Add Participant modal
   useEffect(() => {
     if (!showAddParticipant) return;
