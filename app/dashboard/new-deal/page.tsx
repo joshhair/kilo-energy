@@ -323,8 +323,12 @@ function NewDealPage() {
 
   const { closerPerW, setterBaselinePerW, kiloPerW, activeVersionId } = (() => {
     if (form.installer === 'SolarTech' && hasSolarTechProducts && form.solarTechProductId && kW > 0) {
-      const b = getSolarTechBaseline(form.solarTechProductId, kW, solarTechProducts);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: null };
+      try {
+        const b = getSolarTechBaseline(form.solarTechProductId, kW, solarTechProducts);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: null };
+      } catch {
+        return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
+      }
     } else if (isPcInstaller && hasPcProducts && form.installerProductId && kW > 0) {
       const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
       const b = getProductCatalogBaselineVersioned(productCatalogProducts, form.installerProductId, kW, soldDate, productCatalogPricingVersions);

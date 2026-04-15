@@ -229,6 +229,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setDbReady(true);
       })
       .catch((err) => {
+        if (cancelled) return;
         console.error('Failed to load data from API:', err);
         setDataError(true);
         setDbReady(true);
