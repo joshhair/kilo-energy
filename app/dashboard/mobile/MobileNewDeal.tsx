@@ -756,7 +756,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 1: People ── */}
         {currentStep === 0 && (
-          <div key={0} className={`space-y-7 flex-1 flex flex-col pb-[88px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={0} className={`space-y-7 flex-1 flex flex-col pb-[176px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Customer Name */}
             <div ref={(el) => { fieldWrapperRefs.current['customerName'] = el; }}>
               <label className={labelCls} style={labelStyle}>Customer Name</label>
@@ -854,7 +854,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 2: Deal Details ── */}
         {currentStep === 1 && (
-          <div key={1} className={`space-y-7 flex-1 flex flex-col pb-[88px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={1} className={`space-y-7 flex-1 flex flex-col pb-[176px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Installer */}
             <div>
               <label className={labelCls} style={labelStyle}>Installer</label>
