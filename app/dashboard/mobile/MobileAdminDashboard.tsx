@@ -135,7 +135,7 @@ export default function MobileAdminDashboard() {
   // Uses full `projects` (not period-scoped) so Needs Attention matches desktop regardless of selected period.
   const stalledProjects = useMemo(() => {
     const now = Date.now();
-    return projects.filter((p) => ACTIVE_PHASES.includes(p.phase)).filter((p) => {
+    return projects.filter((p) => ACTIVE_PHASES.includes(p.phase) && !p.flagged).filter((p) => {
       const threshold = PHASE_STUCK_THRESHOLDS[p.phase];
       if (threshold == null) return false;
       if (!p.soldDate) return false;

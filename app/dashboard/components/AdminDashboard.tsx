@@ -533,7 +533,7 @@ export function AdminDashboard({
         const searchFiltered = projects.filter((p) => {
           if (!recentSearch.trim()) return true;
           const q = recentSearch.trim().toLowerCase();
-          return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q);
+          return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q) || (p.subDealerName ?? '').toLowerCase().includes(q);
         });
         const sorted = [...searchFiltered].sort((a, b) => {
           let cmp = 0;
