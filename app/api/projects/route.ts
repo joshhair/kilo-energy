@@ -89,25 +89,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
   }
 
-  // For Cash deals, auto-resolve the Cash financer so clients don't need the ID
+  // For Cash deals, auto-resolve the Cash financer so clients don't need the ID.
+  // Cash is a system-managed record — we force active:true on every upsert so an
+  // admin-triggered archive doesn't silently block new Cash deals.
   let financerId = body.financerId;
-  if (!financerId && (body.productType === 'Cash' || body.financer === 'Cash')) {
+  const isCashAutoResolve = !financerId && (body.productType === 'Cash' || body.financer === 'Cash');
+  if (isCashAutoResolve) {
     const cashFinancer = await prisma.financer.upsert({
       where: { name: 'Cash' },
-      update: {},
-      create: { name: 'Cash' },
+      update: { active: true },
+      create: { name: 'Cash', active: true },
     });
     financerId = cashFinancer.id;
   }
   if (!financerId) {
     return NextResponse.json({ error: 'financerId is required (unless productType=Cash)' }, { status: 400 });
   }
-  const financer = await prisma.financer.findUnique({ where: { id: financerId }, select: { id: true, active: true } });
-  if (!financer) {
-    return NextResponse.json({ error: 'Financer not found' }, { status: 400 });
-  }
-  if (!financer.active) {
-    return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
+  // Skip the archive check on the auto-resolve path — we just reactivated it.
+  if (!isCashAutoResolve) {
+    const financer = await prisma.financer.findUnique({ where: { id: financerId }, select: { id: true, active: true } });
+    if (!financer) {
+      return NextResponse.json({ error: 'Financer not found' }, { status: 400 });
+    }
+    if (!financer.active) {
+      return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
+    }
   }
 
   const project = await prisma.project.create({
