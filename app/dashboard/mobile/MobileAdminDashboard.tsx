@@ -339,7 +339,8 @@ export default function MobileAdminDashboard() {
           {stalledProjects.length > 0 && (
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity"
+              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${onHoldCount > 0 ? ' border-b' : ''}`}
+              style={onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <Clock className="w-4 h-4" style={{ color: MUTED }} />

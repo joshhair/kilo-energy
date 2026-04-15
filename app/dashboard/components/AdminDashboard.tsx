@@ -99,22 +99,26 @@ export function AdminDashboard({
 
   // Revenue = netPPW × kW × 1000 (actual contract value)
   // Profit  = (closerPerW − kiloPerW) × kW × 1000 (Kilo's baseline spread / margin)
-  const { totalRevenue, totalProfit } = projects.reduce(
-    (acc, p) => {
-      if (p.phase === 'Cancelled' || p.phase === 'On Hold') return acc;
-      const { closerPerW, kiloPerW } = getProjectBaselines(p);
-      const watts = p.kWSize * 1000;
-      acc.totalRevenue += (p.netPPW ?? 0) * watts;
-      acc.totalProfit  += (closerPerW - kiloPerW) * watts;
-      return acc;
-    },
-    { totalRevenue: 0, totalProfit: 0 }
-  );
+  const { totalRevenue, totalProfit, totalPaid, totalKWSold, totalKWInstalled } = useMemo(() => {
+    const { totalRevenue, totalProfit } = projects.reduce(
+      (acc, p) => {
+        if (p.phase === 'Cancelled' || p.phase === 'On Hold') return acc;
+        const { closerPerW, kiloPerW } = getProjectBaselines(p);
+        const watts = p.kWSize * 1000;
+        acc.totalRevenue += (p.netPPW ?? 0) * watts;
+        acc.totalProfit  += (closerPerW - kiloPerW) * watts;
+        return acc;
+      },
+      { totalRevenue: 0, totalProfit: 0 }
+    );
 
-  const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
-  const totalPaid = payroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
-  const totalKWSold = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
-  const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
+    const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
+    const totalPaid = payroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
+    const totalKWSold = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
+    const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
+
+    return { totalRevenue, totalProfit, totalPaid, totalKWSold, totalKWInstalled };
+  }, [projects, payroll]);
   const totalUsers = totalReps;
 
   // ── Single-pass project aggregations ──────────────────────────────────
@@ -611,9 +615,9 @@ export function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const isCancelled = proj.phase === 'Cancelled';
-                      const closerPay = isCancelled ? 0 : ((!proj.m1Paid ? (proj.m1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.m2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.m3Amount ?? 0) : 0));
-                      const setterPay = isCancelled ? 0 : ((!proj.m1Paid ? (proj.setterM1Amount ?? 0) : 0) + (!proj.m2Paid ? (proj.setterM2Amount ?? 0) : 0) + (!proj.m3Paid ? (proj.setterM3Amount ?? 0) : 0));
+                      const isCancelled = proj.phase === 'Cancelled' || proj.phase === 'On Hold';
+                      const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0));
+                      const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0));
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
