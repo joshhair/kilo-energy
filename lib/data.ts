@@ -134,7 +134,10 @@ export function getTrainerOverrideRate(
   completedDeals: number
 ): number {
   for (const tier of assignment.tiers) {
-    if (tier.upToDeal === null || completedDeals <= tier.upToDeal) {
+    // upToDeal is exclusive: "upToDeal: 10" means deals 0–9 qualify.
+    // Don't change to <= — that breaks tier-boundary expectations
+    // (agent cycle 715 did that once; tests caught it).
+    if (tier.upToDeal === null || completedDeals < tier.upToDeal) {
       return tier.ratePerW;
     }
   }

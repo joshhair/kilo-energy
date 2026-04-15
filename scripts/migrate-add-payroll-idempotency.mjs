@@ -1,4 +1,4 @@
-// One-shot migration: ADD COLUMN "idempotencyKey" TEXT (nullable, unique)
+// Migration: ADD COLUMN "idempotencyKey" TEXT (nullable, unique)
 // to the PayrollEntry table on the Turso production database.
 //
 // Why: prevents accidental double-pay when a client retries a POST /api/payroll
@@ -7,56 +7,50 @@
 // inserting a duplicate.
 //
 // Safe and additive — nullable column, no existing data is modified.
-// Idempotent — checks for the column and the unique index before adding.
+// Idempotent — up() and down() both check existence before acting.
+//
+// Note: down() drops the unique index and the column. SQLite DROP COLUMN
+// support is modern-3.35+ only; Turso supports it. Existing rows with
+// non-null idempotencyKey values will lose their keys — irreversible data
+// loss. Operator must accept this when passing --down.
 //
 // Run with:
-//   set -a && . ./.env && set +a && node scripts/migrate-add-payroll-idempotency.mjs
+//   node scripts/migrate-add-payroll-idempotency.mjs           # apply
+//   node scripts/migrate-add-payroll-idempotency.mjs --down    # rollback (lossy)
 
-import { createClient } from "@libsql/client";
+import { runMigration, columnExists, indexExists } from "./migrate-helpers.mjs";
 
-const url = process.env.TURSO_DATABASE_URL;
-const authToken = process.env.TURSO_AUTH_TOKEN;
+const INDEX_NAME = "PayrollEntry_idempotencyKey_key";
 
-if (!url || !authToken) {
-  console.error("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in env");
-  process.exit(1);
-}
-
-const client = createClient({ url, authToken });
-
-async function main() {
-  const info = await client.execute(`PRAGMA table_info("PayrollEntry")`);
-  const columns = info.rows.map((r) => r.name);
-  console.log(`PayrollEntry columns: ${columns.length}`);
-
-  if (columns.includes("idempotencyKey")) {
+async function up(db) {
+  if (await columnExists(db, "PayrollEntry", "idempotencyKey")) {
     console.log('✓ Column "idempotencyKey" already exists — skipping ADD.');
   } else {
-    console.log('Adding column "idempotencyKey" TEXT (nullable)...');
-    await client.execute(`ALTER TABLE "PayrollEntry" ADD COLUMN "idempotencyKey" TEXT`);
-    console.log('✓ Column added.');
+    await db.execute(`ALTER TABLE "PayrollEntry" ADD COLUMN "idempotencyKey" TEXT`);
+    console.log('✓ Added column "idempotencyKey".');
   }
 
-  const idxList = await client.execute(`PRAGMA index_list("PayrollEntry")`);
-  const idxNames = idxList.rows.map((r) => r.name);
-  const uniqueIdxName = "PayrollEntry_idempotencyKey_key";
-
-  if (idxNames.includes(uniqueIdxName)) {
-    console.log(`✓ Unique index "${uniqueIdxName}" already exists — skipping.`);
+  if (await indexExists(db, INDEX_NAME)) {
+    console.log(`✓ Unique index "${INDEX_NAME}" already exists — skipping.`);
   } else {
-    console.log(`Creating unique index "${uniqueIdxName}"...`);
-    await client.execute(
-      `CREATE UNIQUE INDEX "${uniqueIdxName}" ON "PayrollEntry"("idempotencyKey")`
-    );
-    console.log(`✓ Unique index created.`);
+    await db.execute(`CREATE UNIQUE INDEX "${INDEX_NAME}" ON "PayrollEntry"("idempotencyKey")`);
+    console.log(`✓ Created unique index "${INDEX_NAME}".`);
   }
-
-  console.log("\nMigration complete.");
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error("Migration failed:", err);
-    process.exit(1);
-  });
+async function down(db) {
+  if (await indexExists(db, INDEX_NAME)) {
+    await db.execute(`DROP INDEX "${INDEX_NAME}"`);
+    console.log(`✓ Dropped unique index "${INDEX_NAME}".`);
+  } else {
+    console.log(`– Index "${INDEX_NAME}" not present.`);
+  }
+  if (await columnExists(db, "PayrollEntry", "idempotencyKey")) {
+    await db.execute(`ALTER TABLE "PayrollEntry" DROP COLUMN "idempotencyKey"`);
+    console.log('✓ Dropped column "idempotencyKey" (idempotency keys on existing rows are lost).');
+  } else {
+    console.log('– Column "idempotencyKey" not present.');
+  }
+}
+
+runMigration({ up, down, name: "add-payroll-idempotency" });

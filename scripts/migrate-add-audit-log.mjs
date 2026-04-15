@@ -1,86 +1,74 @@
-// One-shot migration: create the AuditLog table + its indexes on Turso.
+// Migration: create the AuditLog table + its indexes on Turso.
 //
 // Why: immutable log of sensitive mutations (phase changes, financial edits,
 // role/active flips, payroll publishes). Written by lib/audit.ts logChange(),
 // read by the admin-only /dashboard/admin/audit viewer.
 //
 // Safe: pure additive — creates a new table. No existing data touched.
-// Idempotent: checks for the table and each index before creating.
+// Idempotent: both up() and down() check existence before acting.
 //
 // Run with:
-//   set -a && . ./.env && set +a && node scripts/migrate-add-audit-log.mjs
+//   node scripts/migrate-add-audit-log.mjs             # apply
+//   node scripts/migrate-add-audit-log.mjs --down      # rollback
 
-import { createClient } from "@libsql/client";
+import { runMigration, tableExists, indexExists } from "./migrate-helpers.mjs";
 
-const url = process.env.TURSO_DATABASE_URL;
-const authToken = process.env.TURSO_AUTH_TOKEN;
+const INDEXES = [
+  "AuditLog_entityType_entityId_idx",
+  "AuditLog_actorUserId_idx",
+  "AuditLog_createdAt_idx",
+];
 
-if (!url || !authToken) {
-  console.error("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in env");
-  process.exit(1);
-}
-
-const db = createClient({ url, authToken });
-
-async function tableExists(name) {
-  const r = await db.execute({
-    sql: `SELECT name FROM sqlite_master WHERE type='table' AND name = ?`,
-    args: [name],
-  });
-  return r.rows.length > 0;
-}
-
-async function indexExists(name) {
-  const r = await db.execute({
-    sql: `SELECT name FROM sqlite_master WHERE type='index' AND name = ?`,
-    args: [name],
-  });
-  return r.rows.length > 0;
-}
-
-async function main() {
-  if (await tableExists("AuditLog")) {
+async function up(db) {
+  if (await tableExists(db, "AuditLog")) {
     console.log('✓ Table "AuditLog" already exists — skipping CREATE.');
   } else {
-    console.log('Creating table "AuditLog"...');
     await db.execute(`
       CREATE TABLE "AuditLog" (
-        "id" TEXT PRIMARY KEY,
+        "id"          TEXT    PRIMARY KEY,
         "actorUserId" TEXT,
-        "actorEmail" TEXT,
-        "action" TEXT NOT NULL,
-        "entityType" TEXT NOT NULL,
-        "entityId" TEXT NOT NULL,
-        "oldValue" TEXT,
-        "newValue" TEXT,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        "actorEmail"  TEXT,
+        "action"      TEXT    NOT NULL,
+        "entityType"  TEXT    NOT NULL,
+        "entityId"    TEXT    NOT NULL,
+        "oldValue"    TEXT,
+        "newValue"    TEXT,
+        "createdAt"   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✓ Table "AuditLog" created.');
+    console.log('✓ Created table "AuditLog".');
   }
 
-  const indexes = [
-    { name: "AuditLog_entityType_entityId_idx", columns: '"entityType", "entityId"' },
-    { name: "AuditLog_actorUserId_idx", columns: '"actorUserId"' },
-    { name: "AuditLog_createdAt_idx", columns: '"createdAt"' },
-  ];
-
-  for (const idx of indexes) {
-    if (await indexExists(idx.name)) {
-      console.log(`✓ Index "${idx.name}" already exists — skipping.`);
+  for (const [name, sql] of [
+    ["AuditLog_entityType_entityId_idx", `CREATE INDEX "AuditLog_entityType_entityId_idx" ON "AuditLog"("entityType", "entityId")`],
+    ["AuditLog_actorUserId_idx", `CREATE INDEX "AuditLog_actorUserId_idx" ON "AuditLog"("actorUserId")`],
+    ["AuditLog_createdAt_idx", `CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt")`],
+  ]) {
+    if (await indexExists(db, name)) {
+      console.log(`✓ Index "${name}" already exists — skipping.`);
     } else {
-      console.log(`Creating index "${idx.name}"...`);
-      await db.execute(`CREATE INDEX "${idx.name}" ON "AuditLog"(${idx.columns})`);
-      console.log(`✓ Index "${idx.name}" created.`);
+      await db.execute(sql);
+      console.log(`✓ Created index "${name}".`);
     }
   }
-
-  console.log("\nMigration complete.");
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error("Migration failed:", err);
-    process.exit(1);
-  });
+async function down(db) {
+  // Drop indexes first, then the table. Each step is idempotent.
+  for (const name of INDEXES) {
+    if (await indexExists(db, name)) {
+      await db.execute(`DROP INDEX "${name}"`);
+      console.log(`✓ Dropped index "${name}".`);
+    } else {
+      console.log(`– Index "${name}" not present.`);
+    }
+  }
+  if (await tableExists(db, "AuditLog")) {
+    await db.execute(`DROP TABLE "AuditLog"`);
+    console.log('✓ Dropped table "AuditLog".');
+  } else {
+    console.log('– Table "AuditLog" not present.');
+  }
+}
+
+runMigration({ up, down, name: "add-audit-log" });

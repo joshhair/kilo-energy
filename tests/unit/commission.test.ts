@@ -374,9 +374,8 @@ describe('getProductCatalogBaseline', () => {
     expect(r.closerPerW).toBe(2.50);
   });
 
-  it('returns zeros for unknown product', () => {
-    const r = getProductCatalogBaseline(products, 'nonexistent', 8);
-    expect(r.closerPerW).toBe(0);
+  it('throws on unknown product (loud failure beats silent zero)', () => {
+    expect(() => getProductCatalogBaseline(products, 'nonexistent', 8)).toThrow(/unknown product/);
   });
 });
 
