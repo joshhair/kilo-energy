@@ -524,7 +524,7 @@ function RepEarningsView() {
   if (!isHydrated) return <EarningsSkeleton />;
 
   return (
-    <div className="p-4 md:p-8 animate-fade-in-up">
+    <div className="p-4 md:p-8 pb-24 animate-fade-in-up">
       <ReimbursementModal
         open={showReimbModal}
         onClose={() => setShowReimbModal(false)}
@@ -745,8 +745,8 @@ function RepEarningsView() {
         {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-            {t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
+            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
           </button>
         ))}
       </div>
