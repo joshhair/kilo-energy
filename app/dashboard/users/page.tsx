@@ -598,7 +598,10 @@ function UsersPageInner() {
     // without polluting the active roster.
     if (r.active === false) return false;
     // Search filter
-    if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      if (!r.name.toLowerCase().includes(q) && !r.email?.toLowerCase().includes(q)) return false;
+    }
     // Role filter
     if (filterTab === 'all') return true;
     if (filterTab === 'both') return r.repType === 'both';
@@ -612,7 +615,10 @@ function UsersPageInner() {
   // they were.
   const inactiveReps = reps.filter((r) => {
     if (r.active !== false) return false;
-    if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      if (!r.name.toLowerCase().includes(q) && !r.email?.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -918,7 +924,7 @@ function UsersPageInner() {
                       </span>
                       {canManageReps && u.role === 'sub-dealer' && (
                         <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } setConfirmAction(null); } }); }}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                           title="Deactivate sub-dealer"
                           className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         >
@@ -1520,7 +1526,7 @@ function UsersPageInner() {
                       </div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">kW Sold</span><span className="text-white font-semibold">{formatCompactKW(kwSold)}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
-                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Earned</span><span className="text-[var(--accent-green)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Paid Out</span><span className="text-[var(--accent-green)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[var(--text-secondary)]'}`}>{cancelRate.toFixed(0)}%</span></div>
                     </div>
                   </div>
@@ -1742,7 +1748,7 @@ function UsersPageInner() {
                   <ChevronRight className="hidden md:block w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors" />
                   {canManageReps && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } setConfirmAction(null); } }); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                       title="Deactivate rep"
                       className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >

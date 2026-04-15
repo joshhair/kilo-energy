@@ -170,7 +170,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [barsMounted, setBarsMounted] = useState(false);
   useEffect(() => { const t = setTimeout(() => setBarsMounted(true), 50); return () => clearTimeout(t); }, []);
 
-  if (!hydrated) return <RepDetailSkeleton />;
+  if (!hydrated || currentRole === null) return <RepDetailSkeleton />;
 
   if (isMobile) return <MobileRepDetail repId={id} />;
 
