@@ -1617,7 +1617,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={() => setEditVals((v) => ({ ...v, productType: pt }))}
                       className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                         editVals.productType === pt
-                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
                           : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                       }`}
                     >

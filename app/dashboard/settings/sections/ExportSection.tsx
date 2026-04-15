@@ -241,7 +241,7 @@ export function ExportSection() {
                 }
                 toast(`Export started — ${exportSelected.size} file${exportSelected.size > 1 ? 's' : ''} downloading`, 'info');
               }}
-              className="flex items-center gap-2 bg-[var(--accent-green)] hover:bg-[var(--accent-green)] active:scale-[0.97] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
+              className="flex items-center gap-2 bg-[var(--accent-green)] hover:bg-[var(--accent-green)] active:scale-[0.97] text-black text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
             >
               <Download className="w-4 h-4" />
               Download CSV{exportSelected.size > 1 ? 's' : ''}

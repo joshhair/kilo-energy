@@ -159,7 +159,6 @@ function NewDealPage() {
   // Track which steps have already been auto-advanced (so we only auto-advance once per step)
   const autoAdvancedSteps = useRef<Set<number>>(new Set());
   // Track the step circle pulse animation
-  const [pulseStep, setPulseStep] = useState<number | null>(null);
 
   // Derived: SolarTech — family comes from form, not from financer
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
@@ -433,30 +432,8 @@ function NewDealPage() {
     ? Math.round((allRequired.filter(isFieldValid).length / allRequired.length) * 100)
     : 0;
 
-  // ── Auto-advance when a step is fully filled ───────────────────────────────
-  // Uses a 1.5s delay so the user has time to finish typing before the form
-  // advances. The timer resets on every keystroke (form dependency) so it only
-  // fires after the user stops interacting.
-  useEffect(() => {
-    if (
-      !userNavigatedBack.current &&
-      stepsComplete[currentStep] &&
-      !autoAdvancedSteps.current.has(currentStep) &&
-      currentStep < DEAL_STEPS.length - 1
-    ) {
-      const advanceTimer = setTimeout(() => {
-        // Re-check completion in case the user edited a field during the delay
-        if (!stepsComplete[currentStep]) return;
-        autoAdvancedSteps.current.add(currentStep);
-        setPulseStep(currentStep);
-        setTimeout(() => setPulseStep(null), 600);
-        setSlideDirection('forward');
-        setCurrentStep((prev) => Math.min(prev + 1, DEAL_STEPS.length - 1));
-      }, 1500);
-      return () => clearTimeout(advanceTimer);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepsComplete[currentStep], currentStep, form]);
+  // Auto-advance removed — it "yanked" users forward before they could add
+  // optional fields. Step progression now requires an explicit Next click.
 
   // ── Step navigation handlers ───────────────────────────────────────────────
 
@@ -965,7 +942,7 @@ function NewDealPage() {
                       }}
                       className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
                         form.productType === pt
-                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
                           : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                       }`}
                     >
