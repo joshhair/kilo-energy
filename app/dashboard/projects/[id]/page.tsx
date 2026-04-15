@@ -590,6 +590,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       if (adminNotes === lastSyncedNotes.current) {
         setAdminNotes(incoming);
       }
+      // Cancel any pending debounce so it cannot overwrite the externally-saved value.
+      if (adminNotesDebounce.current) { clearTimeout(adminNotesDebounce.current); adminNotesDebounce.current = null; }
       lastSyncedNotes.current = incoming;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -864,6 +866,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         ? Math.round(val * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0;
       const originalM2 = project.m2Amount ?? 0;
+      // scale is based on the closer's old M2; if it was $0 we can't compute a ratio, so setter M2 is left unchanged
       const scale = originalM2 > 0 ? val / originalM2 : 1;
       const newSetterM2 = Math.round((project.setterM2Amount ?? 0) * scale * 100) / 100;
       const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
@@ -871,7 +874,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         : 0;
       updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
       if (originalM2 === 0 && project.setterId) {
-        toast('M2 updated — setter M2 was $0 and could not be auto-adjusted. Use Edit Deal to recalculate setter amounts.', 'error');
+        toast('M2 updated — closer M2 was $0 so setter M2 could not be auto-scaled. Use Edit Deal to recalculate setter amounts.', 'error');
       } else {
         toast('M2 amount updated', 'success');
       }
