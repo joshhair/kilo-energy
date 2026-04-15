@@ -4,6 +4,7 @@ import { prisma } from '../../../lib/db';
 import { requireAuth } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createReimbursementSchema } from '../../../lib/schemas/reimbursement';
+import { REP_PUBLIC_SELECT } from '../../../lib/redact';
 
 // POST /api/reimbursements — Create a reimbursement request
 export async function POST(req: NextRequest) {
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       status: 'Pending',
       receiptName: body.receiptName ?? null,
     },
-    include: { rep: true },
+    include: { rep: { select: REP_PUBLIC_SELECT } },
   });
   return NextResponse.json(reimbursement, { status: 201 });
 }

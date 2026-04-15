@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchReimbursementSchema } from '../../../../lib/schemas/reimbursement';
+import { REP_PUBLIC_SELECT } from '../../../../lib/redact';
 
 // PATCH /api/reimbursements/[id] — Update status (admin only — approve/deny)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const reimbursement = await prisma.reimbursement.update({
     where: { id },
     data: { status },
-    include: { rep: true },
+    include: { rep: { select: REP_PUBLIC_SELECT } },
   });
   return NextResponse.json(reimbursement);
 }

@@ -5,6 +5,7 @@ import { logChange } from '../../../lib/audit';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createPayrollSchema, patchPayrollSchema } from '../../../lib/schemas/payroll';
 import { enforceRateLimit } from '../../../lib/rate-limit';
+import { REP_PUBLIC_SELECT } from '../../../lib/redact';
 
 // POST /api/payroll — Create a payroll entry (admin or project manager).
 //
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (body.idempotencyKey) {
     const existing = await prisma.payrollEntry.findUnique({
       where: { idempotencyKey: body.idempotencyKey },
-      include: { rep: true, project: true },
+      include: { rep: { select: REP_PUBLIC_SELECT }, project: true },
     });
     if (existing) {
       return NextResponse.json(existing, { status: 200 });

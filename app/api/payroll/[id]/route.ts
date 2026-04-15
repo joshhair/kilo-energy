@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireAdminOrPM } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchPayrollEntrySchema } from '../../../../lib/schemas/pricing';
+import { REP_PUBLIC_SELECT } from '../../../../lib/redact';
 
 // PATCH /api/payroll/[id] — Update a single payroll entry (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -39,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const entry = await prisma.payrollEntry.update({
     where: { id },
     data,
-    include: { rep: true, project: true },
+    include: { rep: { select: REP_PUBLIC_SELECT }, project: true },
   });
   return NextResponse.json(entry);
 }
