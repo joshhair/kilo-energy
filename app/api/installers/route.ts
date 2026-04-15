@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createInstallerSchema } from '../../../lib/schemas/pricing';
 
 // GET /api/installers?name=X — Look up a single installer by name (admin only)
 export async function GET(req: NextRequest) {
@@ -15,12 +17,16 @@ export async function GET(req: NextRequest) {
 // POST /api/installers — Create a new installer (admin only)
 export async function POST(req: NextRequest) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, createInstallerSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
   const installer = await prisma.installer.create({
     data: {
       name: body.name,
-      installPayPct: body.installPayPct ?? 80,
-      usesProductCatalog: body.usesProductCatalog ?? false,
+      installPayPct: body.installPayPct,
+      usesProductCatalog: body.usesProductCatalog,
     },
   });
 
@@ -29,7 +35,7 @@ export async function POST(req: NextRequest) {
     await prisma.productCatalogConfig.create({
       data: {
         installerId: installer.id,
-        families: (body.families as string[] ?? []).join(','),
+        families: (body.families ?? []).join(','),
         familyFinancerMap: JSON.stringify(body.familyFinancerMap ?? {}),
         prepaidFamily: body.prepaidFamily ?? null,
       },

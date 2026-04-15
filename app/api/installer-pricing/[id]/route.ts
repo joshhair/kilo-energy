@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchInstallerPricingSchema } from '../../../../lib/schemas/pricing';
 
 // PATCH /api/installer-pricing/[id] — Update pricing version (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchInstallerPricingSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const data: Record<string, unknown> = {};
   if (body.effectiveTo !== undefined) data.effectiveTo = body.effectiveTo;
@@ -16,9 +21,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.tiers) {
     await prisma.installerPricingTier.deleteMany({ where: { versionId: id } });
     await prisma.installerPricingTier.createMany({
-      data: body.tiers.map((t: { minKW: number; maxKW?: number | null; closerPerW: number; setterPerW?: number | null; kiloPerW: number; subDealerPerW?: number | null }) => ({
+      data: body.tiers.map((t) => ({
         versionId: id,
-        minKW: t.minKW ?? 0,
+        minKW: t.minKW,
         maxKW: t.maxKW ?? null,
         closerPerW: t.closerPerW,
         setterPerW: t.setterPerW ?? null,

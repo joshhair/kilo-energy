@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
+import { parseJsonBody } from '../../../lib/api-validation';
+import { createProductPricingSchema } from '../../../lib/schemas/pricing';
 
 // POST /api/product-pricing — Create a new product pricing version (admin only)
 export async function POST(req: NextRequest) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
-  const body = await req.json();
-  // body: { productId, label, effectiveFrom, closePreviousEffectiveTo?, tiers: [{minKW, maxKW, closerPerW, setterPerW, kiloPerW, subDealerPerW?}] }
+
+  const parsed = await parseJsonBody(req, createProductPricingSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   if (body.closePreviousEffectiveTo) {
     await prisma.productPricingVersion.updateMany({
@@ -22,8 +26,8 @@ export async function POST(req: NextRequest) {
       effectiveFrom: body.effectiveFrom,
       effectiveTo: body.effectiveTo ?? null,
       tiers: {
-        create: (body.tiers || []).map((t: { minKW: number; maxKW?: number | null; closerPerW: number; setterPerW: number; kiloPerW: number; subDealerPerW?: number | null }) => ({
-          minKW: t.minKW ?? 0,
+        create: body.tiers.map((t) => ({
+          minKW: t.minKW,
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,

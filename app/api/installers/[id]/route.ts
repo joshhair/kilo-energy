@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchInstallerSchema } from '../../../../lib/schemas/pricing';
 
 // PATCH /api/installers/[id] — Update installer (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchInstallerSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const data: Record<string, unknown> = {};
   if (body.active !== undefined) data.active = body.active;

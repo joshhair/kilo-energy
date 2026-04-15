@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchProductSchema } from '../../../../lib/schemas/pricing';
 
 // PATCH /api/products/[id] — Update product name or replace active version tiers (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchProductSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   if (body.name !== undefined || body.family !== undefined) {
     const data: Record<string, unknown> = {};
@@ -15,14 +20,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await prisma.product.update({ where: { id }, data });
   }
 
-  if (Array.isArray(body.tiers)) {
+  if (body.tiers) {
     const activeVersion = await prisma.productPricingVersion.findFirst({
       where: { productId: id, effectiveTo: null },
     });
     if (activeVersion) {
       await prisma.productPricingTier.deleteMany({ where: { versionId: activeVersion.id } });
       await prisma.productPricingTier.createMany({
-        data: body.tiers.map((t: { minKW: number; maxKW: number | null; closerPerW: number; setterPerW: number; kiloPerW: number; subDealerPerW?: number }) => ({
+        data: body.tiers.map((t) => ({
           versionId: activeVersion.id,
           minKW: t.minKW,
           maxKW: t.maxKW ?? null,

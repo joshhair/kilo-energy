@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireAdminOrPM } from '../../../../lib/api-auth';
+import { parseJsonBody } from '../../../../lib/api-validation';
+import { patchPayrollEntrySchema } from '../../../../lib/schemas/pricing';
 
 // PATCH /api/payroll/[id] — Update a single payroll entry (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  const body = await req.json();
+
+  const parsed = await parseJsonBody(req, patchPayrollEntrySchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const ALLOWED_TRANSITIONS: Record<string, string> = {
     Draft: 'Pending',
