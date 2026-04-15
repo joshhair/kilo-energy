@@ -724,7 +724,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const total = repPayroll
-        .filter((p) => p.date.startsWith(key) && p.status === 'Paid')
+        .filter((p) => p.date?.startsWith(key) && p.status === 'Paid')
         .reduce((s, p) => s + p.amount, 0);
       months.push(total);
     }
@@ -859,11 +859,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <button
                 onClick={() => {
                   const snapshot = assignment;
-                  let snapshotIndex = -1;
-                  setTrainerAssignments((prev) => {
-                    snapshotIndex = prev.findIndex((a) => a.id === snapshot.id);
-                    return prev.filter((a) => a.id !== snapshot.id);
-                  });
+                  const snapshotIndex = trainerAssignments.findIndex((a) => a.id === snapshot.id);
+                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
                   fetch('/api/trainer-assignments', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
