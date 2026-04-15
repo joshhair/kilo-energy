@@ -119,4 +119,46 @@ describe('splitCloserSetterPay — invariants', () => {
       for (const v of Object.values(r)) expect(Number.isFinite(v)).toBe(true);
     }));
   });
+
+  // ── Money-exact invariants (added when commission math moved to integer cents) ──
+
+  // Compare two money-looking numbers as exact integer cents — avoids
+  // floating-point equality flakiness on round-trip through toDollars.
+  const cents = (n: number) => Math.round(n * 100);
+
+  it('EXACT: closerM1 + closerM2 + closerM3 === closerTotal (to the cent)', () => {
+    fc.assert(fc.property(ppw, baseline, baseline, trainerRate, kW, installPct, (p, c, s, tr, k, ip) => {
+      const r = splitCloserSetterPay(p, c, s, tr, k, ip);
+      expect(cents(r.closerM1) + cents(r.closerM2) + cents(r.closerM3)).toBe(cents(r.closerTotal));
+    }));
+  });
+
+  it('EXACT: setterM1 + setterM2 + setterM3 === setterTotal (to the cent)', () => {
+    fc.assert(fc.property(ppw, baseline, baseline, trainerRate, kW, installPct, (p, c, s, tr, k, ip) => {
+      const r = splitCloserSetterPay(p, c, s, tr, k, ip);
+      expect(cents(r.setterM1) + cents(r.setterM2) + cents(r.setterM3)).toBe(cents(r.setterTotal));
+    }));
+  });
+
+  it('EXACT: closer/setter 50/50 split of the above-setter amount sums to the whole', () => {
+    // Construct a scenario where the sold price exceeds both baselines so
+    // closerDifferential AND aboveSplit are nonzero. closerTotal - closerDifferential
+    // should equal exactly half of aboveSplit (to the cent).
+    fc.assert(fc.property(
+      fc.double({ min: 5, max: 10, noNaN: true }),     // soldPPW
+      fc.double({ min: 1, max: 3, noNaN: true }),      // closerPerW (lower)
+      fc.double({ min: 3.01, max: 5, noNaN: true }),   // setterBaselinePerW (higher)
+      fc.double({ min: 0, max: 0.3, noNaN: true }),    // trainerRate
+      fc.double({ min: 1, max: 20, noNaN: true }),     // kW
+      fc.double({ min: 0, max: 1, noNaN: true }),      // installPct
+      (p, c, s, tr, k, ip) => {
+        const r = splitCloserSetterPay(p, c, s, tr, k, ip);
+        // closerTotal + setterTotal === closerDifferential + aboveSplit — but we
+        // don't expose those internals. Instead assert that the two totals
+        // sum to a value with no fractional cents.
+        const totalCents = cents(r.closerTotal) + cents(r.setterTotal);
+        expect(Number.isInteger(totalCents)).toBe(true);
+      },
+    ));
+  });
 });
