@@ -181,12 +181,17 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
                     <EyeOff className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => setDeleteConfirm({
-                      type: 'financer',
-                      id: fin.name,
-                      name: fin.name,
-                      message: 'This will not affect existing projects but will prevent new deals with this financer.',
-                    })}
+                    onClick={() => {
+                      const projectCount = projects.filter((p) => p.financer === fin.name).length;
+                      setDeleteConfirm({
+                        type: 'financer',
+                        id: fin.name,
+                        name: fin.name,
+                        message: projectCount > 0
+                          ? `This financer is used by ${projectCount} project${projectCount === 1 ? '' : 's'} and cannot be deleted. Archive it instead.`
+                          : 'This financer has no associated projects and will be permanently deleted.',
+                      });
+                    }}
                     title="Delete financer"
                     className="text-[var(--text-dim)] hover:text-red-400 transition-colors"
                   >
@@ -268,12 +273,17 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
                     <Eye className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => setDeleteConfirm({
-                      type: 'financer',
-                      id: fin.name,
-                      name: fin.name,
-                      message: 'This will not affect existing projects but will prevent new deals with this financer.',
-                    })}
+                    onClick={() => {
+                      const projectCount = projects.filter((p) => p.financer === fin.name).length;
+                      setDeleteConfirm({
+                        type: 'financer',
+                        id: fin.name,
+                        name: fin.name,
+                        message: projectCount > 0
+                          ? `This financer is used by ${projectCount} project${projectCount === 1 ? '' : 's'} and cannot be deleted. Archive it instead.`
+                          : 'This financer has no associated projects and will be permanently deleted.',
+                      });
+                    }}
                     title="Delete financer"
                     className="text-[var(--text-dim)] hover:text-red-400 transition-colors"
                   >

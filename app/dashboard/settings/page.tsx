@@ -233,10 +233,6 @@ function SettingsPageInner() {
           }).catch(console.error);
           setEditingAssignmentId(null);
         }
-        if (editingPrepaid) {
-          // handled inline
-          setEditingPrepaid(null);
-        }
       }
     };
     window.addEventListener('keydown', handler);
