@@ -22,16 +22,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  const joinStatus = (caller.role !== 'admin' && caller.id !== blitz.ownerId) ? 'pending' : (body.joinStatus ?? 'pending');
   let participant;
   try {
-    participant = await prisma.blitzParticipant.create({
-      data: {
-        blitzId,
-        userId: body.userId,
-        joinStatus: (caller.role !== 'admin' && caller.id !== blitz.ownerId) ? 'pending' : (body.joinStatus ?? 'pending'),
-      },
-      include: { user: true },
+    const existingParticipant = await prisma.blitzParticipant.findUnique({
+      where: { blitzId_userId: { blitzId, userId: body.userId } },
     });
+    if (existingParticipant) {
+      if (existingParticipant.joinStatus !== 'declined') {
+        return NextResponse.json({ error: 'Rep is already a participant in this blitz' }, { status: 409 });
+      }
+      // Re-add a previously declined rep by resetting their status
+      participant = await prisma.blitzParticipant.update({
+        where: { id: existingParticipant.id },
+        data: { joinStatus },
+        include: { user: true },
+      });
+    } else {
+      participant = await prisma.blitzParticipant.create({
+        data: { blitzId, userId: body.userId, joinStatus },
+        include: { user: true },
+      });
+    }
   } catch (e: unknown) {
     if ((e as { code?: string })?.code === 'P2002') {
       return NextResponse.json({ error: 'Rep is already a participant in this blitz' }, { status: 409 });

@@ -431,6 +431,8 @@ export default function BlitzDetailPage() {
     }
     fetch(`/api/blitzes/${blitzId}`).then((res) => res.json()).then((data) => {
       if (!data.error) setBlitz(data);
+    }).catch(() => {
+      toast('Failed to reload blitz', 'error');
     }).finally(() => {
       setUpdatingAttendance((s) => { const n = new Set(s); n.delete(userId); return n; });
     });
