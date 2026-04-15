@@ -29,9 +29,11 @@ function validateField(field: string, value: string): string {
     case 'solarTechProductId': return value ? '' : 'Product is required';
     case 'pcFamily':           return value ? '' : 'Product family is required';
     case 'installerProductId': return value ? '' : 'Product is required';
+    case 'prepaidSubType':     return value ? '' : 'Prepaid type is required';
+    case 'blitzId':            return value ? '' : 'Blitz is required';
     case 'kWSize':
       if (!value) return 'kW size is required';
-      if (parseFloat(value) <= 0) return 'Must be greater than 0';
+      if (parseFloat(value) < 1) return 'Must be at least 1 kW';
       return '';
     case 'netPPW':
       if (!value) return 'Net PPW is required';
@@ -268,9 +270,11 @@ export default function MobileNewDeal() {
   }, [currentStep]);
 
   // Blitz list
+  const [rawBlitzes, setRawBlitzes] = useState<any[]>([]);
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.json()).then((data) => {
+      setRawBlitzes(data ?? []);
       setAvailableBlitzes((data ?? []).filter((b: any) => {
         const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
         if (!statusOk) return false;
@@ -337,7 +341,8 @@ export default function MobileNewDeal() {
 
   // ── Derived values (mirrors desktop exactly) ─────────────────────────────
 
-  const closerId = currentRole === 'admin' ? form.repId : (currentRepId ?? '');
+  const currentRep = reps.find((r) => r.id === currentRepId);
+  const closerId = currentRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (currentRepId ?? ''));
 
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
   const solarTechFamilyProducts = solarTechProducts.filter((p) => p.family === solarTechFamily);
@@ -572,6 +577,18 @@ export default function MobileNewDeal() {
     }
     setErrors(newErrors);
     if (hasErrors) {
+      submittingRef.current = false;
+      return;
+    }
+
+    if (closerPerW === 0 && kW > 0 && soldPPW > 0) {
+      toast('No pricing baseline found for this system size. Check that a matching tier exists for this product and kW.', 'error');
+      submittingRef.current = false;
+      return;
+    }
+
+    if (form.setterId && setterBaselinePerW === 0 && kW > 0 && soldPPW > 0) {
+      toast('No setter pricing baseline found for this product. Remove the setter or fix the product pricing before submitting.', 'error');
       submittingRef.current = false;
       return;
     }
