@@ -17,7 +17,8 @@
     "test:all": "vitest run && tsc --noEmit",
     "backup:now": "node scripts/backup-turso.mjs",
     "restore:from": "node scripts/restore-turso.mjs",
-    "test:e2e:setup": "tsx scripts/seed-e2e-users.mts"
+    "test:e2e:setup": "tsx scripts/seed-e2e-users.mts",
+    "load:test": "tsx scripts/load-test.mts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
