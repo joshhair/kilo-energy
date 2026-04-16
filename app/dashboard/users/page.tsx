@@ -754,7 +754,19 @@ function UsersPageInner() {
       {canManageReps && (
         <div className="mb-6">
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              // Pre-select the role that matches the currently active tab so
+              // clicking "Add User" from the Admins tab defaults to Admin
+              // (not Rep), which otherwise showed rep-specific fields like
+              // Rep type / Trainer and felt broken.
+              if (roleFilter === 'admin' || roleFilter === 'project_manager' || roleFilter === 'sub-dealer') {
+                setNewUserRole(roleFilter);
+              } else if (roleFilter === 'rep') {
+                setNewUserRole('rep');
+              }
+              // 'all' tab keeps whatever was last picked.
+              setShowAddModal(true);
+            }}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
             style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
           >
