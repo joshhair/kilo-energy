@@ -69,7 +69,7 @@ export default function PrivacyPage() {
         <li><strong>Correction</strong>: edit your name or phone in Settings, or ask your admin.</li>
         <li>
           <strong>Erasure</strong>: email{' '}
-          <a href="mailto:privacy@kilo-energy.com" className="text-emerald-400 hover:underline">privacy@kilo-energy.com</a>
+          <a href="mailto:privacy@kiloenergies.com" className="text-emerald-400 hover:underline">privacy@kiloenergies.com</a>
           {' '}from the address on file. An admin will anonymize your record via{' '}
           <code className="text-emerald-300 bg-white/5 px-1.5 py-0.5 rounded">POST /api/users/&lt;id&gt;/erase</code>
           {' '}within 30 days. Historical financial rows are retained (tax / commission audit), but no longer attributable
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
 
       <h2 className="text-xl font-bold text-white mt-8 mb-3">Contact</h2>
       <p>
-        Privacy questions: <a href="mailto:privacy@kilo-energy.com" className="text-emerald-400 hover:underline">privacy@kilo-energy.com</a>
+        Privacy questions: <a href="mailto:privacy@kiloenergies.com" className="text-emerald-400 hover:underline">privacy@kiloenergies.com</a>
       </p>
     </>
   );

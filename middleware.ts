@@ -5,6 +5,9 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)',
+  // Legal pages must be readable without auth — linked from the sign-in
+  // footer; people need to read privacy/terms before creating an account.
+  '/legal/(.*)',
 ]);
 
 // State-changing HTTP methods. GET/HEAD/OPTIONS can't mutate, so they

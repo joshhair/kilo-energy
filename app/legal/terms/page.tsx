@@ -71,7 +71,7 @@ export default function TermsPage() {
 
       <h2 className="text-xl font-bold text-white mt-8 mb-3">10. Contact</h2>
       <p>
-        Questions about these terms: <a href="mailto:legal@kilo-energy.com" className="text-emerald-400 hover:underline">legal@kilo-energy.com</a>
+        Questions about these terms: <a href="mailto:legal@kiloenergies.com" className="text-emerald-400 hover:underline">legal@kiloenergies.com</a>
       </p>
     </>
   );
