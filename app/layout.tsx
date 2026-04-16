@@ -37,7 +37,13 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
       <html lang="en" className="h-full">
-        <body className="min-h-full text-white antialiased" style={{ backgroundColor: 'var(--navy-base)' }}>
+        {/* NOTE: deliberately NOT using Tailwind's `antialiased` class here.
+             That utility applies -webkit-font-smoothing:antialiased which
+             is Mac-retina-optimized and renders lighter/fuzzier text on
+             Windows 1080p displays (Josh flagged blur twice). Default
+             subpixel rendering is the right call; the globals.css note at
+             line 124 has the longer explanation. */}
+        <body className="min-h-full text-white" style={{ backgroundColor: 'var(--navy-base)' }}>
           <AppProvider>
             <ToastProvider>
               {children}
