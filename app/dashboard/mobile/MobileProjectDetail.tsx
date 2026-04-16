@@ -305,6 +305,18 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   if (project.setterId) {
     infoRows.push(['Setter', project.setterName ?? '']);
   }
+  // Tag-team co-parties — display names after primary closer/setter so
+  // a mobile user can see the full attribution at a glance.
+  if (project.additionalClosers && project.additionalClosers.length > 0) {
+    for (const co of project.additionalClosers) {
+      infoRows.push([`Co-closer #${co.position}`, co.userName]);
+    }
+  }
+  if (project.additionalSetters && project.additionalSetters.length > 0) {
+    for (const co of project.additionalSetters) {
+      infoRows.push([`Co-setter #${co.position}`, co.userName]);
+    }
+  }
   if (project.leadSource) {
     infoRows.push(['Lead Source', project.leadSource === 'door_knock' ? 'Door Knock' : project.leadSource]);
   }

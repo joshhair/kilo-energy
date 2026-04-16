@@ -16,6 +16,8 @@ import { Check, Loader2, PlusCircle, RotateCcw } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
+import { evenSplit } from '../../../lib/commission-split';
 import MobileNewDeal from '../mobile/MobileNewDeal';
 
 import { SubmittedDeal, DEAL_STEPS, validateField, genId, FieldError, PpwHint } from './components/shared';
@@ -61,6 +63,11 @@ function NewDealPage() {
     prepaidSubType: '',
     leadSource: '',
     blitzId: '',
+    // Tag-team co-parties — admin-only in practice (primary closer/setter
+    // filters strip non-closers/non-setters; co-parties follow the same
+    // picker filters). Strings because the inputs are controlled.
+    additionalClosers: [] as CoPartyDraft[],
+    additionalSetters: [] as CoPartyDraft[],
   });
 
   const [view, setView] = useState<'entry' | 'form'>('entry');
@@ -211,7 +218,9 @@ function NewDealPage() {
   };
 
   const handleBlur = (field: string) => {
-    const value = form[field as keyof typeof form] ?? '';
+    const raw = form[field as keyof typeof form];
+    // Array fields (co-parties) aren't blur-validated; only string inputs are.
+    const value = typeof raw === 'string' ? raw : '';
     setErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
     setTouched((prev) => { const next = new Set(prev); next.add(field); return next; });
   };
@@ -391,7 +400,8 @@ function NewDealPage() {
   // ── Stepper: section completion & progress ────────────────────────────────
 
   const isFieldValid = (field: string) => {
-    const value = (form as Record<string, string>)[field] ?? '';
+    const raw = form[field as keyof typeof form];
+    const value = typeof raw === 'string' ? raw : '';
     return !validateField(field, value);
   };
 
@@ -445,7 +455,8 @@ function NewDealPage() {
     const stepErrors: Record<string, string> = {};
     let hasStepErrors = false;
     for (const field of stepFields) {
-      const value = (form as Record<string, string>)[field] ?? '';
+      const raw = form[field as keyof typeof form];
+      const value = typeof raw === 'string' ? raw : '';
       const error = validateField(field, value);
       stepErrors[field] = error;
       if (error) hasStepErrors = true;
@@ -511,7 +522,8 @@ function NewDealPage() {
     const newErrors: Record<string, string> = {};
     let hasErrors = false;
     for (const field of fieldsToValidate) {
-      const value = form[field as keyof typeof form] ?? '';
+      const raw = form[field as keyof typeof form];
+      const value = typeof raw === 'string' ? raw : '';
       const error = validateField(field, value);
       newErrors[field] = error;
       if (error) hasErrors = true;
@@ -592,6 +604,42 @@ function NewDealPage() {
     const setter = form.setterId ? reps.find((r) => r.id === form.setterId) : null;
     const projectId = genId('proj');
 
+    // ── Tag-team serialization ──────────────────────────────────────────
+    // Drop incomplete rows (no user picked), then parse each amount string
+    // to a number. Primary's m1/m2/m3 get reduced by the sum of co-party
+    // cuts so the deal's total closer/setter commission stays consistent
+    // with what the pricing calc returned — no double-counting.
+    const parseNum = (v: string): number => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const cleanAdditionalClosers = form.additionalClosers
+      .filter((c) => !!c.userId && c.userId !== closerId)
+      .map((c, i) => ({
+        userId: c.userId,
+        userName: reps.find((r) => r.id === c.userId)?.name ?? '',
+        m1Amount: parseNum(c.m1Amount),
+        m2Amount: parseNum(c.m2Amount),
+        m3Amount: c.m3Amount.trim() === '' ? null : parseNum(c.m3Amount),
+        position: i + 1,
+      }));
+    const cleanAdditionalSetters = form.additionalSetters
+      .filter((s) => !!s.userId && s.userId !== form.setterId)
+      .map((s, i) => ({
+        userId: s.userId,
+        userName: reps.find((r) => r.id === s.userId)?.name ?? '',
+        m1Amount: parseNum(s.m1Amount),
+        m2Amount: parseNum(s.m2Amount),
+        m3Amount: s.m3Amount.trim() === '' ? null : parseNum(s.m3Amount),
+        position: i + 1,
+      }));
+    const coCloserM1Sum = cleanAdditionalClosers.reduce((a, b) => a + b.m1Amount, 0);
+    const coCloserM2Sum = cleanAdditionalClosers.reduce((a, b) => a + b.m2Amount, 0);
+    const coCloserM3Sum = cleanAdditionalClosers.reduce((a, b) => a + (b.m3Amount ?? 0), 0);
+    const coSetterM1Sum = cleanAdditionalSetters.reduce((a, b) => a + b.m1Amount, 0);
+    const coSetterM2Sum = cleanAdditionalSetters.reduce((a, b) => a + b.m2Amount, 0);
+    const coSetterM3Sum = cleanAdditionalSetters.reduce((a, b) => a + (b.m3Amount ?? 0), 0);
+
     const newProject: Project = {
       id: projectId,
       customerId: genId('cust'),
@@ -608,14 +656,16 @@ function NewDealPage() {
       netPPW: soldPPW,
       phase: 'New',
       m1Paid: false,
-      m1Amount: isSubDealer ? 0 : closerM1,
+      m1Amount: isSubDealer ? 0 : Math.max(0, closerM1 - coCloserM1Sum),
       m2Paid: false,
-      m2Amount: isSubDealer ? subDealerCommission : closerM2,
-      m3Amount: isSubDealer ? 0 : closerM3,
+      m2Amount: isSubDealer ? subDealerCommission : Math.max(0, closerM2 - coCloserM2Sum),
+      m3Amount: isSubDealer ? 0 : Math.max(0, closerM3 - coCloserM3Sum),
       m3Paid: false,
-      setterM1Amount: isSubDealer ? 0 : setterM1,
-      setterM2Amount: isSubDealer ? 0 : setterM2,
-      setterM3Amount: isSubDealer ? 0 : setterM3,
+      setterM1Amount: isSubDealer ? 0 : Math.max(0, setterM1 - coSetterM1Sum),
+      setterM2Amount: isSubDealer ? 0 : Math.max(0, setterM2 - coSetterM2Sum),
+      setterM3Amount: isSubDealer ? 0 : Math.max(0, setterM3 - coSetterM3Sum),
+      additionalClosers: cleanAdditionalClosers,
+      additionalSetters: cleanAdditionalSetters,
       notes: form.notes,
       flagged: false,
       solarTechProductId: form.installer === 'SolarTech' && hasSolarTechProducts ? form.solarTechProductId : undefined,
@@ -861,6 +911,65 @@ function NewDealPage() {
                   </p>
                 )}
               </div>
+
+              {/* ── Tag-team: co-closers + co-setters ──
+                  Admin-only. Default behavior on first-add: evenly split
+                  the calculated closer/setter commission across [primary
+                  + the new row] via evenSplit(). Admin can then override
+                  any amount. On submit, the primary's m1/m2/m3 get
+                  reduced by the sum of each co-party's cut (so the deal
+                  total stays consistent with what the pricing calc
+                  returned). */}
+              {currentRole === 'admin' && (
+                <>
+                  <CoPartySection
+                    label="Co-closers"
+                    rows={form.additionalClosers}
+                    primaryUserId={form.repId}
+                    excludeUserIds={[form.setterId, ...form.additionalClosers.map((c) => c.userId), ...form.additionalSetters.map((s) => s.userId)].filter(Boolean)}
+                    repTypeFilter={(r) => r.repType !== 'setter'}
+                    reps={reps}
+                    onChange={(rows) => setForm((f) => ({ ...f, additionalClosers: rows }))}
+                    onFirstAdd={() => {
+                      // Split the computed closer commission evenly between
+                      // primary + one new co-closer.
+                      if (!closerTotal || closerTotal <= 0) return;
+                      const m1 = evenSplit(closerM1, 2);
+                      const m2 = evenSplit(closerM2, 2);
+                      const m3 = evenSplit(closerM3, 2);
+                      setForm((f) => ({
+                        ...f,
+                        additionalClosers: [
+                          { userId: '', m1Amount: String(m1[1]), m2Amount: String(m2[1]), m3Amount: m3[1] ? String(m3[1]) : '' },
+                        ],
+                      }));
+                    }}
+                  />
+                  <CoPartySection
+                    label="Co-setters"
+                    rows={form.additionalSetters}
+                    primaryUserId={form.setterId}
+                    excludeUserIds={[form.repId, form.setterId, ...form.additionalSetters.map((s) => s.userId), ...form.additionalClosers.map((c) => c.userId)].filter(Boolean)}
+                    repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
+                    reps={reps}
+                    onChange={(rows) => setForm((f) => ({ ...f, additionalSetters: rows }))}
+                    disabled={!form.setterId}
+                    disabledReason="Select a primary setter first to add co-setters."
+                    onFirstAdd={() => {
+                      if (!setterTotal || setterTotal <= 0) return;
+                      const m1 = evenSplit(setterM1, 2);
+                      const m2 = evenSplit(setterM2, 2);
+                      const m3 = evenSplit(setterM3, 2);
+                      setForm((f) => ({
+                        ...f,
+                        additionalSetters: [
+                          { userId: '', m1Amount: String(m1[1]), m2Amount: String(m2[1]), m3Amount: m3[1] ? String(m3[1]) : '' },
+                        ],
+                      }));
+                    }}
+                  />
+                </>
+              )}
             </div>
             )}
 

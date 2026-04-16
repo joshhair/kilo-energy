@@ -1028,6 +1028,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           leadSource: project.leadSource || null,
           blitzId: project.blitzId || null,
           subDealerId: project.subDealerId || null,
+          // Tag-team co-parties (optional). Each entry carries wire dollars;
+          // the API seam converts to cents.
+          additionalClosers: (project.additionalClosers ?? []).map((c) => ({
+            userId: c.userId,
+            m1Amount: c.m1Amount,
+            m2Amount: c.m2Amount,
+            m3Amount: c.m3Amount ?? undefined,
+            position: c.position,
+          })),
+          additionalSetters: (project.additionalSetters ?? []).map((s) => ({
+            userId: s.userId,
+            m1Amount: s.m1Amount,
+            m2Amount: s.m2Amount,
+            m3Amount: s.m3Amount ?? undefined,
+            position: s.position,
+          })),
         }),
       }).then(async (res) => {
         if (!res.ok) {
