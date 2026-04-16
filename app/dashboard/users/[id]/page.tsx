@@ -532,6 +532,65 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
+        {/* Sales preferences (admin viewing an admin) — sets repType so the
+            admin appears in closer/setter dropdowns on new deals and gets a
+            My Pay tab scoped to their own earnings. Non-admin roles either
+            don't have this (PMs) or already have it by default (reps). */}
+        {resolvedUser.role === 'admin' && currentRole === 'admin' && (
+          <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <h2 className="text-white font-bold text-base mb-2">Sales</h2>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+              Set this if {resolvedUser.id === currentRepId ? 'you' : 'this admin'} also sells deals. Once set, {resolvedUser.id === currentRepId ? 'you' : 'they'} appear in closer/setter pickers on new deals and get a My Pay tab with {resolvedUser.id === currentRepId ? 'your' : 'their'} own earnings.
+            </p>
+            <div className="flex items-center gap-3">
+              <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Role for deals
+              </label>
+              <select
+                value={resolvedUser.repType ?? ''}
+                onChange={async (e) => {
+                  const newRepType = e.target.value === '' ? null : e.target.value;
+                  try {
+                    const res = await fetch(`/api/users/${id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ repType: newRepType }),
+                    });
+                    if (!res.ok) {
+                      const err = await res.json().catch(() => ({}));
+                      throw new Error(err.error ?? 'Failed to save');
+                    }
+                    // Reflect locally — the next /api/data hydrate will pick
+                    // this admin up in the reps array (if repType is set) or
+                    // drop them (if cleared). The My Pay tab + dropdown
+                    // presence follow from that.
+                    if (fetchedUser) {
+                      // Store empty string for null to match FetchedUser.repType shape.
+                      setFetchedUser({ ...fetchedUser, repType: newRepType ?? '' });
+                    }
+                    setMetaRefreshKey((k) => k + 1);
+                    toast(newRepType ? `Saved — ${resolvedUser.id === currentRepId ? 'you' : 'they'} now appear as a ${newRepType}` : 'Saved — pure-admin mode', 'success');
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : 'Failed to save', 'error');
+                  }
+                }}
+                className="rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+              >
+                <option value="">Not a seller (admin-only)</option>
+                <option value="closer">Closer</option>
+                <option value="setter">Setter</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            {resolvedUser.id === currentRepId && (
+              <p className="text-[11px] mt-3" style={{ color: 'var(--text-dim)' }}>
+                Refresh the page after changing this to see the My Pay tab update in the nav.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Permissions card (PM only) */}
         {resolvedUser.role === 'project_manager' && currentRole === 'admin' && (
           <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>

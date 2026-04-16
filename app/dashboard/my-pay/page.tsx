@@ -103,7 +103,7 @@ export default function MyPayPage() {
 function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, currentRepName, effectiveRepId, effectiveRepName, isViewingAs, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { currentRole, effectiveRole, currentRepId, currentRepName, currentUserRepType, effectiveRepId, effectiveRepName, isViewingAs, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -365,7 +365,12 @@ function MyPayPageInner() {
 
   if (isMobile) return <MobileMyPay />;
 
-  if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer') {
+  // Admins with a repType set are selling admins — they see their own
+  // earnings here (filtered by repId like any rep). Admins without a
+  // repType are pure-admin and get the same "rep view only" gate as
+  // before. PMs are blocked above regardless.
+  const adminMaySellCheck = effectiveRole === 'admin' && !!currentUserRepType;
+  if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer' && !adminMaySellCheck) {
     return (
       <div className="p-8 text-center">
         <p className="text-[var(--text-muted)] text-sm">My Pay is only available in the rep view.</p>

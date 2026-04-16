@@ -41,11 +41,21 @@ export default function LoginPage() {
         if (res.ok) {
           const user = await res.json();
           // user.role is 'admin' | 'rep' | 'sub-dealer' | 'project_manager'
-          setRole(user.role, user.id, user.name, user.role === 'project_manager' ? {
-            canExport: user.canExport ?? false,
-            canCreateDeals: user.canCreateDeals ?? false,
-            canAccessBlitz: user.canAccessBlitz ?? false,
-          } : undefined);
+          setRole(
+            user.role,
+            user.id,
+            user.name,
+            user.role === 'project_manager'
+              ? {
+                  canExport: user.canExport ?? false,
+                  canCreateDeals: user.canCreateDeals ?? false,
+                  canAccessBlitz: user.canAccessBlitz ?? false,
+                }
+              : undefined,
+            // Pass repType so the context can enable "admin who sells" surfaces
+            // (My Pay tab, rep-dropdown visibility) on the signed-in session.
+            user.repType ?? null,
+          );
           router.push('/dashboard');
         } else if (res.status === 404) {
           setError('Access denied — your account is not registered. Contact your administrator.');

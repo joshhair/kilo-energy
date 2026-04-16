@@ -24,7 +24,11 @@ interface AppContextType {
   currentRole: Role;
   currentRepId: string | null;
   currentRepName: string | null;
-  setRole: (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }) => void;
+  /// Signed-in user's repType, if any. Drives "admin who also sells"
+  /// surfaces: rep-dropdown visibility, My Pay tab injection, My Pay
+  /// access gate. Null for pure admins / PMs.
+  currentUserRepType: 'closer' | 'setter' | 'both' | null;
+  setRole: (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }, repType?: 'closer' | 'setter' | 'both' | null) => void;
   logout: () => void;
   projects: Project[];
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
@@ -146,6 +150,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('kilo-rep-name') ?? null;
   });
+  // Signed-in user's own repType, populated from /api/auth/me. Changes when
+  // the admin toggles their sales preferences (next /api/auth/me refresh)
+  // or during view-as mode (below — we swap to the target's repType so
+  // rep-dropdown + My Pay gating reflects the viewed-as user's capability).
+  const [currentUserRepType, setCurrentUserRepType] = useState<'closer' | 'setter' | 'both' | null>(null);
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const [payrollEntries, setPayrollEntries] = useState<PayrollEntry[]>(PAYROLL_ENTRIES);
   const payrollEntriesRef = useRef(payrollEntries);
@@ -926,10 +935,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   } = installerActions;
   const getInstallerPrepaidOptions = (installer: string) => installerPrepaidOptions[installer] ?? [];
 
-  const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }) => {
+  const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }, repType?: 'closer' | 'setter' | 'both' | null) => {
     setCurrentRole(role);
     setCurrentRepId(repId ?? null);
     setCurrentRepName(repName ?? null);
+    setCurrentUserRepType(repType ?? null);
     setPmPermissions(role === 'project_manager' && pmPerms ? pmPerms : null);
     if (role) localStorage.setItem('kilo-role', role);
     else localStorage.removeItem('kilo-role');
@@ -943,6 +953,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentRole(null);
     setCurrentRepId(null);
     setCurrentRepName(null);
+    setCurrentUserRepType(null);
     setViewAsUserState(null);
     setPmPermissions(null);
     localStorage.removeItem('kilo-role');
@@ -1070,6 +1081,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentRole,
         currentRepId,
         currentRepName,
+        currentUserRepType,
         setRole,
         logout,
         projects,

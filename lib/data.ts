@@ -94,7 +94,10 @@ export interface Rep {
   name: string; // computed display name (keep for backward compat)
   email: string;
   phone: string;
-  role: 'rep' | 'sub-dealer';
+  /// Union includes 'admin' for the "admin who also sells" case — those
+  /// users appear in this list only when they have a repType set. The UI
+  /// filters by repType, not role, so the union expansion is additive.
+  role: 'rep' | 'sub-dealer' | 'admin';
   repType: 'closer' | 'setter' | 'both';
   active: boolean;
   /// True when a clerkUserId is present on the User row — i.e. they have

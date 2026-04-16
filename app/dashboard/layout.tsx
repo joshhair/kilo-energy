@@ -14,6 +14,7 @@ import {
   HelpCircle,
   PlusCircle,
   Tent,
+  Wallet,
   Eye,
   XCircle,
 } from 'lucide-react';
@@ -257,7 +258,7 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentRole, currentRepName, currentRepId, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, effectiveRepName, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers } = useApp();
+  const { currentRole, currentRepName, currentRepId, currentUserRepType, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, effectiveRepName, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers } = useApp();
   const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
@@ -466,7 +467,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Use effectiveRole for View As, currentRole for actual role
   const roleForNav = isViewingAs ? effectiveRole : currentRole;
-  const navItems = roleForNav === 'admin' ? ADMIN_NAV
+
+  // Admins who also sell deals get a "My Pay" tab inserted into their nav.
+  // Insertion point is right after "Projects" so the ordering matches
+  // REP_NAV for muscle memory. Admins without a repType stay on pristine
+  // ADMIN_NAV. Not shown during view-as (rep nav is used in that mode).
+  const adminNavWithPay = !isViewingAs && currentUserRepType
+    ? [
+        ...ADMIN_NAV.slice(0, 3),
+        { href: '/dashboard/my-pay', label: 'My Pay', icon: Wallet },
+        ...ADMIN_NAV.slice(3),
+      ]
+    : ADMIN_NAV;
+
+  const navItems = roleForNav === 'admin' ? adminNavWithPay
     : roleForNav === 'project_manager' ? buildPmNav()
     : roleForNav === 'sub-dealer' ? SUB_DEALER_NAV
     : repNav;

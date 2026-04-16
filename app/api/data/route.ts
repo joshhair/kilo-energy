@@ -143,10 +143,13 @@ export async function GET() {
   ]);
 
   // ─── Reps: strip PII (email, phone) for non-admin viewers ───
-  // Reps still need the list (to pick a setter in new-deal form, to display
-  // names on shared deals), but not contact info.
+  // Includes (a) every user with role='rep', and (b) admins who have opted
+  // in to selling by setting a repType. Admins without a repType stay out
+  // of the list — they're pure-admin and shouldn't appear in closer/setter
+  // dropdowns. The `role` field is preserved as-is so the client can
+  // distinguish selling admins from regular reps if it needs to.
   const reps = users
-    .filter((u) => u.role === 'rep')
+    .filter((u) => u.role === 'rep' || (u.role === 'admin' && !!u.repType))
     .map((u) => ({
       id: u.id,
       firstName: u.firstName,
@@ -154,7 +157,7 @@ export async function GET() {
       name: `${u.firstName} ${u.lastName}`,
       email: isAdmin ? u.email : '',
       phone: isAdmin ? u.phone : '',
-      role: 'rep' as const,
+      role: u.role as 'rep' | 'admin',
       repType: u.repType as 'closer' | 'setter' | 'both',
       active: u.active,
       ...(isAdmin ? { hasClerkAccount: !!u.clerkUserId } : {}),
