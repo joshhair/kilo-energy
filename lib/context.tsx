@@ -1,7 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { PROJECTS, PAYROLL_ENTRIES, REIMBURSEMENTS, TRAINER_ASSIGNMENTS, INCENTIVES, INSTALLERS, FINANCERS, Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, REPS, Rep, SubDealer, SUB_DEALERS, NON_SOLARTECH_BASELINES, SOLARTECH_PRODUCTS, InstallerBaseline, SolarTechProduct, INSTALLER_PRICING_VERSIONS, InstallerPricingVersion, InstallerRates, PRODUCT_CATALOG_INSTALLER_CONFIGS, PRODUCT_CATALOG_PRODUCTS, ProductCatalogInstallerConfig, ProductCatalogProduct, PREPAID_OPTIONS, Phase, PRODUCT_CATALOG_PRICING_VERSIONS, ProductCatalogPricingVersion, ProductCatalogTier, INSTALLER_PAY_CONFIGS, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
+// Seed-data imports (PROJECTS, REPS, PAYROLL_ENTRIES, …) were removed
+// when the initial React state switched to empty arrays — see the
+// comment near the useState calls below. We now import only the type
+// symbols + helper functions, not the pre-DB fixture arrays.
+import { Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, Rep, SubDealer, NON_SOLARTECH_BASELINES, InstallerBaseline, SolarTechProduct, InstallerPricingVersion, InstallerRates, ProductCatalogInstallerConfig, ProductCatalogProduct, Phase, ProductCatalogPricingVersion, ProductCatalogTier, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
 import { getM1PayDate, getM2PayDate, localDateString } from './utils';
 import { persistFetch, emitPersistError } from './persist';
 import { createUserActions } from './context/users';
@@ -155,32 +159,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // or during view-as mode (below — we swap to the target's repType so
   // rep-dropdown + My Pay gating reflects the viewed-as user's capability).
   const [currentUserRepType, setCurrentUserRepType] = useState<'closer' | 'setter' | 'both' | null>(null);
-  const [projects, setProjects] = useState<Project[]>(PROJECTS);
-  const [payrollEntries, setPayrollEntries] = useState<PayrollEntry[]>(PAYROLL_ENTRIES);
+  // Initial state is empty across the board. Previously these were
+  // seeded with the pre-DB-era constants (PROJECTS, PAYROLL_ENTRIES, …)
+  // from lib/data.ts, which caused a flash of *dummy* data on every
+  // refresh: pages rendered with Alex Rivera's fake deals + fake payroll
+  // entries for a few hundred ms before /api/data replaced them. Nav
+  // badges (Draft payroll count, project counts) showed wrong numbers
+  // in the same window. Starting empty avoids that — pages that can
+  // render "no data yet" gracefully do so; others gate on dbReady.
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [payrollEntries, setPayrollEntries] = useState<PayrollEntry[]>([]);
   const payrollEntriesRef = useRef(payrollEntries);
   payrollEntriesRef.current = payrollEntries;
-  const [reimbursements, setReimbursements] = useState<Reimbursement[]>(REIMBURSEMENTS);
-  const [trainerAssignments, setTrainerAssignments] = useState<TrainerAssignment[]>(TRAINER_ASSIGNMENTS);
-  const [incentives, setIncentives] = useState<Incentive[]>(INCENTIVES);
-  const [installers, setInstallers] = useState<ManagedItem[]>(INSTALLERS.map((name) => ({ name, active: true })));
-  const [financers, setFinancers] = useState<ManagedItem[]>(FINANCERS.map((name) => ({ name, active: true })));
-  const [reps, setReps] = useState<Rep[]>(REPS.map((r) => ({ ...r })));
+  const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
+  const [trainerAssignments, setTrainerAssignments] = useState<TrainerAssignment[]>([]);
+  const [incentives, setIncentives] = useState<Incentive[]>([]);
+  const [installers, setInstallers] = useState<ManagedItem[]>([]);
+  const [financers, setFinancers] = useState<ManagedItem[]>([]);
+  const [reps, setReps] = useState<Rep[]>([]);
   const repsRef = useRef(reps);
   repsRef.current = reps;
   const projectsRef = useRef(projects);
   projectsRef.current = projects;
   const trainerAssignmentsRef = useRef(trainerAssignments);
   trainerAssignmentsRef.current = trainerAssignments;
-  const [subDealers, setSubDealers] = useState<SubDealer[]>(SUB_DEALERS.map((sd) => ({ ...sd })));
-  const [installerPricingVersions, setInstallerPricingVersions] = useState<InstallerPricingVersion[]>(INSTALLER_PRICING_VERSIONS.map((v) => ({ ...v })));
-  const [solarTechProducts, setSolarTechProducts] = useState<SolarTechProduct[]>(SOLARTECH_PRODUCTS.map((p) => ({ ...p, tiers: p.tiers.map((t) => ({ ...t })) })));
-  const [productCatalogInstallerConfigs, setProductCatalogInstallerConfigs] = useState<Record<string, ProductCatalogInstallerConfig>>({ ...PRODUCT_CATALOG_INSTALLER_CONFIGS });
-  const [productCatalogProducts, setProductCatalogProducts] = useState<ProductCatalogProduct[]>(PRODUCT_CATALOG_PRODUCTS.map((p) => ({ ...p, tiers: p.tiers.map((t) => ({ ...t })) })));
-  const [productCatalogPricingVersions, setProductCatalogPricingVersions] = useState<ProductCatalogPricingVersion[]>(PRODUCT_CATALOG_PRICING_VERSIONS.map((v) => ({ ...v, tiers: v.tiers.map((t) => ({ ...t })) })));
-  const [installerPrepaidOptions, setInstallerPrepaidOptions] = useState<Record<string, string[]>>({
-    'SolarTech': [...PREPAID_OPTIONS],
-  });
-  const [installerPayConfigs, setInstallerPayConfigs] = useState<Record<string, InstallerPayConfig>>({ ...INSTALLER_PAY_CONFIGS });
+  const [subDealers, setSubDealers] = useState<SubDealer[]>([]);
+  const [installerPricingVersions, setInstallerPricingVersions] = useState<InstallerPricingVersion[]>([]);
+  const [solarTechProducts, setSolarTechProducts] = useState<SolarTechProduct[]>([]);
+  const [productCatalogInstallerConfigs, setProductCatalogInstallerConfigs] = useState<Record<string, ProductCatalogInstallerConfig>>({});
+  const [productCatalogProducts, setProductCatalogProducts] = useState<ProductCatalogProduct[]>([]);
+  const [productCatalogPricingVersions, setProductCatalogPricingVersions] = useState<ProductCatalogPricingVersion[]>([]);
+  const [installerPrepaidOptions, setInstallerPrepaidOptions] = useState<Record<string, string[]>>({});
+  const [installerPayConfigs, setInstallerPayConfigs] = useState<Record<string, InstallerPayConfig>>({});
   const [dbReady, setDbReady] = useState(false);
   const [dataError, setDataError] = useState(false);
   const [unreadMentionCount, setUnreadMentionCount] = useState(0);
