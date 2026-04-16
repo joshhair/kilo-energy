@@ -51,6 +51,27 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   if (updates.setterId !== undefined) dbUpdates.setterId = updates.setterId;
   if (updates.soldDate !== undefined) dbUpdates.soldDate = updates.soldDate;
   if (updates.baselineOverride !== undefined) dbUpdates.baselineOverrideJson = updates.baselineOverride ? JSON.stringify(updates.baselineOverride) : null;
+  // Tag-team co-parties flow straight through to the API, which treats them
+  // as full-replace arrays. Each entry carries wire-format dollars; the API
+  // serializer converts to cents.
+  if (updates.additionalClosers !== undefined) {
+    dbUpdates.additionalClosers = updates.additionalClosers.map((c) => ({
+      userId: c.userId,
+      m1Amount: c.m1Amount,
+      m2Amount: c.m2Amount,
+      m3Amount: c.m3Amount ?? undefined,
+      position: c.position,
+    }));
+  }
+  if (updates.additionalSetters !== undefined) {
+    dbUpdates.additionalSetters = updates.additionalSetters.map((s) => ({
+      userId: s.userId,
+      m1Amount: s.m1Amount,
+      m2Amount: s.m2Amount,
+      m3Amount: s.m3Amount ?? undefined,
+      position: s.position,
+    }));
+  }
   return dbUpdates;
 }
 

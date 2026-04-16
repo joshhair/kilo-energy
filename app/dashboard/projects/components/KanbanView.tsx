@@ -277,8 +277,20 @@ export default function KanbanView({
                           <p className="text-[var(--text-muted)] text-xs mt-0.5">
                             {proj.kWSize} kW · {proj.installer}
                           </p>
-                          <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-[var(--text-secondary)] font-semibold' : 'text-[var(--text-dim)]'}`}>
+                          <p
+                            className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-[var(--text-secondary)] font-semibold' : 'text-[var(--text-dim)]'}`}
+                            title={
+                              (proj.additionalClosers?.length ?? 0) > 0
+                                ? `Co-closers: ${proj.additionalClosers!.map((c) => c.userName).join(', ')}`
+                                : undefined
+                            }
+                          >
                             {proj.repName}
+                            {(proj.additionalClosers?.length ?? 0) > 0 && (
+                              <span className="ml-1 text-[10px] text-[var(--accent-green)] font-semibold">
+                                +{proj.additionalClosers!.length}
+                              </span>
+                            )}
                           </p>
                           {/* Commission row */}
                           {!hideFinancials && (
@@ -532,8 +544,20 @@ export default function KanbanView({
                         )}
                         <p className="text-[var(--text-muted)] text-xs">{proj.kWSize} kW</p>
                         <p className="text-[var(--text-muted)] text-xs">{proj.installer}</p>
-                        <p className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-[var(--text-secondary)] font-semibold' : 'text-[var(--text-dim)]'}`}>
+                        <p
+                          className={`text-xs ${isMyCard && dealScope === 'all' ? 'text-[var(--text-secondary)] font-semibold' : 'text-[var(--text-dim)]'}`}
+                          title={
+                            (proj.additionalClosers?.length ?? 0) > 0
+                              ? `Co-closers: ${proj.additionalClosers!.map((c) => c.userName).join(', ')}`
+                              : undefined
+                          }
+                        >
                           {proj.repName}
+                          {(proj.additionalClosers?.length ?? 0) > 0 && (
+                            <span className="ml-1 text-[10px] text-[var(--accent-green)] font-semibold">
+                              +{proj.additionalClosers!.length}
+                            </span>
+                          )}
                         </p>
                         {/* Mini commission preview + phase nav row */}
                         {!hideFinancials && (

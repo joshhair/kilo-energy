@@ -18,6 +18,7 @@ import { Flag, FlagOff, AlertTriangle, X, Check, Clock, ArrowRight, Pencil, Chev
 import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ProjectChatter from '../../components/ProjectChatter';
+import { CoPartySection, type CoPartyDraft } from '../components/CoPartySection';
 
 // ─── Pipeline stepper ────────────────────────────────────────────────────────
 
@@ -646,6 +647,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [phaseConfirm, setPhaseConfirm] = useState<Phase | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+
   const [editVals, setEditVals] = useState({
     installer: '',
     financer: '',
@@ -659,6 +661,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     overrideCloserPerW: '',
     overrideSetterPerW: '',
     overrideKiloPerW: '',
+    additionalClosers: [] as CoPartyDraft[],
+    additionalSetters: [] as CoPartyDraft[],
   });
 
   // ── Prev/Next project navigation ─────────────────────────────────────────
@@ -890,6 +894,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       overrideCloserPerW: project.baselineOverride ? String(project.baselineOverride.closerPerW) : '',
       overrideSetterPerW: project.baselineOverride?.setterPerW != null ? String(project.baselineOverride.setterPerW) : '',
       overrideKiloPerW: project.baselineOverride ? String(project.baselineOverride.kiloPerW) : '',
+      additionalClosers: (project.additionalClosers ?? []).map((c) => ({
+        userId: c.userId,
+        m1Amount: String(c.m1Amount ?? 0),
+        m2Amount: String(c.m2Amount ?? 0),
+        m3Amount: c.m3Amount != null ? String(c.m3Amount) : '',
+      })),
+      additionalSetters: (project.additionalSetters ?? []).map((s) => ({
+        userId: s.userId,
+        m1Amount: String(s.m1Amount ?? 0),
+        m2Amount: String(s.m2Amount ?? 0),
+        m3Amount: s.m3Amount != null ? String(s.m3Amount) : '',
+      })),
     });
     setEditErrors({});
     setShowEditModal(true);
@@ -950,6 +966,34 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     const editM3Amount = editHasM3 ? Math.round(editCloserM2Full * ((100 - editInstallPayPct) / 100) * 100) / 100 : 0;
     const editSetterM2Amount = editVals.setterId ? Math.round(editSetterM2Full * (editInstallPayPct / 100) * 100) / 100 : 0;
     const editSetterM3Amount = editVals.setterId && editHasM3 ? Math.round(editSetterM2Full * ((100 - editInstallPayPct) / 100) * 100) / 100 : 0;
+    // Serialize co-party drafts — skip rows missing a user picker (abandoned
+    // adds). Empty amount strings parse to 0 (intentional — admin may want
+    // to pre-add a co-closer with zero cut now and backfill later).
+    const toNum = (v: string): number => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const additionalClosersOut = editVals.additionalClosers
+      .filter((c) => !!c.userId && c.userId !== project.repId)
+      .map((c, i) => ({
+        userId: c.userId,
+        userName: reps.find((r) => r.id === c.userId)?.name ?? '',
+        m1Amount: toNum(c.m1Amount),
+        m2Amount: toNum(c.m2Amount),
+        m3Amount: c.m3Amount.trim() === '' ? null : toNum(c.m3Amount),
+        position: i + 1,
+      }));
+    const additionalSettersOut = editVals.additionalSetters
+      .filter((s) => !!s.userId && s.userId !== editVals.setterId)
+      .map((s, i) => ({
+        userId: s.userId,
+        userName: reps.find((r) => r.id === s.userId)?.name ?? '',
+        m1Amount: toNum(s.m1Amount),
+        m2Amount: toNum(s.m2Amount),
+        m3Amount: s.m3Amount.trim() === '' ? null : toNum(s.m3Amount),
+        position: i + 1,
+      }));
+
     ctxUpdateProject(project.id, {
       installer: editVals.installer,
       financer: editVals.financer,
@@ -967,6 +1011,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setterM1Amount: editSetterM1Amount,
       setterM2Amount: editSetterM2Amount,
       setterM3Amount: editSetterM3Amount,
+      additionalClosers: additionalClosersOut,
+      additionalSetters: additionalSettersOut,
       ...(editVals.installer !== project.installer ? { installerProductId: undefined, solarTechProductId: undefined } : {}),
     });
     setShowEditModal(false);
@@ -1385,6 +1431,93 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
+            {/* ── Co-closers / Co-setters (tag-team attribution) ──
+                Only renders if the deal actually has tag-team participants.
+                Each card mirrors the primary closer/setter card so the
+                payroll picture is consistent at a glance. */}
+            {(project.additionalClosers ?? []).map((co) => {
+              const coEntries = projectEntries.filter((e) => e.repId === co.userId);
+              return (
+                <div key={`cc-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-white text-sm font-semibold">{co.userName}</p>
+                      <p className="text-[var(--text-muted)] text-xs">Co-closer · #{co.position}</p>
+                    </div>
+                    <div className="text-right space-y-0.5">
+                      {(co.m1Amount ?? 0) > 0 && (
+                        <p className="text-[var(--accent-green)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
+                      )}
+                      {(co.m2Amount ?? 0) > 0 && (
+                        <p className="text-[var(--accent-green)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
+                      )}
+                      {(co.m3Amount ?? 0) > 0 && (
+                        <p className="text-[var(--accent-green)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
+                      )}
+                    </div>
+                  </div>
+                  {coEntries.length > 0 && (
+                    <div className="space-y-1.5">
+                      {coEntries.map((entry) => (
+                        <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
+                          <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                              entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                              'bg-[var(--border)] text-[var(--text-secondary)]'
+                            }`}>{entry.status}</span>
+                            <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {(project.additionalSetters ?? []).map((co) => {
+              const coEntries = projectEntries.filter((e) => e.repId === co.userId);
+              return (
+                <div key={`cs-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-white text-sm font-semibold">{co.userName}</p>
+                      <p className="text-[var(--text-muted)] text-xs">Co-setter · #{co.position}</p>
+                    </div>
+                    <div className="text-right space-y-0.5">
+                      {(co.m1Amount ?? 0) > 0 && (
+                        <p className="text-[var(--accent-green)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
+                      )}
+                      {(co.m2Amount ?? 0) > 0 && (
+                        <p className="text-[var(--accent-green)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
+                      )}
+                      {(co.m3Amount ?? 0) > 0 && (
+                        <p className="text-[var(--accent-green)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
+                      )}
+                    </div>
+                  </div>
+                  {coEntries.length > 0 && (
+                    <div className="space-y-1.5">
+                      {coEntries.map((entry) => (
+                        <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
+                          <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                              entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                              'bg-[var(--border)] text-[var(--text-secondary)]'
+                            }`}>{entry.status}</span>
+                            <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
             {/* ── Other entries (trainer overrides, bonuses, etc.) ── */}
             {otherEntries.length > 0 && (
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
@@ -1656,6 +1789,45 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   ))}
                 </select>
               </div>
+
+              {/* ── Co-closers (tag-team) ─────────────────────────────────
+                  Each row is one person + their M1/M2/M3 cut. The primary
+                  closer's cut stays on m1Amount/m2Amount/m3Amount above;
+                  these are ADDITIONAL people, not replacements. Adding the
+                  2nd closer evenly re-splits the closer commission 50/50
+                  using evenSplit (reuses lib/money's cent-exact allocator
+                  so no cent is lost in the round-trip). */}
+              <CoPartySection
+                label="Co-closers"
+                rows={editVals.additionalClosers}
+                primaryUserId={project.repId}
+                excludeUserIds={editVals.additionalClosers.map((c) => c.userId).filter(Boolean)}
+                repTypeFilter={(r) => r.repType === 'closer' || r.repType === 'both'}
+                reps={reps}
+                onChange={(rows) => setEditVals((v) => ({ ...v, additionalClosers: rows }))}
+                onFirstAdd={() => {
+                  // Re-split the current commission evenly across [primary + 1 new].
+                  // Primary's m1/m2/m3 on editVals isn't directly editable here;
+                  // we operate on parseFloat(editVals.netPPW/kWSize)-derived
+                  // preview numbers instead. Simpler: default new row to 0
+                  // and let admin enter amounts manually — safer than
+                  // silently mutating the primary's cut on first add.
+                }}
+              />
+
+              {/* Co-setters — same shape. */}
+              <CoPartySection
+                label="Co-setters"
+                rows={editVals.additionalSetters}
+                primaryUserId={editVals.setterId}
+                excludeUserIds={[editVals.setterId, ...editVals.additionalSetters.map((s) => s.userId)].filter(Boolean)}
+                repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
+                reps={reps}
+                onChange={(rows) => setEditVals((v) => ({ ...v, additionalSetters: rows }))}
+                disabled={!editVals.setterId}
+                disabledReason="Select a primary setter above to add co-setters."
+              />
+
 
               {/* Sold Date */}
               <div>

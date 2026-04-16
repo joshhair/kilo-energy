@@ -788,12 +788,40 @@ export default function TableView({
                       <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
                     </Link>
                   </td>
-                  {isAdmin && <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.repName}</td>}
+                  {isAdmin && (
+                    <td
+                      className="px-5 py-3 text-[var(--text-secondary)]"
+                      title={
+                        (proj.additionalClosers?.length ?? 0) > 0
+                          ? `Co-closers: ${proj.additionalClosers!.map((c) => c.userName).join(', ')}`
+                          : undefined
+                      }
+                    >
+                      {proj.repName}
+                      {(proj.additionalClosers?.length ?? 0) > 0 && (
+                        <span className="ml-1 text-[10px] text-[var(--accent-green)] font-semibold">
+                          +{proj.additionalClosers!.length}
+                        </span>
+                      )}
+                    </td>
+                  )}
                   {/* Rep name cell for reps in All Deals mode — shows "You" pill + bold name on own rows */}
                   {!isAdmin && dealScope === 'all' && (
                     <td className="px-5 py-3">
-                      <span className={`flex items-center gap-1.5 ${isMyRow ? 'text-[var(--text-secondary)] font-semibold' : 'text-[var(--text-secondary)]'}`}>
+                      <span
+                        className={`flex items-center gap-1.5 ${isMyRow ? 'text-[var(--text-secondary)] font-semibold' : 'text-[var(--text-secondary)]'}`}
+                        title={
+                          (proj.additionalClosers?.length ?? 0) > 0
+                            ? `Co-closers: ${proj.additionalClosers!.map((c) => c.userName).join(', ')}`
+                            : undefined
+                        }
+                      >
                         {proj.repName}
+                        {(proj.additionalClosers?.length ?? 0) > 0 && (
+                          <span className="text-[10px] text-[var(--accent-green)] font-semibold">
+                            +{proj.additionalClosers!.length}
+                          </span>
+                        )}
                         {isMyRow && (
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
