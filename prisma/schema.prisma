@@ -275,15 +275,18 @@ model Project {
   /// "Pending Install" | "Installed" | "PTO" | "Completed" | "Cancelled" | "On Hold"
   phase String @default("New")
 
-  m1Paid         Boolean @default(false)
-  m1Amount       Float   @default(0)
-  m2Paid         Boolean @default(false)
-  m2Amount       Float   @default(0)
-  m3Amount       Float?
-  m3Paid         Boolean @default(false)
-  setterM1Amount Float   @default(0)
-  setterM2Amount Float   @default(0)
-  setterM3Amount Float?
+  m1Paid              Boolean @default(false)
+  /// Commission milestone amounts stored as INTEGER CENTS (not dollars).
+  /// Compute via lib/money.ts ($.fromCents / $.toDollars) — never mix raw
+  /// with dollar amounts. Float→Int cents migration landed 2026-04-15.
+  m1AmountCents       Int     @default(0)
+  m2Paid              Boolean @default(false)
+  m2AmountCents       Int     @default(0)
+  m3AmountCents       Int?
+  m3Paid              Boolean @default(false)
+  setterM1AmountCents Int     @default(0)
+  setterM2AmountCents Int     @default(0)
+  setterM3AmountCents Int?
 
   notes              String  @default("")
   flagged            Boolean @default(false)
@@ -359,7 +362,8 @@ model PayrollEntry {
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id])
 
-  amount Float
+  /// Integer cents. See Project.m1AmountCents for the rationale.
+  amountCents Int
 
   /// "Deal" | "Bonus"
   type String
@@ -395,7 +399,8 @@ model Reimbursement {
   id          String @id @default(cuid())
   repId       String
   rep         User   @relation(fields: [repId], references: [id])
-  amount      Float
+  /// Integer cents. See Project.m1AmountCents for the rationale.
+  amountCents Int
   description String
   date        String /// ISO date YYYY-MM-DD
 
@@ -560,7 +565,8 @@ model BlitzCost {
 
   /// "housing" | "travel" | "gas" | "meals" | "incentives" | "swag" | "other"
   category    String
-  amount      Float
+  /// Integer cents. See Project.m1AmountCents for the rationale.
+  amountCents Int
   description String @default("")
   date        String /// ISO date YYYY-MM-DD
 

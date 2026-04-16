@@ -5,6 +5,7 @@ import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
+import { serializeProject, dollarsToCents, dollarsToNullableCents } from '../../../../lib/serialize';
 
 // Financial fields project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Higher ceiling on project patches — admins routinely click through many
   // phase changes in a short window. 120/min covers that; legit Kanban
   // drag-drops won't hit it.
-  const limited = enforceRateLimit(`PATCH /api/projects/[id]:${user.id}`, 120, 60_000);
+  const limited = await enforceRateLimit(`PATCH /api/projects/[id]:${user.id}`, 120, 60_000);
   if (limited) return limited;
 
   const parsed = await parseJsonBody(req, patchProjectSchema);
@@ -98,14 +99,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const data: Record<string, unknown> = {};
   const passthrough: Array<keyof PatchProjectInput> = [
     'phase', 'notes', 'flagged',
-    'm1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid',
-    'setterM1Amount', 'setterM2Amount', 'setterM3Amount',
+    'm1Paid', 'm2Paid', 'm3Paid',
     'cancellationReason', 'cancellationNotes', 'baselineOverrideJson',
     'leadSource', 'blitzId', 'productType', 'kWSize', 'netPPW', 'soldDate',
   ];
   for (const key of passthrough) {
     if (body[key] !== undefined) data[key] = body[key];
   }
+
+  // Money fields: wire dollars → Int cents at the DB seam.
+  if (body.m1Amount !== undefined) data.m1AmountCents = dollarsToCents(body.m1Amount);
+  if (body.m2Amount !== undefined) data.m2AmountCents = dollarsToCents(body.m2Amount);
+  if (body.m3Amount !== undefined) data.m3AmountCents = dollarsToNullableCents(body.m3Amount);
+  if (body.setterM1Amount !== undefined) data.setterM1AmountCents = dollarsToCents(body.setterM1Amount);
+  if (body.setterM2Amount !== undefined) data.setterM2AmountCents = dollarsToCents(body.setterM2Amount);
+  if (body.setterM3Amount !== undefined) data.setterM3AmountCents = dollarsToNullableCents(body.setterM3Amount);
   // Nullable FK fields: empty string → null
   if (body.closerId !== undefined) data.closerId = body.closerId || null;
   if (body.setterId !== undefined) data.setterId = body.setterId || null;
@@ -150,7 +158,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     fields: AUDITED_FIELDS.Project,
   });
 
-  return NextResponse.json(project);
+  return NextResponse.json(serializeProject(project));
 }
 
 // DELETE /api/projects/[id] — Admin only

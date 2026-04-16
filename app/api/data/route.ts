@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { getInternalUser } from '../../../lib/api-auth';
 import { logger } from '../../../lib/logger';
+import { toDollars, fromCents } from '../../../lib/money';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
@@ -205,14 +206,14 @@ export async function GET() {
     netPPW: stripFinancials ? 0 : p.netPPW,
     phase: p.phase,
     m1Paid: stripFinancials ? false : p.m1Paid,
-    m1Amount: stripFinancials ? 0 : p.m1Amount,
+    m1Amount: stripFinancials ? 0 : toDollars(fromCents(p.m1AmountCents)),
     m2Paid: stripFinancials ? false : p.m2Paid,
-    m2Amount: stripFinancials ? 0 : p.m2Amount,
+    m2Amount: stripFinancials ? 0 : toDollars(fromCents(p.m2AmountCents)),
     m3Paid: stripFinancials ? false : (p.m3Paid ?? false),
-    m3Amount: stripFinancials ? undefined : (p.m3Amount ?? undefined),
-    setterM1Amount: stripFinancials ? undefined : (p.setterM1Amount ?? undefined),
-    setterM2Amount: stripFinancials ? undefined : (p.setterM2Amount ?? undefined),
-    setterM3Amount: stripFinancials ? undefined : (p.setterM3Amount ?? undefined),
+    m3Amount: stripFinancials ? undefined : (p.m3AmountCents == null ? undefined : toDollars(fromCents(p.m3AmountCents))),
+    setterM1Amount: stripFinancials ? undefined : toDollars(fromCents(p.setterM1AmountCents)),
+    setterM2Amount: stripFinancials ? undefined : toDollars(fromCents(p.setterM2AmountCents)),
+    setterM3Amount: stripFinancials ? undefined : (p.setterM3AmountCents == null ? undefined : toDollars(fromCents(p.setterM3AmountCents))),
     notes: p.notes,
     flagged: p.flagged,
     solarTechProductId: p.installer.name === 'SolarTech' ? (p.productId ?? undefined) : undefined,
@@ -240,7 +241,7 @@ export async function GET() {
     repName: `${pe.rep.firstName} ${pe.rep.lastName}`,
     projectId: pe.projectId,
     customerName: pe.project?.customerName ?? '',
-    amount: pe.amount,
+    amount: toDollars(fromCents(pe.amountCents)),
     type: pe.type,
     paymentStage: pe.paymentStage,
     status: pe.status,
@@ -252,7 +253,7 @@ export async function GET() {
     id: r.id,
     repId: r.repId,
     repName: `${r.rep.firstName} ${r.rep.lastName}`,
-    amount: r.amount,
+    amount: toDollars(fromCents(r.amountCents)),
     description: r.description,
     date: r.date,
     status: r.status,

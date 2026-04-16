@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   // Invitations send an email via Clerk — tight cap to prevent inbox spam
   // (accidental script, fat-fingered bulk). 20/min/admin is > any realistic
   // manual flow.
-  const limited = enforceRateLimit(`POST /api/users/invite:${actor.id}`, 20, 60_000);
+  const limited = await enforceRateLimit(`POST /api/users/invite:${actor.id}`, 20, 60_000);
   if (limited) return limited;
 
   if (process.env.DISABLE_INVITES === 'true') {

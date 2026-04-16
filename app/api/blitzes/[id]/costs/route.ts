@@ -3,6 +3,8 @@ import { prisma } from '../../../../../lib/db';
 import { requireAdmin } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
 import { createBlitzCostSchema } from '../../../../../lib/schemas/business';
+import { serializeBlitzCost } from '../../../../../lib/serialize';
+import { fromDollars } from '../../../../../lib/money';
 
 // POST /api/blitzes/[id]/costs — Add a cost
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -18,12 +20,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: {
         blitzId,
         category: body.category,
-        amount: body.amount,
+        amountCents: fromDollars(body.amount).cents,
         description: body.description ?? '',
         date: body.date,
       },
     });
-    return NextResponse.json(cost, { status: 201 });
+    return NextResponse.json(serializeBlitzCost(cost), { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Failed to create cost' }, { status: 500 });
   }

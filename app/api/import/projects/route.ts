@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { fromDollars } from '../../../../lib/money';
 
 /**
  * POST /api/import/projects — Bulk project import endpoint.
@@ -428,11 +429,11 @@ export async function POST(req: NextRequest) {
             kWSize: row.kWSize,
             netPPW: row.netPPW,
             phase: row.phase,
-            m1Amount: row.m1Amount,
-            m2Amount: row.m2Amount,
-            m3Amount: row.m3Amount,
-            setterM2Amount: row.setterM2Amount,
-            setterM3Amount: row.setterM3Amount,
+            m1AmountCents: fromDollars(row.m1Amount).cents,
+            m2AmountCents: fromDollars(row.m2Amount).cents,
+            m3AmountCents: row.m3Amount == null ? null : fromDollars(row.m3Amount).cents,
+            setterM2AmountCents: fromDollars(row.setterM2Amount).cents,
+            setterM3AmountCents: row.setterM3Amount == null ? null : fromDollars(row.setterM3Amount).cents,
             m1Paid: row.m1Paid,
             m2Paid: row.m2Paid,
             m3Paid: row.m3Paid,

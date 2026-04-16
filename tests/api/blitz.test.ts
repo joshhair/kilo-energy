@@ -85,13 +85,13 @@ describe('Blitz API — Database Integration', () => {
         blitzId: blitz.id,
         category: 'housing',
         description: 'Hotel rooms',
-        amount: 2500,
+        amountCents: 250000,
         date: '2026-05-01',
       },
     });
 
     expect(cost.category).toBe('housing');
-    expect(cost.amount).toBe(2500);
+    expect(cost.amountCents).toBe(250000);
 
     await prisma.blitzCost.delete({ where: { id: cost.id } });
     await prisma.blitz.delete({ where: { id: blitz.id } });
@@ -114,7 +114,7 @@ describe('Blitz API — Database Integration', () => {
     });
 
     await prisma.blitzCost.create({
-      data: { blitzId: blitz.id, category: 'travel', description: 'Flights', amount: 1500, date: '2026-07-01' },
+      data: { blitzId: blitz.id, category: 'travel', description: 'Flights', amountCents: 150000, date: '2026-07-01' },
     });
 
     // Delete blitz — should cascade

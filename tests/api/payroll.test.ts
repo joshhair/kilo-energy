@@ -31,7 +31,7 @@ describe('Payroll API — Database Integration', () => {
       data: {
         repId: testRepId,
         projectId: testProjectId,
-        amount: 1500,
+        amountCents: 150000,
         type: 'Deal',
         paymentStage: 'M1',
         status: 'Draft',
@@ -41,7 +41,7 @@ describe('Payroll API — Database Integration', () => {
     });
 
     expect(entry.id).toBeTruthy();
-    expect(entry.amount).toBe(1500);
+    expect(entry.amountCents).toBe(150000);
     expect(entry.status).toBe('Draft');
     expect(entry.paymentStage).toBe('M1');
 
@@ -53,7 +53,7 @@ describe('Payroll API — Database Integration', () => {
       data: {
         repId: testRepId,
         projectId: testProjectId,
-        amount: 1000,
+        amountCents: 100000,
         type: 'Deal',
         paymentStage: 'M2',
         status: 'Draft',
@@ -82,7 +82,7 @@ describe('Payroll API — Database Integration', () => {
       data: {
         repId: testRepId,
         projectId: null,
-        amount: 500,
+        amountCents: 50000,
         type: 'Bonus',
         paymentStage: 'Bonus',
         status: 'Draft',
@@ -102,7 +102,7 @@ describe('Payroll API — Database Integration', () => {
       data: {
         repId: testRepId,
         projectId: testProjectId,
-        amount: 200,
+        amountCents: 20000,
         type: 'Deal',
         paymentStage: 'Trainer',
         status: 'Draft',

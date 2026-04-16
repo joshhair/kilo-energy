@@ -4,6 +4,7 @@ import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createProjectSchema } from '../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../lib/rate-limit';
+import { serializeProject, dollarsToCents, dollarsToNullableCents } from '../../../lib/serialize';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   // 30 deal creations/minute/user — the form + idempotency handle double-
   // clicks, so legit flow is nowhere near this. Catches runaway clients.
-  const limited = enforceRateLimit(`POST /api/projects:${user.id}`, 30, 60_000);
+  const limited = await enforceRateLimit(`POST /api/projects:${user.id}`, 30, 60_000);
   if (limited) return limited;
 
   if (user.role === 'project_manager') {
@@ -134,12 +135,12 @@ export async function POST(req: NextRequest) {
       kWSize: body.kWSize,
       netPPW: body.netPPW,
       phase: body.phase,
-      m1Amount: body.m1Amount ?? 0,
-      m2Amount: body.m2Amount ?? 0,
-      m3Amount: body.m3Amount ?? 0,
-      setterM1Amount: body.setterM1Amount ?? 0,
-      setterM2Amount: body.setterM2Amount ?? 0,
-      setterM3Amount: body.setterM3Amount ?? 0,
+      m1AmountCents: dollarsToCents(body.m1Amount) ?? 0,
+      m2AmountCents: dollarsToCents(body.m2Amount) ?? 0,
+      m3AmountCents: dollarsToNullableCents(body.m3Amount) ?? null,
+      setterM1AmountCents: dollarsToCents(body.setterM1Amount) ?? 0,
+      setterM2AmountCents: dollarsToCents(body.setterM2Amount) ?? 0,
+      setterM3AmountCents: dollarsToNullableCents(body.setterM3Amount) ?? null,
       notes: body.notes ?? '',
       installerPricingVersionId: body.installerPricingVersionId ?? null,
       productId: body.productId ?? null,
@@ -152,5 +153,5 @@ export async function POST(req: NextRequest) {
     },
     include: { closer: true, setter: true, subDealer: true, installer: true, financer: true },
   });
-  return NextResponse.json(project, { status: 201 });
+  return NextResponse.json(serializeProject(project), { status: 201 });
 }

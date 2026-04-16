@@ -103,12 +103,12 @@ export async function logChange(params: {
 export const AUDITED_FIELDS = {
   Project: [
     "phase",
-    "m1Amount",
-    "m2Amount",
-    "m3Amount",
-    "setterM1Amount",
-    "setterM2Amount",
-    "setterM3Amount",
+    "m1AmountCents",
+    "m2AmountCents",
+    "m3AmountCents",
+    "setterM1AmountCents",
+    "setterM2AmountCents",
+    "setterM3AmountCents",
     "repId",
     "setterId",
     "subDealerId",
@@ -120,5 +120,5 @@ export const AUDITED_FIELDS = {
     "cancellationReason",
   ] as const,
   User: ["role", "repType", "active", "email", "firstName", "lastName"] as const,
-  PayrollEntry: ["status", "amount", "paymentStage"] as const,
+  PayrollEntry: ["status", "amountCents", "paymentStage"] as const,
 } as const;

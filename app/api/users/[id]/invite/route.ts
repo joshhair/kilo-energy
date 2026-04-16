@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Resend cap — each call triggers a Clerk email. 30/min/admin tolerates
   // burst "resend all pending" flows; stops an accidental loop.
-  const limited = enforceRateLimit(`POST /api/users/[id]/invite:${actor.id}`, 30, 60_000);
+  const limited = await enforceRateLimit(`POST /api/users/[id]/invite:${actor.id}`, 30, 60_000);
   if (limited) return limited;
 
   const user = await prisma.user.findUnique({ where: { id } });

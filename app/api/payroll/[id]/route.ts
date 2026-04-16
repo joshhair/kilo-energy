@@ -4,6 +4,7 @@ import { requireAdmin, requireAdminOrPM } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchPayrollEntrySchema } from '../../../../lib/schemas/pricing';
 import { REP_PUBLIC_SELECT } from '../../../../lib/redact';
+import { serializePayrollEntry, dollarsToCents } from '../../../../lib/serialize';
 
 // PATCH /api/payroll/[id] — Update a single payroll entry (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -33,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     data.status = body.status;
   }
-  if (body.amount !== undefined) data.amount = body.amount;
+  if (body.amount !== undefined) data.amountCents = dollarsToCents(body.amount);
   if (body.date !== undefined) data.date = body.date;
   if (body.notes !== undefined) data.notes = body.notes;
 
@@ -42,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data,
     include: { rep: { select: REP_PUBLIC_SELECT }, project: true },
   });
-  return NextResponse.json(entry);
+  return NextResponse.json(serializePayrollEntry(entry));
 }
 
 // DELETE /api/payroll/[id]

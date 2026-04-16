@@ -203,7 +203,7 @@ describe('Reimbursements — Database Integration', () => {
     const reimb = await prisma.reimbursement.create({
       data: {
         repId: rep.id,
-        amount: 75.50,
+        amountCents: 7550,
         description: 'Gas mileage — Vitest',
         date: '2026-04-01',
         status: 'Pending',
@@ -211,7 +211,7 @@ describe('Reimbursements — Database Integration', () => {
     });
 
     expect(reimb.status).toBe('Pending');
-    expect(reimb.amount).toBe(75.50);
+    expect(reimb.amountCents).toBe(7550);
 
     await prisma.reimbursement.delete({ where: { id: reimb.id } });
   });

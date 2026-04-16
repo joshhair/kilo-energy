@@ -6,6 +6,8 @@ import { parseJsonBody } from '../../../lib/api-validation';
 import { createPayrollSchema, patchPayrollSchema } from '../../../lib/schemas/payroll';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { REP_PUBLIC_SELECT } from '../../../lib/redact';
+import { serializePayrollEntry, dollarsToCents } from '../../../lib/serialize';
+import { fromDollars } from '../../../lib/money';
 
 // POST /api/payroll — Create a payroll entry (admin or project manager).
 //
@@ -20,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit: 60 payroll creates/minute/user — generous for legitimate
   // bulk-publish workflows, tight enough to stop a runaway client loop.
-  const limited = enforceRateLimit(`POST /api/payroll:${actor.id}`, 60, 60_000);
+  const limited = await enforceRateLimit(`POST /api/payroll:${actor.id}`, 60, 60_000);
   if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createPayrollSchema);
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
       include: { rep: { select: REP_PUBLIC_SELECT }, project: true },
     });
     if (existing) {
-      return NextResponse.json(existing, { status: 200 });
+      return NextResponse.json(serializePayrollEntry(existing), { status: 200 });
     }
   }
 
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
     data: {
       repId: body.repId,
       projectId: body.projectId ?? null,
-      amount: body.amount,
+      amountCents: fromDollars(body.amount).cents,
       type: body.type,
       paymentStage: body.paymentStage,
       status: body.status,
@@ -60,13 +62,13 @@ export async function POST(req: NextRequest) {
     detail: {
       repId: entry.repId,
       projectId: entry.projectId,
-      amount: entry.amount,
+      amountCents: entry.amountCents,
       paymentStage: entry.paymentStage,
       status: entry.status,
     },
   });
 
-  return NextResponse.json(entry, { status: 201 });
+  return NextResponse.json(serializePayrollEntry(entry), { status: 201 });
 }
 
 // PATCH /api/payroll — Bulk update payroll entries (admin only)
@@ -75,7 +77,7 @@ export async function PATCH(req: NextRequest) {
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   // Bulk publish can touch many rows per call; cap total calls per minute.
-  const limited = enforceRateLimit(`PATCH /api/payroll:${actor.id}`, 30, 60_000);
+  const limited = await enforceRateLimit(`PATCH /api/payroll:${actor.id}`, 30, 60_000);
   if (limited) return limited;
 
   const parsed = await parseJsonBody(req, patchPayrollSchema);

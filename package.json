@@ -14,7 +14,9 @@
     "test:api": "vitest run tests/api",
     "test:e2e": "npx playwright test",
     "test:mobile": "npx playwright test --project=mobile",
-    "test:all": "vitest run && tsc --noEmit"
+    "test:all": "vitest run && tsc --noEmit",
+    "backup:now": "node scripts/backup-turso.mjs",
+    "restore:from": "node scripts/restore-turso.mjs"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -27,6 +29,8 @@
     "@prisma/adapter-libsql": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "@sentry/nextjs": "^10.48.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "better-sqlite3": "^12.8.0",

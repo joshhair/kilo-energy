@@ -5,6 +5,8 @@ import { requireAuth } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createReimbursementSchema } from '../../../lib/schemas/reimbursement';
 import { REP_PUBLIC_SELECT } from '../../../lib/redact';
+import { serializeReimbursement } from '../../../lib/serialize';
+import { fromDollars } from '../../../lib/money';
 
 // POST /api/reimbursements — Create a reimbursement request
 export async function POST(req: NextRequest) {
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
   const reimbursement = await prisma.reimbursement.create({
     data: {
       repId: body.repId,
-      amount: body.amount,
+      amountCents: fromDollars(body.amount).cents,
       description: body.description,
       date: body.date,
       status: 'Pending',
@@ -38,5 +40,5 @@ export async function POST(req: NextRequest) {
     },
     include: { rep: { select: REP_PUBLIC_SELECT } },
   });
-  return NextResponse.json(reimbursement, { status: 201 });
+  return NextResponse.json(serializeReimbursement(reimbursement), { status: 201 });
 }

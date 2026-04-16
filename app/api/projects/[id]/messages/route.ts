@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Chatter is per-user-per-project — 120/min is a generous upper bound
   // for an engaged human reviewer; stops paste-loops and bot spam.
-  const limited = enforceRateLimit(`POST /api/projects/[id]/messages:${user.id}`, 120, 60_000);
+  const limited = await enforceRateLimit(`POST /api/projects/[id]/messages:${user.id}`, 120, 60_000);
   if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createProjectMessageSchema);

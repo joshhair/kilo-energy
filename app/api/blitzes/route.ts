@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzSchema } from '../../../lib/schemas/business';
+import { serializeProject, serializeBlitzCost } from '../../../lib/serialize';
 
 // GET /api/blitzes — List blitzes scoped to the current user's role.
 // Admin: all blitzes. PM: all blitzes if canAccessBlitz is true. Others:
@@ -55,19 +56,25 @@ export async function GET() {
       for (const p of b.projects) {
         const isMyDeal = p.closerId === user.id || p.setterId === user.id;
         if (!isMyDeal) {
-          (p as { netPPW: number }).netPPW = 0;
-          (p as { m1Amount: number }).m1Amount = 0;
-          (p as { m2Amount: number }).m2Amount = 0;
-          (p as { m3Amount: number }).m3Amount = 0;
-          (p as { setterM1Amount: number }).setterM1Amount = 0;
-          (p as { setterM2Amount: number }).setterM2Amount = 0;
-          (p as { setterM3Amount: number }).setterM3Amount = 0;
+          p.netPPW = 0;
+          p.m1AmountCents = 0;
+          p.m2AmountCents = 0;
+          p.m3AmountCents = 0;
+          p.setterM1AmountCents = 0;
+          p.setterM2AmountCents = 0;
+          p.setterM3AmountCents = 0;
         }
       }
     }
   }
 
-  return NextResponse.json(blitzes);
+  // Wire format is dollars; convert at the seam.
+  const serialized = blitzes.map((b) => ({
+    ...b,
+    projects: b.projects.map(serializeProject),
+    costs: b.costs.map(serializeBlitzCost),
+  }));
+  return NextResponse.json(serialized);
 }
 
 // POST /api/blitzes — Create a new blitz. Admin or user with canCreateBlitz.
@@ -115,5 +122,10 @@ export async function POST(req: NextRequest) {
       projects: true,
     },
   });
-  return NextResponse.json(blitz, { status: 201 });
+  const serialized = {
+    ...blitz,
+    projects: blitz.projects.map(serializeProject),
+    costs: blitz.costs.map(serializeBlitzCost),
+  };
+  return NextResponse.json(serialized, { status: 201 });
 }

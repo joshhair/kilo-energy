@@ -1,45 +1,85 @@
 /**
- * rate-limit.ts — simple in-memory per-key rate limiter.
+ * rate-limit.ts — distributed rate limiting with an in-memory fallback.
  *
- * For a pre-launch internal app this is enough. It prevents a malicious
- * or buggy authenticated client from flooding a mutation endpoint (e.g.
- * re-submitting a deal form in a loop, or an admin script gone rogue).
+ * Primary: Upstash Redis via `@upstash/ratelimit` sliding window. Shared
+ * across all Vercel Function instances, survives cold starts. This is the
+ * correct rate limiter for a multi-region serverless deploy — the prior
+ * in-memory Map was ceremonial at best (each cold lambda had its own
+ * counter, so attackers rotated instances around it).
  *
- * Limitations (accepted pre-launch):
- * - Per-instance, not distributed. If Vercel scales to N lambdas each has
- *   its own counter → effective limit is N × limit. For our scale and the
- *   threat we're modelling (human-speed abuse, runaway client), this is
- *   still a useful ceiling.
- * - Resets on cold start. Fine — cold starts happen between humans.
+ * Fallback: the old in-memory Map, used only when Upstash env vars are
+ * absent (local dev without an Upstash project, or a misconfigured env).
+ * Fallback mode logs a warning on every cold start so it never silently
+ * becomes the prod path.
  *
- * When to upgrade to Vercel KV / Upstash:
- * - When we start seeing 429s from legitimate users due to lambda fan-out,
- *   OR when we need to defend against a coordinated attack (distributed
- *   counter + IP + user-agent heuristics + GeoIP).
+ * Env:
+ *   UPSTASH_REDIS_REST_URL   — set by Vercel Marketplace Upstash integration
+ *   UPSTASH_REDIS_REST_TOKEN — same
+ *
+ * Public API is the same as before except that `checkRateLimit` and
+ * `enforceRateLimit` are now async (callers must `await`).
  *
  * Usage:
- *   const rl = checkRateLimit(`POST /api/payroll:${user.id}`, 60, 60_000);
- *   if (!rl.ok) return rateLimitResponse(rl);
+ *   const limited = await enforceRateLimit(`POST /api/payroll:${user.id}`, 60, 60_000);
+ *   if (limited) return limited;
  */
 
 import { NextResponse } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
-type Bucket = {
-  count: number;
-  windowStart: number;   // epoch ms
-};
+// ─── Upstash path ──────────────────────────────────────────────────────
 
-// Max distinct keys we'll track before evicting the oldest. Pre-launch
-// we have O(hundreds of users × routes) so a few thousand buckets is
-// plenty. Any higher = we're under attack and need to upgrade anyway.
+let redisSingleton: Redis | null = null;
+let warnedAboutFallback = false;
+
+function getRedis(): Redis | null {
+  if (redisSingleton) return redisSingleton;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    if (!warnedAboutFallback) {
+      console.warn(
+        '[rate-limit] UPSTASH_REDIS_REST_URL / _TOKEN not set — falling back to in-memory (NOT distributed). ' +
+        'Set the env vars in Vercel → Integrations → Upstash before production traffic.',
+      );
+      warnedAboutFallback = true;
+    }
+    return null;
+  }
+  redisSingleton = new Redis({ url, token });
+  return redisSingleton;
+}
+
+// Ratelimit instances are configured per (limit, windowMs) combo, so we
+// memoize to avoid re-constructing on every call.
+const ratelimiters = new Map<string, Ratelimit>();
+
+function getRatelimiter(limit: number, windowMs: number): Ratelimit | null {
+  const redis = getRedis();
+  if (!redis) return null;
+  const cacheKey = `${limit}:${windowMs}`;
+  let rl = ratelimiters.get(cacheKey);
+  if (!rl) {
+    rl = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(limit, `${windowMs} ms`),
+      prefix: 'kilo-rl',
+      analytics: false,
+    });
+    ratelimiters.set(cacheKey, rl);
+  }
+  return rl;
+}
+
+// ─── In-memory fallback (unchanged from the pre-Upstash implementation) ─
+
+type Bucket = { count: number; windowStart: number };
 const MAX_BUCKETS = 10_000;
-
 const buckets = new Map<string, Bucket>();
 
 function evictIfFull() {
   if (buckets.size <= MAX_BUCKETS) return;
-  // Drop the oldest 10% in one pass. Map iteration order is insertion
-  // order, so the oldest are at the front.
   const toEvict = Math.ceil(MAX_BUCKETS * 0.1);
   let i = 0;
   for (const key of buckets.keys()) {
@@ -48,28 +88,18 @@ function evictIfFull() {
   }
 }
 
-export interface RateLimitResult {
-  ok: boolean;
-  remaining: number;     // requests left in the current window
-  resetAt: number;       // epoch ms when the window rolls over
-  retryAfterMs: number;  // ms to wait before trying again (0 if ok)
-}
-
-/** Check and increment the counter for `key`. Fixed-window algorithm. */
-export function checkRateLimit(
+function checkInMemory(
   key: string,
   limit: number,
   windowMs: number,
-  now: number = Date.now(),
+  now: number,
 ): RateLimitResult {
   const bucket = buckets.get(key);
   if (!bucket || now - bucket.windowStart >= windowMs) {
-    // New bucket or window has rolled — reset.
     buckets.set(key, { count: 1, windowStart: now });
     evictIfFull();
     return { ok: true, remaining: limit - 1, resetAt: now + windowMs, retryAfterMs: 0 };
   }
-
   bucket.count += 1;
   const resetAt = bucket.windowStart + windowMs;
   if (bucket.count > limit) {
@@ -78,8 +108,34 @@ export function checkRateLimit(
   return { ok: true, remaining: limit - bucket.count, resetAt, retryAfterMs: 0 };
 }
 
-/** Build a 429 Response from a failed check. Sets Retry-After + standard
- *  X-RateLimit headers so clients can back off cleanly. */
+// ─── Public API ────────────────────────────────────────────────────────
+
+export interface RateLimitResult {
+  ok: boolean;
+  remaining: number;
+  resetAt: number;       // epoch ms
+  retryAfterMs: number;  // 0 if ok
+}
+
+/** Check and increment the counter for `key`. Uses Upstash if configured,
+ *  in-memory otherwise. The `now` override only affects the in-memory path
+ *  (used by unit tests to fake clock progression). */
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+  now: number = Date.now(),
+): Promise<RateLimitResult> {
+  const rl = getRatelimiter(limit, windowMs);
+  if (rl) {
+    const r = await rl.limit(key);
+    const retryAfterMs = r.success ? 0 : Math.max(0, r.reset - Date.now());
+    return { ok: r.success, remaining: r.remaining, resetAt: r.reset, retryAfterMs };
+  }
+  return checkInMemory(key, limit, windowMs, now);
+}
+
+/** Build a 429 response from a failed check. */
 export function rateLimitResponse(result: RateLimitResult): NextResponse {
   const retryAfterSec = Math.max(1, Math.ceil(result.retryAfterMs / 1000));
   return NextResponse.json(
@@ -95,22 +151,25 @@ export function rateLimitResponse(result: RateLimitResult): NextResponse {
   );
 }
 
-/** Convenience: run a limit check and return the 429 response if exceeded,
- *  or null if the call is allowed. Use as:
- *    const limited = enforceRateLimit(`POST /x:${userId}`, 60, 60_000);
+/** Convenience: run a limit check and return the 429 if exceeded, or null
+ *  if the call is allowed. Use as:
+ *    const limited = await enforceRateLimit(`POST /x:${userId}`, 60, 60_000);
  *    if (limited) return limited;
  */
-export function enforceRateLimit(
+export async function enforceRateLimit(
   key: string,
   limit: number,
   windowMs: number,
-): NextResponse | null {
-  const r = checkRateLimit(key, limit, windowMs);
+): Promise<NextResponse | null> {
+  const r = await checkRateLimit(key, limit, windowMs);
   return r.ok ? null : rateLimitResponse(r);
 }
 
-// Internal test hook — lets unit tests reset global state without
-// exporting the Map directly.
+// Internal test hook — resets both in-memory state and the Ratelimit
+// memoization cache so suites can run independently.
 export function _resetForTests() {
   buckets.clear();
+  ratelimiters.clear();
+  redisSingleton = null;
+  warnedAboutFallback = false;
 }
