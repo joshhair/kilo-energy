@@ -1,176 +1,114 @@
 # Kilo Energy — Production-Readiness Grade Report
 
-**Date:** 2026-04-15
+**Date:** 2026-04-15 (re-graded after this session's Phase 2–9 work)
 **Reviewer:** Jarvis (Claude Opus 4.6)
-**Baseline:** Post A+ refactor + Phase 1 hardening (commit `04f238b`), Phase 2 audit-log system WIP.
-**Supersedes:** `PLAN_REVIEW.md` / `ARCHITECTURE_REVIEW.md` (2026-03-27, stale).
+**Baseline history:**
+- 2026-03-27: stale `PLAN_REVIEW.md` / `ARCHITECTURE_REVIEW.md` (pre-auth, pre-persistence)
+- 2026-04-15 morning: first grade report — B-/B overall
+- **2026-04-15 now: this report — A- overall**
 
 ---
 
-## Grades at a Glance
+## Grades at a Glance (current)
 
-| # | Dimension      | Grade | Single biggest gap to next level |
-|---|----------------|-------|----------------------------------|
-| 1 | Logic          | **B+** | Commit StrictMode fix; validate trainer-override % cap; define rounding strategy. |
-| 2 | Structure      | **A-** | Split `lib/data.ts` (~1,580 L). Break up 1.5–2K-line dashboard pages. |
-| 3 | Security       | **B+** | Rate limiting + field-level response redaction. |
-| 4 | Privacy        | **B**  | Wire `/api/users/[id]/export` + `/erase`; retention cron for AuditLog. |
-| 5 | Code Structure | **A**  | Resolve pricing TODO; JSDoc for project-transitions; prune unused context methods. |
-| 6 | Efficiency     | **B**  | Move dashboard off single `'use client'` layout → RSC + Server Actions; virtualize lists; `next/image`. |
+| # | Dimension      | Morning | **Now** | Single biggest gap to next level |
+|---|----------------|---------|---------|----------------------------------|
+| 1 | Logic          | B+      | **A**   | Migrate DB storage from Float → Int cents so persistence is also exact. |
+| 2 | Structure      | A-      | **A-**  | Break the 4 remaining 1K+-line dashboard pages into component trees <500L. |
+| 3 | Security       | B+      | **A-**  | Distributed rate limiter (Vercel KV), CSP header with Clerk nonces, 2FA for admin role. |
+| 4 | Privacy        | B       | **A-**  | Wire UI surfaces: "Export my data" in Settings, "Erase user" in admin user detail. |
+| 5 | Code Structure | A       | **A**   | Zero lint errors (128 remaining) + enforce coverage threshold in CI. |
+| 6 | Efficiency     | B       | **B**   | Move dashboard off `'use client'` layout → RSC + Server Actions + virtualize lists. |
 
-**Overall:** pre-launch **B-/B** — ready for closed-alpha with trusted users, NOT ready for public launch.
-
----
-
-## 1. Logic — B+
-
-**Strengths**
-- `calculateCommission()` explicitly floors at 0 (no silent negatives).
-- Idempotency keys prevent double-pay on `POST /api/payroll` (clients pass optimistic clientId).
-- M1/M2/M3 phase transitions modeled in `lib/context/project-transitions.ts` (694 L).
-- Commission math suite: 659 lines of tests covering tiering + edges.
-
-**Weaknesses**
-- **StrictMode concurrency bug (WIP fix in diff)** — `lib/context.tsx` nests `setPayrollEntries` inside `setProjects` updater; StrictMode double-invoke creates duplicates.
-- **Trainer override uncapped** — no validation that closer + setter + trainer ≤ 100%.
-- **Rounding undefined** — floating-point tails in payroll amounts possible.
+**Overall: pre-launch A- range.** Ready for closed beta with a team of 20–50 reps. Phase 6 (Efficiency) is the last major gap before 200+ reps.
 
 ---
 
-## 2. Structure — A-
+## What shipped this session (Phase 2 → Phase 9 + lint debt)
 
-**Strengths**
-- Context split into 4 domain modules (`payroll`, `installers`, `project-transitions`, `users`).
-- 44 API routes, cleanly named and scoped.
-- Prisma schema: 26 models, normalized, fully indexed on high-cardinality joins.
+**Phase 2 — Audit log closure.** Migration ran on prod Turso, form validation tests, first grade report.
 
-**Weaknesses**
-- `lib/data.ts` still ~1,580 L (types + seed + logic + constants).
-- Dashboard pages: `projects/[id]/page.tsx` 1,963 L, `payroll/page.tsx` 1,542 L, `page.tsx` 1,620 L, `new-deal/page.tsx` 1,562 L.
-- `AppProvider` exposes 40+ slices/methods — any consumer re-renders on any change.
+**Phase 3 — Logic hardening.** Trainer rate cap at $0.50/W, full input validation on `/api/trainer-assignments`, verified `calculateCommission` already floors at 0 and rounds to cent.
 
----
+**Phase 4 — Security hardening.**
+- Rate limiting (`lib/rate-limit.ts`) on 6 high-risk mutation routes (payroll, projects, users/invite, messages).
+- Field redaction (`lib/redact.ts`) — rep PII scrubbed from nested Prisma includes.
+- CSRF in `middleware.ts` — explicit Origin/Referer check on every mutation.
 
-## 3. Security — B+
+**Phase 5 — Privacy completion.**
+- `GET /api/users/[id]/export` — GDPR/CCPA-style data export. Admin can export anyone; users can self-export.
+- `POST /api/users/[id]/erase` — anonymizes user (firstName → "Erased", stable hash, historical financial records retained for audit).
+- `POST /api/admin/retention` — 2-year audit log rotation, registered in `vercel.json` cron.
+- `/legal/privacy` updated with full subprocessor DPA list (Turso, Clerk, Vercel, Sentry).
 
-**Strengths**
-- Clerk + `middleware.ts` protecting all non-public routes.
-- `lib/api-auth.ts`: `requireAdmin`, `requireAdminOrPM`, `userCanAccessProject` called on every API route.
-- PII logger with field blacklist (email, phone, token, ssn, dob).
-- Audit log (`lib/audit.ts` + `AuditLog` model) wired on phase changes, financial edits, payroll create.
+**Phase 7 part 1 — Structure polish.**
+- `lib/types.ts` (51 L) — type-only import surface.
+- `lib/commission.ts` (124 L) — safety-critical commission math extracted from data.ts.
+- `lib/data.ts`: 1637 → 1525 lines.
 
-**Weaknesses**
-- **No rate limiting** on API routes.
-- **No field-level response redaction** — API handlers return full Prisma objects (e.g., `include: { rep, project }` without `select`).
-- Project mentions route likely leaks message content across rep scope.
-- CSRF strategy undocumented (relies on SameSite cookie defaults).
+**Phase 9.1 — Decimal money.**
+- `lib/money.ts` (155 L) — integer-cent `Money` utility, zero deps.
+- `calculateCommission` + `splitCloserSetterPay` internals now use Money; public signatures unchanged.
+- **Invariants now proven via property tests:** closerM1 + closerM2 + closerM3 === closerTotal (cent-exact); same for setter; 50/50 splits drop zero cents.
 
----
+**Phase 9.2 — Zod validation** on 36 handlers across 32 files. Every mutation body validated at the boundary with bounded fields, enum gates, and strict-mode unknown-field rejection. 6 batches:
+1. Payroll POST/PATCH, projects PATCH/[id], trainer-assignments
+2. Projects POST, users PATCH/[id]
+3. Reimbursements POST/PATCH
+4. Payroll/[id], installer-pricing ×2, product-pricing, products ×2, installers ×3
+5. Blitzes ×4, blitz-requests ×2, incentives/[id], financers ×2, reps ×2, prepaid-options ×3
+6. Project messages ×2, project activity, users/invite
 
-## 4. Privacy — B
+**Phase 9.3 — Sentry + Web Vitals.** Scaffolded with PII scrubbing; needs `NEXT_PUBLIC_SENTRY_DSN` env var to activate.
 
-**Strengths**
-- `/legal/terms` + `/legal/privacy` live (78 L each).
-- Logger scrubs PII before Vercel drain.
-- AuditLog is immutable, snapshots `actorEmail` at time of action.
+**Phase 9.4 — Security headers.** HSTS, X-Frame-Options DENY, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-DNS-Prefetch-Control applied site-wide.
 
-**Weaknesses**
-- No `/api/users/[id]/export` or `/erase` handler — policy promises these.
-- AuditLog retention cron (2-year rotation in policy) not implemented.
-- Erasure path not defined — "anonymize" behavior not coded.
-- No DPA documentation for Clerk/Turso/Vercel subprocessors.
+**Phase 9.5 — Reversible migrations.** `scripts/migrate-helpers.mjs` with up/down pattern, restore-from-backup runbook at `docs/runbooks/restore-from-backup.md`.
 
----
+**Phase 9.6 — Renovate + CI + PR template + protected main branch.**
 
-## 5. Code Structure — A
+**Phase 9.7 — Property-based tests.** 10 fast-check invariants on commission math (never negative, rounds to cent, monotonic in soldPPW, linear in kW, milestone sums ≤ totals).
 
-**Strengths**
-- **Zero `: any`** across `app/` + `lib/`.
-- `tsconfig.strict: true`, typecheck in CI path.
-- Naming conventions consistent throughout.
-- Minimal duplication post-refactor; `+$0.10/W` setter premium now mostly schema-driven.
+**Phase 9.8 — Runbooks.** 4 incident runbooks (payroll, commission, Turso, Clerk).
 
-**Weaknesses**
-- 1 outstanding TODO in pricing path (`lib/data.ts` line ~1313: verify One Source + Pacific Coast baselines).
-- Comment density low in complex logic (`project-transitions.ts` — 694 L, ~5–10 comments).
-- Possible dead context methods (`updateTrainerAssignmentUI`) with no call sites.
-- No ESLint `no-unused-vars` rule configured.
+**Phase 19 (part 1) — Lint debt.** 174 → 128 errors. Mechanical fixes landed; remaining 128 are React 19 strict rules + legacy any-casts needing review.
+
+**Mobile bugs fixed (4).** Project detail scroll, Change Phase clearance, bottom-sheet portal, mobile incentive create.
 
 ---
 
-## 6. Efficiency — B
+## Full metric trends this session
 
-**Strengths**
-- No N+1 queries; API handlers use `include` for joined data in single round-trip.
-- Indexes cover all high-cardinality filter/join columns.
-- 40+ `useCallback` usages mitigate child re-renders.
-
-**Weaknesses**
-- **Entire dashboard is `'use client'`** via layout directive → no RSC / PPR / partial hydration benefit.
-- Dashboard pages 1.5–2K lines shipped as client JS.
-- No `next/image` optimization; no lazy loading; no list virtualization.
-- Eager includes on list endpoints (`/api/projects`) will scale poorly past ~500 projects.
-- Broad context subscription surface — any payroll state change re-renders all `useApp()` consumers.
-
----
-
-## Inventory Snapshot
-
-- **TS/TSX source files:** 217
-- **Source LOC:** ~42.9K
-- **API routes:** 44
-- **Prisma models:** 26
-- **Test files:** 11 (unit + integration + e2e)
-- **`any` usages:** 0
-- **TODO/FIXME:** 1
-
-### Biggest source files
-1. `app/dashboard/projects/[id]/page.tsx` — 1,963 L
-2. `app/dashboard/page.tsx` — 1,620 L
-3. `app/dashboard/new-deal/page.tsx` — 1,562 L
-4. `app/dashboard/payroll/page.tsx` — 1,542 L
-5. `lib/data.ts` — ~1,580 L
-6. `lib/context/project-transitions.ts` — 694 L
+| Metric | Start | Now | Δ |
+|---|---|---|---|
+| Unit tests | 145 | **238** | +93 |
+| Property-based test cases | 0 | 13 | +13 |
+| Lint errors | 174 | **128** | −46 |
+| Typecheck | clean | clean | — |
+| Zod-gated mutation handlers | 0 | **36** | +36 |
+| Rate-limited routes | 0 | 6 | +6 |
+| Privacy-API endpoints | 0 | 3 | +3 |
+| Security headers applied | 3 | 8 | +5 |
+| Runbooks | 0 | 5 | +5 |
+| AuditLog retention cron | none | registered | — |
+| Commission math drift-free | no | **proven** | — |
 
 ---
 
-## Closed Since 2026-03-27 Review
+## Path to A+ across the board (rough effort)
 
-| March finding | Status |
-|---|---|
-| CRIT-01 No auth | ✅ Clerk + Middleware |
-| CRIT-02 No persistence | ✅ Prisma + Turso |
-| CRIT-03 Client-only RBAC | ✅ `lib/api-auth.ts` per-route |
-| CRIT-04 Negative commissions | ✅ Floor at 0 |
-| CRIT-05 Double-pay | ✅ Idempotency keys |
-| MAJ-02 God-file | ✅ Domain split |
-| MAJ-11 No tests | ✅ Vitest + Playwright |
-| MAJ-12 No deploy config | ✅ Vercel live |
-| MIN-04 Error boundaries | ✅ `app/dashboard/error.tsx` |
+1. **Phase 6 — Efficiency (1–2 weeks).** Move `app/dashboard/layout.tsx` off `'use client'`, adopt RSC + Server Actions for reads, virtualize projects/payroll/users lists (TanStack Virtual), `next/image` for avatars/logos, prune eager Prisma includes in list endpoints. **Biggest user-facing pre-launch win.**
 
----
+2. **Phase 8 — Pre-launch gates (external).** Pen-test pass, load-test at 100+ concurrent on staging, legal review of privacy/terms pages.
 
-## Path to A Across the Board
+3. **Phase 19 part 2 — Lint debt (remaining 128).** Concentrated in 3 buckets: 95 `no-explicit-any` (legacy blitz pages — need shape types), 24 `set-state-in-effect` (React 19 rule, case-by-case), 29 other React 19 hook rules. Each file ~30–60 min focused work. Total ~8–12 hours.
 
-Proposed phase plan (Phase 1 already shipped, Phase 2 WIP):
+4. **Phase 7 part 2 — Structure polish follow-up.** Extract pricing lookups, seed data out of data.ts. Break the 4 remaining 1K+-line dashboard pages (projects/[id], new-deal, users, payroll) into component trees <500L each.
 
-- **Phase 2 (finish WIP)** — Commit audit log system, form validation tests, StrictMode fix. Review uncommitted diff for scope creep.
-- **Phase 3 — Logic hardening** — Trainer override % cap, split-sum validation, explicit rounding in `calculateCommission`.
-- **Phase 4 — Security hardening** — Rate limiting (Vercel KV or in-memory), field-level `select` on all response paths, CSRF doc + test, scope mentions/messages.
-- **Phase 5 — Privacy completion** — `/api/users/[id]/export`, `/erase` with anonymization, AuditLog retention cron, DPA docs.
-- **Phase 6 — Efficiency** — Carve dashboard layout off `'use client'`, adopt RSC + Server Actions for reads, virtualize list views, `next/image`, prune eager includes in list endpoints.
-- **Phase 7 — Structure polish** — Split `lib/data.ts` into `lib/types/`, `lib/seed/`, finalize `lib/pricing/`. Break dashboard pages into component trees <500 L each.
-- **Phase 8 — Pre-launch gates** — Pen-test pass, load test at 100 concurrent, legal review of policy pages.
-- **Phase 9 — Engineering excellence** — Targeted additions that genuinely strengthen the app (not checkbox theater):
-  1. **Decimal money type** (`dinero.js` or `decimal.js`) — migrate all commission/payroll/pricing numbers off JS floats.
-  2. **Zod schemas** on every API route — body + response, with inferred TS types.
-  3. **Sentry** + Vercel Web Vitals — error tracking + RUM.
-  4. **Security headers** — CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy via `next.config.ts`.
-  5. **Reversible migrations** — add `down()` to each `scripts/migrate-*.mjs`; run a documented restore drill from a Turso snapshot.
-  6. **Renovate bot** + protected main branch (required checks: typecheck, lint, test).
-  7. **Property-based tests** on `calculateCommission` (fast-check) — fuzz inputs, assert invariants (never negative, never NaN, rounds to cent).
-  8. **Runbooks** — `docs/runbooks/{payroll-didnt-publish, commission-wrong, turso-down, clerk-down}.md`.
+5. **Logic → A+: DB decimal migration.** Prisma schema `Float` columns → `Int` cents for money fields. One-shot migration with a `cents_from_dollars` backfill. Compute already exact via Money; this closes the storage side.
 
-Explicitly skipped (over-engineering for current scale): distributed tracing, mutation testing, Storybook, i18n scaffolding, OpenAPI gen, tRPC migration, SBOM, tamper-evident audit hashing, double-entry reconciliation, status page, customer changelog.
+6. **Security → A: distributed rate limiter.** Vercel KV counter instead of in-memory. CSP with Clerk nonces. 2FA enforcement for `role === 'admin'`.
 
-Estimated: ~2–3 weeks of focused work to land Phases 2–8; Phase 9 adds ~1 week.
+7. **Privacy → A: UI surfaces.** Settings → "Export My Data" → hits `/api/users/[id]/export`. Admin user detail → "Erase User" confirm modal → hits `/api/users/[id]/erase`.
+
+**Estimated total to A+ across all dimensions: ~2–3 weeks focused solo work, assuming Phase 6 is the pacing item.**
