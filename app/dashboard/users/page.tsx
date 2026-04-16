@@ -597,6 +597,11 @@ function UsersPageInner() {
     // inactive" expander below so admins can find and reactivate them
     // without polluting the active roster.
     if (r.active === false) return false;
+    // Selling admins (role='admin' + repType) are in the `reps` array so
+    // dropdown pickers can reach them, but the Users > Reps bucket is for
+    // actual role='rep' users — admins render under the Admins tab. Skip
+    // them here so they don't duplicate.
+    if (r.role !== 'rep') return false;
     // Search filter
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
@@ -615,6 +620,7 @@ function UsersPageInner() {
   // they were.
   const inactiveReps = reps.filter((r) => {
     if (r.active !== false) return false;
+    if (r.role !== 'rep') return false;  // selling admins stay under the Admins tab
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       if (!r.name.toLowerCase().includes(q) && !r.email?.toLowerCase().includes(q)) return false;
@@ -832,7 +838,8 @@ function UsersPageInner() {
         const pool: SimpleUser[] =
           roleFilter === 'all'
             ? [
-                ...reps.filter((r) => r.active !== false).map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
+                // Filter to actual reps only — selling admins live in adminUsers below, not here.
+                ...reps.filter((r) => r.active !== false && r.role === 'rep').map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
                 ...subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
                 ...pmUsers.filter((u) => u.active !== false),
                 ...adminUsers.filter((u) => u.active !== false),
@@ -1312,7 +1319,9 @@ function UsersPageInner() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <GradCard
           label="Total Reps"
-          rawValue={reps.filter(r => r.active !== false).length}
+          // Selling admins are in the reps array for dropdown-picker purposes;
+          // exclude them from the Total Reps count — they're counted under Admins.
+          rawValue={reps.filter(r => r.active !== false && r.role === 'rep').length}
           formatter={(v) => String(Math.round(v))}
           gradient="linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))"
           borderColor="rgba(77,159,255,0.3)"
