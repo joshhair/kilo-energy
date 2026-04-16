@@ -143,9 +143,15 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   }, [id, rep, subDealer]);
 
   // Resolve the display user from whichever source succeeded.
+  // NOTE: preserve `rep.role` — it may be 'rep' OR 'admin' (selling
+  // admins are now included in the reps[] array so they appear in
+  // closer/setter dropdowns). Hardcoding 'rep' here caused the admin
+  // shell branch below to never match for selling admins, and they
+  // rendered the rep-specific UI (trainer assignment, "this rep has no
+  // deals yet") instead of the Admin+Sales card + action footer.
   const resolvedUser =
     rep
-      ? { ...rep, role: 'rep' as string, canCreateDeals: false, canAccessBlitz: false, canExport: false }
+      ? { ...rep, role: rep.role as string, canCreateDeals: false, canAccessBlitz: false, canExport: false }
       : subDealer
       ? { ...subDealer, role: 'sub-dealer' as string, repType: 'both' as string, canCreateDeals: false, canAccessBlitz: false, canExport: false }
       : fetchedUser;
