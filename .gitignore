@@ -67,3 +67,9 @@ mobile-audit-screenshots/
 # negated below so they're checked in.
 state/backups/*.json
 !state/backups/anchor-*.json
+
+# Playwright authenticated storage states. These contain Clerk session
+# cookies for the E2E test users — rotating them is cheap, but checking
+# them into git is a credential leak. Regenerate via `npm run test:e2e`
+# (the setup project runs the sign-in flow and writes these files).
+tests/e2e/.auth/
