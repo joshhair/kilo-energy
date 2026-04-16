@@ -1,0 +1,2404 @@
+{
+  "takenAt": "2026-04-16T19:02:15.663Z",
+  "tableCount": 25,
+  "totalRows": 247,
+  "tables": {
+    "User": [
+      {
+        "id": "admin_josh",
+        "firstName": "Josh",
+        "lastName": "Hair",
+        "email": "josh@kiloenergies.com",
+        "phone": "",
+        "role": "admin",
+        "repType": "closer",
+        "active": 1,
+        "canRequestBlitz": 0,
+        "canCreateBlitz": 0,
+        "createdAt": "2026-04-02 17:26:39",
+        "updatedAt": "2026-04-16T05:49:10.254+00:00",
+        "canExport": 0,
+        "canCreateDeals": 0,
+        "canAccessBlitz": 0,
+        "clerkUserId": "user_3CQWd75LmPGn0qoTPh2Wles2PTZ"
+      },
+      {
+        "id": "cmnjghfrd00000albjorobtni",
+        "firstName": "Rebekah",
+        "lastName": "Carpenter",
+        "email": "rebekah@kiloenergies.com",
+        "phone": "",
+        "role": "admin",
+        "repType": "both",
+        "active": 1,
+        "canRequestBlitz": 0,
+        "canCreateBlitz": 0,
+        "createdAt": "2026-04-03T22:09:08.618+00:00",
+        "updatedAt": "2026-04-07T15:28:13.926+00:00",
+        "canExport": 0,
+        "canCreateDeals": 0,
+        "canAccessBlitz": 0,
+        "clerkUserId": "user_3C2FKAFf88NSg0G1WUD7UqFff0X"
+      },
+      {
+        "id": "cmnjghtw000010alb91xhck29",
+        "firstName": "Jessica",
+        "lastName": "Sousa",
+        "email": "jessica@kiloenergies.com",
+        "phone": "",
+        "role": "project_manager",
+        "repType": "both",
+        "active": 1,
+        "canRequestBlitz": 0,
+        "canCreateBlitz": 0,
+        "createdAt": "2026-04-03T22:09:26.928+00:00",
+        "updatedAt": "2026-04-08T11:39:33.539+00:00",
+        "canExport": 0,
+        "canCreateDeals": 0,
+        "canAccessBlitz": 0,
+        "clerkUserId": "user_3C4cdUyUiBDOS2vC4X5JogAIM0c"
+      }
+    ],
+    "Installer": [
+      {
+        "id": "inst_esp",
+        "name": "ESP",
+        "active": 1,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "inst_exo",
+        "name": "EXO",
+        "active": 0,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:26:40.768+00:00"
+      },
+      {
+        "id": "inst_solartech",
+        "name": "SolarTech",
+        "active": 1,
+        "installPayPct": 100,
+        "usesProductCatalog": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "inst_geg",
+        "name": "GEG",
+        "active": 0,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:26:42.423+00:00"
+      },
+      {
+        "id": "inst_sunpower",
+        "name": "SunPower",
+        "active": 1,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "inst_complete_solar",
+        "name": "Complete Solar",
+        "active": 0,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:26:35.555+00:00"
+      },
+      {
+        "id": "inst_solrite",
+        "name": "Solrite",
+        "active": 1,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "inst_solnova",
+        "name": "Solnova",
+        "active": 0,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:26:46.351+00:00"
+      },
+      {
+        "id": "inst_bryton",
+        "name": "Bryton",
+        "active": 0,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:26:36.640+00:00"
+      },
+      {
+        "id": "inst_one_source",
+        "name": "One Source",
+        "active": 0,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:26:43.546+00:00"
+      },
+      {
+        "id": "inst_pacific_coast",
+        "name": "Pacific Coast",
+        "active": 0,
+        "installPayPct": 80,
+        "usesProductCatalog": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:26:44.800+00:00"
+      },
+      {
+        "id": "cmnxnu0qq00000bjrlrbqmec7",
+        "name": "BVI",
+        "active": 1,
+        "installPayPct": 80,
+        "usesProductCatalog": 1,
+        "createdAt": "2026-04-13T20:43:39.458+00:00",
+        "updatedAt": "2026-04-14T02:22:30.704+00:00"
+      }
+    ],
+    "Financer": [
+      {
+        "id": "fin_enfin",
+        "name": "Enfin",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_everbright",
+        "name": "Everbright",
+        "active": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:27:04.849+00:00"
+      },
+      {
+        "id": "fin_mosaic",
+        "name": "Mosaic",
+        "active": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:27:09.121+00:00"
+      },
+      {
+        "id": "fin_solrite",
+        "name": "Solrite",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_sunnova",
+        "name": "Sunnova",
+        "active": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:27:12.723+00:00"
+      },
+      {
+        "id": "fin_sunrun",
+        "name": "Sunrun",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_lightreach",
+        "name": "LightReach",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_dividend",
+        "name": "Dividend",
+        "active": 0,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-04T06:27:01.896+00:00"
+      },
+      {
+        "id": "fin_wheelhouse",
+        "name": "Wheelhouse",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_sungage",
+        "name": "Sungage",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_goodleap",
+        "name": "Goodleap",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_participate",
+        "name": "Participate",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "fin_credit_human",
+        "name": "Credit Human",
+        "active": 1,
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "cmnjpjmnb00010al84tq1ez84",
+        "name": "Cash",
+        "active": 1,
+        "createdAt": "2026-04-04T02:22:47.399+00:00",
+        "updatedAt": "2026-04-07T20:10:09.259+00:00"
+      }
+    ],
+    "InstallerPrepaidOption": [
+      {
+        "id": "prepaid_st_hdm",
+        "installerId": "inst_solartech",
+        "name": "HDM",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "prepaid_st_pe",
+        "installerId": "inst_solartech",
+        "name": "PE",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "cmnxnv6xp00020bjruxm7ytgn",
+        "installerId": "cmnxnu0qq00000bjrlrbqmec7",
+        "name": "HDM",
+        "createdAt": "2026-04-13T20:44:34.141+00:00",
+        "updatedAt": "2026-04-13T20:44:34.141+00:00"
+      },
+      {
+        "id": "cmnxzo1ff00050al20bcz1u7n",
+        "installerId": "cmnxnu0qq00000bjrlrbqmec7",
+        "name": "PE",
+        "createdAt": "2026-04-14T02:14:55.803+00:00",
+        "updatedAt": "2026-04-14T03:35:59.080+00:00"
+      }
+    ],
+    "InstallerPricingVersion": [
+      {
+        "id": "ipv_esp_v1",
+        "installerId": "inst_esp",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_exo_v1",
+        "installerId": "inst_exo",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_geg_v1",
+        "installerId": "inst_geg",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_sunpower_v1",
+        "installerId": "inst_sunpower",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_complete_solar_v1",
+        "installerId": "inst_complete_solar",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_solrite_v1",
+        "installerId": "inst_solrite",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_solnova_v1",
+        "installerId": "inst_solnova",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_bryton_v1",
+        "installerId": "inst_bryton",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_one_source_v1",
+        "installerId": "inst_one_source",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      },
+      {
+        "id": "ipv_pacific_coast_v1",
+        "installerId": "inst_pacific_coast",
+        "label": "v1 — Initial",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "rateType": "flat",
+        "createdAt": "2026-04-03T20:28:33.257Z",
+        "updatedAt": "2026-04-03T20:28:33.257Z"
+      }
+    ],
+    "InstallerPricingTier": [
+      {
+        "id": "ipv_esp_v1_t1",
+        "versionId": "ipv_esp_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": null,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_exo_v1_t1",
+        "versionId": "ipv_exo_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": null,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_geg_v1_t1",
+        "versionId": "ipv_geg_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.7,
+        "setterPerW": null,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_sunpower_v1_t1",
+        "versionId": "ipv_sunpower_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2,
+        "setterPerW": null,
+        "kiloPerW": 1.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_complete_solar_v1_t1",
+        "versionId": "ipv_complete_solar_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": null,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_solrite_v1_t1",
+        "versionId": "ipv_solrite_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": null,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_solnova_v1_t1",
+        "versionId": "ipv_solnova_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": null,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_bryton_v1_t1",
+        "versionId": "ipv_bryton_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.8,
+        "setterPerW": null,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_one_source_v1_t1",
+        "versionId": "ipv_one_source_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": null,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "ipv_pacific_coast_v1_t1",
+        "versionId": "ipv_pacific_coast_v1",
+        "minKW": 0,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": null,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      }
+    ],
+    "ProductCatalogConfig": [
+      {
+        "id": "pcc_solartech",
+        "installerId": "inst_solartech",
+        "families": "Goodleap,Enfin,Lightreach,Cash/HDM/PE",
+        "familyFinancerMap": "{\"Goodleap\":\"Goodleap\",\"Enfin\":\"Enfin\",\"Lightreach\":\"LightReach\",\"Cash/HDM/PE\":\"Cash\"}",
+        "prepaidFamily": "Cash/HDM/PE",
+        "createdAt": "2026-04-07T17:16:20.026Z",
+        "updatedAt": "2026-04-07T17:16:20.026Z"
+      },
+      {
+        "id": "cmnxnu0se00010bjrlohulj9z",
+        "installerId": "cmnxnu0qq00000bjrlrbqmec7",
+        "families": "HDM",
+        "familyFinancerMap": "{}",
+        "prepaidFamily": null,
+        "createdAt": "2026-04-13T20:43:39.518+00:00",
+        "updatedAt": "2026-04-13T20:43:39.518+00:00"
+      }
+    ],
+    "Product": [
+      {
+        "id": "gl-qpeak-enphase",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "Q.Peak DUO BLK ML-G10.C+ 410 + Enphase IQ8HC",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "gl-qtron-1pw3",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "Q.TRON + 1x Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "gl-qtron-2pw3",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "Q.TRON + 2x Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "gl-qtron-3pw3",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "Q.TRON + 3x Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "gl-hyundai-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "Hyundai 440 DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "gl-hyundai-enphase",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "Hyundai 440 + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "gl-spr-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "SPR-MAX3 DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "gl-spr-enphase",
+        "installerId": "inst_solartech",
+        "family": "Goodleap",
+        "name": "SPR-MAX3 + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ef-qpeak-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Enfin",
+        "name": "Q.Peak DUO DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ef-qpeak-tesla",
+        "installerId": "inst_solartech",
+        "family": "Enfin",
+        "name": "Q.Peak DUO + Tesla PVI",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ef-qpeak-enphase",
+        "installerId": "inst_solartech",
+        "family": "Enfin",
+        "name": "Q.Peak DUO + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-hyundai-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "Hyundai 440 DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-hyundai-tesla",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "Hyundai 440 + Tesla PVI",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-hyundai-enphase",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "Hyundai 440 + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-spr-tesla",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "SPR-MAX3 + Tesla PVI",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-spr-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "SPR-MAX3 DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-qpeak-tesla",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "Q.Peak DUO + Tesla PVI",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-qpeak-enphase",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "Q.Peak DUO + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-qpeak-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "Q.Peak DUO DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "lr-spr-enphase",
+        "installerId": "inst_solartech",
+        "family": "Lightreach",
+        "name": "SPR-MAX3 + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-hyundai-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "Hyundai/SEG 440 DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-hyundai-tesla",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "Hyundai/SEG 440 + Tesla PVI",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-hyundai-enphase",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "Hyundai/SEG 440 + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-spr-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "SPR-MAX3 DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-spr-tesla",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "SPR-MAX3 + Tesla PVI",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-spr-enphase",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "SPR-MAX3 + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-qpeak-dc-pw3",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "Q.Peak DUO DC + Powerwall 3",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-qpeak-tesla",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "Q.Peak DUO + Tesla PVI",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ca-qpeak-enphase",
+        "installerId": "inst_solartech",
+        "family": "Cash/HDM/PE",
+        "name": "Q.Peak DUO + Enphase",
+        "active": 1,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "cmnxo0d2m00000aihddzl2x7l",
+        "installerId": "cmnxnu0qq00000bjrlrbqmec7",
+        "family": "HDM",
+        "name": "Seg-440 w/PW3",
+        "active": 1,
+        "createdAt": "2026-04-13T20:48:35.374+00:00",
+        "updatedAt": "2026-04-13T20:48:35.374+00:00"
+      },
+      {
+        "id": "cmnxoc9x000160aihtrkg5xnv",
+        "installerId": "cmnxnu0qq00000bjrlrbqmec7",
+        "family": "HDM",
+        "name": "Seg-440 Tesla String Inverter",
+        "active": 1,
+        "createdAt": "2026-04-13T20:57:51.156+00:00",
+        "updatedAt": "2026-04-13T20:57:51.156+00:00"
+      },
+      {
+        "id": "cmnxofs4k00300aihixbreqci",
+        "installerId": "cmnxnu0qq00000bjrlrbqmec7",
+        "family": "HDM",
+        "name": "Seg-440 Enphase",
+        "active": 1,
+        "createdAt": "2026-04-13T21:00:34.724+00:00",
+        "updatedAt": "2026-04-13T21:00:34.724+00:00"
+      }
+    ],
+    "ProductPricingVersion": [
+      {
+        "id": "ppv_gl-qpeak-enphase_v1",
+        "productId": "gl-qpeak-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_gl-qtron-1pw3_v1",
+        "productId": "gl-qtron-1pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_gl-qtron-2pw3_v1",
+        "productId": "gl-qtron-2pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_gl-qtron-3pw3_v1",
+        "productId": "gl-qtron-3pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_gl-hyundai-dc-pw3_v1",
+        "productId": "gl-hyundai-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_gl-hyundai-enphase_v1",
+        "productId": "gl-hyundai-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_gl-spr-dc-pw3_v1",
+        "productId": "gl-spr-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_gl-spr-enphase_v1",
+        "productId": "gl-spr-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ef-qpeak-dc-pw3_v1",
+        "productId": "ef-qpeak-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ef-qpeak-tesla_v1",
+        "productId": "ef-qpeak-tesla",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ef-qpeak-enphase_v1",
+        "productId": "ef-qpeak-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-hyundai-dc-pw3_v1",
+        "productId": "lr-hyundai-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-hyundai-tesla_v1",
+        "productId": "lr-hyundai-tesla",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-hyundai-enphase_v1",
+        "productId": "lr-hyundai-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-spr-tesla_v1",
+        "productId": "lr-spr-tesla",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-spr-dc-pw3_v1",
+        "productId": "lr-spr-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-qpeak-tesla_v1",
+        "productId": "lr-qpeak-tesla",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-qpeak-enphase_v1",
+        "productId": "lr-qpeak-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-qpeak-dc-pw3_v1",
+        "productId": "lr-qpeak-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_lr-spr-enphase_v1",
+        "productId": "lr-spr-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-hyundai-dc-pw3_v1",
+        "productId": "ca-hyundai-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-hyundai-tesla_v1",
+        "productId": "ca-hyundai-tesla",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-hyundai-enphase_v1",
+        "productId": "ca-hyundai-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-spr-dc-pw3_v1",
+        "productId": "ca-spr-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-spr-tesla_v1",
+        "productId": "ca-spr-tesla",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-spr-enphase_v1",
+        "productId": "ca-spr-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-qpeak-dc-pw3_v1",
+        "productId": "ca-qpeak-dc-pw3",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-qpeak-tesla_v1",
+        "productId": "ca-qpeak-tesla",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "ppv_ca-qpeak-enphase_v1",
+        "productId": "ca-qpeak-enphase",
+        "label": "v1 — Restored from seed",
+        "effectiveFrom": "2020-01-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-07T16:16:08.634Z",
+        "updatedAt": "2026-04-07T16:16:08.634Z"
+      },
+      {
+        "id": "cmnxzg8bw00000ajpg7f7yvk4",
+        "productId": "cmnxoc9x000160aihtrkg5xnv",
+        "label": "BVI - CTM",
+        "effectiveFrom": "2026-04-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-14T02:08:51.500+00:00",
+        "updatedAt": "2026-04-14T02:08:51.500+00:00"
+      },
+      {
+        "id": "cmnxzg9gz00000al2cnqeqzbu",
+        "productId": "cmnxo0d2m00000aihddzl2x7l",
+        "label": "BVI - CTM",
+        "effectiveFrom": "2026-04-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-14T02:08:52.979+00:00",
+        "updatedAt": "2026-04-14T02:08:52.979+00:00"
+      },
+      {
+        "id": "cmnxzg9oe00000bjt6olwjgpr",
+        "productId": "cmnxofs4k00300aihixbreqci",
+        "label": "BVI - CTM",
+        "effectiveFrom": "2026-04-01",
+        "effectiveTo": null,
+        "createdAt": "2026-04-14T02:08:53.246+00:00",
+        "updatedAt": "2026-04-14T02:08:53.246+00:00"
+      }
+    ],
+    "ProductPricingTier": [
+      {
+        "id": "tier_mnotmw0gs59gunjo",
+        "versionId": "ppv_gl-qpeak-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.45,
+        "setterPerW": 3.55,
+        "kiloPerW": 2.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmw2wmrmv858v",
+        "versionId": "ppv_gl-qpeak-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmw5bzluu1j01",
+        "versionId": "ppv_gl-qpeak-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmw8zq76funln",
+        "versionId": "ppv_gl-qpeak-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmwkm5mur065i",
+        "versionId": "ppv_gl-qtron-1pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 5.98,
+        "setterPerW": 6.08,
+        "kiloPerW": 5.43,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmwn8xye5on0z",
+        "versionId": "ppv_gl-qtron-1pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 4.57,
+        "setterPerW": 4.67,
+        "kiloPerW": 3.97,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmwps6ao4isnc",
+        "versionId": "ppv_gl-qtron-1pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3.66,
+        "setterPerW": 3.76,
+        "kiloPerW": 3.11,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmwsbnfw18f26",
+        "versionId": "ppv_gl-qtron-1pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 3.61,
+        "setterPerW": 3.71,
+        "kiloPerW": 3.11,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmx05lilxvthx",
+        "versionId": "ppv_gl-qtron-2pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 8.28,
+        "setterPerW": 8.38,
+        "kiloPerW": 7.73,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmx2mtrxculiw",
+        "versionId": "ppv_gl-qtron-2pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 5.94,
+        "setterPerW": 6.04,
+        "kiloPerW": 5.34,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmx5jw6okey4l",
+        "versionId": "ppv_gl-qtron-2pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 4.47,
+        "setterPerW": 4.57,
+        "kiloPerW": 3.92,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmx7vgkvqqbiu",
+        "versionId": "ppv_gl-qtron-2pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 4.42,
+        "setterPerW": 4.52,
+        "kiloPerW": 3.92,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmxi12zypimua",
+        "versionId": "ppv_gl-qtron-3pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 10.58,
+        "setterPerW": 10.68,
+        "kiloPerW": 10.03,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmxlcfmu4iyog",
+        "versionId": "ppv_gl-qtron-3pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 7.3,
+        "setterPerW": 7.4,
+        "kiloPerW": 6.7,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmxnqe8bdow58",
+        "versionId": "ppv_gl-qtron-3pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 5.29,
+        "setterPerW": 5.39,
+        "kiloPerW": 4.74,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmxral026vokm",
+        "versionId": "ppv_gl-qtron-3pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 5.24,
+        "setterPerW": 5.34,
+        "kiloPerW": 4.74,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmxyixaih4ftj",
+        "versionId": "ppv_gl-hyundai-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmy236dl2uvuo",
+        "versionId": "ppv_gl-hyundai-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.6,
+        "setterPerW": 2.7,
+        "kiloPerW": 1.95,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmy53bdokcvjp",
+        "versionId": "ppv_gl-hyundai-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.5,
+        "setterPerW": 2.6,
+        "kiloPerW": 1.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmy7p0l7tpitn",
+        "versionId": "ppv_gl-hyundai-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.45,
+        "setterPerW": 2.55,
+        "kiloPerW": 1.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmyitlicznxii",
+        "versionId": "ppv_gl-hyundai-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.2,
+        "setterPerW": 3.3,
+        "kiloPerW": 2.7,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmylmvm4dirvx",
+        "versionId": "ppv_gl-hyundai-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmyotuovx65i6",
+        "versionId": "ppv_gl-hyundai-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmysftz5375rb",
+        "versionId": "ppv_gl-hyundai-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmz0t5ye37lkx",
+        "versionId": "ppv_gl-spr-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmz3g2k5w3q9q",
+        "versionId": "ppv_gl-spr-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.65,
+        "setterPerW": 2.75,
+        "kiloPerW": 2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmz62p1sja81a",
+        "versionId": "ppv_gl-spr-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.5,
+        "setterPerW": 2.6,
+        "kiloPerW": 1.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmz8e9emjk1ob",
+        "versionId": "ppv_gl-spr-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.45,
+        "setterPerW": 2.55,
+        "kiloPerW": 1.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmzg4nzzcdl0q",
+        "versionId": "ppv_gl-spr-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.3,
+        "setterPerW": 3.4,
+        "kiloPerW": 2.8,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmzifyuuzhnbo",
+        "versionId": "ppv_gl-spr-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmzm7kb1sr8os",
+        "versionId": "ppv_gl-spr-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmzos3qggu65c",
+        "versionId": "ppv_gl-spr-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmzxgw5bndn91",
+        "versionId": "ppv_ef-qpeak-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.2,
+        "setterPerW": 3.3,
+        "kiloPerW": 2.7,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotmzzu8a49bl54",
+        "versionId": "ppv_ef-qpeak-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn038abfau9f1",
+        "versionId": "ppv_ef-qpeak-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn05sp42dulv7",
+        "versionId": "ppv_ef-qpeak-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn0f8lh1w9qws",
+        "versionId": "ppv_ef-qpeak-tesla_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.4,
+        "setterPerW": 3.5,
+        "kiloPerW": 2.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn0j6za6x8m35",
+        "versionId": "ppv_ef-qpeak-tesla_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn0msc8vzwg3h",
+        "versionId": "ppv_ef-qpeak-tesla_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.95,
+        "setterPerW": 3.05,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn0p850jdepy7",
+        "versionId": "ppv_ef-qpeak-tesla_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn0y05kyv0xso",
+        "versionId": "ppv_ef-qpeak-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.25,
+        "setterPerW": 3.35,
+        "kiloPerW": 2.75,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn10k3istkjpc",
+        "versionId": "ppv_ef-qpeak-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn133uisn4dto",
+        "versionId": "ppv_ef-qpeak-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn162do2lsvj8",
+        "versionId": "ppv_ef-qpeak-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.7,
+        "setterPerW": 2.8,
+        "kiloPerW": 2.2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn1djjv8fpxbm",
+        "versionId": "ppv_lr-hyundai-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.6,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn1go2l5dyhka",
+        "versionId": "ppv_lr-hyundai-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn1j3rblwuauv",
+        "versionId": "ppv_lr-hyundai-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.7,
+        "setterPerW": 2.8,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn1lz6flh4nn9",
+        "versionId": "ppv_lr-hyundai-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.65,
+        "setterPerW": 2.75,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn1ud5paw1vub",
+        "versionId": "ppv_lr-hyundai-tesla_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.3,
+        "setterPerW": 3.4,
+        "kiloPerW": 2.8,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn1wp1p37wio8",
+        "versionId": "ppv_lr-hyundai-tesla_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn1z6pqf233su",
+        "versionId": "ppv_lr-hyundai-tesla_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn22fhth9f75d",
+        "versionId": "ppv_lr-hyundai-tesla_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn2bjq8i23eji",
+        "versionId": "ppv_lr-hyundai-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.45,
+        "setterPerW": 3.55,
+        "kiloPerW": 2.95,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn2els8tlbsru",
+        "versionId": "ppv_lr-hyundai-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn2h0j5jhbfkb",
+        "versionId": "ppv_lr-hyundai-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3,
+        "setterPerW": 3.1,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn2jdetenxgb6",
+        "versionId": "ppv_lr-hyundai-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.95,
+        "setterPerW": 3.05,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn2t63rl3zj9s",
+        "versionId": "ppv_lr-spr-tesla_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.3,
+        "setterPerW": 3.4,
+        "kiloPerW": 2.85,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn2w2tmn7o5hc",
+        "versionId": "ppv_lr-spr-tesla_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3,
+        "setterPerW": 3.1,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn2yz03omcav3",
+        "versionId": "ppv_lr-spr-tesla_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn31eduu7i6r6",
+        "versionId": "ppv_lr-spr-tesla_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn39kkg6yi65q",
+        "versionId": "ppv_lr-spr-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.65,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn3c0nf9malhv",
+        "versionId": "ppv_lr-spr-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn3ehng61ggyc",
+        "versionId": "ppv_lr-spr-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.7,
+        "setterPerW": 2.8,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn3h9npk707wr",
+        "versionId": "ppv_lr-spr-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.65,
+        "setterPerW": 2.75,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn3rggb547hix",
+        "versionId": "ppv_lr-qpeak-tesla_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.35,
+        "setterPerW": 3.45,
+        "kiloPerW": 2.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn3v7r7rusozu",
+        "versionId": "ppv_lr-qpeak-tesla_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn42s7ttjneac",
+        "versionId": "ppv_lr-qpeak-tesla_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.95,
+        "setterPerW": 3.05,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn46dn7z4fmpn",
+        "versionId": "ppv_lr-qpeak-tesla_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn4ekrzidz28c",
+        "versionId": "ppv_lr-qpeak-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.6,
+        "setterPerW": 3.7,
+        "kiloPerW": 3.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn4ia9cx6ihjq",
+        "versionId": "ppv_lr-qpeak-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.3,
+        "setterPerW": 3.4,
+        "kiloPerW": 2.75,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn4lnemn5700e",
+        "versionId": "ppv_lr-qpeak-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3.15,
+        "setterPerW": 3.25,
+        "kiloPerW": 2.6,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn4o58l8yuu8f",
+        "versionId": "ppv_lr-qpeak-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.6,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn4xdc2oj6q6z",
+        "versionId": "ppv_lr-qpeak-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.15,
+        "setterPerW": 3.25,
+        "kiloPerW": 2.7,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn4zwqpopw32y",
+        "versionId": "ppv_lr-qpeak-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn52drp6i8q6p",
+        "versionId": "ppv_lr-qpeak-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn54s1voaev4i",
+        "versionId": "ppv_lr-qpeak-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn5d8dc4l4twu",
+        "versionId": "ppv_lr-spr-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.5,
+        "setterPerW": 3.6,
+        "kiloPerW": 3.05,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn5go2y5e7uol",
+        "versionId": "ppv_lr-spr-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.2,
+        "setterPerW": 3.3,
+        "kiloPerW": 2.65,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn5jg7yngwae4",
+        "versionId": "ppv_lr-spr-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.55,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn5lxfu3mszpv",
+        "versionId": "ppv_lr-spr-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.55,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn5vrxzdgsa6u",
+        "versionId": "ppv_ca-hyundai-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.6,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn5y8wndjk9ho",
+        "versionId": "ppv_ca-hyundai-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn618r2mllzgb",
+        "versionId": "ppv_ca-hyundai-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.7,
+        "setterPerW": 2.8,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn64aknf00oja",
+        "versionId": "ppv_ca-hyundai-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.65,
+        "setterPerW": 2.75,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn6d2803hswqe",
+        "versionId": "ppv_ca-hyundai-tesla_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.3,
+        "setterPerW": 3.4,
+        "kiloPerW": 2.8,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn6fwsqutk3ws",
+        "versionId": "ppv_ca-hyundai-tesla_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn6i91sbr7zjt",
+        "versionId": "ppv_ca-hyundai-tesla_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn6ky8aol6srj",
+        "versionId": "ppv_ca-hyundai-tesla_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn6upih54zzg3",
+        "versionId": "ppv_ca-hyundai-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.45,
+        "setterPerW": 3.55,
+        "kiloPerW": 2.95,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn6xl1h6z3es6",
+        "versionId": "ppv_ca-hyundai-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn70rwhp0nv8q",
+        "versionId": "ppv_ca-hyundai-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3,
+        "setterPerW": 3.1,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn74031sq36wa",
+        "versionId": "ppv_ca-hyundai-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.95,
+        "setterPerW": 3.05,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn7beouu526zq",
+        "versionId": "ppv_ca-spr-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.65,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn7e7xhoi8ioq",
+        "versionId": "ppv_ca-spr-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn7goah5tx9xa",
+        "versionId": "ppv_ca-spr-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.7,
+        "setterPerW": 2.8,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn7jaev6ygtsu",
+        "versionId": "ppv_ca-spr-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.65,
+        "setterPerW": 2.75,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn7tirnxajw09",
+        "versionId": "ppv_ca-spr-tesla_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.3,
+        "setterPerW": 3.4,
+        "kiloPerW": 2.85,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn7w0t5tc7ynj",
+        "versionId": "ppv_ca-spr-tesla_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3,
+        "setterPerW": 3.1,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn805xu1fn1bk",
+        "versionId": "ppv_ca-spr-tesla_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn832093lclht",
+        "versionId": "ppv_ca-spr-tesla_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8bb8o4vtfr2",
+        "versionId": "ppv_ca-spr-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.5,
+        "setterPerW": 3.6,
+        "kiloPerW": 3.05,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8dtfk5k9awy",
+        "versionId": "ppv_ca-spr-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.2,
+        "setterPerW": 3.3,
+        "kiloPerW": 2.65,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8ggolb8on1h",
+        "versionId": "ppv_ca-spr-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.55,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8itiyttd4ht",
+        "versionId": "ppv_ca-spr-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.55,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8qr872ax1bh",
+        "versionId": "ppv_ca-qpeak-dc-pw3_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.15,
+        "setterPerW": 3.25,
+        "kiloPerW": 2.7,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8twmizpgzz5",
+        "versionId": "ppv_ca-qpeak-dc-pw3_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8wkd9dpjyia",
+        "versionId": "ppv_ca-qpeak-dc-pw3_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn8ztxwi5gh6d",
+        "versionId": "ppv_ca-qpeak-dc-pw3_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.25,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn97d7a0wj5ay",
+        "versionId": "ppv_ca-qpeak-tesla_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.35,
+        "setterPerW": 3.45,
+        "kiloPerW": 2.9,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn9abxa5774pn",
+        "versionId": "ppv_ca-qpeak-tesla_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn9co4cltgsvv",
+        "versionId": "ppv_ca-qpeak-tesla_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.95,
+        "setterPerW": 3.05,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn9f2nx5zgkf8",
+        "versionId": "ppv_ca-qpeak-tesla_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.4,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn9n33r46u84s",
+        "versionId": "ppv_ca-qpeak-enphase_v1",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.6,
+        "setterPerW": 3.7,
+        "kiloPerW": 3.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn9ppf4w926xj",
+        "versionId": "ppv_ca-qpeak-enphase_v1",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.3,
+        "setterPerW": 3.4,
+        "kiloPerW": 2.75,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn9sxo34f2gso",
+        "versionId": "ppv_ca-qpeak-enphase_v1",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3.15,
+        "setterPerW": 3.25,
+        "kiloPerW": 2.6,
+        "subDealerPerW": null
+      },
+      {
+        "id": "tier_mnotn9v8kyf9twb8",
+        "versionId": "ppv_ca-qpeak-enphase_v1",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.6,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg8cj00010ajpyouf4dur",
+        "versionId": "cmnxzg8bw00000ajpg7f7yvk4",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.4,
+        "setterPerW": 3.5,
+        "kiloPerW": 2.8,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg8cj00020ajp5s4brx0y",
+        "versionId": "cmnxzg8bw00000ajpg7f7yvk4",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3,
+        "setterPerW": 3.1,
+        "kiloPerW": 2.35,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg8cj00030ajp9ggm8hrn",
+        "versionId": "cmnxzg8bw00000ajpg7f7yvk4",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.95,
+        "setterPerW": 3.05,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg8cj00040ajpgd9jvbsl",
+        "versionId": "cmnxzg8bw00000ajpg7f7yvk4",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.9,
+        "setterPerW": 3,
+        "kiloPerW": 2.3,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9hf00010al2ea7u8lab",
+        "versionId": "cmnxzg9gz00000al2cnqeqzbu",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.2,
+        "setterPerW": 3.3,
+        "kiloPerW": 2.6,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9hf00020al2xhph0tt8",
+        "versionId": "cmnxzg9gz00000al2cnqeqzbu",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 2.85,
+        "setterPerW": 2.95,
+        "kiloPerW": 2.2,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9hf00030al2xqxev8r5",
+        "versionId": "cmnxzg9gz00000al2cnqeqzbu",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 2.8,
+        "setterPerW": 2.9,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9hf00040al2tgolxk4i",
+        "versionId": "cmnxzg9gz00000al2cnqeqzbu",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 2.75,
+        "setterPerW": 2.85,
+        "kiloPerW": 2.15,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9ow00010bjt2nrsfg67",
+        "versionId": "cmnxzg9oe00000bjt6olwjgpr",
+        "minKW": 1,
+        "maxKW": 5,
+        "closerPerW": 3.55,
+        "setterPerW": 3.65,
+        "kiloPerW": 2.95,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9ow00020bjtex1tfltp",
+        "versionId": "cmnxzg9oe00000bjt6olwjgpr",
+        "minKW": 5,
+        "maxKW": 10,
+        "closerPerW": 3.15,
+        "setterPerW": 3.25,
+        "kiloPerW": 2.5,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9ow00030bjtsymja234",
+        "versionId": "cmnxzg9oe00000bjt6olwjgpr",
+        "minKW": 10,
+        "maxKW": 13,
+        "closerPerW": 3.1,
+        "setterPerW": 3.2,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      },
+      {
+        "id": "cmnxzg9ow00040bjt5jzbe4oo",
+        "versionId": "cmnxzg9oe00000bjt6olwjgpr",
+        "minKW": 13,
+        "maxKW": null,
+        "closerPerW": 3.05,
+        "setterPerW": 3.15,
+        "kiloPerW": 2.45,
+        "subDealerPerW": null
+      }
+    ],
+    "Project": [],
+    "ProjectActivity": [],
+    "ProjectMessage": [],
+    "ProjectCheckItem": [],
+    "ProjectMention": [],
+    "PayrollEntry": [],
+    "Reimbursement": [],
+    "TrainerAssignment": [],
+    "TrainerOverrideTier": [],
+    "Incentive": [],
+    "IncentiveMilestone": [],
+    "Blitz": [],
+    "BlitzParticipant": [],
+    "BlitzCost": [],
+    "BlitzRequest": []
+  }
+}

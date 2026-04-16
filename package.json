@@ -18,7 +18,9 @@
     "backup:now": "node scripts/backup-turso.mjs",
     "restore:from": "node scripts/restore-turso.mjs",
     "test:e2e:setup": "tsx scripts/seed-e2e-users.mts",
-    "load:test": "tsx scripts/load-test.mts"
+    "load:test": "tsx scripts/load-test.mts",
+    "wipe:dry": "tsx scripts/wipe-dummy-data.mts",
+    "wipe:confirm": "tsx scripts/wipe-dummy-data.mts --confirm"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
