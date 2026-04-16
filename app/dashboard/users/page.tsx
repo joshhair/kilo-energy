@@ -144,7 +144,7 @@ export default function UsersPage() {
 function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, updateRepType, trainerAssignments, setTrainerAssignments } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, updateRepType, trainerAssignments, setTrainerAssignments, dbReady } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
@@ -729,7 +729,9 @@ function UsersPageInner() {
 
   const isMobile = useMediaQuery('(max-width: 767px)');
 
-  if (!isHydrated) {
+  // Gate on both client-hydrate AND /api/data so the fade-in runs on
+  // real data (matches Dashboard + Projects).
+  if (!isHydrated || !dbReady) {
     return <RepsSkeleton />;
   }
 

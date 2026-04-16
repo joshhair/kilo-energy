@@ -63,7 +63,7 @@ export default function PayrollPage() {
 function PayrollPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, effectiveRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements, installerPayConfigs } = useApp();
+  const { currentRole, effectiveRole, currentRepId, effectiveRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements, installerPayConfigs, dbReady } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
@@ -507,7 +507,12 @@ function PayrollPageInner() {
 
   const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
 
-  if (!isHydrated) {
+  // Hold the skeleton until both client-hydrate AND the API's first
+  // /api/data round-trip resolve. Otherwise the page mounts with empty
+  // arrays, runs its fade-in on a blank surface, and real data pops in
+  // without animation — same flash behavior Dashboard + Projects
+  // already avoid with this pattern.
+  if (!isHydrated || !dbReady) {
     return <PayrollSkeleton />;
   }
 

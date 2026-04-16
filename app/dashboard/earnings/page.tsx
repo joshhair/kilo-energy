@@ -348,7 +348,7 @@ function MonthlyEarningsBarChart({
 function RepEarningsView() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRepId, currentRepName, effectiveRepId, effectiveRepName, payrollEntries, reimbursements, setReimbursements } = useApp();
+  const { currentRepId, currentRepName, effectiveRepId, effectiveRepName, payrollEntries, reimbursements, setReimbursements, dbReady } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
 
@@ -520,7 +520,9 @@ function RepEarningsView() {
   useEffect(() => { setDealPage(1); setBonusPage(1); setDealRoleFilter(null); }, [monthFilter]);
   useEffect(() => { setDealPage(1); }, [dealRoleFilter]);
 
-  if (!isHydrated) return <EarningsSkeleton />;
+  // Gate on both client-hydrate AND /api/data ready so the fade-in
+  // runs on populated content instead of an empty shell.
+  if (!isHydrated || !dbReady) return <EarningsSkeleton />;
 
   return (
     <div className="p-4 md:p-8 pb-24 animate-fade-in-up">
@@ -1713,12 +1715,12 @@ function SubDealerEarningsView() {
 }
 
 function EarningsPageInner() {
-  const { currentRole, effectiveRole } = useApp();
+  const { currentRole, effectiveRole, dbReady } = useApp();
   const isHydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
   useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
 
-  if (!isHydrated) return <EarningsSkeleton />;
+  if (!isHydrated || !dbReady) return <EarningsSkeleton />;
 
   if (isMobile) return <MobileEarnings />;
 

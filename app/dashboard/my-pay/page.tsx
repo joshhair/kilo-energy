@@ -103,7 +103,7 @@ export default function MyPayPage() {
 function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, currentRepName, currentUserRepType, effectiveRepId, effectiveRepName, isViewingAs, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { currentRole, effectiveRole, currentRepId, currentRepName, currentUserRepType, effectiveRepId, effectiveRepName, isViewingAs, payrollEntries, projects, reimbursements, setReimbursements, dbReady } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -361,7 +361,9 @@ function MyPayPageInner() {
     );
   }
 
-  if (!isHydrated) return <MyPaySkeleton />;
+  // Gate on both client-hydrate AND /api/data so the fade-in runs on
+  // real data (matches Dashboard + Projects pattern).
+  if (!isHydrated || !dbReady) return <MyPaySkeleton />;
 
   if (isMobile) return <MobileMyPay />;
 
