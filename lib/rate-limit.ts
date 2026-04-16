@@ -35,8 +35,18 @@ let warnedAboutFallback = false;
 
 function getRedis(): Redis | null {
   if (redisSingleton) return redisSingleton;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Vercel Marketplace Upstash emits env vars as `{PREFIX}_KV_REST_API_URL`
+  // / `{PREFIX}_KV_REST_API_TOKEN` — the prefix is whatever the operator
+  // configured at link time (we chose `UPSTASH_REDIS_REST`). The Upstash SDK
+  // itself documents the shorter `UPSTASH_REDIS_REST_URL` pair, so we accept
+  // either convention. Prefer the KV-style names (what Vercel actually sets)
+  // and fall back to the SDK-canonical pair for hand-rolled setups.
+  const url =
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_URL ??
+    process.env.UPSTASH_REDIS_REST_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN ??
+    process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) {
     if (!warnedAboutFallback) {
       console.warn(
