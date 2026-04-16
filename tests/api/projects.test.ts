@@ -137,4 +137,88 @@ describe('Projects API — Database Integration', () => {
 
     await prisma.project.delete({ where: { id: project.id } });
   });
+
+  // ── Tag-team: multi-closer / multi-setter via ProjectCloser + ProjectSetter ──
+  it('can create a project with one co-closer and query them both back', async () => {
+    // Grab any second active rep (non-admin) distinct from the primary.
+    const coCloser = await prisma.user.findFirst({
+      where: { role: 'rep', active: true, NOT: { id: testCloserId } },
+    });
+    if (!coCloser) {
+      // If the seed only has one rep, skip rather than fabricate data that
+      // would break other tests. The E2E + Glide import exercises this path.
+      return;
+    }
+
+    const project = await prisma.project.create({
+      data: {
+        customerName: 'Tag-team Test — Vitest',
+        closerId: testCloserId,
+        installerId: testInstallerId,
+        financerId: testFinancerId,
+        productType: 'Loan',
+        kWSize: 8.0,
+        netPPW: 3.20,
+        soldDate: '2026-04-01',
+        phase: 'New',
+        m1AmountCents: 50000,  // primary closer's cut at M1 ($500)
+        additionalClosers: {
+          create: [
+            {
+              userId: coCloser.id,
+              m1AmountCents: 50000,  // co-closer's cut at M1 ($500)
+              m2AmountCents: 0,
+              position: 1,
+            },
+          ],
+        },
+      },
+      include: {
+        additionalClosers: { include: { user: true } },
+      },
+    });
+
+    expect(project.additionalClosers).toHaveLength(1);
+    expect(project.additionalClosers[0].userId).toBe(coCloser.id);
+    expect(project.additionalClosers[0].m1AmountCents).toBe(50000);
+    expect(project.additionalClosers[0].position).toBe(1);
+    expect(project.additionalClosers[0].user.id).toBe(coCloser.id);
+
+    // Cleanup — cascade delete drops the ProjectCloser row automatically.
+    await prisma.project.delete({ where: { id: project.id } });
+    const orphan = await prisma.projectCloser.findFirst({ where: { projectId: project.id } });
+    expect(orphan).toBeNull();
+  });
+
+  it('rejects duplicate co-closer (same user on same project)', async () => {
+    const coCloser = await prisma.user.findFirst({
+      where: { role: 'rep', active: true, NOT: { id: testCloserId } },
+    });
+    if (!coCloser) return;
+
+    const project = await prisma.project.create({
+      data: {
+        customerName: 'Dedupe Test — Vitest',
+        closerId: testCloserId,
+        installerId: testInstallerId,
+        financerId: testFinancerId,
+        productType: 'Loan',
+        kWSize: 5.0,
+        netPPW: 3.00,
+        soldDate: '2026-04-01',
+        phase: 'New',
+        additionalClosers: {
+          create: [{ userId: coCloser.id, m1AmountCents: 10000, position: 1 }],
+        },
+      },
+    });
+
+    await expect(
+      prisma.projectCloser.create({
+        data: { projectId: project.id, userId: coCloser.id, m1AmountCents: 1, position: 2 },
+      }),
+    ).rejects.toThrow(); // unique(projectId, userId)
+
+    await prisma.project.delete({ where: { id: project.id } });
+  });
 });

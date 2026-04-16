@@ -55,6 +55,11 @@ model User {
   projectsAsCloser   Project[]          @relation("ProjectCloser")
   projectsAsSetter   Project[]          @relation("ProjectSetter")
   projectsAsSubDealer Project[]         @relation("ProjectSubDealer")
+  /// Deals where this user is a co-closer (not the primary closer). Used by
+  /// the GDPR export to surface "deals I earned commission on" even when
+  /// the user isn't the primary on the Project row.
+  projectsAsAdditionalCloser ProjectCloser[] @relation("ProjectAdditionalClosers")
+  projectsAsAdditionalSetter ProjectSetter[] @relation("ProjectAdditionalSetters")
   payrollEntries     PayrollEntry[]
   reimbursements     Reimbursement[]
   trainingAsTrainer  TrainerAssignment[] @relation("Trainer")
@@ -321,6 +326,11 @@ model Project {
   activities     ProjectActivity[]
   messages       ProjectMessage[]
 
+  /// Tag-team support: extra closers / setters on a deal beyond the primary.
+  /// Empty for a standard single-closer, single-setter deal — no query cost.
+  additionalClosers ProjectCloser[]
+  additionalSetters ProjectSetter[]
+
   @@index([closerId])
   @@index([setterId])
   @@index([subDealerId])
@@ -328,6 +338,61 @@ model Project {
   @@index([phase])
   @@index([soldDate])
   @@index([blitzId])
+}
+
+// ============================================================================
+// PROJECT CO-CLOSERS / CO-SETTERS
+// ============================================================================
+// Tag-team support. The primary closer stays on Project.closerId (and
+// primary setter on Project.setterId). These join tables hold every
+// ADDITIONAL person who co-closed / co-set a deal along with their own
+// per-milestone commission cut. A standard single-closer, single-setter
+// deal has zero rows in these tables — the existing code path is unchanged.
+
+model ProjectCloser {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation("ProjectAdditionalClosers", fields: [userId], references: [id])
+
+  /// This person's personal cut per milestone, stored as integer cents.
+  /// Matches the Project.m1AmountCents storage convention set by the
+  /// 2026-04-15 Float→Int money migration.
+  m1AmountCents Int  @default(0)
+  m2AmountCents Int  @default(0)
+  m3AmountCents Int?
+
+  /// Display order among additional closers. Position 1 = first co-closer.
+  position  Int      @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+model ProjectSetter {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation("ProjectAdditionalSetters", fields: [userId], references: [id])
+
+  m1AmountCents Int  @default(0)
+  m2AmountCents Int  @default(0)
+  m3AmountCents Int?
+
+  position  Int      @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
 }
 
 // ============================================================================

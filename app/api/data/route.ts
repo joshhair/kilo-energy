@@ -90,6 +90,10 @@ export async function GET() {
         subDealer: true,
         installer: true,
         financer: true,
+        // Tag-team co-parties — join the user row so the wire format
+        // can expose a friendly `userName` without a second round-trip.
+        additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
+        additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
       },
       orderBy: { soldDate: 'desc' },
     }),
@@ -233,6 +237,23 @@ export async function GET() {
     cancellationReason: p.cancellationReason ?? undefined,
     cancellationNotes: p.cancellationNotes ?? undefined,
     updatedAt: p.updatedAt.toISOString(),
+    // Tag-team co-parties. PMs see structure but no amounts (stripFinancials).
+    additionalClosers: stripFinancials ? [] : p.additionalClosers.map((c) => ({
+      userId: c.userId,
+      userName: `${c.user.firstName} ${c.user.lastName}`,
+      m1Amount: toDollars(fromCents(c.m1AmountCents)),
+      m2Amount: toDollars(fromCents(c.m2AmountCents)),
+      m3Amount: c.m3AmountCents == null ? null : toDollars(fromCents(c.m3AmountCents)),
+      position: c.position,
+    })),
+    additionalSetters: stripFinancials ? [] : p.additionalSetters.map((s) => ({
+      userId: s.userId,
+      userName: `${s.user.firstName} ${s.user.lastName}`,
+      m1Amount: toDollars(fromCents(s.m1AmountCents)),
+      m2Amount: toDollars(fromCents(s.m2AmountCents)),
+      m3Amount: s.m3AmountCents == null ? null : toDollars(fromCents(s.m3AmountCents)),
+      position: s.position,
+    })),
   }));
 
   const transformedPayroll = payrollEntries.map((pe) => ({

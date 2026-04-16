@@ -89,6 +89,37 @@ export function serializeBlitzCost<T extends { amountCents: number }>(
   return { ...rest, amount: toDollars(fromCents(amountCents)) };
 }
 
+/** A co-closer / co-setter row serialized for the wire. The user join is
+ *  required here — we expose the display name inline so the client doesn't
+ *  have to look it up in the reps list. */
+export interface SerializedProjectParty {
+  userId: string;
+  userName: string;
+  m1Amount: number;
+  m2Amount: number;
+  m3Amount: number | null;
+  position: number;
+}
+
+export function serializeProjectParty(row: {
+  userId: string;
+  user?: { firstName: string; lastName: string } | null;
+  m1AmountCents: number;
+  m2AmountCents: number;
+  m3AmountCents: number | null;
+  position: number;
+}): SerializedProjectParty {
+  const userName = row.user ? `${row.user.firstName} ${row.user.lastName}` : '';
+  return {
+    userId: row.userId,
+    userName,
+    m1Amount: toDollars(fromCents(row.m1AmountCents)),
+    m2Amount: toDollars(fromCents(row.m2AmountCents)),
+    m3Amount: row.m3AmountCents == null ? null : toDollars(fromCents(row.m3AmountCents)),
+    position: row.position,
+  };
+}
+
 // ─── Write side: wire dollars → DB cents ───────────────────────────────
 
 /** Convert a dollar value from a request body into integer cents for a

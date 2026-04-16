@@ -5,12 +5,14 @@ import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
-import { serializeProject, dollarsToCents, dollarsToNullableCents } from '../../../../lib/serialize';
+import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents } from '../../../../lib/serialize';
 
 // Financial fields project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
   'm1Paid', 'm1Amount', 'm2Paid', 'm2Amount', 'm3Amount', 'm3Paid',
   'setterM1Amount', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson',
+  // Tag-team splits are money — admin-only same as the primary amounts.
+  'additionalClosers', 'additionalSetters',
 ];
 
 // Fields reps/sub-dealers are NEVER allowed to modify on their own deals —
@@ -140,10 +142,56 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     select: auditSelect,
   });
 
+  // If the body included additionalClosers / additionalSetters, replace
+  // the existing rows wholesale. Omitting the key leaves rows untouched
+  // — admins editing notes or phase won't lose co-party attribution.
+  // Full-replace (rather than diff-based upsert) is simpler and the
+  // 10-row max from the Zod schema keeps the deleteMany + createMany
+  // cheap. Wrapped in a transaction so a failed createMany doesn't leave
+  // the project with zero co-parties mid-save.
+  if (body.additionalClosers !== undefined || body.additionalSetters !== undefined) {
+    await prisma.$transaction(async (tx) => {
+      if (body.additionalClosers !== undefined) {
+        await tx.projectCloser.deleteMany({ where: { projectId: id } });
+        if (body.additionalClosers.length > 0) {
+          await tx.projectCloser.createMany({
+            data: body.additionalClosers.map((c, i) => ({
+              projectId: id,
+              userId: c.userId,
+              m1AmountCents: dollarsToCents(c.m1Amount) ?? 0,
+              m2AmountCents: dollarsToCents(c.m2Amount) ?? 0,
+              m3AmountCents: dollarsToNullableCents(c.m3Amount) ?? null,
+              position: c.position ?? i + 1,
+            })),
+          });
+        }
+      }
+      if (body.additionalSetters !== undefined) {
+        await tx.projectSetter.deleteMany({ where: { projectId: id } });
+        if (body.additionalSetters.length > 0) {
+          await tx.projectSetter.createMany({
+            data: body.additionalSetters.map((s, i) => ({
+              projectId: id,
+              userId: s.userId,
+              m1AmountCents: dollarsToCents(s.m1Amount) ?? 0,
+              m2AmountCents: dollarsToCents(s.m2Amount) ?? 0,
+              m3AmountCents: dollarsToNullableCents(s.m3Amount) ?? null,
+              position: s.position ?? i + 1,
+            })),
+          });
+        }
+      }
+    });
+  }
+
   const project = await prisma.project.update({
     where: { id },
     data,
-    include: { closer: true, setter: true, installer: true, financer: true },
+    include: {
+      closer: true, setter: true, installer: true, financer: true,
+      additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
+      additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
+    },
   });
 
   // Audit: record diff of audited fields (no-op if nothing changed in them).
@@ -158,7 +206,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     fields: AUDITED_FIELDS.Project,
   });
 
-  return NextResponse.json(serializeProject(project));
+  return NextResponse.json({
+    ...serializeProject(project),
+    additionalClosers: project.additionalClosers.map(serializeProjectParty),
+    additionalSetters: project.additionalSetters.map(serializeProjectParty),
+  });
 }
 
 // DELETE /api/projects/[id] — Admin only

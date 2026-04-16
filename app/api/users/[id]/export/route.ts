@@ -38,6 +38,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     projectsAsCloser,
     projectsAsSetter,
     projectsAsSubDealer,
+    projectsAsCoCloser,
+    projectsAsCoSetter,
     payrollEntries,
     reimbursements,
     messages,
@@ -49,6 +51,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     prisma.project.findMany({ where: { closerId: id }, include: { installer: true, financer: true } }),
     prisma.project.findMany({ where: { setterId: id }, include: { installer: true, financer: true } }),
     prisma.project.findMany({ where: { subDealerId: id }, include: { installer: true, financer: true } }),
+    // Tag-team: deals where this user was a co-closer (not the primary).
+    // Without these queries, a GDPR export would miss every deal the user
+    // earned commission on but didn't primary-close — invisible money.
+    prisma.projectCloser.findMany({
+      where: { userId: id },
+      include: { project: { include: { installer: true, financer: true } } },
+    }),
+    prisma.projectSetter.findMany({
+      where: { userId: id },
+      include: { project: { include: { installer: true, financer: true } } },
+    }),
     prisma.payrollEntry.findMany({ where: { repId: id }, orderBy: { date: 'desc' } }),
     prisma.reimbursement.findMany({ where: { repId: id }, orderBy: { date: 'desc' } }),
     prisma.projectMessage.findMany({ where: { authorId: id }, include: { checkItems: true } }),
@@ -76,6 +89,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       asCloser: projectsAsCloser,
       asSetter: projectsAsSetter,
       asSubDealer: projectsAsSubDealer,
+      // Each row: the co-party record (with this user's cut) + the
+      // joined project so the recipient can see what deal it refers to.
+      asCoCloser: projectsAsCoCloser,
+      asCoSetter: projectsAsCoSetter,
     },
     payrollEntries,
     reimbursements,

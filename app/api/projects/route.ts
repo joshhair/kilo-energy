@@ -4,7 +4,7 @@ import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createProjectSchema } from '../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../lib/rate-limit';
-import { serializeProject, dollarsToCents, dollarsToNullableCents } from '../../../lib/serialize';
+import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents } from '../../../lib/serialize';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -123,6 +123,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Build the additionalClosers / additionalSetters nested-create payload
+  // so the project + its co-party rows land in a single Prisma transaction.
+  // Fallback position assignment: if the client didn't send one, use the
+  // array index + 1 (so the first co-closer is position 1, matching the
+  // UI's "1-indexed display order" contract).
+  const additionalClosersCreate = (body.additionalClosers ?? []).map((c, i) => ({
+    userId: c.userId,
+    m1AmountCents: dollarsToCents(c.m1Amount) ?? 0,
+    m2AmountCents: dollarsToCents(c.m2Amount) ?? 0,
+    m3AmountCents: dollarsToNullableCents(c.m3Amount) ?? null,
+    position: c.position ?? i + 1,
+  }));
+  const additionalSettersCreate = (body.additionalSetters ?? []).map((s, i) => ({
+    userId: s.userId,
+    m1AmountCents: dollarsToCents(s.m1Amount) ?? 0,
+    m2AmountCents: dollarsToCents(s.m2Amount) ?? 0,
+    m3AmountCents: dollarsToNullableCents(s.m3Amount) ?? null,
+    position: s.position ?? i + 1,
+  }));
+
   const project = await prisma.project.create({
     data: {
       customerName: body.customerName,
@@ -150,8 +170,19 @@ export async function POST(req: NextRequest) {
       leadSource: body.leadSource ?? null,
       blitzId: body.blitzId ?? null,
       subDealerId: body.subDealerId ?? null,
+      ...(additionalClosersCreate.length ? { additionalClosers: { create: additionalClosersCreate } } : {}),
+      ...(additionalSettersCreate.length ? { additionalSetters: { create: additionalSettersCreate } } : {}),
     },
-    include: { closer: true, setter: true, subDealer: true, installer: true, financer: true },
+    include: {
+      closer: true, setter: true, subDealer: true, installer: true, financer: true,
+      additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
+      additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
+    },
   });
-  return NextResponse.json(serializeProject(project), { status: 201 });
+
+  return NextResponse.json({
+    ...serializeProject(project),
+    additionalClosers: project.additionalClosers.map(serializeProjectParty),
+    additionalSetters: project.additionalSetters.map(serializeProjectParty),
+  }, { status: 201 });
 }

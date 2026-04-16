@@ -13,6 +13,18 @@ const phaseEnum = z.enum([
   'Cancellation Pending',
 ]);
 
+/** One co-closer or co-setter entry — person + their per-milestone cut.
+ *  The primary closer/setter stays on Project.closerId / Project.setterId
+ *  with their amount on Project.m1AmountCents etc. */
+const additionalPartySchema = z.object({
+  userId: idSchema,
+  m1Amount: moneyAmount.optional(),
+  m2Amount: moneyAmount.optional(),
+  m3Amount: moneyAmount.optional(),
+  /// 1-indexed display order. If omitted, server assigns by array position.
+  position: z.number().int().min(1).max(99).optional(),
+});
+
 /** Request body for POST /api/projects — create a new deal. */
 export const createProjectSchema = z.object({
   customerName: z.string().min(1).max(200),
@@ -44,6 +56,12 @@ export const createProjectSchema = z.object({
   prepaidSubType: optionalString,
   leadSource: optionalString,
   blitzId: optionalId,
+
+  /// Tag-team support: additional closers / setters beyond the primary,
+  /// each with their own cut. Hard cap of 10 — a runaway client sending
+  /// thousands of rows would blow up the createMany batch.
+  additionalClosers: z.array(additionalPartySchema).max(10).optional(),
+  additionalSetters: z.array(additionalPartySchema).max(10).optional(),
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
@@ -84,5 +102,11 @@ export const patchProjectSchema = z.object({
   // FK resolution via name (API resolves to installerId/financerId)
   installer: z.string().min(1).optional(),
   financer: z.string().min(1).optional(),
+
+  // Tag-team — full replace semantics. If sent, the API deletes any
+  // existing ProjectCloser/ProjectSetter rows for the project and
+  // inserts these. Omit to leave current rows untouched.
+  additionalClosers: z.array(additionalPartySchema).max(10).optional(),
+  additionalSetters: z.array(additionalPartySchema).max(10).optional(),
 }).strict();
 export type PatchProjectInput = z.infer<typeof patchProjectSchema>;

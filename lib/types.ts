@@ -27,6 +27,7 @@ export type {
   TrainerOverrideTier,
   TrainerAssignment,
   Project,
+  ProjectAdditionalParty,
   PayrollEntry,
   Reimbursement,
   BaselineRate,

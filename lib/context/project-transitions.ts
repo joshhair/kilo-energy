@@ -370,6 +370,51 @@ export function createMilestonePayroll(
     });
   }
 
+  // ── Co-closer entries ── Each additional closer gets a payroll entry
+  // at the same milestone the primary hits, with THEIR cut. Follow the
+  // primary-closer rule about suppressing M1 when a setter exists: a
+  // co-closer is still a closer, and the deal's M1 goes to the setter.
+  for (const co of freshProject.additionalClosers ?? []) {
+    const amount = isAcceptance ? (co.m1Amount ?? 0) : (co.m2Amount ?? 0);
+    if (amount <= 0) continue;
+    if (isAcceptance && freshProject.setterId) continue;
+    newEntries.push({
+      id: `pay_${ts}_${stage.toLowerCase()}_cc${co.position}`,
+      repId: co.userId,
+      repName: co.userName,
+      projectId,
+      customerName: old.customerName,
+      amount,
+      type: 'Deal',
+      paymentStage: stage,
+      status: 'Draft',
+      date: payDate,
+      notes: `Co-closer #${co.position}`,
+    });
+  }
+
+  // ── Co-setter entries ── Additional setters get M1 at Acceptance and
+  // M2 at Installed, mirroring the primary setter's cadence. No
+  // trainer-deduction logic applied (co-parties don't stack with trainer
+  // overrides in the current design — revisit if business needs it).
+  for (const co of freshProject.additionalSetters ?? []) {
+    const amount = isAcceptance ? (co.m1Amount ?? 0) : (co.m2Amount ?? 0);
+    if (amount <= 0) continue;
+    newEntries.push({
+      id: `pay_${ts}_${stage.toLowerCase()}_cs${co.position}`,
+      repId: co.userId,
+      repName: co.userName,
+      projectId,
+      customerName: old.customerName,
+      amount,
+      type: 'Deal',
+      paymentStage: stage,
+      status: 'Draft',
+      date: payDate,
+      notes: `Co-setter #${co.position}`,
+    });
+  }
+
   // ── Trainer override M2 entries (installPayPct% of override at Installed) ──
   if (isInstalled) {
     // Closer's trainer

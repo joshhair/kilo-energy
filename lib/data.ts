@@ -217,6 +217,21 @@ export interface Project {
   subDealerName?: string;
   // Last modified timestamp (ISO string) — used as proxy for phase-change date
   updatedAt?: string;
+  // Tag-team: additional closers / setters on this deal, each with their
+  // own per-milestone cut. Empty (or undefined) for standard single-closer,
+  // single-setter deals. Position = display order (position 1 = first co).
+  additionalClosers?: ProjectAdditionalParty[];
+  additionalSetters?: ProjectAdditionalParty[];
+}
+
+/** One co-closer or co-setter entry in the Project wire format. */
+export interface ProjectAdditionalParty {
+  userId: string;
+  userName: string;
+  m1Amount: number;
+  m2Amount: number;
+  m3Amount: number | null;
+  position: number;
 }
 
 export interface PayrollEntry {
