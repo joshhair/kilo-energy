@@ -10,12 +10,13 @@ import {
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
-import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Clock, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Clock, RefreshCw, Pencil } from 'lucide-react';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ProjectChatter from '../components/ProjectChatter';
+import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 
 // ── Pipeline steps ──
 
@@ -162,7 +163,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }, [projectId]);
 
   const {
-    currentRole, effectiveRole, projects, currentRepId, payrollEntries,
+    currentRole, effectiveRole, projects, currentRepId, payrollEntries, reps,
     updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
@@ -176,6 +177,17 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [notesExpanded, setNotesExpanded] = useState(false);
+  // Mobile edit sheet. Intentionally scoped to the edits mobile admins
+  // reach for most often — setter, notes, flag, co-closer/co-setter
+  // management. Heavier fields (installer, financer, kW, PPW, baseline
+  // override) stay on desktop where the commission preview renders.
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState<{
+    setterId: string;
+    notes: string;
+    additionalClosers: CoPartyDraft[];
+    additionalSetters: CoPartyDraft[];
+  }>({ setterId: '', notes: '', additionalClosers: [], additionalSetters: [] });
 
   useEffect(() => {
     document.title = project ? `${project.customerName} | Kilo Energy` : 'Project | Kilo Energy';
@@ -210,6 +222,65 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const updateProject = (updates: Partial<typeof project>) => {
     ctxUpdateProject(projectId, updates);
+  };
+
+  // ── Edit sheet handlers ─────────────────────────────────────────────
+  const openEditSheet = () => {
+    setEditDraft({
+      setterId: project.setterId ?? '',
+      notes: project.notes ?? '',
+      additionalClosers: (project.additionalClosers ?? []).map((c) => ({
+        userId: c.userId,
+        m1Amount: String(c.m1Amount ?? 0),
+        m2Amount: String(c.m2Amount ?? 0),
+        m3Amount: c.m3Amount != null ? String(c.m3Amount) : '',
+      })),
+      additionalSetters: (project.additionalSetters ?? []).map((s) => ({
+        userId: s.userId,
+        m1Amount: String(s.m1Amount ?? 0),
+        m2Amount: String(s.m2Amount ?? 0),
+        m3Amount: s.m3Amount != null ? String(s.m3Amount) : '',
+      })),
+    });
+    setMoreSheetOpen(false);
+    setEditSheetOpen(true);
+  };
+
+  const saveEditSheet = () => {
+    const toNum = (v: string): number => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const cleanClosers = editDraft.additionalClosers
+      .filter((c) => !!c.userId && c.userId !== project.repId)
+      .map((c, i) => ({
+        userId: c.userId,
+        userName: reps.find((r) => r.id === c.userId)?.name ?? '',
+        m1Amount: toNum(c.m1Amount),
+        m2Amount: toNum(c.m2Amount),
+        m3Amount: c.m3Amount.trim() === '' ? null : toNum(c.m3Amount),
+        position: i + 1,
+      }));
+    const cleanSetters = editDraft.additionalSetters
+      .filter((s) => !!s.userId && s.userId !== editDraft.setterId)
+      .map((s, i) => ({
+        userId: s.userId,
+        userName: reps.find((r) => r.id === s.userId)?.name ?? '',
+        m1Amount: toNum(s.m1Amount),
+        m2Amount: toNum(s.m2Amount),
+        m3Amount: s.m3Amount.trim() === '' ? null : toNum(s.m3Amount),
+        position: i + 1,
+      }));
+    const setterRep = editDraft.setterId ? reps.find((r) => r.id === editDraft.setterId) : undefined;
+    updateProject({
+      setterId: editDraft.setterId || undefined,
+      setterName: setterRep?.name ?? (editDraft.setterId ? project.setterName : undefined),
+      notes: editDraft.notes,
+      additionalClosers: cleanClosers,
+      additionalSetters: cleanSetters,
+    });
+    setEditSheetOpen(false);
+    toast('Project updated', 'success');
   };
 
   // ── Phase change handlers ──
@@ -600,6 +671,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* More actions bottom sheet */}
       <MobileBottomSheet open={moreSheetOpen} onClose={() => setMoreSheetOpen(false)} title="Actions">
+        {isAdmin && (
+          <MobileBottomSheet.Item
+            label="Edit Project"
+            icon={Pencil}
+            onTap={openEditSheet}
+          />
+        )}
         <MobileBottomSheet.Item
           label={project.flagged ? 'Remove Flag' : 'Flag Project'}
           icon={project.flagged ? FlagOff : Flag}
@@ -621,6 +699,88 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             danger
           />
         )}
+      </MobileBottomSheet>
+
+      {/* Edit Project bottom sheet — admin-only, scoped to setter + notes
+          + co-party management. Heavier edits (installer, financer, kW,
+          PPW, baseline override) remain on desktop where the commission
+          preview UI lives. */}
+      <MobileBottomSheet open={editSheetOpen} onClose={() => setEditSheetOpen(false)} title="Edit Project">
+        <div className="px-5 space-y-5 pb-24">
+          {/* Setter */}
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 500 }}>
+              Setter (optional)
+            </label>
+            <select
+              value={editDraft.setterId}
+              onChange={(e) => setEditDraft((d) => ({ ...d, setterId: e.target.value }))}
+              className="w-full min-h-[48px] outline-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px', color: '#fff', fontSize: '1rem' }}
+            >
+              <option value="">— None —</option>
+              {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editDraft.setterId) && r.id !== project.repId).map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 500 }}>
+              Notes
+            </label>
+            <textarea
+              rows={3}
+              value={editDraft.notes}
+              onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
+              className="w-full outline-none resize-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px', color: '#fff', fontSize: '1rem' }}
+            />
+          </div>
+
+          {/* Co-closers + Co-setters — reuse the CoPartySection from desktop.
+              Grid gets tight on narrow phones but stays tappable. */}
+          <CoPartySection
+            label="Co-closers"
+            rows={editDraft.additionalClosers}
+            primaryUserId={project.repId}
+            excludeUserIds={[editDraft.setterId, ...editDraft.additionalClosers.map((c) => c.userId), ...editDraft.additionalSetters.map((s) => s.userId)].filter(Boolean)}
+            repTypeFilter={(r) => r.repType !== 'setter'}
+            reps={reps}
+            onChange={(rows) => setEditDraft((d) => ({ ...d, additionalClosers: rows }))}
+          />
+          <CoPartySection
+            label="Co-setters"
+            rows={editDraft.additionalSetters}
+            primaryUserId={editDraft.setterId}
+            excludeUserIds={[project.repId, editDraft.setterId, ...editDraft.additionalSetters.map((s) => s.userId), ...editDraft.additionalClosers.map((c) => c.userId)].filter(Boolean)}
+            repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
+            reps={reps}
+            onChange={(rows) => setEditDraft((d) => ({ ...d, additionalSetters: rows }))}
+            disabled={!editDraft.setterId}
+            disabledReason="Select a primary setter to add co-setters."
+          />
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={saveEditSheet}
+              className="flex-1 font-semibold"
+              style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: '#fff' }}
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditSheetOpen(false)}
+              className="flex-1"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: '#fff' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </MobileBottomSheet>
     </div>
   );
