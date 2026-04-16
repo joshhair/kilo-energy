@@ -12,7 +12,7 @@ export default function SignInPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-5 py-10 relative overflow-hidden"
+      className="min-h-screen flex flex-col items-center justify-center px-3 py-6 sm:px-5 sm:py-10 relative overflow-hidden"
       style={{
         background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
       }}
@@ -101,9 +101,13 @@ export default function SignInPage() {
           </p>
         </div>
 
-        {/* Clerk sign-in card — sits inside a subtle glass frame */}
+        {/* Clerk sign-in card — sits inside a subtle glass frame.
+            NOTE: the inner `p-1` is sm-and-up only. On narrow phones that
+            extra 8px each side was enough to squish Clerk's form (which has
+            its own internal padding). Dropping it on mobile lets the
+            widget breathe without losing the glass effect on desktop. */}
         <div
-          className="w-full rounded-3xl p-1"
+          className="w-full rounded-3xl p-0.5 sm:p-1"
           style={{
             background:
               'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, rgba(0,180,216,0.10) 50%, rgba(255,255,255,0.04) 100%)',
@@ -112,7 +116,7 @@ export default function SignInPage() {
           }}
         >
           <div
-            className="rounded-[22px] p-1"
+            className="rounded-[22px] p-0 sm:p-1"
             style={{ background: 'rgba(13,21,37,0.75)', backdropFilter: 'blur(10px)' }}
           >
             <SignIn />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate } from '../../../lib/utils';
@@ -345,25 +346,42 @@ export default function MobileMyPay() {
 
                 {/* Entries */}
                 <div>
-                  {period.entries.map((entry, i) => (
-                    <div
-                      key={entry.id}
-                      className={`flex items-center justify-between py-3 ${i < period.entries.length - 1 ? 'border-b' : ''}`}
-                      style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
-                    >
-                      <div>
-                        <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>
-                          {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
-                        </p>
-                        <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
-                          {entry.paymentStage} &middot; {entry.date}
+                  {period.entries.map((entry, i) => {
+                    const label = entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--');
+                    // Link the customer name to the project when we have
+                    // one — mirrors the desktop my-pay table. Bonus rows
+                    // (no projectId) stay static text.
+                    const labelEl = entry.projectId ? (
+                      <Link
+                        href={`/dashboard/projects/${entry.projectId}`}
+                        className="font-semibold text-white active:opacity-70 transition-opacity"
+                        style={{ fontFamily: FONT_BODY, fontSize: '1rem', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)', textUnderlineOffset: '3px' }}
+                      >
+                        {label}
+                      </Link>
+                    ) : (
+                      <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>
+                        {label}
+                      </p>
+                    );
+                    return (
+                      <div
+                        key={entry.id}
+                        className={`flex items-center justify-between py-3 ${i < period.entries.length - 1 ? 'border-b' : ''}`}
+                        style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                      >
+                        <div>
+                          {labelEl}
+                          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
+                            {entry.paymentStage} &middot; {entry.date}
+                          </p>
+                        </div>
+                        <p className="font-bold tabular-nums" style={{ color: statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>
+                          {fmt$(entry.amount)}
                         </p>
                       </div>
-                      <p className="font-bold tabular-nums" style={{ color: statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>
-                        {fmt$(entry.amount)}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </MobileCard>
             ))}

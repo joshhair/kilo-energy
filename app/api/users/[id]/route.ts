@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '../../../../lib/db';
-import { requireAdmin } from '../../../../lib/api-auth';
+import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
 import { logger, errorContext } from '../../../../lib/logger';
 import {
   assertNotSelf,
@@ -13,20 +13,53 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchUserSchema } from '../../../../lib/schemas/user';
 
 /**
- * GET /api/users/[id] — Single user (admin only). Includes PII (email,
- * phone), permission flags, and a `relationCount` so the UI knows whether
- * the Delete-permanently button should be enabled.
+ * GET /api/users/[id] — Single user. Admins see everything; a non-admin
+ * user can fetch their own record but gets a trimmed-down view (profile +
+ * permission flags only, no admin-only fields like relation counts or
+ * pending-invitation lookups).
+ *
+ * Why self-access matters: /dashboard/blitz fetches the current user's
+ * record to gate canRequestBlitz / canCreateBlitz. Admin-only would
+ * silently 403 and leave the flags defaulted to false, making the whole
+ * blitz-request feature dead code for reps.
  */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let viewer;
+  try { viewer = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const isAdmin = viewer.role === 'admin';
+  const isSelf = viewer.id === id;
+  if (!isAdmin && !isSelf) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  // Self view — return only the fields the client needs for permission
+  // gating + profile display. No Clerk lookups, no relation counts.
+  if (!isAdmin) {
+    return NextResponse.json({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      repType: user.repType,
+      active: user.active,
+      canRequestBlitz: user.canRequestBlitz,
+      canCreateBlitz: user.canCreateBlitz,
+      canExport: user.canExport,
+      canCreateDeals: user.canCreateDeals,
+      canAccessBlitz: user.canAccessBlitz,
+    });
+  }
+
+  // Admin view — includes relation breakdown + pending-invitation lookup.
   const { total: relationCount, breakdown: relationBreakdown } = await countUserRelations(id);
 
-  // Best-effort lookup for a pending Clerk invitation. Used by the UI to
-  // decide whether the action footer shows "Send invite" vs "Resend invite".
   let pendingInvitation: { id: string; createdAt: number } | null = null;
   if (!user.clerkUserId) {
     try {
