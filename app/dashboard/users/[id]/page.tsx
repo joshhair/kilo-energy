@@ -44,7 +44,7 @@ type UserMeta = {
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, effectiveRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact, updateRepType } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, effectiveRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact, updateRepType, removeRep } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -581,6 +581,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     }
                     if (repInContext && newRepType) {
                       updateRepType(id, newRepType as 'closer' | 'setter' | 'both');
+                    } else if (repInContext && !newRepType) {
+                      removeRep(id);
                     }
                     setMetaRefreshKey((k) => k + 1);
                     toast(newRepType ? `Saved — ${resolvedUser.id === currentRepId ? 'you' : 'they'} now appear as a ${newRepType}` : 'Saved — pure-admin mode', 'success');
@@ -1580,9 +1582,9 @@ function TrainerOverrideCard({
       </div>
 
       <div className="space-y-2">
-        {(editing ? draftTiers : assignment.tiers).map((tier, i) => {
+        {(editing ? draftTiers : sortedTiers).map((tier, i) => {
           const isActive = i === activeTierIndex;
-          const prevUpTo = i === 0 ? 0 : ((editing ? draftTiers : assignment.tiers)[i - 1].upToDeal ?? 0);
+          const prevUpTo = i === 0 ? 0 : ((editing ? draftTiers : sortedTiers)[i - 1].upToDeal ?? 0);
           const dealRange = editing
             ? null
             : tier.upToDeal === null
