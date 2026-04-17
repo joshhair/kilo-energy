@@ -78,6 +78,7 @@ export const ADMIN_NAV: AnyNavItem[] = [
   { href: '/dashboard/calculator',   label: 'Calculator', icon: Calculator },
   { href: '/dashboard/users',        label: 'Users',      icon: Users },
   { href: '/dashboard/blitz',          label: 'Blitz',      icon: Tent },
+  { href: '/dashboard/training',     label: 'Training',   icon: GraduationCap },
   { href: '/dashboard/incentives',   label: 'Incentives', icon: Trophy },
   { href: '/dashboard/settings',     label: 'Settings',   icon: Settings },
 ];
