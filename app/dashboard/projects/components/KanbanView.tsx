@@ -205,9 +205,14 @@ export default function KanbanView({
                       <p className="text-xs text-[var(--text-muted)] mt-0.5">
                         ${phaseProjects.reduce((sum, p) => {
                           if (dealScope === 'mine') {
-                            if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                            if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                            return sum;
+                            let mine = 0;
+                            if (p.repId === currentRepId) mine += (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                            if (p.setterId === currentRepId) mine += (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                            const coCloser = p.additionalClosers?.find(c => c.userId === currentRepId);
+                            if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
+                            const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
+                            if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                            return sum + mine;
                           }
                           return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                         }, 0).toLocaleString()}
@@ -233,16 +238,21 @@ export default function KanbanView({
                   )}
                   {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
                     const myRole = !isAdmin
-                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
+                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = dealScope === 'mine'
-                      ? (proj.repId === currentRepId
-                          ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
-                          : proj.setterId === currentRepId
-                            ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                            : 0)
-                      : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                    let commissionTotal: number;
+                    if (dealScope === 'mine') {
+                      commissionTotal = 0;
+                      if (proj.repId === currentRepId) commissionTotal += (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                      if (proj.setterId === currentRepId) commissionTotal += (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const coCloser = proj.additionalClosers?.find(c => c.userId === currentRepId);
+                      if (coCloser) commissionTotal += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
+                      const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
+                      if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                    } else {
+                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                    }
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -451,9 +461,14 @@ export default function KanbanView({
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       ${phaseProjects.reduce((sum, p) => {
                         if (dealScope === 'mine') {
-                          if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                          if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                          return sum;
+                          let mine = 0;
+                          if (p.repId === currentRepId) mine += (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                          if (p.setterId === currentRepId) mine += (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                          const coCloser = p.additionalClosers?.find(c => c.userId === currentRepId);
+                          if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
+                          const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
+                          if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                          return sum + mine;
                         }
                         return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                       }, 0).toLocaleString()}
@@ -496,16 +511,21 @@ export default function KanbanView({
                   )}
                   {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
                     const myRole = !isAdmin
-                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : null)
+                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    const commissionTotal = dealScope === 'mine'
-                      ? (proj.repId === currentRepId
-                          ? (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
-                          : proj.setterId === currentRepId
-                            ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                            : 0)
-                      : (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                    let commissionTotal: number;
+                    if (dealScope === 'mine') {
+                      commissionTotal = 0;
+                      if (proj.repId === currentRepId) commissionTotal += (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
+                      if (proj.setterId === currentRepId) commissionTotal += (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      const coCloser = proj.additionalClosers?.find(c => c.userId === currentRepId);
+                      if (coCloser) commissionTotal += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
+                      const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
+                      if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                    } else {
+                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                    }
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -643,9 +663,14 @@ export default function KanbanView({
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
                     ${phaseProjects.reduce((sum, p) => {
                       if (dealScope === 'mine') {
-                        if (p.repId === currentRepId) return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                        if (p.setterId === currentRepId) return sum + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                        return sum;
+                        let mine = 0;
+                        if (p.repId === currentRepId) mine += (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+                        if (p.setterId === currentRepId) mine += (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        const coCloser = p.additionalClosers?.find(c => c.userId === currentRepId);
+                        if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
+                        const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
+                        if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                        return sum + mine;
                       }
                       return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
                     }, 0).toLocaleString()}

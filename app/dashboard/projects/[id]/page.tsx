@@ -732,7 +732,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }
 
   // Reps can only view their own projects
-  if (effectiveRole === 'rep' && project.repId !== effectiveRepId && project.setterId !== effectiveRepId) {
+  if (
+    effectiveRole === 'rep' &&
+    project.repId !== effectiveRepId &&
+    project.setterId !== effectiveRepId &&
+    !project.additionalClosers?.some((p) => p.userId === effectiveRepId) &&
+    !project.additionalSetters?.some((p) => p.userId === effectiveRepId)
+  ) {
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this project.{' '}
@@ -1835,7 +1841,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 label="Co-closers"
                 rows={editVals.additionalClosers}
                 primaryUserId={project.repId}
-                excludeUserIds={editVals.additionalClosers.map((c) => c.userId).filter(Boolean)}
+                excludeUserIds={[editVals.setterId, ...editVals.additionalClosers.map((c) => c.userId)].filter(Boolean)}
                 repTypeFilter={(r) => r.repType === 'closer' || r.repType === 'both'}
                 reps={reps}
                 onChange={(rows) => setEditVals((v) => ({ ...v, additionalClosers: rows }))}
