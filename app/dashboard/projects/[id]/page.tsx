@@ -668,6 +668,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // values instead of the chain.
     trainerId: '',
     trainerRate: '',
+    solarTechProductId: '',
   });
 
   // ── Prev/Next project navigation ─────────────────────────────────────────
@@ -913,6 +914,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       })),
       trainerId: project.trainerId ?? '',
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
+      solarTechProductId: project.solarTechProductId ?? '',
     });
     setEditErrors({});
     setShowEditModal(true);
@@ -925,7 +927,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // Validate required fields before saving
     const errs: Record<string, string> = {};
     if (!editVals.installer) errs.installer = 'Installer is required';
-    if (editVals.installer === 'SolarTech' && !project.solarTechProductId) errs.installer = 'SolarTech requires a product — select a SolarTech product before changing the installer';
+    if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId) errs.installer = 'SolarTech requires a product — select a SolarTech product';
     if (!editVals.soldDate) errs.soldDate = 'Sold date is required';
     if (!editVals.kWSize || isNaN(kw) || kw <= 0) errs.kWSize = 'Must be a number greater than 0';
     if (!editVals.netPPW || isNaN(ppw) || ppw <= 0) errs.netPPW = 'Must be a number greater than 0';
@@ -950,8 +952,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     let editBaseline: InstallerBaseline;
     if (editVals.useBaselineOverride) {
       editBaseline = { closerPerW: parseFloat(editVals.overrideCloserPerW) || 0, kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0, ...(editVals.overrideSetterPerW !== '' && !isNaN(parsedSetterPerW) ? { setterPerW: parsedSetterPerW } : {}) };
-    } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
-      editBaseline = getSolarTechBaseline(project.solarTechProductId, kw, solarTechProducts);
+    } else if (editVals.installer === 'SolarTech' && editVals.solarTechProductId) {
+      editBaseline = getSolarTechBaseline(editVals.solarTechProductId, kw, solarTechProducts);
     } else if (project.installerProductId && editVals.installer === project.installer) {
       editBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
     } else {
@@ -1779,7 +1781,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <button
                       key={pt}
                       type="button"
-                      onClick={() => setEditVals((v) => ({ ...v, productType: pt }))}
+                      onClick={() => setEditVals((v) => ({ ...v, productType: pt, financer: pt === 'Cash' ? 'Cash' : v.financer === 'Cash' ? '' : v.financer }))}
                       className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                         editVals.productType === pt
                           ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
