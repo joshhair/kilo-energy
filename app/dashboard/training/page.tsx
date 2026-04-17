@@ -607,8 +607,8 @@ function TrainingPageInner() {
           </p>
           <button
             onClick={() => setShowNewAssignment(true)}
-            className="mt-3 ml-[52px] inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl text-black transition-all hover:opacity-90 active:scale-[0.97]"
-            style={{ backgroundColor: 'var(--brand)' }}
+            className="mt-3 ml-[52px] inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
+            style={{ backgroundColor: 'var(--brand)', color: '#050d18' }}
           >
             <Plus className="w-4 h-4" />
             New Assignment
@@ -678,8 +678,8 @@ function TrainingPageInner() {
           {filteredAdminRows.length} of {adminRows.length} assignment{adminRows.length === 1 ? '' : 's'}
         </p>
 
-        {/* Table */}
-        <div className="card-surface rounded-2xl overflow-hidden">
+        {/* Table — overflow-visible so the ⋯ row-actions dropdown isn't clipped. */}
+        <div className="card-surface rounded-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="table-header-frost border-b border-[var(--border-subtle)]">
@@ -796,7 +796,7 @@ function TrainingPageInner() {
                           </button>
                           {openMenuId === a.id && (
                             <div
-                              className="absolute right-4 top-10 z-30 min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                              className="absolute right-4 bottom-full mb-1 z-30 min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
                             >
                               <Link
                                 href={`/dashboard/users/${a.traineeId}`}
