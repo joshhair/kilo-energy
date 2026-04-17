@@ -57,6 +57,16 @@ export default defineConfig({
       testMatch: [/smoke\.test\.ts/],
       use: { browserName: 'chromium' },
     },
+    // a11y guardrail: runs axe-core against key surfaces. The test file
+    // handles its own auth via `test.use({ storageState })` inside the
+    // authenticated describe — this project needs setup (for admin.json)
+    // but no default storageState so the anonymous sign-in case also works.
+    {
+      name: 'chromium-a11y',
+      dependencies: ['setup'],
+      testMatch: [/a11y\.test\.ts/],
+      use: { browserName: 'chromium' },
+    },
     {
       name: 'mobile',
       testMatch: [/mobile\.test\.ts/],
