@@ -124,8 +124,7 @@ export function AdminDashboard({
       { totalRevenue: 0, totalProfit: 0 }
     );
 
-    const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
-    const totalPaid = payroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
+    const totalPaid = payroll.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
     const totalKWSold = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
     const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
 
@@ -569,7 +568,7 @@ export function AdminDashboard({
         const startIdx = (safePage - 1) * recentRowsPerPage;
         const endIdx = Math.min(startIdx + recentRowsPerPage, sorted.length);
         const paginated = sorted.slice(startIdx, endIdx);
-        const showM3 = allProjects.some((p) => (p.m3Amount ?? 0) > 0);
+        const showM3 = projects.some((p) => (p.m3Amount ?? 0) > 0);
         const thCls = (col: SortKey) =>
           `text-left px-6 py-3 text-xs font-medium select-none cursor-pointer transition-colors ${
             sortKey === col

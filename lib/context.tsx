@@ -386,8 +386,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // ── 2. Setter reassignment (stays inline — deeply interleaved with state) ──
       if (updates.setterId !== undefined && updates.setterId !== old.setterId) {
-        const oldSetter = old.setterId ? reps.find((r) => r.id === old.setterId)?.name ?? old.setterId : 'none';
-        const newSetter = updates.setterId ? reps.find((r) => r.id === updates.setterId)?.name ?? updates.setterId : 'none';
+        const oldSetter = old.setterId ? repsRef.current.find((r) => r.id === old.setterId)?.name ?? old.setterId : 'none';
+        const newSetter = updates.setterId ? repsRef.current.find((r) => r.id === updates.setterId)?.name ?? updates.setterId : 'none';
         logProjectActivity(id, 'setter_assigned', `Setter changed from ${oldSetter} to ${newSetter}`, JSON.stringify({ oldSetterId: old.setterId, newSetterId: updates.setterId }));
         // Purge the old setter's Draft/Pending payroll entries for this project
         if (old.setterId) {
@@ -434,7 +434,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
           if (pastAcceptance && !old.subDealerId && (closerM1Amount ?? 0) > 0) {
             setPayrollEntries((prevEntries) => {
-              const hasM1 = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M1' && (e.repId === old.repId || e.status === 'Paid'));
+              const hasM1 = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M1' && e.repId === old.repId);
               if (hasM1) return prevEntries;
               const closerRep = repsRef.current.find((r) => r.id === old.repId);
               const ts = Date.now();
