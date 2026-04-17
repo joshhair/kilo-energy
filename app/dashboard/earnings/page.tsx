@@ -179,7 +179,7 @@ function computeMonthlyBarData(
     }
     const d = map.get(key)!;
     if (e.status === 'Paid') d.paid += e.amount;
-    else if (e.status === 'Pending' || e.status === 'Draft') d.pending += e.amount;
+    else if (e.status === 'Pending') d.pending += e.amount;
   }
 
   for (const r of reimbursements) {

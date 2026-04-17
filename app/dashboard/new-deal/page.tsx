@@ -783,8 +783,8 @@ function NewDealPage() {
   const _now = new Date();
   const _today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
   const _monthPrefix = _today.slice(0, 7);
-  const monthCount = currentRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_monthPrefix) && (p.repId === currentRepId || p.setterId === currentRepId)).length;
-  const todayCount = currentRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_today) && (p.repId === currentRepId || p.setterId === currentRepId)).length;
+  const monthCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_monthPrefix) && (p.repId === effectiveRepId || p.setterId === effectiveRepId)).length;
+  const todayCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_today) && (p.repId === effectiveRepId || p.setterId === effectiveRepId)).length;
 
   return (
     <div className="p-4 md:p-8" style={{ maxWidth: 1100, margin: '0 auto' }}>
