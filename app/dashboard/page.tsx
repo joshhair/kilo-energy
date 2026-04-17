@@ -751,8 +751,8 @@ export default function DashboardPage() {
   const mtdUnmatchedCommission = mtdProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
-      const closerM1 = p.m1Amount ?? 0;
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0)) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0)) : 0;
+      const closerM1 = payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0);
+      const totalExpected = p.repId === effectiveRepId ? closerM1 + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0)) : p.setterId === effectiveRepId ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0)) : 0;
       return s + Math.max(0, totalExpected - (allMtdPayrollByProject.get(p.id) ?? 0));
     }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
@@ -865,7 +865,7 @@ export default function DashboardPage() {
 
   // "In Pipeline" = expected commission from active projects minus what's actually been disbursed
   const inPipeline = activeProjects.reduce((sum, p) => {
-    const closerM1 = p.m1Amount ?? 0;
+    const closerM1 = payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0);
     // Use net payroll amounts when entries exist (they are net of trainer deductions).
     // Fall back to gross project amounts only for stages not yet triggered.
     const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
@@ -873,7 +873,7 @@ export default function DashboardPage() {
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + closerM2Net + closerM3Net
       : p.setterId === effectiveRepId
-        ? (p.setterM1Amount ?? 0) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
+        ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
         : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);

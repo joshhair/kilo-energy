@@ -215,7 +215,7 @@ function ProjectsPageInner() {
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Projects</h1>
-          <p className="text-[var(--text-secondary)] text-sm font-medium mt-1 tracking-wide">{hasActiveFilters ? `${filtered.length} of ${visibleProjects.length} projects` : `${visibleProjects.length} total projects`}</p>
+          <p className="text-[var(--text-secondary)] text-sm font-medium mt-1 tracking-wide">{hasActiveFilters ? `${filtered.length} of ${statusFiltered.length} projects` : `${visibleProjects.length} total projects`}</p>
         </div>
         <Link
           href="/dashboard/new-deal"
