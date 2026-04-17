@@ -100,6 +100,12 @@ function SettingsPageInner() {
 
   const [section, setSection] = useState<SettingsSection>(initialSection);
 
+  useEffect(() => {
+    const p = searchParams.get('section') as SettingsSection | null;
+    const next = p && validSections.includes(p) ? p : 'trainers';
+    setSection(next);
+  }, [searchParams]);
+
   // ── Shared editing state (unsaved-changes guard) ────────────────────────────
   const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
   const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
@@ -428,7 +434,7 @@ function SettingsPageInner() {
         {/* Settings Summary Dashboard */}
         {editingInstaller === null && editingAssignmentId === null && editingPrepaid === null && editingProductName === null && (() => {
           const activeInstallerCount = installers.filter((i) => i.active).length;
-          const activeFinancerCount = financers.filter((f) => f.active && !hiddenFinancers.has(f.name)).length;
+          const activeFinancerCount = financers.filter((f) => f.active && !hiddenFinancers.has(f.name) && f.name !== 'Cash').length;
           const trainerCount = trainerAssignments.length;
           const adminCount = adminUsers.length;
           return (
