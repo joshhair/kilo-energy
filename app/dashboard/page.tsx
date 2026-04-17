@@ -731,7 +731,12 @@ export default function DashboardPage() {
   // correct regardless of which period tab is selected.
   const allMyPayroll = payrollEntries.filter((p) => p.repId === effectiveRepId);
   const mtdProjects = projects.filter(
-    (p) => (p.repId === effectiveRepId || p.setterId === effectiveRepId) && isThisMonth(p.soldDate)
+    (p) =>
+      (p.repId === effectiveRepId ||
+        p.setterId === effectiveRepId ||
+        p.additionalClosers?.some((c) => c.userId === effectiveRepId) ||
+        p.additionalSetters?.some((s) => s.userId === effectiveRepId)) &&
+      isThisMonth(p.soldDate)
   );
   const mtdPayrollCommission = payrollEntries
     .filter((p) => p.repId === effectiveRepId && isThisMonth(p.date) && p.type === 'Deal' && p.paymentStage !== 'Trainer')
@@ -755,7 +760,17 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((s, p) => {
       const closerM1 = payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0);
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0)) : p.setterId === effectiveRepId ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0)) : 0;
+      const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterParty = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
+      const totalExpected = p.repId === effectiveRepId
+        ? closerM1 + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
+        : p.setterId === effectiveRepId
+        ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
+        : coCloserParty
+        ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserParty.m3Amount ?? 0))
+        : coSetterParty
+        ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterParty.m3Amount ?? 0))
+        : 0;
       return s + Math.max(0, totalExpected - (allMtdPayrollByProject.get(p.id) ?? 0));
     }, 0);
   const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;

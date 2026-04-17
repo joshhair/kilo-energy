@@ -614,7 +614,7 @@ export function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const isCancelled = proj.phase === 'Cancelled';
+                      const isCancelled = proj.phase === 'Cancelled' || proj.phase === 'On Hold';
                       const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0));
                       const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0));
                       return (

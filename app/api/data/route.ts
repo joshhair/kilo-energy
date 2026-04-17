@@ -21,7 +21,12 @@ export async function GET() {
   // Admin: all. PM: all. Rep: closer or setter. Sub-dealer: subDealerId match.
   const projectWhere: Record<string, unknown> = {};
   if (isRep) {
-    projectWhere.OR = [{ closerId: user.id }, { setterId: user.id }];
+    projectWhere.OR = [
+      { closerId: user.id },
+      { setterId: user.id },
+      { additionalClosers: { some: { userId: user.id } } },
+      { additionalSetters: { some: { userId: user.id } } },
+    ];
   } else if (isSubDealer) {
     projectWhere.OR = [{ subDealerId: user.id }, { closerId: user.id }];
   }
