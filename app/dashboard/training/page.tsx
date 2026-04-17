@@ -358,13 +358,15 @@ function TrainingPageInner() {
       );
       const dealCount = traineeDeals.length;
 
-      const currentRate = getTrainerOverrideRate(assignment, dealCount);
+      const consumedDeals = getConsumedDeals(assignment);
+
+      const currentRate = getTrainerOverrideRate(assignment, consumedDeals);
 
       let activeTierIndex = assignment.tiers.length - 1;
       let nextThreshold: number | null = null;
       for (let i = 0; i < assignment.tiers.length; i++) {
         const tier = assignment.tiers[i];
-        if (tier.upToDeal === null || dealCount <= tier.upToDeal) {
+        if (tier.upToDeal === null || consumedDeals < tier.upToDeal) {
           activeTierIndex = i;
           nextThreshold = tier.upToDeal;
           break;
@@ -375,8 +377,6 @@ function TrainingPageInner() {
       const earningsFromTrainee = trainerEntries
         .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId && isPaidAndEffective(e))
         .reduce((s, e) => s + e.amount, 0);
-
-      const consumedDeals = getConsumedDeals(assignment);
       const status = getAssignmentStatus(assignment, trainee, consumedDeals);
 
       return {
@@ -536,7 +536,7 @@ function TrainingPageInner() {
       const status = getAssignmentStatus(a, trainee, consumed);
       const rate = getTrainerOverrideRate(a, consumed);
       const activeTierIndex = a.tiers.findIndex(
-        (t) => t.upToDeal === null || consumed <= t.upToDeal
+        (t) => t.upToDeal === null || consumed < t.upToDeal
       );
       return { assignment: a, trainer, trainee, consumed, status, rate, activeTierIndex };
     });
@@ -1326,7 +1326,7 @@ function ActiveTraineeCard({
   const { assignment: t, traineeName, traineeRole, dealCount, currentRate, activeTierIndex, nextThreshold, projects, status } = data;
 
   const prevThreshold = activeTierIndex > 0 ? t.tiers[activeTierIndex - 1].upToDeal ?? 0 : 0;
-  const progressMax = nextThreshold ? (nextThreshold + 1) - prevThreshold : 1;
+  const progressMax = nextThreshold ? nextThreshold - prevThreshold : 1;
   const progressVal = nextThreshold ? Math.min(dealCount - prevThreshold, progressMax) : 1;
   const progressPct = Math.round((progressVal / progressMax) * 100);
 
@@ -1384,7 +1384,7 @@ function ActiveTraineeCard({
             Tier {activeTierIndex + 1}: ${currentRate.toFixed(2)}/W
           </span>
           {nextThreshold ? (
-            <span className="text-[var(--text-muted)] text-[10px]">{dealCount}/{nextThreshold + 1} deals</span>
+            <span className="text-[var(--text-muted)] text-[10px]">{dealCount}/{nextThreshold} deals</span>
           ) : (
             <span className="text-[var(--text-muted)] text-[10px]">Final tier</span>
           )}
@@ -1439,7 +1439,7 @@ function ResidualTraineeCard({
   const { assignment: t, traineeName, dealCount, currentRate, activeTierIndex, nextThreshold, earningsFromTrainee, status } = data;
 
   const prevThreshold = activeTierIndex > 0 ? t.tiers[activeTierIndex - 1].upToDeal ?? 0 : 0;
-  const progressMax = nextThreshold ? (nextThreshold + 1) - prevThreshold : 1;
+  const progressMax = nextThreshold ? nextThreshold - prevThreshold : 1;
   const progressVal = nextThreshold ? Math.min(dealCount - prevThreshold, progressMax) : 1;
   const progressPct = Math.round((progressVal / progressMax) * 100);
 
@@ -1494,7 +1494,7 @@ function ResidualTraineeCard({
               />
             </div>
             <span className="text-[10px] text-[var(--text-muted)] tabular-nums">
-              {nextThreshold ? `${dealCount}/${nextThreshold + 1}` : '∞'}
+              {nextThreshold ? `${dealCount}/${nextThreshold}` : '∞'}
             </span>
           </div>
         </div>
@@ -1713,7 +1713,7 @@ function NewAssignmentModal({
   );
   // Eligible trainees: active reps, excluding chosen trainer
   const traineeOptions = useMemo(
-    () => reps.filter((r) => r.active && r.id !== trainerId && r.repType).sort((a, b) => a.name.localeCompare(b.name)),
+    () => reps.filter((r) => r.active !== false && r.id !== trainerId && r.repType).sort((a, b) => a.name.localeCompare(b.name)),
     [reps, trainerId],
   );
 
