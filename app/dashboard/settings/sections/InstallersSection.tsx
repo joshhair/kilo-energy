@@ -314,9 +314,12 @@ export function InstallersSection({
                           const parts: string[] = [];
                           if (productCount > 0) parts.push(`${productCount} product${productCount === 1 ? '' : 's'}`);
                           if (versionCount > 0) parts.push(`${versionCount} pricing version${versionCount === 1 ? '' : 's'}`);
+                          const installerProjectCount = projects.filter((p) => p.installer === inst.name).length;
                           const cascadeDetail = parts.length > 0
                             ? `This will PERMANENTLY delete ${parts.join(' and ')} along with every baseline tier underneath them. This cannot be undone from the UI.\n\nExisting deals that reference this installer will remain but will no longer have a pricing source.`
-                            : 'This installer has no products or pricing configured yet. Existing deals referencing it (if any) will remain, but you will not be able to create new deals with this installer.';
+                            : installerProjectCount > 0
+                              ? `This installer is used by ${installerProjectCount} project${installerProjectCount === 1 ? '' : 's'} and cannot be deleted. Archive it instead.`
+                              : 'This installer has no products, pricing, or associated projects and will be permanently deleted.';
                           setDeleteConfirm({
                             type: 'installer',
                             id: inst.name,

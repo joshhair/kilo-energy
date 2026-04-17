@@ -1265,7 +1265,6 @@ function NewDealPage() {
                         const mappedIsActive = hasFamilyMap && activeFinancers.includes(mappedFinancer);
                         const mappedIsArchived = hasFamilyMap && !mappedIsActive;
                         const financerOptions = (
-                          mappedIsArchived ? [] :
                           mappedIsActive ? activeFinancers.filter((f) => f === mappedFinancer) :
                           activeFinancers
                         ).filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }));
@@ -1275,14 +1274,13 @@ function NewDealPage() {
                               value={form.financer}
                               onChange={(val) => handleFinancerChange(val)}
                               options={financerOptions}
-                              placeholder={mappedIsArchived ? '— Designated financer is archived —' : '— Select financer —'}
+                              placeholder="— Select financer —"
                               label="Financer"
                               error={!!errors.financer}
-                              disabled={mappedIsArchived}
                             />
                             {mappedIsArchived && (
-                              <p className="mt-1 text-xs text-red-400">
-                                The financer designated for this family ("{mappedFinancer}") has been archived. Contact an admin.
+                              <p className="mt-1 text-xs text-yellow-400">
+                                The designated financer for this family ("{mappedFinancer}") has been archived — select an alternative below.
                               </p>
                             )}
                           </>

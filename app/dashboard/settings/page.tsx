@@ -166,6 +166,8 @@ function SettingsPageInner() {
       setPendingSection(s);
       return;
     }
+    setSelectedInstallers(new Set());
+    setSelectedFinancers(new Set());
     setSection(s);
     router.replace(`/dashboard/settings?section=${s}`, { scroll: false });
   };
