@@ -183,6 +183,9 @@ export default function MobileAdminDashboard() {
     const repDeals: Record<string, number> = {};
     for (const p of periodProjects) {
       repDeals[p.repId] = (repDeals[p.repId] || 0) + 1;
+      if (p.setterId && p.setterId !== p.repId) {
+        repDeals[p.setterId] = (repDeals[p.setterId] || 0) + 1;
+      }
     }
     return Object.entries(repDeals)
       .sort((a, b) => b[1] - a[1])

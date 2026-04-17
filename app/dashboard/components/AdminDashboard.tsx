@@ -11,7 +11,7 @@ import { formatDate, fmt$, fmtCompact$, formatCompactKW } from '../../../lib/uti
 import { DollarSign, CheckCircle, Zap, Users, BarChart2, FolderKanban, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, AlertCircle, HelpCircle } from 'lucide-react';
 import { PaginationBar } from './PaginationBar';
 import { type Period, getGreeting, getPhaseStuckThresholds, AnimatedStatValue } from './dashboard-utils';
-import { NeedsAttentionSection } from '../page';
+import { NeedsAttentionSection, MyTasksSection, type MentionItem } from '../page';
 
 export function AdminDashboard({
   projects,
@@ -26,6 +26,8 @@ export function AdminDashboard({
   productCatalogPricingVersions,
   solarTechProducts,
   currentRepName,
+  mentions,
+  onToggleTask,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
   allProjects: ReturnType<typeof useApp>['projects'];
@@ -39,6 +41,8 @@ export function AdminDashboard({
   productCatalogPricingVersions: ProductCatalogPricingVersion[];
   solarTechProducts: ReturnType<typeof useApp>['solarTechProducts'];
   currentRepName: string | null;
+  mentions: MentionItem[];
+  onToggleTask: (projectId: string, messageId: string, checkItemId: string, completed: boolean) => Promise<void>;
 }) {
   const { updateProject } = useApp();
 
@@ -433,6 +437,8 @@ export function AdminDashboard({
           />
         </div>
       )}
+
+      <MyTasksSection mentions={mentions} onToggleTask={onToggleTask} />
 
       {/* ── Installer Insights ────────────────────────────────────────────── */}
       {(() => {

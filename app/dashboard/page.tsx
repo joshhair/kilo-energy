@@ -826,6 +826,23 @@ export default function DashboardPage() {
       productCatalogPricingVersions={productCatalogPricingVersions}
       solarTechProducts={solarTechProducts}
       currentRepName={currentRepName}
+      mentions={dashMentions}
+      onToggleTask={(projectId, messageId, checkItemId, completed) => {
+        return fetch(`/api/projects/${projectId}/messages/${messageId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ checkItemId, completed, completedBy: effectiveRepId }),
+        }).then((res) => {
+          if (!res.ok) throw new Error('Failed to update task');
+          setDashMentions((prev) =>
+            prev.map((m) =>
+              m.messageId === messageId
+                ? { ...m, checkItems: m.checkItems.map((ci) => ci.id === checkItemId ? { ...ci, completed } : ci) }
+                : m
+            )
+          );
+        });
+      }}
     />;
   }
 

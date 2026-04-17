@@ -781,7 +781,7 @@ export function syncPayrollAmounts(
     }
 
     const match = stageAmountUpdates.find(
-      (u) => u.stage === e.paymentStage && u.setter === (e.notes ?? '').startsWith('Setter')
+      (u) => u.stage === e.paymentStage && u.setter === ((e.notes ?? '').startsWith('Setter') || (e.notes ?? '').startsWith('Co-setter'))
     );
     if (!match) return e;
     const deduction = match.setter

@@ -454,14 +454,15 @@ function RepEarningsView() {
       if (!dealRoleFilter) return true;
       if (dealRoleFilter === 'Reimb.')  return row.kind === 'reimb';
       const role = row.kind === 'payroll' ? (row.entry.notes ?? '') : '';
-      if (dealRoleFilter === 'Setter')  return role === 'Setter';
+      if (dealRoleFilter === 'Setter')  return role === 'Setter' || role.startsWith('Co-setter');
       if (dealRoleFilter === 'Trainer') return role.startsWith('Trainer override');
-      return role !== 'Setter' && !role.startsWith('Trainer override') && row.kind !== 'reimb'; // Closer
+      return role !== 'Setter' && !role.startsWith('Co-setter') && !role.startsWith('Trainer override') && row.kind !== 'reimb'; // Closer
     }),
   [sortedDealsBase, dealRoleFilter]);
 
-  const closerCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes !== 'Setter' && !(r.entry.notes ?? '').startsWith('Trainer override')).length;
-  const setterCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && r.entry.notes === 'Setter').length;
+  const isSetterNote = (notes: string | null | undefined) => notes === 'Setter' || (notes ?? '').startsWith('Co-setter');
+  const closerCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && !isSetterNote(r.entry.notes) && !(r.entry.notes ?? '').startsWith('Trainer override')).length;
+  const setterCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && isSetterNote(r.entry.notes)).length;
   const trainerCount = sortedDealsBase.filter(r => r.kind === 'payroll' && (r.entry.notes ?? '').startsWith('Trainer override')).length;
   const reimbCount   = sortedDealsBase.filter(r => r.kind === 'reimb').length;
 
