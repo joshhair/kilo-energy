@@ -615,8 +615,10 @@ export function AdminDashboard({
                   <tbody>
                     {paginated.map((proj) => {
                       const isCancelled = proj.phase === 'Cancelled' || proj.phase === 'On Hold';
-                      const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0));
-                      const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0));
+                      const coCloserPay = (proj.additionalClosers ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
+                      const coSetterPay = (proj.additionalSetters ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
+                      const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + coCloserPay);
+                      const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) + coSetterPay);
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">

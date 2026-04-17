@@ -124,12 +124,9 @@ export function NeedsAttentionSection({
     if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
-    const phaseSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
-      if (!proj.soldDate) return null;
-      const [y, m, d] = proj.soldDate.split('-').map(Number);
-      return new Date(y, m - 1, d);
-    })();
-    if (!phaseSince) continue;
+    if (!proj.soldDate) continue;
+    const [sy, sm, sd] = proj.soldDate.split('-').map(Number);
+    const phaseSince = new Date(sy, sm - 1, sd);
     const diffDays = Math.floor((today.getTime() - phaseSince.getTime()) / 86_400_000);
     if (diffDays > threshold) {
       items.push({
@@ -696,7 +693,13 @@ export default function DashboardPage() {
   const myPrevProjects = hasPreviousPeriod
     ? (effectiveRole === 'admin'
         ? prevPeriodProjects
-        : prevPeriodProjects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId))
+        : prevPeriodProjects.filter(
+            (p) =>
+              p.repId === effectiveRepId ||
+              p.setterId === effectiveRepId ||
+              (p.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) ||
+              (p.additionalSetters ?? []).some((s) => s.userId === effectiveRepId),
+          ))
     : [];
   const myPrevPayroll = hasPreviousPeriod
     ? (effectiveRole === 'admin'

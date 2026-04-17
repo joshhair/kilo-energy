@@ -186,6 +186,12 @@ export default function MobileAdminDashboard() {
       if (p.setterId && p.setterId !== p.repId) {
         repDeals[p.setterId] = (repDeals[p.setterId] || 0) + 1;
       }
+      for (const ac of p.additionalClosers ?? []) {
+        repDeals[ac.userId] = (repDeals[ac.userId] || 0) + 1;
+      }
+      for (const as_ of p.additionalSetters ?? []) {
+        repDeals[as_.userId] = (repDeals[as_.userId] || 0) + 1;
+      }
     }
     return Object.entries(repDeals)
       .sort((a, b) => b[1] - a[1])
