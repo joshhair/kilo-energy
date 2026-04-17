@@ -292,7 +292,7 @@ export function NeedsAttentionSection({
                         })()
                       }`}>
                         {item.kind === 'flagged' && 'Flagged for review'}
-                        {item.kind === 'stuck' && `${item.staleDays ?? 0} days since sold · ${item.stuckPhase}`}
+                        {item.kind === 'stuck' && `${item.staleDays ?? 0} days since update · ${item.stuckPhase}`}
                         {item.kind === 'on-hold' && `On hold · ${item.holdDays ?? 0}d`}
                         {isAdmin && item.repName ? ` \u00b7 ${item.repName}` : ''}
                       </p>

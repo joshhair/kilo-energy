@@ -124,16 +124,22 @@ export function myCommissionOnProject(
     };
   }
 
-  // Setter with no drafted payroll yet — we can't display a number.
+  // Setter with no drafted payroll yet — fall back to stored setter amounts.
   if (isViewerSetter) {
+    const m1Amount = project.setterM1Amount ?? 0;
+    const m2Amount = project.setterM2Amount ?? 0;
+    const m3Amount = project.setterM3Amount ?? 0;
+
+    const stages = {
+      m1: { applicable: true, amount: m1Amount, paid: false },
+      m2: { applicable: true, amount: m2Amount, paid: false },
+      m3: { applicable: m3Amount > 0, amount: m3Amount, paid: false },
+    };
+
     return {
-      total: 0,
-      status: "projected",
-      stages: {
-        m1: { applicable: true, amount: 0, paid: false },
-        m2: { applicable: true, amount: 0, paid: false },
-        m3: { applicable: false, amount: 0, paid: false },
-      },
+      total: m1Amount + m2Amount + m3Amount,
+      status: deriveStatus(stages),
+      stages,
     };
   }
 

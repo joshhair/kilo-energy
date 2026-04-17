@@ -369,7 +369,8 @@ export async function GET() {
   const solarTechProducts = products
     .filter((p) => p.installerId === solarTechInstaller?.id)
     .map((p) => {
-      const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null)
+      const now = new Date();
+      const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= now)
         ?? p.pricingVersions[0];
       return {
         id: p.id,
@@ -398,7 +399,8 @@ export async function GET() {
   const productCatalogProducts = products
     .filter((p) => p.installerId !== solarTechInstaller?.id)
     .map((p) => {
-      const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null)
+      const now = new Date();
+      const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= now)
         ?? p.pricingVersions[0];
       return {
         id: p.id,
