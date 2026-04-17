@@ -669,7 +669,13 @@ export default function DashboardPage() {
   const myProjects =
     effectiveRole === 'admin'
       ? periodProjects
-      : periodProjects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
+      : periodProjects.filter(
+          (p) =>
+            p.repId === effectiveRepId ||
+            p.setterId === effectiveRepId ||
+            (p.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) ||
+            (p.additionalSetters ?? []).some((s) => s.userId === effectiveRepId),
+        );
 
   const myPayroll =
     effectiveRole === 'admin'
@@ -871,7 +877,12 @@ export default function DashboardPage() {
   // Rep dashboard
   // Use unfiltered projects so prior-period deals still in-flight show up in PipelineOverview
   const activeProjects = projects
-    .filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId)
+    .filter((p) =>
+      p.repId === effectiveRepId ||
+      p.setterId === effectiveRepId ||
+      p.additionalClosers?.some((c) => c.userId === effectiveRepId) ||
+      p.additionalSetters?.some((s) => s.userId === effectiveRepId)
+    )
     .filter((p) => ACTIVE_PHASES.includes(p.phase));
 
   // ── Financial stats (project-based to account for milestone-triggered payroll) ──
@@ -888,11 +899,17 @@ export default function DashboardPage() {
     // Fall back to gross project amounts only for stages not yet triggered.
     const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
     const closerM3Net = payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0);
+    const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+    const coSetterParty = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + closerM2Net + closerM3Net
       : p.setterId === effectiveRepId
         ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
-        : 0;
+        : coCloserParty
+          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserParty.m3Amount ?? 0))
+          : coSetterParty
+            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterParty.m3Amount ?? 0))
+            : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
@@ -925,7 +942,17 @@ export default function DashboardPage() {
       const closerM1 = p.m1Amount ?? 0;
       const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
       const setterM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0);
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + closerM2Net : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + setterM2Net : 0;
+      const coCloserParty2 = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterParty2 = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
+      const totalExpected = p.repId === effectiveRepId
+        ? closerM1 + closerM2Net
+        : p.setterId === effectiveRepId
+          ? (p.setterM1Amount ?? 0) + setterM2Net
+          : coCloserParty2
+            ? coCloserParty2.m1Amount + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty2.m2Amount)
+            : coSetterParty2
+              ? coSetterParty2.m1Amount + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty2.m2Amount)
+              : 0;
       return sum + Math.max(0, totalExpected - (allPayrollByProject.get(p.id) ?? 0));
     }, 0);
   // M3: build a set of project IDs that already have an M3 payroll entry (paid or unpaid).
@@ -935,7 +962,17 @@ export default function DashboardPage() {
   const pendingM3Pay = activeProjects
     .filter((p) => !m3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && ((p.m3Amount ?? 0) > 0 || (p.setterM3Amount ?? 0) > 0))
     .reduce((sum, p) => {
-      const m3 = p.repId === effectiveRepId ? (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM3Amount ?? 0) : 0;
+      const coCloserParty3 = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterParty3 = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
+      const m3 = p.repId === effectiveRepId
+        ? (p.m3Amount ?? 0)
+        : p.setterId === effectiveRepId
+          ? (p.setterM3Amount ?? 0)
+          : coCloserParty3
+            ? (coCloserParty3.m3Amount ?? 0)
+            : coSetterParty3
+              ? (coSetterParty3.m3Amount ?? 0)
+              : 0;
       return sum + m3;
     }, 0);
   const totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
@@ -954,11 +991,17 @@ export default function DashboardPage() {
     const closerM1 = p.m1Amount ?? 0;
     const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
     const closerM3Net = payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0);
+    const coCloserPartyP = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+    const coSetterPartyP = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + closerM2Net + closerM3Net
       : p.setterId === effectiveRepId
         ? (p.setterM1Amount ?? 0) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
-        : 0;
+        : coCloserPartyP
+          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserPartyP.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserPartyP.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserPartyP.m3Amount ?? 0))
+          : coSetterPartyP
+            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterPartyP.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterPartyP.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterPartyP.m3Amount ?? 0))
+            : 0;
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
@@ -992,11 +1035,17 @@ export default function DashboardPage() {
   }, new Map<string, number>());
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
     const closerM1 = p.m1Amount ?? 0;
+    const coCloserPartyPrev = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+    const coSetterPartyPrev = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
       : p.setterId === effectiveRepId
         ? (p.setterM1Amount ?? 0) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
-        : 0;
+        : coCloserPartyPrev
+          ? (prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserPartyPrev.m1Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserPartyPrev.m2Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserPartyPrev.m3Amount ?? 0))
+          : coSetterPartyPrev
+            ? (prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterPartyPrev.m1Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterPartyPrev.m2Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterPartyPrev.m3Amount ?? 0))
+            : 0;
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
@@ -1022,14 +1071,34 @@ export default function DashboardPage() {
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
       const closerM1 = p.m1Amount ?? 0;
-      const totalExpected = p.repId === effectiveRepId ? closerM1 + (p.m2Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) : 0;
+      const coCloserPartyPU = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterPartyPU = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
+      const totalExpected = p.repId === effectiveRepId
+        ? closerM1 + (p.m2Amount ?? 0)
+        : p.setterId === effectiveRepId
+          ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0)
+          : coCloserPartyPU
+            ? coCloserPartyPU.m1Amount + coCloserPartyPU.m2Amount
+            : coSetterPartyPU
+              ? coSetterPartyPU.m1Amount + coSetterPartyPU.m2Amount
+              : 0;
       return sum + Math.max(0, totalExpected - (prevAllPayrollByProject.get(p.id) ?? 0));
     }, 0);
   const prevM3PayrollProjectIds = new Set(myPrevPayroll.filter((p) => p.paymentStage === 'M3').map((p) => p.projectId).filter(Boolean));
   const prevPendingM3Pay = myPrevProjects
     .filter((p) => !prevM3PayrollProjectIds.has(p.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && ((p.m3Amount ?? 0) > 0 || (p.setterM3Amount ?? 0) > 0))
     .reduce((sum, p) => {
-      const m3 = p.repId === effectiveRepId ? (p.m3Amount ?? 0) : p.setterId === effectiveRepId ? (p.setterM3Amount ?? 0) : 0;
+      const coCloserPartyPM3 = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterPartyPM3 = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
+      const m3 = p.repId === effectiveRepId
+        ? (p.m3Amount ?? 0)
+        : p.setterId === effectiveRepId
+          ? (p.setterM3Amount ?? 0)
+          : coCloserPartyPM3
+            ? (coCloserPartyPM3.m3Amount ?? 0)
+            : coSetterPartyPM3
+              ? (coSetterPartyPM3.m3Amount ?? 0)
+              : 0;
       return sum + m3;
     }, 0);
   const prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay + prevPendingM3Pay;
@@ -1041,11 +1110,17 @@ export default function DashboardPage() {
   // Sparkline data for the five stat cards — last 7 unique dates, summed per day
   const pipelineSparkData   = computeSparklineData(activeProjects.map((p) => {
     const closerM1 = p.m1Amount ?? 0;
+    const coCloserPartySpark = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+    const coSetterPartySpark = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
     const amount = p.repId === effectiveRepId
       ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
       : p.setterId === effectiveRepId
         ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
-        : 0;
+        : coCloserPartySpark
+          ? coCloserPartySpark.m1Amount + coCloserPartySpark.m2Amount + (coCloserPartySpark.m3Amount ?? 0)
+          : coSetterPartySpark
+            ? coSetterPartySpark.m1Amount + coSetterPartySpark.m2Amount + (coSetterPartySpark.m3Amount ?? 0)
+            : 0;
     return { date: p.soldDate, amount };
   }));
   const chargebackSparkData: number[] = []; // flat / empty — no chargeback data yet
@@ -1337,7 +1412,10 @@ export default function DashboardPage() {
           <NeedsAttentionSection
             activeProjects={projects.filter(
               (p) =>
-                (p.repId === effectiveRepId || p.setterId === effectiveRepId) &&
+                (p.repId === effectiveRepId ||
+                  p.setterId === effectiveRepId ||
+                  (p.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) ||
+                  (p.additionalSetters ?? []).some((s) => s.userId === effectiveRepId)) &&
                 ((ACTIVE_PHASES.includes(p.phase) && p.phase !== 'Completed') || p.phase === 'On Hold')
             )}
           />

@@ -320,6 +320,7 @@ function PayrollPageInner() {
       prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Paid' } : p))
     );
     setShowPublishConfirm(false);
+    setAdminPage(1);
     toast(`Payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
     // Persist to DB via bulk endpoint for atomicity
     try {

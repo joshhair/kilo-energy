@@ -143,6 +143,45 @@ export function myCommissionOnProject(
     };
   }
 
+  // Check additionalClosers / additionalSetters (co-party reps).
+  const coCloserEntry = project.additionalClosers?.find(
+    (p) => p.userId === repId,
+  );
+  if (coCloserEntry) {
+    const m1Amount = coCloserEntry.m1Amount;
+    const m2Amount = coCloserEntry.m2Amount;
+    const m3Amount = coCloserEntry.m3Amount ?? 0;
+    const stages = {
+      m1: { applicable: true, amount: m1Amount, paid: false },
+      m2: { applicable: true, amount: m2Amount, paid: false },
+      m3: { applicable: m3Amount > 0, amount: m3Amount, paid: false },
+    };
+    return {
+      total: m1Amount + m2Amount + m3Amount,
+      status: deriveStatus(stages),
+      stages,
+    };
+  }
+
+  const coSetterEntry = project.additionalSetters?.find(
+    (p) => p.userId === repId,
+  );
+  if (coSetterEntry) {
+    const m1Amount = coSetterEntry.m1Amount;
+    const m2Amount = coSetterEntry.m2Amount;
+    const m3Amount = coSetterEntry.m3Amount ?? 0;
+    const stages = {
+      m1: { applicable: true, amount: m1Amount, paid: false },
+      m2: { applicable: true, amount: m2Amount, paid: false },
+      m3: { applicable: m3Amount > 0, amount: m3Amount, paid: false },
+    };
+    return {
+      total: m1Amount + m2Amount + m3Amount,
+      status: deriveStatus(stages),
+      stages,
+    };
+  }
+
   // Viewer isn't on this deal — zero everything.
   return {
     total: 0,
