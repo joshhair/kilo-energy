@@ -124,7 +124,7 @@ export function NeedsAttentionSection({
     if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
-    const phaseSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
+    const phaseSince = (() => {
       if (!proj.soldDate) return null;
       const [sy, sm, sd] = proj.soldDate.split('-').map(Number);
       return new Date(sy, sm - 1, sd);
@@ -945,7 +945,7 @@ export default function DashboardPage() {
   const unmatchedProjectPay = activeProjects
     .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
     .reduce((sum, p) => {
-      const closerM1 = p.m1Amount ?? 0;
+      const closerM1 = payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0);
       const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
       const setterM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0);
       const coCloserParty2 = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
@@ -953,11 +953,11 @@ export default function DashboardPage() {
       const totalExpected = p.repId === effectiveRepId
         ? closerM1 + closerM2Net
         : p.setterId === effectiveRepId
-          ? (p.setterM1Amount ?? 0) + setterM2Net
+          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + setterM2Net
           : coCloserParty2
-            ? coCloserParty2.m1Amount + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty2.m2Amount)
+            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserParty2.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty2.m2Amount)
             : coSetterParty2
-              ? coSetterParty2.m1Amount + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty2.m2Amount)
+              ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterParty2.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty2.m2Amount)
               : 0;
       return sum + Math.max(0, totalExpected - (allPayrollByProject.get(p.id) ?? 0));
     }, 0);

@@ -239,12 +239,9 @@ export function AdminDashboard({
       if (proj.flagged) continue;
       const threshold = PHASE_STUCK_THRESHOLDS_ADMIN[proj.phase];
       if (threshold == null) continue;
-      const phaseSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
-        if (!proj.soldDate) return null;
-        const [y, m, d] = proj.soldDate.split('-').map(Number);
-        return new Date(y, m - 1, d);
-      })();
-      if (!phaseSince) continue;
+      if (!proj.soldDate) continue;
+      const [y, m, d] = proj.soldDate.split('-').map(Number);
+      const phaseSince = new Date(y, m - 1, d);
       const diffDays = Math.floor((todayAdmin.getTime() - phaseSince.getTime()) / 86_400_000);
       if (diffDays > threshold) count++;
     }
