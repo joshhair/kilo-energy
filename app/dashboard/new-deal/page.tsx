@@ -1253,19 +1253,35 @@ function NewDealPage() {
                       <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Financer {fieldCheck('financer')}</span>
                       </label>
-                      <SearchableSelect
-                        value={form.financer}
-                        onChange={(val) => handleFinancerChange(val)}
-                        options={(pcConfig?.familyFinancerMap?.[form.pcFamily] && form.productType !== 'Loan'
-                          ? (activeFinancers.includes(pcConfig.familyFinancerMap[form.pcFamily])
-                              ? activeFinancers.filter((f) => f === pcConfig.familyFinancerMap![form.pcFamily])
-                              : activeFinancers)
-                          : activeFinancers
-                        ).filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }))}
-                        placeholder="— Select financer —"
-                        label="Financer"
-                        error={!!errors.financer}
-                      />
+                      {(() => {
+                        const mappedFinancer = pcConfig?.familyFinancerMap?.[form.pcFamily];
+                        const hasFamilyMap = !!mappedFinancer && form.productType !== 'Loan';
+                        const mappedIsActive = hasFamilyMap && activeFinancers.includes(mappedFinancer);
+                        const mappedIsArchived = hasFamilyMap && !mappedIsActive;
+                        const financerOptions = (
+                          mappedIsArchived ? [] :
+                          mappedIsActive ? activeFinancers.filter((f) => f === mappedFinancer) :
+                          activeFinancers
+                        ).filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }));
+                        return (
+                          <>
+                            <SearchableSelect
+                              value={form.financer}
+                              onChange={(val) => handleFinancerChange(val)}
+                              options={financerOptions}
+                              placeholder={mappedIsArchived ? '— Designated financer is archived —' : '— Select financer —'}
+                              label="Financer"
+                              error={!!errors.financer}
+                              disabled={mappedIsArchived}
+                            />
+                            {mappedIsArchived && (
+                              <p className="mt-1 text-xs text-red-400">
+                                The financer designated for this family ("{mappedFinancer}") has been archived. Contact an admin.
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                       <FieldError errors={errors} field="financer" />
                     </div>
                   )}

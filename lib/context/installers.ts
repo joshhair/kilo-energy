@@ -582,7 +582,15 @@ export function createInstallerActions(deps: InstallerDeps) {
   };
 
   const deleteFinancer = async (name: string) => {
-    const finId = getIdMaps().financerNameToId[name];
+    let finId = getIdMaps().financerNameToId[name];
+    if (!finId) {
+      // idMap not yet populated (e.g. POST response still in-flight) — look up by name
+      const lookupRes = await fetch(`/api/financers?name=${encodeURIComponent(name)}`);
+      if (lookupRes.ok) {
+        const { id } = await lookupRes.json();
+        finId = id;
+      }
+    }
     if (!finId) throw new Error(`Financer ID not found for: ${name}`);
     const res = await fetch(`/api/financers/${finId}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`Failed to delete financer: ${res.status}`);

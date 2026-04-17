@@ -18,6 +18,7 @@ import {
   Clock, ArrowRight, Users, Download,
 } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // ── Shared constants ───────────────────────────────────────────────────────────
 
@@ -1614,6 +1615,15 @@ function AdminFinancialsView() {
         )}
 
       </div>
+
+      <ConfirmDialog
+        open={markAllConfirmOpen}
+        onClose={() => setMarkAllConfirmOpen(false)}
+        onConfirm={() => { setMarkAllConfirmOpen(false); markAllPendingPaid(); }}
+        title="Mark All Pending Paid"
+        message={`Mark all ${filteredPayroll.filter((e) => e.status === 'Pending').length} pending entr${filteredPayroll.filter((e) => e.status === 'Pending').length === 1 ? 'y' : 'ies'} as paid?`}
+        confirmLabel="Mark Paid"
+      />
     </div>
   );
 }

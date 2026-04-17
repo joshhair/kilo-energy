@@ -41,7 +41,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
       <div className="card-surface rounded-2xl p-5 mb-4">
         <h2 className="text-white font-semibold mb-3">Add Financer</h2>
         {(() => {
-          const financerDup = newFinancer.trim().length > 0 && financers.some((f) => f.name.toLowerCase() === newFinancer.trim().toLowerCase());
+          const financerDup = newFinancer.trim().length > 0 && (newFinancer.trim().toLowerCase() === 'cash' || financers.some((f) => f.name.toLowerCase() === newFinancer.trim().toLowerCase()));
           return (<>
         <div className="flex gap-3">
           <div className="flex-1">
