@@ -640,7 +640,7 @@ function CalculatorPage() {
     ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan)' }] : []),
     ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
     ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: '#b47dff' }] : []),
-    ...(currentRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: kiloTotal, color: 'var(--accent-amber)' }] : []),
+    ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: kiloTotal, color: 'var(--accent-amber)' }] : []),
   ].filter(s => s.value > 0);
   const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
 
@@ -1088,7 +1088,7 @@ function CalculatorPage() {
                   )}
 
                   {/* Kilo Margin (admin) */}
-                  {currentRole === 'admin' && kiloTotal > 0 && (
+                  {effectiveRole === 'admin' && kiloTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-amber)', flexShrink: 0 }} />

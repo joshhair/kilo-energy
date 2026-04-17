@@ -177,8 +177,8 @@ function UsersPageInner() {
   // arrives.
   const [extraUsersReady, setExtraUsersReady] = useState(false);
   useEffect(() => {
-    if (currentRole === null) return;
-    if (currentRole !== 'admin' && currentRole !== 'project_manager') { setExtraUsersReady(true); return; }
+    if (effectiveRole === null) return;
+    if (effectiveRole !== 'admin' && effectiveRole !== 'project_manager') { setExtraUsersReady(true); return; }
     // Promise.all collapses both responses into a single state update, so
     // the grid renders once with everyone present instead of twice.
     Promise.all([
@@ -192,7 +192,7 @@ function UsersPageInner() {
       setPmUsers(pmsData.map((u) => ({ ...u, role: 'project_manager' })));
       setExtraUsersReady(true);
     });
-  }, [currentRole]);
+  }, [effectiveRole]);
 
   const initialFilter = (searchParams.get('filter') ?? 'all') as FilterTab;
   const [filterTab, setFilterTabState] = useState<FilterTab>(FILTER_TABS.some(t => t.value === initialFilter) ? initialFilter : 'all');
@@ -212,7 +212,7 @@ function UsersPageInner() {
     router.replace(`?${params.toString()}`, { scroll: false });
   };
   const isHydrated = useIsHydrated();
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = effectiveRole === 'admin';
   const isPM = effectiveRole === 'project_manager';
   const canManageReps = isAdmin; // PM cannot manage, only view
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; confirmLabel?: string; onConfirm: () => void } | null>(null);
@@ -263,7 +263,7 @@ function UsersPageInner() {
   const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
 
   const fetchPendingInvitations = useCallback(async () => {
-    if (currentRole !== 'admin') return;
+    if (effectiveRole !== 'admin') return;
     try {
       const res = await fetch('/api/users/invitations');
       if (!res.ok) return;
@@ -778,7 +778,7 @@ function UsersPageInner() {
       )}
 
       {/* Admin: pending invitations panel (only shown when there are any) */}
-      {canManageReps && currentRole === 'admin' && pendingInvitations.length > 0 && (
+      {canManageReps && effectiveRole === 'admin' && pendingInvitations.length > 0 && (
         <div className="card-surface rounded-2xl p-5 mb-6" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,176,32,0.15)' }}>
@@ -825,7 +825,7 @@ function UsersPageInner() {
       {/* ── Role filter bar — top-level filter across the unified directory ─ */}
       <div className="mb-6 flex overflow-x-auto whitespace-nowrap gap-2">
         {ROLE_FILTERS.filter((rf) =>
-          currentRole === 'admin' || currentRole === 'project_manager'
+          effectiveRole === 'admin' || effectiveRole === 'project_manager'
             ? true
             : rf.value !== 'admin' && rf.value !== 'project_manager'
         ).map((rf) => {

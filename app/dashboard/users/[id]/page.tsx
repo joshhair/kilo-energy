@@ -44,7 +44,7 @@ type UserMeta = {
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, effectiveRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -72,6 +72,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Commission-by-Role drill-down — admin-only slide-over that lists the
+  // PayrollEntries making up a total when the amount cell is clicked.
+  const [drillRole, setDrillRole] = useState<'Closer' | 'Setter' | 'Trainer' | 'Bonus' | null>(null);
+  const [drillEntries, setDrillEntries] = useState<Array<{ id: string; customerName?: string; projectId?: string | null; amount: number; date: string; paymentStage: string; status: string; notes?: string }>>([]);
+  const [drillTotal, setDrillTotal] = useState(0);
 
   // ── Admin-only metadata for the action footer ─────────────────────────
   // The /api/users/[id] route exposes relationCount + pendingInvitation
@@ -159,7 +164,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const displayName = resolvedUser ? `${resolvedUser.firstName} ${resolvedUser.lastName}` : '';
   useEffect(() => { document.title = displayName ? `${displayName} | Kilo Energy` : 'User Detail | Kilo Energy'; }, [displayName]);
 
-  const isAdminViewer = currentRole === 'admin';
+  const isAdminViewer = effectiveRole === 'admin';
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -180,7 +185,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   if (isMobile) return <MobileRepDetail repId={id} />;
 
-  if (currentRole !== 'admin' && currentRole !== 'project_manager' && id !== currentRepId) {
+  if (effectiveRole !== 'admin' && effectiveRole !== 'project_manager' && id !== effectiveRepId) {
     return (
       <div className="p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this page.
@@ -542,7 +547,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             admin appears in closer/setter dropdowns on new deals and gets a
             My Pay tab scoped to their own earnings. Non-admin roles either
             don't have this (PMs) or already have it by default (reps). */}
-        {resolvedUser.role === 'admin' && currentRole === 'admin' && (
+        {resolvedUser.role === 'admin' && effectiveRole === 'admin' && (
           <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <h2 className="text-white font-bold text-base mb-2">Sales</h2>
             <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
@@ -598,7 +603,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         )}
 
         {/* Permissions card (PM only) */}
-        {resolvedUser.role === 'project_manager' && currentRole === 'admin' && (
+        {resolvedUser.role === 'project_manager' && effectiveRole === 'admin' && (
           <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <h2 className="text-white font-bold text-base mb-4">Permissions</h2>
             <div className="space-y-3 text-sm">
@@ -894,7 +899,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* ── Assign / View Trainer (admin only) ──────────────────────────── */}
-      {currentRole === 'admin' && (
+      {effectiveRole === 'admin' && (
         <div className="card-surface rounded-2xl p-5 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1022,14 +1027,20 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      {/* Trainer Override Card */}
-      {assignment && trainerRep && (
+      {/* Trainer Override Card — hidden for the trainee themselves once they've
+          graduated (isActiveTraining === false). Admins still see it so they
+          can audit residual-override earnings after graduation. */}
+      {assignment && trainerRep && !(
+        effectiveRole !== 'admin'
+        && id === effectiveRepId
+        && assignment.isActiveTraining === false
+      ) && (
         <TrainerOverrideCard
           assignment={assignment}
           trainerName={trainerRep.name}
           completedDeals={completedDeals}
           currentRate={currentOverrideRate}
-          isAdmin={currentRole === 'admin'}
+          isAdmin={effectiveRole === 'admin'}
           onUpdate={(updatedTiers) => {
             setTrainerAssignments((prev) =>
               prev.map((a) =>
@@ -1041,65 +1052,75 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       )}
 
       {/* Commission roles table */}
-      {!isPM && <div className="card-surface rounded-2xl p-5 mb-6">
-        <h2 className="text-white font-semibold mb-4">Commission by Role</h2>
-        <table className="w-full text-sm">
-          <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
-            <tr className="border-b border-[var(--border-subtle)]">
-              <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Role</th>
-              <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Deals</th>
-              <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Total Earned</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(() => {
-              const closerDeals = projects.filter((p) => p.repId === id);
-              const setterDeals = projects.filter((p) => p.setterId === id && p.repId !== id);
-              const trainerDeals = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId));
-              const closerPay = repPayroll
-                .filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer')
-                .reduce((s, e) => s + e.amount, 0);
-              const setterPay = repPayroll
-                .filter((e) => e.notes === 'Setter')
-                .reduce((s, e) => s + e.amount, 0);
-              const trainerPay = repPayroll
-                .filter((e) => e.paymentStage === 'Trainer')
-                .reduce((s, e) => s + e.amount, 0);
-              const bonusPay = repPayroll
-                .filter((e) => e.type !== 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer')
-                .reduce((s, e) => s + e.amount, 0);
-              return (
-                <>
-                  <tr className="table-row-enter row-stagger-0 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                    <td className="py-2.5 text-white">Closer</td>
-                    <td className="py-2.5 text-[var(--text-secondary)]">{closerDeals.length}</td>
-                    <td className="py-2.5 text-[var(--accent-green)] font-semibold">${closerPay.toLocaleString()}</td>
+      {!isPM && (() => {
+        // Hoist role-specific filters so the drill-down slide-over can reuse
+        // them without re-deriving. Each filter mirrors the classification in
+        // the row below so totals and drill-down sets are guaranteed to match.
+        const closerDealCount = projects.filter((p) => p.repId === id).length;
+        const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id).length;
+        const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId)).size;
+        const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer');
+        const setterEntries = repPayroll.filter((e) => e.notes === 'Setter');
+        const trainerEntries = repPayroll.filter((e) => e.paymentStage === 'Trainer');
+        const bonusEntries = repPayroll.filter((e) => e.type !== 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer');
+        const sum = (arr: typeof repPayroll) => arr.reduce((s, e) => s + e.amount, 0);
+        const closerPay = sum(closerEntries);
+        const setterPay = sum(setterEntries);
+        const trainerPay = sum(trainerEntries);
+        const bonusPay = sum(bonusEntries);
+
+        const openDrill = (role: typeof drillRole, entries: typeof repPayroll, total: number) => {
+          if (!isAdminViewer) return;
+          setDrillRole(role);
+          setDrillEntries(entries);
+          setDrillTotal(total);
+        };
+        const amountCls = `py-2.5 text-[var(--accent-green)] font-semibold${isAdminViewer ? ' cursor-pointer hover:underline decoration-dotted underline-offset-4' : ''}`;
+
+        return (
+          <div className="card-surface rounded-2xl p-5 mb-6">
+            <h2 className="text-white font-semibold mb-4">Commission by Role</h2>
+            <table className="w-full text-sm">
+              <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                <tr className="border-b border-[var(--border-subtle)]">
+                  <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Role</th>
+                  <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Deals</th>
+                  <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Total Earned</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="table-row-enter row-stagger-0 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                  <td className="py-2.5 text-white">Closer</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">{closerDealCount}</td>
+                  <td className={amountCls} onClick={() => openDrill('Closer', closerEntries, closerPay)}>${closerPay.toLocaleString()}</td>
+                </tr>
+                <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                  <td className="py-2.5 text-white">Setter</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">{setterDealCount}</td>
+                  <td className={amountCls} onClick={() => openDrill('Setter', setterEntries, setterPay)}>${setterPay.toLocaleString()}</td>
+                </tr>
+                <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[var(--border-subtle)]/50' : ''} even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
+                  <td className="py-2.5 text-white">Trainer</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">{trainerDealCount}</td>
+                  <td className={amountCls} onClick={() => openDrill('Trainer', trainerEntries, trainerPay)}>${trainerPay.toLocaleString()}</td>
+                </tr>
+                {bonusPay > 0 && (
+                  <tr className="table-row-enter row-stagger-3 relative even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                    <td className="py-2.5 text-white">Bonus / Other</td>
+                    <td className="py-2.5 text-[var(--text-secondary)]">—</td>
+                    <td className={amountCls} onClick={() => openDrill('Bonus', bonusEntries, bonusPay)}>${bonusPay.toLocaleString()}</td>
                   </tr>
-                  <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                    <td className="py-2.5 text-white">Setter</td>
-                    <td className="py-2.5 text-[var(--text-secondary)]">{setterDeals.length}</td>
-                    <td className="py-2.5 text-[var(--accent-green)] font-semibold">${setterPay.toLocaleString()}</td>
-                  </tr>
-                  <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[var(--border-subtle)]/50' : ''} even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
-                    <td className="py-2.5 text-white">Trainer</td>
-                    <td className="py-2.5 text-[var(--text-secondary)]">
-                      {trainerDeals.size}
-                    </td>
-                    <td className="py-2.5 text-[var(--accent-green)] font-semibold">${trainerPay.toLocaleString()}</td>
-                  </tr>
-                  {bonusPay > 0 && (
-                    <tr className="table-row-enter row-stagger-3 relative even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                      <td className="py-2.5 text-white">Bonus / Other</td>
-                      <td className="py-2.5 text-[var(--text-secondary)]">—</td>
-                      <td className="py-2.5 text-[var(--accent-green)] font-semibold">${bonusPay.toLocaleString()}</td>
-                    </tr>
-                  )}
-                </>
-              );
-            })()}
-          </tbody>
-        </table>
-      </div>}
+                )}
+              </tbody>
+            </table>
+            {isAdminViewer && (
+              <p className="text-[var(--text-muted)] text-[11px] mt-3">
+                Click any total to see the contributing payroll entries.
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
           </div>{/* end xl:flex xl:flex-col left inner */}
         </div>{/* end xl:sticky left col */}
@@ -1116,14 +1137,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <span className="text-yellow-400">Pending: ${totalPending.toLocaleString()}</span>
           </div>
         </div>
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+        <table className="w-full text-sm table-fixed">
+          <colgroup>
+            <col className="w-[30%]" />
+            <col className="w-[10%]" />
+            <col className="w-[10%]" />
+            <col className="w-[15%]" />
+            <col className="w-[15%]" />
+            <col className="w-[20%]" />
+          </colgroup>
+          <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
             <tr className="border-b border-[var(--border-subtle)]">
               <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Customer / Notes</th>
               <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Type</th>
               <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Stage</th>
               <th className="text-right px-5 py-3 font-medium">
-                <button onClick={() => togglePaySort('amount')} className={`flex items-center gap-1 ml-auto transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
+                <button onClick={() => togglePaySort('amount')} className={`flex items-center justify-end gap-1 w-full transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
                   Amount <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'amount' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
@@ -1359,6 +1388,67 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         confirmLabel="Delete permanently"
         danger
       />
+
+      {/* Commission drill-down slide-over — admin audit of what makes up each role total. */}
+      {drillRole && (
+        <>
+          <div
+            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm motion-safe:animate-fade-in"
+            onClick={() => setDrillRole(null)}
+          />
+          <div className="fixed top-0 right-0 bottom-0 z-[70] w-full md:w-[560px] bg-[var(--surface)] border-l border-[var(--border)] shadow-2xl overflow-y-auto motion-safe:animate-slide-in-right">
+            <div className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{drillRole} commission breakdown</p>
+                <h3 className="text-white text-lg font-semibold mt-0.5">${drillTotal.toLocaleString()} <span className="text-[var(--text-muted)] text-sm font-normal">across {drillEntries.length} {drillEntries.length === 1 ? 'entry' : 'entries'}</span></h3>
+              </div>
+              <button onClick={() => setDrillRole(null)} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5">
+              {drillEntries.length === 0 ? (
+                <p className="text-[var(--text-muted)] text-sm text-center py-8">No entries for this role yet.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                    <tr className="border-b border-[var(--border-subtle)]">
+                      <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Customer</th>
+                      <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Stage</th>
+                      <th className="text-right py-2 text-[var(--text-secondary)] font-medium">Amount</th>
+                      <th className="text-left py-2 pl-3 text-[var(--text-secondary)] font-medium">Status</th>
+                      <th className="text-left py-2 pl-3 text-[var(--text-secondary)] font-medium">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...drillEntries].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((e, i) => (
+                      <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150`}>
+                        <td className="py-2.5 text-white">
+                          {e.projectId ? (
+                            <Link href={`/dashboard/projects/${e.projectId}`} className="hover:text-[var(--accent-green)] transition-colors">
+                              {e.customerName || e.notes || '—'}
+                            </Link>
+                          ) : (
+                            <span>{e.customerName || e.notes || '—'}</span>
+                          )}
+                        </td>
+                        <td className="py-2.5">
+                          <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage}</span>
+                        </td>
+                        <td className="py-2.5 text-right text-[var(--accent-green)] font-semibold tabular-nums">${e.amount.toLocaleString()}</td>
+                        <td className="py-2.5 pl-3">
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${e.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' : e.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-[var(--border)] text-[var(--text-secondary)]'}`}>{e.status}</span>
+                        </td>
+                        <td className="py-2.5 pl-3 text-[var(--text-muted)] tabular-nums">{formatDate(e.date)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

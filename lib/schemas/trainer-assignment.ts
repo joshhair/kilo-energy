@@ -31,6 +31,7 @@ export const createTrainerAssignmentSchema = z.object({
   trainerId: idSchema,
   traineeId: idSchema,
   tiers: z.array(tierSchema).max(20).default([]).superRefine(validateTierOrder),
+  isActiveTraining: z.boolean().default(true),
 }).refine((d) => d.trainerId !== d.traineeId, {
   message: 'trainer and trainee must be different users',
   path: ['traineeId'],
@@ -39,10 +40,22 @@ export type CreateTrainerAssignmentInput = z.infer<typeof createTrainerAssignmen
 
 export const patchTrainerAssignmentSchema = z.object({
   id: idSchema,
-  tiers: z.array(tierSchema).max(20).default([]).superRefine(validateTierOrder),
-});
+  // Both fields optional — caller can send just one or both. tiers edits
+  // require at least one tier; graduation flips just send `isActiveTraining`.
+  tiers: z.array(tierSchema).max(20).superRefine(validateTierOrder).optional(),
+  isActiveTraining: z.boolean().optional(),
+}).refine(
+  (d) => d.tiers !== undefined || d.isActiveTraining !== undefined,
+  { message: 'must include tiers or isActiveTraining' },
+);
 export type PatchTrainerAssignmentInput = z.infer<typeof patchTrainerAssignmentSchema>;
 
 export const deleteTrainerAssignmentSchema = z.object({
   id: idSchema,
 });
+
+export const backfillTrainerSchema = z.object({
+  projectIds: z.array(idSchema).min(1, 'must select at least one project').max(1000),
+  statusForMilestones: z.enum(['Paid', 'Draft']).default('Paid'),
+});
+export type BackfillTrainerInput = z.infer<typeof backfillTrainerSchema>;

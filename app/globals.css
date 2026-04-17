@@ -256,6 +256,15 @@ body {
   animation: fadeIn 0.4s ease-out both;
 }
 
+/* Slide-over drawer — right-side panel (admin drill-down, edit sheets) */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Page transition — quick fade-in without flicker */
 @keyframes pageEnter {
   from {

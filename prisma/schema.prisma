@@ -55,6 +55,8 @@ model User {
   projectsAsCloser   Project[]          @relation("ProjectCloser")
   projectsAsSetter   Project[]          @relation("ProjectSetter")
   projectsAsSubDealer Project[]         @relation("ProjectSubDealer")
+  /// Deals where this user is the per-project trainer (one-off override).
+  projectsAsTrainer   Project[]         @relation("ProjectTrainer")
   /// Deals where this user is a co-closer (not the primary closer). Used by
   /// the GDPR export to surface "deals I earned commission on" even when
   /// the user isn't the primary on the Project row.
@@ -319,6 +321,16 @@ model Project {
   blitzId    String?
   blitz      Blitz?  @relation(fields: [blitzId], references: [id])
 
+  // --- Per-project trainer override ---
+  // One-off trainer attachment for deals where the TrainerAssignment chain
+  // doesn't apply (e.g., historical Glide imports, trainers who came in for
+  // a single deal). When set, the commission calculator uses these instead
+  // of the rep's tiered TrainerAssignment. When null, normal tier chain runs.
+  trainerId   String?
+  trainer     User?   @relation("ProjectTrainer", fields: [trainerId], references: [id])
+  /// Override rate in $/W. Paired with trainerId. Admin-set in project sheet.
+  trainerRate Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -335,6 +347,7 @@ model Project {
   @@index([setterId])
   @@index([subDealerId])
   @@index([installerId])
+  @@index([trainerId])
   @@index([phase])
   @@index([soldDate])
   @@index([blitzId])
@@ -492,6 +505,12 @@ model TrainerAssignment {
   traineeId String
   trainee   User    @relation("Trainee", fields: [traineeId], references: [id])
   active    Boolean @default(true)
+
+  /// Training vs. residuals. true = actively coaching (trainer sees trainee's
+  /// project list + coaching UI). false = Residuals — override still earns on
+  /// trainee's deals but trainer no longer coaches; trainee profile hides the
+  /// trainer card. Flipped by admin/trainer via "Mark as Graduated" action.
+  isActiveTraining Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

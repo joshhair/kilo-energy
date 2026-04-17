@@ -63,7 +63,7 @@ const NAV: NavGroup[] = [
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 export default function MobileSettings() {
-  const { currentRole } = useApp();
+  const { effectiveRole } = useApp();
 
   const [activeSection, setActiveSection] = useState<SettingsSection | null>(null);
   const [leaving, setLeaving] = useState(false);
@@ -79,8 +79,8 @@ export default function MobileSettings() {
     }, 255);
   }
 
-  // Admin guard (uses currentRole, not effectiveRole)
-  if (currentRole !== 'admin') {
+  // Admin guard — uses effectiveRole so View As respects what reps actually see.
+  if (effectiveRole !== 'admin') {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Settings" />

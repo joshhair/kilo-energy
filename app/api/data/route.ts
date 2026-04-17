@@ -88,6 +88,8 @@ export async function GET() {
         closer: true,
         setter: true,
         subDealer: true,
+        // Per-project trainer override — expose name inline for the UI.
+        trainer: true,
         installer: true,
         financer: true,
         // Tag-team co-parties — join the user row so the wire format
@@ -237,6 +239,12 @@ export async function GET() {
     blitzId: p.blitzId ?? undefined,
     subDealerId: p.subDealerId ?? undefined,
     subDealerName: p.subDealer ? `${p.subDealer.firstName} ${p.subDealer.lastName}` : undefined,
+    // Per-project trainer override — only expose to admins (the rate + name
+    // are pay config; reps shouldn't see them). PMs already blocked via
+    // stripFinancials above; non-admin UIs don't render these anyway.
+    trainerId:   isAdmin ? (p.trainerId ?? undefined) : undefined,
+    trainerName: isAdmin && p.trainer ? `${p.trainer.firstName} ${p.trainer.lastName}` : undefined,
+    trainerRate: isAdmin ? (p.trainerRate ?? undefined) : undefined,
     cancellationReason: p.cancellationReason ?? undefined,
     cancellationNotes: p.cancellationNotes ?? undefined,
     updatedAt: p.updatedAt.toISOString(),
@@ -288,6 +296,10 @@ export async function GET() {
     id: ta.id,
     trainerId: ta.trainerId,
     traineeId: ta.traineeId,
+    // isActiveTraining defaults to true at the DB layer; surface it so the
+    // client can distinguish Active Trainees from Residuals. Old consumers
+    // that ignore the field keep working — it's optional on the wire type.
+    isActiveTraining: ta.isActiveTraining,
     tiers: ta.tiers.map((t) => ({
       upToDeal: t.upToDeal,
       ratePerW: t.ratePerW,

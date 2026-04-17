@@ -12,6 +12,131 @@
 
 import * as $ from './money';
 
+// ─── Trainer-rate resolver ──────────────────────────────────────────────────
+//
+// Resolves the effective per-watt trainer override rate for a single deal.
+// Precedence:
+//   1. Per-project override (project.trainerId + project.trainerRate).
+//   2. Rep-level TrainerAssignment tier chain (traineeId === closerRepId),
+//      stepping through tiers sorted by sortOrder.
+//   3. Nothing. rate = 0.
+//
+// Tier counting rule: "completed" = deals where the trainer has ALREADY
+// earned a Trainer PayrollEntry. The current deal is explicitly excluded so
+// the resolver stays stable across phase transitions (the trainer's M2/M3
+// entries for THIS deal shouldn't consume a tier slot for THIS deal).
+
+/** Minimal shape of a project for rate resolution. */
+export interface TrainerResolverProject {
+  id: string;
+  trainerId?: string | null;
+  trainerRate?: number | null;
+}
+
+/** Minimal shape of a tier. upToDeal is exclusive (tier covers 0..upToDeal-1). */
+export interface TrainerResolverTier {
+  upToDeal: number | null;
+  ratePerW: number;
+}
+
+/** Minimal shape of a trainer assignment. Tiers must be in sortOrder. */
+export interface TrainerResolverAssignment {
+  id: string;
+  trainerId: string;
+  traineeId: string;
+  tiers: TrainerResolverTier[];
+  isActiveTraining?: boolean;
+}
+
+/** Minimal shape of a payroll entry for counting prior trainer earnings. */
+export interface TrainerResolverPayrollEntry {
+  repId: string;
+  projectId: string | null;
+  paymentStage: string;
+}
+
+/**
+ * Why the resolver picked a given rate. Useful for debugging + telemetry;
+ * `active-tier-N` encodes the 0-based tier index that was selected.
+ */
+export type TrainerRateReason =
+  | 'project-override'
+  | `active-tier-${number}`
+  | 'maxed'
+  | 'none';
+
+export interface TrainerRateResolution {
+  rate: number;
+  trainerId: string | null;
+  reason: TrainerRateReason;
+}
+
+/**
+ * Returns the effective trainer rate + attributed trainer for one deal.
+ *
+ * Pure function — no DB, no state. Feed it the project, the closer's ID,
+ * and the full trainer-assignment + payroll-entry lists (already loaded
+ * into memory by the hydrating call site).
+ *
+ * `priorDealsConsumed` counts DISTINCT projectIds where this trainer has
+ * already earned a Trainer PayrollEntry for this trainee — not including
+ * the current project. A trainee's first deal sees `consumed = 0` even if
+ * that deal already has draft Trainer entries on it.
+ */
+export function resolveTrainerRate(
+  project: TrainerResolverProject,
+  closerRepId: string | null | undefined,
+  trainerAssignments: readonly TrainerResolverAssignment[],
+  payrollEntries: readonly TrainerResolverPayrollEntry[],
+): TrainerRateResolution {
+  // 1. Per-project override short-circuits the entire chain.
+  if (project.trainerId && project.trainerRate != null) {
+    return {
+      rate: project.trainerRate,
+      trainerId: project.trainerId,
+      reason: 'project-override',
+    };
+  }
+
+  // 2. Rep-level assignment. The closer is the trainee; match on traineeId.
+  if (!closerRepId) {
+    return { rate: 0, trainerId: null, reason: 'none' };
+  }
+  const assignment = trainerAssignments.find((a) => a.traineeId === closerRepId);
+  if (!assignment) {
+    return { rate: 0, trainerId: null, reason: 'none' };
+  }
+
+  // Count PRIOR deals where this trainer-trainee pair already earned a
+  // Trainer PayrollEntry. Using a Set on projectId de-duplicates multi-entry
+  // deals (M2 + M3 both emit a Trainer row for the same project).
+  const consumedProjectIds = new Set<string>();
+  for (const entry of payrollEntries) {
+    if (entry.paymentStage !== 'Trainer') continue;
+    if (entry.repId !== assignment.trainerId) continue;
+    if (entry.projectId == null) continue;
+    if (entry.projectId === project.id) continue;
+    consumedProjectIds.add(entry.projectId);
+  }
+  const dealsConsumed = consumedProjectIds.size;
+
+  // 3. Walk tiers in order. First tier where the cap is either null
+  //    (perpetuity) or still has capacity (consumed < upToDeal) wins.
+  for (let i = 0; i < assignment.tiers.length; i++) {
+    const tier = assignment.tiers[i];
+    if (tier.upToDeal === null || dealsConsumed < tier.upToDeal) {
+      return {
+        rate: tier.ratePerW,
+        trainerId: assignment.trainerId,
+        reason: `active-tier-${i}`,
+      };
+    }
+  }
+
+  // 4. All capped, no perpetuity tier — trainer earns nothing on this deal.
+  return { rate: 0, trainerId: null, reason: 'maxed' };
+}
+
 /** Per-rep breakdown of a deal's commission across milestones. */
 export interface CommissionSplit {
   closerTotal: number;

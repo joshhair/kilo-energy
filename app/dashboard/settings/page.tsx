@@ -81,7 +81,7 @@ function SettingsPageInner() {
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Settings | Kilo Energy'; }, []);
   const {
-    currentRole,
+    effectiveRole,
     reps,
     installers, financers, setInstallerActive, setFinancerActive, deleteInstaller, deleteFinancer,
     projects, trainerAssignments, setTrainerAssignments,
@@ -315,7 +315,7 @@ function SettingsPageInner() {
 
   if (isMobile) return <MobileSettings />;
 
-  if (currentRole !== 'admin') {
+  if (effectiveRole !== 'admin') {
     return (
       <div className="p-8 text-center">
         <p className="text-[var(--text-muted)] text-sm">You don&apos;t have permission to view this page.</p>

@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect, useCall
 // when the initial React state switched to empty arrays — see the
 // comment near the useState calls below. We now import only the type
 // symbols + helper functions, not the pre-DB fixture arrays.
-import { Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, getTrainerOverrideRate, Rep, SubDealer, NON_SOLARTECH_BASELINES, InstallerBaseline, SolarTechProduct, InstallerPricingVersion, InstallerRates, ProductCatalogInstallerConfig, ProductCatalogProduct, Phase, ProductCatalogPricingVersion, ProductCatalogTier, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
+import { Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, resolveTrainerRate, Rep, SubDealer, NON_SOLARTECH_BASELINES, InstallerBaseline, SolarTechProduct, InstallerPricingVersion, InstallerRates, ProductCatalogInstallerConfig, ProductCatalogProduct, Phase, ProductCatalogPricingVersion, ProductCatalogTier, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
 import { getM1PayDate, getM2PayDate, localDateString } from './utils';
 import { persistFetch, emitPersistError } from './persist';
 import { createUserActions } from './context/users';
@@ -509,20 +509,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
 
             // Pre-compute setter trainer deductions so the trainer's cut comes from
-            // the setter's entry rather than being paid on top (mirrors project-transitions.ts:362/541)
+            // the setter's entry rather than being paid on top (mirrors
+            // project-transitions.ts). Uses the unified resolver so counting +
+            // precedence stay consistent with the phase-transition path.
             let setterM2TrainerDeduction = 0;
             let setterM3TrainerDeduction = 0;
             if (!old.subDealerId) {
-              const earlySetterTA = trainerAssignmentsRef.current.find((a) => a.traineeId === newSetterId);
-              if (earlySetterTA) {
-                const earlyDeals = projectsRef.current.filter((p) =>
-                  (p.repId === earlySetterTA.traineeId || p.setterId === earlySetterTA.traineeId) &&
-                  ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
-                ).length;
-                const earlyRate = getTrainerOverrideRate(earlySetterTA, earlyDeals);
+              const earlyRes = resolveTrainerRate(
+                { id, trainerId: null, trainerRate: null },
+                newSetterId,
+                trainerAssignmentsRef.current,
+                prevEntries,
+              );
+              if (earlyRes.rate > 0) {
                 const earlyInstPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-                setterM2TrainerDeduction = Math.round(earlyRate * old.kWSize * 1000 * (earlyInstPct / 100) * 100) / 100;
-                setterM3TrainerDeduction = Math.round(earlyRate * old.kWSize * 1000 * ((100 - earlyInstPct) / 100) * 100) / 100;
+                setterM2TrainerDeduction = Math.round(earlyRes.rate * old.kWSize * 1000 * (earlyInstPct / 100) * 100) / 100;
+                setterM3TrainerDeduction = Math.round(earlyRes.rate * old.kWSize * 1000 * ((100 - earlyInstPct) / 100) * 100) / 100;
               }
             }
 
@@ -573,22 +575,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            // Trainer override entries for the new setter's trainer
-            const setterTrainerAssignment = trainerAssignmentsRef.current.find((a) => a.traineeId === newSetterId);
-            if (setterTrainerAssignment) {
-              const setterTrainerRep = repsRef.current.find((r) => r.id === setterTrainerAssignment.trainerId);
-              const setterTraineeDeals = projectsRef.current.filter((p) =>
-                (p.repId === setterTrainerAssignment.traineeId || p.setterId === setterTrainerAssignment.traineeId) &&
-                ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
-              ).length;
-              const setterOverrideRate = getTrainerOverrideRate(setterTrainerAssignment, setterTraineeDeals);
+            // Trainer override entries for the new setter's trainer — routed
+            // through resolveTrainerRate. Project-level override does NOT apply
+            // to the setter slot (closer-scoped field only).
+            const setterRes = resolveTrainerRate(
+              { id, trainerId: null, trainerRate: null },
+              newSetterId,
+              trainerAssignmentsRef.current,
+              prevEntries,
+            );
+            if (setterRes.rate > 0 && setterRes.trainerId) {
+              const setterTrainerRep = repsRef.current.find((r) => r.id === setterRes.trainerId);
+              const setterOverrideRate = setterRes.rate;
               const trainerInstallPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const setterName = newSetterRep?.name ?? '';
 
               if (pastInstalled && !old.subDealerId) {
                 const hasTrainerM2 = prevEntries.some((e) =>
                   e.projectId === id &&
-                  e.repId === setterTrainerAssignment.trainerId &&
+                  e.repId === setterRes.trainerId &&
                   e.paymentStage === 'Trainer' &&
                   e.notes?.startsWith('Trainer override M2') &&
                   (setterName ? e.notes?.includes(`— ${setterName} (`) : true)
@@ -598,7 +603,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   if (m2TrainerAmount > 0) {
                     newEntries.push({
                       id: `pay_${ts}_m2_trainer_s`,
-                      repId: setterTrainerAssignment.trainerId,
+                      repId: setterRes.trainerId,
                       repName: setterTrainerRep?.name ?? '',
                       projectId: id,
                       customerName: old.customerName,
@@ -616,7 +621,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (pastPTO && !old.subDealerId) {
                 const hasTrainerM3 = prevEntries.some((e) =>
                   e.projectId === id &&
-                  e.repId === setterTrainerAssignment.trainerId &&
+                  e.repId === setterRes.trainerId &&
                   e.paymentStage === 'Trainer' &&
                   e.notes?.startsWith('Trainer override M3') &&
                   (setterName ? e.notes?.includes(`— ${setterName} (`) : true)
@@ -626,7 +631,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   if (m3TrainerAmount > 0) {
                     newEntries.push({
                       id: `pay_${ts}_m3_trainer_s`,
-                      repId: setterTrainerAssignment.trainerId,
+                      repId: setterRes.trainerId,
                       repName: setterTrainerRep?.name ?? '',
                       projectId: id,
                       customerName: old.customerName,
@@ -844,65 +849,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
       || updates.m3Amount !== undefined || updates.setterM1Amount !== undefined
       || updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined;
     if (hasAmountUpdates) {
-      // Re-compute closer M2 trainer deduction so syncPayrollAmounts subtracts it,
-      // mirroring the deduction applied at createMilestonePayroll time (line 309).
-      const updatedProjects = projects.map((p) => p.id === id ? { ...p, ...updates } : p);
+      // Re-compute trainer deductions so syncPayrollAmounts subtracts them,
+      // mirroring the deduction logic at createMilestonePayroll / createM3Payroll
+      // time. All four go through resolveTrainerRate so the project-level
+      // override (Project.trainerId + Project.trainerRate) wins over the tier
+      // chain, and "deals consumed" counts off prior Trainer PayrollEntries.
       let closerM2TrainerDeduction = 0;
-      if (updates.m2Amount !== undefined && old) {
-        const cta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.repId);
-        if (cta) {
-          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-          const ctDeals = updatedProjects.filter((p) =>
-            (p.repId === cta.traineeId || p.setterId === cta.traineeId) &&
-            ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
-              ? p.m3Paid === true : p.m2Paid === true)
-          ).length;
-          closerM2TrainerDeduction = Math.round(getTrainerOverrideRate(cta, ctDeals) * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-        }
-      }
-      // Re-compute closer M3 trainer deduction, mirroring createM3Payroll's deduction logic.
       let closerM3TrainerDeduction = 0;
-      if (updates.m3Amount !== undefined && old) {
-        const cta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.repId);
-        if (cta) {
-          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-          if (installPayPct < 100) {
-            const ctDeals = updatedProjects.filter((p) =>
-              (p.repId === cta.traineeId || p.setterId === cta.traineeId) &&
-              ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
-                ? p.m3Paid === true : p.m2Paid === true)
-            ).length;
-            closerM3TrainerDeduction = Math.round(getTrainerOverrideRate(cta, ctDeals) * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+      let setterM2TrainerDeduction = 0;
+      let setterM3TrainerDeduction = 0;
+      if (old) {
+        const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+        const effectiveTrainerId = updates.trainerId !== undefined ? updates.trainerId : old.trainerId;
+        const effectiveTrainerRate = updates.trainerRate !== undefined ? updates.trainerRate : old.trainerRate;
+        if (updates.m2Amount !== undefined || updates.m3Amount !== undefined) {
+          const closerRes = resolveTrainerRate(
+            { id, trainerId: effectiveTrainerId, trainerRate: effectiveTrainerRate },
+            old.repId,
+            trainerAssignmentsRef.current,
+            payrollEntriesRef.current,
+          );
+          if (closerRes.rate > 0) {
+            if (updates.m2Amount !== undefined) {
+              closerM2TrainerDeduction = Math.round(closerRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+            }
+            if (updates.m3Amount !== undefined && installPayPct < 100) {
+              closerM3TrainerDeduction = Math.round(closerRes.rate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+            }
           }
         }
-      }
-      // Re-compute setter M2 trainer deduction, mirroring createMilestonePayroll's deduction logic.
-      let setterM2TrainerDeduction = 0;
-      if (updates.setterM2Amount !== undefined && old && old.setterId) {
-        const sta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.setterId);
-        if (sta) {
-          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-          const stDeals = updatedProjects.filter((p) =>
-            (p.repId === sta.traineeId || p.setterId === sta.traineeId) &&
-            ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
-              ? p.m3Paid === true : p.m2Paid === true)
-          ).length;
-          setterM2TrainerDeduction = Math.round(getTrainerOverrideRate(sta, stDeals) * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-        }
-      }
-      // Re-compute setter M3 trainer deduction, mirroring createM3Payroll's deduction logic.
-      let setterM3TrainerDeduction = 0;
-      if (updates.setterM3Amount !== undefined && old && old.setterId) {
-        const sta = trainerAssignmentsRef.current.find((a) => a.traineeId === old.setterId);
-        if (sta) {
-          const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-          if (installPayPct < 100) {
-            const stDeals = updatedProjects.filter((p) =>
-              (p.repId === sta.traineeId || p.setterId === sta.traineeId) &&
-              ((installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100
-                ? p.m3Paid === true : p.m2Paid === true)
-            ).length;
-            setterM3TrainerDeduction = Math.round(getTrainerOverrideRate(sta, stDeals) * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+        if ((updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined) && old.setterId) {
+          const setterRes = resolveTrainerRate(
+            { id, trainerId: null, trainerRate: null },
+            old.setterId,
+            trainerAssignmentsRef.current,
+            payrollEntriesRef.current,
+          );
+          if (setterRes.rate > 0) {
+            if (updates.setterM2Amount !== undefined) {
+              setterM2TrainerDeduction = Math.round(setterRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+            }
+            if (updates.setterM3Amount !== undefined && installPayPct < 100) {
+              setterM3TrainerDeduction = Math.round(setterRes.rate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+            }
           }
         }
       }

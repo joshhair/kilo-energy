@@ -199,7 +199,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
 
 export default function MobileNewDeal() {
   const {
-    dbReady, currentRole, currentRepId, currentRepName,
+    dbReady, currentRole, effectiveRole, currentRepId, effectiveRepId, currentRepName, effectiveRepName,
     addDeal, projects, trainerAssignments,
     activeInstallers, activeFinancers, reps,
     installerPricingVersions, productCatalogInstallerConfigs,
@@ -222,7 +222,7 @@ export default function MobileNewDeal() {
     kWSize: '',
     netPPW: '',
     notes: '',
-    repId: currentRole === 'admin' ? '' : (currentRepId ?? ''),
+    repId: effectiveRole === 'admin' ? '' : (effectiveRepId ?? ''),
     setterId: '',
     solarTechFamily: '',
     solarTechProductId: '',
@@ -285,11 +285,11 @@ export default function MobileNewDeal() {
       setAvailableBlitzes((data ?? []).filter((b: any) => {
         const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
         if (!statusOk) return false;
-        if (currentRole === 'admin') return true;
-        return b.participants?.some((p: any) => p.userId === currentRepId && p.joinStatus === 'approved');
+        if (effectiveRole === 'admin') return true;
+        return b.participants?.some((p: any) => p.userId === effectiveRepId && p.joinStatus === 'approved');
       }));
     }).catch(() => {});
-  }, [currentRole, currentRepId]);
+  }, [effectiveRole, effectiveRepId]);
 
   // Pre-fill last-used installer
   const lastInstallerApplied = useRef(false);
@@ -349,8 +349,8 @@ export default function MobileNewDeal() {
 
   // ── Derived values (mirrors desktop exactly) ─────────────────────────────
 
-  const currentRep = reps.find((r) => r.id === currentRepId);
-  const closerId = currentRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (currentRepId ?? ''));
+  const currentRep = reps.find((r) => r.id === effectiveRepId);
+  const closerId = effectiveRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (effectiveRepId ?? ''));
 
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
   const solarTechFamilyProducts = solarTechProducts.filter((p) => p.family === solarTechFamily);
@@ -489,7 +489,7 @@ export default function MobileNewDeal() {
   const isCashDeal = form.productType === 'Cash';
 
   const s1Fields: string[] = [
-    ...(currentRole === 'admin' ? ['repId'] : []),
+    ...(effectiveRole === 'admin' ? ['repId'] : []),
     'customerName',
     'soldDate',
   ];
@@ -569,7 +569,7 @@ export default function MobileNewDeal() {
 
     const fieldsToValidate: string[] = [
       'customerName', 'soldDate', 'installer', ...(form.productType === 'Cash' ? [] : ['financer']), 'productType', 'kWSize', 'netPPW',
-      ...(currentRole === 'admin' ? ['repId'] : []),
+      ...(effectiveRole === 'admin' ? ['repId'] : []),
       ...(form.installer === 'SolarTech' ? ['solarTechFamily'] : []),
       ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
@@ -831,7 +831,7 @@ export default function MobileNewDeal() {
             </div>
 
             {/* Closer (admin/PM only) */}
-            {!isSubDealer && currentRole === 'admin' && (
+            {!isSubDealer && effectiveRole === 'admin' && (
               <div ref={(el) => { fieldWrapperRefs.current['repId'] = el; }}>
                 <label className={labelCls} style={labelStyle}>Closer (Rep)</label>
                 <select
@@ -869,7 +869,7 @@ export default function MobileNewDeal() {
             {/* ── Tag-team: co-closers / co-setters ── Admin-only. Same
                 CoPartySection as desktop; grid is tight on 360px but
                 remains tappable. */}
-            {currentRole === 'admin' && (
+            {effectiveRole === 'admin' && (
               <>
                 <CoPartySection
                   label="Co-closers"
@@ -1357,7 +1357,7 @@ export default function MobileNewDeal() {
                       <span>Your redline</span>
                       <span>${closerPerW.toFixed(2)}/W</span>
                     </div>
-                    {currentRole === 'admin' && (
+                    {effectiveRole === 'admin' && (
                       <div className="flex justify-between text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
                         <span>Kilo baseline</span>
                         <span>${kiloPerW.toFixed(2)}/W</span>
@@ -1386,7 +1386,7 @@ export default function MobileNewDeal() {
                         <span className="text-amber-400">${trainerTotal.toLocaleString()}</span>
                       </div>
                     )}
-                    {currentRole === 'admin' && (
+                    {effectiveRole === 'admin' && (
                       <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
                         <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Kilo revenue</span>
                         <span className="font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>${kiloTotal.toLocaleString()}</span>
@@ -1473,7 +1473,7 @@ export default function MobileNewDeal() {
                     <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Sold Date</span>
                     <span className="text-white font-medium">{form.soldDate || '---'}</span>
                   </div>
-                  {currentRole === 'admin' && (
+                  {effectiveRole === 'admin' && (
                     <div className="flex justify-between">
                       <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Closer</span>
                       <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
@@ -1573,7 +1573,7 @@ export default function MobileNewDeal() {
                         <span className="text-amber-400">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
                       </div>
                     )}
-                    {currentRole === 'admin' && (
+                    {effectiveRole === 'admin' && (
                       <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
                         <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Kilo revenue</span>
                         <span className="font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>${kiloTotal.toLocaleString()}</span>

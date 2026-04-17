@@ -163,7 +163,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }, [projectId]);
 
   const {
-    currentRole, effectiveRole, projects, currentRepId, payrollEntries, reps,
+    currentRole, effectiveRole, effectiveRepId, projects, currentRepId, payrollEntries, reps,
     updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
@@ -187,7 +187,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     notes: string;
     additionalClosers: CoPartyDraft[];
     additionalSetters: CoPartyDraft[];
-  }>({ setterId: '', notes: '', additionalClosers: [], additionalSetters: [] });
+    trainerId: string;
+    trainerRate: string;
+  }>({ setterId: '', notes: '', additionalClosers: [], additionalSetters: [], trainerId: '', trainerRate: '' });
 
   useEffect(() => {
     document.title = project ? `${project.customerName} | Kilo Energy` : 'Project | Kilo Energy';
@@ -202,7 +204,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     );
   }
 
-  if (currentRole === 'rep' && project.repId !== currentRepId && project.setterId !== currentRepId) {
+  if (effectiveRole === 'rep' && project.repId !== effectiveRepId && project.setterId !== effectiveRepId) {
     return (
       <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         You don&apos;t have permission to view this project.
@@ -211,7 +213,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     );
   }
 
-  if (currentRole === 'sub-dealer' && project.subDealerId !== currentRepId && project.repId !== currentRepId) {
+  if (effectiveRole === 'sub-dealer' && project.subDealerId !== effectiveRepId && project.repId !== effectiveRepId) {
     return (
       <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         You don&apos;t have permission to view this project.
@@ -241,6 +243,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         m2Amount: String(s.m2Amount ?? 0),
         m3Amount: s.m3Amount != null ? String(s.m3Amount) : '',
       })),
+      trainerId: project.trainerId ?? '',
+      trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
     });
     setMoreSheetOpen(false);
     setEditSheetOpen(true);
@@ -272,12 +276,20 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         position: i + 1,
       }));
     const setterRep = editDraft.setterId ? reps.find((r) => r.id === editDraft.setterId) : undefined;
+    const trainerRateNum = editDraft.trainerRate.trim() !== '' ? parseFloat(editDraft.trainerRate) : NaN;
+    const nextTrainerId = editDraft.trainerId || undefined;
+    const nextTrainerRate = nextTrainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : undefined;
+    const trainerRep = nextTrainerId ? reps.find((r) => r.id === nextTrainerId) : undefined;
+
     updateProject({
       setterId: editDraft.setterId || undefined,
       setterName: setterRep?.name ?? (editDraft.setterId ? project.setterName : undefined),
       notes: editDraft.notes,
       additionalClosers: cleanClosers,
       additionalSetters: cleanSetters,
+      trainerId: nextTrainerId,
+      trainerName: trainerRep?.name,
+      trainerRate: nextTrainerRate,
     });
     setEditSheetOpen(false);
     toast('Project updated', 'success');
@@ -335,7 +347,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   // Shared helper computes total + per-stage applicability + status for
   // both reps and sub-dealers. SDs don't get an M1, and M3 only applies
   // when the installer has an M2/M3 structure (project.m3Amount > 0).
-  const myCommission = myCommissionOnProject(project, currentRepId, currentRole, payrollEntries);
+  const myCommission = myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries);
 
   // Find payroll entry dates for milestones
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
@@ -534,7 +546,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           Admin: show the deal's own amounts from project fields (viewing the
             deal, not "their" stake). */}
       {!isPM && (() => {
-        const isMeView = currentRole === 'rep' || currentRole === 'sub-dealer';
+        const isMeView = effectiveRole === 'rep' || effectiveRole === 'sub-dealer';
         type Stage = { key: 'M1' | 'M2' | 'M3'; amount: number; paid: boolean };
         const allStages: Stage[] = isMeView
           ? [
@@ -761,6 +773,51 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             disabled={!editDraft.setterId}
             disabledReason="Select a primary setter to add co-setters."
           />
+
+          {/* Per-project trainer override — admin only. */}
+          {isAdmin && (
+            <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>Per-project trainer</span>
+                {editDraft.trainerId && (
+                  <button
+                    type="button"
+                    onClick={() => setEditDraft((d) => ({ ...d, trainerId: '', trainerRate: '' }))}
+                    className="text-xs"
+                    style={{ color: 'rgba(255,100,100,0.8)' }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                Attaches a trainer + rate to this deal only. Overrides the rep's assignment chain.
+              </p>
+              <select
+                value={editDraft.trainerId}
+                onChange={(e) => setEditDraft((d) => ({ ...d, trainerId: e.target.value }))}
+                className="w-full mb-2"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: '#fff' }}
+              >
+                <option value="">— no trainer override —</option>
+                {reps.filter((r) => r.active && r.id !== project.repId && r.id !== editDraft.setterId).map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="5"
+                placeholder="Rate $/W (e.g. 0.20)"
+                value={editDraft.trainerRate}
+                disabled={!editDraft.trainerId}
+                onChange={(e) => setEditDraft((d) => ({ ...d, trainerRate: e.target.value }))}
+                className="w-full"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: '#fff', opacity: editDraft.trainerId ? 1 : 0.45 }}
+              />
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button

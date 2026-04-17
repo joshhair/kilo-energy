@@ -130,6 +130,10 @@ export interface TrainerAssignment {
   trainerId: string;
   traineeId: string;
   tiers: TrainerOverrideTier[];
+  // Training vs. residuals. true = actively coaching; false = graduated but
+  // override still earns on existing tier capacity. Defaults to true when
+  // the wire format omits it (backward-compat with pre-3a payloads).
+  isActiveTraining?: boolean;
 }
 
 export function getTrainerOverrideRate(
@@ -218,6 +222,12 @@ export interface Project {
   // Sub-dealer attribution
   subDealerId?: string;
   subDealerName?: string;
+  // Per-project trainer override (one-off attachment, admin-only).
+  // When null, the rep-level TrainerAssignment chain applies. When set,
+  // this deal uses trainerId + trainerRate instead and the chain is skipped.
+  trainerId?: string;
+  trainerName?: string;
+  trainerRate?: number;
   // Last modified timestamp (ISO string) — used as proxy for phase-change date
   updatedAt?: string;
   // Tag-team: additional closers / setters on this deal, each with their
@@ -1402,8 +1412,8 @@ export function getInstallerRatesForDeal(
 // Re-exported here so existing `import { calculateCommission } from
 // '@/lib/data'` call sites continue working. New code should import
 // from '@/lib/commission' directly.
-export { calculateCommission, splitCloserSetterPay } from './commission';
-export type { CommissionSplit } from './commission';
+export { calculateCommission, splitCloserSetterPay, resolveTrainerRate } from './commission';
+export type { CommissionSplit, TrainerRateResolution, TrainerRateReason } from './commission';
 
 // ─── Incentives ──────────────────────────────────────────────────────────────
 

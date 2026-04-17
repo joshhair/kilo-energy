@@ -40,7 +40,7 @@ type MobileFetchedUser = {
 
 export default function MobileRepDetail({ repId }: { repId: string }) {
   const router = useRouter();
-  const { projects, payrollEntries, currentRole, effectiveRole, reps, subDealers } = useApp();
+  const { projects, payrollEntries, effectiveRole, reps, subDealers } = useApp();
   const hydrated = useIsHydrated();
   const isPM = effectiveRole === 'project_manager';
 
@@ -77,7 +77,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     );
   }
 
-  if (currentRole !== 'admin' && currentRole !== 'project_manager' && repId !== undefined) {
+  if (effectiveRole !== 'admin' && effectiveRole !== 'project_manager' && repId !== undefined) {
     // Permission check handled by desktop page, but guard here too
   }
 
@@ -144,7 +144,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           </div>
         </div>
 
-        {resolvedUser.role === 'project_manager' && fu && currentRole === 'admin' && (
+        {resolvedUser.role === 'project_manager' && fu && effectiveRole === 'admin' && (
           <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
             <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)' }}>Permissions</p>
             <div className="space-y-2 text-sm">

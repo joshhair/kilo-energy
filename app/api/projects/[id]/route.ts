@@ -13,6 +13,8 @@ const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
   'setterM1Amount', 'setterM2Amount', 'setterM3Amount', 'netPPW', 'baselineOverrideJson',
   // Tag-team splits are money — admin-only same as the primary amounts.
   'additionalClosers', 'additionalSetters',
+  // Per-project trainer override is pay config — admin-only.
+  'trainerId', 'trainerRate',
 ];
 
 // Fields reps/sub-dealers are NEVER allowed to modify on their own deals —
@@ -119,6 +121,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Nullable FK fields: empty string → null
   if (body.closerId !== undefined) data.closerId = body.closerId || null;
   if (body.setterId !== undefined) data.setterId = body.setterId || null;
+  // Per-project trainer override — nullable FK + nullable rate.
+  if (body.trainerId !== undefined) data.trainerId = body.trainerId || null;
+  if (body.trainerRate !== undefined) data.trainerRate = body.trainerRate ?? null;
 
   // FK resolution: installer/financer name → ID
   if (body.installer !== undefined) {

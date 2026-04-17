@@ -16,8 +16,8 @@ export default function MobilePayroll() {
     payrollEntries,
     setPayrollEntries,
     reps,
-    currentRole,
-    currentRepId,
+    effectiveRole,
+    effectiveRepId,
   } = useApp();
   const { toast } = useToast();
 
@@ -38,9 +38,9 @@ export default function MobilePayroll() {
   const filtered = useMemo(
     () => payrollEntries.filter((e) =>
       e.status === statusTab &&
-      (currentRole === 'admin' || e.repId === currentRepId)
+      (effectiveRole === 'admin' || e.repId === effectiveRepId)
     ),
-    [payrollEntries, statusTab, currentRole, currentRepId],
+    [payrollEntries, statusTab, effectiveRole, effectiveRepId],
   );
 
   // ── Group by rep ──────────────────────────────────────────────────────────

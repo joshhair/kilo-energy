@@ -37,7 +37,7 @@ export default function NewDealPageWrapper() {
 }
 
 function NewDealPage() {
-  const { dbReady, currentRole, currentRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
+  const { dbReady, currentRole, effectiveRole, currentRepId, effectiveRepId, currentRepName, effectiveRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
   const { toast } = useToast();
   const router = useRouter();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
@@ -54,7 +54,7 @@ function NewDealPage() {
     kWSize: '',
     netPPW: '',
     notes: '',
-    repId: currentRole === 'admin' ? '' : (currentRepId ?? ''),
+    repId: effectiveRole === 'admin' ? '' : (effectiveRepId ?? ''),
     setterId: '',
     solarTechFamily: '',
     solarTechProductId: '',
@@ -98,16 +98,16 @@ function NewDealPage() {
     return rawBlitzes.filter((b: any) => {
       const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
       if (!statusOk) return false;
-      if (currentRole === 'admin') {
+      if (effectiveRole === 'admin') {
         // When a rep is selected, only show blitzes that rep is approved for
         if (form.repId) {
           return b.participants?.some((p: any) => p.userId === form.repId && p.joinStatus === 'approved');
         }
         return true;
       }
-      return b.participants?.some((p: any) => p.userId === currentRepId && p.joinStatus === 'approved');
+      return b.participants?.some((p: any) => p.userId === effectiveRepId && p.joinStatus === 'approved');
     });
-  }, [rawBlitzes, currentRole, currentRepId, form.repId]);
+  }, [rawBlitzes, effectiveRole, effectiveRepId, form.repId]);
 
   // ── Duplicate deal pre-fill from query params ─────────────────────────────
   const searchParams = useSearchParams();
@@ -126,7 +126,7 @@ function NewDealPage() {
     const rawFinancer = searchParams.get('financer') ?? '';
     const financer = activeFinancers.includes(rawFinancer) ? rawFinancer : '';
     const productType = searchParams.get('productType') ?? '';
-    const repId = searchParams.get('repId') ?? (currentRole === 'admin' ? '' : (currentRepId ?? ''));
+    const repId = searchParams.get('repId') ?? (effectiveRole === 'admin' ? '' : (effectiveRepId ?? ''));
     const setterId = searchParams.get('setterId') ?? '';
     setForm((prev) => ({
       ...prev,
@@ -141,7 +141,7 @@ function NewDealPage() {
     toast('Deal duplicated — fill in the new customer details', 'info');
     // Auto-focus customer name field after a brief delay for form to render
     setTimeout(() => customerNameInputRef.current?.focus(), 150);
-  }, [searchParams, dbReady, currentRole, currentRepId, activeInstallers, activeFinancers, toast]);
+  }, [searchParams, dbReady, effectiveRole, effectiveRepId, activeInstallers, activeFinancers, toast]);
 
   // ── Pre-fill last-used installer from localStorage ────────────────────────
   const lastInstallerApplied = useRef(false);
@@ -187,7 +187,7 @@ function NewDealPage() {
     form.notes.trim() !== '' || form.setterId !== '' || form.solarTechFamily !== '' ||
     form.solarTechProductId !== '' || form.pcFamily !== '' || form.installerProductId !== '' || form.prepaidSubType !== '' ||
     form.leadSource !== '' || form.blitzId !== '' ||
-    (currentRole === 'admin' && form.repId !== '');
+    (effectiveRole === 'admin' && form.repId !== '');
 
   useEffect(() => {
     if (!isFormDirty) return;
@@ -266,8 +266,8 @@ function NewDealPage() {
 
   // ── Derived values ─────────────────────────────────────────────────────────
 
-  const currentRep = reps.find((r) => r.id === currentRepId);
-  const closerId = currentRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (currentRepId ?? ''));
+  const currentRep = reps.find((r) => r.id === effectiveRepId);
+  const closerId = effectiveRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (effectiveRepId ?? ''));
 
   // When a blitz is selected, only approved participants of that blitz may be setters.
   const setterPickerReps = useMemo(() => {
@@ -406,7 +406,7 @@ function NewDealPage() {
   };
 
   const s1Fields: string[] = [
-    ...(currentRole === 'admin' ? ['repId'] : []),
+    ...(effectiveRole === 'admin' ? ['repId'] : []),
     'customerName',
     'soldDate',
   ];
@@ -506,7 +506,7 @@ function NewDealPage() {
 
     const fieldsToValidate: string[] = [
       'customerName', 'soldDate', 'installer', ...(form.productType === 'Cash' ? [] : ['financer']), 'productType', 'kWSize', 'netPPW',
-      ...(currentRole === 'admin' ? ['repId'] : []),
+      ...(effectiveRole === 'admin' ? ['repId'] : []),
       ...(form.installer === 'SolarTech' ? ['solarTechFamily'] : []),
       ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
@@ -876,7 +876,7 @@ function NewDealPage() {
             {/* Closer / Setter card — hidden for sub-dealers */}
             {!isSubDealer && (
             <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-1 space-y-4">
-              {currentRole === 'admin' && (
+              {effectiveRole === 'admin' && (
                 <div className="transition-all duration-200">
                   <label htmlFor="field-repId" className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">Closer (Rep) {fieldCheck('repId')}</span>
@@ -920,7 +920,7 @@ function NewDealPage() {
                   reduced by the sum of each co-party's cut (so the deal
                   total stays consistent with what the pricing calc
                   returned). */}
-              {currentRole === 'admin' && (
+              {effectiveRole === 'admin' && (
                 <>
                   <CoPartySection
                     label="Co-closers"
@@ -1399,7 +1399,7 @@ function NewDealPage() {
                 closerTrainerTotal={closerTrainerTotal}
                 closerTrainerOverrideRate={closerTrainerOverrideRate}
                 kiloTotal={kiloTotal}
-                currentRole={currentRole}
+                effectiveRole={effectiveRole}
                 subDealerRate={subDealerRate}
               />
             </div> {/* end card-surface 2 */}
@@ -1427,7 +1427,7 @@ function NewDealPage() {
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Sold Date</p>
                   <p className="text-white font-medium">{form.soldDate || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
-                {currentRole === 'admin' && (
+                {effectiveRole === 'admin' && (
                   <div>
                     <p className="text-[var(--text-muted)] text-xs mb-0.5">Closer</p>
                     <p className="text-white font-medium truncate">

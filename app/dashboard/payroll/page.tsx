@@ -518,7 +518,7 @@ function PayrollPageInner() {
 
   // ── Non-admin guard ──────────────────────────────────────────────────────────
   // Reps can view only their own entries in a read-only mode; no admin actions.
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = effectiveRole === 'admin';
   if (!isAdmin) {
     const myEntries = payrollEntries.filter((p) => p.repId === effectiveRepId);
     const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);

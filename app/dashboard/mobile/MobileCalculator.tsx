@@ -337,7 +337,7 @@ export default function MobileCalculator() {
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
               </div>
             )}
-            {currentRole === 'admin' && (
+            {effectiveRole === 'admin' && (
               <div className="calc-row-2 flex items-center justify-between">
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloTotal)}</span>

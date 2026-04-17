@@ -566,7 +566,7 @@ function ActivityTimeline({ projectId }: { projectId: string }) {
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { currentRole, effectiveRole, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts } = useApp();
+  const { currentRole, effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
@@ -663,6 +663,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     overrideKiloPerW: '',
     additionalClosers: [] as CoPartyDraft[],
     additionalSetters: [] as CoPartyDraft[],
+    // Per-project trainer override. Admin-only; when empty, the rep-level
+    // TrainerAssignment chain applies. When set, this project uses these
+    // values instead of the chain.
+    trainerId: '',
+    trainerRate: '',
   });
 
   // ── Prev/Next project navigation ─────────────────────────────────────────
@@ -726,7 +731,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }
 
   // Reps can only view their own projects
-  if (currentRole === 'rep' && project.repId !== currentRepId && project.setterId !== currentRepId) {
+  if (effectiveRole === 'rep' && project.repId !== effectiveRepId && project.setterId !== effectiveRepId) {
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this project.{' '}
@@ -738,7 +743,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }
 
   // Sub-dealers can only view projects assigned to them
-  if (currentRole === 'sub-dealer' && project.subDealerId !== currentRepId && project.repId !== currentRepId) {
+  if (effectiveRole === 'sub-dealer' && project.subDealerId !== effectiveRepId && project.repId !== effectiveRepId) {
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this project.{' '}
@@ -906,6 +911,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         m2Amount: String(s.m2Amount ?? 0),
         m3Amount: s.m3Amount != null ? String(s.m3Amount) : '',
       })),
+      trainerId: project.trainerId ?? '',
+      trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
     });
     setEditErrors({});
     setShowEditModal(true);
@@ -994,6 +1001,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         position: i + 1,
       }));
 
+    // Per-project trainer — normalize empty strings to undefined so the API
+    // treats "no override" correctly (PATCH body only sends defined fields).
+    const trainerRateNum = editVals.trainerRate.trim() !== '' ? parseFloat(editVals.trainerRate) : NaN;
+    const nextTrainerId = editVals.trainerId || undefined;
+    const nextTrainerRate = nextTrainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : undefined;
+    const trainerRep = nextTrainerId ? reps.find((r) => r.id === nextTrainerId) : undefined;
+
     ctxUpdateProject(project.id, {
       installer: editVals.installer,
       financer: editVals.financer,
@@ -1013,6 +1027,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setterM3Amount: editSetterM3Amount,
       additionalClosers: additionalClosersOut,
       additionalSetters: additionalSettersOut,
+      trainerId: nextTrainerId,
+      trainerName: trainerRep?.name,
+      trainerRate: nextTrainerRate,
       ...(editVals.installer !== project.installer ? { installerProductId: undefined, solarTechProductId: undefined } : {}),
     });
     setShowEditModal(false);
@@ -1021,8 +1038,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   };
 
   // Commission entries for this project (rep view)
-  const myEntries = currentRole === 'rep'
-    ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === currentRepId)
+  const myEntries = effectiveRole === 'rep'
+    ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId)
     : [];
 
   // All payroll entries for this project (admin view)
@@ -1101,7 +1118,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
 
       {/* Phase quick-advance strip — admin/PM only, hidden when off-track */}
-      {(currentRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (() => {
+      {(effectiveRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (() => {
         const phaseIdx = PIPELINE_STEPS.indexOf(project.phase as typeof PIPELINE_STEPS[number]);
         const prevStep = phaseIdx > 0 ? PIPELINE_STEPS[phaseIdx - 1] : null;
         const nextStep = phaseIdx < PIPELINE_STEPS.length - 1 ? PIPELINE_STEPS[phaseIdx + 1] : null;
@@ -1146,7 +1163,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {(currentRole === 'admin' || isPM) ? (
+        {(effectiveRole === 'admin' || isPM) ? (
           <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-2">
             {!isPM && (
               <button
@@ -1247,7 +1264,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
 
-        {(currentRole === 'admin' || isPM) && (
+        {(effectiveRole === 'admin' || isPM) && (
           <div className="mt-5 pt-5 border-t border-[var(--border-subtle)]">
             <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Change Phase</p>
             <select
@@ -1264,7 +1281,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Commission — rep view shows their own payroll entries */}
-      {currentRole === 'rep' && !isPM && (
+      {effectiveRole === 'rep' && !isPM && (
         <div className="card-surface rounded-2xl p-6 mb-5">
           <h2 className="text-white font-semibold mb-4">My Commission</h2>
           {myEntries.length > 0 ? (
@@ -1318,7 +1335,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       )}
 
       {/* Commission breakdown (admin) */}
-      {currentRole === 'admin' && !isPM && (
+      {effectiveRole === 'admin' && !isPM && (
         <div className="card-surface rounded-2xl p-6 mb-5">
           <h2 className="text-white font-semibold mb-1">Commission Breakdown</h2>
 
@@ -1327,6 +1344,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
               Closer baseline: <span className="text-[var(--accent-cyan)] font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
             </span>
+            {project.setterId && (
+              <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
+                Setter baseline: <span className="text-[var(--accent-cyan)] font-semibold">${setterPerW.toFixed(3)}/W</span>
+              </span>
+            )}
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
               Kilo cost: <span className="text-purple-300 font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
             </span>
@@ -1658,7 +1680,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <div className="card-surface rounded-2xl p-6">
         <h2 className="text-white font-semibold mb-3">Notes</h2>
 
-        {(currentRole === 'admin' || isPM) ? (
+        {(effectiveRole === 'admin' || isPM) ? (
           <div>
             <textarea
               rows={4}
@@ -1827,6 +1849,55 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 disabled={!editVals.setterId}
                 disabledReason="Select a primary setter above to add co-setters."
               />
+
+              {/* Per-project trainer override — admin-only one-off attachment. */}
+              <div className="bg-[var(--surface-card)]/60 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Per-project trainer override</label>
+                  {editVals.trainerId && (
+                    <button
+                      type="button"
+                      onClick={() => setEditVals((v) => ({ ...v, trainerId: '', trainerRate: '' }))}
+                      className="text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <p className="text-[var(--text-muted)] text-xs mb-3">
+                  Optional: attach a specific trainer + rate to this deal only. Bypasses the rep-level
+                  TrainerAssignment chain. Use for historical deals or one-off mentors.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[var(--text-secondary)] text-[11px] block mb-1">Trainer</label>
+                    <select
+                      value={editVals.trainerId}
+                      onChange={(e) => setEditVals((v) => ({ ...v, trainerId: e.target.value }))}
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+                    >
+                      <option value="">— none —</option>
+                      {reps
+                        .filter((r) => r.active && r.id !== project.repId && r.id !== editVals.setterId)
+                        .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[var(--text-secondary)] text-[11px] block mb-1">Rate ($/W)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="5"
+                      placeholder="0.20"
+                      value={editVals.trainerRate}
+                      onChange={(e) => setEditVals((v) => ({ ...v, trainerRate: e.target.value }))}
+                      disabled={!editVals.trainerId}
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+              </div>
 
 
               {/* Sold Date */}

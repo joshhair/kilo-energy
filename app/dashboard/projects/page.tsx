@@ -54,8 +54,8 @@ function ProjectsPageInner() {
       setDealScope(effectiveRole !== 'admin' && effectiveRole !== 'project_manager' ? 'mine' : 'all');
     }
   }, [effectiveRole, searchParams]);
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('q') ?? '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('q') ?? '');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
     const v = searchParams.get('status') as StatusFilter | null;
     return v && ['active', 'all', 'completed', 'cancelled', 'on-hold', 'inactive'].includes(v) ? v : 'active';
@@ -65,7 +65,9 @@ function ProjectsPageInner() {
   const [qaOnly, setQaOnly] = useState(() => searchParams.get('qa') === '1');
   const isHydrated = useIsHydrated();
 
-  // Sync filters to URL searchParams
+  // Sync filters to URL searchParams (debouncedSearch is used for the q param
+  // so keystrokes don't pound router.replace — it only fires after the debounce
+  // lands, matching when the filter actually applies to the result set).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (tab !== 'phase') params.set('view', tab); else params.delete('view');
@@ -74,10 +76,11 @@ function ProjectsPageInner() {
     if (phaseFilter) params.set('phase', phaseFilter); else params.delete('phase');
     if (qaOnly) params.set('qa', '1'); else params.delete('qa');
     if (dealScope === 'mine') params.set('scope', 'mine'); else params.delete('scope');
+    if (debouncedSearch) params.set('q', debouncedSearch); else params.delete('q');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, statusFilter, installerFilter, phaseFilter, qaOnly, dealScope]);
+  }, [tab, statusFilter, installerFilter, phaseFilter, qaOnly, dealScope, debouncedSearch]);
 
   // Sliding tab indicators
   const viewTabRefs = useRef<(HTMLButtonElement | null)[]>([]);

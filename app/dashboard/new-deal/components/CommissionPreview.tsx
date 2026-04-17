@@ -28,7 +28,7 @@ export interface CommissionPreviewProps {
   closerTrainerTotal: number;
   closerTrainerOverrideRate: number;
   kiloTotal: number;
-  currentRole: string | null | undefined;
+  effectiveRole: string | null | undefined;
   subDealerRate: number;
 }
 
@@ -58,7 +58,7 @@ export function CommissionPreview({
   closerTrainerTotal,
   closerTrainerOverrideRate,
   kiloTotal,
-  currentRole,
+  effectiveRole,
   subDealerRate,
 }: CommissionPreviewProps) {
   return (
@@ -92,7 +92,7 @@ export function CommissionPreview({
               <span>Your redline</span>
               <span>${closerPerW.toFixed(2)}/W</span>
             </div>
-            {currentRole === 'admin' && (
+            {effectiveRole === 'admin' && (
               <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
                 <span>Kilo baseline</span>
                 <span>${kiloPerW.toFixed(2)}/W</span>
@@ -141,7 +141,7 @@ export function CommissionPreview({
                 </span>
               </div>
             )}
-            {currentRole === 'admin' && (
+            {effectiveRole === 'admin' && (
               <div className="flex justify-between border-t border-[var(--border)] pt-2">
                 <span className="text-[var(--text-secondary)]">Kilo revenue</span>
                 <TickerAmount amount={kiloTotal} className="text-[var(--text-secondary)] font-semibold" />

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { Phase } from '../../../lib/data';
 import { Search } from 'lucide-react';
@@ -48,12 +48,29 @@ function relativeTime(dateStr: string): string {
 export default function MobileProjects() {
   const { effectiveRole, effectiveRepId, projects, payrollEntries } = useApp();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const isSubDealer = effectiveRole === 'sub-dealer';
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [phaseFilter, setPhaseFilter] = useState<Phase | 'All'>('All');
+  // Initial values read from URL so filters survive project-detail round trips,
+  // matching desktop Projects page behaviour.
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('q') ?? '');
+  const [phaseFilter, setPhaseFilter] = useState<Phase | 'All'>(() => {
+    const v = searchParams.get('phase');
+    return v && (PHASE_FILTERS as readonly string[]).includes(v) ? (v as Phase | 'All') : 'All';
+  });
+
+  // Persist filters to URL — fires only after debounce lands so keystrokes
+  // don't spam router.replace.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (debouncedSearch) params.set('q', debouncedSearch); else params.delete('q');
+    if (phaseFilter !== 'All') params.set('phase', phaseFilter); else params.delete('phase');
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, phaseFilter]);
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
   const [listKey, setListKey] = useState(0);

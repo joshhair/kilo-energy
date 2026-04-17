@@ -556,6 +556,19 @@ export default function TableView({
 
   const executeBulkPhaseChange = (targetPhase: Phase) => {
     const count = selectedProjectIds.size;
+    // Capture persist errors that fire during the bulk operation so the
+    // toast reports actual per-project failures instead of falsely claiming
+    // success. Each updateProject triggers a fire-and-forget PATCH; client-
+    // side guards (e.g. m1Amount missing at Acceptance) dispatch the same
+    // `kilo-persist-error` event as server 4xx/5xx, so one listener covers
+    // both failure modes.
+    const errors: string[] = [];
+    const errorListener = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === 'string') errors.push(detail);
+    };
+    window.addEventListener('kilo-persist-error', errorListener);
+
     if (targetPhase === 'On Hold') {
       // onPhaseChange opens a per-project setPhaseConfirm modal and returns early,
       // so bulk 'On Hold' must call updateProject directly (bulkConfirm already confirmed).
@@ -570,7 +583,22 @@ export default function TableView({
     setSelectedProjectIds(new Set());
     setBulkPhaseTarget('');
     setBulkConfirm(null);
-    toast(`${count} project${count > 1 ? 's' : ''} moved to ${targetPhase}`, 'success');
+
+    // Let sync persist errors flush on the next tick (updateProject dispatches
+    // guard failures synchronously; PATCH failures come later but those are
+    // already toasted separately by persistFetch).
+    setTimeout(() => {
+      window.removeEventListener('kilo-persist-error', errorListener);
+      const failed = errors.length;
+      const succeeded = count - failed;
+      if (failed === 0) {
+        toast(`${count} project${count > 1 ? 's' : ''} moved to ${targetPhase}`, 'success');
+      } else if (succeeded > 0) {
+        toast(`${succeeded} of ${count} moved to ${targetPhase} — ${failed} blocked (see errors)`, 'info');
+      } else {
+        toast(`Unable to move ${count} project${count > 1 ? 's' : ''} — see errors above`, 'error');
+      }
+    }, 0);
   };
 
   function thClass(colKey: SortKey) {

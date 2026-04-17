@@ -108,5 +108,11 @@ export const patchProjectSchema = z.object({
   // inserts these. Omit to leave current rows untouched.
   additionalClosers: z.array(additionalPartySchema).max(10).optional(),
   additionalSetters: z.array(additionalPartySchema).max(10).optional(),
+
+  // Per-project trainer override. Admin-only one-off attachment that bypasses
+  // the rep-level TrainerAssignment chain. Send both together to set, both
+  // null to clear.
+  trainerId:   optionalId,
+  trainerRate: finiteNumber.min(0).max(5).nullable().optional(),
 }).strict();
 export type PatchProjectInput = z.infer<typeof patchProjectSchema>;
