@@ -149,7 +149,11 @@ export default function BlitzDetailPage() {
   const visibleProjects = useMemo(() => {
     if (!blitz?.projects) return [];
     if (isAdmin || isOwner) return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-    return blitz.projects.filter((p: any) => (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+    return blitz.projects.filter((p: any) =>
+      (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId ||
+        (p.additionalClosers ?? []).some((cc: any) => cc.userId === effectiveRepId) ||
+        (p.additionalSetters ?? []).some((cs: any) => cs.userId === effectiveRepId)) &&
+      p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const approvedParticipantIds = useMemo(

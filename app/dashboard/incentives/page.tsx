@@ -153,7 +153,7 @@ function isEndingSoon(endDate: string | null): boolean {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function IncentivesPage() {
-  const { currentRole, effectiveRole, currentRepId, incentives, setIncentives, projects, payrollEntries, reps } = useApp();
+  const { currentRole, effectiveRole, currentRepId, effectiveRepId, incentives, setIncentives, projects, payrollEntries, reps } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Incentives | Kilo Energy'; }, []);
@@ -186,10 +186,10 @@ export default function IncentivesPage() {
     isAdmin
       ? incentives
       : incentives.filter(
-          (inc) => inc.active && (inc.type === 'company' || (currentRepId != null && inc.targetRepId === currentRepId))
+          (inc) => inc.active && (inc.type === 'company' || (effectiveRepId != null && inc.targetRepId === effectiveRepId))
         ),
-   
-  [incentives, isAdmin, currentRepId]);
+
+  [incentives, isAdmin, effectiveRepId]);
 
   // ── Split active vs expired (past) incentives ──
   const activeVisible = useMemo(() => visible.filter((i) => !isExpired(i.endDate)), [visible]);

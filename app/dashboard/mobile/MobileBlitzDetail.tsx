@@ -70,7 +70,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const visibleProjects = useMemo(() => {
     if (!blitz?.projects) return [];
     if (isAdmin || isOwner) return blitz.projects.filter((p: any) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-    return blitz.projects.filter((p: any) => (p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+    return blitz.projects.filter((p: any) => (
+      p.closer?.id === effectiveRepId ||
+      p.setter?.id === effectiveRepId ||
+      p.additionalClosers?.some((c: any) => c.userId === effectiveRepId) ||
+      p.additionalSetters?.some((s: any) => s.userId === effectiveRepId)
+    ) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const approvedParticipantIds = useMemo(

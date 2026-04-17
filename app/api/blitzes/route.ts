@@ -42,7 +42,7 @@ export async function GET() {
       participants: { include: { user: true } },
       costs: { orderBy: { date: 'desc' } },
       projects: {
-        include: { closer: true, setter: true, installer: true, financer: true },
+        include: { closer: true, setter: true, installer: true, financer: true, additionalClosers: { include: { user: true } }, additionalSetters: { include: { user: true } } },
       },
       incentives: { include: { milestones: true } },
     },
@@ -54,7 +54,9 @@ export async function GET() {
     for (const b of blitzes) {
       (b as { costs: unknown[] }).costs = [];
       for (const p of b.projects) {
-        const isMyDeal = p.closerId === user.id || p.setterId === user.id;
+        const isMyDeal = p.closerId === user.id || p.setterId === user.id
+          || p.additionalClosers.some((ac: { userId: string }) => ac.userId === user.id)
+          || p.additionalSetters.some((as: { userId: string }) => as.userId === user.id);
         if (!isMyDeal) {
           p.netPPW = 0;
           p.m1AmountCents = 0;

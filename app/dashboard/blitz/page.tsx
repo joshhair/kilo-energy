@@ -33,7 +33,7 @@ interface BlitzData {
     user: { id: string; firstName: string; lastName: string };
   }>;
   costs: Array<{ id: string; category: string; amount: number; description: string; date: string }>;
-  projects: Array<{ id: string; customerName: string; kWSize: number; netPPW: number; m1Amount: number; m2Amount: number; phase: string; closer: { id: string } | null; setter: { id: string } | null }>;
+  projects: Array<{ id: string; customerName: string; kWSize: number; netPPW: number; m1Amount: number; m2Amount: number; phase: string; closer: { id: string } | null; setter: { id: string } | null; additionalClosers: Array<{ userId: string }>; additionalSetters: Array<{ userId: string }> }>;
 }
 
 interface BlitzRequestData {
@@ -112,7 +112,9 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   const visibleProjects = (isAdmin || currentUserId === blitz.owner.id)
     ? activeProjects.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
-    : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId);
+    : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId
+        || p.additionalClosers?.some((ac) => ac.userId === currentUserId)
+        || p.additionalSetters?.some((as) => as.userId === currentUserId));
   const totalKW = visibleProjects.reduce((s, p) => {
     const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
     const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
