@@ -8,7 +8,7 @@
 
 import type { Project, PayrollEntry, Phase, Rep, TrainerAssignment, InstallerPayConfig } from '../data';
 import { resolveTrainerRate, DEFAULT_INSTALL_PAY_PCT } from '../data';
-import { getM1PayDate, getM2PayDate, localDateString } from '../utils';
+import { getM1PayDate, getM2PayDate, getM3PayDate, localDateString } from '../utils';
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -479,18 +479,18 @@ export function createMilestonePayroll(
     // Setter's trainer — project-level override does NOT apply to setter's trainer
     // slot (the override field was designed for closer attribution). Setter always
     // goes through the tier chain.
-    if (old.setterId) {
+    if (freshProject.setterId) {
       const setterRes = resolveTrainerRate(
         { id: projectId, trainerId: null, trainerRate: null },
-        old.setterId,
+        freshProject.setterId,
         deps.trainerAssignmentsRef.current,
         prevEntries,
       );
       if (setterRes.rate > 0 && setterRes.trainerId) {
         const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterRes.trainerId);
         const m2SetterTrainerAmount = Math.round(setterRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-        const setterRep = deps.repsRef.current.find(r => r.id === old.setterId);
-        const setterTraineeNotesPrefix = `Trainer override M2 — ${setterRep?.name ?? old.setterName ?? ''}`;
+        const setterRep = deps.repsRef.current.find(r => r.id === freshProject.setterId);
+        const setterTraineeNotesPrefix = `Trainer override M2 — ${setterRep?.name ?? freshProject.setterName ?? ''}`;
         const setterTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
           (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterRes.trainerId
         );
@@ -506,7 +506,7 @@ export function createMilestonePayroll(
             paymentStage: 'Trainer',
             status: 'Draft',
             date: payDate,
-            notes: `Trainer override M2 — ${setterRep?.name ?? old.setterName ?? ''} ($${setterRes.rate.toFixed(2)}/W)`,
+            notes: `Trainer override M2 — ${setterRep?.name ?? freshProject.setterName ?? ''} ($${setterRes.rate.toFixed(2)}/W)`,
           });
         }
       }
@@ -557,7 +557,7 @@ export function createM3Payroll(
       : 0;
 
   const ts = Date.now();
-  const payDate = getM2PayDate(); // M3 follows the same Saturday cutoff as M2
+  const payDate = getM3PayDate();
   const newEntries: PayrollEntry[] = [];
   const closerRep = deps.repsRef.current.find((r) => r.id === old.repId);
 
