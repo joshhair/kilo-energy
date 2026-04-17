@@ -176,12 +176,13 @@ export default function MobileAdminDashboard() {
   }, [active]);
 
   // Recent deals
-  const recentDeals = useMemo(() => [...periodProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 5), [periodProjects]);
+  const recentDeals = useMemo(() => [...periodProjects].filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 5), [periodProjects]);
 
   // Top reps by deal count
   const topReps = useMemo(() => {
     const repDeals: Record<string, number> = {};
     for (const p of periodProjects) {
+      if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
       repDeals[p.repId] = (repDeals[p.repId] || 0) + 1;
       if (p.setterId && p.setterId !== p.repId) {
         repDeals[p.setterId] = (repDeals[p.setterId] || 0) + 1;
