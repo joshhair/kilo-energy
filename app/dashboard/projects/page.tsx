@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
-import { ACTIVE_PHASES, Phase } from '../../../lib/data';
+import { Phase } from '../../../lib/data';
 import { X } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import ConfirmDialog from '../components/ConfirmDialog';

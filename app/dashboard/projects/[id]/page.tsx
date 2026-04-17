@@ -990,7 +990,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         m3Amount: c.m3Amount.trim() === '' ? null : toNum(c.m3Amount),
         position: i + 1,
       }));
-    const additionalSettersOut = editVals.additionalSetters
+    const additionalSettersOut = (editVals.setterId ? editVals.additionalSetters : [])
       .filter((s) => !!s.userId && s.userId !== editVals.setterId)
       .map((s, i) => ({
         userId: s.userId,
@@ -1310,21 +1310,28 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               ))}
             </div>
-          ) : (
+          ) : (() => {
+              const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === currentRepId);
+              const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === currentRepId);
+              const isSetterRep = project.setterId === currentRepId;
+              const expM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
+              const expM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
+              const expM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
+              return (
             <div>
               <div className="flex gap-4 mb-4">
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
-                  <p className="text-[var(--accent-green)] font-bold">${(project.setterId === currentRepId ? (project.setterM1Amount ?? 0) : (project.m1Amount ?? 0)).toLocaleString()}</p>
+                  <p className="text-[var(--accent-green)] font-bold">${expM1.toLocaleString()}</p>
                 </div>
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
-                  <p className="text-[var(--accent-green)] font-bold">${(project.setterId === currentRepId ? (project.setterM2Amount ?? 0) : (project.m2Amount ?? 0)).toLocaleString()}</p>
+                  <p className="text-[var(--accent-green)] font-bold">${expM2.toLocaleString()}</p>
                 </div>
-                {(project.setterId === currentRepId ? (project.setterM3Amount ?? 0) : (project.m3Amount ?? 0)) > 0 && (
+                {expM3 > 0 && (
                   <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                     <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
-                    <p className="text-teal-400 font-bold">${(project.setterId === currentRepId ? (project.setterM3Amount ?? 0) : (project.m3Amount ?? 0)).toLocaleString()}</p>
+                    <p className="text-teal-400 font-bold">${expM3.toLocaleString()}</p>
                   </div>
                 )}
               </div>
@@ -1332,7 +1339,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 No payments yet &mdash; commission will appear here as milestones are reached.
               </p>
             </div>
-          )}
+              );
+            })()}
         </div>
       )}
 
@@ -2127,12 +2135,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         onConfirm={() => {
           if (phaseConfirm) {
             const previousPhase = project.phase;
+            const previousCancelReason = project.cancellationReason;
+            const previousCancelNotes = project.cancellationNotes;
             updateProject({ phase: phaseConfirm });
             toast(`Phase updated to ${phaseConfirm}`, 'success', {
               label: 'Undo',
               onClick: () => {
                 if (previousPhase === 'Cancelled') {
-                  setShowCancelReasonModal(true);
+                  updateProject({ phase: 'Cancelled', cancellationReason: previousCancelReason, cancellationNotes: previousCancelNotes });
                 } else {
                   updateProject({ phase: previousPhase });
                 }
