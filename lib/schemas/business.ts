@@ -51,7 +51,7 @@ export type CreateBlitzParticipantInput = z.infer<typeof createBlitzParticipantS
 export const patchBlitzParticipantSchema = z.object({
   userId: idSchema,
   joinStatus: joinStatusEnum.optional(),
-  attendanceStatus: attendanceStatusEnum.optional(),
+  attendanceStatus: attendanceStatusEnum.nullable().optional(),
 }).refine(
   (d) => d.joinStatus !== undefined || d.attendanceStatus !== undefined,
   { message: 'joinStatus or attendanceStatus required' },

@@ -120,7 +120,11 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
     const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
     return s + (isSelfGen || closerApproved ? p.kWSize : 0);
   }, 0);
-  const totalDeals = visibleProjects.length;
+  const totalDeals = visibleProjects.filter((p) => {
+    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+    const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+    return isSelfGen || closerApproved;
+  }).length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
   const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;
@@ -594,7 +598,9 @@ function BlitzPageInner() {
           const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
           return (isAdmin || effectiveRepId === blitz.owner.id)
             ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
-            : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId);
+            : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
+                || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+                || p.additionalSetters?.some((as) => as.userId === effectiveRepId));
         };
         sorted.sort((a, b) => scopedDeals(b).length - scopedDeals(a).length);
         break;
@@ -605,7 +611,9 @@ function BlitzPageInner() {
           const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
           const visible = (isAdmin || effectiveRepId === blitz.owner.id)
             ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
-            : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId);
+            : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
+                || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+                || p.additionalSetters?.some((as) => as.userId === effectiveRepId));
           return visible.reduce((s, p) => {
             const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
             const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
