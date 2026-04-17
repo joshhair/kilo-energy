@@ -85,6 +85,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
       }
     }
+    for (const coCloser of body.additionalClosers ?? []) {
+      const p = await prisma.blitzParticipant.findFirst({
+        where: { blitzId: body.blitzId, userId: coCloser.userId, joinStatus: 'approved' },
+      });
+      if (!p) {
+        return NextResponse.json({ error: 'Co-closer is not an approved participant of this blitz' }, { status: 403 });
+      }
+    }
+    for (const coSetter of body.additionalSetters ?? []) {
+      const p = await prisma.blitzParticipant.findFirst({
+        where: { blitzId: body.blitzId, userId: coSetter.userId, joinStatus: 'approved' },
+      });
+      if (!p) {
+        return NextResponse.json({ error: 'Co-setter is not an approved participant of this blitz' }, { status: 403 });
+      }
+    }
   }
 
   // ─── FK existence checks ───

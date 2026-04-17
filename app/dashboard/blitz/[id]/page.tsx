@@ -326,6 +326,16 @@ export default function BlitzDetailPage() {
           bump(setterId, 0, sM1 + sM2 + sM3);
         }
       }
+      for (const cc of (proj as any).additionalClosers ?? []) {
+        if (cc.userId && participantIds.has(cc.userId)) {
+          bump(cc.userId, 0, (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0));
+        }
+      }
+      for (const cs of (proj as any).additionalSetters ?? []) {
+        if (cs.userId && participantIds.has(cs.userId)) {
+          bump(cs.userId, 0, (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0));
+        }
+      }
     }
 
     const entries: LeaderboardEntry[] = participants.map((p: any) => {

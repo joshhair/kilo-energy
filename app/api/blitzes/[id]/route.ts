@@ -3,7 +3,7 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchBlitzSchema } from '../../../../lib/schemas/business';
-import { serializeProject, serializeBlitzCost } from '../../../../lib/serialize';
+import { serializeProject, serializeProjectParty, serializeBlitzCost } from '../../../../lib/serialize';
 
 // GET /api/blitzes/[id] — Get a single blitz. Access:
 // - admin, project_manager: yes
@@ -21,7 +21,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       participants: { include: { user: true } },
       costs: { orderBy: { date: 'desc' } },
       projects: {
-        include: { closer: true, setter: true, installer: true, financer: true },
+        include: {
+          closer: true, setter: true, installer: true, financer: true,
+          additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
+          additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
+        },
       },
       incentives: { include: { milestones: true } },
     },
@@ -77,7 +81,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  return NextResponse.json({ ...blitz, costs: blitz.costs.map(serializeBlitzCost), projects: blitz.projects.map(serializeProject) });
+  return NextResponse.json({
+    ...blitz,
+    costs: blitz.costs.map(serializeBlitzCost),
+    projects: blitz.projects.map((p) => {
+      const s = serializeProject(p);
+      return {
+        ...s,
+        additionalClosers: (p as any).additionalClosers?.map(serializeProjectParty) ?? [],
+        additionalSetters: (p as any).additionalSetters?.map(serializeProjectParty) ?? [],
+      };
+    }),
+  });
 }
 
 // PATCH /api/blitzes/[id] — Update blitz (admin or blitz owner)
@@ -132,7 +147,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
     blitz.projects = await prisma.project.findMany({
       where: { blitzId: id },
-      include: { closer: true, setter: true, installer: true, financer: true },
+      include: {
+        closer: true, setter: true, installer: true, financer: true,
+        additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
+        additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
+      },
     });
   }
 
@@ -165,7 +184,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  return NextResponse.json({ ...blitz, costs: blitz.costs.map(serializeBlitzCost), projects: blitz.projects.map(serializeProject) });
+  return NextResponse.json({
+    ...blitz,
+    costs: blitz.costs.map(serializeBlitzCost),
+    projects: blitz.projects.map((p) => {
+      const s = serializeProject(p);
+      return {
+        ...s,
+        additionalClosers: (p as any).additionalClosers?.map(serializeProjectParty) ?? [],
+        additionalSetters: (p as any).additionalSetters?.map(serializeProjectParty) ?? [],
+      };
+    }),
+  });
 }
 
 // DELETE /api/blitzes/[id] — Admin only

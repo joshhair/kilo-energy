@@ -407,13 +407,17 @@ function CalculatorPage() {
   const { closerPerW, setterBaselinePerW, kiloPerW } = (() => {
     if (!hasInput) return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 };
     if (isSolarTech) {
-      const b = getSolarTechBaseline(solarTechProductId, kW, solarTechProducts);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      try {
+        const b = getSolarTechBaseline(solarTechProductId, kW, solarTechProducts);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
     if (isPcInstaller) {
       const pricingDate = quickFillSoldDate || new Date().toISOString().split('T')[0];
-      const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, pricingDate, productCatalogPricingVersions);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      try {
+        const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, pricingDate, productCatalogPricingVersions);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
     const pricingDate = quickFillSoldDate || new Date().toISOString().split('T')[0];
     const r = getInstallerRatesForDeal(installer, pricingDate, kW, installerPricingVersions);

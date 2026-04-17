@@ -582,6 +582,8 @@ function NewDealPage() {
           .map((p: any) => p.userId as string),
       );
       if (form.repId && !approvedIds.has(form.repId)) {
+        setSlideDirection('backward');
+        setCurrentStep(0);
         toast('Selected closer is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
