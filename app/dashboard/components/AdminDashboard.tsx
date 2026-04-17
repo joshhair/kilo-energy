@@ -55,7 +55,7 @@ export function AdminDashboard({
   const [recentPage, setRecentPage] = useState(1);
   const [recentRowsPerPage, setRecentRowsPerPage] = useState(10);
 
-  useEffect(() => { setRecentPage(1); }, [period]);
+  useEffect(() => { setRecentPage(1); setRecentSearch(''); }, [period]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
