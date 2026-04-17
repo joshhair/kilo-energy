@@ -59,7 +59,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (user.role !== 'admin' && !isBlitzOwner) {
     (blitz as unknown as { costs: unknown[] }).costs = [];
     for (const p of blitz.projects) {
-      const isMyDeal = p.closerId === user.id || p.setterId === user.id;
+      const isMyDeal = p.closerId === user.id || p.setterId === user.id
+        || (p as any).additionalClosers?.some((cc: { userId: string }) => cc.userId === user.id)
+        || (p as any).additionalSetters?.some((cs: { userId: string }) => cs.userId === user.id);
       if (!isMyDeal) {
         const mp = p as unknown as {
           netPPW: number;
@@ -162,7 +164,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (user.role !== 'admin' && !isBlitzOwnerPatch) {
     (blitz as unknown as { costs: unknown[] }).costs = [];
     for (const p of blitz.projects) {
-      const isMyDeal = p.closerId === user.id || p.setterId === user.id;
+      const isMyDeal = p.closerId === user.id || p.setterId === user.id
+        || (p as any).additionalClosers?.some((cc: { userId: string }) => cc.userId === user.id)
+        || (p as any).additionalSetters?.some((cs: { userId: string }) => cs.userId === user.id);
       if (!isMyDeal) {
         const mp = p as unknown as {
           netPPW: number;

@@ -162,7 +162,11 @@ export default function BlitzDetailPage() {
   );
   const approvedVisibleProjects = useMemo(
     () => (isAdmin || isOwner)
-      ? visibleProjects.filter((p: any) => approvedParticipantIds.has(p.closer?.id) || approvedParticipantIds.has(p.setter?.id))
+      ? visibleProjects.filter((p: any) =>
+          approvedParticipantIds.has(p.closer?.id) ||
+          approvedParticipantIds.has(p.setter?.id) ||
+          (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId)) ||
+          (p.additionalSetters ?? []).some((cs: any) => approvedParticipantIds.has(cs.userId)))
       : visibleProjects,
     [visibleProjects, isAdmin, isOwner, approvedParticipantIds],
   );
@@ -1064,7 +1068,7 @@ export default function BlitzDetailPage() {
                         <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-[var(--accent-cyan)] transition-colors">{p.customerName}</Link>
                       </td>
                       <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id ? <Link href={`/dashboard/users/${p.closer.id}`} className="hover:text-[var(--accent-cyan)] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
-                      {!isAdmin && !isOwner && <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id === effectiveRepId && p.setter?.id === effectiveRepId ? 'Self-gen' : p.closer?.id === effectiveRepId ? 'Closer' : 'Setter'}</td>}
+                      {!isAdmin && !isOwner && <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id === effectiveRepId && p.setter?.id === effectiveRepId ? 'Self-gen' : p.closer?.id === effectiveRepId || p.additionalClosers?.some((c: any) => c.id === effectiveRepId) ? 'Closer' : 'Setter'}</td>}
                       <td className="px-4 py-3">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-[var(--surface-card)]/40 text-[var(--text-secondary)] border-[var(--border)]/30'}`}>{p.phase}</span>
                       </td>
