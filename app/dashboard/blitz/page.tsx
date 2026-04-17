@@ -123,7 +123,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const progress = getBlitzProgress(blitz);
   const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;
   const isOwner = currentUserId === blitz.owner.id;
-  const canJoin = !isAdmin && !isOwner && !myParticipation && (blitz.status === 'upcoming' || blitz.status === 'active');
+  const canJoin = !isAdmin && !isOwner && (!myParticipation || myParticipation.joinStatus === 'declined') && (blitz.status === 'upcoming' || blitz.status === 'active');
 
   return (
     <Link href={`/dashboard/blitz/${blitz.id}`}>

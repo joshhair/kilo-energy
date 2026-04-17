@@ -3,7 +3,7 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchBlitzSchema } from '../../../../lib/schemas/business';
-import { serializeProject } from '../../../../lib/serialize';
+import { serializeProject, serializeBlitzCost } from '../../../../lib/serialize';
 
 // GET /api/blitzes/[id] — Get a single blitz. Access:
 // - admin, project_manager: yes
@@ -76,7 +76,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  return NextResponse.json({ ...blitz, projects: blitz.projects.map(serializeProject) });
+  return NextResponse.json({ ...blitz, costs: blitz.costs.map(serializeBlitzCost), projects: blitz.projects.map(serializeProject) });
 }
 
 // PATCH /api/blitzes/[id] — Update blitz (admin or blitz owner)
@@ -163,7 +163,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  return NextResponse.json({ ...blitz, projects: blitz.projects.map(serializeProject) });
+  return NextResponse.json({ ...blitz, costs: blitz.costs.map(serializeBlitzCost), projects: blitz.projects.map(serializeProject) });
 }
 
 // DELETE /api/blitzes/[id] — Admin only
