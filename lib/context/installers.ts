@@ -45,13 +45,22 @@ export function createInstallerActions(deps: InstallerDeps) {
   } = deps;
 
   const setInstallerActive = (name: string, active: boolean) => {
-    setInstallers((prev) => prev.map((i) => i.name === name ? { ...i, active } : i));
+    let prevActive: boolean | undefined;
+    setInstallers((prev) => {
+      prevActive = prev.find((i) => i.name === name)?.active;
+      return prev.map((i) => i.name === name ? { ...i, active } : i);
+    });
+    const rollback = () => {
+      if (prevActive !== undefined) {
+        setInstallers((prev) => prev.map((i) => i.name === name ? { ...i, active: prevActive! } : i));
+      }
+    };
     const instId = getIdMaps().installerNameToId[name];
     const doPatch = (id: string) => persistFetch(`/api/installers/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active }),
-    }, 'Failed to update installer status').catch(() => {});
+    }, 'Failed to update installer status').catch(rollback);
     if (instId) {
       doPatch(instId);
     } else {
@@ -62,18 +71,27 @@ export function createInstallerActions(deps: InstallerDeps) {
           setIdMaps((prev) => ({ ...prev, installerNameToId: { ...prev.installerNameToId, [name]: data.id } }));
           doPatch(data.id);
         })
-        .catch(() => {});
+        .catch(rollback);
     }
   };
 
   const setFinancerActive = (name: string, active: boolean) => {
-    setFinancers((prev) => prev.map((f) => f.name === name ? { ...f, active } : f));
+    let prevActive: boolean | undefined;
+    setFinancers((prev) => {
+      prevActive = prev.find((f) => f.name === name)?.active;
+      return prev.map((f) => f.name === name ? { ...f, active } : f);
+    });
+    const rollback = () => {
+      if (prevActive !== undefined) {
+        setFinancers((prev) => prev.map((f) => f.name === name ? { ...f, active: prevActive! } : f));
+      }
+    };
     const finId = getIdMaps().financerNameToId[name];
     const doPatch = (id: string) => persistFetch(`/api/financers/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active }),
-    }, 'Failed to update financer status').catch(() => {});
+    }, 'Failed to update financer status').catch(rollback);
     if (finId) {
       doPatch(finId);
     } else {
@@ -84,7 +102,7 @@ export function createInstallerActions(deps: InstallerDeps) {
           setIdMaps((prev) => ({ ...prev, financerNameToId: { ...prev.financerNameToId, [name]: data.id } }));
           doPatch(data.id);
         })
-        .catch(() => {});
+        .catch(rollback);
     }
   };
 
@@ -340,8 +358,18 @@ export function createInstallerActions(deps: InstallerDeps) {
         console.error(err);
         rejectInstallerId(err);
         pendingInstallerIdRef.current.delete(name);
+        setInstallers((prev) => prev.filter((i) => i.name !== name));
+        setProductCatalogInstallerConfigs((prev) => { const next = { ...prev }; delete next[name]; return next; });
+        emitPersistError('Failed to add installer — please try again');
       }
-    }).catch((err) => { console.error(err); rejectInstallerId(err); pendingInstallerIdRef.current.delete(name); });
+    }).catch((err) => {
+      console.error(err);
+      rejectInstallerId(err);
+      pendingInstallerIdRef.current.delete(name);
+      setInstallers((prev) => prev.filter((i) => i.name !== name));
+      setProductCatalogInstallerConfigs((prev) => { const next = { ...prev }; delete next[name]; return next; });
+      emitPersistError('Failed to add installer — please try again');
+    });
   };
 
   const updateProductCatalogInstallerConfig = (name: string, config: Partial<ProductCatalogInstallerConfig>) => {

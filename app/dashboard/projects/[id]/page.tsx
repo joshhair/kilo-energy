@@ -1753,7 +1753,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <SearchableSelect
                   value={editVals.installer}
                   onChange={(val) => { setEditVals((v) => ({ ...v, installer: val })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
-                  options={(activeInstallers.includes(editVals.installer) || !editVals.installer ? activeInstallers : [editVals.installer, ...activeInstallers]).map((inst) => ({ value: inst, label: inst }))}
+                  options={(activeInstallers.includes(editVals.installer) || !editVals.installer ? activeInstallers : [editVals.installer, ...activeInstallers]).map((inst) => ({ value: inst, label: !activeInstallers.includes(inst) ? `${inst} (archived)` : inst }))}
                   placeholder="Select installer…"
                   error={!!editErrors.installer}
                 />
@@ -1766,7 +1766,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <SearchableSelect
                   value={editVals.financer}
                   onChange={(val) => setEditVals((v) => ({ ...v, financer: val }))}
-                  options={(activeFinancers.includes(editVals.financer) || !editVals.financer ? activeFinancers : [editVals.financer, ...activeFinancers]).filter((fin) => fin !== 'Cash' || editVals.productType === 'Cash').map((fin) => ({ value: fin, label: fin }))}
+                  options={(activeFinancers.includes(editVals.financer) || !editVals.financer ? activeFinancers : [editVals.financer, ...activeFinancers]).filter((fin) => fin !== 'Cash' || editVals.productType === 'Cash').map((fin) => ({ value: fin, label: !activeFinancers.includes(fin) ? `${fin} (archived)` : fin }))}
                   placeholder="Select financer…"
                 />
               </div>
