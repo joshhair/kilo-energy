@@ -7,7 +7,7 @@ import {
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   Project, InstallerPricingVersion, ProductCatalogProduct, ProductCatalogPricingVersion, ACTIVE_PHASES,
 } from '../../../lib/data';
-import { formatDate, fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
+import { formatDate, fmt$, fmtCompact$, formatCompactKW, todayLocalDateStr } from '../../../lib/utils';
 import { DollarSign, CheckCircle, Zap, Users, BarChart2, FolderKanban, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, AlertCircle, HelpCircle } from 'lucide-react';
 import { PaginationBar } from './PaginationBar';
 import { type Period, getGreeting, getPhaseStuckThresholds, AnimatedStatValue } from './dashboard-utils';
@@ -124,7 +124,7 @@ export function AdminDashboard({
       { totalRevenue: 0, totalProfit: 0 }
     );
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = todayLocalDateStr();
     const totalPaid = payroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
     const totalKWSold = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
     const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);

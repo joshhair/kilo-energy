@@ -420,7 +420,7 @@ function CalculatorPage() {
     return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
   })();
 
-  const kiloTotal = soldPPW > 0 ? calculateCommission(closerPerW, kiloPerW, kW) : 0;
+  const kiloTotal = soldPPW > 0 ? calculateCommission(soldPPW, kiloPerW, kW) : 0;
 
   // Trainer override — uses the selected setter's trainer assignment
   const effectiveSetterId = hasSetter && selectedSetterId ? selectedSetterId : null;
