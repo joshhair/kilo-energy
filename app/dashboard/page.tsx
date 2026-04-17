@@ -57,17 +57,6 @@ const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: st
 
 // ─── Needs Attention ──────────────────────────────────────────────────────────
 
-/** Cumulative days-from-sold thresholds — a project still in this phase after this many total days is "stuck". */
-const DEFAULT_PHASE_STUCK_THRESHOLDS: Record<string, number> = {
-  'New':             5,
-  'Acceptance':      10,
-  'Site Survey':     20,
-  'Design':          30,
-  'Permitting':      50,
-  'Pending Install': 65,
-  'Installed':       75,
-};
-
 export type MentionItem = {
   id: string;
   projectId: string;
@@ -820,7 +809,7 @@ export default function DashboardPage() {
       period={period}
       setPeriod={setPeriod}
       PERIODS={PERIODS}
-      totalReps={reps.filter(r => r.active).length}
+      totalReps={reps.filter(r => r.active !== false).length}
       installerPricingVersions={installerPricingVersions}
       productCatalogProducts={productCatalogProducts}
       productCatalogPricingVersions={productCatalogPricingVersions}

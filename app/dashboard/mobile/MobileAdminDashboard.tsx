@@ -296,7 +296,7 @@ export default function MobileAdminDashboard() {
       {/* ── Quick stats row ── */}
       <div className="grid grid-cols-3 gap-3">
         <MobileStatCard label="Active" value={active.length} color={ACCENT} />
-        <MobileStatCard label="Reps" value={reps.filter(r => r.active).length} color={ACCENT2} />
+        <MobileStatCard label="Reps" value={reps.filter(r => r.active !== false).length} color={ACCENT2} />
         <MobileStatCard label="kW" value={formatCompactKW(totalKW)} color={WARNING} />
       </div>
 

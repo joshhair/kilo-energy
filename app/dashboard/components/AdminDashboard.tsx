@@ -133,31 +133,17 @@ export function AdminDashboard({
   }, [projects, payroll, solarTechProducts, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions]);
   const totalUsers = totalReps;
 
-  // ── Single-pass project aggregations (all-time, for attention + installer ranking) ──
-  const { attentionActiveProjects, installerRanking, maxInstallerDeals } = useMemo(() => {
-    const activeSet = new Set(['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO']);
-    const attentionSet = new Set([...activeSet, 'On Hold']);
+  // ── Single-pass project aggregations (all-time, for attention cards) ──
+  const { attentionActiveProjects } = useMemo(() => {
+    const attentionSet = new Set(['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'On Hold']);
 
     const attentionActiveProjects: typeof projects = [];
-    const installerMap = new Map<string, { deals: number; kW: number; cancelled: number }>();
 
     for (const p of allProjects) {
       if (attentionSet.has(p.phase)) attentionActiveProjects.push(p);
-
-      // Installer rollup
-      const prev = installerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
-      prev.deals++;
-      prev.kW += p.kWSize;
-      if (p.phase === 'Cancelled') prev.cancelled++;
-      installerMap.set(p.installer, prev);
     }
 
-    const installerRanking = [...installerMap.entries()]
-      .map(([name, data]) => ({ name, ...data }))
-      .sort((a, b) => b.deals - a.deals);
-    const maxInstallerDeals = Math.max(1, ...installerRanking.map((i) => i.deals));
-
-    return { attentionActiveProjects, installerRanking, maxInstallerDeals };
+    return { attentionActiveProjects };
   }, [allProjects]);
 
   // Compact money format for 6-column admin stat cards — prevents overflow
@@ -625,7 +611,7 @@ export function AdminDashboard({
                   </thead>
                   <tbody>
                     {paginated.map((proj) => {
-                      const isCancelled = proj.phase === 'Cancelled' || proj.phase === 'On Hold';
+                      const isCancelled = proj.phase === 'Cancelled';
                       const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0));
                       const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0));
                       return (
