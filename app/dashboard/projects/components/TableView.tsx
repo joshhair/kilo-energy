@@ -12,6 +12,7 @@ import { Search, Flag, X, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight, 
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { SearchableSelect } from '../../components/SearchableSelect';
 import { PhaseBadge, StaleBadge, PIPELINE_PHASES, relativeTime, type ProjectList } from './shared';
 
 // ─── Setter Popover ───────────────────────────────────────────────────────────
@@ -1041,18 +1042,19 @@ export default function TableView({
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
-            {/* Change Phase — dropdown to pick any target phase */}
-            <select
-              value={bulkPhaseTarget}
-              onChange={(e) => { if (e.target.value) handleBulkChangePhase(e.target.value as Phase); }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-[var(--border)]/60 border border-[var(--border)]/40 text-[var(--text-secondary)] rounded-xl px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] cursor-pointer hover:bg-[var(--text-dim)]/80 transition-colors"
-            >
-              <option value="">Change Phase...</option>
-              {PHASES.map((ph) => (
-                <option key={ph} value={ph}>{ph}</option>
-              ))}
-            </select>
+            {/* Change Phase — custom dropdown to pick any target phase. Uses
+                SearchableSelect (portaled, fully styled) instead of a native
+                <select>, whose OS-rendered option list can't be styled and
+                appears semi-transparent on Windows Chrome. */}
+            <div className="min-w-[180px]">
+              <SearchableSelect
+                value={bulkPhaseTarget}
+                onChange={(val) => { if (val) handleBulkChangePhase(val as Phase); }}
+                options={PHASES.map((ph) => ({ value: ph, label: ph }))}
+                placeholder="Change Phase..."
+                searchable={false}
+              />
+            </div>
 
             {/* Flag / Unflag toggle */}
             <button
