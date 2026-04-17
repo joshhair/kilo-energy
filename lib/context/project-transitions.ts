@@ -799,7 +799,7 @@ export function syncPayrollAmounts(
 
   const patches: Array<{ id: string; newAmount: number }> = [];
   const updatedEntries = prevEntries.map((e) => {
-    if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback') || (e.notes ?? '').startsWith('Co-setter')) return e;
+    if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback') || (e.notes ?? '').startsWith('Co-setter') || (e.notes ?? '').startsWith('Co-closer')) return e;
 
     // Trainer override entries have paymentStage === 'Trainer' and never match the
     // M1/M2/M3 stageAmountUpdates. Recompute from the rate embedded in their notes.

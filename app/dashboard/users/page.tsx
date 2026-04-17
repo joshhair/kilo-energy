@@ -349,7 +349,7 @@ function UsersPageInner() {
             phone: newPhone,
             role: newUserRole,
             // repType is only meaningful for rep accounts
-            repType: isRepRole ? newRepType : 'both',
+            repType: isRepRole ? newRepType : 'none',
           }),
         })
           .then(async (r) => {
@@ -669,7 +669,7 @@ function UsersPageInner() {
     () =>
       new Map(
         [...reps]
-          .filter((r) => r.active !== false && (repPaidAmounts.get(r.id) ?? 0) > 0)
+          .filter((r) => r.role === 'rep' && r.active !== false && (repPaidAmounts.get(r.id) ?? 0) > 0)
           .sort((a, b) => (repPaidAmounts.get(b.id) ?? 0) - (repPaidAmounts.get(a.id) ?? 0))
           .map((rep, idx) => [rep.id, idx + 1])
       ),
@@ -680,7 +680,7 @@ function UsersPageInner() {
   const topPerformers = useMemo(
     () =>
       [...reps]
-        .filter((r) => r.active !== false)
+        .filter((r) => r.role === 'rep' && r.active !== false)
         .map((rep) => ({ rep, paid: repPaidAmounts.get(rep.id) ?? 0 }))
         .filter(({ paid }) => paid > 0)
         .sort((a, b) => b.paid - a.paid)
