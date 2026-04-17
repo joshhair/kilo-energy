@@ -647,6 +647,44 @@ export function createM3Payroll(
     }
   }
 
+  // ── Co-closer M3 entries ──
+  for (const co of proj?.additionalClosers ?? []) {
+    const amount = co.m3Amount ?? 0;
+    if (amount <= 0) continue;
+    newEntries.push({
+      id: `pay_${ts}_m3_cc${co.position}`,
+      repId: co.userId,
+      repName: co.userName,
+      projectId,
+      customerName: old.customerName,
+      amount,
+      type: 'Deal',
+      paymentStage: 'M3',
+      status: 'Draft',
+      date: payDate,
+      notes: `Co-closer #${co.position}`,
+    });
+  }
+
+  // ── Co-setter M3 entries ──
+  for (const co of proj?.additionalSetters ?? []) {
+    const amount = co.m3Amount ?? 0;
+    if (amount <= 0) continue;
+    newEntries.push({
+      id: `pay_${ts}_m3_cs${co.position}`,
+      repId: co.userId,
+      repName: co.userName,
+      projectId,
+      customerName: old.customerName,
+      amount,
+      type: 'Deal',
+      paymentStage: 'M3',
+      status: 'Draft',
+      date: payDate,
+      notes: `Co-setter #${co.position}`,
+    });
+  }
+
   // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
   // Closer's trainer — gated by m3 > 0, which is 0 for sub-dealer deals.
   // Honors the per-project override before falling back to the tier chain.
@@ -761,7 +799,7 @@ export function syncPayrollAmounts(
 
   const patches: Array<{ id: string; newAmount: number }> = [];
   const updatedEntries = prevEntries.map((e) => {
-    if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback')) return e;
+    if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback') || (e.notes ?? '').startsWith('Co-setter')) return e;
 
     // Trainer override entries have paymentStage === 'Trainer' and never match the
     // M1/M2/M3 stageAmountUpdates. Recompute from the rate embedded in their notes.

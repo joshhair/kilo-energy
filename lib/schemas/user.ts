@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const repTypeEnum = z.enum(['closer', 'setter', 'both']).optional();
+const repTypeEnum = z.enum(['closer', 'setter', 'both']).nullable().optional();
 
 /** Partial patch schema for PATCH /api/users/[id]. All fields optional. */
 export const patchUserSchema = z.object({

@@ -8,7 +8,7 @@ export interface InternalUser {
   lastName: string;
   email: string;
   role: string; // 'admin' | 'rep' | 'sub-dealer' | 'project_manager'
-  repType: string;
+  repType: string | null;
   clerkUserId: string | null;
 }
 
