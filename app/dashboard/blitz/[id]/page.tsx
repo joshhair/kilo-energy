@@ -727,7 +727,7 @@ export default function BlitzDetailPage() {
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[var(--text-muted)] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const ccEntry = (p.additionalClosers ?? []).find((cc: any) => cc.userId === effectiveRepId); const csEntry = (p.additionalSetters ?? []).find((cs: any) => cs.userId === effectiveRepId); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (ccEntry ? (ccEntry.m1Amount ?? 0) + (ccEntry.m2Amount ?? 0) + (ccEntry.m3Amount ?? 0) : (csEntry ? (csEntry.m1Amount ?? 0) + (csEntry.m2Amount ?? 0) + (csEntry.m3Amount ?? 0) : 0)))); }, 0))}</p>
               </div>
             )}
           </div>
@@ -738,15 +738,15 @@ export default function BlitzDetailPage() {
               <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider mb-3">Your Blitz Summary</p>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length}</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Deal{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).length !== 1 ? 's' : ''} Attributed</p>
+                  <p className="text-2xl font-bold text-white">{visibleProjects.length}</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Deal{visibleProjects.length !== 1 ? 's' : ''} Attributed</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{visibleProjects.filter((p: any) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId).reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? p.kWSize : 0), 0).toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-white">{visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? p.kWSize : 0), 0).toFixed(1)}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                    <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); }, 0))}</p>
+                    <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const ccEntry = (p.additionalClosers ?? []).find((cc: any) => cc.userId === effectiveRepId); const csEntry = (p.additionalSetters ?? []).find((cs: any) => cs.userId === effectiveRepId); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (ccEntry ? (ccEntry.m1Amount ?? 0) + (ccEntry.m2Amount ?? 0) + (ccEntry.m3Amount ?? 0) : (csEntry ? (csEntry.m1Amount ?? 0) + (csEntry.m2Amount ?? 0) + (csEntry.m3Amount ?? 0) : 0)))); }, 0))}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">Projected Pay</p>
                 </div>
               </div>
