@@ -571,13 +571,11 @@ export function createInstallerActions(deps: InstallerDeps) {
     } else {
       // idMap not yet populated (e.g. POST response still in-flight) — look up by name
       const lookupRes = await fetch(`/api/installers?name=${encodeURIComponent(name)}`);
-      if (lookupRes.ok) {
-        const { id } = await lookupRes.json();
-        if (id) {
-          const delRes = await fetch(`/api/installers/${id}`, { method: 'DELETE' });
-          if (!delRes.ok) throw new Error(`Failed to delete installer: ${delRes.status}`);
-        }
-      }
+      if (!lookupRes.ok) throw new Error(`Failed to look up installer: ${lookupRes.status}`);
+      const { id } = await lookupRes.json();
+      if (!id) throw new Error(`Installer not found: ${name}`);
+      const delRes = await fetch(`/api/installers/${id}`, { method: 'DELETE' });
+      if (!delRes.ok) throw new Error(`Failed to delete installer: ${delRes.status}`);
     }
 
     setInstallers((prev) => prev.filter((i) => i.name !== name));
