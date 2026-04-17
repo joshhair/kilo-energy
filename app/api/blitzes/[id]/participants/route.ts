@@ -23,8 +23,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
-  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true } });
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, status: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
+  if (blitz.status === 'cancelled' || blitz.status === 'completed') {
+    return NextResponse.json({ error: 'Cannot join a cancelled or completed blitz' }, { status: 409 });
+  }
   if (caller.role !== 'admin' && caller.id !== blitz.ownerId && caller.id !== body.userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

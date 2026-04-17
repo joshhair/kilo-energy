@@ -26,6 +26,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // If approving a cancellation request, also cancel the blitz and unlink projects
     if (body.status === 'approved' && updated.type === 'cancel' && updated.blitzId) {
+      const currentBlitz = await tx.blitz.findUnique({ where: { id: updated.blitzId }, select: { status: true } });
+      if (!currentBlitz || !['upcoming', 'active'].includes(currentBlitz.status)) {
+        throw new Error(`Cannot cancel blitz in '${currentBlitz?.status ?? 'unknown'}' status`);
+      }
       await tx.blitz.update({
         where: { id: updated.blitzId },
         data: { status: 'cancelled' },

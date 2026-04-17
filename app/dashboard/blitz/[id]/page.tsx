@@ -280,7 +280,7 @@ export default function BlitzDetailPage() {
   //
   // Payout formula (unchanged from the original per-row computation):
   //   closer + setter are SAME person (self-gen via blitz):
-  //       full amount (m1 + m2 + m3 + setterM2 + setterM3)
+  //       full amount (m1 + m2 + m3 + setterM1 + setterM2 + setterM3)
   //   person is the setter (but not closer):
   //       setterM1 + setterM2 + setterM3
   //   person is the closer (with a separate setter):
@@ -535,6 +535,7 @@ export default function BlitzDetailPage() {
       });
       if (res.ok) {
         toast('Cancellation request submitted for admin approval');
+        loadBlitz();
       } else {
         toast('Failed to submit cancellation request', 'error');
       }

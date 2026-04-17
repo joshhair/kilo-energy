@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
     if (blitz.status !== 'upcoming' && blitz.status !== 'active') {
       return NextResponse.json({ error: 'Cannot request cancellation of a blitz that is not upcoming or active' }, { status: 400 });
     }
+    const existing = await prisma.blitzRequest.findFirst({
+      where: { blitzId: body.blitzId, type: 'cancel', status: 'pending' },
+    });
+    if (existing) {
+      return NextResponse.json({ error: 'A cancellation request for this blitz is already pending' }, { status: 409 });
+    }
   }
 
   const request = await prisma.blitzRequest.create({
