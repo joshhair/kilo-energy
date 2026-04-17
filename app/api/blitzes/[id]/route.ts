@@ -48,10 +48,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  // Non-admins: strip other reps' financial data from projects + hide costs.
+  // Non-admins (except blitz owner): strip other reps' financial data from projects + hide costs.
   // Using `as unknown as` tightens the cast vs `any` — explicit about what
   // shape we're forcing, and only the fields we actually mutate.
-  if (user.role !== 'admin') {
+  const isBlitzOwner = blitz.ownerId === user.id;
+  if (user.role !== 'admin' && !isBlitzOwner) {
     (blitz as unknown as { costs: unknown[] }).costs = [];
     for (const p of blitz.projects) {
       const isMyDeal = p.closerId === user.id || p.setterId === user.id;
@@ -135,10 +136,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
-  // Non-admins: strip other reps' financial data from projects + hide costs.
+  // Non-admins (except blitz owner): strip other reps' financial data from projects + hide costs.
   // Using `as unknown as` tightens the cast vs `any` — explicit about what
   // shape we're forcing, and only the fields we actually mutate.
-  if (user.role !== 'admin') {
+  const isBlitzOwnerPatch = blitz.ownerId === user.id;
+  if (user.role !== 'admin' && !isBlitzOwnerPatch) {
     (blitz as unknown as { costs: unknown[] }).costs = [];
     for (const p of blitz.projects) {
       const isMyDeal = p.closerId === user.id || p.setterId === user.id;
