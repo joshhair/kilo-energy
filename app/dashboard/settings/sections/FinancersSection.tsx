@@ -109,8 +109,8 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
             <div className="flex items-center gap-2 mb-2 px-1">
               <button
                 onClick={() => {
-                  if (filteredActiveFinancers.every((f) => selectedFinancers.has(f.name))) setSelectedFinancers(new Set());
-                  else setSelectedFinancers(new Set(filteredActiveFinancers.map((f) => f.name)));
+                  if (filteredActiveFinancers.every((f) => selectedFinancers.has(f.name))) setSelectedFinancers(prev => { const next = new Set(prev); filteredActiveFinancers.forEach(f => next.delete(f.name)); return next; });
+                  else setSelectedFinancers(prev => { const next = new Set(prev); filteredActiveFinancers.forEach(f => next.add(f.name)); return next; });
                 }}
                 className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
               >

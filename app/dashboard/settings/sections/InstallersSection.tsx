@@ -208,12 +208,12 @@ export function InstallersSection({
             <div className="flex items-center gap-2 mb-2 px-1">
               <button
                 onClick={() => {
-                  if (selectedInstallers.size === filteredActive.length) setSelectedInstallers(new Set());
+                  if (filteredActive.every((i) => selectedInstallers.has(i.name))) setSelectedInstallers(new Set());
                   else setSelectedInstallers(new Set(filteredActive.map((i) => i.name)));
                 }}
                 className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
               >
-                {selectedInstallers.size === filteredActive.length
+                {filteredActive.every((i) => selectedInstallers.has(i.name))
                   ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-green)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
