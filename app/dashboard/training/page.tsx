@@ -26,6 +26,7 @@ import {
   GraduationCap,
   DollarSign,
   Users,
+  User,
   TrendingUp,
   BarChart2,
   Search,
@@ -836,7 +837,7 @@ function TrainingPageInner() {
                               onClick={() => setOpenMenuId(null)}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
                             >
-                              <Pencil className="w-3.5 h-3.5" /> Edit assignment
+                              <User className="w-3.5 h-3.5" /> View trainee profile
                             </Link>
                             {a.isActiveTraining === false ? (
                               <button
@@ -1315,7 +1316,7 @@ function ActiveTraineeCard({
 }: {
   data: {
     assignment: TrainerAssignment; traineeId: string; traineeName: string; traineeRole: string;
-    dealCount: number; currentRate: number; activeTierIndex: number; nextThreshold: number | null;
+    dealCount: number; consumedDeals: number; currentRate: number; activeTierIndex: number; nextThreshold: number | null;
     earningsFromTrainee: number; status: AdminStatus; projects: Project[];
   };
   idx: number;
@@ -1323,11 +1324,11 @@ function ActiveTraineeCard({
   onOpenProject: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { assignment: t, traineeName, traineeRole, dealCount, currentRate, activeTierIndex, nextThreshold, projects, status } = data;
+  const { assignment: t, traineeName, traineeRole, dealCount, consumedDeals, currentRate, activeTierIndex, nextThreshold, projects, status } = data;
 
   const prevThreshold = activeTierIndex > 0 ? t.tiers[activeTierIndex - 1].upToDeal ?? 0 : 0;
   const progressMax = nextThreshold ? nextThreshold - prevThreshold : 1;
-  const progressVal = nextThreshold ? Math.min(dealCount - prevThreshold, progressMax) : 1;
+  const progressVal = nextThreshold ? Math.min(consumedDeals - prevThreshold, progressMax) : 1;
   const progressPct = Math.round((progressVal / progressMax) * 100);
 
   const roleBadgeColor =
@@ -1384,7 +1385,7 @@ function ActiveTraineeCard({
             Tier {activeTierIndex + 1}: ${currentRate.toFixed(2)}/W
           </span>
           {nextThreshold ? (
-            <span className="text-[var(--text-muted)] text-[10px]">{dealCount}/{nextThreshold} deals</span>
+            <span className="text-[var(--text-muted)] text-[10px]">{consumedDeals}/{nextThreshold} deals</span>
           ) : (
             <span className="text-[var(--text-muted)] text-[10px]">Final tier</span>
           )}
@@ -1429,18 +1430,18 @@ function ResidualTraineeCard({
 }: {
   data: {
     assignment: TrainerAssignment; traineeId: string; traineeName: string;
-    dealCount: number; currentRate: number; activeTierIndex: number; nextThreshold: number | null;
+    dealCount: number; consumedDeals: number; currentRate: number; activeTierIndex: number; nextThreshold: number | null;
     earningsFromTrainee: number; status: AdminStatus;
   };
   idx: number;
   recentEntries: PayrollEntry[];
   onResume: () => void;
 }) {
-  const { assignment: t, traineeName, dealCount, currentRate, activeTierIndex, nextThreshold, earningsFromTrainee, status } = data;
+  const { assignment: t, traineeName, consumedDeals, currentRate, activeTierIndex, nextThreshold, earningsFromTrainee, status } = data;
 
   const prevThreshold = activeTierIndex > 0 ? t.tiers[activeTierIndex - 1].upToDeal ?? 0 : 0;
   const progressMax = nextThreshold ? nextThreshold - prevThreshold : 1;
-  const progressVal = nextThreshold ? Math.min(dealCount - prevThreshold, progressMax) : 1;
+  const progressVal = nextThreshold ? Math.min(consumedDeals - prevThreshold, progressMax) : 1;
   const progressPct = Math.round((progressVal / progressMax) * 100);
 
   return (
@@ -1494,7 +1495,7 @@ function ResidualTraineeCard({
               />
             </div>
             <span className="text-[10px] text-[var(--text-muted)] tabular-nums">
-              {nextThreshold ? `${dealCount}/${nextThreshold}` : '∞'}
+              {nextThreshold ? `${consumedDeals}/${nextThreshold}` : '∞'}
             </span>
           </div>
         </div>
