@@ -35,7 +35,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
+    <ClerkProvider appearance={{
+      baseTheme: dark,
+      variables: {
+        colorPrimary: '#00e5a0',
+        colorTextOnPrimaryBackground: '#050d18',
+      },
+      elements: {
+        formButtonPrimary:
+          'bg-gradient-to-r from-[#1de9b6] to-[#00b894] text-[#050d18] font-semibold hover:opacity-90 transition-opacity',
+      },
+    }}>
       <html lang="en" className="h-full">
         {/* NOTE: deliberately NOT using Tailwind's `antialiased` class here.
              That utility applies -webkit-font-smoothing:antialiased which
