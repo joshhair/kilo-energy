@@ -836,7 +836,9 @@ function RepEarningsView() {
                         <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap">{stage}</span></td>
                         <td className="px-5 py-3 text-xs">
                           {isReim ? <span className="text-violet-400">Reimb.</span>
-                            : role === 'Setter' || role.startsWith('Co-setter') ? <span className="text-[var(--accent-green)]">Setter</span>
+                            : role.startsWith('Co-setter') ? <span className="text-sky-400">Co-setter</span>
+                            : role === 'Setter' ? <span className="text-[var(--accent-green)]">Setter</span>
+                            : role.startsWith('Co-closer') ? <span className="text-sky-400">Co-closer</span>
                             : role.startsWith('Trainer override') ? <span className="text-amber-400">Trainer</span>
                             : <span className="text-[var(--accent-green)]">Closer</span>}
                         </td>

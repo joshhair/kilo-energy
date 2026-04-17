@@ -180,7 +180,7 @@ function ProjectsPageInner() {
       return;
     }
     const cancelProject = projects.find((p) => p.id === cancelReasonModal.projectId);
-    if (isRep && cancelProject?.repId !== effectiveRepId && cancelProject?.setterId !== effectiveRepId) { toast('You can only update your own projects.', 'error'); setCancelReasonModal(null); return; }
+    if (isRep && cancelProject?.repId !== effectiveRepId && cancelProject?.setterId !== effectiveRepId && !cancelProject?.additionalClosers?.some((c) => c.userId === effectiveRepId) && !cancelProject?.additionalSetters?.some((s) => s.userId === effectiveRepId)) { toast('You can only update your own projects.', 'error'); setCancelReasonModal(null); return; }
     updateProject(cancelReasonModal.projectId, {
       phase: 'Cancelled',
       cancellationReason: cancelReason || undefined,

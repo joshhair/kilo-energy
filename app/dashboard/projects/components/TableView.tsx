@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
 import { useTableKeyNav } from '../../../../lib/hooks';
-import { PHASES, Phase, Rep, TrainerAssignment } from '../../../../lib/data';
+import { PHASES, Phase, Rep, TrainerAssignment, ProjectAdditionalParty } from '../../../../lib/data';
 import { formatDate, downloadCSV } from '../../../../lib/utils';
 import { Search, Flag, X, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight, UserPlus, ArrowLeftRight, Check, ArrowRight, Download } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
@@ -22,6 +22,7 @@ function SetterPopover({
   customerName,
   currentSetterId,
   currentSetterName,
+  additionalSetters,
   reps,
   trainerAssignments,
   setProjects,
@@ -31,6 +32,7 @@ function SetterPopover({
   customerName: string;
   currentSetterId?: string;
   currentSetterName?: string;
+  additionalSetters?: ProjectAdditionalParty[];
   reps: Rep[];
   trainerAssignments: TrainerAssignment[];
   setProjects: React.Dispatch<React.SetStateAction<ProjectList>>;
