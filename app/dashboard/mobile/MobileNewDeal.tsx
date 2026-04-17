@@ -406,7 +406,7 @@ export default function MobileNewDeal() {
     return { closerTotal: closerDifferential + half, setterTotal: aboveSplit - half };
   })();
 
-  const kiloTotal = calculateCommission(closerPerW, kiloPerW, kW);
+  const kiloTotal = calculateCommission(soldPPW, kiloPerW, kW);
 
   const m1Flat = kW >= 5 ? 1000 : 500;
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;

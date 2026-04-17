@@ -1046,7 +1046,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
   const closerEntries = projectEntries.filter((e) => e.repId === project.repId);
   const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId) : [];
-  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e));
+  const coCloserIds = new Set((project.additionalClosers ?? []).map((c) => c.userId));
+  const coSetterIds = new Set((project.additionalSetters ?? []).map((c) => c.userId));
+  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e) && !coCloserIds.has(e.repId) && !coSetterIds.has(e.repId));
 
   // Resolved baseline rates for this project
   const projectBaselines = (() => {
@@ -1756,7 +1758,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <SearchableSelect
                   value={editVals.financer}
                   onChange={(val) => setEditVals((v) => ({ ...v, financer: val }))}
-                  options={(activeFinancers.includes(editVals.financer) || !editVals.financer ? activeFinancers : [editVals.financer, ...activeFinancers]).filter((fin) => fin !== 'Cash').map((fin) => ({ value: fin, label: fin }))}
+                  options={(activeFinancers.includes(editVals.financer) || !editVals.financer ? activeFinancers : [editVals.financer, ...activeFinancers]).filter((fin) => fin !== 'Cash' || editVals.productType === 'Cash').map((fin) => ({ value: fin, label: fin }))}
                   placeholder="Select financer…"
                 />
               </div>
