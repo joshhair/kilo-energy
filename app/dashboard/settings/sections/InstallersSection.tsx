@@ -396,7 +396,9 @@ export function InstallersSection({
                   {/* Expandable pay schedule panel */}
                   {payScheduleExpanded === inst.name && (() => {
                     const currentPct = installerPayConfigs[inst.name]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-                    const remainder = 100 - currentPct;
+                    const parsedEditPct = parseInt(editPayPct);
+                    const previewPct = !isNaN(parsedEditPct) && parsedEditPct >= 0 && parsedEditPct <= 100 ? parsedEditPct : currentPct;
+                    const remainder = 100 - previewPct;
                     return (
                       <div className="px-4 pb-4 pt-1 border-t border-[var(--border-subtle)]/50">
                         <p className="text-xs font-semibold text-[var(--accent-green)]/80 uppercase tracking-wider mb-2">Pay Schedule</p>
@@ -422,7 +424,7 @@ export function InstallersSection({
                           </div>
                           <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                             <p className="text-xs text-[var(--text-secondary)] font-medium">
-                              M2: <span className="text-[var(--accent-green)]">{currentPct}%</span> at Install
+                              M2: <span className="text-[var(--accent-green)]">{previewPct}%</span> at Install
                               <span className="text-[var(--text-dim)] mx-1.5">&middot;</span>
                               M3: <span className="text-[var(--accent-green)]">{remainder}%</span> at PTO
                             </p>

@@ -65,7 +65,7 @@ export function TrainersSection({
   const enrichedRows = useMemo(() => trainerAssignments.map((a) => {
     const trainee = reps.find((r) => r.id === a.traineeId);
     const trainer = reps.find((r) => r.id === a.trainerId);
-    const completedDeals = projects.filter((p) => (p.repId === a.traineeId || p.setterId === a.traineeId) && ['Installed', 'PTO', 'Completed'].includes(p.phase)).length;
+    const completedDeals = projects.filter((p) => (p.repId === a.traineeId || p.setterId === a.traineeId || (p.additionalClosers ?? []).some((c) => c.userId === a.traineeId) || (p.additionalSetters ?? []).some((s) => s.userId === a.traineeId)) && ['Installed', 'PTO', 'Completed'].includes(p.phase)).length;
     const currentRate = getTrainerOverrideRate(a, completedDeals);
     const activeTierIndex = a.tiers.findIndex((t) => t.upToDeal === null || completedDeals < t.upToDeal);
     const tierLabel = activeTierIndex >= 0 ? `Tier ${activeTierIndex + 1} of ${a.tiers.length}` : `Tier ${a.tiers.length}`;
