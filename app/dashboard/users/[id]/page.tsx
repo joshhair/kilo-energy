@@ -789,7 +789,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       return s + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
     }
   }, 0);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayLocalDateStr();
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending = repPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
@@ -1059,8 +1059,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         const closerDealCount = projects.filter((p) => p.repId === id).length;
         const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id).length;
         const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId)).size;
-        const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer');
-        const setterEntries = repPayroll.filter((e) => e.notes === 'Setter');
+        const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && !e.notes?.startsWith('Co-setter') && e.paymentStage !== 'Trainer');
+        const setterEntries = repPayroll.filter((e) => e.notes === 'Setter' || e.notes?.startsWith('Co-setter'));
         const trainerEntries = repPayroll.filter((e) => e.paymentStage === 'Trainer');
         const bonusEntries = repPayroll.filter((e) => e.type !== 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer');
         const sum = (arr: typeof repPayroll) => arr.reduce((s, e) => s + e.amount, 0);

@@ -377,7 +377,7 @@ function NewDealPage() {
   );
 
   const currentTierIndex = setterAssignment
-    ? setterAssignment.tiers.findIndex((t) => t.upToDeal === null || setterCompletedDeals <= t.upToDeal)
+    ? setterAssignment.tiers.findIndex((t) => t.upToDeal === null || setterCompletedDeals < t.upToDeal)
     : -1;
   const currentTier = currentTierIndex >= 0 ? setterAssignment!.tiers[currentTierIndex] : null;
   const nextTier = currentTierIndex >= 0 ? setterAssignment!.tiers[currentTierIndex + 1] : null;
