@@ -117,6 +117,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { blitzId, setterId: body.userId, closerId: { notIn: approvedIds } },
       data: { blitzId: null },
     });
+    // Also unlink deals where the user is only an additionalCloser or additionalSetter
+    const coRoleProjectsPatch = await prisma.project.findMany({
+      where: { blitzId, OR: [{ additionalClosers: { some: { userId: body.userId } } }, { additionalSetters: { some: { userId: body.userId } } }] },
+      select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+    });
+    for (const project of coRoleProjectsPatch) {
+      const involvedIds = [project.closerId, project.setterId, ...project.additionalClosers.map(c => c.userId), ...project.additionalSetters.map(s => s.userId)].filter((id): id is string => id !== null);
+      if (!involvedIds.some(id => approvedIds.includes(id))) {
+        await prisma.project.update({ where: { id: project.id }, data: { blitzId: null } });
+      }
+    }
   }
 
   return NextResponse.json(updated);
@@ -161,6 +172,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     where: { blitzId, setterId: userId, closerId: { notIn: approvedIds } },
     data: { blitzId: null },
   });
+  // Also unlink deals where the user is only an additionalCloser or additionalSetter
+  const coRoleProjectsDelete = await prisma.project.findMany({
+    where: { blitzId, OR: [{ additionalClosers: { some: { userId } } }, { additionalSetters: { some: { userId } } }] },
+    select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+  });
+  for (const project of coRoleProjectsDelete) {
+    const involvedIds = [project.closerId, project.setterId, ...project.additionalClosers.map(c => c.userId), ...project.additionalSetters.map(s => s.userId)].filter((id): id is string => id !== null);
+    if (!involvedIds.some(id => approvedIds.includes(id))) {
+      await prisma.project.update({ where: { id: project.id }, data: { blitzId: null } });
+    }
+  }
 
   return NextResponse.json({ success: true });
 }

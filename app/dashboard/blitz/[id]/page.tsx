@@ -184,8 +184,11 @@ export default function BlitzDetailPage() {
           const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
           const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
           const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id);
+          const ccTotal = (p.additionalClosers ?? []).filter((cc: any) => approvedParticipantIds.has(cc.userId)).reduce((s: number, cc: any) => s + (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0), 0);
+          const csTotal = (p.additionalSetters ?? []).filter((cs: any) => approvedParticipantIds.has(cs.userId)).reduce((s: number, cs: any) => s + (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0), 0);
           return (closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0)
-            + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
+            + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)
+            + ccTotal + csTotal;
         };
         av = calcPayout(a); bv = calcPayout(b);
       }
@@ -1068,13 +1071,13 @@ export default function BlitzDetailPage() {
                         <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-[var(--accent-cyan)] transition-colors">{p.customerName}</Link>
                       </td>
                       <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id ? <Link href={`/dashboard/users/${p.closer.id}`} className="hover:text-[var(--accent-cyan)] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
-                      {!isAdmin && !isOwner && <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id === effectiveRepId && p.setter?.id === effectiveRepId ? 'Self-gen' : p.closer?.id === effectiveRepId || p.additionalClosers?.some((c: any) => c.id === effectiveRepId) ? 'Closer' : 'Setter'}</td>}
+                      {!isAdmin && !isOwner && <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id === effectiveRepId && p.setter?.id === effectiveRepId ? 'Self-gen' : p.closer?.id === effectiveRepId || p.additionalClosers?.some((c: any) => c.userId === effectiveRepId) ? 'Closer' : 'Setter'}</td>}
                       <td className="px-4 py-3">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-[var(--surface-card)]/40 text-[var(--text-secondary)] border-[var(--border)]/30'}`}>{p.phase}</span>
                       </td>
                       <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{p.kWSize.toFixed(1)}</td>
                       <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'ppw' ? ' bg-[var(--surface-card)]/20' : '')}>${p.netPPW.toFixed(2)}</td>
-                      {isAdmin && <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{(() => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id); return formatCurrency((closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0) + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0)); })()}</td>}
+                      {isAdmin && <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{(() => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id); const ccTotal = (p.additionalClosers ?? []).filter((cc: any) => approvedParticipantIds.has(cc.userId)).reduce((s: number, cc: any) => s + (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0), 0); const csTotal = (p.additionalSetters ?? []).filter((cs: any) => approvedParticipantIds.has(cs.userId)).reduce((s: number, cs: any) => s + (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0), 0); return formatCurrency((closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0) + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0) + ccTotal + csTotal); })()}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -1083,7 +1086,7 @@ export default function BlitzDetailPage() {
                     <td colSpan={!isAdmin && !isOwner ? 4 : 3} className="px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]">{sortedDeals.length} deal{sortedDeals.length !== 1 ? 's' : ''}</td>
                     <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{totalKW.toFixed(1)} kW</td>
                     <td className="px-4 py-3 text-right text-sm text-[var(--text-muted)]">—</td>
-                    {isAdmin && <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{formatCurrency(approvedVisibleProjects.reduce((s: number, p: any) => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id); return s + (closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0) + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0); }, 0))}</td>}
+                    {isAdmin && <td className={'px-4 py-3 text-right text-sm font-bold text-white tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{formatCurrency(approvedVisibleProjects.reduce((s: number, p: any) => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id); const ccTotal = (p.additionalClosers ?? []).filter((cc: any) => approvedParticipantIds.has(cc.userId)).reduce((ss: number, cc: any) => ss + (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0), 0); const csTotal = (p.additionalSetters ?? []).filter((cs: any) => approvedParticipantIds.has(cs.userId)).reduce((ss: number, cs: any) => ss + (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0), 0); return s + (closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0) + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0) + ccTotal + csTotal; }, 0))}</td>}
                   </tr>
                 </tfoot>
               </table>
