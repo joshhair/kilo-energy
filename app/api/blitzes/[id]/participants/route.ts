@@ -108,9 +108,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       select: { userId: true },
     });
     const approvedIds = approvedAfterPatch.map(p => p.userId);
-    // Only unlink deals where the co-participant is also not an approved participant
+    // Only unlink deals where no remaining approved party is on the deal
     await prisma.project.updateMany({
-      where: { blitzId, closerId: body.userId, OR: [{ setterId: null }, { setterId: { notIn: approvedIds } }] },
+      where: {
+        blitzId,
+        closerId: body.userId,
+        OR: [{ setterId: null }, { setterId: { notIn: approvedIds } }],
+        additionalClosers: { none: { userId: { in: approvedIds } } },
+        additionalSetters: { none: { userId: { in: approvedIds } } },
+      },
       data: { blitzId: null },
     });
     await prisma.project.updateMany({
@@ -158,14 +164,20 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   await prisma.blitzParticipant.deleteMany({ where: { blitzId, userId } });
 
-  // Only unlink deals where the co-participant is also not an approved participant
+  // Only unlink deals where no remaining approved party is on the deal
   const approvedAfterDelete = await prisma.blitzParticipant.findMany({
     where: { blitzId, joinStatus: 'approved' },
     select: { userId: true },
   });
   const approvedIds = approvedAfterDelete.map(p => p.userId);
   await prisma.project.updateMany({
-    where: { blitzId, closerId: userId, OR: [{ setterId: null }, { setterId: { notIn: approvedIds } }] },
+    where: {
+      blitzId,
+      closerId: userId,
+      OR: [{ setterId: null }, { setterId: { notIn: approvedIds } }],
+      additionalClosers: { none: { userId: { in: approvedIds } } },
+      additionalSetters: { none: { userId: { in: approvedIds } } },
+    },
     data: { blitzId: null },
   });
   await prisma.project.updateMany({

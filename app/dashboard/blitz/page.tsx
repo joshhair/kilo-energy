@@ -111,7 +111,9 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
   const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   const visibleProjects = (isAdmin || currentUserId === blitz.owner.id)
-    ? activeProjects.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
+    ? activeProjects.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+        || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+        || p.additionalSetters?.some((as) => approvedIds.has(as.userId)))
     : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId
         || p.additionalClosers?.some((ac) => ac.userId === currentUserId)
         || p.additionalSetters?.some((as) => as.userId === currentUserId));
@@ -120,11 +122,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
     const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
     return s + (isSelfGen || closerApproved ? p.kWSize : 0);
   }, 0);
-  const totalDeals = visibleProjects.filter((p) => {
-    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-    const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-    return isSelfGen || closerApproved;
-  }).length;
+  const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
   const myParticipation = currentUserId ? blitz.participants.find((p) => p.user.id === currentUserId) : null;
@@ -597,7 +595,9 @@ function BlitzPageInner() {
           const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
           const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
           return (isAdmin || effectiveRepId === blitz.owner.id)
-            ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
+            ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+                || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+                || p.additionalSetters?.some((as) => approvedIds.has(as.userId)))
             : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
                 || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
                 || p.additionalSetters?.some((as) => as.userId === effectiveRepId));
@@ -610,7 +610,9 @@ function BlitzPageInner() {
           const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
           const active = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
           const visible = (isAdmin || effectiveRepId === blitz.owner.id)
-            ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? ''))
+            ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+                || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+                || p.additionalSetters?.some((as) => approvedIds.has(as.userId)))
             : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
                 || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
                 || p.additionalSetters?.some((as) => as.userId === effectiveRepId));
