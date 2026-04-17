@@ -124,9 +124,12 @@ export function NeedsAttentionSection({
     if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
-    if (!proj.soldDate) continue;
-    const [sy, sm, sd] = proj.soldDate.split('-').map(Number);
-    const phaseSince = new Date(sy, sm - 1, sd);
+    const phaseSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
+      if (!proj.soldDate) return null;
+      const [sy, sm, sd] = proj.soldDate.split('-').map(Number);
+      return new Date(sy, sm - 1, sd);
+    })();
+    if (!phaseSince) continue;
     const diffDays = Math.floor((today.getTime() - phaseSince.getTime()) / 86_400_000);
     if (diffDays > threshold) {
       items.push({

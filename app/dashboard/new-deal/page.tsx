@@ -789,8 +789,12 @@ function NewDealPage() {
   const _now = new Date();
   const _today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
   const _monthPrefix = _today.slice(0, 7);
-  const monthCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_monthPrefix) && (p.repId === effectiveRepId || p.setterId === effectiveRepId)).length;
-  const todayCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_today) && (p.repId === effectiveRepId || p.setterId === effectiveRepId)).length;
+  const _isMyDeal = (p: { repId?: string | null; setterId?: string | null; additionalClosers?: { userId: string }[]; additionalSetters?: { userId: string }[] }) =>
+    p.repId === effectiveRepId || p.setterId === effectiveRepId ||
+    p.additionalClosers?.some((c) => c.userId === effectiveRepId) ||
+    p.additionalSetters?.some((s) => s.userId === effectiveRepId);
+  const monthCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_monthPrefix) && _isMyDeal(p)).length;
+  const todayCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_today) && _isMyDeal(p)).length;
 
   return (
     <div className="p-4 md:p-8" style={{ maxWidth: 1100, margin: '0 auto' }}>
