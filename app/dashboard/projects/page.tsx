@@ -115,10 +115,10 @@ function ProjectsPageInner() {
   // Admins see everything; reps ONLY see their own deals; sub-dealers see their sub-dealer deals.
   const visibleProjects =
     effectiveRole === 'admin' || effectiveRole === 'project_manager'
-      ? (dealScope === 'mine' ? projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId) : projects)
+      ? (dealScope === 'mine' ? projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId || p.additionalClosers?.some((c) => c.userId === effectiveRepId) || p.additionalSetters?.some((s) => s.userId === effectiveRepId)) : projects)
       : isSubDealer
         ? projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
-        : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
+        : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId || p.additionalClosers?.some((c) => c.userId === effectiveRepId) || p.additionalSetters?.some((s) => s.userId === effectiveRepId));
 
   const statusFiltered = applyStatusFilter(visibleProjects, statusFilter);
 
