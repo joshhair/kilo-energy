@@ -1317,8 +1317,9 @@ function PayrollPageInner() {
                   value={paymentForm.projectId}
                   onChange={(val) => setPaymentForm((p) => ({ ...p, projectId: val }))}
                   options={projects
+                    .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
                     .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
-                    .map((p) => ({ value: p.id, label: `${p.customerName} — ${p.installer} (${p.kWSize} kW)` }))}
+                    .map((p) => ({ value: p.id, label: `${p.customerName} — ${p.installer} (${p.kWSize} kW) [${p.phase}]` }))}
                   placeholder="— Select project (optional) —"
                 />
               </div>

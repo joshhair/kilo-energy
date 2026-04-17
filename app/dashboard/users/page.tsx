@@ -705,7 +705,7 @@ function UsersPageInner() {
       case 'active': arr.sort((a, b) => (activeDealsByRep.get(b.id) ?? 0) - (activeDealsByRep.get(a.id) ?? 0)); break;
       case 'deals': {
         const dealsByRep = new Map<string, number>();
-        for (const p of projects.filter(p => !PIPELINE_EXCLUDED.has(p.phase))) {
+        for (const p of projects) {
           if (p.repId)                       dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
           if (p.setterId && p.setterId !== p.repId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
         }
@@ -1571,7 +1571,7 @@ function UsersPageInner() {
           const activeCount = repProjects.filter(
             (p) => !PIPELINE_EXCLUDED.has(p.phase)
           ).length;
-          const totalKW = repProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
+          const totalKW = repProjects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0);
           const initials = rep.name.split(' ').map((n) => n[0]).join('');
           const rank = rankMap.get(rep.id) ?? 999;
 
@@ -1679,7 +1679,7 @@ function UsersPageInner() {
                       </p>
                       {canManageReps ? (
                         <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); const nextRole = ROLE_NEXT[rep.repType]; updateRepType(rep.id, nextRole); }}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); const nextRole = ROLE_NEXT[rep.repType]; setConfirmAction({ title: `Change ${rep.name}'s role?`, message: `This will change their rep type from ${ROLE_LABELS[rep.repType]} to ${ROLE_LABELS[nextRole]}.`, confirmLabel: 'Change Role', onConfirm: async () => { setConfirmAction(null); updateRepType(rep.id, nextRole); } }); }}
                           title="Click to cycle role"
                           className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${ROLE_BADGE_CLS[rep.repType]} ${ROLE_BADGE_HOVER[rep.repType]}`}
                           style={ROLE_BADGE_STYLES[rep.repType]}
