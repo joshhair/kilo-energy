@@ -775,9 +775,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const skippedToInstalled = newPhase === 'PTO' && !['Installed', 'PTO', 'Completed'].includes(old.phase);
       const isInstalled = (newPhase === 'Installed' && old.phase !== 'Installed') || skippedToInstalled;
       const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
-      // True when a phase jump to Installed/PTO skips over Acceptance entirely (only
-      // possible from 'New', the sole pre-Acceptance phase in the pipeline).
-      const skippedAcceptance = isInstalled && old.phase === 'New' && !isSubDealerDeal;
+      // True when a phase jump to Installed/PTO skips over Acceptance entirely.
+      // Pre-Acceptance phases: New, On Hold (reachable from New before Acceptance).
+      const skippedAcceptance = isInstalled && ['New', 'On Hold'].includes(old.phase) && !isSubDealerDeal;
 
       // Tracks M2 entries created in this transition so createM3Payroll can see them
       // even before payrollEntriesRef.current is updated (relevant on phase-skip to PTO).
@@ -847,7 +847,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    setProjects(updated);
+    const finalUpdatedProject = updated.find((p) => p.id === id)!;
+    setProjects((prev) => prev.map((p) => p.id === id ? finalUpdatedProject : p));
 
     // ── 6. Amount sync: patch Draft/Pending entries when amounts are edited ──
     const hasAmountUpdates = updates.m1Amount !== undefined || updates.m2Amount !== undefined

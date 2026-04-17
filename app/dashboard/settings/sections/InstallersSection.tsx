@@ -208,8 +208,8 @@ export function InstallersSection({
             <div className="flex items-center gap-2 mb-2 px-1">
               <button
                 onClick={() => {
-                  if (filteredActive.every((i) => selectedInstallers.has(i.name))) setSelectedInstallers(new Set());
-                  else setSelectedInstallers(new Set(filteredActive.map((i) => i.name)));
+                  if (filteredActive.every((i) => selectedInstallers.has(i.name))) setSelectedInstallers(prev => { const next = new Set(prev); filteredActive.forEach(i => next.delete(i.name)); return next; });
+                  else setSelectedInstallers(prev => { const next = new Set(prev); filteredActive.forEach(i => next.add(i.name)); return next; });
                 }}
                 className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
               >

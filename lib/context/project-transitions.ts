@@ -368,10 +368,10 @@ export function createMilestonePayroll(
   // so setter-trainer resolution always passes {trainerId:null,trainerRate:null}
   // to route through the tier chain.
   let setterM2TrainerDeduction = 0;
-  if (isInstalled && old.setterId) {
+  if (isInstalled && freshProject.setterId) {
     const res = resolveTrainerRate(
       { id: projectId, trainerId: null, trainerRate: null },
-      old.setterId,
+      freshProject.setterId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
@@ -381,12 +381,12 @@ export function createMilestonePayroll(
   }
 
   // Setter entry (M2 at Installed — setterM2Amount is already post-installPayPct)
-  if (old.setterId && isInstalled && (freshProject.setterM2Amount ?? 0) > 0) {
-    const setterRep = deps.repsRef.current.find((r) => r.id === old.setterId);
+  if (freshProject.setterId && isInstalled && (freshProject.setterM2Amount ?? 0) > 0) {
+    const setterRep = deps.repsRef.current.find((r) => r.id === freshProject.setterId);
     newEntries.push({
       id: `pay_${ts}_m2_s`,
-      repId: old.setterId,
-      repName: setterRep?.name ?? old.setterName ?? '',
+      repId: freshProject.setterId,
+      repName: setterRep?.name ?? freshProject.setterName ?? '',
       projectId,
       customerName: old.customerName,
       amount: Math.max(0, freshProject.setterM2Amount! - setterM2TrainerDeduction),

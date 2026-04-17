@@ -124,10 +124,13 @@ export function NeedsAttentionSection({
     if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
-    if (!proj.soldDate) continue;
-    const [y, m, d] = proj.soldDate.split('-').map(Number);
-    const sold = new Date(y, m - 1, d);
-    const diffDays = Math.floor((today.getTime() - sold.getTime()) / 86_400_000);
+    const phaseSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
+      if (!proj.soldDate) return null;
+      const [y, m, d] = proj.soldDate.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    })();
+    if (!phaseSince) continue;
+    const diffDays = Math.floor((today.getTime() - phaseSince.getTime()) / 86_400_000);
     if (diffDays > threshold) {
       items.push({
         uid: `stuck-${proj.id}`,
@@ -731,7 +734,7 @@ export default function DashboardPage() {
     (p) => (p.repId === effectiveRepId || p.setterId === effectiveRepId) && isThisMonth(p.soldDate)
   );
   const mtdPayrollCommission = payrollEntries
-    .filter((p) => p.repId === effectiveRepId && isThisMonth(p.date))
+    .filter((p) => p.repId === effectiveRepId && isThisMonth(p.date) && p.type === 'Deal' && p.paymentStage !== 'Trainer')
     .reduce((s, p) => s + p.amount, 0);
   // Build a per-project sum of ALL payroll entries so we subtract only what's already
   // accounted for, rather than skipping the entire project when only M1 has been drafted.

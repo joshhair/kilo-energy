@@ -204,6 +204,10 @@ function NewDealPage() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  useEffect(() => {
+    if (!form.setterId) setForm((prev) => ({ ...prev, additionalSetters: [] }));
+  }, [form.setterId]);
+
   // ── Field helpers ──────────────────────────────────────────────────────────
 
   const update = (field: string, value: string) => {
