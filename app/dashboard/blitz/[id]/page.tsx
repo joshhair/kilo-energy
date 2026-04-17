@@ -293,7 +293,7 @@ export default function BlitzDetailPage() {
     const statsByUserId = new Map<string, { deals: number; kW: number; payout: number }>();
     const bump = (userId: string, dKw: number, dPayout: number) => {
       const s = statsByUserId.get(userId) ?? { deals: 0, kW: 0, payout: 0 };
-      if (dKw > 0) s.deals += 1;
+      s.deals += 1;
       s.kW += dKw;
       s.payout += dPayout;
       statsByUserId.set(userId, s);

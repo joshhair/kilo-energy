@@ -103,8 +103,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // If the participant is no longer approved, unlink their orphaned deals (same logic as DELETE).
   if (body.joinStatus !== undefined && body.joinStatus !== 'approved' && existing.joinStatus === 'approved') {
-    await prisma.project.updateMany({ where: { blitzId, closerId: body.userId }, data: { blitzId: null } });
-    await prisma.project.updateMany({ where: { blitzId, setterId: body.userId }, data: { blitzId: null } });
+    const approvedAfterPatch = await prisma.blitzParticipant.findMany({
+      where: { blitzId, joinStatus: 'approved' },
+      select: { userId: true },
+    });
+    const approvedIds = approvedAfterPatch.map(p => p.userId);
+    // Only unlink deals where the co-participant is also not an approved participant
+    await prisma.project.updateMany({
+      where: { blitzId, closerId: body.userId, OR: [{ setterId: null }, { setterId: { notIn: approvedIds } }] },
+      data: { blitzId: null },
+    });
+    await prisma.project.updateMany({
+      where: { blitzId, setterId: body.userId, closerId: { notIn: approvedIds } },
+      data: { blitzId: null },
+    });
   }
 
   return NextResponse.json(updated);
@@ -135,8 +147,20 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   await prisma.blitzParticipant.deleteMany({ where: { blitzId, userId } });
 
-  await prisma.project.updateMany({ where: { blitzId, closerId: userId }, data: { blitzId: null } });
-  await prisma.project.updateMany({ where: { blitzId, setterId: userId }, data: { blitzId: null } });
+  // Only unlink deals where the co-participant is also not an approved participant
+  const approvedAfterDelete = await prisma.blitzParticipant.findMany({
+    where: { blitzId, joinStatus: 'approved' },
+    select: { userId: true },
+  });
+  const approvedIds = approvedAfterDelete.map(p => p.userId);
+  await prisma.project.updateMany({
+    where: { blitzId, closerId: userId, OR: [{ setterId: null }, { setterId: { notIn: approvedIds } }] },
+    data: { blitzId: null },
+  });
+  await prisma.project.updateMany({
+    where: { blitzId, setterId: userId, closerId: { notIn: approvedIds } },
+    data: { blitzId: null },
+  });
 
   return NextResponse.json({ success: true });
 }

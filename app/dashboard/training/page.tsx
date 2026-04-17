@@ -536,7 +536,7 @@ function TrainingPageInner() {
       const status = getAssignmentStatus(a, trainee, consumed);
       const rate = getTrainerOverrideRate(a, consumed);
       const activeTierIndex = a.tiers.findIndex(
-        (t) => t.upToDeal === null || consumed < t.upToDeal
+        (t) => t.upToDeal === null || consumed <= t.upToDeal
       );
       return { assignment: a, trainer, trainee, consumed, status, rate, activeTierIndex };
     });
