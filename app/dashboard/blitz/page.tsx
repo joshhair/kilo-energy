@@ -359,6 +359,7 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'create',
           requestedById: userId,
           name: name.trim(),
           location: location.trim(),

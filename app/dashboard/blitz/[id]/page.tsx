@@ -949,7 +949,7 @@ export default function BlitzDetailPage() {
                             <option value="">—</option>
                             <option value="attended">Attended</option>
                             <option value="partial">Partial</option>
-                            <option value="no_show">No-show</option>
+                            <option value="no-show">No-show</option>
                           </select>
                         ) : (
                           <span className="text-xs text-[var(--text-secondary)]">{p.attendanceStatus ?? '—'}</span>

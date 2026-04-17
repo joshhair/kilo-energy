@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchBlitzSchema } from '../../../../lib/schemas/business';
+import { serializeProject } from '../../../../lib/serialize';
 
 // GET /api/blitzes/[id] — Get a single blitz. Access:
 // - admin, project_manager: yes
@@ -57,25 +58,25 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       if (!isMyDeal) {
         const mp = p as unknown as {
           netPPW: number;
-          m1Amount: number;
-          m2Amount: number;
-          m3Amount: number;
-          setterM1Amount: number;
-          setterM2Amount: number;
-          setterM3Amount: number;
+          m1AmountCents: number;
+          m2AmountCents: number;
+          m3AmountCents: number;
+          setterM1AmountCents: number;
+          setterM2AmountCents: number;
+          setterM3AmountCents: number;
         };
         mp.netPPW = 0;
-        mp.m1Amount = 0;
-        mp.m2Amount = 0;
-        mp.m3Amount = 0;
-        mp.setterM1Amount = 0;
-        mp.setterM2Amount = 0;
-        mp.setterM3Amount = 0;
+        mp.m1AmountCents = 0;
+        mp.m2AmountCents = 0;
+        mp.m3AmountCents = 0;
+        mp.setterM1AmountCents = 0;
+        mp.setterM2AmountCents = 0;
+        mp.setterM3AmountCents = 0;
       }
     }
   }
 
-  return NextResponse.json(blitz);
+  return NextResponse.json({ ...blitz, projects: blitz.projects.map(serializeProject) });
 }
 
 // PATCH /api/blitzes/[id] — Update blitz (admin or blitz owner)
@@ -144,25 +145,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!isMyDeal) {
         const mp = p as unknown as {
           netPPW: number;
-          m1Amount: number;
-          m2Amount: number;
-          m3Amount: number;
-          setterM1Amount: number;
-          setterM2Amount: number;
-          setterM3Amount: number;
+          m1AmountCents: number;
+          m2AmountCents: number;
+          m3AmountCents: number;
+          setterM1AmountCents: number;
+          setterM2AmountCents: number;
+          setterM3AmountCents: number;
         };
         mp.netPPW = 0;
-        mp.m1Amount = 0;
-        mp.m2Amount = 0;
-        mp.m3Amount = 0;
-        mp.setterM1Amount = 0;
-        mp.setterM2Amount = 0;
-        mp.setterM3Amount = 0;
+        mp.m1AmountCents = 0;
+        mp.m2AmountCents = 0;
+        mp.m3AmountCents = 0;
+        mp.setterM1AmountCents = 0;
+        mp.setterM2AmountCents = 0;
+        mp.setterM3AmountCents = 0;
       }
     }
   }
 
-  return NextResponse.json(blitz);
+  return NextResponse.json({ ...blitz, projects: blitz.projects.map(serializeProject) });
 }
 
 // DELETE /api/blitzes/[id] — Admin only
