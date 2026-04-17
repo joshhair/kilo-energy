@@ -209,7 +209,7 @@ export default function MobileNewDeal() {
   } = useApp();
   const { toast } = useToast();
   const router = useRouter();
-  const isSubDealer = currentRole === 'sub-dealer';
+  const isSubDealer = effectiveRole === 'sub-dealer';
 
   // ── Form state ──────────────────────────────────────────────────────────────
 

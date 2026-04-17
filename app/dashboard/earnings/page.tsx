@@ -170,8 +170,7 @@ function computeMonthlyBarData(
 
   for (const e of payrollEntries) {
     if (e.repId !== repId) continue;
-    if (e.status === 'Draft') continue;
-    if (e.status !== 'Pending' && e.date > today) continue;
+    if (e.status !== 'Pending' && e.status !== 'Draft' && e.date > today) continue;
     const key = e.date.slice(0, 7);
     if (!map.has(key)) {
       const monthIdx = parseInt(key.slice(5, 7), 10) - 1;
@@ -179,7 +178,7 @@ function computeMonthlyBarData(
     }
     const d = map.get(key)!;
     if (e.status === 'Paid') d.paid += e.amount;
-    else if (e.status === 'Pending') d.pending += e.amount;
+    else if (e.status === 'Pending' || e.status === 'Draft') d.pending += e.amount;
   }
 
   for (const r of reimbursements) {
@@ -400,7 +399,7 @@ function RepEarningsView() {
   const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date <= todayStr)),    [payrollEntries, effectiveRepId, todayStr]);
   const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')), [payrollEntries, effectiveRepId]);
   const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved')), [reimbursements, effectiveRepId]);
-  const thisMonthPaidData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date <= todayStr)), [payrollEntries, effectiveRepId, todayStr]);
+  const thisMonthPaidData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date.startsWith(currentYYYYMM))), [payrollEntries, effectiveRepId, currentYYYYMM]);
 
   // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
   const monthlyBarData = useMemo(

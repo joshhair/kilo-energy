@@ -43,7 +43,7 @@ function NewDealPage() {
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
   const isHydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
-  const isSubDealer = currentRole === 'sub-dealer';
+  const isSubDealer = effectiveRole === 'sub-dealer';
 
   const blankForm = () => ({
     customerName: '',
