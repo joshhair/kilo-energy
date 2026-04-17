@@ -135,3 +135,13 @@ export function getM2PayDate(milestoneDate?: Date): string {
   friday.setDate(saturday.getDate() + 6);
   return localDateString(friday);
 }
+
+// M3 (PTO phase) uses the same Saturday cutoff as M2 but falls in the following
+// week's cycle so it doesn't collapse into the M2 pay period when both entries
+// are created simultaneously (e.g. during setter reassignment on a past-PTO project).
+export function getM3PayDate(milestoneDate?: Date): string {
+  const d = milestoneDate ?? new Date();
+  const offsetDate = new Date(d);
+  offsetDate.setDate(d.getDate() + 7);
+  return getM2PayDate(offsetDate);
+}

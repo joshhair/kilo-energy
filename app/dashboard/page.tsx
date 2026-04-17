@@ -839,7 +839,7 @@ export default function DashboardPage() {
       period={period}
       setPeriod={setPeriod}
       PERIODS={PERIODS}
-      totalReps={reps.filter(r => r.active !== false).length}
+      totalReps={reps.filter(r => r.active).length}
       installerPricingVersions={installerPricingVersions}
       productCatalogProducts={productCatalogProducts}
       productCatalogPricingVersions={productCatalogPricingVersions}

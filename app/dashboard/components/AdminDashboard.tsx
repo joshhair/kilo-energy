@@ -494,7 +494,7 @@ export function AdminDashboard({
 
       {/* ── Cancellation Reasons Summary ──────────────────────────────────── */}
       {(() => {
-        const cancelledProjects = projects.filter((p) => p.phase === 'Cancelled');
+        const cancelledProjects = allProjects.filter((p) => p.phase === 'Cancelled');
         if (cancelledProjects.length === 0) return null;
         const reasonCounts = new Map<string, number>();
         for (const p of cancelledProjects) {
@@ -511,7 +511,7 @@ export function AdminDashboard({
               <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
                 <AlertCircle className="w-4 h-4 text-red-400" />
               </div>
-              <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons</h2>
+              <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons <span className="text-[var(--text-muted)] font-normal text-xs">(all time)</span></h2>
               <span className="text-[var(--text-muted)] text-xs mr-2">{cancelledProjects.length} cancelled</span>
               {cancellationExpanded
                 ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />

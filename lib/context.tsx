@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect, useCall
 // comment near the useState calls below. We now import only the type
 // symbols + helper functions, not the pre-DB fixture arrays.
 import { Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, resolveTrainerRate, Rep, SubDealer, NON_SOLARTECH_BASELINES, InstallerBaseline, SolarTechProduct, InstallerPricingVersion, InstallerRates, ProductCatalogInstallerConfig, ProductCatalogProduct, Phase, ProductCatalogPricingVersion, ProductCatalogTier, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
-import { getM1PayDate, getM2PayDate, localDateString } from './utils';
+import { getM1PayDate, getM2PayDate, getM3PayDate, localDateString } from './utils';
 import { persistFetch, emitPersistError } from './persist';
 import { createUserActions } from './context/users';
 import { createInstallerActions } from './context/installers';
@@ -384,6 +384,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Guard: abort the entire transition if m2Amount is missing at Installed
+      if (updates.phase === 'Installed' && old.phase !== 'Installed' && !old.subDealerId) {
+        const effectiveSetterId = 'setterId' in updates ? updates.setterId : old.setterId;
+        const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
+        if (
+          (updates.m2Amount ?? old.m2Amount) == null ||
+          (effectiveSetterId != null && effectiveSetterM2 == null)
+        ) {
+          emitPersistError(`Phase change to Installed blocked for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate commission first.`);
+          return;
+        }
+      }
+
+      // Guard: abort the entire transition if m1Amount is missing at Acceptance
+      if (updates.phase === 'Acceptance' && old.phase !== 'Acceptance' && !old.subDealerId) {
+        const effectiveSetterId = 'setterId' in updates ? updates.setterId : old.setterId;
+        const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
+        if (
+          (updates.m1Amount ?? old.m1Amount) == null ||
+          (effectiveSetterId != null && effectiveSetterM1 == null)
+        ) {
+          emitPersistError(`Phase change to Acceptance blocked for ${old.customerName} — m1Amount is missing. Re-save the project to recalculate commission first.`);
+          return;
+        }
+      }
+
       // ── 2. Setter reassignment (stays inline — deeply interleaved with state) ──
       if (updates.setterId !== undefined && updates.setterId !== old.setterId) {
         const oldSetter = old.setterId ? repsRef.current.find((r) => r.id === old.setterId)?.name ?? old.setterId : 'none';
@@ -568,7 +594,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     type: 'Deal',
                     paymentStage: 'M3',
                     status: 'Draft',
-                    date: getM2PayDate(),
+                    date: getM3PayDate(),
                     notes: 'Setter',
                   });
                 }
@@ -639,7 +665,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       type: 'Deal',
                       paymentStage: 'Trainer',
                       status: 'Draft',
-                      date: getM2PayDate(),
+                      date: getM3PayDate(),
                       notes: `Trainer override M3 — ${setterName} ($${setterOverrideRate.toFixed(2)}/W)`,
                     });
                   }
@@ -678,32 +704,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     // Derive m3 from m2 edits on projects past Installed
     if (old) deriveM3FromM2Edit(updates, old, installerPayConfigs, dbUpdates);
-
-    // Guard: abort the entire transition if m2Amount is missing at Installed
-    if (updates.phase === 'Installed' && old && old.phase !== 'Installed' && !old.subDealerId) {
-      const effectiveSetterId = 'setterId' in updates ? updates.setterId : old.setterId;
-      const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
-      if (
-        (updates.m2Amount ?? old.m2Amount) == null ||
-        (effectiveSetterId != null && effectiveSetterM2 == null)
-      ) {
-        emitPersistError(`Phase change to Installed blocked for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate commission first.`);
-        return;
-      }
-    }
-
-    // Guard: abort the entire transition if m1Amount is missing at Acceptance
-    if (updates.phase === 'Acceptance' && old && old.phase !== 'Acceptance' && !old.subDealerId) {
-      const effectiveSetterId = 'setterId' in updates ? updates.setterId : old.setterId;
-      const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
-      if (
-        (updates.m1Amount ?? old.m1Amount) == null ||
-        (effectiveSetterId != null && effectiveSetterM1 == null)
-      ) {
-        emitPersistError(`Phase change to Acceptance blocked for ${old.customerName} — m1Amount is missing. Re-save the project to recalculate commission first.`);
-        return;
-      }
-    }
 
     // ── 4. Persist DB changes ──
     if (Object.keys(dbUpdates).length > 0) {
