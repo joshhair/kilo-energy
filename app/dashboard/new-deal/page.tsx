@@ -339,9 +339,13 @@ function NewDealPage() {
         return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
       }
     } else if (isPcInstaller && hasPcProducts && form.installerProductId && kW > 0) {
-      const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
-      const b = getProductCatalogBaselineVersioned(productCatalogProducts, form.installerProductId, kW, soldDate, productCatalogPricingVersions);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: b.pcPricingVersionId };
+      try {
+        const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+        const b = getProductCatalogBaselineVersioned(productCatalogProducts, form.installerProductId, kW, soldDate, productCatalogPricingVersions);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: b.pcPricingVersionId };
+      } catch {
+        return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
+      }
     } else if (form.installer && form.installer !== 'SolarTech' && !isPcInstaller && kW > 0) {
       const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
       const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);

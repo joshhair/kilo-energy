@@ -204,6 +204,8 @@ function PayrollPageInner() {
       }
 
       if (e.key === 'Escape') {
+        if (showBonusModal) { setShowBonusModal(false); return; }
+        if (showPaymentModal) { setShowPaymentModal(false); return; }
         setSelectedIds(new Set());
         return;
       }
@@ -350,10 +352,16 @@ function PayrollPageInner() {
       } else {
         const data = await res.json();
         if (data.updated !== ids.length) {
-          console.warn(`[handlePublish] Server updated ${data.updated} of ${ids.length} entries — some were already Paid`);
-          // Do NOT roll back: entries skipped by the server were already Paid in the DB,
-          // so the optimistic UI state (all Paid) correctly reflects reality.
-          toast(`${data.updated} of ${ids.length} entries published — others were already Paid`, 'success');
+          console.warn(`[handlePublish] Server updated ${data.updated} of ${ids.length} entries — re-fetching to reconcile`);
+          // Skipped entries may be Draft (concurrent rollback) not just Paid — re-fetch to get true DB state.
+          const refreshRes = await fetch('/api/data').catch(() => null);
+          if (refreshRes?.ok) {
+            const refreshData = await refreshRes.json().catch(() => null);
+            if (refreshData?.payrollEntries) {
+              setPayrollEntries(refreshData.payrollEntries);
+            }
+          }
+          toast(`${data.updated} of ${ids.length} entries published`, 'success');
         }
       }
     } catch (err) {

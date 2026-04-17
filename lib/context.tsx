@@ -307,8 +307,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return result;
   }, [installerPricingVersions]);
 
-  const activeInstallers = installers.filter((i) => i.active).map((i) => i.name);
-  const activeFinancers = financers.filter((f) => f.active).map((f) => f.name);
+  const activeInstallers = useMemo(() => installers.filter((i) => i.active).map((i) => i.name), [installers]);
+  const activeFinancers = useMemo(() => financers.filter((f) => f.active).map((f) => f.name), [financers]);
   // ── Installer / financer / pricing actions (delegated to lib/context/installers.ts) ──
   const installerActions = useMemo(() => createInstallerActions({
     installers,
@@ -681,7 +681,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Guard: abort the entire transition if m2Amount is missing at Installed
     if (updates.phase === 'Installed' && old && old.phase !== 'Installed' && !old.subDealerId) {
-      if ((updates.m2Amount ?? old.m2Amount) == null) {
+      const effectiveSetterId = 'setterId' in updates ? updates.setterId : old.setterId;
+      const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
+      if (
+        (updates.m2Amount ?? old.m2Amount) == null ||
+        (effectiveSetterId != null && effectiveSetterM2 == null)
+      ) {
         emitPersistError(`Phase change to Installed blocked for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate commission first.`);
         return;
       }

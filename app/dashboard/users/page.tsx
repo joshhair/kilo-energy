@@ -272,7 +272,7 @@ function UsersPageInner() {
     } catch {
       // Silent fail — pending invites is a nice-to-have, not critical
     }
-  }, [currentRole]);
+  }, [effectiveRole]);
 
   useEffect(() => { fetchPendingInvitations(); }, [fetchPendingInvitations]);
 
