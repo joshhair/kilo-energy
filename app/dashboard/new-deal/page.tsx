@@ -205,7 +205,7 @@ function NewDealPage() {
   }, []);
 
   useEffect(() => {
-    if (!form.setterId) setForm((prev) => ({ ...prev, additionalSetters: [] }));
+    setForm((prev) => ({ ...prev, additionalSetters: [] }));
   }, [form.setterId]);
 
   // ── Field helpers ──────────────────────────────────────────────────────────
@@ -237,7 +237,7 @@ function NewDealPage() {
   };
 
   const handleInstallerChange = (value: string) => {
-    setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
+    setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
   };
 
@@ -1058,6 +1058,7 @@ function NewDealPage() {
                           financer: isCash ? 'Cash' : '',
                           // Reset family/product selections when product type changes
                           solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '',
+                          additionalClosers: [], additionalSetters: [],
                         }));
                         isDirty.current = true;
                         setErrors((prev) => ({ ...prev, productType: '', financer: isCash ? '' : prev.financer }));

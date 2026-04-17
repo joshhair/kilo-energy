@@ -743,11 +743,7 @@ function BlitzPageInner() {
           || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
           || p.additionalSetters?.some((as) => as.userId === effectiveRepId))
     );
-    return s + visibleProjects.filter((p) => {
-      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-      const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-      return isSelfGen || closerApproved;
-    }).length;
+    return s + visibleProjects.length;
   }, 0);
   const totalKW = blitzes.reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
