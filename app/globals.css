@@ -148,16 +148,10 @@ body {
   }
 }
 
-/* Desktop: bump base from browser-default 16px to 18px (12.5% larger).
-   Josh's feedback: "text across the app shrunk". Previously desktop got
-   no bump while mobile was bumped to 24px, leaving the desktop view
-   feeling cramped. 18px base: text-xs=13.5px, text-sm=15.75px,
-   text-base=18px — readable without breaking existing layouts. */
-@media (min-width: 768px) {
-  html {
-    font-size: 18px;
-  }
-}
+/* Desktop keeps the browser-default 16px root. A prior 18px bump
+   overflowed the fixed-width sidebar wordmark + badges. Per-component
+   sizing (e.g. modal labels bumped to text-sm/text-base in-file)
+   is the right escape hatch for small text, not a global scale. */
 
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

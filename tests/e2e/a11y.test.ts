@@ -9,17 +9,13 @@
 // 'minor' show up in the report for info but don't block merges — avoids
 // churn over things like landmark regions that rarely matter to real users.
 
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import type { Result } from 'axe-core';
 
 const BLOCKING_IMPACTS = ['serious', 'critical'] as const;
 
-function formatViolations(violations: Array<{
-  id: string;
-  impact: string | null | undefined;
-  help: string;
-  nodes: Array<{ target: unknown[]; failureSummary?: string }>;
-}>) {
+function formatViolations(violations: Result[]) {
   return violations
     .map((v) => {
       const targets = v.nodes
