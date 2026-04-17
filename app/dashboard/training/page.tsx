@@ -796,7 +796,7 @@ function TrainingPageInner() {
                           </button>
                           {openMenuId === a.id && (
                             <div
-                              className="absolute right-4 bottom-full mb-1 z-30 min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                              className="absolute right-4 top-full mt-1 z-50 min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
                             >
                               <Link
                                 href={`/dashboard/users/${a.traineeId}`}
@@ -1786,30 +1786,31 @@ function NewAssignmentModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto overscroll-contain"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="min-h-full grid place-items-center p-4">
+        <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 rounded-2xl p-6 w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-500/15">
-              <GraduationCap className="w-5 h-5 text-amber-400" />
+              <GraduationCap className="w-6 h-6 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-white font-semibold">New Assignment</h2>
-              <p className="text-xs text-[var(--text-muted)]">Create a trainer-trainee relationship</p>
+              <h2 className="text-white font-semibold text-lg">New Assignment</h2>
+              <p className="text-sm text-[var(--text-muted)]">Create a trainer-trainee relationship</p>
             </div>
           </div>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors">
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4">
           {/* Trainer picker */}
           <div>
-            <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Trainer</label>
+            <label className="text-[var(--text-secondary)] text-sm uppercase tracking-wider block mb-1.5">Trainer</label>
             <SearchableSelect
               value={trainerId}
               onChange={setTrainerId}
@@ -1820,7 +1821,7 @@ function NewAssignmentModal({
 
           {/* Trainee picker */}
           <div>
-            <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Rep (trainee)</label>
+            <label className="text-[var(--text-secondary)] text-sm uppercase tracking-wider block mb-1.5">Rep (trainee)</label>
             <SearchableSelect
               value={traineeId}
               onChange={setTraineeId}
@@ -1837,20 +1838,20 @@ function NewAssignmentModal({
               onChange={(e) => setIsActiveTraining(e.target.checked)}
               className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface-card)]"
             />
-            <span className="text-sm text-[var(--text-secondary)]">Active coaching</span>
-            <span className="text-[10px] text-[var(--text-muted)]">(uncheck for Residuals from day one)</span>
+            <span className="text-base text-[var(--text-secondary)]">Active coaching</span>
+            <span className="text-xs text-[var(--text-muted)]">(uncheck for Residuals from day one)</span>
           </label>
 
           {/* Tier list */}
           <div>
-            <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-2">Tier Chain</label>
+            <label className="text-[var(--text-secondary)] text-sm uppercase tracking-wider block mb-2">Tier Chain</label>
             <div className="space-y-2">
               {tiers.map((tier, idx) => (
                 <div key={idx} className="flex items-center gap-2 bg-[var(--surface-card)]/50 rounded-xl p-3 border border-[var(--border-subtle)]">
-                  <span className="text-[10px] text-[var(--text-muted)] font-semibold w-6 flex-shrink-0">T{idx + 1}</span>
+                  <span className="text-xs text-[var(--text-muted)] font-semibold w-6 flex-shrink-0">T{idx + 1}</span>
                   <div className="flex-1 grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">$/W</label>
+                      <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">$/W</label>
                       <input
                         type="number"
                         step="0.01"
@@ -1863,15 +1864,15 @@ function NewAssignmentModal({
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <label className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Up to deal</label>
+                        <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Up to deal</label>
                         <label className="flex items-center gap-1 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={tier.perpetuity}
                             onChange={(e) => updateTier(idx, 'perpetuity', e.target.checked)}
-                            className="w-3 h-3 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
+                            className="w-3.5 h-3.5 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
                           />
-                          <span className="text-[9px] text-[var(--text-muted)]">Perpetuity</span>
+                          <span className="text-xs text-[var(--text-muted)]">Perpetuity</span>
                         </label>
                       </div>
                       <input
@@ -1955,6 +1956,7 @@ function NewAssignmentModal({
               {saving ? 'Creating...' : 'Create Assignment'}
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>

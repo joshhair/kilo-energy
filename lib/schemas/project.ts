@@ -3,14 +3,16 @@ import { idSchema, optionalId, optionalString, finiteNumber, moneyAmount } from 
 
 const phaseEnum = z.enum([
   'New',
-  'Sold',
-  'Accepted',
-  'Install Scheduled',
+  'Acceptance',
+  'Site Survey',
+  'Design',
+  'Permitting',
+  'Pending Install',
   'Installed',
   'PTO',
+  'Completed',
   'Cancelled',
   'On Hold',
-  'Cancellation Pending',
 ]);
 
 /** One co-closer or co-setter entry — person + their per-milestone cut.

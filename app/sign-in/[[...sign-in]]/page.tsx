@@ -12,9 +12,11 @@ export default function SignInPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-3 py-6 sm:px-5 sm:py-10 relative overflow-hidden"
+      className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-5 relative overflow-hidden"
       style={{
         background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.5rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
       }}
     >
       {/* ── Background grid — extremely faint, anchors the layout in space ── */}
@@ -124,11 +126,11 @@ export default function SignInPage() {
         </div>
 
         {/* Footer line */}
-        <div className="flex flex-col items-center gap-1 mt-2">
-          <p className="text-xs tracking-wider uppercase" style={{ color: '#525c72', letterSpacing: '0.08em' }}>
+        <div className="flex flex-col items-center gap-1 mt-2 text-center">
+          <p className="text-[10px] sm:text-xs uppercase whitespace-nowrap" style={{ color: '#525c72', letterSpacing: '0.04em' }}>
             Track commission · pipeline · payouts
           </p>
-          <p className="text-[11px]" style={{ color: '#3a4358' }}>
+          <p className="text-[10px] sm:text-[11px]" style={{ color: '#3a4358' }}>
             © {year} Kilo Energy · <a href="/legal/privacy" className="hover:text-white/70 transition-colors">Privacy</a> · <a href="/legal/terms" className="hover:text-white/70 transition-colors">Terms</a>
           </p>
         </div>

@@ -136,7 +136,7 @@ export const createRepSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(200),
   phone: z.string().trim().max(50).optional().default(''),
   role: z.enum(['rep', 'admin', 'sub-dealer', 'project_manager']).optional().default('rep'),
-  repType: z.enum(['solo', 'self-gen', 'trainee', 'sub-dealer', 'both']).optional().default('both'),
+  repType: z.enum(['closer', 'setter', 'both']).optional().default('both'),
 });
 export type CreateRepInput = z.infer<typeof createRepSchema>;
 
@@ -145,7 +145,7 @@ export const patchRepSchema = z.object({
   lastName: z.string().trim().min(1).max(100).optional(),
   email: z.string().trim().toLowerCase().email().max(200).optional(),
   phone: z.string().trim().max(50).optional(),
-  repType: z.enum(['solo', 'self-gen', 'trainee', 'sub-dealer', 'both']).optional(),
+  repType: z.enum(['closer', 'setter', 'both']).optional(),
   active: z.boolean().optional(),
 }).strict();
 export type PatchRepInput = z.infer<typeof patchRepSchema>;
@@ -213,6 +213,6 @@ export const createUserInviteSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(200),
   phone: z.string().trim().max(50).optional().default(''),
   role: z.enum(['rep', 'sub-dealer', 'admin', 'project_manager']).optional().default('rep'),
-  repType: z.enum(['solo', 'self-gen', 'trainee', 'sub-dealer', 'both', 'closer', 'setter']).optional().default('both'),
+  repType: z.enum(['closer', 'setter', 'both']).optional().default('both'),
 });
 export type CreateUserInviteInput = z.infer<typeof createUserInviteSchema>;

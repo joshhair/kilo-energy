@@ -513,8 +513,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           minHeight: 'calc(48px + env(safe-area-inset-top, 0px))',
         }}
       >
-        <div className="flex items-center gap-1.5">
-          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 10px var(--accent-emerald)', flexShrink: 0 }} />
+        <div className="flex items-center gap-2">
+          <img src="/icons/icon-192.svg" alt="Kilo Energy" width={22} height={22} style={{ borderRadius: '5px', flexShrink: 0 }} />
           <div className="flex items-baseline gap-0.5">
             <span className="text-white font-black tracking-tighter text-xl leading-none" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kilo</span>
             <span className="tracking-[0.2em] uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '10px', fontWeight: 400 }}>energy</span>
@@ -558,11 +558,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       >
         {/* Logo + collapse/close toggle */}
-        <div className="flex items-center justify-between px-4 py-4 h-[60px]" style={{ borderBottom: '1px solid var(--d-border, var(--border))' }}>
-          {!showCollapsed && (
+        <div className={`flex items-center ${showCollapsed ? 'justify-center' : 'justify-between'} px-4 py-4 h-[60px]`} style={{ borderBottom: '1px solid var(--d-border, var(--border))' }}>
+          {showCollapsed ? (
+            <button
+              onClick={() => { setCollapsed(false); localStorage.setItem('sidebar-collapsed', 'false'); }}
+              aria-label="Expand sidebar"
+              className="hover:opacity-85 transition-opacity"
+            >
+              <img
+                src="/icons/icon-192.svg"
+                alt="Kilo Energy"
+                width={28}
+                height={28}
+                style={{ borderRadius: '6px', flexShrink: 0 }}
+              />
+            </button>
+          ) : (
             <div className="flex items-center gap-2 overflow-hidden min-w-0">
-              <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
-                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 10px var(--accent-green)', flexShrink: 0 }} />
+              <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                <img
+                  src="/icons/icon-192.svg"
+                  alt="Kilo Energy"
+                  width={26}
+                  height={26}
+                  style={{ borderRadius: '6px', flexShrink: 0 }}
+                />
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-white font-bold tracking-tighter text-xl leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
                   <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--d-muted, var(--text-muted))', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
@@ -594,15 +614,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </div>
           )}
-          {/* Desktop: collapse chevron */}
-          <button
-            onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
-            style={{ color: 'var(--d-muted, var(--text-muted))' }}
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+          {/* Desktop: collapse chevron — only visible when expanded (collapsed
+              state uses the K icon as the expand button above) */}
+          {!showCollapsed && (
+            <button
+              onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
+              aria-label="Collapse sidebar"
+              className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
+              style={{ color: 'var(--d-muted, var(--text-muted))' }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
           {/* Mobile: close (X) button */}
           <button
             onClick={() => setMobileOpen(false)}

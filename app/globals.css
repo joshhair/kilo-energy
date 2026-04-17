@@ -2,6 +2,12 @@
 @import "tailwindcss";
 
 :root {
+  /* Tell the browser this app is dark. Without this, native UI (<select>
+     option lists, scrollbars, form autofill, date pickers) renders in the
+     OS default scheme — on Windows that's a light-mode overlay on our dark
+     surfaces, producing unreadable light-on-light dropdowns. */
+  color-scheme: dark;
+
   /* ── Brand ──────────────────────────────────────────────────────────────── */
   --brand: #00e07a;
   --brand-light: #00c4f0;
@@ -139,6 +145,17 @@ body {
   html {
     font-size: 24px;
     -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* Desktop: bump base from browser-default 16px to 18px (12.5% larger).
+   Josh's feedback: "text across the app shrunk". Previously desktop got
+   no bump while mobile was bumped to 24px, leaving the desktop view
+   feeling cramped. 18px base: text-xs=13.5px, text-sm=15.75px,
+   text-base=18px — readable without breaking existing layouts. */
+@media (min-width: 768px) {
+  html {
+    font-size: 18px;
   }
 }
 
