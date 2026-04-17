@@ -44,7 +44,7 @@ type UserMeta = {
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, effectiveRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, effectiveRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact, updateRepType } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -579,6 +579,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       // Store empty string for null to match FetchedUser.repType shape.
                       setFetchedUser({ ...fetchedUser, repType: newRepType ?? '' });
                     }
+                    if (repInContext && newRepType) {
+                      updateRepType(id, newRepType as 'closer' | 'setter' | 'both');
+                    }
                     setMetaRefreshKey((k) => k + 1);
                     toast(newRepType ? `Saved — ${resolvedUser.id === currentRepId ? 'you' : 'they'} now appear as a ${newRepType}` : 'Saved — pure-admin mode', 'success');
                   } catch (err) {
@@ -1056,8 +1059,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         // Hoist role-specific filters so the drill-down slide-over can reuse
         // them without re-deriving. Each filter mirrors the classification in
         // the row below so totals and drill-down sets are guaranteed to match.
-        const closerDealCount = projects.filter((p) => p.repId === id).length;
-        const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id).length;
+        const closerDealCount = projects.filter((p) => p.repId === id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
+        const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
         const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId)).size;
         const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && !e.notes?.startsWith('Co-setter') && e.paymentStage !== 'Trainer');
         const setterEntries = repPayroll.filter((e) => e.notes === 'Setter' || e.notes?.startsWith('Co-setter'));

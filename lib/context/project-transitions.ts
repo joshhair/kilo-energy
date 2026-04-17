@@ -649,7 +649,11 @@ export function createM3Payroll(
 
   // ── Co-closer M3 entries ──
   for (const co of proj?.additionalClosers ?? []) {
-    const amount = co.m3Amount ?? 0;
+    const amount = co.m3Amount != null && installPayPct < 100
+      ? co.m3Amount
+      : installPayPct > 0 && installPayPct < 100
+        ? Math.round(co.m2Amount * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0;
     if (amount <= 0) continue;
     newEntries.push({
       id: `pay_${ts}_m3_cc${co.position}`,
@@ -668,7 +672,11 @@ export function createM3Payroll(
 
   // ── Co-setter M3 entries ──
   for (const co of proj?.additionalSetters ?? []) {
-    const amount = co.m3Amount ?? 0;
+    const amount = co.m3Amount != null && installPayPct < 100
+      ? co.m3Amount
+      : installPayPct > 0 && installPayPct < 100
+        ? Math.round(co.m2Amount * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0;
     if (amount <= 0) continue;
     newEntries.push({
       id: `pay_${ts}_m3_cs${co.position}`,
@@ -795,11 +803,40 @@ export function syncPayrollAmounts(
   if (updates.setterM2Amount !== undefined) stageAmountUpdates.push({ stage: 'M2', setter: true, newAmount: updates.setterM2Amount });
   if (updates.setterM3Amount !== undefined) stageAmountUpdates.push({ stage: 'M3', setter: true, newAmount: updates.setterM3Amount });
 
-  if (stageAmountUpdates.length === 0) return { updatedEntries: prevEntries, patches: [] };
+  const hasCoPartyUpdates = updates.additionalClosers !== undefined || updates.additionalSetters !== undefined;
+  if (stageAmountUpdates.length === 0 && !hasCoPartyUpdates) return { updatedEntries: prevEntries, patches: [] };
 
   const patches: Array<{ id: string; newAmount: number }> = [];
   const updatedEntries = prevEntries.map((e) => {
-    if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback') || (e.notes ?? '').startsWith('Co-setter') || (e.notes ?? '').startsWith('Co-closer')) return e;
+    if (e.projectId !== projectId || (e.status !== 'Draft' && e.status !== 'Pending') || e.type !== 'Deal' || (e.notes ?? '').startsWith('Chargeback')) return e;
+
+    // Co-closer entries: match by position embedded in notes ("Co-closer #N")
+    const coCloserMatch = (e.notes ?? '').match(/^Co-closer #(\d+)$/);
+    if (coCloserMatch) {
+      if (!updates.additionalClosers) return e;
+      const position = parseInt(coCloserMatch[1], 10);
+      const coParty = updates.additionalClosers.find((c) => c.position === position);
+      if (!coParty) return e;
+      const newAmount = e.paymentStage === 'M2' ? coParty.m2Amount : (e.paymentStage === 'M1' ? coParty.m1Amount : (coParty.m3Amount ?? 0));
+      if (newAmount === e.amount) return e;
+      patches.push({ id: e.id, newAmount });
+      return { ...e, amount: newAmount };
+    }
+
+    // Co-setter entries: match by position embedded in notes ("Co-setter #N")
+    const coSetterMatch = (e.notes ?? '').match(/^Co-setter #(\d+)$/);
+    if (coSetterMatch) {
+      if (!updates.additionalSetters) return e;
+      const position = parseInt(coSetterMatch[1], 10);
+      const coParty = updates.additionalSetters.find((s) => s.position === position);
+      if (!coParty) return e;
+      const newAmount = e.paymentStage === 'M2' ? coParty.m2Amount : (e.paymentStage === 'M1' ? coParty.m1Amount : (coParty.m3Amount ?? 0));
+      if (newAmount === e.amount) return e;
+      patches.push({ id: e.id, newAmount });
+      return { ...e, amount: newAmount };
+    }
+
+    if (stageAmountUpdates.length === 0) return e;
 
     // Trainer override entries have paymentStage === 'Trainer' and never match the
     // M1/M2/M3 stageAmountUpdates. Recompute from the rate embedded in their notes.

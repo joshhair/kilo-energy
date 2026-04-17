@@ -853,7 +853,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // ── 6. Amount sync: patch Draft/Pending entries when amounts are edited ──
     const hasAmountUpdates = updates.m1Amount !== undefined || updates.m2Amount !== undefined
       || updates.m3Amount !== undefined || updates.setterM1Amount !== undefined
-      || updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined;
+      || updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined
+      || updates.additionalClosers !== undefined || updates.additionalSetters !== undefined;
     if (hasAmountUpdates) {
       // Re-compute trainer deductions so syncPayrollAmounts subtracts them,
       // mirroring the deduction logic at createMilestonePayroll / createM3Payroll
