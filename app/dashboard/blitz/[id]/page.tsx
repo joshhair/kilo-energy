@@ -397,10 +397,11 @@ export default function BlitzDetailPage() {
           if (!pr.ok) { toast('Failed to approve new owner as participant', 'error'); setEditing(false); loadBlitz(true); return; }
         }
       }
+      const patchBody = isAdmin ? editForm : (({ ownerId: _o, ...rest }) => rest)(editForm);
       const r = await fetch(`/api/blitzes/${blitzId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(patchBody),
       });
       if (!r.ok) { toast('Failed to update blitz', 'error'); setEditing(false); loadBlitz(true); return; }
       toast('Blitz updated');

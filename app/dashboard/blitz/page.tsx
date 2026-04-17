@@ -733,12 +733,19 @@ function BlitzPageInner() {
   const upcomingBlitzes = blitzes.filter((b) => b.status === 'upcoming').length;
   const totalDeals = blitzes.reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
-    return s + b.projects.filter((p) =>
+    const visibleProjects = b.projects.filter((p) =>
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
       (isAdmin || b.owner.id === effectiveRepId
         ? approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
-        : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)
-    ).length;
+        : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
+          || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+          || p.additionalSetters?.some((as) => as.userId === effectiveRepId))
+    );
+    return s + visibleProjects.filter((p) => {
+      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+      const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+      return isSelfGen || closerApproved;
+    }).length;
   }, 0);
   const totalKW = blitzes.reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
@@ -746,7 +753,9 @@ function BlitzPageInner() {
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
       (isAdmin || b.owner.id === effectiveRepId
         ? approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
-        : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId)
+        : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
+          || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+          || p.additionalSetters?.some((as) => as.userId === effectiveRepId))
     );
     return s + visibleProjects.reduce((ps, p) => {
       const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
