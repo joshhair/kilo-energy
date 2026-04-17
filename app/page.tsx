@@ -80,12 +80,16 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-8"
            style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}>
-        {/* Logo icon */}
+        {/* Logo icon — uses the designed PWA icon so splash matches the
+            app icon on the home screen and the dashboard loading variant */}
         <div className="animate-splash flex flex-col items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-               style={{ background: 'linear-gradient(135deg, #00e07a, #00e07a)' }}>
-            <span className="text-white font-black text-4xl" style={{ letterSpacing: '-2px' }}>K</span>
-          </div>
+          <img
+            src="/icons/icon-192.svg"
+            alt="Kilo Energy"
+            width={80}
+            height={80}
+            style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px rgba(0,229,160,0.35)' }}
+          />
           <div className="flex items-baseline gap-1">
             <span className="text-white font-black tracking-tight leading-none"
                   style={{ fontSize: '2.25rem', letterSpacing: '-0.04em' }}>

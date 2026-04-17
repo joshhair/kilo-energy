@@ -670,7 +670,7 @@ export default function IncentivesPage() {
             <button
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-2 font-medium px-4 py-2.5 rounded-xl text-sm transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}
             >
               <Plus className="w-4 h-4" />
               New Incentive

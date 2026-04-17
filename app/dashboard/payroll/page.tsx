@@ -689,7 +689,7 @@ function PayrollPageInner() {
               onClick={() => setShowPublishConfirm(true)}
               disabled={totalPending === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
             >
               Publish {typeTab} Payroll
             </button>
@@ -1022,12 +1022,12 @@ function PayrollPageInner() {
               {statusTab === 'Draft' ? (typeTab === 'Deal' ? 'Draft entries are auto-created when projects hit milestones' : 'Create a bonus entry for any rep') : statusTab === 'Pending' ? 'Select Draft entries and mark them for payroll' : 'Publish pending payroll to move entries here'}
             </p>
             {statusTab === 'Draft' && typeTab === 'Deal' && (
-              <button onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}>
+              <button onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
                 <ArrowRight className="w-3.5 h-3.5" /> Add Payment
               </button>
             )}
             {statusTab === 'Draft' && typeTab === 'Bonus' && (
-              <button onClick={() => setShowBonusModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}>
+              <button onClick={() => setShowBonusModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
                 Add Bonus
               </button>
             )}

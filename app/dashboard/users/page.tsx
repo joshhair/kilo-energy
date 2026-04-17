@@ -770,7 +770,7 @@ function UsersPageInner() {
               setShowAddModal(true);
             }}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -2068,7 +2068,7 @@ function UsersPageInner() {
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
               >
                 {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>

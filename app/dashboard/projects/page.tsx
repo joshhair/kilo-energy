@@ -220,7 +220,7 @@ function ProjectsPageInner() {
         <Link
           href="/dashboard/new-deal"
           className="font-bold px-4 py-2 rounded-xl text-sm active:scale-[0.97]"
-          style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff', boxShadow: '0 0 20px rgba(0,224,122,0.25)' }}
+          style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 0 20px rgba(0,224,122,0.25)' }}
         >
           + New Deal
         </Link>

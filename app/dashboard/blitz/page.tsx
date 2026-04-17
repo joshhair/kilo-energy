@@ -759,7 +759,7 @@ function BlitzPageInner() {
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
               <Plus className="w-4 h-4" /> New Blitz
             </button>
           )}

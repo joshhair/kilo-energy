@@ -76,7 +76,7 @@ export function PMSection() {
           <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Email</label>
           <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
         </div>
-        <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#fff' }}>
+        <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
           <Plus className="w-4 h-4" />
         </button>
       </div>
