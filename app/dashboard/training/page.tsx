@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
@@ -253,14 +254,44 @@ function TrainingPageInner() {
   const [paymentSearch, setPaymentSearch] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>('all');
 
-  // Row actions menu (admin) — stores the assignment id whose menu is open
+  // Row actions menu (admin) — stores the assignment id whose menu is open.
+  // Menu is portaled to document.body with viewport-fixed positioning so it
+  // escapes the table wrapper's overflow-x clipping (which implicitly clips
+  // overflow-y as well, making a non-portaled menu invisible below the row).
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuContainerRef = useRef<HTMLDivElement | null>(null);
+  const kebabButtonRefs = useRef<Map<string, HTMLButtonElement | null>>(new Map());
+  const menuPanelRef = useRef<HTMLDivElement | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+
+  // Compute menu position anchored to the opened kebab button. Recomputes on
+  // scroll/resize so the menu stays attached while the user moves the page.
+  useEffect(() => {
+    if (!openMenuId) { setMenuPos(null); return; }
+    const compute = () => {
+      const btn = kebabButtonRefs.current.get(openMenuId);
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    };
+    compute();
+    window.addEventListener('scroll', compute, { capture: true });
+    window.addEventListener('resize', compute);
+    return () => {
+      window.removeEventListener('scroll', compute, { capture: true } as EventListenerOptions);
+      window.removeEventListener('resize', compute);
+    };
+  }, [openMenuId]);
+
+  // Click-away: close when a mousedown hits outside both the menu panel and
+  // the kebab button for the open row.
   useEffect(() => {
     if (!openMenuId) return;
     const onClickAway = (e: MouseEvent) => {
-      if (!menuContainerRef.current) return;
-      if (!menuContainerRef.current.contains(e.target as Node)) setOpenMenuId(null);
+      const target = e.target as Node;
+      if (menuPanelRef.current?.contains(target)) return;
+      const btn = kebabButtonRefs.current.get(openMenuId);
+      if (btn?.contains(target)) return;
+      setOpenMenuId(null);
     };
     document.addEventListener('mousedown', onClickAway);
     return () => document.removeEventListener('mousedown', onClickAway);
@@ -783,65 +814,67 @@ function TrainingPageInner() {
                         )}
                       </td>
                       <td className="px-4 py-3 relative">
-                        <div ref={openMenuId === a.id ? menuContainerRef : undefined}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuId(openMenuId === a.id ? null : a.id);
-                            }}
-                            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--border)]/60 transition-colors"
-                            aria-label="Row actions"
+                        <button
+                          ref={(el) => { kebabButtonRefs.current.set(a.id, el); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === a.id ? null : a.id);
+                          }}
+                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--border)]/60 transition-colors"
+                          aria-label="Row actions"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                        {openMenuId === a.id && menuPos && typeof document !== 'undefined' && createPortal(
+                          <div
+                            ref={menuPanelRef}
+                            className="fixed z-[9999] min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                            style={{ top: menuPos.top, right: menuPos.right }}
                           >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                          {openMenuId === a.id && (
-                            <div
-                              className="absolute right-4 top-full mt-1 z-50 min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                            <Link
+                              href={`/dashboard/users/${a.traineeId}`}
+                              onClick={() => setOpenMenuId(null)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
                             >
-                              <Link
-                                href={`/dashboard/users/${a.traineeId}`}
-                                onClick={() => setOpenMenuId(null)}
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
-                              >
-                                <Pencil className="w-3.5 h-3.5" /> Edit assignment
-                              </Link>
-                              {a.isActiveTraining === false ? (
-                                <button
-                                  onClick={() => { setOpenMenuId(null); resumeTraining(a.id); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
-                                >
-                                  <Play className="w-3.5 h-3.5" /> Resume Training
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => { setOpenMenuId(null); markGraduated(a.id); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
-                                >
-                                  <ShieldCheck className="w-3.5 h-3.5" /> Mark Graduated
-                                </button>
-                              )}
+                              <Pencil className="w-3.5 h-3.5" /> Edit assignment
+                            </Link>
+                            {a.isActiveTraining === false ? (
                               <button
-                                onClick={() => { setOpenMenuId(null); toast(row.status === 'paused' ? 'Resume handled via rep activation (coming soon)' : 'Pause handled via rep deactivation (coming soon)', 'info'); }}
+                                onClick={() => { setOpenMenuId(null); resumeTraining(a.id); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
                               >
-                                <Pause className="w-3.5 h-3.5" /> {row.status === 'paused' ? 'Resume' : 'Pause'}
+                                <Play className="w-3.5 h-3.5" /> Resume Training
                               </button>
+                            ) : (
                               <button
-                                onClick={() => { setOpenMenuId(null); toast('Archive coming soon', 'info'); }}
+                                onClick={() => { setOpenMenuId(null); markGraduated(a.id); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
                               >
-                                <Archive className="w-3.5 h-3.5" /> Archive
+                                <ShieldCheck className="w-3.5 h-3.5" /> Mark Graduated
                               </button>
-                              <div className="border-t border-[var(--border-subtle)] my-1" />
-                              <button
-                                onClick={() => { setOpenMenuId(null); setBackfillAssignmentId(a.id); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" /> Run Backfill
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                            <button
+                              onClick={() => { setOpenMenuId(null); toast(row.status === 'paused' ? 'Resume handled via rep activation (coming soon)' : 'Pause handled via rep deactivation (coming soon)', 'info'); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                            >
+                              <Pause className="w-3.5 h-3.5" /> {row.status === 'paused' ? 'Resume' : 'Pause'}
+                            </button>
+                            <button
+                              onClick={() => { setOpenMenuId(null); toast('Archive coming soon', 'info'); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                            >
+                              <Archive className="w-3.5 h-3.5" /> Archive
+                            </button>
+                            <div className="border-t border-[var(--border-subtle)] my-1" />
+                            <button
+                              onClick={() => { setOpenMenuId(null); setBackfillAssignmentId(a.id); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" /> Run Backfill
+                            </button>
+                          </div>,
+                          document.body
+                        )}
                       </td>
                     </tr>
                   );
