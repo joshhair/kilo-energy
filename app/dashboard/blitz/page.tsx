@@ -639,9 +639,7 @@ function BlitzPageInner() {
     if (isAdmin) return sortedBlitzes;
     if (!effectiveRepId) return sortedBlitzes;
     const myIds = new Set([...myBlitzes, ...pendingBlitzes].map((b) => b.id));
-    return sortedBlitzes.filter((b) =>
-      !myIds.has(b.id) && (b.status === 'upcoming' || b.status === 'active')
-    );
+    return sortedBlitzes.filter((b) => !myIds.has(b.id));
   }, [sortedBlitzes, isAdmin, effectiveRepId, myBlitzes, pendingBlitzes]);
 
   // Reset pages when filters change

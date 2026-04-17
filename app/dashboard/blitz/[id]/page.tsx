@@ -171,7 +171,16 @@ export default function BlitzDetailPage() {
       if (dealsSort.col === 'customer') { av = a.customerName ?? ''; bv = b.customerName ?? ''; }
       else if (dealsSort.col === 'kw') { av = a.kWSize; bv = b.kWSize; }
       else if (dealsSort.col === 'ppw') { av = a.netPPW; bv = b.netPPW; }
-      else { av = (a.m1Amount ?? 0) + (a.m2Amount ?? 0) + (a.m3Amount ?? 0) + (a.setterM1Amount ?? 0) + (a.setterM2Amount ?? 0) + (a.setterM3Amount ?? 0); bv = (b.m1Amount ?? 0) + (b.m2Amount ?? 0) + (b.m3Amount ?? 0) + (b.setterM1Amount ?? 0) + (b.setterM2Amount ?? 0) + (b.setterM3Amount ?? 0); }
+      else {
+        const calcPayout = (p: any) => {
+          const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+          const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+          const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id);
+          return (closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0)
+            + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
+        };
+        av = calcPayout(a); bv = calcPayout(b);
+      }
       if (av < bv) return dealsSort.dir === 'asc' ? -1 : 1;
       if (av > bv) return dealsSort.dir === 'asc' ? 1 : -1;
       return 0;
