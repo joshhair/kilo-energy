@@ -1291,7 +1291,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Commission — rep view shows their own payroll entries */}
-      {effectiveRole === 'rep' && !isPM && (
+      {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (
         <div className="card-surface rounded-2xl p-6 mb-5">
           <h2 className="text-white font-semibold mb-4">My Commission</h2>
           {myEntries.length > 0 ? (
@@ -1760,13 +1760,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Installer</label>
                 <SearchableSelect
                   value={editVals.installer}
-                  onChange={(val) => { setEditVals((v) => ({ ...v, installer: val })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
+                  onChange={(val) => { setEditVals((v) => ({ ...v, installer: val, solarTechProductId: val === 'SolarTech' ? v.solarTechProductId : '' })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
                   options={(activeInstallers.includes(editVals.installer) || !editVals.installer ? activeInstallers : [editVals.installer, ...activeInstallers]).map((inst) => ({ value: inst, label: !activeInstallers.includes(inst) ? `${inst} (archived)` : inst }))}
                   placeholder="Select installer…"
                   error={!!editErrors.installer}
                 />
                 {editErrors.installer && <p className="text-red-400 text-xs mt-1">{editErrors.installer}</p>}
               </div>
+
+              {/* SolarTech Product — shown only when installer is SolarTech */}
+              {editVals.installer === 'SolarTech' && (
+                <div>
+                  <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">SolarTech Product</label>
+                  <select
+                    value={editVals.solarTechProductId}
+                    onChange={(e) => { setEditVals((v) => ({ ...v, solarTechProductId: e.target.value })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.installer && !editVals.solarTechProductId ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`}
+                  >
+                    <option value="">— Select product —</option>
+                    {solarTechProducts.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Financer */}
               <div>
@@ -2000,7 +2017,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   kiloPerW: overrideKilo,
                   ...(!isNaN(overrideSetter) ? { setterPerW: overrideSetter } : {}),
                 };
-              } else if (editVals.installer === 'SolarTech' && !project.solarTechProductId) {
+              } else if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId) {
                 return (
                   <div className="mt-4 rounded-xl p-4 bg-amber-900/20 border border-amber-500/30">
                     <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
@@ -2009,8 +2026,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </p>
                   </div>
                 );
-              } else if (editVals.installer === 'SolarTech' && project.solarTechProductId) {
-                previewBaseline = getSolarTechBaseline(project.solarTechProductId, previewKW, solarTechProducts);
+              } else if (editVals.installer === 'SolarTech' && editVals.solarTechProductId) {
+                previewBaseline = getSolarTechBaseline(editVals.solarTechProductId, previewKW, solarTechProducts);
               } else if (project.installerProductId && editVals.installer === project.installer) {
                 previewBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, previewKW, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
               } else {
