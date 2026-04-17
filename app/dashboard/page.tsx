@@ -124,7 +124,7 @@ export function NeedsAttentionSection({
     if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
-    const phaseSince = (() => {
+    const phaseSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
       if (!proj.soldDate) return null;
       const [sy, sm, sd] = proj.soldDate.split('-').map(Number);
       return new Date(sy, sm - 1, sd);
