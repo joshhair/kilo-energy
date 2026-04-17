@@ -70,10 +70,14 @@ export function formatCompactKW(kw: number): string {
 }
 
 export function isInDateRange(dateStr: string, startDate: string, endDate: string | null): boolean {
-  const date = new Date(dateStr);
-  const start = new Date(startDate);
-  const end = endDate ? new Date(endDate) : new Date('2099-12-31');
-  return date >= start && date <= end;
+  const [dy, dm, dd] = dateStr.split('-').map(Number);
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const end = endDate ?? '2099-12-31';
+  const [ey, em, ed] = end.split('-').map(Number);
+  const d = dy * 10000 + dm * 100 + dd;
+  const s = sy * 10000 + sm * 100 + sd;
+  const e = ey * 10000 + em * 100 + ed;
+  return d >= s && d <= e;
 }
 
 /** Format a Date as YYYY-MM-DD using local time (avoids UTC off-by-one). */

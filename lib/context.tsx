@@ -512,8 +512,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
             const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
             const effectiveSetterM3 = updates.setterM3Amount ?? old.setterM3Amount;
-            const closerHasPaidM1 = !old.setterId && prevEntries.some(
-              (e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1' && e.status === 'Paid'
+            const closerHasPaidM1 = prevEntries.some(
+              (e) =>
+                e.projectId === id &&
+                e.paymentStage === 'M1' &&
+                e.status === 'Paid' &&
+                (old.setterId ? e.repId === old.setterId : e.repId === old.repId)
             );
             if (pastAcceptance && (effectiveSetterM1 ?? 0) > 0) {
               const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M1');
@@ -575,7 +579,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
             if (pastPTO) {
               const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-              const hasM2Entry = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
+              const hasM2Entry = prevEntries.some((e) => e.projectId === id && e.paymentStage === 'M2') ||
+                newEntries.some((e) => e.projectId === id && e.paymentStage === 'M2');
               const setterM3 = effectiveSetterM3 != null
                 ? effectiveSetterM3
                 : installPayPct > 0 && installPayPct < 100 && !old.subDealerId
