@@ -349,7 +349,7 @@ function UsersPageInner() {
             phone: newPhone,
             role: newUserRole,
             // repType is only meaningful for rep accounts
-            repType: isRepRole ? newRepType : 'none',
+            repType: isRepRole ? newRepType : undefined,
           }),
         })
           .then(async (r) => {

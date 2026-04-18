@@ -112,6 +112,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Setter-type rep cannot be assigned as closer' }, { status: 400 });
   }
 
+  if (body.setterId) {
+    const setterRep = await prisma.user.findUnique({ where: { id: body.setterId }, select: { repType: true } });
+    if (setterRep && setterRep.repType === 'closer') {
+      return NextResponse.json({ error: 'Closer-type rep cannot be assigned as setter' }, { status: 400 });
+    }
+  }
+
   const installer = await prisma.installer.findUnique({ where: { id: body.installerId }, select: { id: true, active: true } });
   if (!installer) {
     return NextResponse.json({ error: 'Installer not found' }, { status: 400 });

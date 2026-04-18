@@ -1038,7 +1038,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerId: nextTrainerId,
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
-      solarTechProductId: editVals.installer !== project.installer ? undefined : (editVals.solarTechProductId || undefined),
+      solarTechProductId: (editVals.installer !== project.installer && editVals.installer !== 'SolarTech') ? undefined : (editVals.solarTechProductId || undefined),
       ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
     });
     setShowEditModal(false);
@@ -1320,9 +1320,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               ))}
             </div>
           ) : (() => {
-              const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === currentRepId);
-              const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === currentRepId);
-              const isSetterRep = project.setterId === currentRepId;
+              const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
+              const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
+              const isSetterRep = project.setterId === effectiveRepId;
               const expM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
               const expM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
               const expM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
