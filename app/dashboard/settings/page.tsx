@@ -20,7 +20,6 @@ import { SettingsSkeleton } from './components/SettingsSkeleton';
 import { BlitzPermissionsSection } from './sections/BlitzPermissionsSection';
 import { SubDealersSection } from './sections/SubDealersSection';
 import { PMSection } from './sections/PMSection';
-import { TrainersSection } from './sections/TrainersSection';
 import { InstallersSection } from './sections/InstallersSection';
 import { FinancersSection } from './sections/FinancersSection';
 import { CustomizationSection } from './sections/CustomizationSection';
@@ -30,7 +29,6 @@ import { BaselinesSection } from './sections/BaselinesSection';
 // ─── Nav structure ────────────────────────────────────────────────────────────
 
 type SettingsSection =
-  | 'trainers'
   | 'installers' | 'financers' | 'baselines'
   | 'blitz-permissions'
   | 'sub-dealers'
@@ -45,7 +43,8 @@ const NAV: NavGroup[] = [
   {
     group: 'Team',
     items: [
-      { id: 'trainers', label: 'Trainer Overrides', icon: Layers },
+      // "Trainer Overrides" used to live here — moved to /dashboard/training
+      // in Batch 6 so the Trainer Hub is the single source of truth.
       { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
       { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
       { id: 'project-managers', label: 'Project Managers', icon: UserCog },
@@ -94,15 +93,29 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['trainers', 'blitz-permissions', 'sub-dealers', 'project-managers', 'installers', 'financers', 'baselines', 'customization', 'export'];
-  const paramSection = searchParams.get('section') as SettingsSection | null;
-  const initialSection: SettingsSection = paramSection && validSections.includes(paramSection) ? paramSection : 'trainers';
+  const validSections: SettingsSection[] = ['blitz-permissions', 'sub-dealers', 'project-managers', 'installers', 'financers', 'baselines', 'customization', 'export'];
+  const paramSection = searchParams.get('section') as string | null;
+
+  // Legacy redirect: Settings > Trainer Overrides was consolidated into
+  // /dashboard/training in Batch 6. Old links (bookmarks, shared URLs,
+  // external docs) land here — forward them so they don't break.
+  useEffect(() => {
+    if (paramSection === 'trainers') {
+      router.replace('/dashboard/training');
+    }
+  }, [paramSection, router]);
+
+  const initialSection: SettingsSection = paramSection && (validSections as string[]).includes(paramSection)
+    ? (paramSection as SettingsSection)
+    : 'blitz-permissions';
 
   const [section, setSection] = useState<SettingsSection>(initialSection);
 
   useEffect(() => {
-    const p = searchParams.get('section') as SettingsSection | null;
-    const next = p && validSections.includes(p) ? p : 'trainers';
+    const p = searchParams.get('section') as string | null;
+    const next: SettingsSection = p && (validSections as string[]).includes(p)
+      ? (p as SettingsSection)
+      : 'blitz-permissions';
     // URL changed externally (back/forward, manual edit) — guard unsaved edits
     if (next !== section && hasUnsavedChanges()) {
       setPendingSection(next);
@@ -465,17 +478,6 @@ function SettingsPageInner() {
         })()}
 
         {/* ── Section rendering ──────────────────────────────────────────────── */}
-
-        {section === 'trainers' && (
-          <TrainersSection
-            editingAssignmentId={editingAssignmentId}
-            setEditingAssignmentId={setEditingAssignmentId}
-            editingTiers={editingTiers}
-            setEditingTiers={setEditingTiers}
-            deleteConfirm={deleteConfirm}
-            setDeleteConfirm={setDeleteConfirm}
-          />
-        )}
 
         {section === 'blitz-permissions' && (
           <BlitzPermissionsSection reps={reps} />

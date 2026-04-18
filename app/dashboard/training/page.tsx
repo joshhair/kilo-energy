@@ -233,6 +233,9 @@ function TrainingPageInner() {
   const [adminTrainerFilter, setAdminTrainerFilter] = useState(() => searchParams.get('trainer') ?? '');
   const [adminRepFilter, setAdminRepFilter] = useState(() => searchParams.get('rep') ?? '');
   const [adminSearch, setAdminSearch] = useState(() => searchParams.get('q') ?? '');
+  // Ref on the admin search input so the "/" shortcut can focus it.
+  // Ported from the old Settings TrainersSection for parity.
+  const adminSearchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (effectiveRole !== 'admin') return;
@@ -245,6 +248,22 @@ function TrainingPageInner() {
     router.replace(qs ? `?${qs}` : '/dashboard/training', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminStatusFilter, adminTrainerFilter, adminRepFilter, adminSearch, effectiveRole]);
+
+  // Keyboard shortcut: "/" focuses the admin search when not already
+  // inside an input. Scoped to admin view since that's the only place
+  // adminSearchRef exists. Matches the old Settings-section behavior.
+  useEffect(() => {
+    if (effectiveRole !== 'admin') return;
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(tag ?? '') && adminSearchRef.current) {
+        e.preventDefault();
+        adminSearchRef.current.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [effectiveRole]);
 
   // ── Rep-trainer search + sort for rate schedule ───────────────────────────
   const [traineeSearch, setTraineeSearch] = useState('');
@@ -638,6 +657,27 @@ function TrainingPageInner() {
           <p className="text-[var(--text-muted)] text-sm mt-2 ml-[52px]">
             All trainer-trainee assignments across the org. Use filters to scope.
           </p>
+          {/* At-a-glance stats — ported from the old Settings > Trainer
+              Overrides header. Keeps admins from having to open a tab to
+              know the shape of trainer activity. avgRate averages current
+              effective rates across all assignments (completedDeals-aware
+              via the adminRows enrichment computed further down). */}
+          {(() => {
+            const totalAssignments = trainerAssignments.length;
+            const uniqueTrainerCount = new Set(trainerAssignments.map((a) => a.trainerId)).size;
+            const avgRate = adminRows.length > 0
+              ? adminRows.reduce((s, r) => s + r.rate, 0) / adminRows.length
+              : 0;
+            return (
+              <div className="mt-3 ml-[52px] flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
+                <span><span className="text-white font-semibold">{totalAssignments}</span> assignment{totalAssignments === 1 ? '' : 's'}</span>
+                <span className="text-[var(--border)]">·</span>
+                <span><span className="text-white font-semibold">{uniqueTrainerCount}</span> unique trainer{uniqueTrainerCount === 1 ? '' : 's'}</span>
+                <span className="text-[var(--border)]">·</span>
+                <span>avg override <span className="text-white font-semibold">${avgRate.toFixed(2)}/W</span></span>
+              </div>
+            );
+          })()}
           <button
             onClick={() => setShowNewAssignment(true)}
             className="mt-3 ml-[52px] inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
@@ -653,10 +693,12 @@ function TrainingPageInner() {
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <input
+              ref={adminSearchRef}
               type="text"
-              placeholder="Search trainer or rep..."
+              placeholder='Search trainer or rep… press "/" to focus'
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') { (e.target as HTMLInputElement).blur(); } }}
               className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
             />
           </div>
