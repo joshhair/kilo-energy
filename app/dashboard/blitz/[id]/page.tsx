@@ -235,7 +235,8 @@ export default function BlitzDetailPage() {
     return approvedVisibleProjects.reduce((s: number, p: any) => {
       const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
       const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
-      if (!isSelfGen && !closerApproved) return s;
+      const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+      if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
       const setterCost = (p.setterId && p.setterId !== p.closerId) ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
