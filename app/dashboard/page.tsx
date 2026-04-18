@@ -986,8 +986,13 @@ export default function DashboardPage() {
 
   // Only count as "paid" once the pay date has actually passed
   const totalPaid = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
-  const totalChargebacks = Math.abs(myPayroll.filter((p) => p.amount < 0).reduce((sum, p) => sum + p.amount, 0));
-  const chargebackCount = myPayroll.filter((p) => p.amount < 0).length;
+  // Chargebacks tile shows ONLY currently-owed negatives — entries still
+  // Draft or Pending. Paid negatives have already been deducted from a
+  // past paycheck and aren't owed anymore; including them would double-
+  // count the historical claw-back.
+  const outstandingChargebacks = myPayroll.filter((p) => p.amount < 0 && (p.status === 'Draft' || p.status === 'Pending'));
+  const totalChargebacks = Math.abs(outstandingChargebacks.reduce((sum, p) => sum + p.amount, 0));
+  const chargebackCount = outstandingChargebacks.length;
   const totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
   const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);

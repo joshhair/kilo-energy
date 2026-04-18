@@ -87,13 +87,91 @@ describe('PATCH /api/payroll/[id] — status transitions (Batch 4 adds reverse)'
     await prisma.payrollEntry.delete({ where: { id: entry.id } });
   });
 
-  it('Paid → Pending rejected (422 — money already disbursed)', async () => {
+  it('Paid → Pending within 24h grace window succeeds', async () => {
     await asAdmin();
     const rep = await prisma.user.findFirstOrThrow({ where: { role: 'rep', active: true } });
-    const entry = await createEntry(rep.id, 'Paid');
+    // Fresh Paid entry with paidAt = now — within the grace window.
+    const entry = await prisma.payrollEntry.create({
+      data: {
+        repId: rep.id,
+        amountCents: 50000,
+        type: 'Bonus',
+        paymentStage: 'Bonus',
+        status: 'Paid',
+        paidAt: new Date(),
+        date: '2026-04-01',
+        notes: 'test',
+      },
+    });
+    const { req, params } = patchReq(entry.id, { status: 'Pending' });
+    const res = await PATCH(req, { params });
+    expect(res.status).toBe(200);
+    const row = await prisma.payrollEntry.findUniqueOrThrow({ where: { id: entry.id } });
+    expect(row.status).toBe('Pending');
+    // Reversal clears paidAt so a subsequent re-Paid restamps it fresh.
+    expect(row.paidAt).toBeNull();
+    await prisma.payrollEntry.delete({ where: { id: entry.id } });
+  });
+
+  it('Paid → Pending after 24h grace window is rejected (422)', async () => {
+    await asAdmin();
+    const rep = await prisma.user.findFirstOrThrow({ where: { role: 'rep', active: true } });
+    // paidAt = 25 hours ago → grace window expired.
+    const stale = new Date(Date.now() - 25 * 60 * 60 * 1000);
+    const entry = await prisma.payrollEntry.create({
+      data: {
+        repId: rep.id,
+        amountCents: 50000,
+        type: 'Bonus',
+        paymentStage: 'Bonus',
+        status: 'Paid',
+        paidAt: stale,
+        date: '2026-04-01',
+        notes: 'test',
+      },
+    });
     const { req, params } = patchReq(entry.id, { status: 'Pending' });
     const res = await PATCH(req, { params });
     expect(res.status).toBe(422);
+    const row = await prisma.payrollEntry.findUniqueOrThrow({ where: { id: entry.id } });
+    expect(row.status).toBe('Paid'); // unchanged
+    await prisma.payrollEntry.delete({ where: { id: entry.id } });
+  });
+
+  it('Paid → Pending on a never-paid entry with null paidAt is rejected', async () => {
+    // Defensive: an entry marked Paid via direct DB manipulation (no paidAt
+    // stamp) shouldn't be reversible — treat null paidAt as "outside
+    // window" since we can't prove it's fresh.
+    await asAdmin();
+    const rep = await prisma.user.findFirstOrThrow({ where: { role: 'rep', active: true } });
+    const entry = await prisma.payrollEntry.create({
+      data: {
+        repId: rep.id,
+        amountCents: 50000,
+        type: 'Bonus',
+        paymentStage: 'Bonus',
+        status: 'Paid',
+        paidAt: null,
+        date: '2026-04-01',
+        notes: 'test',
+      },
+    });
+    const { req, params } = patchReq(entry.id, { status: 'Pending' });
+    const res = await PATCH(req, { params });
+    expect(res.status).toBe(422);
+    await prisma.payrollEntry.delete({ where: { id: entry.id } });
+  });
+
+  it('Pending → Paid stamps paidAt', async () => {
+    await asAdmin();
+    const rep = await prisma.user.findFirstOrThrow({ where: { role: 'rep', active: true } });
+    const entry = await createEntry(rep.id, 'Pending');
+    const { req, params } = patchReq(entry.id, { status: 'Paid' });
+    const res = await PATCH(req, { params });
+    expect(res.status).toBe(200);
+    const row = await prisma.payrollEntry.findUniqueOrThrow({ where: { id: entry.id } });
+    expect(row.paidAt).not.toBeNull();
+    expect(Math.abs(row.paidAt!.getTime() - Date.now())).toBeLessThan(10_000);
     await prisma.payrollEntry.delete({ where: { id: entry.id } });
   });
 

@@ -231,6 +231,10 @@ export interface Project {
   // Set only when phase changes; null for projects pre-dating this field.
   phaseChangedAt?: string;
   updatedAt?: string;
+  // True for rows brought in by the 2026-04-16 Glide bulk import. Chargeback
+  // generation skips these — imported rows carry their own historical
+  // reconciliation. Defaults to false for all net-new deals.
+  importedFromGlide?: boolean;
   // Tag-team: additional closers / setters on this deal, each with their
   // own per-milestone cut. Empty (or undefined) for standard single-closer,
   // single-setter deals. Position = display order (position 1 = first co).

@@ -347,6 +347,13 @@ model Project {
   additionalClosers ProjectCloser[]
   additionalSetters ProjectSetter[]
 
+  /// True when this project was bulk-imported from Glide (the 2026-04-16
+  /// migration). Chargeback generation skips these — the imported rows
+  /// carry their own historical reconciliation, and re-generating would
+  /// double-charge reps. Set by scripts/backfill-imported-from-glide.mjs
+  /// for existing rows; remains false for all net-new deals.
+  importedFromGlide Boolean @default(false)
+
   @@index([closerId])
   @@index([setterId])
   @@index([subDealerId])
@@ -455,6 +462,12 @@ model PayrollEntry {
 
   /// "Draft" | "Pending" | "Paid"
   status String @default("Draft")
+
+  /// Timestamp of the Draft→Paid or Pending→Paid transition. Used by the
+  /// grace-window rule in PATCH /api/payroll/[id]: Paid→Pending reversal
+  /// is allowed only if paidAt is within the last 24 hours. Null until
+  /// the entry is first marked Paid.
+  paidAt DateTime?
 
   date  String /// ISO date YYYY-MM-DD
   notes String @default("")

@@ -173,6 +173,12 @@ export interface ChargebackResult {
  * When a project is cancelled, creates negative chargeback entries for any Paid
  * entries, and identifies Draft/Pending entries for deletion.
  * Handles deduplication — won't create a chargeback if one already exists.
+ *
+ * Skips Glide-imported projects (`old.importedFromGlide === true`): those
+ * rows carry their own historical reconciliation from Glide and creating
+ * new chargebacks would double-charge. Still cleans up any Draft/Pending
+ * positives though — a cancelled imported deal shouldn't continue
+ * generating future payroll.
  */
 export function handleChargebacks(
   projectId: string,
@@ -184,6 +190,13 @@ export function handleChargebacks(
     (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && (e.status === 'Draft' || e.status === 'Pending')
   );
   const toDeleteIds = draftOrPendingEntries.map((e) => e.id);
+
+  // Imported-from-Glide short-circuit: historical rows carry their own
+  // chargeback reconciliation in the imported payroll. Only clean up the
+  // forward-looking Draft/Pending positives; don't generate new negatives.
+  if (old.importedFromGlide) {
+    return { toAdd: [], toDeleteIds };
+  }
 
   const remaining = draftOrPendingEntries.length > 0
     ? prevEntries.filter((e) => !draftOrPendingEntries.includes(e))

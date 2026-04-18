@@ -91,9 +91,17 @@ export async function PATCH(req: NextRequest) {
   };
   const sourceStatus = sourceStatusMap[status];
 
+  // Stamp paidAt on the Paid transition so the 24h grace-window rule in
+  // the single-entry PATCH handler knows when to allow Paid→Pending
+  // reversal. Pending transitions leave paidAt alone (null for a
+  // never-paid entry, or stale from a reversed-then-re-progressed entry
+  // — the single-entry reversal clears it explicitly).
+  const updateData: Record<string, unknown> = { status };
+  if (status === 'Paid') updateData.paidAt = new Date();
+
   const result = await prisma.payrollEntry.updateMany({
     where: { id: { in: ids }, status: sourceStatus },
-    data: { status },
+    data: updateData,
   });
   return NextResponse.json({ success: true, updated: result.count });
 }
