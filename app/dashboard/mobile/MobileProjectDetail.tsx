@@ -544,9 +544,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             so setters see setter amounts, SDs skip M1, and M3 only shows if
             the installer structure produces an M3 (m3Amount > 0).
           Admin: show the deal's own amounts from project fields (viewing the
-            deal, not "their" stake). */}
+            deal, not "their" stake).
+
+          Total-expected rows (top of each card) mirror desktop behavior —
+          rep/SD see their own sum; admin sees closer + setter sums when
+          applicable; closer-viewing-own sees setter total too. */}
       {!isPM && (() => {
         const isMeView = effectiveRole === 'rep' || effectiveRole === 'sub-dealer';
+        const isCloserRep = isMeView && project.repId === effectiveRepId;
         type Stage = { key: 'M1' | 'M2' | 'M3'; amount: number; paid: boolean };
         const allStages: Stage[] = isMeView
           ? [
@@ -580,9 +585,56 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               : 0
             : (paidCount / (visibleStages.length - 1)) * 100;
 
+        // Totals for the summary row(s).
+        const myTotalExpected = isMeView
+          ? myCommission.stages.m1.amount + myCommission.stages.m2.amount + myCommission.stages.m3.amount
+          : 0;
+        const closerTotalExpected =
+          (project.m1Amount ?? 0) + (project.m2Amount ?? 0) + (project.m3Amount ?? 0);
+        const setterTotalExpected = project.setterId
+          ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
+          : 0;
+        const showSetterTotalToCloser = isCloserRep && project.setterId && setterTotalExpected > 0;
+
         return (
           <MobileCard>
             <h2 className="text-base font-semibold text-white mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission Breakdown</h2>
+
+            {/* Total-expected summary row — rep/SD see own total; admin sees
+                closer (and setter, if applicable) totals. */}
+            {isMeView && myTotalExpected > 0 && (
+              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Total expected</span>
+                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(myTotalExpected)}</span>
+              </div>
+            )}
+            {showSetterTotalToCloser && (
+              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.setterName} (setter) total</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--m-text-secondary, var(--text-mobile-secondary))' }}>{fmt$(setterTotalExpected)}</span>
+              </div>
+            )}
+            {!isMeView && (
+              <div className="space-y-2 mb-3">
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                  <div>
+                    <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.repName} (closer)</p>
+                    <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>Total expected</p>
+                  </div>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotalExpected)}</span>
+                </div>
+                {project.setterId && setterTotalExpected > 0 && (
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                    <div>
+                      <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.setterName} (setter)</p>
+                      <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>Total expected</p>
+                    </div>
+                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotalExpected)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="relative flex items-start justify-between pt-2 pb-4">
               {visibleStages.length > 1 && (
                 <>
