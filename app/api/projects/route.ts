@@ -104,6 +104,14 @@ export async function POST(req: NextRequest) {
   }
 
   // ─── FK existence checks ───
+  const closerRep = await prisma.user.findUnique({ where: { id: body.closerId }, select: { id: true, repType: true } });
+  if (!closerRep) {
+    return NextResponse.json({ error: 'Closer not found' }, { status: 400 });
+  }
+  if (closerRep.repType === 'setter') {
+    return NextResponse.json({ error: 'Setter-type rep cannot be assigned as closer' }, { status: 400 });
+  }
+
   const installer = await prisma.installer.findUnique({ where: { id: body.installerId }, select: { id: true, active: true } });
   if (!installer) {
     return NextResponse.json({ error: 'Installer not found' }, { status: 400 });

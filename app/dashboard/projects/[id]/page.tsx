@@ -901,7 +901,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       netPPW: String(project.netPPW),
       setterId: project.setterId ?? '',
       soldDate: project.soldDate,
-      notes: project.notes ?? '',
+      notes: adminNotes ?? '',
       useBaselineOverride: !!project.baselineOverride,
       overrideCloserPerW: project.baselineOverride ? String(project.baselineOverride.closerPerW) : '',
       overrideSetterPerW: project.baselineOverride?.setterPerW != null ? String(project.baselineOverride.setterPerW) : '',
@@ -1038,7 +1038,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerId: nextTrainerId,
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
-      ...(editVals.installer !== project.installer ? { installerProductId: undefined, solarTechProductId: undefined } : {}),
+      solarTechProductId: editVals.installer !== project.installer ? undefined : (editVals.solarTechProductId || undefined),
+      ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
     });
     setShowEditModal(false);
     setEditErrors({});
