@@ -69,3 +69,67 @@ test('rep cannot POST to /api/payroll (admin/PM only)', async ({ request }) => {
   // requireAdminOrPM → 403 on rep path.
   expect([401, 403]).toContain(res.status());
 });
+
+test('rep cannot bulk-PATCH payroll status (admin/PM only)', async ({ request }) => {
+  const res = await request.patch('/api/payroll', {
+    data: { ids: ['fake-id-1', 'fake-id-2'], status: 'Paid' },
+  });
+  expect([401, 403]).toContain(res.status());
+});
+
+test('rep cannot DELETE a project (admin only)', async ({ request }) => {
+  const res = await request.delete('/api/projects/nonexistent-id');
+  expect([401, 403]).toContain(res.status());
+});
+
+test('rep cannot POST an installer (admin only)', async ({ request }) => {
+  const res = await request.post('/api/installers', {
+    data: { name: 'Rogue Installer', installPayPct: 100 },
+  });
+  expect([401, 403]).toContain(res.status());
+});
+
+test('rep cannot POST a financer (admin only)', async ({ request }) => {
+  const res = await request.post('/api/financers', {
+    data: { name: 'Rogue Financer' },
+  });
+  expect([401, 403]).toContain(res.status());
+});
+
+test('rep cannot POST a blitz (admin only)', async ({ request }) => {
+  const res = await request.post('/api/blitz', {
+    data: { name: 'Rogue Blitz', startDate: '2026-04-01', endDate: '2026-04-30' },
+  });
+  expect([401, 403]).toContain(res.status());
+});
+
+test('rep cannot create another user via /api/reps (admin only)', async ({ request }) => {
+  const res = await request.post('/api/reps', {
+    data: { name: 'Ghost Rep', email: 'ghost@example.com', role: 'rep' },
+  });
+  expect([401, 403]).toContain(res.status());
+});
+
+test('rep cannot PATCH another user\'s role (admin only)', async ({ request }) => {
+  // Pick an arbitrary rep id from /api/data via the admin context — we don't
+  // need to find a specific one since the guard rejects before any lookup.
+  const adminCtx = await pwRequest.newContext({
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    extraHTTPHeaders: { origin: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000' },
+    storageState: 'tests/e2e/.auth/admin.json',
+  });
+  const dataRes = await adminCtx.get('/api/data');
+  const payload = await dataRes.json();
+  await adminCtx.dispose();
+
+  const victim = payload.reps.find((r: { email: string }) => r.email !== 'e2e-rep@kiloenergies.com');
+  if (!victim) {
+    test.skip(true, 'No victim rep found');
+    return;
+  }
+
+  const res = await request.patch(`/api/users/${victim.id}`, {
+    data: { role: 'sub-dealer' },
+  });
+  expect([401, 403]).toContain(res.status());
+});
