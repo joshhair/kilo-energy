@@ -562,7 +562,7 @@ function RepEarningsView() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => {
-                const _d = new Date(); const dateStr = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+                const dateStr = localDateString(new Date());
                 if (tab === 'bonus') {
                   const headers = ['Type', 'Note', 'Amount', 'Status', 'Date'];
                   const rows = sortedBonuses.map((e) => ['Bonus', e.notes || '', `$${e.amount.toFixed(2)}`, e.status, formatDate(e.date)]);

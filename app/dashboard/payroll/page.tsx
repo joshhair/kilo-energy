@@ -189,6 +189,7 @@ function PayrollPageInner() {
       // handleMarkForPayroll and selectAll are defined after both the isMobile and
       // project_manager early returns, so skip all shortcuts on those render paths
       // to avoid calling uninitialized bindings (TDZ ReferenceError).
+      if (!isHydrated || !dbReady) return;
       if (isMobile || effectiveRole === 'project_manager') return;
 
       // Skip if an input element is focused
@@ -252,8 +253,8 @@ function PayrollPageInner() {
 
       // Row passed the date/rep/type filters — it's in filteredByDateRep.
       filteredByDateRep.push(p);
-      if (p.status === 'Draft') totalDraft += p.amount;
-      else if (p.status === 'Pending') totalPending += p.amount;
+      if (p.status === 'Draft' && p.date <= today) totalDraft += p.amount;
+      else if (p.status === 'Pending' && p.date <= today) totalPending += p.amount;
       else if (p.status === 'Paid' && p.date <= today) totalPaid += p.amount;
 
       // And it's in `filtered` (the visible table) only if its status
@@ -717,7 +718,7 @@ function PayrollPageInner() {
                   formatDate(e.date),
                   e.notes ?? '',
                 ]);
-                downloadCSV(`payroll-${statusTab.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+                downloadCSV(`payroll-${statusTab.toLowerCase()}-${todayLocalDateStr()}.csv`, headers, rows);
               }}
               disabled={filtered.length === 0}
               className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"

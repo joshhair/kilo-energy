@@ -148,9 +148,9 @@ export function NeedsAttentionSection({
   for (const proj of activeProjects) {
     if (proj.flagged) continue; // already added above; don't double-count
     if (proj.phase === 'On Hold') {
-      // Use updatedAt as proxy for when the project was placed on hold.
-      // Fallback to soldDate only if updatedAt is absent (legacy data).
-      const holdSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
+      // Use phaseChangedAt (stamped when phase changes) for accurate hold duration.
+      // Fallback to soldDate only for legacy rows predating phaseChangedAt.
+      const holdSince = proj.phaseChangedAt ? new Date(proj.phaseChangedAt) : (() => {
         if (!proj.soldDate) return today;
         const [y, m, d] = proj.soldDate.split('-').map(Number);
         return new Date(y, m - 1, d);

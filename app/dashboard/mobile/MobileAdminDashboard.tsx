@@ -140,10 +140,9 @@ export default function MobileAdminDashboard() {
   const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
   const flaggedCount = useMemo(() => projects.filter((p) => p.flagged && p.phase !== 'Cancelled' && p.phase !== 'Completed').length, [projects]);
 
-  // Stalled projects — cumulative days-from-sold thresholds (intentional design: no phaseEnteredAt field exists).
+  // Stalled projects — cumulative days-from-sold thresholds (intentional design: simpler than phase-entry age).
   // A project still in a given phase after this many total days from soldDate is "stuck".
-  // This matches desktop logic in page.tsx (DEFAULT_PHASE_STUCK_THRESHOLDS). Do NOT attempt to switch to
-  // phase-entry age without first adding a phaseEnteredAt field to the Project schema.
+  // Desktop stuck detection uses phaseChangedAt for accuracy; mobile uses soldDate for simplicity.
   // Uses full `projects` (not period-scoped) so Needs Attention matches desktop regardless of selected period.
   const stalledProjects = useMemo(() => {
     const now = Date.now();

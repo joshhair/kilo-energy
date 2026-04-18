@@ -180,19 +180,20 @@ export function ExportSection() {
                   a.href = url; a.download = filename; a.click();
                   URL.revokeObjectURL(url);
                 };
+                const _d = new Date(); const dateStr = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
                 if (exportSelected.has('payments')) {
                   const csv = toCSV(
                     ['Rep', 'Customer / Notes', 'Type', 'Stage', 'Amount', 'Status', 'Date'],
                     filteredPayroll.map((p) => [p.repName, p.customerName || p.notes || '', p.type, String(p.paymentStage ?? ''), String(p.amount), p.status, p.date]),
                   );
-                  download(csv, `kilo_payments_${new Date().toISOString().split('T')[0]}.csv`);
+                  download(csv, `kilo_payments_${dateStr}.csv`);
                 }
                 if (exportSelected.has('projects')) {
                   const csv = toCSV(
                     ['Customer', 'Rep', 'Phase', 'Installer', 'Financer', 'Product Type', 'kW Size', 'Net PPW', 'Sold Date', 'M1 Amount', 'M1 Paid', 'M2 Amount', 'M2 Paid', 'Flagged'],
                     filteredProjects.map((p) => [p.customerName, p.repName, p.phase, p.installer, p.financer, p.productType, String(p.kWSize), String(p.netPPW), p.soldDate, String(p.m1Amount), p.m1Paid ? 'Yes' : 'No', String(p.m2Amount), p.m2Paid ? 'Yes' : 'No', p.flagged ? 'Yes' : 'No']),
                   );
-                  download(csv, `kilo_projects_${new Date().toISOString().split('T')[0]}.csv`);
+                  download(csv, `kilo_projects_${dateStr}.csv`);
                 }
                 if (exportSelected.has('baselines')) {
                   const rows: string[][] = [];
@@ -222,7 +223,7 @@ export function ExportSection() {
                     ['Source', 'Name', 'Family / Label', 'Installer / EffectiveFrom', 'EffectiveTo', 'Closer $/W', 'Kilo $/W', 'Min kW', 'Max kW', 'Band Min kW', 'Band Max kW', '', ''],
                     rows,
                   );
-                  download(csv, `kilo_baselines_${new Date().toISOString().split('T')[0]}.csv`);
+                  download(csv, `kilo_baselines_${dateStr}.csv`);
                 }
                 if (exportSelected.has('trainers')) {
                   const rows: string[][] = [];

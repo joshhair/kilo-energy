@@ -365,7 +365,7 @@ export function BaselinesSection({
                   });
                   return sorted;
                 })().map((installer) => {
-                  const today = new Date().toISOString().split('T')[0];
+                  const now = new Date(); const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                   const allVersions = installerPricingVersions.filter((v) => v.installer === installer);
                   const activeVersion = allVersions.reduce<typeof allVersions[0] | null>((best, v) => {
                     if (v.effectiveFrom > today || (v.effectiveTo !== null && v.effectiveTo < today)) return best;

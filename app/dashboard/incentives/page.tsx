@@ -657,7 +657,8 @@ export default function IncentivesPage() {
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url; a.download = `kilo_incentives_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+                const _d2 = new Date(); const _ds2 = `${_d2.getFullYear()}-${String(_d2.getMonth()+1).padStart(2,'0')}-${String(_d2.getDate()).padStart(2,'0')}`;
+                a.href = url; a.download = `kilo_incentives_${_ds2}.csv`; a.click();
                 URL.revokeObjectURL(url);
                 toast('Incentives CSV exported', 'info');
               }}

@@ -11,6 +11,7 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { useToast } from '../../../lib/toast';
+import { todayLocalDateStr } from '../../../lib/utils';
 
 // ─── Calc History ──────────────────────────────────────────────────────────────
 const CALC_HISTORY_KEY = 'kilo-calc-history';
@@ -413,13 +414,13 @@ function CalculatorPage() {
       } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
     if (isPcInstaller) {
-      const pricingDate = quickFillSoldDate || new Date().toISOString().split('T')[0];
+      const pricingDate = quickFillSoldDate || todayLocalDateStr();
       try {
         const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, pricingDate, productCatalogPricingVersions);
         return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
       } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
-    const pricingDate = quickFillSoldDate || new Date().toISOString().split('T')[0];
+    const pricingDate = quickFillSoldDate || todayLocalDateStr();
     const r = getInstallerRatesForDeal(installer, pricingDate, kW, installerPricingVersions);
     return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
   })();

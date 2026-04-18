@@ -527,7 +527,7 @@ function UsersPageInner() {
     const m = now.getMonth();
     const d = now.getDay(); // 0=Sun
 
-    const fmt = (dt: Date) => dt.toISOString().split('T')[0];
+    const fmt = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     const startOfWeek = new Date(y, m, now.getDate() - (d === 0 ? 6 : d - 1)); // Monday
     const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 6);
     const q = Math.floor(m / 3);

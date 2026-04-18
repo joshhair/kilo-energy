@@ -198,7 +198,6 @@ export function handleChargebacks(
   const paidEntriesToChargeback = paidEntries.filter(
     (pe) => !remaining.some(
       (e) => e.projectId === projectId && e.type === 'Deal' && e.amount < 0
-        && e.status !== 'Paid'
         && e.repId === pe.repId && e.paymentStage === pe.paymentStage
     )
   );
