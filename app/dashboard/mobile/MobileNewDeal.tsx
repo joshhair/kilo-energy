@@ -15,6 +15,7 @@ import { Check, Loader2, ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, Ro
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import { evenSplit } from '../../../lib/commission-split';
+import { splitCloserSetterPay } from '../../../lib/commission';
 import MobileCard from './shared/MobileCard';
 
 // ── Validation (mirrors desktop exactly) ────────────────────────────────────
@@ -395,34 +396,36 @@ export default function MobileNewDeal() {
   const trainerTotal = setterAssignment && trainerOverrideRate > 0
     ? Math.round(trainerOverrideRate * kW * 1000 * 100) / 100 : 0;
 
-  const { closerTotal, setterTotal } = (() => {
-    if (!form.setterId || setterBaselinePerW === 0) {
-      return { closerTotal: calculateCommission(soldPPW, closerPerW, kW), setterTotal: 0 };
-    }
-    const closerDifferential = soldPPW > closerPerW ? Math.round(Math.max(0, Math.min(setterBaselinePerW - closerPerW, soldPPW - closerPerW)) * kW * 1000 * 100) / 100 : 0;
-    const splitPoint = setterBaselinePerW + trainerOverrideRate;
-    const aboveSplit = calculateCommission(soldPPW, splitPoint, kW);
-    const half = Math.floor(aboveSplit / 2 * 100) / 100;
-    return { closerTotal: closerDifferential + half, setterTotal: aboveSplit - half };
-  })();
-
-  const kiloTotal = calculateCommission(soldPPW, kiloPerW, kW);
-
-  const m1Flat = kW >= 5 ? 1000 : 500;
+  // Use the canonical splitCloserSetterPay so mobile preview stays
+  // exactly in sync with what POST /api/projects + PATCH /api/projects
+  // compute server-side (Batch 2b.4). Prevents the ±1¢ drift the old
+  // manual float math produced when setter baseline + trainer rate +
+  // installPayPct combined in edge cases.
+  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct || DEFAULT_INSTALL_PAY_PCT;
+  const hasM3 = installPayPct < 100;
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
-  const closerM1 = Math.min(isSelfGen ? m1Flat : 0, Math.max(0, closerTotal));
-  const closerM2Full = Math.max(0, closerTotal - closerM1);
-  const setterM1 = isSelfGen ? 0 : Math.min(m1Flat, Math.max(0, setterTotal));
-  const setterM2Full = Math.max(0, setterTotal - setterM1);
+
+  const split = splitCloserSetterPay(
+    soldPPW,
+    closerPerW,
+    isSelfGen ? 0 : setterBaselinePerW,
+    trainerOverrideRate,
+    kW,
+    installPayPct,
+  );
+
+  const closerTotal = split.closerTotal;
+  const setterTotal = split.setterTotal;
+  const closerM1 = split.closerM1;
+  const closerM2 = split.closerM2;
+  const closerM3 = split.closerM3;
+  const setterM1 = split.setterM1;
+  const setterM2 = split.setterM2;
+  const setterM3 = split.setterM3;
   const trainerM1 = 0;
   const trainerM2 = trainerTotal;
 
-  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct || DEFAULT_INSTALL_PAY_PCT;
-  const hasM3 = installPayPct < 100;
-  const closerM2 = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
-  const closerM3 = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
-  const setterM2 = Math.round(setterM2Full * (installPayPct / 100) * 100) / 100;
-  const setterM3 = hasM3 ? Math.round(setterM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+  const kiloTotal = calculateCommission(soldPPW, kiloPerW, kW);
 
   const showPreview = closerPerW > 0 && kW > 0 && soldPPW > 0;
 
