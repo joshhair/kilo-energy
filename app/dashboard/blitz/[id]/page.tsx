@@ -1213,6 +1213,44 @@ export default function BlitzDetailPage() {
             </div>
           )}
 
+          {/* Per-project margin breakdown — admin-facing. Each approved
+              deal listed with kW, PPW, and kilo margin for that deal,
+              computed via the same baselines-based formula that rolls up
+              to the top-level Kilo Margin card. */}
+          {approvedVisibleProjects.length > 0 && (
+            <div className="card-surface rounded-2xl p-5">
+              <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">Projects in this blitz</h3>
+              <div className="space-y-2">
+                {approvedVisibleProjects.map((p: any) => {
+                  const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+                  const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+                  const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+                  if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return null;
+                  const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
+                  const setterCost = (p.setterId && p.setterId !== p.closerId) ? 0.10 * p.kWSize * 1000 : 0;
+                  const margin = (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
+                  const closerName = p.closer ? `${p.closer.firstName} ${p.closer.lastName}` : '—';
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/dashboard/projects/${p.id}`}
+                      className="flex items-center justify-between bg-[var(--surface-card)]/50 hover:bg-[var(--surface-card)] rounded-xl px-4 py-2.5 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-white font-medium truncate">{p.customerName}</p>
+                        <p className="text-[11px] text-[var(--text-muted)]">{closerName} · {p.kWSize?.toFixed(1)} kW · ${p.netPPW?.toFixed(2)}/W</p>
+                      </div>
+                      <div className="text-right shrink-0 pl-3">
+                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Kilo margin</p>
+                        <p className={`text-sm font-bold ${margin >= 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>{formatCurrency(Math.round(margin))}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Per-rep performance — uses the shared `leaderboard` memo
               which now carries deals/kW/payout per approved participant.
               Renamed fields from the memo (kW → kw) to match the

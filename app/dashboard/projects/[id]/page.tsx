@@ -1077,6 +1077,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     : Math.round((projectBaselines.closerPerW + 0.10) * 100) / 100;
   const m1Flat = project.kWSize >= 5 ? 1000 : 500;
 
+  // Per-person total expected commission (sum of all milestones). Displayed
+  // under each rep's name on the admin commission breakdown so admin can
+  // eyeball each rep's full expected payout at a glance. Milestone
+  // breakdown stays visible on the right.
+  const closerTotalExpected =
+    (project.m1Amount ?? 0) + (project.m2Amount ?? 0) + (project.m3Amount ?? 0);
+  const setterTotalExpected = project.setterId
+    ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
+    : 0;
+  const trainerTotalExpected = (project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000;
+
   const inputCls =
     'bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]';
 
@@ -1323,9 +1334,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
               const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
               const isSetterRep = project.setterId === effectiveRepId;
+              const isCloserRep = project.repId === effectiveRepId;
               const expM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
               const expM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
               const expM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
+              // Closer viewing their own deal: show setter's TOTAL (not breakdown)
+              // so they can see what their setter is making. Policy: setters and
+              // trainers don't get this reciprocal visibility.
+              const showSetterTotal = isCloserRep && project.setterId && setterTotalExpected > 0;
               return (
             <div>
               <div className="flex gap-4 mb-4">
@@ -1344,6 +1360,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 )}
               </div>
+              {showSetterTotal && (
+                <div className="mb-3 bg-[var(--surface-card)]/50 rounded-xl px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-[var(--text-muted)] text-xs">{project.setterName} (setter) total</span>
+                  <span className="text-[var(--text-secondary)] font-semibold text-sm">${setterTotalExpected.toLocaleString()}</span>
+                </div>
+              )}
               <p className="text-[var(--text-muted)] text-sm">
                 No payments yet &mdash; commission will appear here as milestones are reached.
               </p>
@@ -1383,6 +1405,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div>
                   <p className="text-white text-sm font-semibold">{project.repName}</p>
                   <p className="text-[var(--text-muted)] text-xs">Closer</p>
+                  <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${closerTotalExpected.toLocaleString()}</p>
                 </div>
                 <div className="text-right">
                   {!project.setterId && (
@@ -1427,6 +1450,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <div>
                     <p className="text-white text-sm font-semibold">{project.setterName}</p>
                     <p className="text-[var(--text-muted)] text-xs">Setter</p>
+                    <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${setterTotalExpected.toLocaleString()}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[var(--text-secondary)] text-xs">Expected M1</p>
@@ -2040,12 +2064,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const editM1Flat = previewKW >= 5 ? 1000 : 500;
               const closerM1 = editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, closerTotal));
               const closerM2 = Math.round(Math.max(0, closerTotal - closerM1) * (previewInstallPayPct / 100) * 100) / 100;
-              const kiloMargin = Math.round((previewBaseline.closerPerW - previewBaseline.kiloPerW) * previewKW * 1000 * 100) / 100;
               const belowBaseline = previewPPW < previewBaseline.closerPerW;
               const previewSetterPerW = 'setterPerW' in previewBaseline && (previewBaseline as any).setterPerW != null
                 ? (previewBaseline as any).setterPerW
                 : Math.round((previewBaseline.closerPerW + 0.10) * 100) / 100;
               const setterTotal = editVals.setterId ? calculateCommission(previewPPW, previewSetterPerW, previewKW) : 0;
+              // Actual Kilo take on this deal: gross above wholesale, minus all
+              // commission paid out. (Trainer override isn't edited from this
+              // modal; if a trainer is attached, the server-computed margin on
+              // the stored project covers it — this preview is for editing.)
+              const kiloMargin = Math.max(0, Math.round(
+                ((previewPPW - previewBaseline.kiloPerW) * previewKW * 1000 - closerTotal - setterTotal) * 100,
+              ) / 100);
               const setterM1 = editVals.setterId ? Math.min(editM1Flat, Math.max(0, setterTotal)) : 0;
               const setterM2 = editVals.setterId ? Math.round(Math.max(0, setterTotal - setterM1) * (previewInstallPayPct / 100) * 100) / 100 : 0;
               const previewHasM3 = previewInstallPayPct < 100 && !project.subDealerId;

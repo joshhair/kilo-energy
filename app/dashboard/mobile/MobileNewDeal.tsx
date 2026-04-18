@@ -1388,8 +1388,8 @@ export default function MobileNewDeal() {
                     )}
                     {effectiveRole === 'admin' && (
                       <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
-                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Kilo revenue</span>
-                        <span className="font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>${kiloTotal.toLocaleString()}</span>
+                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Kilo margin</span>
+                        <span className="font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal).toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -1575,8 +1575,8 @@ export default function MobileNewDeal() {
                     )}
                     {effectiveRole === 'admin' && (
                       <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
-                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Kilo revenue</span>
-                        <span className="font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>${kiloTotal.toLocaleString()}</span>
+                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Kilo margin</span>
+                        <span className="font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal).toLocaleString()}</span>
                       </div>
                     )}
                   </div>
