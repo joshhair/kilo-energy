@@ -117,11 +117,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
     : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId
         || p.additionalClosers?.some((ac) => ac.userId === currentUserId)
         || p.additionalSetters?.some((as) => as.userId === currentUserId));
-  const totalKW = visibleProjects.reduce((s, p) => {
-    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-    const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-    return s + (isSelfGen || closerApproved ? p.kWSize : 0);
-  }, 0);
+  const totalKW = visibleProjects.reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);

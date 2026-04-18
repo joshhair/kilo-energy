@@ -93,8 +93,8 @@ function getAssignmentStatus(
   trainee: Rep | undefined,
   consumedDeals: number,
 ): AdminStatus {
-  if (trainee && trainee.active === false) return 'paused';
   if (assignment.isActiveTraining === false) return 'residuals';
+  if (trainee && trainee.active === false) return 'paused';
   // Check if every tier has a cap and every cap is consumed (no perpetuity tier).
   const hasPerpetual = assignment.tiers.some((t) => t.upToDeal === null);
   if (!hasPerpetual) {
@@ -536,9 +536,10 @@ function TrainingPageInner() {
       const consumed = getConsumedDeals(a);
       const status = getAssignmentStatus(a, trainee, consumed);
       const rate = getTrainerOverrideRate(a, consumed);
-      const activeTierIndex = a.tiers.findIndex(
+      const foundTierIndex = a.tiers.findIndex(
         (t) => t.upToDeal === null || consumed < t.upToDeal
       );
+      const activeTierIndex = foundTierIndex === -1 ? a.tiers.length - 1 : foundTierIndex;
       return { assignment: a, trainer, trainee, consumed, status, rate, activeTierIndex };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

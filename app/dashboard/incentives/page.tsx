@@ -1373,6 +1373,12 @@ function CreateIncentiveModal({
   const validate = (): Record<string, string> => {
     const errs: Record<string, string> = {};
     if (!form.title.trim()) errs.title = 'Title is required';
+    milestones.forEach((m, i) => {
+      const hasThreshold = !!m.threshold;
+      const hasReward = !!m.reward;
+      if (hasThreshold && !hasReward) errs[`milestone_${i}`] = 'Reward is required';
+      if (!hasThreshold && hasReward) errs[`milestone_${i}`] = 'Threshold is required';
+    });
     const validMilestones = milestones.filter((m) => m.threshold && m.reward);
     if (validMilestones.length === 0) errs.milestones = 'At least one milestone with threshold and reward is required';
     if (form.type === 'personal' && !form.targetRepId) errs.targetRepId = 'Select a rep for personal incentives';
@@ -1636,25 +1642,30 @@ function CreateIncentiveModal({
             {submitted && errors.milestones && <p className={errTextCls + ' mb-2'}>{errors.milestones}</p>}
             <div className="space-y-2">
               {milestones.map((m, i) => (
-                <div key={i} className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <input
-                    type="number" min="0" step="any"
-                    placeholder="Threshold (e.g. 10)"
-                    value={m.threshold}
-                    onChange={(e) => updMilestone(i, 'threshold', e.target.value)}
-                    className={inputCls + ' w-full sm:w-32'}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Reward (e.g. $200 Bonus)"
-                    value={m.reward}
-                    onChange={(e) => updMilestone(i, 'reward', e.target.value)}
-                    className={inputCls + ' flex-1 min-w-0'}
-                  />
-                  {milestones.length > 1 && (
-                    <button type="button" onClick={() => removeMilestone(i)} className="text-[var(--text-dim)] hover:text-red-400 transition-colors flex-shrink-0">
-                      <X className="w-4 h-4" />
-                    </button>
+                <div key={i}>
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <input
+                      type="number" min="0" step="any"
+                      placeholder="Threshold (e.g. 10)"
+                      value={m.threshold}
+                      onChange={(e) => updMilestone(i, 'threshold', e.target.value)}
+                      className={inputCls + ' w-full sm:w-32'}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Reward (e.g. $200 Bonus)"
+                      value={m.reward}
+                      onChange={(e) => updMilestone(i, 'reward', e.target.value)}
+                      className={inputCls + ' flex-1 min-w-0'}
+                    />
+                    {milestones.length > 1 && (
+                      <button type="button" onClick={() => removeMilestone(i)} className="text-[var(--text-dim)] hover:text-red-400 transition-colors flex-shrink-0">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {submitted && errors[`milestone_${i}`] && (
+                    <p className={errTextCls + ' mt-1'}>{errors[`milestone_${i}`]}</p>
                   )}
                 </div>
               ))}

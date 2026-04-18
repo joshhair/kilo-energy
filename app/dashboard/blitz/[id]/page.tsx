@@ -199,15 +199,8 @@ export default function BlitzDetailPage() {
     return arr;
   }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => {
-      // Only count kW for deals where the closer is an approved participant (mirrors leaderboard logic).
-      // When a closer is removed but their setter remains approved, the deal appears in
-      // approvedVisibleProjects (OR filter) but the leaderboard assigns kW=0 to setters.
-      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
-      return s + (isSelfGen || closerApproved ? p.kWSize : 0);
-    }, 0),
-    [approvedVisibleProjects, approvedParticipantIds],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
+    [approvedVisibleProjects],
   );
   const totalCosts = useMemo(
     () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,
