@@ -272,7 +272,7 @@ describe('computeProjectCommission — invariants', () => {
     productCatalogPricingVersions: [],
     trainerAssignments: [],
     payrollEntries: [],
-    installerPayConfigs: { BVI: { installPayPct: 80, usesProductCatalog: true } },
+    installerPayConfigs: { BVI: { installPayPct: 80 } },
   };
 
   it('never returns negative amounts', () => {
@@ -361,7 +361,7 @@ describe('computeProjectCommission — invariants', () => {
           additionalClosers: [],
           additionalSetters: [],
         },
-        { ...emptyDeps, installerPayConfigs: { BVI: { installPayPct: 100, usesProductCatalog: true } } },
+        { ...emptyDeps, installerPayConfigs: { BVI: { installPayPct: 100 } } },
       );
       expect(out.m3Amount).toBeNull();
       expect(out.setterM3Amount).toBeNull();
