@@ -244,7 +244,7 @@ export default function IncentivesPage() {
       incentiveFilter === 'ending_soon' ? visible.filter((i) => isEndingSoon(i.endDate)) :
       incentiveFilter === 'expired'     ? visible.filter((i) => isExpired(i.endDate)) :
       incentiveFilter === 'active'      ? activeVisible.filter((i) => i.active) :
-                                          activeVisible.filter((i) => i.active);
+                                          activeVisible;
     for (const inc of deadlineBase) {
       if (!inc.endDate) continue;
       const [y, m, d] = inc.endDate.split('-').map(Number);
@@ -263,13 +263,9 @@ export default function IncentivesPage() {
       title: 'Delete incentive?',
       message: 'This cannot be undone.',
       onConfirm: () => {
-        let removed: typeof incentives[0] | undefined;
-        let removedIndex = -1;
-        setIncentives((prev) => {
-          removedIndex = prev.findIndex((i) => i.id === id);
-          removed = prev[removedIndex];
-          return prev.filter((i) => i.id !== id);
-        });
+        const removedIndex = incentives.findIndex((i) => i.id === id);
+        const removed = incentives[removedIndex];
+        setIncentives((prev) => prev.filter((i) => i.id !== id));
         fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Incentive deleted'); })
           .catch((err) => {

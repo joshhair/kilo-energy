@@ -93,8 +93,8 @@ function getAssignmentStatus(
   trainee: Rep | undefined,
   consumedDeals: number,
 ): AdminStatus {
-  if (assignment.isActiveTraining === false) return 'residuals';
   if (trainee && trainee.active === false) return 'paused';
+  if (assignment.isActiveTraining === false) return 'residuals';
   // Check if every tier has a cap and every cap is consumed (no perpetuity tier).
   const hasPerpetual = assignment.tiers.some((t) => t.upToDeal === null);
   if (!hasPerpetual) {
