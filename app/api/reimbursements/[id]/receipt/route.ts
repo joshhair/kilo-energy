@@ -71,6 +71,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     );
   }
 
+  // Preflight: receipt storage is Vercel Blob. If the token isn't set in
+  // this environment (e.g., admin hasn't provisioned blob storage yet),
+  // return a clear, human-readable 503 instead of letting put() throw a
+  // cryptic "missing token" error. The rest of the reimbursement flow
+  // (create row, approve/deny, delete) still works — only file upload
+  // is gated on this env var.
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    logger.error('vercel_blob_token_missing', { reimbursementId: id });
+    return NextResponse.json(
+      {
+        error: 'Receipt upload is not configured yet. Your reimbursement was saved, but the attached file was not uploaded. Ask an admin to finish setting up receipt storage.',
+        code: 'BLOB_NOT_CONFIGURED',
+      },
+      { status: 503 },
+    );
+  }
+
   // Namespace per-reimbursement so uploads don't clash, and include a
   // timestamp so re-upload creates a new URL (cache-bust for admins).
   const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '';

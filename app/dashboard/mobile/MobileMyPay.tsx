@@ -236,7 +236,14 @@ export default function MobileMyPay() {
         setReimbursements((prev) => prev.map((r) => r.id === newReimb.id ? { ...r, receiptUrl: withReceipt.receiptUrl, receiptName: withReceipt.receiptName } : r));
         toast('Reimbursement submitted with receipt');
       } else {
-        toast('Submitted — receipt upload failed, try re-uploading', 'error');
+        // Surface the server's specific error (e.g., "receipt upload not
+        // configured yet") so reps know whether to retry vs ping admin.
+        let msg = 'Submitted — receipt upload failed, try re-uploading';
+        try {
+          const body = await upRes.json() as { error?: string };
+          if (body.error) msg = `Submitted — ${body.error}`;
+        } catch {}
+        toast(msg, 'error');
       }
     } else {
       toast('Reimbursement request submitted');

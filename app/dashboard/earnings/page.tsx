@@ -1248,15 +1248,19 @@ function AdminFinancialsView() {
   // Reimbursements tab filters + pagination
   const [reimbRepFilter,    setReimbRepFilter]    = useState('');
   const [reimbStatusFilter, setReimbStatusFilter] = useState('');
+  const [reimbShowArchived, setReimbShowArchived] = useState(false);
   const [reimbPage,         setReimbPage]         = useState(1);
   const [reimbPageSize,     setReimbPageSize]     = useState(25);
 
   const filteredReimbs = useMemo(() => {
     return reimbursements.filter((r) =>
       (!reimbRepFilter || r.repId === reimbRepFilter) &&
-      (!reimbStatusFilter || r.status === reimbStatusFilter)
+      (!reimbStatusFilter || r.status === reimbStatusFilter) &&
+      // Default list hides archived rows. Toggle the "Show archived"
+      // chip to surface them (for undo, audit, or hard-delete).
+      (reimbShowArchived ? true : !r.archivedAt)
     ).sort((a, b) => b.date.localeCompare(a.date));
-  }, [reimbursements, reimbRepFilter, reimbStatusFilter]);
+  }, [reimbursements, reimbRepFilter, reimbStatusFilter, reimbShowArchived]);
 
   // Stats — computed from rep-filtered (not status-filtered) data so status breakdown is always accurate
   const repFilteredPayroll = repFilter ? payrollEntries.filter((e) => e.repId === repFilter) : payrollEntries;
@@ -1317,6 +1321,41 @@ function AdminFinancialsView() {
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement rejected', 'info'); })
       .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to reject reimbursement', 'error'); });
+  };
+
+  // Soft-archive. Default list hides archived rows; the "Show archived"
+  // toggle surfaces them. Preferred over hard delete for all but typo cleanup.
+  const archiveReim = (id: string) => {
+    const row = reimbursements.find((r) => r.id === id);
+    if (!row) return;
+    const nowIso = new Date().toISOString();
+    setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, archivedAt: nowIso } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archived: true }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement archived', 'success'); })
+      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? row : r)); toast('Failed to archive', 'error'); });
+  };
+
+  // Unarchive — for undo. Only reachable when "Show archived" is on.
+  const unarchiveReim = (id: string) => {
+    const row = reimbursements.find((r) => r.id === id);
+    if (!row) return;
+    setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, archivedAt: undefined } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archived: false }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement restored', 'success'); })
+      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? row : r)); toast('Failed to restore', 'error'); });
+  };
+
+  // Destructive hard delete — typo cleanup only. Most cases should archive.
+  const deleteReim = (id: string) => {
+    const row = reimbursements.find((r) => r.id === id);
+    if (!row) return;
+    const label = `${row.repName} — $${row.amount.toFixed(2)} — ${row.description}`;
+    if (!window.confirm(`Permanently delete this reimbursement?\n\n${label}\n\nThis also deletes any attached receipt file. Cannot be undone. Use "Archive" for reversible hide.`)) return;
+
+    setReimbursements((prev) => prev.filter((r) => r.id !== id));
+    fetch(`/api/reimbursements/${id}`, { method: 'DELETE' })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement deleted', 'success'); })
+      .catch((err) => { console.error(err); setReimbursements((prev) => [...prev, row]); toast('Failed to delete — rolled back', 'error'); });
   };
 
   // By Rep summary
@@ -1532,6 +1571,15 @@ function AdminFinancialsView() {
                 <option value="Approved">Approved</option>
                 <option value="Denied">Denied</option>
               </select>
+              <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer select-none px-2 py-1 rounded-lg hover:bg-[var(--surface-card)] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={reimbShowArchived}
+                  onChange={(e) => { setReimbShowArchived(e.target.checked); setReimbPage(1); }}
+                  className="accent-[var(--accent-green)]"
+                />
+                Show archived
+              </label>
             </div>
             <div className="relative card-surface rounded-2xl overflow-hidden">
               <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
@@ -1558,20 +1606,39 @@ function AdminFinancialsView() {
                         <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                         <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
                         <td className="px-5 py-3">
-                          {r.status === 'Pending' && (
-                            <div className="flex items-center gap-1.5">
-                              <button onClick={() => approveReim(r.id)}
-                                className="flex items-center gap-1 text-xs text-[var(--accent-green)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                Approve
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {r.status === 'Pending' && (
+                              <>
+                                <button onClick={() => approveReim(r.id)}
+                                  className="flex items-center gap-1 text-xs text-[var(--accent-green)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Approve
+                                </button>
+                                <button onClick={() => rejectReim(r.id)}
+                                  className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 border border-red-700/30 px-2 py-1 rounded-lg transition-colors">
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                            {r.archivedAt ? (
+                              <button onClick={() => unarchiveReim(r.id)}
+                                className="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-700/20 hover:bg-slate-700/40 border border-slate-600/40 px-2 py-1 rounded-lg transition-colors">
+                                Restore
                               </button>
-                              <button onClick={() => rejectReim(r.id)}
-                                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 border border-red-700/30 px-2 py-1 rounded-lg transition-colors">
-                                <XCircle className="w-3.5 h-3.5" />
-                                Reject
+                            ) : (
+                              <button onClick={() => archiveReim(r.id)}
+                                title="Hide from default list; can be restored"
+                                className="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-700/20 hover:bg-slate-700/40 border border-slate-600/40 px-2 py-1 rounded-lg transition-colors">
+                                Archive
                               </button>
-                            </div>
-                          )}
+                            )}
+                            <button onClick={() => deleteReim(r.id)}
+                              title="Permanently delete — typo cleanup only"
+                              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-900/10 hover:bg-red-900/30 border border-red-900/30 px-2 py-1 rounded-lg transition-colors">
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

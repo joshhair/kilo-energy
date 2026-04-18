@@ -426,7 +426,16 @@ function MyPayPageInner() {
                 setReimbursements((prev) => prev.map((r) => r.id === created.id ? withReceipt : r));
                 toast('Reimbursement submitted with receipt', 'success');
               } else {
-                toast('Submitted — receipt upload failed, try re-uploading', 'error');
+                // Surface the server's specific error (e.g., "receipt upload
+                // not configured yet") so reps know whether to retry vs
+                // ping admin. Falls back to the generic message if parsing
+                // fails or the server didn't send an error field.
+                let msg = 'Submitted — receipt upload failed, try re-uploading';
+                try {
+                  const body = await upRes.json() as { error?: string };
+                  if (body.error) msg = `Submitted — ${body.error}`;
+                } catch {}
+                toast(msg, 'error');
               }
             } else {
               toast('Reimbursement submitted', 'success');
