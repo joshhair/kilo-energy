@@ -133,3 +133,75 @@ test('rep cannot PATCH another user\'s role (admin only)', async ({ request }) =
   });
   expect([401, 403]).toContain(res.status());
 });
+
+// ─── Viewer-aware scrubbing (Batch 1) ─────────────────────────────────────
+
+test('rep /api/data projects: trainer fields are never exposed', async ({ request }) => {
+  const res = await request.get('/api/data');
+  expect(res.status()).toBe(200);
+  const payload = await res.json();
+  for (const p of payload.projects) {
+    // Reps must never see per-project trainer override fields.
+    expect(p.trainerId).toBeUndefined();
+    expect(p.trainerName).toBeUndefined();
+    expect(p.trainerRate).toBeUndefined();
+  }
+});
+
+test('rep /api/data projects: baselineOverride never contains kiloPerW', async ({ request }) => {
+  const res = await request.get('/api/data');
+  const payload = await res.json();
+  for (const p of payload.projects) {
+    if (p.baselineOverride && typeof p.baselineOverride === 'object') {
+      expect(p.baselineOverride.kiloPerW).toBeUndefined();
+    }
+  }
+});
+
+test('rep cannot see co-party breakdowns on non-own-deal blitz projects', async ({ request }) => {
+  // Find a blitz the rep participates in that also has deals they're NOT on.
+  const adminCtx = await pwRequest.newContext({
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    extraHTTPHeaders: { origin: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000' },
+    storageState: 'tests/e2e/.auth/admin.json',
+  });
+  const adminData = await (await adminCtx.get('/api/data')).json();
+  const repRow = adminData.reps.find((r: { email: string }) => r.email === 'e2e-rep@kiloenergies.com');
+  if (!repRow) {
+    await adminCtx.dispose();
+    test.skip(true, 'E2E rep not found — run npm run test:e2e:setup');
+    return;
+  }
+  // Find a blitz containing a project the rep is a participant on + one they're not.
+  const blitzes = await (await adminCtx.get('/api/blitz')).json();
+  await adminCtx.dispose();
+
+  const candidate = blitzes.find((b: { participants?: Array<{ userId: string; joinStatus: string }> }) =>
+    b.participants?.some((p) => p.userId === repRow.id && p.joinStatus === 'approved'),
+  );
+  if (!candidate) {
+    test.skip(true, 'No blitz with rep participant to test');
+    return;
+  }
+
+  const res = await request.get(`/api/blitzes/${candidate.id}`);
+  expect(res.status()).toBe(200);
+  const blitz = await res.json();
+
+  for (const p of blitz.projects ?? []) {
+    const isOwn = p.repId === repRow.id || p.setterId === repRow.id;
+    if (isOwn) continue;
+    // Non-own deal: all primary amounts zeroed AND co-party amounts zeroed.
+    expect(p.netPPW).toBe(0);
+    expect(p.m1Amount).toBe(0);
+    expect(p.m2Amount).toBe(0);
+    for (const co of p.additionalClosers ?? []) {
+      expect(co.m1Amount).toBe(0);
+      expect(co.m2Amount).toBe(0);
+    }
+    for (const co of p.additionalSetters ?? []) {
+      expect(co.m1Amount).toBe(0);
+      expect(co.m2Amount).toBe(0);
+    }
+  }
+});

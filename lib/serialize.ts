@@ -136,3 +136,143 @@ export function dollarsToNullableCents(dollars: number | null | undefined): numb
   if (dollars === null) return null;
   return fromDollars(dollars).cents;
 }
+
+// ─── Viewer-aware scrubbing ────────────────────────────────────────────
+
+import type { ProjectRelationship } from './api-auth';
+
+/** Shape a serialized Project DTO must minimally have for the scrubber to
+ *  operate. Fields not present on the DTO are ignored. Keeps the scrubber
+ *  generic so it can apply to the /api/data shape, /api/projects/[id] shape,
+ *  and /api/blitzes/[id] shape without strict typing coupling. */
+interface ScrubbableProjectDTO {
+  netPPW?: number;
+  m1Paid?: boolean;
+  m1Amount?: number;
+  m2Paid?: boolean;
+  m2Amount?: number;
+  m3Paid?: boolean;
+  m3Amount?: number | null;
+  setterM1Amount?: number | null;
+  setterM2Amount?: number | null;
+  setterM3Amount?: number | null;
+  baselineOverride?: unknown;
+  trainerId?: string | null;
+  trainerName?: string | null;
+  trainerRate?: number | null;
+  additionalClosers?: ReadonlyArray<SerializedProjectParty>;
+  additionalSetters?: ReadonlyArray<SerializedProjectParty>;
+  // Future (Batch 2): kiloMargin?: number; kiloRevenue?: number;
+}
+
+const ZEROED_PARTY = (p: SerializedProjectParty): SerializedProjectParty => ({
+  ...p,
+  m1Amount: 0,
+  m2Amount: 0,
+  m3Amount: null,
+});
+
+/**
+ * Apply role-aware scrubbing to a serialized Project DTO based on the
+ * viewer's relationship to that specific project. Enforces:
+ *
+ *   - admin / pm  → full visibility (passthrough)
+ *   - closer      → own breakdown visible; co-setter amounts zeroed (sum
+ *                   still derivable from primary setterM1/M2/M3 on the
+ *                   top level, which the closer IS allowed to see as a
+ *                   total). Trainer assignment hidden.
+ *   - setter      → own setter amounts visible; closer amounts and co-closer
+ *                   amounts zeroed; trainer hidden.
+ *   - trainer     → trainer fields preserved; closer + setter amounts zeroed.
+ *   - sub-dealer  → passthrough (sub-dealers see their own deals as primary
+ *                   closer; distinct commission path).
+ *   - none        → defense in depth, everything zeroed (shouldn't reach
+ *                   here if query filters are correct).
+ *
+ * Also strips `kiloPerW` from any `baselineOverride` for non-admin/pm.
+ *
+ * Pure function — does not mutate the input. Extra fields on the DTO pass
+ * through unchanged; missing fields are skipped.
+ */
+export function scrubProjectForViewer<T extends ScrubbableProjectDTO>(
+  project: T,
+  relationship: ProjectRelationship,
+): T {
+  if (relationship === 'admin' || relationship === 'pm') {
+    return project;
+  }
+
+  const scrubbed: T = { ...project };
+
+  // Trainer assignment on a project is admin pay-config, not rep-facing.
+  // Hide for any non-admin/pm viewer regardless of relationship.
+  if ('trainerId' in scrubbed) scrubbed.trainerId = undefined;
+  if ('trainerName' in scrubbed) scrubbed.trainerName = undefined;
+  if ('trainerRate' in scrubbed) scrubbed.trainerRate = undefined;
+
+  // baselineOverride.kiloPerW is installer wholesale — reps never see it.
+  if (scrubbed.baselineOverride && typeof scrubbed.baselineOverride === 'object') {
+    const bo = { ...(scrubbed.baselineOverride as Record<string, unknown>) };
+    delete bo.kiloPerW;
+    scrubbed.baselineOverride = bo;
+  }
+
+  switch (relationship) {
+    case 'closer': {
+      // Closer sees own breakdown + setter TOTAL (the top-level setterM1/M2/M3
+      // stay visible so the client can sum them). Co-setter amounts zeroed.
+      if (scrubbed.additionalSetters) {
+        scrubbed.additionalSetters = scrubbed.additionalSetters.map(ZEROED_PARTY);
+      }
+      return scrubbed;
+    }
+    case 'setter': {
+      // Setter sees own setter amounts only. Zero closer amounts and hide
+      // co-closer structure; zero co-setter amounts (other setters).
+      scrubbed.m1Amount = 0;
+      scrubbed.m2Amount = 0;
+      scrubbed.m3Amount = null;
+      scrubbed.additionalClosers = [];
+      if (scrubbed.additionalSetters) {
+        scrubbed.additionalSetters = scrubbed.additionalSetters.map(ZEROED_PARTY);
+      }
+      return scrubbed;
+    }
+    case 'trainer': {
+      // Trainer-on-project: trainer fields preserved above (for admin viewing
+      // trainer info). A rep who is the project's trainer should see the
+      // trainer rate only, not closer/setter commission.
+      scrubbed.m1Amount = 0;
+      scrubbed.m2Amount = 0;
+      scrubbed.m3Amount = null;
+      scrubbed.setterM1Amount = 0;
+      scrubbed.setterM2Amount = 0;
+      scrubbed.setterM3Amount = null;
+      scrubbed.additionalClosers = [];
+      scrubbed.additionalSetters = [];
+      return scrubbed;
+    }
+    case 'sub-dealer': {
+      // Sub-dealers have their own commission path (subDealerPerW) and see
+      // their deals as primary. Passthrough — no scrubbing required beyond
+      // the trainer + baseline kiloPerW already stripped above.
+      return scrubbed;
+    }
+    case 'none':
+    default: {
+      // Defense in depth: if a rep somehow got a project they're not on in
+      // their response set (blitz view of other reps' deals), strip all
+      // financials.
+      scrubbed.netPPW = 0;
+      scrubbed.m1Amount = 0;
+      scrubbed.m2Amount = 0;
+      scrubbed.m3Amount = null;
+      scrubbed.setterM1Amount = 0;
+      scrubbed.setterM2Amount = 0;
+      scrubbed.setterM3Amount = null;
+      scrubbed.additionalClosers = [];
+      scrubbed.additionalSetters = [];
+      return scrubbed;
+    }
+  }
+}

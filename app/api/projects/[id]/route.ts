@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { requireAdmin, requireInternalUser, userCanAccessProject } from '../../../../lib/api-auth';
+import { requireAdmin, requireInternalUser, userCanAccessProject, relationshipToProject } from '../../../../lib/api-auth';
 import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
-import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents } from '../../../../lib/serialize';
+import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../../lib/serialize';
 
 // Financial fields project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
@@ -219,11 +219,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     fields: AUDITED_FIELDS.Project,
   });
 
-  return NextResponse.json({
+  const dto = {
     ...serializeProject(project),
     additionalClosers: project.additionalClosers.map(serializeProjectParty),
     additionalSetters: project.additionalSetters.map(serializeProjectParty),
+  };
+  const rel = relationshipToProject(user, {
+    closerId: project.closerId,
+    setterId: project.setterId,
+    subDealerId: (project as { subDealerId?: string | null }).subDealerId ?? null,
+    trainerId: project.trainerId,
+    additionalClosers: dto.additionalClosers.map((c) => ({ userId: c.userId })),
+    additionalSetters: dto.additionalSetters.map((s) => ({ userId: s.userId })),
   });
+  return NextResponse.json(scrubProjectForViewer(dto, rel));
 }
 
 // DELETE /api/projects/[id] — Admin only

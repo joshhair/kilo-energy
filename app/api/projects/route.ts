@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireInternalUser } from '../../../lib/api-auth';
+import { requireInternalUser, relationshipToProject } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createProjectSchema } from '../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../lib/rate-limit';
-import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents } from '../../../lib/serialize';
+import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../lib/serialize';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -211,9 +211,18 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({
+  const dto = {
     ...serializeProject(project),
     additionalClosers: project.additionalClosers.map(serializeProjectParty),
     additionalSetters: project.additionalSetters.map(serializeProjectParty),
-  }, { status: 201 });
+  };
+  const rel = relationshipToProject(user, {
+    closerId: project.closerId,
+    setterId: project.setterId,
+    subDealerId: project.subDealerId,
+    trainerId: project.trainerId,
+    additionalClosers: dto.additionalClosers.map((c) => ({ userId: c.userId })),
+    additionalSetters: dto.additionalSetters.map((s) => ({ userId: s.userId })),
+  });
+  return NextResponse.json(scrubProjectForViewer(dto, rel), { status: 201 });
 }

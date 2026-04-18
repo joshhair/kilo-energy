@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { getInternalUser } from '../../../lib/api-auth';
+import { getInternalUser, relationshipToProject } from '../../../lib/api-auth';
 import { logger } from '../../../lib/logger';
 import { toDollars, fromCents } from '../../../lib/money';
+import { scrubProjectForViewer } from '../../../lib/serialize';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
@@ -200,9 +201,14 @@ export async function GET() {
   const finIdToName: Record<string, string> = {};
   for (const fin of financers) finIdToName[fin.id] = fin.name;
 
-  // ─── Projects: strip financial fields for PMs ───
-  // Admin: everything. PM: no m1/m2/m3 amounts or setter M2/M3. Rep/SD: full
-  // (own deals only — already filtered by where clause above).
+  // ─── Projects: viewer-aware scrubbing ───
+  // PM: financial columns zeroed via the legacy `stripFinancials` branch
+  //   inside the transform below. Kept because PM-specific UI depends on
+  //   zero values, not `undefined`.
+  // Rep / sub-dealer: wrapped in scrubProjectForViewer after the transform
+  //   to apply the per-relationship policy (closer sees setter total, setter
+  //   sees own only, etc.). See lib/serialize.ts.
+  // Admin: passthrough — scrubber short-circuits for admin relationship.
   const stripFinancials = isPM;
   const transformedProjects = projects.map((p) => ({
     id: p.id,
@@ -272,6 +278,21 @@ export async function GET() {
       position: s.position,
     })),
   }));
+
+  // Apply viewer-aware scrubbing (no-op for admin; PM already stripped via
+  // stripFinancials; reps get per-relationship policy applied).
+  const scrubbedProjects = transformedProjects.map((dto, idx) => {
+    const raw = projects[idx];
+    const rel = relationshipToProject(user, {
+      closerId: raw.closerId,
+      setterId: raw.setterId,
+      subDealerId: raw.subDealerId,
+      trainerId: raw.trainerId,
+      additionalClosers: raw.additionalClosers.map((c) => ({ userId: c.userId })),
+      additionalSetters: raw.additionalSetters.map((s) => ({ userId: s.userId })),
+    });
+    return scrubProjectForViewer(dto, rel);
+  });
 
   const transformedPayroll = payrollEntries.map((pe) => ({
     id: pe.id,
@@ -469,7 +490,7 @@ export async function GET() {
     installers: installerNames,
     financers: financerNames,
     installerPayConfigs,
-    projects: transformedProjects,
+    projects: scrubbedProjects,
     payrollEntries: transformedPayroll,
     reimbursements: transformedReimbursements,
     trainerAssignments: transformedTrainers,

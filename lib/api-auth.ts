@@ -96,6 +96,49 @@ export async function userCanAccessProject(
 }
 
 /**
+ * Describes a viewer's relationship to a given project. Used by the
+ * viewer-aware serializer to decide what commission / margin / per-party
+ * fields to expose.
+ *
+ * Precedence (when multiple apply — e.g. admin who's also a closer on the
+ * deal): admin > pm > trainer > closer > setter > sub-dealer > none.
+ * Admins always get full visibility regardless of whether they're also
+ * on the deal.
+ */
+export type ProjectRelationship =
+  | 'admin'
+  | 'pm'
+  | 'closer'
+  | 'setter'
+  | 'trainer'
+  | 'sub-dealer'
+  | 'none';
+
+export interface ProjectRelationshipInputs {
+  closerId: string;
+  setterId: string | null;
+  subDealerId: string | null;
+  trainerId: string | null;
+  additionalClosers?: ReadonlyArray<{ userId: string }>;
+  additionalSetters?: ReadonlyArray<{ userId: string }>;
+}
+
+export function relationshipToProject(
+  viewer: Pick<InternalUser, 'id' | 'role'>,
+  project: ProjectRelationshipInputs,
+): ProjectRelationship {
+  if (viewer.role === 'admin') return 'admin';
+  if (viewer.role === 'project_manager') return 'pm';
+  if (project.trainerId === viewer.id) return 'trainer';
+  if (project.closerId === viewer.id) return 'closer';
+  if (project.additionalClosers?.some((c) => c.userId === viewer.id)) return 'closer';
+  if (project.setterId === viewer.id) return 'setter';
+  if (project.additionalSetters?.some((s) => s.userId === viewer.id)) return 'setter';
+  if (project.subDealerId === viewer.id) return 'sub-dealer';
+  return 'none';
+}
+
+/**
  * Throws a 403 NextResponse if the user cannot access the project.
  * Convenience wrapper for use inside route handlers.
  */
