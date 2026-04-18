@@ -1077,7 +1077,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId) : [];
   const coCloserIds = new Set((project.additionalClosers ?? []).map((c) => c.userId));
   const coSetterIds = new Set((project.additionalSetters ?? []).map((c) => c.userId));
-  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e) && !coCloserIds.has(e.repId) && !coSetterIds.has(e.repId));
+  // Trainer payouts belong in their own card so the admin view shows a
+  // dedicated slot matching closer/setter. Identified by paymentStage
+  // (some trainers are admins/reps too, so repId alone isn't reliable).
+  const trainerEntries = projectEntries.filter((e) => e.paymentStage === 'Trainer');
+  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e) && !coCloserIds.has(e.repId) && !coSetterIds.has(e.repId) && !trainerEntries.includes(e));
 
   // Resolved baseline rates for this project
   const projectBaselines = (() => {
@@ -1602,6 +1606,48 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               );
             })}
+
+            {/* ── Trainer ──
+                Only renders if the project has a trainerId pinned (per-project
+                override) OR if any Trainer-stage payroll rows exist. Trainer
+                info is scrubbed server-side for non-admin/PM viewers, so
+                project.trainerName / trainerRate will be undefined for reps. */}
+            {(project.trainerId || trainerEntries.length > 0) && (
+              <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-white text-sm font-semibold">{project.trainerName ?? '(trainer)'}</p>
+                    <p className="text-[var(--text-muted)] text-xs">Trainer{project.trainerRate != null ? ` · $${project.trainerRate.toFixed(2)}/W` : ''}</p>
+                    {trainerTotalExpected > 0 && (
+                      <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                    )}
+                  </div>
+                </div>
+                {trainerEntries.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {trainerEntries.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
+                          {entry.notes ? <span className="text-[var(--text-muted)] text-xs ml-1.5">({entry.notes})</span> : null}
+                          <p className="text-[var(--text-dim)] text-xs">{formatDate(entry.date)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                            entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                            'bg-[var(--border)] text-[var(--text-secondary)]'
+                          }`}>{entry.status}</span>
+                          <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[var(--text-dim)] text-xs italic">No payroll entries yet — generated on phase progression.</p>
+                )}
+              </div>
+            )}
 
             {/* ── Other entries (trainer overrides, bonuses, etc.) ── */}
             {otherEntries.length > 0 && (
