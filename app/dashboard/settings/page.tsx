@@ -168,6 +168,8 @@ function SettingsPageInner() {
     }
     setSelectedInstallers(new Set());
     setSelectedFinancers(new Set());
+    setInstallerSelectMode(false);
+    setFinancerSelectMode(false);
     setSection(s);
     router.replace(`/dashboard/settings?section=${s}`, { scroll: false });
   };

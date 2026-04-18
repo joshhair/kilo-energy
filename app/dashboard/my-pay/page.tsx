@@ -7,7 +7,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileMyPay from '../mobile/MobileMyPay';
 import { useToast } from '../../../lib/toast';
-import { formatDate, getM1PayDate, getM2PayDate, fmt$ } from '../../../lib/utils';
+import { formatDate, getM1PayDate, getM2PayDate, fmt$, localDateString } from '../../../lib/utils';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { ReimbursementModal } from '../components/ReimbursementModal';
@@ -35,7 +35,10 @@ function getFridayForDate(dateStr: string): string {
   if (day === 5) return dateStr;
   const nf = new Date(d);
   nf.setDate(d.getDate() + diff);
-  return nf.toISOString().split('T')[0];
+  const y = nf.getFullYear();
+  const m = String(nf.getMonth() + 1).padStart(2, '0');
+  const dd = String(nf.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
 }
 
 function formatFridayLabel(dateStr: string): string {
@@ -160,12 +163,17 @@ function MyPayPageInner() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateString(new Date());
   // Wrap in useMemo so the React Compiler can treat nextFriday/nextFridayStr as
   // stable memoized values — without this the compiler flags any useMemo that
   // lists nextFridayStr as a dep with "Existing memoization could not be preserved".
   const nextFriday = useMemo(() => getNextFriday(), []);
-  const nextFridayStr = useMemo(() => nextFriday.toISOString().split('T')[0], [nextFriday]);
+  const nextFridayStr = useMemo(() => {
+    const y = nextFriday.getFullYear();
+    const m = String(nextFriday.getMonth() + 1).padStart(2, '0');
+    const d = String(nextFriday.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [nextFriday]);
 
   // ── Filter entries to this rep ──
   const myEntries = useMemo(() => {
