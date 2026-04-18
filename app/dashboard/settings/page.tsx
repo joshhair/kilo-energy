@@ -103,8 +103,14 @@ function SettingsPageInner() {
   useEffect(() => {
     const p = searchParams.get('section') as SettingsSection | null;
     const next = p && validSections.includes(p) ? p : 'trainers';
+    // URL changed externally (back/forward, manual edit) — guard unsaved edits
+    if (next !== section && hasUnsavedChanges()) {
+      setPendingSection(next);
+      router.replace(`/dashboard/settings?section=${section}`, { scroll: false });
+      return;
+    }
     setSection(next);
-  }, [searchParams]);
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Shared editing state (unsaved-changes guard) ────────────────────────────
   const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
