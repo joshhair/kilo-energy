@@ -255,3 +255,193 @@ describe('shouldCreateSetterM1OnSetterAdd — setter-re-add guard', () => {
     ).toBe(true);
   });
 });
+
+// ─── Batch 2b.7: server-authoritative computeProjectCommission invariants ────
+// These guard the contract that PATCH /api/projects/[id] relies on: running
+// the server resolver over a deal's inputs is deterministic, non-negative,
+// and co-party-consistent. If any of these ever fail, commissions computed
+// on PATCH will silently pay reps wrong amounts.
+import { computeProjectCommission } from '@/lib/commission-server';
+
+describe('computeProjectCommission — invariants', () => {
+  const baselineOverride = { closerPerW: 2.85, setterPerW: 2.95, kiloPerW: 2.20 };
+  const emptyDeps = {
+    installerPricingVersions: [],
+    solarTechProducts: [],
+    productCatalogProducts: [],
+    productCatalogPricingVersions: [],
+    trainerAssignments: [],
+    payrollEntries: [],
+    installerPayConfigs: { BVI: { installPayPct: 80, usesProductCatalog: true } },
+  };
+
+  it('never returns negative amounts', () => {
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      const out = computeProjectCommission(
+        {
+          soldDate: '2026-04-17',
+          netPPW: p,
+          kWSize: k,
+          installer: 'BVI',
+          productType: 'Loan',
+          closerId: 'closer_1',
+          setterId: 'setter_1',
+          baselineOverride,
+          additionalClosers: [],
+          additionalSetters: [],
+        },
+        emptyDeps,
+      );
+      expect(out.m1Amount).toBeGreaterThanOrEqual(0);
+      expect(out.m2Amount).toBeGreaterThanOrEqual(0);
+      expect(out.m3Amount ?? 0).toBeGreaterThanOrEqual(0);
+      expect(out.setterM1Amount).toBeGreaterThanOrEqual(0);
+      expect(out.setterM2Amount).toBeGreaterThanOrEqual(0);
+      expect(out.setterM3Amount ?? 0).toBeGreaterThanOrEqual(0);
+    }));
+  });
+
+  it('deterministic: two runs with identical inputs produce identical outputs', () => {
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      const inputs = {
+        soldDate: '2026-04-17',
+        netPPW: p,
+        kWSize: k,
+        installer: 'BVI',
+        productType: 'Loan',
+        closerId: 'closer_1',
+        setterId: 'setter_1',
+        baselineOverride,
+        additionalClosers: [],
+        additionalSetters: [],
+      };
+      const a = computeProjectCommission(inputs, emptyDeps);
+      const b = computeProjectCommission(inputs, emptyDeps);
+      expect(a).toEqual(b);
+    }));
+  });
+
+  it('sub-dealer flag zeroes every amount (different formula handled elsewhere)', () => {
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      const out = computeProjectCommission(
+        {
+          soldDate: '2026-04-17',
+          netPPW: p,
+          kWSize: k,
+          installer: 'BVI',
+          productType: 'Loan',
+          closerId: 'closer_1',
+          setterId: 'setter_1',
+          subDealerId: 'sd_1',
+          baselineOverride,
+          additionalClosers: [],
+          additionalSetters: [],
+        },
+        emptyDeps,
+      );
+      expect(out.m1Amount).toBe(0);
+      expect(out.m2Amount).toBe(0);
+      expect(out.setterM1Amount).toBe(0);
+      expect(out.setterM2Amount).toBe(0);
+    }));
+  });
+
+  it('installPayPct=100 → M3 slots are null (no deferred payment stage)', () => {
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      const out = computeProjectCommission(
+        {
+          soldDate: '2026-04-17',
+          netPPW: p,
+          kWSize: k,
+          installer: 'BVI',
+          productType: 'Loan',
+          closerId: 'closer_1',
+          setterId: 'setter_1',
+          baselineOverride,
+          additionalClosers: [],
+          additionalSetters: [],
+        },
+        { ...emptyDeps, installerPayConfigs: { BVI: { installPayPct: 100, usesProductCatalog: true } } },
+      );
+      expect(out.m3Amount).toBeNull();
+      expect(out.setterM3Amount).toBeNull();
+    }));
+  });
+
+  it('co-closer amounts never drive primary closer amounts negative', () => {
+    // Arbitrary co-party splits up to $10k/slot — the floor clamp inside
+    // computeProjectCommission must keep primary amounts >= 0 regardless.
+    const co = fc.record({
+      m1Amount: fc.double({ min: 0, max: 10000, noNaN: true }),
+      m2Amount: fc.double({ min: 0, max: 10000, noNaN: true }),
+      m3Amount: fc.double({ min: 0, max: 10000, noNaN: true }),
+    });
+    fc.assert(fc.property(ppw, kW, co, (p, k, c) => {
+      const out = computeProjectCommission(
+        {
+          soldDate: '2026-04-17',
+          netPPW: p,
+          kWSize: k,
+          installer: 'BVI',
+          productType: 'Loan',
+          closerId: 'closer_1',
+          setterId: 'setter_1',
+          baselineOverride,
+          additionalClosers: [c],
+          additionalSetters: [],
+        },
+        emptyDeps,
+      );
+      expect(out.m1Amount).toBeGreaterThanOrEqual(0);
+      expect(out.m2Amount).toBeGreaterThanOrEqual(0);
+      expect(out.m3Amount ?? 0).toBeGreaterThanOrEqual(0);
+    }));
+  });
+
+  it('amounts are cent-precision (no floating-point tails after multiplying by 100)', () => {
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      const out = computeProjectCommission(
+        {
+          soldDate: '2026-04-17',
+          netPPW: p,
+          kWSize: k,
+          installer: 'BVI',
+          productType: 'Loan',
+          closerId: 'closer_1',
+          setterId: 'setter_1',
+          baselineOverride,
+          additionalClosers: [],
+          additionalSetters: [],
+        },
+        emptyDeps,
+      );
+      for (const v of [out.m1Amount, out.m2Amount, out.setterM1Amount, out.setterM2Amount]) {
+        const cents = Math.round(v * 100);
+        expect(Math.abs(v * 100 - cents)).toBeLessThan(1e-6);
+      }
+    }));
+  });
+
+  it('self-gen (no setter) keeps all commission on the closer side', () => {
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      const out = computeProjectCommission(
+        {
+          soldDate: '2026-04-17',
+          netPPW: p,
+          kWSize: k,
+          installer: 'BVI',
+          productType: 'Loan',
+          closerId: 'closer_1',
+          setterId: null,
+          baselineOverride,
+          additionalClosers: [],
+          additionalSetters: [],
+        },
+        emptyDeps,
+      );
+      expect(out.setterM1Amount).toBe(0);
+      expect(out.setterM2Amount).toBe(0);
+      expect(out.setterM3Amount ?? 0).toBe(0);
+    }));
+  });
+});
