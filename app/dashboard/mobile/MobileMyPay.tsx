@@ -96,6 +96,7 @@ export default function MobileMyPay() {
   const { toast } = useToast();
   const [showReimbSheet, setShowReimbSheet] = useState(false);
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
+  const [reimbFile, setReimbFile] = useState<File | undefined>(undefined);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const nextFriday = useMemo(() => getNextFriday(), []);
@@ -203,26 +204,48 @@ export default function MobileMyPay() {
   const handleSubmitReimb = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reimbForm.amount || !reimbForm.description) { toast('Amount and description required', 'error'); return; }
+    const amt = parseFloat(reimbForm.amount);
+    const descr = reimbForm.description.trim();
+    const dt = reimbForm.date || new Date().toISOString().split('T')[0];
+
     const res = await fetch('/api/reimbursements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         repId: effectiveRepId,
-        amount: parseFloat(reimbForm.amount),
-        description: reimbForm.description.trim(),
-        date: reimbForm.date || new Date().toISOString().split('T')[0],
+        amount: amt,
+        description: descr,
+        date: dt,
+        receiptName: reimbFile?.name,
       }),
     });
-    if (res.ok) {
-      const newReimb = await res.json();
-      setReimbursements((prev) => [...prev, { id: newReimb.id, repId: effectiveRepId!, repName: effectiveRepName ?? '', amount: parseFloat(reimbForm.amount), description: reimbForm.description.trim(), date: reimbForm.date || new Date().toISOString().split('T')[0], status: 'Pending' }]);
-      setShowReimbSheet(false);
-      setReimbForm({ amount: '', description: '', date: '' });
-      toast('Reimbursement request submitted');
-    } else {
+    if (!res.ok) {
       toast('Failed to submit request', 'error');
+      return;
     }
-  }, [reimbForm, effectiveRepId, effectiveRepName, setReimbursements, toast]);
+    const newReimb = await res.json();
+    setReimbursements((prev) => [...prev, { id: newReimb.id, repId: effectiveRepId!, repName: effectiveRepName ?? '', amount: amt, description: descr, date: dt, status: 'Pending', receiptName: reimbFile?.name, receiptUrl: newReimb.receiptUrl }]);
+
+    // Chain-upload the receipt if attached (desktop-parity).
+    if (reimbFile) {
+      const form = new FormData();
+      form.append('file', reimbFile);
+      const upRes = await fetch(`/api/reimbursements/${newReimb.id}/receipt`, { method: 'POST', body: form });
+      if (upRes.ok) {
+        const withReceipt = await upRes.json();
+        setReimbursements((prev) => prev.map((r) => r.id === newReimb.id ? { ...r, receiptUrl: withReceipt.receiptUrl, receiptName: withReceipt.receiptName } : r));
+        toast('Reimbursement submitted with receipt');
+      } else {
+        toast('Submitted — receipt upload failed, try re-uploading', 'error');
+      }
+    } else {
+      toast('Reimbursement request submitted');
+    }
+
+    setShowReimbSheet(false);
+    setReimbForm({ amount: '', description: '', date: '' });
+    setReimbFile(undefined);
+  }, [reimbForm, reimbFile, effectiveRepId, effectiveRepName, setReimbursements, toast]);
 
   // ── Count-up display values ──
   const displayNext = useCountUp(nextPayoutTotal, 900);
@@ -426,6 +449,23 @@ export default function MobileMyPay() {
               className="w-full min-h-[48px] outline-none"
               style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}
             />
+          </div>
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Receipt <span className="normal-case" style={{ color: 'rgba(255,255,255,0.3)' }}>(optional)</span></label>
+            {/* Native file picker triggers the camera on iOS when `accept="image/*"` is honored.
+                Accept images + PDF to mirror the desktop modal + server whitelist. */}
+            <label
+              className="flex items-center gap-2 w-full min-h-[48px] cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px dashed rgba(255,255,255,0.15)', borderRadius: '14px', padding: '16px 18px', color: reimbFile ? '#fff' : 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.95rem' }}
+            >
+              <span className="truncate">{reimbFile ? reimbFile.name : 'Attach photo or PDF…'}</span>
+              <input
+                type="file"
+                accept="image/*,.pdf,.heic,.heif"
+                className="hidden"
+                onChange={(e) => setReimbFile(e.target.files?.[0])}
+              />
+            </label>
           </div>
           <button
             type="submit"
