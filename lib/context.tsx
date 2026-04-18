@@ -73,6 +73,9 @@ interface AppContextType {
   deleteRepPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
   updateRepType: (id: string, repType: 'closer' | 'setter' | 'both') => void;
   updateRepContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipPersist?: boolean) => void;
+  /** Flip a user between 'rep' and 'sub-dealer'. Preserves userId, Clerk
+   * account, deals, payroll, commission history. Admin-only on the server. */
+  convertUserRole: (id: string, targetRole: 'rep' | 'sub-dealer') => Promise<void>;
   // Sub-dealer management
   subDealers: SubDealer[];
   addSubDealer: (firstName: string, lastName: string, email: string, phone: string, id?: string) => Promise<{ id: string } | undefined>;
@@ -337,7 +340,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSubDealers,
     getSubDealers: () => subDealers,
   }), [setReps, setSubDealers, subDealers]);
-  const { addRep, deactivateRep, reactivateRep, deleteRepPermanently, removeRep, updateRepType, updateRepContact, addSubDealer, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, removeSubDealer, updateSubDealerContact } = userActions;
+  const { addRep, deactivateRep, reactivateRep, deleteRepPermanently, removeRep, updateRepType, updateRepContact, convertUserRole, addSubDealer, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, removeSubDealer, updateSubDealerContact } = userActions;
 
   // ── Activity logging helper (fire-and-forget) ──
   const logProjectActivity = (projectId: string, type: string, detail: string, meta?: string) => {
@@ -1140,6 +1143,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteRepPermanently,
         updateRepType,
         updateRepContact,
+        convertUserRole,
         updateProject,
         installerBaselines,
         updateInstallerBaseline,

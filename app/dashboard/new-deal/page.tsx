@@ -253,7 +253,7 @@ function NewDealPage() {
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
-    const financerCleared = !effectiveFinancer;
+    const financerCleared = !effectiveFinancer && !!form.financer;
     setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: (touched.has('financer') || financerCleared) ? validateField('financer', effectiveFinancer) : '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); if (financerCleared) next.add('financer'); return next; });
   };
@@ -264,7 +264,7 @@ function NewDealPage() {
     // Loan and Cash deals must not inherit a financer from the family mapping
     const effectiveFinancer = (form.productType === 'Loan' || form.productType === 'Cash') ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
-    const financerCleared = !effectiveFinancer;
+    const financerCleared = !effectiveFinancer && !!form.financer;
     setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: (touched.has('financer') || financerCleared) ? validateField('financer', effectiveFinancer) : '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); if (financerCleared) next.add('financer'); return next; });
   };

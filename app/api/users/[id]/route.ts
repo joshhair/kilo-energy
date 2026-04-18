@@ -116,6 +116,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.phone !== undefined) data.phone = body.phone;
   if (body.repType !== undefined) data.repType = body.repType;
 
+  // Role flip — only rep ↔ sub-dealer. Admin/PM are out of scope for this
+  // endpoint; those stay administrative-only and immutable here.
+  //
+  // Note: we intentionally leave repType alone on rep→SD. The prod Turso
+  // column is still NOT NULL DEFAULT 'both' (see memory "repType schema
+  // drift") — nulling would fail in prod and the test DB. SDs don't read
+  // repType anywhere (the two render sites in app/dashboard/users/[id]/
+  // and MobileRepDetail.tsx manufacture a 'both' default client-side), so
+  // the leftover value is harmless. Reverse flip (SD→rep) keeps whatever
+  // value was there; if it's somehow null, that's still fine because the
+  // Prisma client treats it as optional, and rep dropdowns handle
+  // undefined defensively.
+  if (body.role !== undefined && body.role !== existing.role) {
+    if (existing.role !== 'rep' && existing.role !== 'sub-dealer') {
+      return NextResponse.json(
+        { error: `Cannot change role of ${existing.role} user via PATCH` },
+        { status: 400 },
+      );
+    }
+    data.role = body.role;
+    logger.info('user_role_converted', {
+      userId: id,
+      from: existing.role,
+      to: body.role,
+      actorId: viewer.id,
+    });
+  }
+
   // Permission flags
   if (body.canRequestBlitz !== undefined) data.canRequestBlitz = body.canRequestBlitz;
   if (body.canCreateBlitz !== undefined) data.canCreateBlitz = body.canCreateBlitz;

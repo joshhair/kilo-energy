@@ -1204,7 +1204,7 @@ export default function DashboardPage() {
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
       sparkStroke: 'var(--accent-cyan)',
-      pctChange: computePctChange(periodInPipeline, prevInPipeline),
+      pctChange: computePctChange(inPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
     },

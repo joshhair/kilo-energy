@@ -480,6 +480,8 @@ function RepEarningsView() {
   const [bonusSortDir, setBonusSortDir]   = useState<SortDir>('desc');
   const [bonusPage, setBonusPage]         = useState(1);
   const [bonusPageSize, setBonusPageSize] = useState(10);
+  const [reimbPage, setReimbPage]         = useState(1);
+  const [reimbPageSize, setReimbPageSize] = useState(10);
 
   const handleBonusSort = (key: BonusSortKey) => {
     setBonusPage(1);
@@ -508,6 +510,13 @@ function RepEarningsView() {
   const bonusStart      = (bonusSafePage - 1) * bonusPageSize;
   const bonusEnd        = Math.min(bonusStart + bonusPageSize, bonusTotal);
   const pagedBonuses    = sortedBonuses.slice(bonusStart, bonusEnd);
+
+  const reimbTotal      = filteredReimbs.length;
+  const reimbTotalPages = Math.max(1, Math.ceil(reimbTotal / reimbPageSize));
+  const reimbSafePage   = Math.min(reimbPage, reimbTotalPages);
+  const reimbStart      = (reimbSafePage - 1) * reimbPageSize;
+  const reimbEnd        = Math.min(reimbStart + reimbPageSize, reimbTotal);
+  const pagedReimbs     = filteredReimbs.slice(reimbStart, reimbEnd);
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
@@ -988,7 +997,7 @@ function RepEarningsView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredReimbs.map((r, i) => (
+                  {pagedReimbs.map((r, i) => (
                     <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-white">{r.description}</td>
                       <td className="px-5 py-3 text-[var(--accent-green)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
@@ -1031,6 +1040,11 @@ function RepEarningsView() {
                 </tbody>
               </table>
             </div>
+            {filteredReimbs.length > 0 && (
+              <PaginationBar totalResults={reimbTotal} startIdx={reimbStart} endIdx={reimbEnd}
+                currentPage={reimbSafePage} totalPages={reimbTotalPages} rowsPerPage={reimbPageSize}
+                onPageChange={setReimbPage} onRowsPerPageChange={(n) => { setReimbPageSize(n); setReimbPage(1); }} />
+            )}
           </div>
         )}
 

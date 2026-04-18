@@ -7,7 +7,7 @@ import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileReps from '../mobile/MobileReps';
 import { useApp } from '../../../lib/context';
 import { formatCompactKW } from '../../../lib/utils';
-import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, Trophy, Award, X, Mail, Clock } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, Trophy, Award, X, Mail, Clock, UserCog } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
@@ -144,7 +144,7 @@ export default function UsersPage() {
 function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, updateRepType, trainerAssignments, setTrainerAssignments, dbReady } = useApp();
+  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, updateRepType, convertUserRole, trainerAssignments, setTrainerAssignments, dbReady } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');
@@ -945,6 +945,15 @@ function UsersPageInner() {
                       </span>
                       {canManageReps && u.role === 'sub-dealer' && (
                         <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${u.firstName} ${u.lastName} to Rep?`, message: `${u.firstName} ${u.lastName} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(u.id, 'rep'); toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
+                          title="Convert to Rep"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-green)] hover:bg-[rgba(0,224,122,0.12)] transition-colors"
+                        >
+                          <UserCog className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {canManageReps && u.role === 'sub-dealer' && (
+                        <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                           title="Deactivate sub-dealer"
                           className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -1678,14 +1687,19 @@ function UsersPageInner() {
                         {rep.name}
                       </p>
                       {canManageReps ? (
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); const nextRole = ROLE_NEXT[rep.repType]; setConfirmAction({ title: `Change ${rep.name}'s role?`, message: `This will change their rep type from ${ROLE_LABELS[rep.repType]} to ${ROLE_LABELS[nextRole]}.`, confirmLabel: 'Change Role', onConfirm: async () => { setConfirmAction(null); updateRepType(rep.id, nextRole); } }); }}
-                          title="Click to cycle role"
-                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${ROLE_BADGE_CLS[rep.repType]} ${ROLE_BADGE_HOVER[rep.repType]}`}
+                        <select
+                          value={rep.repType}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onChange={(e) => { e.stopPropagation(); const next = e.target.value as 'closer' | 'setter' | 'both'; if (next !== rep.repType) updateRepType(rep.id, next); }}
+                          aria-label={`${rep.name} rep type`}
+                          title="Change rep type"
+                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors cursor-pointer appearance-none ${ROLE_BADGE_CLS[rep.repType]} ${ROLE_BADGE_HOVER[rep.repType]}`}
                           style={ROLE_BADGE_STYLES[rep.repType]}
                         >
-                          {ROLE_LABELS[rep.repType]}
-                        </button>
+                          <option value="closer">{ROLE_LABELS.closer}</option>
+                          <option value="setter">{ROLE_LABELS.setter}</option>
+                          <option value="both">{ROLE_LABELS.both}</option>
+                        </select>
                       ) : (
                         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${ROLE_BADGE_CLS[rep.repType]}`} style={ROLE_BADGE_STYLES[rep.repType]}>
                           {ROLE_LABELS[rep.repType]}
@@ -1773,6 +1787,15 @@ function UsersPageInner() {
                   )}
 
                   <ChevronRight className="hidden md:block w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors" />
+                  {canManageReps && (
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${rep.name} to Sub-Dealer?`, message: `${rep.name} will move to the Sub-Dealers list with sub-dealer login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(rep.id, 'sub-dealer'); toast(`${rep.name} converted to Sub-Dealer`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
+                      title="Convert to Sub-Dealer"
+                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-purple)] hover:bg-[rgba(180,125,255,0.12)] transition-colors"
+                    >
+                      <UserCog className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   {canManageReps && (
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}

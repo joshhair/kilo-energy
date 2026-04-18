@@ -116,6 +116,68 @@ export function createUserActions(deps: UserDeps) {
     }
   };
 
+  // Flip a user between 'rep' and 'sub-dealer'. Optimistically moves the
+  // record between the reps and subDealers arrays while the PATCH is in
+  // flight, rolling both back on failure. Server preserves userId /
+  // clerkUserId / all FKs (payroll, projects, commission history).
+  const convertUserRole = async (id: string, targetRole: 'rep' | 'sub-dealer'): Promise<void> => {
+    const reps = getReps();
+    const subDealers = getSubDealers();
+    const repSnap = reps.find((r) => r.id === id);
+    const sdSnap = subDealers.find((s) => s.id === id);
+
+    if (targetRole === 'sub-dealer' && repSnap) {
+      const moved: SubDealer = {
+        id: repSnap.id,
+        firstName: repSnap.firstName,
+        lastName: repSnap.lastName,
+        name: repSnap.name,
+        email: repSnap.email,
+        phone: repSnap.phone,
+        role: 'sub-dealer',
+        active: repSnap.active,
+        hasClerkAccount: repSnap.hasClerkAccount,
+      };
+      setReps((prev) => prev.filter((r) => r.id !== id));
+      setSubDealers((prev) => [...prev, moved]);
+    } else if (targetRole === 'rep' && sdSnap) {
+      const moved: Rep = {
+        id: sdSnap.id,
+        firstName: sdSnap.firstName,
+        lastName: sdSnap.lastName,
+        name: sdSnap.name,
+        email: sdSnap.email,
+        phone: sdSnap.phone,
+        role: 'rep',
+        repType: 'both',
+        active: sdSnap.active,
+        hasClerkAccount: sdSnap.hasClerkAccount,
+      };
+      setSubDealers((prev) => prev.filter((s) => s.id !== id));
+      setReps((prev) => [...prev, moved]);
+    } else {
+      // User not found in the expected source array — nothing to optimize,
+      // but still send the PATCH so the server can reconcile.
+    }
+
+    try {
+      await persistFetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: targetRole }),
+      }, 'Failed to convert user role');
+    } catch (err) {
+      if (targetRole === 'sub-dealer' && repSnap) {
+        setSubDealers((prev) => prev.filter((s) => s.id !== id));
+        setReps((prev) => [...prev, repSnap]);
+      } else if (targetRole === 'rep' && sdSnap) {
+        setReps((prev) => prev.filter((r) => r.id !== id));
+        setSubDealers((prev) => [...prev, sdSnap]);
+      }
+      throw err;
+    }
+  };
+
   const updateRepContact = (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipPersist = false) => {
     const reps = getReps();
     const snapshot = reps.find((r) => r.id === id);
@@ -236,6 +298,7 @@ export function createUserActions(deps: UserDeps) {
     removeRep,
     updateRepType,
     updateRepContact,
+    convertUserRole,
     addSubDealer,
     deactivateSubDealer,
     reactivateSubDealer,

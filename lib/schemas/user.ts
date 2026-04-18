@@ -9,6 +9,9 @@ export const patchUserSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(200).optional(),
   phone: z.string().trim().max(50).optional(),
   repType: repTypeEnum,
+  // Only rep↔sub-dealer flips go through this field. Admin/PM roles can't
+  // be set or unset via PATCH — those are separate workflows.
+  role: z.enum(['rep', 'sub-dealer']).optional(),
   active: z.boolean().optional(),
   canRequestBlitz: z.boolean().optional(),
   canCreateBlitz: z.boolean().optional(),
