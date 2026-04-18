@@ -6,6 +6,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect, useCall
 // comment near the useState calls below. We now import only the type
 // symbols + helper functions, not the pre-DB fixture arrays.
 import { Project, PayrollEntry, Reimbursement, TrainerAssignment, Incentive, resolveTrainerRate, Rep, SubDealer, NON_SOLARTECH_BASELINES, InstallerBaseline, SolarTechProduct, InstallerPricingVersion, InstallerRates, ProductCatalogInstallerConfig, ProductCatalogProduct, Phase, ProductCatalogPricingVersion, ProductCatalogTier, InstallerPayConfig, DEFAULT_INSTALL_PAY_PCT } from './data';
+import { shouldCreateSetterM1OnSetterAdd } from './commission';
 import { getM1PayDate, getM2PayDate, getM3PayDate, localDateString } from './utils';
 import { persistFetch, emitPersistError } from './persist';
 import { createUserActions } from './context/users';
@@ -515,30 +516,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
             const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
             const effectiveSetterM3 = updates.setterM3Amount ?? old.setterM3Amount;
-            const closerHasPaidM1 = prevEntries.some(
-              (e) =>
-                e.projectId === id &&
-                e.paymentStage === 'M1' &&
-                e.status === 'Paid' &&
-                (old.setterId ? e.repId === old.setterId : e.repId === old.repId)
-            );
-            if (pastAcceptance && (effectiveSetterM1 ?? 0) > 0) {
-              const hasM1 = prevEntries.some((e) => e.projectId === id && e.repId === newSetterId && e.paymentStage === 'M1');
-              if (!hasM1 && !closerHasPaidM1) {
-                newEntries.push({
-                  id: `pay_${ts}_m1_s`,
-                  repId: newSetterId,
-                  repName: newSetterRep?.name ?? '',
-                  projectId: id,
-                  customerName: old.customerName,
-                  amount: effectiveSetterM1 ?? 0,
-                  type: 'Deal',
-                  paymentStage: 'M1',
-                  status: 'Draft',
-                  date: getM1PayDate(),
-                  notes: 'Setter',
-                });
-              }
+            if (shouldCreateSetterM1OnSetterAdd({
+              pastAcceptance,
+              effectiveSetterM1,
+              projectId: id,
+              newSetterId,
+              oldSetterId: old.setterId,
+              existingEntries: prevEntries,
+            })) {
+              newEntries.push({
+                id: `pay_${ts}_m1_s`,
+                repId: newSetterId,
+                repName: newSetterRep?.name ?? '',
+                projectId: id,
+                customerName: old.customerName,
+                amount: effectiveSetterM1 ?? 0,
+                type: 'Deal',
+                paymentStage: 'M1',
+                status: 'Draft',
+                date: getM1PayDate(),
+                notes: 'Setter',
+              });
             }
 
             // Pre-compute setter trainer deductions so the trainer's cut comes from

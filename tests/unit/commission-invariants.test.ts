@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { calculateCommission, splitCloserSetterPay } from '@/lib/data';
+import { shouldCreateSetterM1OnSetterAdd } from '@/lib/commission';
 
 /**
  * Property-based tests for commission math.
@@ -160,5 +161,97 @@ describe('splitCloserSetterPay — invariants', () => {
         expect(Number.isInteger(totalCents)).toBe(true);
       },
     ));
+  });
+});
+
+describe('shouldCreateSetterM1OnSetterAdd — setter-re-add guard', () => {
+  // Regression anchor for the Timothy-Salunga-shape bug. Before the fix,
+  // the guard blocked creating a setter M1 PayrollEntry whenever the closer
+  // had already been Paid M1 — leaving `setterM1AmountCents` orphan on the
+  // Project with no payroll row. After the fix, the guard only blocks when
+  // the PREVIOUS setter (not the closer) was already Paid.
+
+  const baseOpts = {
+    pastAcceptance: true as boolean,
+    effectiveSetterM1: 1000,
+    projectId: 'proj_1',
+    newSetterId: 'setter_new',
+    oldSetterId: null as string | null,
+    existingEntries: [] as Array<{ projectId: string; repId: string; paymentStage: string; status: string }>,
+  };
+
+  it('creates setter M1 when no prior setter existed, even if closer was Paid M1', () => {
+    // The canonical Timothy-Salunga shape: deal submitted without a setter,
+    // closer's M1 already Paid, then setter added via edit.
+    expect(
+      shouldCreateSetterM1OnSetterAdd({
+        ...baseOpts,
+        oldSetterId: null,
+        existingEntries: [
+          { projectId: 'proj_1', repId: 'closer_1', paymentStage: 'M1', status: 'Paid' },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('skips creation when the previous setter was already Paid M1 (setter replacement after payout)', () => {
+    // Replacing setter A with setter B after A was already Paid — admin must
+    // reconcile manually because we can't un-pay.
+    expect(
+      shouldCreateSetterM1OnSetterAdd({
+        ...baseOpts,
+        oldSetterId: 'setter_old',
+        existingEntries: [
+          { projectId: 'proj_1', repId: 'setter_old', paymentStage: 'M1', status: 'Paid' },
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it('creates setter M1 when previous setter had only Draft/Pending M1 (safe to swap)', () => {
+    expect(
+      shouldCreateSetterM1OnSetterAdd({
+        ...baseOpts,
+        oldSetterId: 'setter_old',
+        existingEntries: [
+          { projectId: 'proj_1', repId: 'setter_old', paymentStage: 'M1', status: 'Draft' },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('skips when new setter already has an M1 entry (defensive, avoids duplication)', () => {
+    expect(
+      shouldCreateSetterM1OnSetterAdd({
+        ...baseOpts,
+        existingEntries: [
+          { projectId: 'proj_1', repId: 'setter_new', paymentStage: 'M1', status: 'Draft' },
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it('skips when not past Acceptance (payroll is created at phase transition, not before)', () => {
+    expect(
+      shouldCreateSetterM1OnSetterAdd({ ...baseOpts, pastAcceptance: false }),
+    ).toBe(false);
+  });
+
+  it('skips when effectiveSetterM1 is zero or null (nothing owed)', () => {
+    expect(shouldCreateSetterM1OnSetterAdd({ ...baseOpts, effectiveSetterM1: 0 })).toBe(false);
+    expect(shouldCreateSetterM1OnSetterAdd({ ...baseOpts, effectiveSetterM1: null })).toBe(false);
+    expect(shouldCreateSetterM1OnSetterAdd({ ...baseOpts, effectiveSetterM1: undefined })).toBe(false);
+  });
+
+  it('is project-scoped: an M1 Paid to the same setter on a DIFFERENT project does not block creation', () => {
+    expect(
+      shouldCreateSetterM1OnSetterAdd({
+        ...baseOpts,
+        oldSetterId: 'setter_old',
+        existingEntries: [
+          { projectId: 'proj_other', repId: 'setter_old', paymentStage: 'M1', status: 'Paid' },
+        ],
+      }),
+    ).toBe(true);
   });
 });

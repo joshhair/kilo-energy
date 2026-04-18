@@ -247,3 +247,57 @@ export function splitCloserSetterPay(
     setterM3: $.toDollars(setterM3M),
   };
 }
+
+/**
+ * Decides whether to create a Draft setter M1 PayrollEntry when a setter is
+ * added to a deal after initial submission. Called from the updateProject
+ * setter-replacement path.
+ *
+ * Returns true ⇒ create a new Draft setter M1 for `newSetterId`.
+ * Returns false ⇒ skip (admin will reconcile manually).
+ *
+ * Rules:
+ *  1. Phase must be at or past Acceptance (before that no payroll exists yet).
+ *  2. The deal must actually owe the setter an M1 (`effectiveSetterM1 > 0`).
+ *  3. The NEW setter must not already have an M1 entry for this project
+ *     (defensive — a duplicate create would double-pay).
+ *  4. The PREVIOUS setter (if any) must not have been already Paid an M1 —
+ *     that's the only case where admin must reconcile (can't un-pay).
+ *
+ * The key bug this fixes: historically the guard blocked when the CLOSER had
+ * a Paid M1 (left over from when the deal had no setter). That left a new
+ * setter silently without an M1 entry while `setterM1AmountCents` was still
+ * set on the Project, producing orphan amounts. See check-timothy-salunga.mts
+ * for the systemic-drift scan that found 15 projects with this shape.
+ */
+export function shouldCreateSetterM1OnSetterAdd(opts: {
+  pastAcceptance: boolean;
+  effectiveSetterM1: number | null | undefined;
+  projectId: string;
+  newSetterId: string;
+  oldSetterId: string | null | undefined;
+  existingEntries: ReadonlyArray<{
+    projectId: string | null;
+    repId: string;
+    paymentStage: string;
+    status: string;
+  }>;
+}): boolean {
+  const { pastAcceptance, effectiveSetterM1, projectId, newSetterId, oldSetterId, existingEntries } = opts;
+  if (!pastAcceptance) return false;
+  if ((effectiveSetterM1 ?? 0) <= 0) return false;
+
+  const newSetterAlreadyHasM1 = existingEntries.some(
+    (e) => e.projectId === projectId && e.repId === newSetterId && e.paymentStage === 'M1',
+  );
+  if (newSetterAlreadyHasM1) return false;
+
+  const previousSetterWasPaidM1 = !!oldSetterId && existingEntries.some(
+    (e) =>
+      e.projectId === projectId &&
+      e.repId === oldSetterId &&
+      e.paymentStage === 'M1' &&
+      e.status === 'Paid',
+  );
+  return !previousSetterWasPaidM1;
+}
