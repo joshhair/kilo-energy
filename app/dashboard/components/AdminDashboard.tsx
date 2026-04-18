@@ -576,7 +576,7 @@ export function AdminDashboard({
               : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
             }
           </button>
-          <div className="flex items-center gap-2">
+          {recentExpanded && <div className="flex items-center gap-2">
             <input
               type="text"
               placeholder="Search customer or rep..."
@@ -587,7 +587,7 @@ export function AdminDashboard({
             {recentSearch.trim() && (
               <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
             )}
-          </div>
+          </div>}
         </div>
         <div className={`collapsible-panel ${recentExpanded ? 'open' : ''}`}>
           <div className="collapsible-inner">
