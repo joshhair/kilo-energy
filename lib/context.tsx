@@ -909,14 +909,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       const effectiveKWSize = old ? (updates.kWSize ?? old.kWSize) : 0;
       const effectiveInstallPayPct = old ? (installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) : 100;
-      const pendingPatches: Array<{ id: string; newAmount: number }> = [];
-      setPayrollEntries((prev) => {
-        const result = syncPayrollAmounts(id, updates, prev, closerM2TrainerDeduction, closerM3TrainerDeduction, effectiveKWSize, effectiveInstallPayPct, setterM2TrainerDeduction, setterM3TrainerDeduction);
-        pendingPatches.push(...result.patches);
-        return result.patches.length > 0 ? result.updatedEntries : prev;
-      });
-      // pendingPatches is populated synchronously by the updater above in React's
-      // batching model. Persist each patch to DB.
+      // Compute outside the updater so React Strict Mode's double-invocation
+      // does not push patches twice (same hazard documented above for setProjects).
+      const syncResult = syncPayrollAmounts(id, updates, payrollEntriesRef.current, closerM2TrainerDeduction, closerM3TrainerDeduction, effectiveKWSize, effectiveInstallPayPct, setterM2TrainerDeduction, setterM3TrainerDeduction);
+      const pendingPatches = syncResult.patches;
+      if (syncResult.patches.length > 0) {
+        setPayrollEntries(() => syncResult.updatedEntries);
+      }
+      // Persist each patch to DB.
       // Skip entries with temp client IDs (pay_${ts}_...) — they were created in
       // this same updateProject call and don't have a real DB row yet. Their amount
       // is already correct in the POST body, so no PATCH is needed.
