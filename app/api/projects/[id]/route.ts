@@ -6,6 +6,9 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../../lib/serialize';
+import { computeProjectCommission, COMMISSION_INPUT_KEYS } from '../../../../lib/commission-server';
+import { fromDollars } from '../../../../lib/money';
+import type { InstallerBaseline } from '../../../../lib/data';
 
 // Financial fields project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
@@ -145,6 +148,165 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!fin) return NextResponse.json({ error: `Financer "${body.financer}" not found` }, { status: 400 });
     if (!fin.active) return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
     data.financerId = fin.id;
+  }
+
+  // ─── Server-authoritative commission recompute (Batch 2b) ─────────────
+  // If ANY math-input changed (netPPW, kWSize, installer, product, closer,
+  // setter, trainer override, co-parties, etc.), recompute commission
+  // amounts server-side and OVERRIDE whatever the client sent in the
+  // same body. Client's m1Amount/m2Amount/etc. are silently discarded.
+  //
+  // Prevents the Timothy-Salunga-shape bug where editing netPPW left
+  // stale stored amounts. Same resolvers as the client — see
+  // lib/commission-server.ts for how it mirrors the new-deal compute.
+  const bodyTouchesCommissionInputs = COMMISSION_INPUT_KEYS.some((k) => (body as Record<string, unknown>)[k] !== undefined);
+  if (bodyTouchesCommissionInputs) {
+    const current = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        installer: true,
+        additionalClosers: true,
+        additionalSetters: true,
+      },
+    });
+    if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    // Load the pricing/trainer data needed by the resolver.
+    const [
+      installerPricingVersionsRaw,
+      productCatalogProductsRaw,
+      productCatalogPricingVersionsRaw,
+      trainerAssignmentsRaw,
+      payrollEntriesRaw,
+      installers,
+    ] = await Promise.all([
+      prisma.installerPricingVersion.findMany({ include: { tiers: true } }),
+      prisma.product.findMany({ where: { active: true }, include: { pricingVersions: { include: { tiers: true } } } }),
+      prisma.productPricingVersion.findMany({ include: { tiers: true } }),
+      prisma.trainerAssignment.findMany({ include: { tiers: { orderBy: { sortOrder: 'asc' } } } }),
+      prisma.payrollEntry.findMany({ where: { paymentStage: 'Trainer' } }),
+      prisma.installer.findMany({ select: { id: true, name: true, installPayPct: true, usesProductCatalog: true } }),
+    ]);
+
+    // Shape the loaded data into the forms the resolvers expect.
+    // Library types use camelCase / slightly different field names than
+    // the Prisma shape — do the conversion here at the seam.
+    const installerPricingVersions = installerPricingVersionsRaw.map((v) => ({
+      id: v.id,
+      installer: installers.find((i) => i.id === v.installerId)?.name ?? '',
+      label: v.label ?? '',
+      effectiveFrom: v.effectiveFrom,
+      effectiveTo: v.effectiveTo,
+      rates: v.rateType === 'tiered'
+        ? { type: 'tiered' as const, bands: v.tiers.map((t) => ({ minKW: t.minKW, maxKW: t.maxKW, closerPerW: t.closerPerW, kiloPerW: t.kiloPerW, setterPerW: t.setterPerW ?? undefined, subDealerPerW: t.subDealerPerW ?? undefined })) }
+        : { type: 'flat' as const, closerPerW: v.tiers[0]?.closerPerW ?? 0, kiloPerW: v.tiers[0]?.kiloPerW ?? 0, setterPerW: v.tiers[0]?.setterPerW ?? undefined, subDealerPerW: v.tiers[0]?.subDealerPerW ?? undefined },
+    }));
+
+    const productCatalogProducts = productCatalogProductsRaw.map((p) => ({
+      id: p.id,
+      installer: installers.find((i) => i.id === p.installerId)?.name ?? '',
+      family: p.family,
+      name: p.name,
+      tiers: (p.pricingVersions.find((pv) => pv.effectiveTo === null)?.tiers ?? []).map((t) => ({
+        minKW: t.minKW,
+        maxKW: t.maxKW,
+        closerPerW: t.closerPerW,
+        setterPerW: t.setterPerW,
+        kiloPerW: t.kiloPerW,
+        subDealerPerW: t.subDealerPerW ?? undefined,
+      })),
+    }));
+
+    const productCatalogPricingVersions = productCatalogPricingVersionsRaw.map((v) => ({
+      id: v.id,
+      productId: v.productId,
+      label: v.label,
+      effectiveFrom: v.effectiveFrom,
+      effectiveTo: v.effectiveTo,
+      tiers: v.tiers.map((t) => ({
+        minKW: t.minKW,
+        maxKW: t.maxKW,
+        closerPerW: t.closerPerW,
+        setterPerW: t.setterPerW,
+        kiloPerW: t.kiloPerW,
+        subDealerPerW: t.subDealerPerW ?? undefined,
+      })),
+    }));
+
+    const trainerAssignments = trainerAssignmentsRaw.map((a) => ({
+      id: a.id,
+      trainerId: a.trainerId,
+      traineeId: a.traineeId,
+      isActiveTraining: a.isActiveTraining,
+      tiers: a.tiers.map((t) => ({ upToDeal: t.upToDeal, ratePerW: t.ratePerW })),
+    }));
+
+    const payrollEntries = payrollEntriesRaw.map((e) => ({
+      repId: e.repId,
+      projectId: e.projectId,
+      paymentStage: e.paymentStage,
+      amount: e.amountCents / 100,
+      status: e.status,
+    }));
+
+    const installerPayConfigs: Record<string, { installPayPct: number; usesProductCatalog: boolean }> = {};
+    for (const i of installers) installerPayConfigs[i.name] = { installPayPct: i.installPayPct, usesProductCatalog: i.usesProductCatalog };
+
+    // Build effective inputs: body value if sent, else current DB value.
+    const installerName = body.installer !== undefined
+      ? body.installer
+      : installers.find((i) => i.id === current.installerId)?.name ?? '';
+
+    const effectiveBaselineOverride: InstallerBaseline | null = (() => {
+      const json = body.baselineOverrideJson !== undefined ? body.baselineOverrideJson : current.baselineOverrideJson;
+      if (!json) return null;
+      try { return JSON.parse(json) as InstallerBaseline; } catch { return null; }
+    })();
+
+    const effectiveAdditionalClosers = body.additionalClosers !== undefined
+      ? body.additionalClosers.map((c) => ({ m1Amount: c.m1Amount ?? 0, m2Amount: c.m2Amount ?? 0, m3Amount: c.m3Amount ?? null }))
+      : current.additionalClosers.map((c) => ({ m1Amount: c.m1AmountCents / 100, m2Amount: c.m2AmountCents / 100, m3Amount: c.m3AmountCents == null ? null : c.m3AmountCents / 100 }));
+    const effectiveAdditionalSetters = body.additionalSetters !== undefined
+      ? body.additionalSetters.map((s) => ({ m1Amount: s.m1Amount ?? 0, m2Amount: s.m2Amount ?? 0, m3Amount: s.m3Amount ?? null }))
+      : current.additionalSetters.map((s) => ({ m1Amount: s.m1AmountCents / 100, m2Amount: s.m2AmountCents / 100, m3Amount: s.m3AmountCents == null ? null : s.m3AmountCents / 100 }));
+
+    const result = computeProjectCommission(
+      {
+        soldDate: body.soldDate ?? current.soldDate,
+        netPPW: body.netPPW ?? current.netPPW,
+        kWSize: body.kWSize ?? current.kWSize,
+        installer: installerName,
+        productType: body.productType ?? current.productType,
+        closerId: body.closerId !== undefined ? (body.closerId || null) : current.closerId,
+        setterId: body.setterId !== undefined ? (body.setterId || null) : current.setterId,
+        subDealerId: current.subDealerId,
+        solarTechProductId: installerName === 'SolarTech' ? (current.productId ?? null) : null,
+        installerProductId: installerName !== 'SolarTech' ? (current.productId ?? null) : null,
+        baselineOverride: effectiveBaselineOverride,
+        trainerId: body.trainerId !== undefined ? (body.trainerId || null) : current.trainerId,
+        trainerRate: body.trainerRate !== undefined ? (body.trainerRate ?? null) : current.trainerRate,
+        additionalClosers: effectiveAdditionalClosers,
+        additionalSetters: effectiveAdditionalSetters,
+      },
+      {
+        installerPricingVersions,
+        solarTechProducts: [],
+        productCatalogProducts,
+        productCatalogPricingVersions,
+        trainerAssignments,
+        payrollEntries,
+        installerPayConfigs,
+        currentProjectId: id,
+      },
+    );
+
+    // Override any client-sent amounts with the server-computed values.
+    data.m1AmountCents = fromDollars(result.m1Amount).cents;
+    data.m2AmountCents = fromDollars(result.m2Amount).cents;
+    data.m3AmountCents = result.m3Amount == null ? null : fromDollars(result.m3Amount).cents;
+    data.setterM1AmountCents = fromDollars(result.setterM1Amount).cents;
+    data.setterM2AmountCents = fromDollars(result.setterM2Amount).cents;
+    data.setterM3AmountCents = result.setterM3Amount == null ? null : fromDollars(result.setterM3Amount).cents;
   }
 
   // Snapshot before-state for audit diff (only fields we care about).
