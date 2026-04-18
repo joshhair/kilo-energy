@@ -199,8 +199,11 @@ export default function BlitzDetailPage() {
     return arr;
   }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
-    [approvedVisibleProjects],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => {
+      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+      return s + (closerApproved ? p.kWSize : 0);
+    }, 0),
+    [approvedVisibleProjects, approvedParticipantIds],
   );
   const totalCosts = useMemo(
     () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,

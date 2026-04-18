@@ -735,6 +735,8 @@ function BlitzPageInner() {
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
       (isAdmin || b.owner.id === effectiveRepId
         ? approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+            || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+            || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
         : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
           || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
           || p.additionalSetters?.some((as) => as.userId === effectiveRepId))
@@ -747,6 +749,8 @@ function BlitzPageInner() {
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
       (isAdmin || b.owner.id === effectiveRepId
         ? approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+            || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+            || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
         : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
           || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
           || p.additionalSetters?.some((as) => as.userId === effectiveRepId))

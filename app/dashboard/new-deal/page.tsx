@@ -896,7 +896,7 @@ function NewDealPage() {
                   <label htmlFor="field-repId" className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">Closer (Rep) {fieldCheck('repId')}</span>
                   </label>
-                  <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('blitzId', ''); update('setterId', ''); }}
+                  <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('setterId', ''); }}
                     onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} aria-describedby={errors.repId ? 'repId-error' : undefined} className={selectCls('repId')} style={inputFieldStyle('repId')}>
                     <option value="">— Select closer —</option>
                     {closerPickerReps.filter((r) => r.id !== form.setterId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -1592,7 +1592,7 @@ function NewDealPage() {
                       }
                       // Blitz deselected — leave soldDate as-is to preserve any manually entered date
                       // Clear setter whenever a blitz is selected (including first selection); don't clear on deselect
-                      if (blitzId) { update('setterId', ''); update('repId', ''); }
+                      if (blitzId) { update('setterId', ''); }
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}
