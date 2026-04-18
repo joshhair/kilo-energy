@@ -15,9 +15,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
-  const ALLOWED_TRANSITIONS: Record<string, string> = {
-    Draft: 'Pending',
-    Pending: 'Paid',
+  // Allowed status transitions for a single payroll entry. Forward
+  // transitions mirror the publish-workflow (Draft → Pending → Paid).
+  // Reverse transitions are admin-only corrections: Pending → Draft lets
+  // an admin pull an entry back out of the current payroll batch before
+  // it's published (e.g., a mistaken bonus). Paid → * stays blocked —
+  // money has already left, corrections go through a negative-adjustment
+  // entry instead.
+  const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    Draft: ['Pending'],
+    Pending: ['Paid', 'Draft'],
+    Paid: [],
   };
 
   const data: Record<string, unknown> = {};
@@ -25,9 +33,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const current = await prisma.payrollEntry.findUnique({ where: { id }, select: { status: true } });
     if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     if (body.status !== current.status) {
-      if (ALLOWED_TRANSITIONS[current.status] !== body.status) {
+      const allowed = ALLOWED_TRANSITIONS[current.status] ?? [];
+      if (!allowed.includes(body.status)) {
         return NextResponse.json(
-          { error: `Invalid transition: ${current.status} → ${body.status}. Allowed: ${current.status} → ${ALLOWED_TRANSITIONS[current.status] ?? '(none)'}` },
+          { error: `Invalid transition: ${current.status} → ${body.status}. Allowed: ${current.status} → ${allowed.length ? allowed.join(' | ') : '(none)'}` },
           { status: 422 }
         );
       }

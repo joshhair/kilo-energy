@@ -336,11 +336,20 @@ export default function MobilePayroll() {
               />
             )}
             {selectedEntry.status === 'Pending' && (
-              <MobileBottomSheet.Item
-                label="Mark as Paid"
-                icon={Check}
-                onTap={() => handleStatusChange(selectedEntry, 'Paid')}
-              />
+              <>
+                <MobileBottomSheet.Item
+                  label="Mark as Paid"
+                  icon={Check}
+                  onTap={() => handleStatusChange(selectedEntry, 'Paid')}
+                />
+                {/* Reverse Pending → Draft — lets admin pull an entry out of
+                    the current batch before publish. Matches desktop parity. */}
+                <MobileBottomSheet.Item
+                  label="Move back to Draft"
+                  icon={Check}
+                  onTap={() => handleStatusChange(selectedEntry, 'Draft')}
+                />
+              </>
             )}
             {selectedEntry.status !== 'Paid' && (
               <>

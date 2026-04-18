@@ -79,19 +79,35 @@ function PayrollPageInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [actionBarMounted, setActionBarMounted] = useState(false);
   const [actionBarVisible, setActionBarVisible] = useState(false);
-  const [showBonusModal, setShowBonusModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const bonusSubmitting = useRef(false);
   const paymentSubmitting = useRef(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [publishingPayroll, setPublishingPayroll] = useState(false);
   const [markingForPayroll, setMarkingForPayroll] = useState(false);
-  const [bonusForm, setBonusForm] = useState({ repId: '', amount: '', notes: '', date: '' });
-  const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', stage: 'M1' as 'M1' | 'M2' | 'M3', date: '', notes: '' });
-  const bonusPanelRef = useRef<HTMLDivElement>(null);
+  // Unified add-payment form — covers Deal (requires project + stage) and
+  // Bonus (just amount + notes + date). Toggle in the modal switches the
+  // field set. Replaced the standalone Add Bonus modal in Batch 4.
+  const [paymentForm, setPaymentForm] = useState({
+    type: 'Deal' as 'Deal' | 'Bonus',
+    repId: '',
+    projectId: '',
+    amount: '',
+    stage: 'M1' as 'M1' | 'M2' | 'M3',
+    date: '',
+    notes: '',
+  });
   const paymentPanelRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(bonusPanelRef, showBonusModal);
   useFocusTrap(paymentPanelRef, showPaymentModal);
+
+  // Row-level edit (Batch 4). Open with an entry reference; modal lets
+  // admin change amount / date / notes (status is managed via the
+  // Reverse and row-action buttons). Per-row processing set prevents
+  // concurrent clicks on the same row.
+  const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
+  const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
+  const [processingEntryIds, setProcessingEntryIds] = useState<Set<string>>(new Set());
+  const editEntryPanelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(editEntryPanelRef, editingEntry !== null);
 
   // Reimbursements date filter
   const [reimFilterFrom, setReimFilterFrom] = useState('');
@@ -210,7 +226,6 @@ function PayrollPageInner() {
       }
 
       if (e.key === 'Escape') {
-        if (showBonusModal) { setShowBonusModal(false); return; }
         if (showPaymentModal) { setShowPaymentModal(false); return; }
         setSelectedIds(new Set());
         return;
@@ -422,6 +437,93 @@ function PayrollPageInner() {
     });
   };
 
+  // ── Row-level actions (Batch 4) ─────────────────────────────────────────
+
+  // Reverse a Pending entry back to Draft so admin can pull it out of
+  // the current payroll batch before publish. Server enforces the
+  // transition — Paid is never reversed here.
+  const handleReverseEntry = async (entry: PayrollEntry) => {
+    if (entry.status !== 'Pending') return;
+    if (processingEntryIds.has(entry.id)) return;
+    setProcessingEntryIds((prev) => new Set(prev).add(entry.id));
+    setPayrollEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: 'Draft' } : e));
+    try {
+      const res = await fetch(`/api/payroll/${entry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Draft' }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast('Moved back to Draft', 'success');
+    } catch (err) {
+      console.error(err);
+      toast('Failed to reverse — try again', 'error');
+      setPayrollEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: 'Pending' } : e));
+    } finally {
+      setProcessingEntryIds((prev) => { const s = new Set(prev); s.delete(entry.id); return s; });
+    }
+  };
+
+  const handleDeleteEntry = async (entry: PayrollEntry) => {
+    if (entry.status === 'Paid') { toast('Paid entries cannot be deleted', 'error'); return; }
+    const ok = window.confirm(`Delete this ${entry.type.toLowerCase()} payment?\n\n${entry.repName} — $${entry.amount.toFixed(2)}\n${entry.notes || entry.customerName || ''}\n\nThis cannot be undone.`);
+    if (!ok) return;
+    if (processingEntryIds.has(entry.id)) return;
+    setProcessingEntryIds((prev) => new Set(prev).add(entry.id));
+    const snapshot = entry;
+    setPayrollEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    setSelectedIds((prev) => { const s = new Set(prev); s.delete(entry.id); return s; });
+    try {
+      const res = await fetch(`/api/payroll/${entry.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast('Entry deleted', 'success');
+    } catch (err) {
+      console.error(err);
+      toast('Failed to delete — restoring', 'error');
+      setPayrollEntries((prev) => [...prev, snapshot]);
+    } finally {
+      setProcessingEntryIds((prev) => { const s = new Set(prev); s.delete(entry.id); return s; });
+    }
+  };
+
+  const openEditEntry = (entry: PayrollEntry) => {
+    if (entry.status === 'Paid') { toast('Paid entries cannot be edited — add a negative adjustment entry instead', 'error'); return; }
+    setEditEntryForm({
+      amount: String(entry.amount),
+      date: entry.date,
+      notes: entry.notes ?? '',
+    });
+    setEditingEntry(entry);
+  };
+
+  const handleSaveEditEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEntry) return;
+    const amt = parseFloat(editEntryForm.amount);
+    if (!Number.isFinite(amt) || amt <= 0) { toast('Amount must be greater than $0', 'error'); return; }
+    if (processingEntryIds.has(editingEntry.id)) return;
+    setProcessingEntryIds((prev) => new Set(prev).add(editingEntry.id));
+    const snapshot = editingEntry;
+    const patch = { amount: amt, date: editEntryForm.date, notes: editEntryForm.notes };
+    setPayrollEntries((prev) => prev.map((e) => e.id === editingEntry.id ? { ...e, ...patch } : e));
+    setEditingEntry(null);
+    try {
+      const res = await fetch(`/api/payroll/${editingEntry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast('Entry updated', 'success');
+    } catch (err) {
+      console.error(err);
+      toast('Failed to save — reverting', 'error');
+      setPayrollEntries((prev) => prev.map((e) => e.id === snapshot.id ? snapshot : e));
+    } finally {
+      setProcessingEntryIds((prev) => { const s = new Set(prev); s.delete(snapshot.id); return s; });
+    }
+  };
+
   const selectAll = () => {
     const pageIds = paginatedFiltered.map((e) => e.id);
     const allSelected = pageIds.every((id) => selectedIds.has(id));
@@ -433,88 +535,54 @@ function PayrollPageInner() {
     });
   };
 
-  const handleAddBonus = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (bonusSubmitting.current) return;
-    bonusSubmitting.current = true;
-    if (!bonusForm.repId) { bonusSubmitting.current = false; toast('Please select a rep', 'error'); return; }
-    if (!bonusForm.amount || isNaN(parseFloat(bonusForm.amount)) || parseFloat(bonusForm.amount) <= 0) { bonusSubmitting.current = false; toast('Enter a valid amount greater than $0', 'error'); return; }
-    const rep = reps.find((r) => r.id === bonusForm.repId);
-    const newEntry: PayrollEntry = {
-      id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-      repId: bonusForm.repId,
-      repName: rep?.name ?? '',
-      projectId: null,
-      customerName: '',
-      amount: parseFloat(bonusForm.amount),
-      type: 'Bonus',
-      paymentStage: 'Bonus',
-      status: 'Draft',
-      date: bonusForm.date || localDateString(new Date()),
-      notes: bonusForm.notes,
-    };
-    setPayrollEntries((prev) => [...prev, newEntry]);
-    setShowBonusModal(false);
-    setBonusForm({ repId: '', amount: '', notes: '', date: '' });
-    setStatusTab('Draft');
-    setTypeTab('Bonus');
-    setFilterRepId('');
-    setSelectedIds(new Set());
-    setAdminPage(1);
-    const bonusParams = new URLSearchParams(searchParams.toString());
-    bonusParams.set('status', 'Draft');
-    bonusParams.set('type', 'Bonus');
-    bonusParams.delete('rep');
-    router.replace(`?${bonusParams.toString()}`, { scroll: false });
-    bonusSubmitting.current = false;
-    toast(`Bonus added for ${rep?.name ?? 'rep'} — $${parseFloat(bonusForm.amount).toLocaleString()}`, 'success');
-    // Persist to DB via context helper — registers temp ID in resolution map so
-    // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
-    persistPayrollEntry(newEntry);
-  };
-
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (paymentSubmitting.current) return;
     paymentSubmitting.current = true;
+
     if (!paymentForm.repId) { paymentSubmitting.current = false; toast('Please select a rep', 'error'); return; }
     if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount)) || parseFloat(paymentForm.amount) <= 0) { paymentSubmitting.current = false; toast('Enter a valid amount greater than $0', 'error'); return; }
+
     const rep = reps.find((r) => r.id === paymentForm.repId);
-    const project = projects.find((p) => p.id === paymentForm.projectId);
-    if (paymentForm.stage === 'M3') {
+    const isBonus = paymentForm.type === 'Bonus';
+    const project = !isBonus ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
+
+    if (!isBonus && paymentForm.stage === 'M3') {
       if (!paymentForm.projectId || !project) { paymentSubmitting.current = false; toast('M3 payments require a linked project', 'error'); return; }
       const installerName = project.installer ?? '';
       const payPct = installerPayConfigs[installerName]?.installPayPct ?? 100;
       if (payPct >= 100) { paymentSubmitting.current = false; toast('M3 payments are only allowed for installers with a partial install payment percentage (installPayPct < 100)', 'error'); return; }
     }
+
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       repId: paymentForm.repId,
       repName: rep?.name ?? '',
-      projectId: paymentForm.projectId || null,
+      projectId: isBonus ? null : (paymentForm.projectId || null),
       customerName: project?.customerName ?? '',
       amount: parseFloat(paymentForm.amount),
-      type: 'Deal',
-      paymentStage: paymentForm.stage,
+      type: isBonus ? 'Bonus' : 'Deal',
+      paymentStage: isBonus ? 'Bonus' : paymentForm.stage,
       status: 'Draft',
       date: paymentForm.date || localDateString(new Date()),
       notes: paymentForm.notes,
     };
     setPayrollEntries((prev) => [...prev, newEntry]);
     setShowPaymentModal(false);
-    setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
+    setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
     setStatusTab('Draft');
-    setTypeTab('Deal');
+    setTypeTab(isBonus ? 'Bonus' : 'Deal');
     setFilterRepId('');
     setSelectedIds(new Set());
     setAdminPage(1);
-    const paymentParams = new URLSearchParams(searchParams.toString());
-    paymentParams.set('status', 'Draft');
-    paymentParams.set('type', 'Deal');
-    paymentParams.delete('rep');
-    router.replace(`?${paymentParams.toString()}`, { scroll: false });
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set('status', 'Draft');
+    nextParams.set('type', isBonus ? 'Bonus' : 'Deal');
+    nextParams.delete('rep');
+    router.replace(`?${nextParams.toString()}`, { scroll: false });
     paymentSubmitting.current = false;
-    toast(`Payment draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
+    const label = isBonus ? 'Bonus' : 'Payment';
+    toast(`${label} draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
     // Persist to DB via context helper — registers temp ID in resolution map so
     // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
     persistPayrollEntry(newEntry);
@@ -696,13 +764,6 @@ function PayrollPageInner() {
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
             >
               + Add Payment
-            </button>
-            <button
-              onClick={() => { bonusSubmitting.current = false; setShowBonusModal(true); }}
-              className="font-medium px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] whitespace-nowrap transition-colors"
-              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
-            >
-              + Add Bonus
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
@@ -1097,14 +1158,17 @@ function PayrollPageInner() {
             <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>
               {statusTab === 'Draft' ? (typeTab === 'Deal' ? 'Draft entries are auto-created when projects hit milestones' : 'Create a bonus entry for any rep') : statusTab === 'Pending' ? 'Select Draft entries and mark them for payroll' : 'Publish pending payroll to move entries here'}
             </p>
-            {statusTab === 'Draft' && typeTab === 'Deal' && (
-              <button onClick={() => { paymentSubmitting.current = false; setShowPaymentModal(true); }} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
-                <ArrowRight className="w-3.5 h-3.5" /> Add Payment
-              </button>
-            )}
-            {statusTab === 'Draft' && typeTab === 'Bonus' && (
-              <button onClick={() => setShowBonusModal(true)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
-                Add Bonus
+            {statusTab === 'Draft' && (
+              <button
+                onClick={() => {
+                  paymentSubmitting.current = false;
+                  setPaymentForm((p) => ({ ...p, type: typeTab === 'Bonus' ? 'Bonus' : 'Deal' }));
+                  setShowPaymentModal(true);
+                }}
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]"
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+              >
+                <ArrowRight className="w-3.5 h-3.5" /> Add {typeTab === 'Bonus' ? 'Bonus' : 'Payment'}
               </button>
             )}
           </div>
@@ -1126,6 +1190,7 @@ function PayrollPageInner() {
                 <th style={{ padding: '10px 14px', textAlign: 'right' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Amount</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Date</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Status</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const, width: 1 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1153,6 +1218,43 @@ function PayrollPageInner() {
                         ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                         : { background: 'rgba(77,159,255,0.12)', color: 'var(--accent-blue)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                     }>{entry.status}</span>
+                  </td>
+                  <td style={{ padding: '12px 14px', fontSize: 12, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' as const, textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                    <div className="flex gap-1 justify-end">
+                      {entry.status !== 'Paid' && (
+                        <button
+                          disabled={processingEntryIds.has(entry.id)}
+                          onClick={() => openEditEntry(entry)}
+                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40"
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
+                          title="Edit amount / date / notes"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {entry.status === 'Pending' && (
+                        <button
+                          disabled={processingEntryIds.has(entry.id)}
+                          onClick={() => handleReverseEntry(entry)}
+                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40"
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--accent-amber)' }}
+                          title="Move back to Draft"
+                        >
+                          Reverse
+                        </button>
+                      )}
+                      {entry.status !== 'Paid' && (
+                        <button
+                          disabled={processingEntryIds.has(entry.id)}
+                          onClick={() => handleDeleteEntry(entry)}
+                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40 hover:text-red-400 hover:bg-red-500/10"
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-dim)' }}
+                          title="Delete entry"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1275,96 +1377,44 @@ function PayrollPageInner() {
       })()}
 
       {/* Bonus Modal */}
-      {showBonusModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div ref={bonusPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Add Bonus Payment</h2>
-              <button
-                onClick={() => { setShowBonusModal(false); setBonusForm({ repId: '', amount: '', notes: '', date: '' }); }}
-                className="text-[var(--text-muted)] hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleAddBonus} className="space-y-4">
-              <div>
-                <label className={labelCls}>Rep</label>
-                <RepSelector
-                  value={bonusForm.repId}
-                  onChange={(repId) => setBonusForm((p) => ({ ...p, repId }))}
-                  reps={reps}
-                  filterFn={(r) => r.active !== false}
-                  placeholder="— Select rep —"
-                  clearLabel="— Select rep —"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Amount ($)</label>
-                <input
-                  required
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={bonusForm.amount}
-                  onChange={(e) => setBonusForm((p) => ({ ...p, amount: e.target.value }))}
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Date</label>
-                <input
-                  type="date"
-                  value={bonusForm.date}
-                  onChange={(e) => setBonusForm((p) => ({ ...p, date: e.target.value }))}
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Notes</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Monthly performance bonus"
-                  value={bonusForm.notes}
-                  onChange={(e) => setBonusForm((p) => ({ ...p, notes: e.target.value }))}
-                  className={inputCls + ' placeholder-slate-500'}
-                />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button
-                  type="submit"
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-                  style={{ backgroundColor: 'var(--brand)' }}
-                >
-                  Add Bonus
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowBonusModal(false); setBonusForm({ repId: '', amount: '', notes: '', date: '' }); }}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Spacer so content is never hidden behind the fixed action bar */}
       {showActionBar && <div className="h-20" />}
 
       {/* Manual Payment Modal */}
-      {showPaymentModal && (
+      {showPaymentModal && (() => {
+        const isBonus = paymentForm.type === 'Bonus';
+        const closeAndReset = () => {
+          setShowPaymentModal(false);
+          setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
+        };
+        return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
           <div ref={paymentPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Add Deal Payment</h2>
-              <button onClick={() => { setShowPaymentModal(false); setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' }); }} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <h2 className="text-white font-semibold text-lg">Add {isBonus ? 'Bonus' : 'Payment'}</h2>
+              <button onClick={closeAndReset} className="text-[var(--text-muted)] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleAddPayment} className="space-y-4">
+              {/* Type toggle — Deal (project + stage) vs Bonus (rep + amount only).
+                  Mirrors the unified mobile pattern; replaces the old two-modal split. */}
+              <div>
+                <label className={labelCls}>Type</label>
+                <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                  {(['Deal', 'Bonus'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setPaymentForm((p) => ({ ...p, type: t }))}
+                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? 'text-black' : 'text-[var(--text-secondary)]'}`}
+                      style={{ background: paymentForm.type === t ? 'var(--brand)' : 'transparent' }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div>
                 <label className={labelCls}>Rep</label>
                 <RepSelector
@@ -1376,19 +1426,21 @@ function PayrollPageInner() {
                   clearLabel="— Select rep —"
                 />
               </div>
-              <div>
-                <label className={labelCls}>Project</label>
-                <SearchableSelect
-                  value={paymentForm.projectId}
-                  onChange={(val) => setPaymentForm((p) => ({ ...p, projectId: val }))}
-                  options={projects
-                    .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-                    .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
-                    .map((p) => ({ value: p.id, label: `${p.customerName} — ${p.installer} (${p.kWSize} kW) [${p.phase}]` }))}
-                  placeholder="— Select project (optional) —"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+              {!isBonus && (
+                <div>
+                  <label className={labelCls}>Project</label>
+                  <SearchableSelect
+                    value={paymentForm.projectId}
+                    onChange={(val) => setPaymentForm((p) => ({ ...p, projectId: val }))}
+                    options={projects
+                      .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
+                      .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
+                      .map((p) => ({ value: p.id, label: `${p.customerName} — ${p.installer} (${p.kWSize} kW) [${p.phase}]` }))}
+                    placeholder="— Select project (optional) —"
+                  />
+                </div>
+              )}
+              <div className={isBonus ? '' : 'grid grid-cols-2 gap-3'}>
                 <div>
                   <label className={labelCls}>Amount ($)</label>
                   <input required type="number" min="0.01" step="0.01"
@@ -1396,30 +1448,32 @@ function PayrollPageInner() {
                     onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
                     className={inputCls} />
                 </div>
-                <div>
-                  <label className={labelCls}>Stage</label>
-                  <SearchableSelect
-                    value={paymentForm.stage}
-                    onChange={(val) => setPaymentForm((p) => ({ ...p, stage: val as 'M1' | 'M2' | 'M3' }))}
-                    options={[
-                      { value: 'M1', label: 'M1' },
-                      { value: 'M2', label: 'M2' },
-                      { value: 'M3', label: 'M3' },
-                    ]}
-                    placeholder="Select stage"
-                    searchable={false}
-                  />
-                </div>
+                {!isBonus && (
+                  <div>
+                    <label className={labelCls}>Stage</label>
+                    <SearchableSelect
+                      value={paymentForm.stage}
+                      onChange={(val) => setPaymentForm((p) => ({ ...p, stage: val as 'M1' | 'M2' | 'M3' }))}
+                      options={[
+                        { value: 'M1', label: 'M1' },
+                        { value: 'M2', label: 'M2' },
+                        { value: 'M3', label: 'M3' },
+                      ]}
+                      placeholder="Select stage"
+                      searchable={false}
+                    />
+                  </div>
+                )}
               </div>
               <div>
-                <label className={labelCls}>Pay Date</label>
+                <label className={labelCls}>{isBonus ? 'Date' : 'Pay Date'}</label>
                 <input type="date" value={paymentForm.date}
                   onChange={(e) => setPaymentForm((p) => ({ ...p, date: e.target.value }))}
                   className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Notes</label>
-                <input type="text" placeholder="e.g. Additional payment — special circumstance"
+                <input type="text" placeholder={isBonus ? 'e.g. Monthly performance bonus' : 'e.g. Additional payment — special circumstance'}
                   value={paymentForm.notes}
                   onChange={(e) => setPaymentForm((p) => ({ ...p, notes: e.target.value }))}
                   className={inputCls + ' placeholder-slate-500'} />
@@ -1428,9 +1482,60 @@ function PayrollPageInner() {
                 <button type="submit"
                   className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97]"
                   style={{ backgroundColor: 'var(--brand)' }}>
-                  Add Payment
+                  Add {isBonus ? 'Bonus' : 'Payment'}
                 </button>
-                <button type="button" onClick={() => { setShowPaymentModal(false); setPaymentForm({ repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' }); }}
+                <button type="button" onClick={closeAndReset}
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        );
+      })()}
+
+      {/* Row-level Edit modal — amount / date / notes (status is changed
+          via the row buttons, not here). Paid entries are blocked at the
+          open-modal step. */}
+      {editingEntry && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
+          <div ref={editEntryPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-white font-semibold text-lg">Edit {editingEntry.type} Entry</h2>
+              <button onClick={() => setEditingEntry(null)} className="text-[var(--text-muted)] hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-[var(--text-muted)] text-xs mb-4">{editingEntry.repName} — {editingEntry.paymentStage}{editingEntry.customerName ? ` · ${editingEntry.customerName}` : ''}</p>
+            <form onSubmit={handleSaveEditEntry} className="space-y-4">
+              <div>
+                <label className={labelCls}>Amount ($)</label>
+                <input required type="number" min="0.01" step="0.01"
+                  value={editEntryForm.amount}
+                  onChange={(e) => setEditEntryForm((f) => ({ ...f, amount: e.target.value }))}
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Date</label>
+                <input type="date" value={editEntryForm.date}
+                  onChange={(e) => setEditEntryForm((f) => ({ ...f, date: e.target.value }))}
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <input type="text"
+                  value={editEntryForm.notes}
+                  onChange={(e) => setEditEntryForm((f) => ({ ...f, notes: e.target.value }))}
+                  className={inputCls + ' placeholder-slate-500'} />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="submit"
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97]"
+                  style={{ backgroundColor: 'var(--brand)' }}>
+                  Save Changes
+                </button>
+                <button type="button" onClick={() => setEditingEntry(null)}
                   className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>
