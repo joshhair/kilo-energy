@@ -705,7 +705,7 @@ function UsersPageInner() {
       case 'active': arr.sort((a, b) => (activeDealsByRep.get(b.id) ?? 0) - (activeDealsByRep.get(a.id) ?? 0)); break;
       case 'deals': {
         const dealsByRep = new Map<string, number>();
-        for (const p of projects) {
+        for (const p of projects.filter(p => !PIPELINE_EXCLUDED.has(p.phase))) {
           if (p.repId)                       dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
           if (p.setterId && p.setterId !== p.repId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
         }

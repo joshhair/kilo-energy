@@ -819,10 +819,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevMonthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
-  const thisMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey)).length;
-  const prevMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey)).length;
-  const thisMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey)).reduce((s, p) => s + p.kWSize, 0);
-  const prevMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey)).reduce((s, p) => s + p.kWSize, 0);
+  const thisMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
+  const prevMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
+  const thisMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
+  const prevMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
   const dealsTrend = thisMonthDeals - prevMonthDeals; // positive = up, negative = down
   const kwTrend = thisMonthKW - prevMonthKW;
 
@@ -1064,7 +1064,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         const closerDealCount = projects.filter((p) => p.repId === id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
         const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
         const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId)).size;
-        const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && !e.notes?.startsWith('Co-setter') && e.paymentStage !== 'Trainer');
+        const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && !e.notes?.startsWith('Co-setter') && !e.notes?.startsWith('Co-closer') && e.paymentStage !== 'Trainer');
         const setterEntries = repPayroll.filter((e) => e.notes === 'Setter' || e.notes?.startsWith('Co-setter'));
         const trainerEntries = repPayroll.filter((e) => e.paymentStage === 'Trainer');
         const bonusEntries = repPayroll.filter((e) => e.type !== 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer');
