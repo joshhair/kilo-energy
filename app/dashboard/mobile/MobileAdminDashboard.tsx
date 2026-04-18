@@ -177,7 +177,10 @@ export default function MobileAdminDashboard() {
   // Recent deals
   const recentDeals = useMemo(() => [...periodProjects].filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 5), [periodProjects]);
 
-  // Top reps by deal count
+  // Top reps by deal count. Uses standard competition rank so ties share
+  // the same position (two reps tied at 5 deals both show "1", next rep
+  // at 3 deals shows "3"). Expanded to top-5 so a 3-way tie at the top
+  // doesn't hide the actual next rep off-screen.
   const topReps = useMemo(() => {
     const repDeals: Record<string, number> = {};
     for (const p of periodProjects) {
@@ -193,13 +196,16 @@ export default function MobileAdminDashboard() {
         repDeals[as_.userId] = (repDeals[as_.userId] || 0) + 1;
       }
     }
-    return Object.entries(repDeals)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([id, count]) => {
-        const rep = reps.find((r) => r.id === id);
-        return { name: rep?.name ?? 'Unknown', count };
-      });
+    const sorted = Object.entries(repDeals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    let lastCount = -1;
+    let lastRank = 0;
+    return sorted.map(([id, count], i) => {
+      const rank = count === lastCount ? lastRank : i + 1;
+      lastCount = count;
+      lastRank = rank;
+      const rep = reps.find((r) => r.id === id);
+      return { name: rep?.name ?? 'Unknown', count, rank };
+    });
   }, [periodProjects, reps]);
 
   // ── Animated counters ────────────────────────────────────────────────────
@@ -414,17 +420,17 @@ export default function MobileAdminDashboard() {
             <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
           </div>
           <div className="space-y-3">
-            {topReps.map((r, i) => (
+            {topReps.map((r) => (
               <div key={r.name} className="flex items-center gap-3">
                 <span
                   className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                   style={{
-                    background: i === 0 ? 'rgba(0,229,160,0.15)' : i === 1 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
-                    color: i === 0 ? ACCENT : i === 1 ? ACCENT2 : MUTED,
+                    background: r.rank === 1 ? 'rgba(0,229,160,0.15)' : r.rank === 2 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
+                    color: r.rank === 1 ? ACCENT : r.rank === 2 ? ACCENT2 : MUTED,
                     fontFamily: FONT_DISPLAY,
                   }}
                 >
-                  {i + 1}
+                  {r.rank}
                 </span>
                 <span className="flex-1 text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.name}</span>
                 <span className="font-bold tabular-nums" style={{ color: MUTED, fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{r.count} deals</span>

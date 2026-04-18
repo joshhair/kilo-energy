@@ -12,6 +12,7 @@ import MobileListItem from './shared/MobileListItem';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import { useToast } from '../../../lib/toast';
+import { sortForSelection } from '../../../lib/sorting';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
 
@@ -101,9 +102,9 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const totalCosts = blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0;
 
   const availableReps = useMemo(() => {
-    if (!blitz?.participants) return reps;
+    if (!blitz?.participants) return sortForSelection(reps);
     const participantIds = new Set(blitz.participants.map((p: any) => p.user.id));
-    return reps.filter((r) => r.active && !participantIds.has(r.id));
+    return sortForSelection(reps.filter((r) => !participantIds.has(r.id)));
   }, [reps, blitz?.participants]);
 
   const handleAddParticipant = async () => {

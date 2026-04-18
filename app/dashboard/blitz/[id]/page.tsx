@@ -9,6 +9,7 @@ import { formatDate, formatCurrency, formatCompactKW } from '../../../../lib/uti
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
 import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2, FolderKanban, Trophy, ChevronUp } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
+import { sortForSelection } from '../../../../lib/sorting';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Link from 'next/link';
 
@@ -255,11 +256,13 @@ export default function BlitzDetailPage() {
     return result;
   }, [blitz?.costs]);
 
-  // Available reps (not already participants)
+  // Available reps (not already participants). Canonical picker sort
+  // (active-only, first-name alpha) so admins scanning a long roster
+  // don't have to hunt through unsorted entries.
   const availableReps = useMemo(() => {
-    if (!blitz?.participants) return reps;
+    if (!blitz?.participants) return sortForSelection(reps);
     const participantIds = new Set(blitz.participants.filter((p: any) => p.joinStatus !== 'declined').map((p: any) => p.user.id));
-    return reps.filter((r) => r.active && !participantIds.has(r.id));
+    return sortForSelection(reps.filter((r) => !participantIds.has(r.id)));
   }, [reps, blitz?.participants]);
 
   // ── Leaderboard + per-rep performance ────────────────────────────────

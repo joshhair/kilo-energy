@@ -182,6 +182,20 @@ export default function MobileDashboard() {
     [myPayroll, todayStr],
   );
 
+  // Parity with desktop dashboard: currently-owed chargebacks = Draft +
+  // Pending negatives. Paid negatives have already been deducted from a
+  // past paycheck and are not owed anymore; including them would double-
+  // count the claw-back. Shown as an extra stat card only when > 0 so
+  // reps without chargebacks don't see a "0.00" clutter tile.
+  const outstandingChargebacks = useMemo(
+    () => myPayroll.filter((p) => p.amount < 0 && (p.status === 'Draft' || p.status === 'Pending')),
+    [myPayroll],
+  );
+  const totalChargebacks = useMemo(
+    () => Math.abs(outstandingChargebacks.reduce((s, p) => s + p.amount, 0)),
+    [outstandingChargebacks],
+  );
+
   const totalKW = useMemo(
     () => myProjects.reduce((s, p) => s + p.kWSize, 0),
     [myProjects],
@@ -348,12 +362,19 @@ export default function MobileDashboard() {
           </div>
         </MobileCard>
 
-        {/* Stat grid — 2x2 */}
+        {/* Stat grid — 2x2, +1 conditional chargeback tile when owed */}
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
           <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color={ACCENT2} />
           <MobileStatCard label="Active Deals" value={activeProjects.length} color="#fff" />
           <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
+          {outstandingChargebacks.length > 0 && (
+            <MobileStatCard
+              label="Chargebacks"
+              value={fmt$(totalChargebacks)}
+              color={DANGER}
+            />
+          )}
         </div>
 
         {/* Recent */}
