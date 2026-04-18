@@ -102,4 +102,50 @@ test.describe('a11y — authenticated admin surfaces', () => {
     await page.waitForLoadState('networkidle');
     await scan(page, '/dashboard/payroll');
   });
+
+  test('blitz list', async ({ page }) => {
+    await page.goto('/dashboard/blitz');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/blitz');
+  });
+
+  test('settings (installer/financer/pricing)', async ({ page }) => {
+    await page.goto('/dashboard/settings');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/settings');
+  });
+
+  test('commission calculator', async ({ page }) => {
+    await page.goto('/dashboard/calculator');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/calculator');
+  });
+
+  test('new-deal form', async ({ page }) => {
+    await page.goto('/dashboard/new-deal');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/new-deal');
+  });
+});
+
+test.describe('a11y — authenticated rep surfaces', () => {
+  test.use({ storageState: 'tests/e2e/.auth/rep.json' });
+
+  test('dashboard (rep view)', async ({ page }) => {
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard (rep)');
+  });
+
+  test('earnings', async ({ page }) => {
+    await page.goto('/dashboard/earnings');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/earnings');
+  });
+
+  test('new-deal form (rep)', async ({ page }) => {
+    await page.goto('/dashboard/new-deal');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/new-deal (rep)');
+  });
 });
