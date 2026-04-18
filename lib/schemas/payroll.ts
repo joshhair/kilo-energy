@@ -1,11 +1,18 @@
 import { z } from 'zod';
-import { idSchema, optionalId, optionalString, moneyAmount } from '../api-validation';
+import { idSchema, optionalId, optionalString, finiteNumber } from '../api-validation';
 
-/** Request body for POST /api/payroll */
+/** Request body for POST /api/payroll.
+ *
+ *  `amount` allows negative values: chargebacks are stored as negative
+ *  "Deal" PayrollEntry rows (matches the auto-generated shape from
+ *  handleChargebacks), and admins sometimes post negative Bonus rows as
+ *  post-window corrections. Capped to ±1M to catch fat-finger mistakes
+ *  without blocking legitimate entries.
+ */
 export const createPayrollSchema = z.object({
   repId: idSchema,
   projectId: optionalId,
-  amount: moneyAmount,
+  amount: finiteNumber.min(-1_000_000).max(1_000_000),
   type: z.string().min(1),
   paymentStage: z.string().min(1),
   status: z.enum(['Draft', 'Pending', 'Paid']).optional().default('Draft'),

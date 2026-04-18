@@ -88,7 +88,7 @@ function PayrollPageInner() {
   // Bonus (just amount + notes + date). Toggle in the modal switches the
   // field set. Replaced the standalone Add Bonus modal in Batch 4.
   const [paymentForm, setPaymentForm] = useState({
-    type: 'Deal' as 'Deal' | 'Bonus',
+    type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback',
     repId: '',
     projectId: '',
     amount: '',
@@ -545,6 +545,7 @@ function PayrollPageInner() {
 
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const isBonus = paymentForm.type === 'Bonus';
+    const isChargeback = paymentForm.type === 'Chargeback';
     const project = !isBonus ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
 
     if (!isBonus && paymentForm.stage === 'M3') {
@@ -554,18 +555,27 @@ function PayrollPageInner() {
       if (payPct >= 100) { paymentSubmitting.current = false; toast('M3 payments are only allowed for installers with a partial install payment percentage (installPayPct < 100)', 'error'); return; }
     }
 
+    // Chargebacks are stored as negative "Deal" entries (matches the
+    // auto-generated shape from handleChargebacks). Admin enters the
+    // dollar amount positively for UX; we negate here before persisting.
+    const rawAmount = parseFloat(paymentForm.amount);
+    const signedAmount = isChargeback ? -rawAmount : rawAmount;
+    const dbType = isBonus ? 'Bonus' : 'Deal';
+    const dbStage = isBonus ? 'Bonus' : paymentForm.stage;
+    const chargebackNote = isChargeback ? `Chargeback — manual${paymentForm.notes ? ` · ${paymentForm.notes}` : ''}` : paymentForm.notes;
+
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       repId: paymentForm.repId,
       repName: rep?.name ?? '',
       projectId: isBonus ? null : (paymentForm.projectId || null),
       customerName: project?.customerName ?? '',
-      amount: parseFloat(paymentForm.amount),
-      type: isBonus ? 'Bonus' : 'Deal',
-      paymentStage: isBonus ? 'Bonus' : paymentForm.stage,
+      amount: signedAmount,
+      type: dbType,
+      paymentStage: dbStage,
       status: 'Draft',
       date: paymentForm.date || localDateString(new Date()),
-      notes: paymentForm.notes,
+      notes: chargebackNote,
     };
     setPayrollEntries((prev) => [...prev, newEntry]);
     setShowPaymentModal(false);
@@ -581,8 +591,8 @@ function PayrollPageInner() {
     nextParams.delete('rep');
     router.replace(`?${nextParams.toString()}`, { scroll: false });
     paymentSubmitting.current = false;
-    const label = isBonus ? 'Bonus' : 'Payment';
-    toast(`${label} draft added for ${rep?.name ?? 'rep'} — $${parseFloat(paymentForm.amount).toLocaleString()}`, 'success');
+    const label = isChargeback ? 'Chargeback' : isBonus ? 'Bonus' : 'Payment';
+    toast(`${label} draft added for ${rep?.name ?? 'rep'} — $${Math.abs(signedAmount).toLocaleString()}`, 'success');
     // Persist to DB via context helper — registers temp ID in resolution map so
     // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
     persistPayrollEntry(newEntry);
@@ -1383,37 +1393,43 @@ function PayrollPageInner() {
       {/* Manual Payment Modal */}
       {showPaymentModal && (() => {
         const isBonus = paymentForm.type === 'Bonus';
+        const isChargeback = paymentForm.type === 'Chargeback';
         const closeAndReset = () => {
           setShowPaymentModal(false);
           setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
         };
+        const titleFor = isChargeback ? 'Chargeback' : isBonus ? 'Bonus' : 'Payment';
         return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
           <div ref={paymentPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Add {isBonus ? 'Bonus' : 'Payment'}</h2>
+              <h2 className="text-white font-semibold text-lg">Add {titleFor}</h2>
               <button onClick={closeAndReset} className="text-[var(--text-muted)] hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleAddPayment} className="space-y-4">
-              {/* Type toggle — Deal (project + stage) vs Bonus (rep + amount only).
+              {/* Type toggle — Deal (project + stage) / Bonus (rep + amount only)
+                  / Chargeback (project-linked, stored as negative Deal).
                   Mirrors the unified mobile pattern; replaces the old two-modal split. */}
               <div>
                 <label className={labelCls}>Type</label>
                 <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-                  {(['Deal', 'Bonus'] as const).map((t) => (
+                  {(['Deal', 'Bonus', 'Chargeback'] as const).map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setPaymentForm((p) => ({ ...p, type: t }))}
-                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? 'text-black' : 'text-[var(--text-secondary)]'}`}
-                      style={{ background: paymentForm.type === t ? 'var(--brand)' : 'transparent' }}
+                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? (t === 'Chargeback' ? 'text-white' : 'text-black') : 'text-[var(--text-secondary)]'}`}
+                      style={{ background: paymentForm.type === t ? (t === 'Chargeback' ? 'var(--accent-red, #ef4444)' : 'var(--brand)') : 'transparent' }}
                     >
                       {t}
                     </button>
                   ))}
                 </div>
+                {isChargeback && (
+                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5">Enter the positive dollar amount to claw back. Stored as a negative Draft entry — admin controls when it actually hits payroll.</p>
+                )}
               </div>
               <div>
                 <label className={labelCls}>Rep</label>
@@ -1466,23 +1482,23 @@ function PayrollPageInner() {
                 )}
               </div>
               <div>
-                <label className={labelCls}>{isBonus ? 'Date' : 'Pay Date'}</label>
+                <label className={labelCls}>{isBonus ? 'Date' : isChargeback ? 'Date' : 'Pay Date'}</label>
                 <input type="date" value={paymentForm.date}
                   onChange={(e) => setPaymentForm((p) => ({ ...p, date: e.target.value }))}
                   className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Notes</label>
-                <input type="text" placeholder={isBonus ? 'e.g. Monthly performance bonus' : 'e.g. Additional payment — special circumstance'}
+                <input type="text" placeholder={isBonus ? 'e.g. Monthly performance bonus' : isChargeback ? 'e.g. Deal cancelled by homeowner — M2 claw-back' : 'e.g. Additional payment — special circumstance'}
                   value={paymentForm.notes}
                   onChange={(e) => setPaymentForm((p) => ({ ...p, notes: e.target.value }))}
                   className={inputCls + ' placeholder-slate-500'} />
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="submit"
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97]"
-                  style={{ backgroundColor: 'var(--brand)' }}>
-                  Add {isBonus ? 'Bonus' : 'Payment'}
+                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${isChargeback ? 'text-white' : 'btn-primary text-black'}`}
+                  style={{ backgroundColor: isChargeback ? 'var(--accent-red, #ef4444)' : 'var(--brand)' }}>
+                  Add {titleFor}
                 </button>
                 <button type="button" onClick={closeAndReset}
                   className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
