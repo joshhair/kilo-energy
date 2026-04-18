@@ -648,7 +648,14 @@ export default function BlitzDetailPage() {
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: blitz.status, ownerId: blitz.owner?.id ?? '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white disabled:opacity-50 transition-colors">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}</button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         ) : (
@@ -925,7 +932,13 @@ export default function BlitzDetailPage() {
 
           {canManage && (
             <div className="flex justify-end">
-              <button onClick={() => setShowAddParticipant(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] transition-colors"><UserPlus className="w-4 h-4" /> Add Rep</button>
+              <button
+                onClick={() => setShowAddParticipant(true)}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
+                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+              >
+                <UserPlus className="w-4 h-4" /> Add Rep
+              </button>
             </div>
           )}
           {blitz.participants?.length === 0 ? (
@@ -1016,7 +1029,15 @@ export default function BlitzDetailPage() {
                 </select>
                 <div className="flex justify-end gap-2">
                   <button onClick={() => { setShowAddParticipant(false); setSelectedRepId(''); }} className="px-3 py-2 text-sm text-[var(--text-secondary)]">Cancel</button>
-                  <button onClick={handleAddParticipant} disabled={!selectedRepId || addingParticipant} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-40 transition-colors">{addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingParticipant ? 'Adding...' : 'Add'}</button>
+                  <button
+                    onClick={handleAddParticipant}
+                    disabled={!selectedRepId || addingParticipant}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                  >
+                    {addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {addingParticipant ? 'Adding...' : 'Add'}
+                  </button>
                 </div>
               </div>
             </div>
