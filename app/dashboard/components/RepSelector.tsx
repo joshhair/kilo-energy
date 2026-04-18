@@ -21,6 +21,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Search, UserCircle2, X } from 'lucide-react';
 import { Rep } from '../../../lib/data';
+import { sortForSelection } from '../../../lib/sorting';
 
 interface RepSelectorProps {
   value: string;
@@ -132,8 +133,12 @@ export function RepSelector({
    
   }, [open]);
 
-  // Apply optional filter, then search filter
-  const baseReps = filterFn ? reps.filter(filterFn) : reps;
+  // Apply optional filter, then search filter. Ordering: active-only
+  // alphabetical by first name via the canonical sortForSelection helper
+  // (see lib/sorting.ts). The filterFn runs first since callers sometimes
+  // use it to gate by role; the helper's active-check is redundant for
+  // already-filtered lists but cheap and defensive.
+  const baseReps = sortForSelection(filterFn ? reps.filter(filterFn) : reps);
   const filteredReps = baseReps.filter(
     (r) => searchQuery === '' || r.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );

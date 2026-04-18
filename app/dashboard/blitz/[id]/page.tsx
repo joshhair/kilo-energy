@@ -1098,7 +1098,13 @@ export default function BlitzDetailPage() {
       {tab === 'costs' && isAdmin && (
         <div key="costs" className="animate-tab-enter space-y-4">
           <div className="flex justify-end">
-            <button onClick={() => setShowAddCost(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] transition-colors"><Plus className="w-4 h-4" /> Add Cost</button>
+            <button
+              onClick={() => setShowAddCost(true)}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            >
+              <Plus className="w-4 h-4" /> Add Cost
+            </button>
           </div>
 
           {showAddCost && (
@@ -1113,7 +1119,15 @@ export default function BlitzDetailPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setShowAddCost(false)} className="px-3 py-1.5 text-sm text-[var(--text-secondary)]">Cancel</button>
-                <button onClick={handleAddCost} disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0} className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green)] disabled:opacity-50 transition-colors">{addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{addingCost ? 'Adding...' : 'Add Cost'}</button>
+                <button
+                  onClick={handleAddCost}
+                  disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                >
+                  {addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {addingCost ? 'Adding...' : 'Add Cost'}
+                </button>
               </div>
             </div>
           )}

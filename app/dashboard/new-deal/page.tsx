@@ -14,6 +14,7 @@ import {
 } from '../../../lib/data';
 import { Check, Loader2, PlusCircle, RotateCcw } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
+import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
@@ -803,14 +804,10 @@ function NewDealPage() {
 
         {/* ── Left panel — 220px ── */}
         <div style={{ flex: '0 0 220px' }}>
-          {/* Your Deals card */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 16 }}>
-            <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 16 }}>Your Deals</p>
-            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: todayCount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1, textShadow: todayCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{todayCount}</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>Today</p>
-            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 42, color: monthCount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1, marginTop: 16, textShadow: monthCount > 0 ? '0 0 20px rgba(0,224,122,0.25)' : 'none' }}>{monthCount}</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginTop: 6 }}>This Month</p>
-          </div>
+          {/* "Your Deals" stats card used to live here — it duplicated the
+              hero DealEntryPage stats. Removed so the form view is focused:
+              one big entry point (hero), one form. Steps guide below is
+              novel content specific to the form flow. */}
 
           {/* Step guide card */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
@@ -893,14 +890,20 @@ function NewDealPage() {
             <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-1 space-y-4">
               {effectiveRole === 'admin' && (
                 <div className="transition-all duration-200">
-                  <label htmlFor="field-repId" className={labelCls} style={labelStyle}>
+                  <label className={labelCls} style={labelStyle}>
                     <span className="inline-flex items-center gap-1">Closer (Rep) {fieldCheck('repId')}</span>
                   </label>
-                  <select id="field-repId" value={form.repId} onChange={(e) => { update('repId', e.target.value); update('setterId', ''); }}
-                    onBlur={() => handleBlur('repId')} aria-invalid={!!errors.repId} aria-describedby={errors.repId ? 'repId-error' : undefined} className={selectCls('repId')} style={inputFieldStyle('repId')}>
-                    <option value="">— Select closer —</option>
-                    {closerPickerReps.filter((r) => r.id !== form.setterId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                  </select>
+                  {/* Swapped from a plain <select> to RepSelector so the
+                      closer picker matches the setter picker's rich styling
+                      (searchable, avatars, role chips). Both controls now
+                      use the same canonical ordering from lib/sorting.ts. */}
+                  <RepSelector
+                    value={form.repId}
+                    onChange={(repId) => { update('repId', repId); update('setterId', ''); handleBlur('repId'); }}
+                    reps={closerPickerReps.filter((r) => r.id !== form.setterId)}
+                    placeholder="— Select closer —"
+                    clearLabel="— Select closer —"
+                  />
                   <FieldError errors={errors} field="repId" />
                 </div>
               )}

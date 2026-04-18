@@ -707,7 +707,13 @@ function PayrollPageInner() {
                 {myFiltered.map((entry, i) => (
                   <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
-                      {entry.type === 'Deal' ? entry.customerName : (entry.notes || '—')}
+                      {entry.type === 'Deal' && entry.customerName && entry.projectId ? (
+                        <Link href={`/dashboard/projects/${entry.projectId}`} className="hover:underline" style={{ color: 'var(--accent-cyan)' }}>
+                          {entry.customerName}
+                        </Link>
+                      ) : (
+                        entry.type === 'Deal' ? entry.customerName : (entry.notes || '—')
+                      )}
                     </td>
                     <td className="px-5 py-3">
                       <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'rgba(168,85,247,0.15)' : 'rgba(37,99,235,0.15)', color: entry.type === 'Bonus' ? '#c084fc' : '#60a5fa' }}>
@@ -1217,7 +1223,20 @@ function PayrollPageInner() {
                   )}
                   <td style={{ padding: '12px 14px', fontSize: 15, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{entry.repName}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }} onClick={(e) => e.stopPropagation()}>
+                    {typeTab === 'Deal' && entry.customerName && entry.projectId ? (
+                      <Link
+                        href={`/dashboard/projects/${entry.projectId}`}
+                        className="hover:underline"
+                        style={{ color: 'var(--accent-cyan)' }}
+                        title="Open project"
+                      >
+                        {entry.customerName}
+                      </Link>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span>
+                    )}
+                  </td>
                   <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: 'var(--accent-green)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}><RelativeDate date={entry.date} /></span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>

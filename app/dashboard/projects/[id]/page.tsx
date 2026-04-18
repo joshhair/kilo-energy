@@ -711,6 +711,26 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return () => window.removeEventListener('keydown', handler);
   }, [showEditModal]);
 
+  // Lock body scroll while the Edit modal is open + reset window scroll
+  // to top so the fixed-inset-0 backdrop is always predictably centered
+  // in the user's viewport. Users were reporting the modal "opens
+  // somewhere random" when they clicked Edit after scrolling deep on a
+  // long project page — the modal was centered correctly, but ambient
+  // page scroll below a collapsed parent made it feel misplaced.
+  useEffect(() => {
+    if (!showEditModal) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevScrollY = window.scrollY;
+    document.body.style.overflow = 'hidden';
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      // Restore prior scroll position on close so admin lands back where
+      // they were — avoids the jarring "lose my place" feeling.
+      window.scrollTo({ top: prevScrollY, behavior: 'instant' as ScrollBehavior });
+    };
+  }, [showEditModal]);
+
   // (Cancel Confirm Escape handler removed — ConfirmDialog handles it internally)
 
   // Mobile layout
