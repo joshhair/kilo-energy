@@ -187,7 +187,8 @@ function NewDealPage() {
     form.notes.trim() !== '' || form.setterId !== '' || form.solarTechFamily !== '' ||
     form.solarTechProductId !== '' || form.pcFamily !== '' || form.installerProductId !== '' || form.prepaidSubType !== '' ||
     form.leadSource !== '' || form.blitzId !== '' ||
-    (effectiveRole === 'admin' && form.repId !== '');
+    (effectiveRole === 'admin' && form.repId !== '') ||
+    form.additionalClosers.length > 0 || form.additionalSetters.length > 0;
 
   useEffect(() => {
     if (!isFormDirty) return;

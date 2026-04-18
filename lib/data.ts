@@ -228,7 +228,8 @@ export interface Project {
   trainerId?: string;
   trainerName?: string;
   trainerRate?: number;
-  // Last modified timestamp (ISO string) — used as proxy for phase-change date
+  // Set only when phase changes; null for projects pre-dating this field.
+  phaseChangedAt?: string;
   updatedAt?: string;
   // Tag-team: additional closers / setters on this deal, each with their
   // own per-milestone cut. Empty (or undefined) for standard single-closer,

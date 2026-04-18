@@ -94,6 +94,7 @@ export function NeedsAttentionSection({
     phase: string;
     repName?: string;
     updatedAt?: string;
+    phaseChangedAt?: string;
   }>;
   isAdmin?: boolean;
   onUnflag?: (projectId: string) => void;
@@ -124,7 +125,7 @@ export function NeedsAttentionSection({
     if (proj.flagged) continue; // already added above; don't double-count
     const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
     if (threshold == null) continue; // skip phases without a threshold (e.g. PTO)
-    const phaseSince = proj.updatedAt ? new Date(proj.updatedAt) : (() => {
+    const phaseSince = proj.phaseChangedAt ? new Date(proj.phaseChangedAt) : (() => {
       if (!proj.soldDate) return null;
       const [sy, sm, sd] = proj.soldDate.split('-').map(Number);
       return new Date(sy, sm - 1, sd);

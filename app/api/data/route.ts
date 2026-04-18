@@ -252,6 +252,7 @@ export async function GET() {
     trainerRate: isAdmin ? (p.trainerRate ?? undefined) : undefined,
     cancellationReason: p.cancellationReason ?? undefined,
     cancellationNotes: p.cancellationNotes ?? undefined,
+    phaseChangedAt: p.phaseChangedAt?.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
     // Tag-team co-parties. PMs see structure but no amounts (stripFinancials).
     additionalClosers: stripFinancials ? [] : p.additionalClosers.map((c) => ({

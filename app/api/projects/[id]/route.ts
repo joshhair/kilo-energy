@@ -101,6 +101,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Build update data, only including fields that were sent.
   // Zod has already validated types + bounds at the boundary.
   const data: Record<string, unknown> = {};
+  // When phase changes, stamp phaseChangedAt so staleness calc uses the true phase-entry time.
+  if (body.phase !== undefined) {
+    const current = await prisma.project.findUnique({ where: { id }, select: { phase: true } });
+    if (current && current.phase !== body.phase) {
+      data.phaseChangedAt = new Date();
+    }
+  }
+
   const passthrough: Array<keyof PatchProjectInput> = [
     'phase', 'notes', 'flagged',
     'm1Paid', 'm2Paid', 'm3Paid',

@@ -331,6 +331,10 @@ model Project {
   /// Override rate in $/W. Paired with trainerId. Admin-set in project sheet.
   trainerRate Float?
 
+  /// Set only when phase changes — used by Needs Attention staleness calc.
+  /// Null for projects created before this field was added.
+  phaseChangedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
