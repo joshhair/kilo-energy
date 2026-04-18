@@ -489,13 +489,24 @@ model Reimbursement {
   /// "Pending" | "Approved" | "Denied" | "Rejected"
   status String @default("Pending")
 
+  /// Original filename as uploaded by the rep (display only).
   receiptName String?
+  /// Vercel Blob public URL where the receipt file lives. Null if no
+  /// receipt was uploaded; if the blob is deleted the URL stays as a
+  /// breadcrumb but may 404 on fetch.
+  receiptUrl  String?
+
+  /// Soft-archive timestamp. Non-null = hidden from the default list but
+  /// recoverable. Separate from status so "Archived Approved" and
+  /// "Archived Denied" are distinguishable during audit.
+  archivedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([repId])
   @@index([status])
+  @@index([archivedAt])
 }
 
 // ============================================================================

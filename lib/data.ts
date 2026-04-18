@@ -271,6 +271,10 @@ export interface Reimbursement {
   date: string;
   status: 'Pending' | 'Approved' | 'Denied' | 'Rejected';
   receiptName?: string;
+  /** Vercel Blob public URL of the uploaded receipt (null/undefined = none). */
+  receiptUrl?: string;
+  /** ISO timestamp when admin soft-archived this row. Undefined = visible. */
+  archivedAt?: string;
 }
 
 export const REPS: Rep[] = [

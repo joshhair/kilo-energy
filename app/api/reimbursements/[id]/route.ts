@@ -1,23 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { del as deleteBlob } from '@vercel/blob';
 import { prisma } from '../../../../lib/db';
-import { requireAdmin } from '../../../../lib/api-auth';
+import { requireAdmin, requireInternalUser } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchReimbursementSchema } from '../../../../lib/schemas/reimbursement';
 import { REP_PUBLIC_SELECT } from '../../../../lib/redact';
+import { logger, errorContext } from '../../../../lib/logger';
+import { serializeReimbursement } from '../../../../lib/serialize';
 
-// PATCH /api/reimbursements/[id] — Update status (admin only — approve/deny)
+// PATCH /api/reimbursements/[id] — Admin only. Updates status (approve /
+// deny / paid / reset to pending) and/or archive flag. receiptUrl /
+// receiptName also patchable for admin corrections.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   const parsed = await parseJsonBody(req, patchReimbursementSchema);
   if (!parsed.ok) return parsed.response;
-  const { status } = parsed.data;
+  const body = parsed.data;
+
+  const data: Record<string, unknown> = {};
+  if (body.status !== undefined) data.status = body.status;
+  if (body.archived !== undefined) data.archivedAt = body.archived ? new Date() : null;
+  if (body.receiptUrl !== undefined) data.receiptUrl = body.receiptUrl;
+  if (body.receiptName !== undefined) data.receiptName = body.receiptName;
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+  }
 
   const reimbursement = await prisma.reimbursement.update({
     where: { id },
-    data: { status },
+    data,
     include: { rep: { select: REP_PUBLIC_SELECT } },
   });
-  return NextResponse.json(reimbursement);
+  return NextResponse.json(serializeReimbursement(reimbursement));
 }
+
+// DELETE /api/reimbursements/[id] — Admin only. Hard delete for typo
+// cleanup. Also deletes the Vercel Blob receipt if one is attached
+// (best effort; the DB row is the source of truth).
+//
+// For the common case (hide from the default list without losing the
+// record), use PATCH with `{archived: true}` instead.
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  let viewer;
+  try { viewer = await requireAdmin(); } catch (r) { return r as NextResponse; }
+  const { id } = await params;
+
+  const existing = await prisma.reimbursement.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  // Best-effort blob cleanup. If it fails, the DB row still gets deleted
+  // and the orphan blob can be cleaned up from the Vercel dashboard.
+  if (existing.receiptUrl) {
+    try {
+      await deleteBlob(existing.receiptUrl);
+    } catch (err) {
+      logger.error('vercel_blob_delete_failed', { reimbursementId: id, url: existing.receiptUrl, ...errorContext(err) });
+    }
+  }
+
+  await prisma.reimbursement.delete({ where: { id } });
+  logger.info('reimbursement_deleted', { reimbursementId: id, actorId: viewer.id });
+  return NextResponse.json({ success: true });
+}
+
+// Silence the unused-import warning for requireInternalUser — it's wired
+// when we later add a rep-owned upload fallback. For now only admin mutates.
+void requireInternalUser;

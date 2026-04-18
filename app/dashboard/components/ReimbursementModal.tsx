@@ -14,6 +14,10 @@ export interface ReimbursementSubmitData {
   description: string;
   date: string;
   receiptName?: string;
+  /** When set, caller should POST this file to /api/reimbursements/{id}/receipt
+   *  after the reimbursement is created. Kept separate from the DB write so the
+   *  reimbursement row exists before the (possibly slow) upload happens. */
+  receiptFile?: File;
 }
 
 export interface ReimbursementModalProps {
@@ -57,6 +61,7 @@ const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 
 
 export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: ReimbursementModalProps) {
   const [form, setForm] = useState({ amount: '', description: '', date: localDateString(new Date()), fileName: '' });
+  const [receiptFile, setReceiptFile] = useState<File | undefined>(undefined);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const panelRef = useRef<HTMLDivElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
@@ -66,6 +71,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
   useEffect(() => {
     if (open) {
       setForm({ amount: '', description: '', date: localDateString(new Date()), fileName: '' });
+      setReceiptFile(undefined);
       setErrors({});
       requestAnimationFrame(() => amountRef.current?.focus());
     }
@@ -112,6 +118,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
       description: form.description.trim(),
       date: form.date || localDateString(new Date()),
       receiptName: form.fileName || undefined,
+      receiptFile,
     });
   };
 
@@ -161,8 +168,12 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
             <label className="flex items-center gap-2 bg-[var(--surface-card)] border border-[var(--border)] border-dashed rounded-xl px-4 py-2.5 cursor-pointer hover:border-[var(--border)] transition-colors overflow-hidden">
               <Upload className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" />
               <span className="text-[var(--text-muted)] text-sm truncate">{form.fileName || 'Attach file…'}</span>
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
-                onChange={(e) => updateForm('fileName', e.target.files?.[0]?.name ?? '')} />
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp" className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  setReceiptFile(f);
+                  updateForm('fileName', f?.name ?? '');
+                }} />
             </label>
           </div>
           <div className="flex gap-3 pt-1">

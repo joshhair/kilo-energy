@@ -317,6 +317,8 @@ export async function GET() {
     date: r.date,
     status: r.status,
     receiptName: r.receiptName ?? undefined,
+    receiptUrl: r.receiptUrl ?? undefined,
+    archivedAt: r.archivedAt ? r.archivedAt.toISOString() : undefined,
   }));
 
   const transformedTrainers = trainerAssignments.map((ta) => ({

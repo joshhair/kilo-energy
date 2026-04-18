@@ -542,16 +542,40 @@ function RepEarningsView() {
         onClose={() => setShowReimbModal(false)}
         repId={effectiveRepId ?? ''}
         repName={effectiveRepName ?? ''}
-        onSubmit={(data) => {
+        onSubmit={async (data) => {
           const tempId = `reimb_${Date.now()}`;
-          const newReimb: Reimbursement = { id: tempId, ...data, status: 'Pending' };
+          const { receiptFile, ...displayData } = data;
+          const newReimb: Reimbursement = { id: tempId, ...displayData, status: 'Pending' };
           setReimbursements((prev) => [...prev, newReimb]);
-          fetch('/api/reimbursements', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ repId: data.repId, amount: data.amount, description: data.description, date: data.date, receiptName: data.receiptName }),
-          }).then(async (res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); const created = await res.json(); setReimbursements((prev) => prev.map((r) => r.id === tempId ? { ...r, id: created.id } : r)); toast('Reimbursement request submitted', 'success'); setShowReimbModal(false); })
-            .catch((err) => { console.error(err); setReimbursements((prev) => prev.filter((r) => r.id !== tempId)); toast('Failed to save reimbursement', 'error'); });
+          setShowReimbModal(false);
+          try {
+            const res = await fetch('/api/reimbursements', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ repId: data.repId, amount: data.amount, description: data.description, date: data.date, receiptName: data.receiptName }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const created = await res.json() as Reimbursement;
+            setReimbursements((prev) => prev.map((r) => r.id === tempId ? created : r));
+            if (receiptFile) {
+              const form = new FormData();
+              form.append('file', receiptFile);
+              const upRes = await fetch(`/api/reimbursements/${created.id}/receipt`, { method: 'POST', body: form });
+              if (upRes.ok) {
+                const withReceipt = await upRes.json() as Reimbursement;
+                setReimbursements((prev) => prev.map((r) => r.id === created.id ? withReceipt : r));
+                toast('Reimbursement submitted with receipt', 'success');
+              } else {
+                toast('Submitted — receipt upload failed, try re-uploading', 'error');
+              }
+            } else {
+              toast('Reimbursement request submitted', 'success');
+            }
+          } catch (err) {
+            console.error(err);
+            setReimbursements((prev) => prev.filter((r) => r.id !== tempId));
+            toast('Failed to save reimbursement', 'error');
+          }
         }}
       />
 

@@ -7,10 +7,19 @@ export const createReimbursementSchema = z.object({
   description: z.string().min(1).max(2000),
   date: z.string().min(1),             // ISO date
   receiptName: optionalString,
+  receiptUrl: optionalString,           // Vercel Blob public URL (set by /receipt upload endpoint)
 });
 export type CreateReimbursementInput = z.infer<typeof createReimbursementSchema>;
 
 export const patchReimbursementSchema = z.object({
-  status: z.enum(['Pending', 'Approved', 'Denied', 'Paid']),
+  status: z.enum(['Pending', 'Approved', 'Denied', 'Paid']).optional(),
+  // Soft-archive toggle. true = archivedAt: now(), false = archivedAt: null.
+  // Separate from status so archive can be toggled independently of approval.
+  archived: z.boolean().optional(),
+  // Allow rep to attach a receipt URL after upload (server-side receiptUrl
+  // write happens in the /receipt endpoint, this keeps the shape permissive
+  // for admin edits if needed).
+  receiptUrl: optionalString.nullable(),
+  receiptName: optionalString.nullable(),
 }).strict();
 export type PatchReimbursementInput = z.infer<typeof patchReimbursementSchema>;

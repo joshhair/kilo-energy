@@ -5,10 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
-import { PayrollEntry } from '../../../lib/data';
+import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$, localDateString, todayLocalDateStr } from '../../../lib/utils';
 import { RelativeDate } from '../components/RelativeDate';
-import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer } from 'lucide-react';
+import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer, Trash2 } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -98,6 +98,11 @@ function PayrollPageInner() {
   const [reimFilterTo, setReimFilterTo] = useState('');
   const [reimFilterStatus, setReimFilterStatus] = useState<'All' | 'Pending' | 'Approved' | 'Denied'>('Pending');
   const [processingReimIds, setProcessingReimIds] = useState<Set<string>>(new Set());
+  // Archived-visibility toggle for reimbursements.
+  //   false  → hide archived (default)
+  //   true   → show everything (archived mixed in)
+  //   'only' → show only archived
+  const [showArchivedReim, setShowArchivedReim] = useState<false | true | 'only'>(false);
 
   // Rep-view filters (non-admin)
   const [repTypeFilter, setRepTypeFilter] = useState<'All' | 'Deal' | 'Bonus'>('All');
@@ -314,7 +319,7 @@ function PayrollPageInner() {
     if (publishingPayroll) return;
     setPublishingPayroll(true);
     // Publish only Pending entries matching the active filters (same set the button's disabled state reflects)
-    const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending');
+    const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending' && e.date <= today);
     const ids = pendingVisible.map((e) => e.id);
     const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
     setPayrollEntries((prev) =>
@@ -662,6 +667,8 @@ function PayrollPageInner() {
   const pendingReimCount = reimbursements.filter((r) => r.status === 'Pending').length;
 
   const filteredReimbursements = reimbursements.filter((r) => {
+    if (!showArchivedReim && r.archivedAt) return false;
+    if (showArchivedReim === 'only' && !r.archivedAt) return false;
     if (reimFilterStatus !== 'All' && r.status !== reimFilterStatus) return false;
     if (reimFilterFrom && r.date < reimFilterFrom) return false;
     if (reimFilterTo && r.date > reimFilterTo) return false;
@@ -810,6 +817,17 @@ function PayrollPageInner() {
                 style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
+            <select
+              value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
+              onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
+              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)] ml-auto"
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+              title="Archive visibility"
+            >
+              <option value="active">Active only</option>
+              <option value="all">Include archived</option>
+              <option value="only">Archived only</option>
+            </select>
             {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending') && (
               <button
                 onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); }}
@@ -841,47 +859,93 @@ function PayrollPageInner() {
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{r.description}</td>
                     <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
                     <td className="px-5 py-3 text-[var(--text-muted)] text-xs">{formatDate(r.date)}</td>
-                    <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
-                    <td className="px-5 py-3">
-                      <ReimBadge status={r.status} />
+                    <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">
+                      {r.receiptUrl ? (
+                        <a href={r.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan)] hover:underline">
+                          {r.receiptName || 'Receipt'}
+                        </a>
+                      ) : (
+                        r.receiptName || '—'
+                      )}
                     </td>
                     <td className="px-5 py-3">
-                      {r.status === 'Pending' ? (
-                        <div className="flex gap-2">
-                          <button
-                            disabled={processingReimIds.has(r.id)}
-                            onClick={() => {
-                              if (processingReimIds.has(r.id)) return;
-                              setProcessingReimIds((prev) => new Set(prev).add(r.id));
-                              setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Approved' } : x));
-                              fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
-                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement approved for ${r.repName}`, 'success'); })
-                                .catch((err) => { console.error(err); toast('Failed to persist approval', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
-                                .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
-                            }}
-                            className="flex items-center gap-1 text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-[var(--accent-green)] px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Check className="w-3 h-3" /> Approve
-                          </button>
-                          <button
-                            disabled={processingReimIds.has(r.id)}
-                            onClick={() => {
-                              if (processingReimIds.has(r.id)) return;
-                              setProcessingReimIds((prev) => new Set(prev).add(r.id));
-                              setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Denied' } : x));
-                              fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
-                                .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement denied for ${r.repName}`); })
-                                .catch((err) => { console.error(err); toast('Failed to persist denial', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, status: 'Pending' } : x)); })
-                                .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
-                            }}
-                            className="flex items-center gap-1 text-xs bg-red-900/50 hover:bg-red-800/60 text-red-400 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <X className="w-3 h-3" /> Deny
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[var(--text-dim)] text-xs">—</span>
+                      <ReimBadge status={r.status} />
+                      {r.archivedAt && (
+                        <span className="ml-1.5 text-[10px] uppercase tracking-wider text-[var(--text-dim)]">· archived</span>
                       )}
+                    </td>
+                    <td className="px-5 py-3">
+                      {(() => {
+                        // Inline handler — shared by all state-transition buttons.
+                        const patchReim = (updates: Partial<{ status: Reimbursement['status']; archived: boolean }>, successMsg: string, rollback: Partial<Reimbursement>) => {
+                          if (processingReimIds.has(r.id)) return;
+                          setProcessingReimIds((prev) => new Set(prev).add(r.id));
+                          const optimistic: Partial<Reimbursement> = {};
+                          if (updates.status) optimistic.status = updates.status;
+                          if (updates.archived !== undefined) optimistic.archivedAt = updates.archived ? new Date().toISOString() : undefined;
+                          setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, ...optimistic } : x));
+                          fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
+                            .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(successMsg, 'success'); })
+                            .catch((err) => { console.error(err); toast('Failed to persist change', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, ...rollback } : x)); })
+                            .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
+                        };
+                        const deleteReim = async () => {
+                          // Native confirm — payroll page doesn't have a
+                          // shared ConfirmDialog state machine. Matches the
+                          // existing delete patterns elsewhere in this file.
+                          const ok = window.confirm(
+                            `Delete reimbursement permanently?\n\n$${r.amount.toFixed(2)} for ${r.repName}\n\nThis cannot be undone. Prefer Archive unless this is a typo.`,
+                          );
+                          if (!ok) return;
+                          setProcessingReimIds((prev) => new Set(prev).add(r.id));
+                          const snapshot = r;
+                          setReimbursements((prev) => prev.filter((x) => x.id !== r.id));
+                          try {
+                            const res = await fetch(`/api/reimbursements/${r.id}`, { method: 'DELETE' });
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            toast(`Reimbursement deleted`, 'success');
+                          } catch (err) {
+                            console.error(err);
+                            toast('Failed to delete — restoring', 'error');
+                            setReimbursements((prev) => [...prev, snapshot]);
+                          } finally {
+                            setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; });
+                          }
+                        };
+                        const btnCls = 'flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+                        return (
+                          <div className="flex gap-2 flex-wrap">
+                            {r.status === 'Pending' && (
+                              <>
+                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-emerald-900/50 hover:bg-emerald-800/60 text-[var(--accent-green)]`}>
+                                  <Check className="w-3 h-3" /> Approve
+                                </button>
+                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Denied' }, `Reimbursement denied for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-red-900/50 hover:bg-red-800/60 text-red-400`}>
+                                  <X className="w-3 h-3" /> Deny
+                                </button>
+                              </>
+                            )}
+                            {(r.status === 'Approved' || r.status === 'Denied') && (
+                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Pending' }, `Reset to Pending`, { status: r.status })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border-subtle)]`}>
+                                Reset
+                              </button>
+                            )}
+                            {!r.archivedAt && (
+                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ archived: true }, `Reimbursement archived`, { archivedAt: undefined })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-muted)] border border-[var(--border-subtle)]`}>
+                                Archive
+                              </button>
+                            )}
+                            {r.archivedAt && (
+                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ archived: false }, `Reimbursement unarchived`, { archivedAt: new Date().toISOString() })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border-subtle)]`}>
+                                Unarchive
+                              </button>
+                            )}
+                            <button disabled={processingReimIds.has(r.id)} onClick={deleteReim} className={`${btnCls} text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10`} title="Delete permanently">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -910,13 +974,13 @@ function PayrollPageInner() {
         <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
-          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft').length} entries</p>
+          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft' && p.date <= today).length} entries</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
-          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending').length} entries</p>
+          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today).length} entries</p>
         </div>
         {/* Total */}
         <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
@@ -1117,7 +1181,7 @@ function PayrollPageInner() {
 
       {/* Publish Confirm Modal */}
       {showPublishConfirm && (() => {
-        const pendingEntries = filteredByDateRep.filter((p) => p.status === 'Pending');
+        const pendingEntries = filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today);
         // Build a per-rep summary sorted descending by total payout
         const repSummary = Array.from(
           pendingEntries.reduce((map, e) => {
