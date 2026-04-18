@@ -40,11 +40,21 @@ const PHASES_NEEDING_PAYROLL = [
 
 console.log(COMMIT ? '── COMMIT MODE — writes will happen ──' : '── DRY RUN — no writes ──');
 
+// Glide-imported deals are inviolable historical records — their
+// commission + payroll state was frozen at import and should never be
+// mutated by later Kilo logic. Same policy enforced on chargeback auto-
+// generation (lib/context/project-transitions.ts), admin manual
+// chargeback (app/api/payroll/route.ts), and the reconcile script
+// (scripts/reconcile-project-commission.mts). Adding the filter here
+// protects against future re-runs: if a non-imported project ever
+// develops a setter-re-add orphan, the script can fix it without
+// touching the Glide-era rows.
 const candidates = await prisma.project.findMany({
   where: {
     setterId: { not: null },
     setterM1AmountCents: { gt: 0 },
     phase: { in: PHASES_NEEDING_PAYROLL },
+    importedFromGlide: false,
   },
   select: {
     id: true,
