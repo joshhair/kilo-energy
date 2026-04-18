@@ -119,6 +119,13 @@ export default function MobilePayroll() {
 
   const handleDelete = useCallback(
     async (entry: PayrollEntry) => {
+      // Destructive — always confirm before dropping a payroll row.
+      // Matches the desktop behavior at app/dashboard/payroll/page.tsx.
+      const label = entry.type === 'Bonus'
+        ? `${entry.repName} — Bonus $${entry.amount.toFixed(2)}`
+        : `${entry.repName} — ${entry.paymentStage} $${entry.amount.toFixed(2)}`;
+      if (!window.confirm(`Delete this entry?\n\n${label}\n\nThis cannot be undone.`)) return;
+
       const snapshot = [...payrollEntries];
       setPayrollEntries((prev) => prev.filter((p) => p.id !== entry.id));
       setSelectedEntry(null);

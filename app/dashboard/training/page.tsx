@@ -19,6 +19,7 @@ import {
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
 import { MAX_TRAINER_RATE_PER_W } from '../../../lib/schemas/trainer-assignment';
+import { sortForSelection } from '../../../lib/sorting';
 import { isPaidAndEffective, formatDate } from '../../../lib/utils';
 import { PHASE_PILL } from '../projects/components/shared';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -543,6 +544,33 @@ function TrainingPageInner() {
   const markGraduated = (id: string) => patchAssignment(id, { isActiveTraining: false }, 'Marked as graduated');
   const resumeTraining = (id: string) => patchAssignment(id, { isActiveTraining: true }, 'Training resumed');
 
+  // Destructive. Confirms via browser dialog, then optimistically removes the
+  // row + tier rows server-side via DELETE /api/trainer-assignments. On
+  // failure, restores the local state.
+  const deleteAssignment = async (id: string) => {
+    const assignment = trainerAssignments.find((a) => a.id === id);
+    if (!assignment) return;
+    const trainerName = reps.find((r) => r.id === assignment.trainerId)?.name ?? 'trainer';
+    const traineeName = reps.find((r) => r.id === assignment.traineeId)?.name ?? 'trainee';
+    const msg = `Delete the ${trainerName} → ${traineeName} assignment?\n\nThis removes the assignment and all of its rate tiers. Historical Trainer payroll rows are kept. This cannot be undone.`;
+    if (!window.confirm(msg)) return;
+
+    const snapshot = trainerAssignments;
+    setTrainerAssignments((list) => list.filter((a) => a.id !== id));
+    try {
+      const res = await fetch('/api/trainer-assignments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error('non-2xx');
+      toast('Assignment deleted', 'success');
+    } catch {
+      setTrainerAssignments(snapshot);
+      toast('Failed to delete assignment', 'error');
+    }
+  };
+
   // ── Admin filter application ─────────────────────────────────────────────
 
   const adminRows = useMemo(() => {
@@ -915,6 +943,13 @@ function TrainingPageInner() {
                               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
                             >
                               <RotateCcw className="w-3.5 h-3.5" /> Run Backfill
+                            </button>
+                            <div className="border-t border-[var(--border-subtle)] my-1" />
+                            <button
+                              onClick={() => { setOpenMenuId(null); deleteAssignment(a.id); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete assignment
                             </button>
                           </div>,
                           document.body
@@ -1750,14 +1785,15 @@ function NewAssignmentModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Eligible trainers: users with repType set
+  // Eligible trainers: active users with a repType, canonical picker sort
+  // (first-name alpha). sortForSelection also filters out inactive reps.
   const trainerOptions = useMemo(
-    () => reps.filter((r) => r.repType).sort((a, b) => a.name.localeCompare(b.name)),
+    () => sortForSelection(reps.filter((r) => r.repType)),
     [reps],
   );
-  // Eligible trainees: active reps, excluding chosen trainer
+  // Eligible trainees: same canonical picker sort, minus the chosen trainer.
   const traineeOptions = useMemo(
-    () => reps.filter((r) => r.active !== false && r.id !== trainerId && r.repType).sort((a, b) => a.name.localeCompare(b.name)),
+    () => sortForSelection(reps.filter((r) => r.repType && r.id !== trainerId)),
     [reps, trainerId],
   );
 

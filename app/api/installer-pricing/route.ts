@@ -3,10 +3,15 @@ import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createInstallerPricingSchema } from '../../../lib/schemas/pricing';
+import { logChange } from '../../../lib/audit';
 
 // POST /api/installer-pricing — Create a new pricing version (admin only)
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor: { id: string; email: string | null };
+  try {
+    const admin = await requireAdmin();
+    actor = { id: admin.id, email: admin.email ?? null };
+  } catch (r) { return r as NextResponse; }
 
   const parsed = await parseJsonBody(req, createInstallerPricingSchema);
   if (!parsed.ok) return parsed.response;
@@ -40,5 +45,23 @@ export async function POST(req: NextRequest) {
     },
     include: { tiers: true },
   });
+
+  // Commission math depends on this row — always record who created it.
+  await logChange({
+    actor,
+    action: 'installer_pricing_version_create',
+    entityType: 'InstallerPricingVersion',
+    entityId: version.id,
+    detail: {
+      installerId: version.installerId,
+      label: version.label,
+      effectiveFrom: version.effectiveFrom,
+      effectiveTo: version.effectiveTo,
+      rateType: version.rateType,
+      tierCount: version.tiers.length,
+      closedPrevious: !!(body.closePreviousForInstaller && body.closePreviousEffectiveTo),
+    },
+  });
+
   return NextResponse.json(version, { status: 201 });
 }

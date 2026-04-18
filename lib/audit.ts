@@ -52,7 +52,7 @@ function diffFields(
 export async function logChange(params: {
   actor: AuditActor;
   action: string;
-  entityType: "Project" | "PayrollEntry" | "User" | "Blitz" | "Installer" | "Financer";
+  entityType: "Project" | "PayrollEntry" | "User" | "Blitz" | "Installer" | "Financer" | "InstallerPricingVersion" | "ProductPricingVersion";
   entityId: string;
   before?: Record<string, unknown>;
   after?: Record<string, unknown>;

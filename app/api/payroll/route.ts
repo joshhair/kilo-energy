@@ -39,6 +39,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Imported-from-Glide deals are inviolable historical records — their
+  // commission state was locked at import time and may pre-date any Kilo
+  // chargeback convention. The automatic phase-transition generator in
+  // lib/context/project-transitions.ts already skips them; enforce the
+  // same rule on the admin manual-create path so a negative-amount entry
+  // (the canonical chargeback shape) cannot be attached to an imported
+  // project. Positive amounts on imports still go through (legitimate
+  // post-import bonuses etc.).
+  if (body.projectId && body.amount < 0) {
+    const proj = await prisma.project.findUnique({
+      where: { id: body.projectId },
+      select: { importedFromGlide: true, customerName: true },
+    });
+    if (proj?.importedFromGlide) {
+      return NextResponse.json(
+        { error: `Cannot create a chargeback on imported deal "${proj.customerName}". Imported deals from Glide carry their historical commission intact and are excluded from chargeback generation.` },
+        { status: 400 },
+      );
+    }
+  }
+
   const entry = await prisma.payrollEntry.create({
     data: {
       repId: body.repId,

@@ -3,10 +3,15 @@ import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createProductPricingSchema } from '../../../lib/schemas/pricing';
+import { logChange } from '../../../lib/audit';
 
 // POST /api/product-pricing — Create a new product pricing version (admin only)
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor: { id: string; email: string | null };
+  try {
+    const admin = await requireAdmin();
+    actor = { id: admin.id, email: admin.email ?? null };
+  } catch (r) { return r as NextResponse; }
 
   const parsed = await parseJsonBody(req, createProductPricingSchema);
   if (!parsed.ok) return parsed.response;
@@ -37,6 +42,22 @@ export async function POST(req: NextRequest) {
       },
     },
     include: { tiers: true },
+  });
+
+  // Commission math depends on this row — always record who created it.
+  await logChange({
+    actor,
+    action: 'product_pricing_version_create',
+    entityType: 'ProductPricingVersion',
+    entityId: version.id,
+    detail: {
+      productId: version.productId,
+      label: version.label,
+      effectiveFrom: version.effectiveFrom,
+      effectiveTo: version.effectiveTo,
+      tierCount: version.tiers.length,
+      closedPrevious: !!body.closePreviousEffectiveTo,
+    },
   });
 
   return NextResponse.json(version, { status: 201 });
