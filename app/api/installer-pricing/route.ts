@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createInstallerPricingSchema } from '../../../lib/schemas/pricing';
 import { logChange } from '../../../lib/audit';
+import { logger } from '../../../lib/logger';
 
 // POST /api/installer-pricing — Create a new pricing version (admin only)
 export async function POST(req: NextRequest) {
@@ -61,6 +62,13 @@ export async function POST(req: NextRequest) {
       tierCount: version.tiers.length,
       closedPrevious: !!(body.closePreviousForInstaller && body.closePreviousEffectiveTo),
     },
+  });
+  logger.info('installer_pricing_version_created', {
+    versionId: version.id,
+    actorId: actor.id,
+    installerId: version.installerId,
+    effectiveFrom: version.effectiveFrom,
+    tierCount: version.tiers.length,
   });
 
   return NextResponse.json(version, { status: 201 });

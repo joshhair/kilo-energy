@@ -3,10 +3,12 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchInstallerPricingSchema } from '../../../../lib/schemas/pricing';
+import { logger } from '../../../../lib/logger';
 
 // PATCH /api/installer-pricing/[id] — Update pricing version (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   const parsed = await parseJsonBody(req, patchInstallerPricingSchema);
@@ -38,14 +40,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data,
     include: { tiers: true },
   });
+  logger.info('installer_pricing_version_updated', {
+    versionId: id,
+    actorId: actor.id,
+    fieldsChanged: Object.keys(data),
+    tiersReplaced: !!body.tiers,
+  });
   return NextResponse.json(version);
 }
 
 // DELETE /api/installer-pricing/[id] — Delete pricing version (admin only)
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   // Cascade delete will remove associated tiers automatically
   await prisma.installerPricingVersion.delete({ where: { id } });
+  logger.info('installer_pricing_version_deleted', { versionId: id, actorId: actor.id });
   return NextResponse.json({ ok: true });
 }

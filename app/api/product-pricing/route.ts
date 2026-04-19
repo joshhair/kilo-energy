@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createProductPricingSchema } from '../../../lib/schemas/pricing';
 import { logChange } from '../../../lib/audit';
+import { logger } from '../../../lib/logger';
 
 // POST /api/product-pricing — Create a new product pricing version (admin only)
 export async function POST(req: NextRequest) {
@@ -58,6 +59,13 @@ export async function POST(req: NextRequest) {
       tierCount: version.tiers.length,
       closedPrevious: !!body.closePreviousEffectiveTo,
     },
+  });
+  logger.info('product_pricing_version_created', {
+    versionId: version.id,
+    actorId: actor.id,
+    productId: version.productId,
+    effectiveFrom: version.effectiveFrom,
+    tierCount: version.tiers.length,
   });
 
   return NextResponse.json(version, { status: 201 });
