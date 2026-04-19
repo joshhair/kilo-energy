@@ -251,7 +251,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
           {archivedFinancersOpen && (
           <div className="grid grid-cols-2 gap-2">
             {archivedFinancers.map((fin) => (
-              <div key={fin.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-green)]/40' : ''}`}>
+              <div key={fin.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group opacity-60 hover:opacity-90 transition-opacity ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-green)]/40 opacity-90' : ''}`}>
                 <div className="flex items-center gap-2 min-w-0">
                   {financerSelectMode && (
                     <button

@@ -507,6 +507,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--navy-base)' }}>
+      {/* Skip-to-main-content link — visually hidden until focused via
+          keyboard (Tab from the top). Lets keyboard users bypass the
+          sidebar / nav on every page load. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--accent-green)] focus:text-black focus:font-semibold focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
 
       {/* ── Mobile top bar (hidden on md+) — minimal: logo only ────────── */}
       <div
@@ -548,6 +557,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
        *                width follows the collapsed toggle as before.
        */}
       <aside
+        role="navigation"
+        aria-label="Main"
         className={[
           'fixed inset-y-0 left-0 z-40 flex flex-col border-r',
           'transition-all duration-300 ease-in-out',
@@ -705,9 +716,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </ul>
         </nav>
 
-        {/* View As selector (admin only) */}
+        {/* View As selector (admin only) — full picker when sidebar is
+            expanded; compact icon button when collapsed so admin doesn't
+            lose the feature just because they narrowed the sidebar. */}
         {currentRole === 'admin' && !isViewingAs && !showCollapsed && (
           <ViewAsSelector reps={reps} subDealers={subDealers} onSelect={setViewAsUser} />
+        )}
+        {currentRole === 'admin' && !isViewingAs && showCollapsed && (
+          <div className="px-2 pb-1 flex justify-center">
+            <button
+              onClick={() => setCollapsed(false)}
+              title="View as…"
+              aria-label="Expand sidebar to pick a user to view as"
+              className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors hover:bg-[var(--surface-card)]"
+              style={{ color: 'var(--d-muted, var(--text-muted))' }}
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          </div>
         )}
 
         {/* Keyboard shortcuts help */}
@@ -765,6 +791,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main content ────────────────────────────────────────────────── */}
       {/* pt-[48px] reserves space for the fixed mobile top bar; reset on md+ */}
       <main
+        id="main-content"
         ref={mainRef}
         className="flex-1 overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
         style={{ backgroundColor: 'var(--navy-base)', paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}

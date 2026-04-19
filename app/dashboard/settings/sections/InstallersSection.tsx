@@ -486,7 +486,7 @@ export function InstallersSection({
           {archivedInstallersOpen && (
           <div className="grid grid-cols-2 gap-2">
             {archivedInstallers.map((inst) => (
-              <div key={inst.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[var(--accent-green)]/40' : ''}`}>
+              <div key={inst.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group opacity-60 hover:opacity-90 transition-opacity ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[var(--accent-green)]/40 opacity-90' : ''}`}>
                 <div className="flex items-center gap-2 min-w-0">
                   {installerSelectMode && (
                     <button
