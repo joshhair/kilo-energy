@@ -8,7 +8,7 @@ import {
   Project, InstallerPricingVersion, ProductCatalogProduct, ProductCatalogPricingVersion, ACTIVE_PHASES,
 } from '../../../lib/data';
 import { formatDate, fmt$, fmtCompact$, formatCompactKW, todayLocalDateStr } from '../../../lib/utils';
-import { DollarSign, CheckCircle, Zap, Users, BarChart2, FolderKanban, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, AlertCircle, HelpCircle } from 'lucide-react';
+import { DollarSign, CheckCircle, Zap, Users, BarChart2, FolderKanban, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, AlertCircle, HelpCircle, Trophy } from 'lucide-react';
 import { PaginationBar } from './PaginationBar';
 import { type Period, getGreeting, getPhaseStuckThresholds, AnimatedStatValue } from './dashboard-utils';
 import { NeedsAttentionSection, MyTasksSection, type MentionItem } from '../page';
@@ -44,13 +44,46 @@ export function AdminDashboard({
   mentions: MentionItem[];
   onToggleTask: (projectId: string, messageId: string, checkItemId: string, completed: boolean) => Promise<void>;
 }) {
-  const { updateProject } = useApp();
+  const { updateProject, reps } = useApp();
 
   // Search filter for Recent Projects table
   const [recentSearch, setRecentSearch] = useState('');
   const [insightsExpanded, setInsightsExpanded] = useState(false);
   const [cancellationExpanded, setCancellationExpanded] = useState(false);
   const [recentExpanded, setRecentExpanded] = useState(true);
+  const [topRepsExpanded, setTopRepsExpanded] = useState(true);
+
+  // Top Reps by deal count — parity with MobileAdminDashboard's Top Reps
+  // card. Uses standard competition rank so ties share position (two reps
+  // at 5 deals both show #1). Top 5 so a 3-way top tie doesn't push real
+  // next reps off-screen. Counts any commission-earning role on the deal
+  // (primary closer, setter, co-closer, co-setter).
+  const topReps = useMemo(() => {
+    const repDeals: Record<string, number> = {};
+    for (const p of projects) {
+      if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
+      repDeals[p.repId] = (repDeals[p.repId] || 0) + 1;
+      if (p.setterId && p.setterId !== p.repId) {
+        repDeals[p.setterId] = (repDeals[p.setterId] || 0) + 1;
+      }
+      for (const ac of p.additionalClosers ?? []) {
+        repDeals[ac.userId] = (repDeals[ac.userId] || 0) + 1;
+      }
+      for (const as_ of p.additionalSetters ?? []) {
+        repDeals[as_.userId] = (repDeals[as_.userId] || 0) + 1;
+      }
+    }
+    const sorted = Object.entries(repDeals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    let lastCount = -1;
+    let lastRank = 0;
+    return sorted.map(([id, count], i) => {
+      const rank = count === lastCount ? lastRank : i + 1;
+      lastCount = count;
+      lastRank = rank;
+      const rep = reps.find((r) => r.id === id);
+      return { name: rep?.name ?? 'Unknown', count, rank };
+    });
+  }, [projects, reps]);
 
   // Sort & pagination for Recent Projects table
   type SortKey = 'customerName' | 'installer' | 'kWSize' | 'netPPW' | 'phase' | 'soldDate';
@@ -425,6 +458,53 @@ export function AdminDashboard({
       )}
 
       <MyTasksSection mentions={mentions} onToggleTask={onToggleTask} />
+
+      {/* ── Top Reps ─────────────────────────────────────────────────────────
+          Parity with MobileAdminDashboard's Top Reps card. Desktop admin
+          previously only saw Installer Insights — reps were invisible at
+          the dashboard level, despite being the primary unit of perf
+          review. Standard competition rank so ties share position. */}
+      {topReps.length > 0 && (
+        <div className="card-surface rounded-2xl p-5 mb-6">
+          <button
+            onClick={() => setTopRepsExpanded((e) => !e)}
+            className="flex items-center gap-2 w-full text-left group"
+          >
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,229,160,0.15)' }}>
+              <Trophy className="w-4 h-4 text-[var(--accent-green)]" />
+            </div>
+            <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Top Reps</h2>
+            <span className="text-xs text-[var(--text-muted)] mr-2">
+              {period === 'all' ? 'All time' : PERIODS.find((p) => p.value === period)?.label}
+            </span>
+            {topRepsExpanded
+              ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+              : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+            }
+          </button>
+          <div className={`collapsible-panel ${topRepsExpanded ? 'open' : ''}`}>
+            <div className="collapsible-inner">
+              <div className="mt-4 space-y-2">
+                {topReps.map((r) => (
+                  <div key={r.name} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors">
+                    <span
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums"
+                      style={{
+                        background: r.rank === 1 ? 'rgba(0,229,160,0.15)' : r.rank === 2 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
+                        color: r.rank === 1 ? 'var(--accent-green)' : r.rank === 2 ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                      }}
+                    >
+                      {r.rank}
+                    </span>
+                    <span className="flex-1 text-white text-sm font-medium">{r.name}</span>
+                    <span className="text-[var(--text-secondary)] text-sm font-semibold tabular-nums">{r.count} deal{r.count === 1 ? '' : 's'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Installer Insights ────────────────────────────────────────────── */}
       {(() => {

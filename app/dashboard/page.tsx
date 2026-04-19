@@ -1241,10 +1241,14 @@ export default function DashboardPage() {
       href: '/dashboard/projects',
       tooltip: 'Total kilowatts from projects that have been physically installed',
     },
-    {
+    // Chargebacks tile only renders when there are actually outstanding
+    // (Draft + Pending negative) entries. A rep with no chargebacks
+    // doesn't need a permanent "$0 / No chargebacks" clutter tile —
+    // matches the mobile dashboard's conditional-stat-card approach.
+    ...(chargebackCount > 0 ? [{
       label: 'Chargebacks',
       value: fmt$(totalChargebacks),
-      sub: chargebackCount > 0 ? `${chargebackCount} chargeback${chargebackCount === 1 ? '' : 's'}` : 'No chargebacks',
+      sub: `${chargebackCount} chargeback${chargebackCount === 1 ? '' : 's'}`,
       icon: AlertCircle,
       color: 'text-red-400',
       accentGradient: 'from-red-500 to-red-400',
@@ -1254,7 +1258,7 @@ export default function DashboardPage() {
       pctChange: undefined as number | null | undefined,
       href: '/dashboard/my-pay',
       tooltip: 'Total negative adjustments from cancelled or clawed-back deals',
-    },
+    }] : []),
   ];
 
   return (

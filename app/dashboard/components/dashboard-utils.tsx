@@ -6,13 +6,15 @@ import { getCustomConfig } from '../../../lib/utils';
 
 // ─── Period type & constants ─────────────────────────────────────────────────
 
-export type Period = 'all' | 'this-month' | 'last-month' | 'this-year';
+export type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year' | 'last-year';
 
 export const PERIODS: { value: Period; label: string }[] = [
   { value: 'all', label: 'All Time' },
   { value: 'this-month', label: 'This Month' },
   { value: 'last-month', label: 'Last Month' },
+  { value: 'this-quarter', label: 'This Quarter' },
   { value: 'this-year', label: 'This Year' },
+  { value: 'last-year', label: 'Last Year' },
 ];
 
 // ─── Period helpers ──────────────────────────────────────────────────────────
@@ -29,8 +31,17 @@ export function isInPeriod(dateStr: string | null | undefined, period: Period): 
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return month - 1 === lastMonth.getMonth() && year === lastMonth.getFullYear();
   }
+  if (period === 'this-quarter') {
+    if (year !== now.getFullYear()) return false;
+    const currentQuarter = Math.floor(now.getMonth() / 3);
+    const entryQuarter = Math.floor((month - 1) / 3);
+    return entryQuarter === currentQuarter;
+  }
   if (period === 'this-year') {
     return year === now.getFullYear();
+  }
+  if (period === 'last-year') {
+    return year === now.getFullYear() - 1;
   }
   return true;
 }
@@ -48,8 +59,18 @@ export function isInPreviousPeriod(dateStr: string | null | undefined, period: P
     const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
     return month - 1 === twoMonthsAgo.getMonth() && year === twoMonthsAgo.getFullYear();
   }
+  if (period === 'this-quarter') {
+    const currentQuarter = Math.floor(now.getMonth() / 3);
+    const prevQuarterStartMonth = currentQuarter === 0 ? 9 : (currentQuarter - 1) * 3;
+    const prevQuarterYear = currentQuarter === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const entryQuarter = Math.floor((month - 1) / 3);
+    return year === prevQuarterYear && entryQuarter * 3 === prevQuarterStartMonth;
+  }
   if (period === 'this-year') {
     return year === now.getFullYear() - 1;
+  }
+  if (period === 'last-year') {
+    return year === now.getFullYear() - 2;
   }
   return false;
 }
