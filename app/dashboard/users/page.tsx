@@ -7,12 +7,13 @@ import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileReps from '../mobile/MobileReps';
 import { useApp } from '../../../lib/context';
 import { formatCompactKW } from '../../../lib/utils';
-import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, Trophy, Award, X, Mail, Clock, UserCog } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, X, Mail, Clock, UserCog } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
 import { GradCard } from './components/GradCard';
 import { RepsSkeleton } from './components/RepsSkeleton';
+import { TopPerformersPodium } from './components/TopPerformersPodium';
 
 const FILTER_TABS = [
   { value: 'all',    label: 'All' },
@@ -81,13 +82,6 @@ const RANK_GRADIENTS = [
   'from-slate-300 to-slate-500',  // silver – #2
   'from-amber-600 to-amber-800',  // bronze – #3
 ];
-
-// Breathing box-shadow pulse class for each podium rank
-const PODIUM_BREATH_CLS: Record<number, string> = {
-  1: 'animate-podium-breath-gold',
-  2: 'animate-podium-breath-silver',
-  3: 'animate-podium-breath-bronze',
-};
 
 export default function UsersPage() {
   return (
@@ -1233,61 +1227,7 @@ function UsersPageInner() {
       })()}
 
       {/* ── Top Performers Podium (reps view only) ─────────────────────────── */}
-      {roleFilter === 'rep' && podiumDisplay.length === 3 && !isPM && (
-        <div className="card-surface rounded-2xl p-5 mb-8 animate-slide-in-scale" style={{ animationDelay: 'var(--podium-delay, 300ms)' }}>
-          {/* Section header */}
-          <div className="h-[3px] w-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 mb-3" />
-          <div className="flex items-center gap-2 mb-5">
-            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(234,179,8,0.15)' }}>
-              <Trophy className="w-4 h-4 text-yellow-400" />
-            </div>
-            <h2 className="text-white font-bold text-base tracking-tight">Top Performers</h2>
-          </div>
-
-          {/* Podium cards */}
-          <div className="flex items-end justify-center gap-3">
-            {podiumDisplay.map(({ rep, paid, rank, order }) => {
-              const isFirst = rank === 1;
-              const gradient = RANK_GRADIENTS[rank - 1];
-              const initials = rep.name.split(' ').map((n) => n[0]).join('');
-              return (
-                <div
-                  key={rep.id}
-                  className={`relative flex flex-col items-center gap-2 card-surface rounded-2xl p-4 flex-1 max-w-[160px] overflow-hidden animate-slide-in-scale stagger-${order} ${PODIUM_BREATH_CLS[rank]}${isFirst ? ' scale-105' : ''}`}
-                  style={{ order }}
-                >
-                  {/* Gradient top border */}
-                  <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${gradient}${isFirst ? ' animate-podium-glow' : ''}`} />
-
-                  {/* Award icon for #1 */}
-                  {isFirst && <Award className="w-4 h-4 text-yellow-400" />}
-
-                  {/* Initials circle with gradient border */}
-                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${gradient} p-[2px] flex-shrink-0`}>
-                    <div
-                      className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-lg"
-                      style={{ backgroundColor: 'var(--navy-card)' }}
-                    >
-                      {initials}
-                    </div>
-                  </div>
-
-                  {/* Rank badge */}
-                  <div className={`text-[10px] font-black text-white px-2 py-0.5 rounded-full bg-gradient-to-br ${gradient}`}>
-                    #{rank}
-                  </div>
-
-                  {/* Name */}
-                  <p className="font-bold text-white text-sm text-center leading-tight">{rep.name}</p>
-
-                  {/* Paid amount */}
-                  <p className="text-gradient-brand font-black text-sm">${paid.toLocaleString()}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {roleFilter === 'rep' && !isPM && <TopPerformersPodium entries={podiumDisplay} />}
 
       {/* ── REP-ONLY RICH UI — the podium below plus this summary bar, rep-type
            filter tabs, search, and rep card grid only render when the role
