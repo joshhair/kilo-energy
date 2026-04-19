@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { Phase } from '../../../lib/data';
-import { Search } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
@@ -28,6 +29,21 @@ const PHASE_FILTERS: (Phase | 'All')[] = [
   'Pending Install',
   'Installed',
   'PTO',
+  'Completed',
+  'On Hold',
+  'Cancelled',
+];
+
+// Sort modes match the desktop table view so users get consistent
+// ordering between devices. Default matches prior mobile behavior:
+// sold-desc (newest first).
+type SortMode = 'soldDesc' | 'soldAsc' | 'customer' | 'kWDesc' | 'kWAsc';
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: 'soldDesc', label: 'Newest first' },
+  { value: 'soldAsc',  label: 'Oldest first' },
+  { value: 'customer', label: 'Customer A→Z' },
+  { value: 'kWDesc',   label: 'kW (high→low)' },
+  { value: 'kWAsc',    label: 'kW (low→high)' },
 ];
 
 function relativeTime(dateStr: string): string {
@@ -60,6 +76,11 @@ export default function MobileProjects() {
     const v = searchParams.get('phase');
     return v && (PHASE_FILTERS as readonly string[]).includes(v) ? (v as Phase | 'All') : 'All';
   });
+  const [installerFilter, setInstallerFilter] = useState<string>(() => searchParams.get('installer') ?? '');
+  const [sortMode, setSortMode] = useState<SortMode>(() => {
+    const v = searchParams.get('sort');
+    return v && SORT_OPTIONS.some((o) => o.value === v) ? (v as SortMode) : 'soldDesc';
+  });
 
   // Persist filters to URL — fires only after debounce lands so keystrokes
   // don't spam router.replace.
@@ -67,10 +88,12 @@ export default function MobileProjects() {
     const params = new URLSearchParams(window.location.search);
     if (debouncedSearch) params.set('q', debouncedSearch); else params.delete('q');
     if (phaseFilter !== 'All') params.set('phase', phaseFilter); else params.delete('phase');
+    if (installerFilter) params.set('installer', installerFilter); else params.delete('installer');
+    if (sortMode !== 'soldDesc') params.set('sort', sortMode); else params.delete('sort');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, phaseFilter]);
+  }, [debouncedSearch, phaseFilter, installerFilter, sortMode]);
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
   const [listKey, setListKey] = useState(0);
@@ -105,6 +128,15 @@ export default function MobileProjects() {
     return acc;
   }, [visibleProjects]);
 
+  // Unique installer names present on visible projects — keeps the
+  // dropdown scoped to what's actually shown rather than listing every
+  // installer in the catalog.
+  const installerOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of visibleProjects) if (p.installer) set.add(p.installer);
+    return Array.from(set).sort();
+  }, [visibleProjects]);
+
   const filtered = useMemo(() => {
     let result = visibleProjects;
 
@@ -112,13 +144,30 @@ export default function MobileProjects() {
       result = result.filter((p) => p.phase === phaseFilter);
     }
 
+    if (installerFilter) {
+      result = result.filter((p) => p.installer === installerFilter);
+    }
+
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       result = result.filter((p) => p.customerName.toLowerCase().includes(q));
     }
 
-    return [...result].sort((a, b) => b.soldDate.localeCompare(a.soldDate));
-  }, [visibleProjects, phaseFilter, debouncedSearch]);
+    const sorted = [...result];
+    switch (sortMode) {
+      case 'soldAsc':  sorted.sort((a, b) => a.soldDate.localeCompare(b.soldDate)); break;
+      case 'customer': sorted.sort((a, b) => a.customerName.localeCompare(b.customerName)); break;
+      case 'kWDesc':   sorted.sort((a, b) => b.kWSize - a.kWSize); break;
+      case 'kWAsc':    sorted.sort((a, b) => a.kWSize - b.kWSize); break;
+      case 'soldDesc':
+      default:         sorted.sort((a, b) => b.soldDate.localeCompare(a.soldDate));
+    }
+    return sorted;
+  }, [visibleProjects, phaseFilter, installerFilter, debouncedSearch, sortMode]);
+
+  // "Are any non-default filters active?" — drives the empty-state CTA:
+  // if yes, show Clear Filters; otherwise show Submit Deal.
+  const hasActiveFilters = phaseFilter !== 'All' || !!installerFilter || !!debouncedSearch;
 
   // Average days in each phase (based on days since sold for all projects in that phase)
   const phaseAvgDays = useMemo(() => {
@@ -161,6 +210,40 @@ export default function MobileProjects() {
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         />
+      </div>
+
+      {/* Installer + Sort dropdowns — parity with desktop Projects page.
+          Shown as compact selects side-by-side to keep vertical space tight
+          on phone. Installer select only renders when there's more than one
+          to choose from. */}
+      <div className="flex gap-2">
+        {installerOptions.length > 1 && (
+          <select
+            value={installerFilter}
+            onChange={(e) => setInstallerFilter(e.target.value)}
+            className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+            style={{
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            <option value="">All installers</option>
+            {installerOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        )}
+        <select
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value as SortMode)}
+          className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+          style={{
+            background: 'var(--m-card, var(--surface-mobile-card))',
+            border: '1px solid var(--m-border, var(--border-mobile))',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
+        >
+          {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
       </div>
 
       {/* Phase filter pills */}
@@ -225,8 +308,50 @@ export default function MobileProjects() {
       {/* Project cards */}
       <div key={listKey} className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No projects found</p>
+          <div className="flex flex-col items-center gap-4 py-12 px-6 text-center">
+            {/* Simple folder illustration — matches the visual
+                language used in the desktop Projects empty state. */}
+            <svg width="72" height="72" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
+              <rect x="10" y="24" width="60" height="44" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+              <path d="M10 24 L30 24 L36 18 L70 18 L70 32 L10 32 Z" fill="#0f172a" stroke="#334155" strokeWidth="1.5" strokeLinejoin="round"/>
+            </svg>
+            {hasActiveFilters ? (
+              <>
+                <p className="text-base font-semibold text-white">No projects match your filters</p>
+                <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                  Try a different phase, installer, or clear your search.
+                </p>
+                <button
+                  onClick={() => { setPhaseFilter('All'); setInstallerFilter(''); setSearch(''); setSortMode('soldDesc'); }}
+                  className="mt-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold text-white"
+                  style={{ background: 'var(--m-border, var(--border-mobile))' }}
+                >
+                  Clear filters
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-semibold text-white">No projects yet</p>
+                <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                  {effectiveRole === 'admin' || effectiveRole === 'project_manager'
+                    ? 'Projects will appear here once deals are submitted.'
+                    : 'Submit your first deal to get started.'}
+                </p>
+                {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && (
+                  <Link
+                    href="/dashboard/new-deal"
+                    className="mt-2 inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold"
+                    style={{
+                      background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))',
+                      color: '#050d18',
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Submit a deal
+                  </Link>
+                )}
+              </>
+            )}
           </div>
         ) : (
           filtered.map((project, index) => {
