@@ -11,6 +11,8 @@ import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, Trophy, Award, 
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
+import { GradCard } from './components/GradCard';
+import { RepsSkeleton } from './components/RepsSkeleton';
 
 const FILTER_TABS = [
   { value: 'all',    label: 'All' },
@@ -86,52 +88,6 @@ const PODIUM_BREATH_CLS: Record<number, string> = {
   2: 'animate-podium-breath-silver',
   3: 'animate-podium-breath-bronze',
 };
-
-// Count-up animation hook driven by requestAnimationFrame.
-// Returns the animated value; respects prefers-reduced-motion.
-function useCountUp(target: number, duration: number, delay: number): number {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setValue(target);
-      return;
-    }
-    let rafId: number;
-    const start = performance.now();
-    function tick(now: number) {
-      const elapsed = now - start;
-      const t = Math.min(Math.max((elapsed - delay) / duration, 0), 1);
-      const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-      setValue(Math.round(target * ease));
-      if (t < 1) rafId = requestAnimationFrame(tick);
-    }
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [target, duration, delay]);
-  return value;
-}
-
-type GradCardProps = {
-  label: string;
-  rawValue: number;
-  formatter: (v: number) => string;
-  gradient: string;
-  borderColor: string;
-  valueColor: string;
-  delay: number;
-};
-
-function GradCard({ label, rawValue, formatter, gradient, borderColor, valueColor, delay }: GradCardProps) {
-  const animated = useCountUp(rawValue, 900, delay);
-  return (
-    <div className="rounded-2xl p-4 flex flex-col gap-1" style={{ background: gradient, border: `1px solid ${borderColor}` }}>
-      <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-      <span className="text-2xl font-bold" style={{ fontFamily: "'DM Serif Display', serif", color: valueColor, textShadow: `0 0 20px ${valueColor}50` }}>
-        {formatter(animated)}
-      </span>
-    </div>
-  );
-}
 
 export default function UsersPage() {
   return (
@@ -1362,7 +1318,7 @@ function UsersPageInner() {
         />
         <GradCard
           label="kW Sold"
-          rawValue={projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0)}
+          rawValue={projects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0)}
           formatter={formatCompactKW}
           gradient="linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))"
           borderColor="rgba(255,176,32,0.3)"
@@ -2113,71 +2069,3 @@ function UsersPageInner() {
   );
 }
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
-
-function RepsSkeleton() {
-  return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton" />
-          <div className="h-8 w-20 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
-        </div>
-        <div className="h-3 w-44 bg-[var(--surface-card)]/70 rounded animate-skeleton ml-12 mt-1" style={{ animationDelay: '150ms' }} />
-      </div>
-
-      {/* Search bar placeholder */}
-      <div className="relative max-w-xs mb-6">
-        <div className="h-9 w-full bg-[var(--surface-card)] rounded-xl animate-skeleton" style={{ animationDelay: '75ms' }} />
-      </div>
-
-      {/* 6 rep card skeletons */}
-      <div className="space-y-3">
-        {[...Array(6)].map((_, i) => {
-          const delay = i * 75;
-          return (
-            <div
-              key={i}
-              className="card-surface rounded-2xl p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-            >
-              {/* Avatar + name/email */}
-              <div className="flex items-center gap-4">
-                <div
-                  className="w-12 h-12 rounded-full bg-[var(--surface-card)] flex-shrink-0 animate-skeleton"
-                  style={{ animationDelay: `${delay}ms` }}
-                />
-                <div className="space-y-2">
-                  <div
-                    className="h-4 w-32 bg-[var(--surface-card)] rounded animate-skeleton"
-                    style={{ animationDelay: `${delay}ms` }}
-                  />
-                  <div
-                    className="h-3 w-44 bg-[var(--surface-card)]/70 rounded animate-skeleton"
-                    style={{ animationDelay: `${delay}ms` }}
-                  />
-                </div>
-              </div>
-
-              {/* 4 stat number placeholders */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 md:flex md:items-center md:gap-8">
-                {[...Array(4)].map((_, si) => (
-                  <div key={si} className="text-center space-y-1.5">
-                    <div
-                      className="h-4 w-10 bg-[var(--surface-card)] rounded animate-skeleton mx-auto"
-                      style={{ animationDelay: `${delay + si * 30}ms` }}
-                    />
-                    <div
-                      className="h-3 w-14 bg-[var(--surface-card)]/70 rounded animate-skeleton mx-auto"
-                      style={{ animationDelay: `${delay + si * 30}ms` }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
