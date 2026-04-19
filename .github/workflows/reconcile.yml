@@ -1,0 +1,73 @@
+# A+ Phase 2.3: nightly commission reconcile drift detection.
+#
+# Why this exists: the Timothy Salunga bug — commission stored on
+# Project rows drifted from what splitCloserSetterPay would compute
+# for the same inputs — went undetected for weeks because no one was
+# looking. The reconcile script was built as a one-shot investigation.
+# Now it runs every night automatically.
+#
+# Behavior:
+#   - Dry-run only. Never writes. Running --commit still requires a
+#     human at the terminal (by design; money-touching commits
+#     should never be automated without review).
+#   - If zero drift: job completes silently (just a green check in
+#     Actions). No PR noise.
+#   - If drift detected: job fails (non-zero exit) + drift report
+#     uploaded as an artifact. Admin sees the failure email and
+#     investigates.
+#
+# Runs at 06:00 UTC = 00:00 MST → before morning stand-up. Any
+# overnight drift surfaces at the start of the day.
+
+name: Commission reconcile drift check
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {} # Allow manual runs from the Actions tab
+
+jobs:
+  reconcile:
+    name: Dry-run reconcile against prod
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run reconcile (dry-run)
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          # The script exits 0 whether or not drift is detected (it just
+          # prints the report). We tee the output and fail the step
+          # only if drift rows > 0. That way the GH Actions log and
+          # email alerts reflect real drift, not a silent cron heartbeat.
+          npx tsx scripts/reconcile-project-commission.mts | tee /tmp/reconcile.log
+          DRIFT=$(grep -oP 'Drift detected: \K\d+' /tmp/reconcile.log || echo "0")
+          echo "drift_count=$DRIFT" >> "$GITHUB_OUTPUT"
+          if [ "$DRIFT" -gt "0" ]; then
+            echo "::error::$DRIFT project(s) have commission drift. Investigate and run --commit manually if needed."
+            exit 1
+          fi
+          echo "No drift detected."
+        id: reconcile
+
+      - name: Upload drift report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconcile-drift-${{ github.run_id }}
+          path: /tmp/reconcile.log
+          retention-days: 30

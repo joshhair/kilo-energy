@@ -1,0 +1,51 @@
+# A+ Phase 4.3: automated dependency updates.
+#
+# Scope decisions:
+#   - npm: weekly cadence. Solo-maintained repo; daily would drown PR
+#     noise. Weekly is the "one review session per Monday" pattern.
+#   - GitHub Actions: also weekly — much lower churn than npm.
+#   - Grouping: minor + patch updates in one PR per ecosystem. Majors
+#     as individual PRs (they often require code changes).
+#   - Ignore list: intentionally empty. If a dep starts spamming
+#     breaking majors, add here with a rationale comment.
+#   - Labels: "deps" tag so these are filterable in the PR list.
+#
+# Security alerts (separate from version bumps) always auto-PR
+# immediately via GitHub's default — this config is for routine
+# freshness. Both feeds land in the same PR list.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Denver"
+    open-pull-requests-limit: 5
+    labels:
+      - "deps"
+    groups:
+      npm-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Denver"
+    open-pull-requests-limit: 3
+    labels:
+      - "deps"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
