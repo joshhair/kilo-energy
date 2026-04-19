@@ -201,6 +201,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const user = await prisma.user.update({ where: { id }, data });
+  logger.info('user_updated', {
+    userId: id,
+    actorId: viewer.id,
+    fieldsChanged: Object.keys(data),
+    activeChanged: activeChanged ? body.active : undefined,
+  });
   return NextResponse.json({
     ...user,
     hasClerkAccount: !!user.clerkUserId,
@@ -253,5 +259,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   await prisma.user.delete({ where: { id } });
+  logger.info('user_deleted', { userId: id, actorId: viewer.id, email: user.email });
   return NextResponse.json({ success: true });
 }
