@@ -133,6 +133,18 @@ test.describe('a11y — authenticated admin surfaces', () => {
     await scan(page, '/dashboard/admin/audit');
   });
 
+  test('admin hub', async ({ page }) => {
+    await page.goto('/dashboard/admin');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/admin');
+  });
+
+  test('commission playground (A+ Phase 3.4 addition)', async ({ page }) => {
+    await page.goto('/dashboard/admin/commission-playground');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/admin/commission-playground');
+  });
+
   test('my-pay (admin viewing own pay)', async ({ page }) => {
     await page.goto('/dashboard/my-pay');
     await page.waitForLoadState('networkidle');
