@@ -10,6 +10,7 @@ import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils'
 import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap, UserPlus, UserCheck, ChevronDown, X } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import { PaginationBar } from '../components/PaginationBar';
+import { EmptyState } from '../components/EmptyState';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
 type TabKey = 'blitzes' | 'requests';
@@ -955,18 +956,12 @@ function BlitzPageInner() {
           ) : isAdmin ? (
             /* Admin sees all blitzes in one grid */
             paginatedAdminBlitzes.length === 0 && sortedBlitzes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
-                <Tent className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />
-                <div className="text-center">
-                  <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitzes found</p>
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}</p>
-                </div>
-                {!search && statusFilter === 'all' && (
-                  <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors" style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}>
-                    Create a Blitz
-                  </button>
-                )}
-              </div>
+              <EmptyState
+                icon={Tent}
+                title="No blitzes found"
+                description={search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first blitz to get started'}
+                action={!search && statusFilter === 'all' ? { label: 'Create a Blitz', onClick: () => setShowCreate(true) } : undefined}
+              />
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
