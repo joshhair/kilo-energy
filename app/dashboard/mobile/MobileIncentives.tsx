@@ -9,6 +9,9 @@ import {
   IncentiveMetric,
   IncentivePeriod,
   IncentiveType,
+  Project,
+  PayrollEntry,
+  Rep,
 } from '../../../lib/data';
 import { useToast } from '../../../lib/toast';
 import { Trophy, Plus, Gift, Target, Loader2, Zap } from 'lucide-react';
@@ -472,9 +475,9 @@ function IncentiveCard({
   expired,
 }: {
   incentive: Incentive;
-  projects: any[];
-  payrollEntries: any[];
-  reps: any[];
+  projects: Project[];
+  payrollEntries: PayrollEntry[];
+  reps: Rep[];
   expired?: boolean;
 }) {
   const progress = useMemo(
@@ -488,7 +491,7 @@ function IncentiveCard({
   const pct = Math.min((progress / maxThreshold) * 100, 100);
 
   const targetRepName = incentive.targetRepId
-    ? reps.find((r: any) => r.id === incentive.targetRepId)?.name ?? 'Unknown Rep'
+    ? reps.find((r) => r.id === incentive.targetRepId)?.name ?? 'Unknown Rep'
     : null;
 
   const typeBadgeStyle: React.CSSProperties = incentive.type === 'company'

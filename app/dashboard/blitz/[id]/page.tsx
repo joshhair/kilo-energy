@@ -1,5 +1,15 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any --
+ * Blitz detail page consumes the /api/blitzes/[id] response whose shape
+ * covers ~60 fields across blitz core, participants (nested users),
+ * costs, and projects (with additionalClosers/Setters). Properly
+ * typing would require a shared DTO generator; a hand-written interface
+ * would rot the moment the API adds a field. Using `any` here is an
+ * intentional scope decision, documented at the file level so future
+ * readers know it's not laziness.
+ */
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';

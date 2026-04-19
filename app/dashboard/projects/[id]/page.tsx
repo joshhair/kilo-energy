@@ -1624,8 +1624,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const closerM1 = editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, closerTotal));
               const closerM2 = Math.round(Math.max(0, closerTotal - closerM1) * (previewInstallPayPct / 100) * 100) / 100;
               const belowBaseline = previewPPW < previewBaseline.closerPerW;
-              const previewSetterPerW = 'setterPerW' in previewBaseline && (previewBaseline as any).setterPerW != null
-                ? (previewBaseline as any).setterPerW
+              const previewSetterPerW = 'setterPerW' in previewBaseline && (previewBaseline as { setterPerW?: number | null }).setterPerW != null
+                ? (previewBaseline as { setterPerW: number }).setterPerW
                 : Math.round((previewBaseline.closerPerW + 0.10) * 100) / 100;
               const setterTotal = editVals.setterId ? calculateCommission(previewPPW, previewSetterPerW, previewKW) : 0;
               // Actual Kilo take on this deal: gross above wholesale, minus all

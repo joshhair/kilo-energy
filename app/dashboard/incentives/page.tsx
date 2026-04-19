@@ -365,7 +365,7 @@ export default function IncentivesPage() {
     fetch(`/api/incentives/${updated.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate, metric: updated.metric, period: updated.period, startDate: updated.startDate, type: updated.type, targetRepId: updated.targetRepId, milestones: updated.milestones.map((m: any) => ({ ...(m.id ? { id: m.id } : {}), threshold: m.threshold, reward: m.reward, achieved: m.achieved })) }),
+      body: JSON.stringify({ title: updated.title, description: updated.description, active: updated.active, endDate: updated.endDate, metric: updated.metric, period: updated.period, startDate: updated.startDate, type: updated.type, targetRepId: updated.targetRepId, milestones: updated.milestones.map((m: IncentiveMilestone) => ({ ...(m.id ? { id: m.id } : {}), threshold: m.threshold, reward: m.reward, achieved: m.achieved })) }),
     }).then(async (res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const saved = await res.json();
@@ -398,7 +398,7 @@ export default function IncentivesPage() {
       const res = await fetch('/api/incentives', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
+        body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: IncentiveMilestone) => ({ threshold: m.threshold, reward: m.reward })) }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const created = await res.json();
@@ -917,7 +917,7 @@ export default function IncentivesPage() {
               const res = await fetch('/api/incentives', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: any) => ({ threshold: m.threshold, reward: m.reward })) }),
+                body: JSON.stringify({ title: inc.title, description: inc.description, type: inc.type, metric: inc.metric, period: inc.period, startDate: inc.startDate, endDate: inc.endDate, targetRepId: inc.targetRepId, active: inc.active, milestones: inc.milestones.map((m: IncentiveMilestone) => ({ threshold: m.threshold, reward: m.reward })) }),
               });
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const created = await res.json();

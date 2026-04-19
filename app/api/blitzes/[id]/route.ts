@@ -155,9 +155,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (user.role !== 'admin' && !isBlitzOwnerPatch) {
     (blitz as unknown as { costs: unknown[] }).costs = [];
     for (const p of blitz.projects) {
+      type WithParties = { additionalClosers?: Array<{ userId: string }>; additionalSetters?: Array<{ userId: string }> };
+      const pWithParties = p as WithParties;
       const isMyDeal = p.closerId === user.id || p.setterId === user.id
-        || (p as any).additionalClosers?.some((cc: { userId: string }) => cc.userId === user.id)
-        || (p as any).additionalSetters?.some((cs: { userId: string }) => cs.userId === user.id);
+        || pWithParties.additionalClosers?.some((cc) => cc.userId === user.id)
+        || pWithParties.additionalSetters?.some((cs) => cs.userId === user.id);
       if (!isMyDeal) {
         const mp = p as unknown as {
           netPPW: number;
@@ -189,10 +191,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     costs: blitz.costs.map(serializeBlitzCost),
     projects: blitz.projects.map((p) => {
       const s = serializeProject(p);
+      type WithParties = { additionalClosers?: Array<Parameters<typeof serializeProjectParty>[0]>; additionalSetters?: Array<Parameters<typeof serializeProjectParty>[0]> };
+      const pWithParties = p as WithParties;
       return {
         ...s,
-        additionalClosers: (p as any).additionalClosers?.map(serializeProjectParty) ?? [],
-        additionalSetters: (p as any).additionalSetters?.map(serializeProjectParty) ?? [],
+        additionalClosers: pWithParties.additionalClosers?.map(serializeProjectParty) ?? [],
+        additionalSetters: pWithParties.additionalSetters?.map(serializeProjectParty) ?? [],
       };
     }),
   });

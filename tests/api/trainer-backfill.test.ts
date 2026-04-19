@@ -140,7 +140,7 @@ describe('Trainer Backfill — Database Integration', () => {
       }),
     });
 
-    const res = await POST(req as any, { params: Promise.resolve({ id: assignmentId }) });
+    const res = await POST(req as Parameters<typeof POST>[0], { params: Promise.resolve({ id: assignmentId }) });
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -171,7 +171,7 @@ describe('Trainer Backfill — Database Integration', () => {
       }),
     });
 
-    const res = await POST(req as any, { params: Promise.resolve({ id: assignmentId }) });
+    const res = await POST(req as Parameters<typeof POST>[0], { params: Promise.resolve({ id: assignmentId }) });
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -204,7 +204,7 @@ describe('Trainer Backfill — Database Integration', () => {
       }),
     });
 
-    const res = await POST(req as any, { params: Promise.resolve({ id: assignmentId }) });
+    const res = await POST(req as Parameters<typeof POST>[0], { params: Promise.resolve({ id: assignmentId }) });
     // Should be 401 or 403 — requireAdmin() throws for non-admin users
     expect([401, 403]).toContain(res.status);
   });

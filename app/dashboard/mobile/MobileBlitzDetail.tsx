@@ -1,5 +1,10 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any --
+ * Mirror of desktop blitz/[id]/page.tsx — consumes the same
+ * /api/blitzes/[id] response with dynamic shape. See that file for
+ * the scope-decision rationale. */
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';

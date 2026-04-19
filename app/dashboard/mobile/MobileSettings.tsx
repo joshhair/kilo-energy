@@ -554,7 +554,8 @@ function BlitzPermissionsSection() {
   useEffect(() => {
     const perms: Record<string, { canRequestBlitz: boolean; canCreateBlitz: boolean }> = {};
     reps.forEach((r) => {
-      perms[r.id] = { canRequestBlitz: (r as any).canRequestBlitz ?? false, canCreateBlitz: (r as any).canCreateBlitz ?? false };
+      const flags = r as { canRequestBlitz?: boolean; canCreateBlitz?: boolean };
+      perms[r.id] = { canRequestBlitz: flags.canRequestBlitz ?? false, canCreateBlitz: flags.canCreateBlitz ?? false };
     });
     setPermissions(perms);
   }, [reps]);
@@ -619,7 +620,7 @@ function SubDealersSection() {
         <MobileEmptyState icon={Handshake} title="No sub-dealers" subtitle="Add sub-dealers from the desktop view." />
       ) : (
         <MobileCard>
-          {subDealers.map((sd: any, idx: number) => (
+          {subDealers.map((sd, idx: number) => (
             <div key={sd.id ?? idx}>
               {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">

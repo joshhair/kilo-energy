@@ -277,16 +277,24 @@ export default function MobileNewDeal() {
   }, [currentStep]);
 
   // Blitz list
-  const [_rawBlitzes, setRawBlitzes] = useState<any[]>([]);
+  type BlitzListItem = {
+    id: string;
+    name: string;
+    status: string;
+    startDate?: string;
+    endDate?: string;
+    participants?: Array<{ userId: string; joinStatus: string }>;
+  };
+  const [_rawBlitzes, setRawBlitzes] = useState<BlitzListItem[]>([]);
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
-    fetch('/api/blitzes').then((r) => r.json()).then((data) => {
+    fetch('/api/blitzes').then((r) => r.json()).then((data: BlitzListItem[]) => {
       setRawBlitzes(data ?? []);
-      setAvailableBlitzes((data ?? []).filter((b: any) => {
+      setAvailableBlitzes((data ?? []).filter((b) => {
         const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
         if (!statusOk) return false;
         if (effectiveRole === 'admin') return true;
-        return b.participants?.some((p: any) => p.userId === effectiveRepId && p.joinStatus === 'approved');
+        return b.participants?.some((p) => p.userId === effectiveRepId && p.joinStatus === 'approved');
       }));
     }).catch(() => {});
   }, [effectiveRole, effectiveRepId]);

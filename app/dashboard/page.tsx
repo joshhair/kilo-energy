@@ -794,24 +794,39 @@ export default function DashboardPage() {
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();
       })
-      .then((rawMentions: any[]) => {
-        // Transform Prisma shape → MentionItem shape
-        const items: MentionItem[] = (rawMentions ?? []).map((m: any) => ({
+      .then((rawMentions: unknown[]) => {
+        // Transform Prisma shape → MentionItem shape. The API response is
+        // internally-typed Prisma output; we narrow field-by-field here.
+        const items: MentionItem[] = (rawMentions ?? []).map((raw) => {
+        const m = raw as {
+          id: string;
+          messageId?: string;
+          message?: {
+            id?: string;
+            projectId?: string;
+            project?: { customerName?: string };
+            text?: string;
+            authorName?: string;
+            checkItems?: Array<{ id: string; text: string; completed: boolean }>;
+          };
+        };
+        return ({
           id: m.id,
           projectId: m.message?.projectId ?? '',
           projectCustomerName: m.message?.project?.customerName ?? 'Unknown',
           messageId: m.messageId ?? m.message?.id ?? '',
           messageSnippet: (m.message?.text ?? '').slice(0, 120),
           authorName: m.message?.authorName ?? 'Unknown',
-          checkItems: (m.message?.checkItems ?? []).map((ci: any) => ({
+          checkItems: (m.message?.checkItems ?? []).map((ci) => ({
             id: ci.id,
             text: ci.text,
             completed: ci.completed,
-            dueDate: ci.dueDate ?? null,
+            dueDate: (ci as { dueDate?: string | null }).dueDate ?? null,
           })),
-          createdAt: m.message?.createdAt ?? new Date().toISOString(),
-          read: m.readAt != null,
-        }));
+          createdAt: (m.message as { createdAt?: string } | undefined)?.createdAt ?? new Date().toISOString(),
+          read: (raw as { readAt?: string | null }).readAt != null,
+        });
+        });
         setDashMentions(items);
       })
       .catch(() => setDashMentions([]));

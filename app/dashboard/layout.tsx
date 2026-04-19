@@ -274,9 +274,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .then((data) => {
           const items = Array.isArray(data) ? data : data.mentions ?? [];
           // Count mentions that are either unread OR have uncompleted check items
-          const actionable = items.filter((m: any) => {
+          type MentionCount = { readAt?: string | null; message?: { checkItems?: Array<{ completed: boolean }> } };
+          const actionable = items.filter((m: MentionCount) => {
             const isUnread = !m.readAt;
-            const hasOpenTasks = (m.message?.checkItems ?? []).some((ci: any) => !ci.completed);
+            const hasOpenTasks = (m.message?.checkItems ?? []).some((ci) => !ci.completed);
             return isUnread || hasOpenTasks;
           }).length;
           setUnreadMentionCount(actionable);

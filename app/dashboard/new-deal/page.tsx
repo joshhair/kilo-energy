@@ -85,7 +85,15 @@ function NewDealPage() {
   const submittingRef = useRef(false);
 
   // Blitz list for lead source attribution
-  const [rawBlitzes, setRawBlitzes] = useState<any[]>([]);
+  type BlitzListItem = {
+    id: string;
+    name: string;
+    status: string;
+    startDate?: string;
+    endDate?: string;
+    participants?: Array<{ userId: string; joinStatus: string }>;
+  };
+  const [rawBlitzes, setRawBlitzes] = useState<BlitzListItem[]>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((data) => {
       setRawBlitzes(data ?? []);
@@ -94,17 +102,17 @@ function NewDealPage() {
     });
   }, []);
   const availableBlitzes = useMemo<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>(() => {
-    return rawBlitzes.filter((b: any) => {
+    return rawBlitzes.filter((b) => {
       const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
       if (!statusOk) return false;
       if (effectiveRole === 'admin') {
         // When a rep is selected, only show blitzes that rep is approved for
         if (form.repId) {
-          return b.participants?.some((p: any) => p.userId === form.repId && p.joinStatus === 'approved');
+          return b.participants?.some((p) => p.userId === form.repId && p.joinStatus === 'approved');
         }
         return true;
       }
-      return b.participants?.some((p: any) => p.userId === effectiveRepId && p.joinStatus === 'approved');
+      return b.participants?.some((p) => p.userId === effectiveRepId && p.joinStatus === 'approved');
     });
   }, [rawBlitzes, effectiveRole, effectiveRepId, form.repId]);
 
@@ -279,8 +287,8 @@ function NewDealPage() {
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
-        .filter((p: any) => p.joinStatus === 'approved')
-        .map((p: any) => p.userId as string),
+        .filter((p) => p.joinStatus === 'approved')
+        .map((p) => p.userId),
     );
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
@@ -291,8 +299,8 @@ function NewDealPage() {
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
-        .filter((p: any) => p.joinStatus === 'approved')
-        .map((p: any) => p.userId as string),
+        .filter((p) => p.joinStatus === 'approved')
+        .map((p) => p.userId),
     );
     return reps.filter((r) => r.active && approvedIds.has(r.id) && r.repType !== 'setter');
   }, [form.blitzId, rawBlitzes, reps]);
@@ -578,8 +586,8 @@ function NewDealPage() {
       const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
       const approvedIds = new Set(
         (selectedBlitz?.participants ?? [])
-          .filter((p: any) => p.joinStatus === 'approved')
-          .map((p: any) => p.userId as string),
+          .filter((p) => p.joinStatus === 'approved')
+          .map((p) => p.userId),
       );
       if (form.repId && !approvedIds.has(form.repId)) {
         setSlideDirection('backward');
