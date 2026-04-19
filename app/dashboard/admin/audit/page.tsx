@@ -17,7 +17,7 @@
  * tamper-evidence). Just a UI on the table that already exists.
  */
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '../../../../lib/context';
 import { ArrowLeft, Filter, Download } from 'lucide-react';
@@ -245,9 +245,8 @@ export default function AdminAuditPage() {
             {logs.map((log) => {
               const isOpen = expanded === log.id;
               return (
-                <>
+                <Fragment key={log.id}>
                   <tr
-                    key={log.id}
                     className="border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 cursor-pointer"
                     onClick={() => setExpanded(isOpen ? null : log.id)}
                   >
@@ -263,7 +262,7 @@ export default function AdminAuditPage() {
                     </td>
                   </tr>
                   {isOpen && (log.oldValue || log.newValue) && (
-                    <tr key={`${log.id}-diff`} className="border-b border-[var(--border-subtle)]/50 bg-[var(--surface)]/40">
+                    <tr className="border-b border-[var(--border-subtle)]/50 bg-[var(--surface)]/40">
                       <td colSpan={6} className="px-4 py-3">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
@@ -282,7 +281,7 @@ export default function AdminAuditPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </tbody>
