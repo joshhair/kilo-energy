@@ -80,24 +80,44 @@ All hot-path query columns are indexed. Current state per model:
 
 ## Bundle size awareness
 
-Current production bundle (per `npm run build` output):
-- First Load JS shared: ~102 kB
-- Biggest routes: `/dashboard/projects/[id]`, `/dashboard/new-deal`,
-  `/dashboard/earnings` — each ~250-350 kB first load
+Next.js 16 + Turbopack does **not** print the per-route "First Load
+JS" column that Webpack builds used to. To measure:
 
-These are reasonable for an admin dashboard but on the high side
-for a consumer app. After the Phase 1.1 decomposition settles,
-worth revisiting with code-splitting (dynamic imports for the
-heavy modals).
+```bash
+npm run build                                         # produces .next/
+du -k .next/static/chunks/*.js | sort -rn | head -10  # largest chunks
+# For per-route attribution, install @next/bundle-analyzer and set
+# ANALYZE=true in next.config before build.
+```
+
+**Current snapshot** (measured 2026-04-19, post-Phase-1.1 partial
+decomposition): largest single chunk is 388 kB minified, next 316 kB,
+then 200 kB, then sub-200 kB. Chunk names are hashed (e.g.
+`0taa664fo2jes.js`) so route attribution requires the bundle
+analyzer.
+
+These are acceptable for an admin dashboard but on the high side
+for a consumer app. After the remaining Phase 1.1 decomposition
+(Edit Project Modal, Commission Breakdown Admin), worth revisiting
+with code-splitting (dynamic imports for the heavy modals).
 
 ### Budgets to enforce (future)
 
 Target ceilings to keep things honest:
-- First Load JS shared: **< 150 kB** (currently 102 kB — safe)
-- Any single route first load: **< 400 kB** (currently max 350 kB — safe)
+- Largest single chunk: **< 400 kB** (currently 388 kB — at ceiling)
+- Second-largest chunk: **< 350 kB** (currently 316 kB — safe)
 
 When a PR blows through these, investigate: probably an import of a
-heavy dependency (chart lib, icon set) that could be dynamic.
+heavy dependency (chart lib, icon set) that could be dynamic. The
+fix is almost always `const Foo = dynamic(() => import('./Foo'))`
+at the use site.
+
+### When bundle analysis becomes a priority
+
+Add `@next/bundle-analyzer` and gate it in CI if any of:
+- A single route crosses 500 kB first-load
+- Total JS shipped per page > 1 MB
+- Lighthouse mobile TBT > 300 ms on the slow-3G preset
 
 ---
 
@@ -141,6 +161,9 @@ or significant architectural change.
   envelope not yet measured via `scripts/load-test.mts`. Next step:
   first formal run against prod to populate the baseline table in
   `docs/runbooks/load-testing.md`.
+- **2026-04-19 (later)**: Bundle size snapshot added — Next.js 16 +
+  Turbopack doesn't print per-route sizes; documented workaround
+  (du + `@next/bundle-analyzer`). Current largest chunk 388 kB.
 
 ---
 
