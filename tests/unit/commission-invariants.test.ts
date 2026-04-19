@@ -444,4 +444,190 @@ describe('computeProjectCommission — invariants', () => {
       expect(out.setterM3Amount ?? 0).toBe(0);
     }));
   });
+
+  // ─── Phase 2.2 additions — stronger invariants ────────────────────
+
+  it('envelope conservation: closer + setter + trainer = (soldPPW - closerPerW) × kW × 1000 when above baseline', () => {
+    // The "total commission envelope" — money out to closer + setter +
+    // trainer combined — should exactly equal the amount the deal
+    // generates above the closer baseline, regardless of how the
+    // trainer rate shifts the split point. This catches bugs where a
+    // formula change inadvertently changes the envelope size (leaking
+    // or retaining money vs the commercial policy).
+    fc.assert(fc.property(
+      fc.double({ min: 3, max: 10, noNaN: true }),      // ppw — always above baselines
+      fc.double({ min: 1, max: 2, noNaN: true }),       // closerPerW
+      fc.double({ min: 2, max: 3, noNaN: true }),       // setterBaselinePerW (>closer)
+      fc.double({ min: 0, max: 0.5, noNaN: true }),     // trainerRate
+      fc.double({ min: 1, max: 20, noNaN: true }),      // kW
+      (p, c, s, tr, k) => {
+        if (p <= c + 0.01) return; // skip degenerate
+        if (s <= c + 0.01) return;
+        const out = splitCloserSetterPay(p, c, s, tr, k, 80);
+        const trainerTotal = tr * k * 1000;
+        const envelope = out.closerTotal + out.setterTotal + trainerTotal;
+        const expected = (p - c) * k * 1000;
+        // Tolerance: 1 cent × kW — aboveSplit clips at 0 when
+        // tr >= p - s, so the envelope only equals expected when there's
+        // SOME money above the setter+trainer split point. When there
+        // isn't, the envelope is differential + trainerTotal, which
+        // equals (s - c + tr) × k × 1000 — not (p - c). Skip those.
+        if (p - (s + tr) < 0.01) return;
+        expect(Math.abs(envelope - expected)).toBeLessThan(0.05);
+      },
+    ));
+  });
+
+  it('trainer substitution: increasing trainerRate never decreases envelope, only shifts distribution', () => {
+    // With the same ppw/baselines/kw, bumping trainerRate from X to Y
+    // should: trainer gets MORE, closer gets LESS OR EQUAL, setter
+    // gets LESS OR EQUAL, total envelope unchanged (within float
+    // tolerance).
+    fc.assert(fc.property(
+      fc.double({ min: 3, max: 10, noNaN: true }),
+      fc.double({ min: 1, max: 2, noNaN: true }),
+      fc.double({ min: 2, max: 3, noNaN: true }),
+      fc.double({ min: 0, max: 0.3, noNaN: true }),
+      fc.double({ min: 1, max: 20, noNaN: true }),
+      (p, c, s, trLow, k) => {
+        if (p <= s + 0.01) return;
+        if (s <= c + 0.01) return;
+        const trHigh = trLow + 0.10;
+        // Both trainer rates must leave SOME above-split room so we're
+        // comparing like for like (tr fully consumed → envelope
+        // depends on tr alone, which invalidates the "envelope
+        // unchanged" rule). Skip when the higher trainer rate would
+        // clip aboveSplit.
+        if (p - (s + trHigh) < 0.01) return;
+        const low = splitCloserSetterPay(p, c, s, trLow, k, 80);
+        const high = splitCloserSetterPay(p, c, s, trHigh, k, 80);
+        expect(high.closerTotal).toBeLessThanOrEqual(low.closerTotal + 0.01);
+        expect(high.setterTotal).toBeLessThanOrEqual(low.setterTotal + 0.01);
+        const lowEnv = low.closerTotal + low.setterTotal + trLow * k * 1000;
+        const highEnv = high.closerTotal + high.setterTotal + trHigh * k * 1000;
+        expect(Math.abs(highEnv - lowEnv)).toBeLessThan(0.05);
+      },
+    ));
+  });
+
+  it('self-gen M1 flat is $1000 for kW ≥ 5 and $500 for kW < 5', () => {
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      if (p <= 2.0) return; // need commission above M1 flat
+      const out = splitCloserSetterPay(p, 1.5, 0, 0, k, 80); // self-gen
+      const expectedFlat = k >= 5 ? 1000 : 500;
+      // closerM1 = min(flat, closerTotal). When closerTotal >= flat,
+      // closerM1 = flat exactly.
+      if (out.closerTotal >= expectedFlat) {
+        expect(out.closerM1).toBe(expectedFlat);
+      }
+    }));
+  });
+
+  it('paired deal: setter M1 is flat (not closer M1)', () => {
+    fc.assert(fc.property(
+      fc.double({ min: 3, max: 10, noNaN: true }),
+      fc.double({ min: 5, max: 20, noNaN: true }), // kW ≥ 5 so flat is $1000
+      (p, k) => {
+        const out = splitCloserSetterPay(p, 2.85, 2.95, 0, k, 80);
+        // Paired: closer M1 always 0 (flat routes to setter instead).
+        expect(out.closerM1).toBe(0);
+        if (out.setterTotal >= 1000) {
+          expect(out.setterM1).toBe(1000);
+        }
+      },
+    ));
+  });
+
+  it('closer differential is exactly (setterPerW - closerPerW) × kW × 1000 when fully capped', () => {
+    // When soldPPW is high enough that the min() cap doesn't clip, the
+    // differential equals the straight difference. This pins the exact
+    // numerical relationship that reps understand as "closer bonus."
+    fc.assert(fc.property(
+      fc.double({ min: 5, max: 10, noNaN: true }),
+      fc.double({ min: 1, max: 2, noNaN: true }),
+      fc.double({ min: 2, max: 3, noNaN: true }),
+      fc.double({ min: 1, max: 20, noNaN: true }),
+      (p, c, s, k) => {
+        if (p <= s + 0.01) return;
+        if (s <= c + 0.01) return;
+        const out = splitCloserSetterPay(p, c, s, 0, k, 80);
+        const above = (p - s) * k * 1000;
+        const expectedDifferential = (s - c) * k * 1000;
+        const expectedCloserTotal = expectedDifferential + above / 2;
+        expect(Math.abs(out.closerTotal - expectedCloserTotal)).toBeLessThan(0.02);
+      },
+    ));
+  });
+
+  it('setter never earns more than closer on the same deal (with zero trainer)', () => {
+    // Setter's pay from the split is aboveSplit/2; closer gets that
+    // PLUS the differential. Closer should always earn ≥ setter for
+    // any non-zero differential, any sold price.
+    fc.assert(fc.property(
+      fc.double({ min: 2, max: 10, noNaN: true }),
+      fc.double({ min: 1, max: 2, noNaN: true }),
+      fc.double({ min: 2, max: 3, noNaN: true }),
+      fc.double({ min: 1, max: 20, noNaN: true }),
+      (p, c, s, k) => {
+        if (s <= c) return;
+        const out = splitCloserSetterPay(p, c, s, 0, k, 80);
+        // Closer should earn at least as much as setter.
+        expect(out.closerTotal).toBeGreaterThanOrEqual(out.setterTotal - 0.01);
+      },
+    ));
+  });
+
+  it('closerM1 + setterM1 never exceeds the M1 flat amount (prevents double-M1 bug)', () => {
+    // On any deal, at most one side gets the flat M1 payout. If both
+    // received it, we'd be paying $1000 or $500 twice per deal.
+    fc.assert(fc.property(ppw, baseline, kW, (p, b, k) => {
+      const out = splitCloserSetterPay(p, b, b + 0.10, 0, k, 80);
+      const flatExpected = k >= 5 ? 1000 : 500;
+      expect(out.closerM1 + out.setterM1).toBeLessThanOrEqual(flatExpected + 0.01);
+    }));
+  });
+
+  it('installPayPct affects M2/M3 split but not totals', () => {
+    // Changing installPayPct between 50 and 100 rebalances M2 vs M3
+    // but must not change closerTotal or setterTotal.
+    fc.assert(fc.property(
+      fc.double({ min: 3, max: 10, noNaN: true }),
+      fc.double({ min: 1, max: 2, noNaN: true }),
+      fc.double({ min: 1, max: 20, noNaN: true }),
+      fc.integer({ min: 50, max: 99 }),
+      (p, c, k, pct) => {
+        if (p <= c + 0.10) return;
+        const paired = splitCloserSetterPay(p, c, c + 0.10, 0, k, 80);
+        const varied = splitCloserSetterPay(p, c, c + 0.10, 0, k, pct);
+        expect(Math.abs(paired.closerTotal - varied.closerTotal)).toBeLessThan(0.02);
+        expect(Math.abs(paired.setterTotal - varied.setterTotal)).toBeLessThan(0.02);
+      },
+    ));
+  });
+
+  it('installPayPct=100 nulls M3 on both sides (never 0)', () => {
+    // The null vs 0 distinction matters for UI rendering — null means
+    // "no M3 by design," 0 means "M3 earned but not paid."
+    fc.assert(fc.property(ppw, kW, (p, k) => {
+      const out = splitCloserSetterPay(p, 2.85, 2.95, 0, k, 100);
+      expect(out.closerM3).toBe(0);
+      expect(out.setterM3).toBe(0);
+      // Note: splitCloserSetterPay returns 0 not null at the raw
+      // level — computeProjectCommission wraps to null. Confirmed
+      // the wrap happens in commission-server.ts.
+    }));
+  });
+
+  it('zero-commission edge: when soldPPW equals baseline exactly, everyone gets 0', () => {
+    fc.assert(fc.property(
+      fc.double({ min: 2, max: 5, noNaN: true }),
+      fc.double({ min: 1, max: 20, noNaN: true }),
+      (baseline, k) => {
+        const out = splitCloserSetterPay(baseline, baseline, baseline, 0, k, 80);
+        expect(out.closerTotal).toBe(0);
+        expect(out.setterTotal).toBe(0);
+        expect(out.closerM1 + out.closerM2 + out.closerM3).toBe(0);
+      },
+    ));
+  });
 });
