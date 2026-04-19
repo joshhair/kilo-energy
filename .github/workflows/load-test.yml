@@ -1,0 +1,69 @@
+# A+ Phase 3.3: load test manual trigger.
+#
+# Not scheduled — runs on-demand via the Actions tab → "Run workflow."
+# Intentional: periodic load-test-against-prod means paying for that
+# traffic forever, and adding that kind of synthetic load to billing
+# in perpetuity. Manual trigger keeps operators in control.
+#
+# Configurable via workflow inputs: base URL (default prod),
+# concurrency (default conservative 20), duration (default 10s).
+# Overrides let a human crank it up when intentionally stress-
+# testing a preview deployment or staging DB.
+#
+# See docs/runbooks/load-testing.md for envelope baselines + what
+# to do when results look bad.
+
+name: Load test
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Base URL to test (e.g. https://app.kiloenergies.com)
+        required: true
+        default: https://app.kiloenergies.com
+      concurrency:
+        description: Concurrent workers
+        required: true
+        default: '20'
+      duration_ms:
+        description: Duration in ms
+        required: true
+        default: '10000'
+      target_path:
+        description: URL path to hit
+        required: true
+        default: /legal/privacy
+
+jobs:
+  load:
+    name: Run load test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run load test
+        env:
+          LOAD_TEST_BASE_URL: ${{ inputs.base_url }}
+          CONCURRENCY: ${{ inputs.concurrency }}
+          DURATION_MS: ${{ inputs.duration_ms }}
+          TARGET_PATH: ${{ inputs.target_path }}
+        run: |
+          npx tsx scripts/load-test.mts | tee /tmp/load-test-output.txt
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-${{ github.run_id }}
+          path: /tmp/load-test-output.txt
+          retention-days: 90
