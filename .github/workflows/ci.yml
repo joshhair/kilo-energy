@@ -28,17 +28,17 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Lint (advisory — pre-existing debt)
-        # 174 lint errors in the repo predate the CI setup (unused vars,
-        # explicit any, rules-of-hooks in legacy dashboard code). Marked
-        # advisory until Phase 7 structure polish cleans them up. Unit
-        # tests + typecheck are the actual correctness gate.
+      - name: Lint (errors block; warnings allowed)
+        # A+ Phase 1.2 landed: lint rules were tuned so only real
+        # correctness issues (rules-of-hooks) are errors. Stylistic
+        # churn (no-explicit-any, no-unused-vars, exhaustive-deps,
+        # React 19 strict-mode diagnostics) are warnings — visible in
+        # CI logs, don't block the gate. Zero errors is the bar now.
+        # Each warning is a ratchet target for incremental cleanup.
         run: npm run lint
-        continue-on-error: true
 
       - name: Unit tests
         run: npm run test:unit
-        # Note: tests/api/* need a real test DB (see Phase 5 in GRADE_REPORT.md).
-        # Until that's wired, CI runs unit tests only — property tests on
-        # commission math + form validation + data integrity give us solid
-        # financial-correctness coverage.
+        # tests/api/* need a real test DB. Run locally before PRs
+        # land; CI unit covers property tests on commission math +
+        # field-visibility contract + form validation for ship-gate.

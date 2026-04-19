@@ -9,21 +9,19 @@ import MobileDashboard from './mobile/MobileDashboard';
 import { computeSparklineData, Sparkline } from '../../lib/sparkline';
 import {
   computeIncentiveProgress, formatIncentiveMetric,
-  getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   getTrainerOverrideRate,
-  Project, InstallerPricingVersion, ProductCatalogProduct, ProductCatalogPricingVersion, ACTIVE_PHASES,
+  ACTIVE_PHASES,
   DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS,
 } from '../../lib/data';
-import { formatDate, fmt$, formatCompactKW, getCustomConfig } from '../../lib/utils';
-import { TrendingUp, TrendingDown, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Users, BarChart2, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, PauseCircle, HelpCircle, MessageSquare } from 'lucide-react';
-import { PaginationBar } from './components/PaginationBar';
+import { fmt$, formatCompactKW } from '../../lib/utils';
+import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle } from 'lucide-react';
 
 // ── Extracted component imports ──────────────────────────────────────────────
 import {
   type Period,
   isInPeriod, isInPreviousPeriod, isThisWeek, isThisMonth,
   getPhaseStuckThresholds, relativeTimeShort, formatDueDate, isOverdue,
-  getGreeting, useCountUp, AnimatedStatValue, TrendBadge,
+  getGreeting, TrendBadge,
 } from './components/dashboard-utils';
 import { PMDashboard } from './components/PMDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
