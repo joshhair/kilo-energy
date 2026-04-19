@@ -126,6 +126,24 @@ test.describe('a11y — authenticated admin surfaces', () => {
     await page.waitForLoadState('networkidle');
     await scan(page, '/dashboard/new-deal');
   });
+
+  test('audit log (A+ Phase 2.5 addition)', async ({ page }) => {
+    await page.goto('/dashboard/admin/audit');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/admin/audit');
+  });
+
+  test('my-pay (admin viewing own pay)', async ({ page }) => {
+    await page.goto('/dashboard/my-pay');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/my-pay');
+  });
+
+  test('earnings (admin review)', async ({ page }) => {
+    await page.goto('/dashboard/earnings');
+    await page.waitForLoadState('networkidle');
+    await scan(page, '/dashboard/earnings (admin)');
+  });
 });
 
 test.describe('a11y — authenticated rep surfaces', () => {
