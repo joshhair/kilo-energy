@@ -7,7 +7,7 @@ import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
 import { formatDate, formatCurrency, formatCompactKW } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
-import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, CheckCircle, XCircle, Clock, UserPlus, X, Pencil, Save, Loader2, FolderKanban, Trophy, ChevronUp } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, Trophy, ChevronUp } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import { sortForSelection } from '../../../../lib/sorting';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -51,7 +51,7 @@ type TabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 export default function BlitzDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentRole, currentRepId, effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts, solarTechProducts } = useApp();
+  const { effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts, solarTechProducts } = useApp();
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isAdmin = effectiveRole === 'admin';
@@ -717,7 +717,7 @@ export default function BlitzDetailPage() {
         const totalDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
         const elapsed = Math.max(0, Math.min(totalDays, Math.round((nowMs - startMs) / 86400000) + 1));
         const progressPct = blitz.status === 'completed' ? 100 : blitz.status === 'active' ? Math.round((elapsed / totalDays) * 100) : 0;
-        const approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id));
+        const _approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id));
 
         return (
         <div className="space-y-4">

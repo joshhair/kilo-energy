@@ -119,7 +119,7 @@ function computeDatesForPeriod(period: IncentivePeriod, year: number, month: num
 }
 
 function getPeriodDisplayLabel(incentive: Incentive): string {
-  const { period, startDate, endDate } = incentive;
+  const { period, startDate } = incentive;
   if (period === 'alltime') return 'All Time';
   if (!startDate) return '';
   const [y, m] = startDate.split('-').map(Number);
@@ -154,7 +154,7 @@ function isEndingSoon(endDate: string | null): boolean {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function IncentivesPage() {
-  const { currentRole, effectiveRole, currentRepId, effectiveRepId, incentives, setIncentives, projects, payrollEntries, reps } = useApp();
+  const { effectiveRole, effectiveRepId, incentives, setIncentives, projects, payrollEntries } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Incentives | Kilo Energy'; }, []);
@@ -484,7 +484,7 @@ export default function IncentivesPage() {
         Promise.allSettled(ids.map((id) => fetch(`/api/incentives/${id}`, { method: 'DELETE' })
           .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return id; })))
           .then((results) => {
-            const succeededIds = new Set(ids.filter((_, i) => results[i].status === 'fulfilled'));
+            const _succeededIds = new Set(ids.filter((_, i) => results[i].status === 'fulfilled'));
             const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'));
             if (failedIds.size > 0) {
               toast('Failed to delete some incentives', 'error');
@@ -1044,7 +1044,7 @@ function IncentiveCard({
     revenue: 'revenue',
   };
 
-  const periodLabel: Record<string, string> = {
+  const _periodLabel: Record<string, string> = {
     month: 'Monthly',
     quarter: 'Quarterly',
     year: 'Annual',

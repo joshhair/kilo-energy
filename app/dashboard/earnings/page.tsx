@@ -24,11 +24,8 @@ import { SubDealerEarningsView } from './components/SubDealerEarningsView';
 import { MonthlyEarningsBarChart, computeMonthlyBarData, MONTH_LABELS } from './components/MonthlyEarningsBarChart';
 import {
   SortIcon,
-  StatusPill,
   PayrollStatusBadge,
   ReimbStatusBadge,
-  PAYROLL_PILL,
-  REIMB_PILL,
   getPayrollRowAccent,
   SparklineWithTooltip,
   getNextFriday,
@@ -40,7 +37,6 @@ import {
 
 // ── Shared constants ───────────────────────────────────────────────────────────
 
-const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
 
 /** Maps Tailwind accent-gradient class strings to an RGBA radial glow for --card-accent */
 const ACCENT_COLOR_MAP: Record<string, string> = {
@@ -63,7 +59,7 @@ type BonusSortKey = 'notes' | 'amount' | 'status' | 'date';
 function RepEarningsView() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRepId, currentRepName, effectiveRepId, effectiveRepName, payrollEntries, reimbursements, setReimbursements, dbReady } = useApp();
+  const { effectiveRepId, effectiveRepName, payrollEntries, reimbursements, setReimbursements, dbReady } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
 
@@ -1378,7 +1374,7 @@ export default function EarningsPage() {
 // ── Sub-Dealer Earnings View ─────────────────────────────────────────────────
 
 function EarningsPageInner() {
-  const { currentRole, effectiveRole, dbReady } = useApp();
+  const { effectiveRole, dbReady } = useApp();
   const isHydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
   useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);

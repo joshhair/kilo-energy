@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
@@ -12,11 +12,10 @@ import {
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
-import { Check, Loader2, PlusCircle, RotateCcw } from 'lucide-react';
+import { Check, Loader2, RotateCcw } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
-import { Breadcrumb } from '../components/Breadcrumb';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import { evenSplit } from '../../../lib/commission-split';
 import MobileNewDeal from '../mobile/MobileNewDeal';
@@ -38,9 +37,8 @@ export default function NewDealPageWrapper() {
 }
 
 function NewDealPage() {
-  const { dbReady, currentRole, effectiveRole, currentRepId, effectiveRepId, currentRepName, effectiveRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
+  const { dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
   const { toast } = useToast();
-  const router = useRouter();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
   const isHydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -116,7 +114,7 @@ function NewDealPage() {
   const duplicateCustomerName = searchParams.get('duplicate') === 'true' ? (searchParams.get('customerName') ?? '') : '';
   const customerNameInputRef = useRef<HTMLInputElement>(null);
   const soldDateInputRef = useRef<HTMLInputElement>(null);
-  const repIdSelectRef = useRef<HTMLSelectElement>(null);
+  const _repIdSelectRef = useRef<HTMLSelectElement>(null);
   useEffect(() => {
     if (duplicateApplied.current) return;
     if (searchParams.get('duplicate') !== 'true') return;
@@ -161,7 +159,7 @@ function NewDealPage() {
 
   // ── Multi-step navigation ──────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
+  const [_slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
   // Track whether the user manually navigated backward (suppress auto-advance)
   const userNavigatedBack = useRef(false);
   // Track which steps have already been auto-advanced (so we only auto-advance once per step)
@@ -441,14 +439,14 @@ function NewDealPage() {
     ...(form.leadSource === 'blitz' ? ['blitzId'] : []),
   ];
 
-  const stepsComplete = [
+  const _stepsComplete = [
     s1Fields.every(isFieldValid),
     s2Fields.every(isFieldValid),
     s3Fields.every(isFieldValid),
   ];
 
   const allRequired = [...s1Fields, ...s2Fields, ...s3Fields];
-  const progressPct = allRequired.length
+  const _progressPct = allRequired.length
     ? Math.round((allRequired.filter(isFieldValid).length / allRequired.length) * 100)
     : 0;
 
@@ -754,7 +752,7 @@ function NewDealPage() {
     fontFamily: "'DM Sans', sans-serif",
   });
 
-  const selectCls = (field: string) =>
+  const _selectCls = (field: string) =>
     `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
@@ -795,8 +793,8 @@ function NewDealPage() {
     p.repId === effectiveRepId || p.setterId === effectiveRepId ||
     p.additionalClosers?.some((c) => c.userId === effectiveRepId) ||
     p.additionalSetters?.some((s) => s.userId === effectiveRepId);
-  const monthCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_monthPrefix) && _isMyDeal(p)).length;
-  const todayCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_today) && _isMyDeal(p)).length;
+  const _monthCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_monthPrefix) && _isMyDeal(p)).length;
+  const _todayCount = effectiveRepId == null ? 0 : projects.filter((p) => p.soldDate?.startsWith(_today) && _isMyDeal(p)).length;
 
   return (
     <div className="p-4 md:p-8" style={{ maxWidth: 1100, margin: '0 auto' }}>

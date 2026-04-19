@@ -6,7 +6,6 @@ import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import {
   PHASES, Phase,
-  getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal,
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
@@ -163,12 +162,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }, [projectId]);
 
   const {
-    currentRole, effectiveRole, effectiveRepId, projects, currentRepId, payrollEntries, reps,
-    updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts,
+    effectiveRole, effectiveRepId, projects, payrollEntries, reps,
+    updateProject: ctxUpdateProject,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
-  const isRep = effectiveRole === 'rep';
   const { toast } = useToast();
   const router = useRouter();
 
@@ -176,7 +174,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
-  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [_notesExpanded, _setNotesExpanded] = useState(false);
   // Mobile edit sheet. Intentionally scoped to the edits mobile admins
   // reach for most often — setter, notes, flag, co-closer/co-setter
   // management. Heavier fields (installer, financer, kW, PPW, baseline
@@ -351,16 +349,16 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   // Find payroll entry dates for milestones
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
-  const getEntryDate = (stage: 'M1' | 'M2' | 'M3'): string | null => {
+  const _getEntryDate = (stage: 'M1' | 'M2' | 'M3'): string | null => {
     const entry = projectEntries.find((e) => e.paymentStage === stage && e.status !== 'Draft');
     return entry ? entry.date : null;
   };
-  const formatShortDate = (dateStr: string) => {
+  const _formatShortDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T12:00:00');
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
   // Estimate next Friday after a target date
-  const estimateFriday = (baseDate: string, addDays: number): string => {
+  const _estimateFriday = (baseDate: string, addDays: number): string => {
     const d = new Date(baseDate + 'T12:00:00');
     d.setDate(d.getDate() + addDays);
     const day = d.getDay();
