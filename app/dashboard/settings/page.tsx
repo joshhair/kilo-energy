@@ -8,14 +8,13 @@ import MobileSettings from '../mobile/MobileSettings';
 import { useToast } from '../../../lib/toast';
 import { TrainerAssignment, TrainerOverrideTier } from '../../../lib/data';
 import {
-  Layers, Building2, Landmark, BookOpen, Download, Settings,
+  Building2, Landmark, BookOpen, Download, Settings,
   ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 // ── Extracted components ──────────────────────────────────────────────────────
 import { ConfirmDeleteDialog } from './components/ConfirmDeleteDialog';
-import { SectionHeader } from './components/SectionHeader';
 import { SettingsSkeleton } from './components/SettingsSkeleton';
 import { BlitzPermissionsSection } from './sections/BlitzPermissionsSection';
 import { SubDealersSection } from './sections/SubDealersSection';
@@ -83,9 +82,9 @@ function SettingsPageInner() {
     effectiveRole,
     reps,
     installers, financers, setInstallerActive, setFinancerActive, deleteInstaller, deleteFinancer,
-    projects, trainerAssignments, setTrainerAssignments,
-    installerBaselines, updateInstallerBaseline,
-    installerPrepaidOptions, updateInstallerPrepaidOption,
+    trainerAssignments, setTrainerAssignments,
+    updateInstallerBaseline,
+    updateInstallerPrepaidOption,
   } = useApp();
 
   const { toast } = useToast();
@@ -128,7 +127,7 @@ function SettingsPageInner() {
   // ── Shared editing state (unsaved-changes guard) ────────────────────────────
   const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
   const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
-  const [editingTiers, setEditingTiers] = useState<TrainerOverrideTier[]>([]);
+  const [editingTiers, _setEditingTiers] = useState<TrainerOverrideTier[]>([]);
   const [editingPrepaid, setEditingPrepaid] = useState<string | null>(null);
   const [editingProductName, setEditingProductName] = useState<string | null>(null);
   const [newVersionFor, setNewVersionFor] = useState<string | null>(null);
@@ -144,7 +143,7 @@ function SettingsPageInner() {
     name: string;
     message: string;
   } | null>(null);
-  const [hiddenFinancers, setHiddenFinancers] = useState<Set<string>>(new Set());
+  const [hiddenFinancers, _setHiddenFinancers] = useState<Set<string>>(new Set());
   const deletedEntityRef = useRef<
     | { type: 'installer'; name: string }
     | { type: 'financer'; name: string }

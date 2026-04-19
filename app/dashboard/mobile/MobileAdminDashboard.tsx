@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, formatDate, formatCompactKW } from '../../../lib/utils';
+import { fmt$, formatCompactKW } from '../../../lib/utils';
 import {
   ACTIVE_PHASES,
   getSolarTechBaseline,
@@ -11,8 +11,7 @@ import {
   getInstallerRatesForDeal,
 } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
-import { AlertTriangle, TrendingUp, Users, Zap, CreditCard, FolderKanban, ChevronRight, Flag, Clock, PauseCircle } from 'lucide-react';
-import MobilePageHeader from './shared/MobilePageHeader';
+import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';

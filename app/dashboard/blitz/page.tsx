@@ -7,7 +7,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileBlitz from '../mobile/MobileBlitz';
 import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
-import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Inbox, Loader2, Zap, UserPlus, UserCheck, ChevronDown, X } from 'lucide-react';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck, ChevronDown, X } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import { PaginationBar } from '../components/PaginationBar';
 import { EmptyState } from '../components/EmptyState';
@@ -459,7 +459,7 @@ export default function BlitzPage() {
 function BlitzPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, currentRepId, effectiveRole, effectiveRepId, reps } = useApp();
+  const { currentRepId, effectiveRole, effectiveRepId, reps } = useApp();
   const hydrated = useIsHydrated();
   const isAdmin = effectiveRole === 'admin';
 
@@ -523,7 +523,7 @@ function BlitzPageInner() {
 
   // Admin tab sliding indicator
   const adminTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [adminTabIndicator, setAdminTabIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [_adminTabIndicator, setAdminTabIndicator] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
     const idx = tab === 'blitzes' ? 0 : 1;
@@ -534,7 +534,7 @@ function BlitzPageInner() {
   // Status filter sliding indicator
   const STATUS_FILTER_OPTIONS = ['all', 'active', 'upcoming', 'completed', 'cancelled'] as const;
   const statusTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [statusIndicator, setStatusIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [_statusIndicator, setStatusIndicator] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
     const idx = STATUS_FILTER_OPTIONS.indexOf(statusFilter);
