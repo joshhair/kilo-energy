@@ -76,6 +76,24 @@ This makes direct pushes to `main` with failing checks impossible
 
 ---
 
+## Verifying configuration
+
+Run `npx tsx scripts/verify-deploy-gate.mts` (with `GITHUB_TOKEN`
+set) to confirm the GitHub side is configured correctly. The script
+checks:
+
+1. `main` branch has branch protection enabled.
+2. Required status checks include `verify`.
+3. `require_branches_to_be_up_to_date` is true.
+
+It does **not** verify the Vercel "Wait for Checks" toggle (no
+public API — dashboard-only). That stays manual.
+
+Exit 0 = GitHub side clean. Exit 1 = gap; follow the setup
+instructions above.
+
+---
+
 ## What a gated deploy looks like
 
 1. Commit is pushed to `main` (or merged via PR).

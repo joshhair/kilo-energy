@@ -55,6 +55,11 @@ Read-only diagnostics. Never write without `--commit`.
   non-imported project and diffs stored M1/M2/M3 against what
   `splitCloserSetterPay` would compute. `--commit` rewrites drifted
   amounts. Wired to a nightly GitHub Action (`.github/workflows/reconcile.yml`).
+- `verify-deploy-gate.mts` — confirms GitHub branch protection rules
+  are configured correctly to gate Vercel prod deploys behind CI.
+  Reads branch protection via the GitHub API; exits 0 on pass, 1 on
+  gap. Run before any risky release; see `docs/runbooks/deploy-gating.md`
+  for the full setup.
 
 ---
 
