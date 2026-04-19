@@ -12,7 +12,8 @@ import { serializeReimbursement } from '../../../../lib/serialize';
 // deny / paid / reset to pending) and/or archive flag. receiptUrl /
 // receiptName also patchable for admin corrections.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   const parsed = await parseJsonBody(req, patchReimbursementSchema);
@@ -33,6 +34,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     where: { id },
     data,
     include: { rep: { select: REP_PUBLIC_SELECT } },
+  });
+  logger.info('reimbursement_updated', {
+    reimbursementId: id,
+    actorId: actor.id,
+    fieldsChanged: Object.keys(data),
+    newStatus: reimbursement.status,
   });
   return NextResponse.json(serializeReimbursement(reimbursement));
 }

@@ -7,6 +7,7 @@ import { createReimbursementSchema } from '../../../lib/schemas/reimbursement';
 import { REP_PUBLIC_SELECT } from '../../../lib/redact';
 import { serializeReimbursement } from '../../../lib/serialize';
 import { fromDollars } from '../../../lib/money';
+import { logger } from '../../../lib/logger';
 
 // POST /api/reimbursements — Create a reimbursement request
 export async function POST(req: NextRequest) {
@@ -39,6 +40,12 @@ export async function POST(req: NextRequest) {
       receiptName: body.receiptName ?? null,
     },
     include: { rep: { select: REP_PUBLIC_SELECT } },
+  });
+  logger.info('reimbursement_created', {
+    reimbursementId: reimbursement.id,
+    actorId: internalUser.id,
+    repId: reimbursement.repId,
+    amountCents: reimbursement.amountCents,
   });
   return NextResponse.json(serializeReimbursement(reimbursement), { status: 201 });
 }
