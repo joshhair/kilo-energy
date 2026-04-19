@@ -454,7 +454,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const isTrainer = trainerAssignments.some((a) => a.trainerId === effectiveRepId);
+  // Training tab should be visible to anyone who is a trainer on ANY
+  // project. That includes both routes: a rep-level TrainerAssignment
+  // (the setter-trainee chain from commission.ts:resolveTrainerRate)
+  // AND a per-project trainer override (Project.trainerId, pinned by
+  // admin on the project detail page). Gating on trainerAssignments
+  // alone hid the tab for reps who were only attached via per-project
+  // overrides — the Paul Tupou / Gary Leger case.
+  const isTrainer = trainerAssignments.some((a) => a.trainerId === effectiveRepId)
+    || projects.some((p) => p.trainerId === effectiveRepId);
   const repNav = isTrainer ? REP_NAV : REP_NAV.filter((item) => !('href' in item && item.href === '/dashboard/training'));
 
   // Build PM nav with conditional items

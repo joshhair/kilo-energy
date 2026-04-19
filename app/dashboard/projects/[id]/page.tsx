@@ -1335,6 +1335,32 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (
         <div className="card-surface rounded-2xl p-6 mb-5">
           <h2 className="text-white font-semibold mb-4">My Commission</h2>
+          {(() => {
+            // Compute the rep's total once so both the payroll view and the
+            // "projected" view use the same hero number. Matches the
+            // MobileProjectDetail "Your Commission $X" hero — parity fix
+            // so a rep sees one total on their phone and the same total
+            // on desktop (previously desktop only showed milestone boxes).
+            const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
+            const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
+            const isSetterRep = project.setterId === effectiveRepId;
+            const myExpM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
+            const myExpM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
+            const myExpM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
+            const myTotal = myExpM1 + myExpM2 + (myExpM3 ?? 0);
+            return myTotal > 0 ? (
+              <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
+                   style={{ background: 'linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
+                     style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
+                <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission</p>
+                <p className="text-[var(--accent-green)] text-4xl font-black tabular-nums">
+                  ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </p>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">Projected earnings on this deal</p>
+              </div>
+            ) : null;
+          })()}
           {myEntries.length > 0 ? (
             <div className="space-y-2">
               {myEntries.map((entry) => (
