@@ -1332,9 +1332,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Commission — rep view shows their own payroll entries */}
-      {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (
+      {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (() => {
+        const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId;
+        const trainerOnlyEntries = isTrainerOnDeal ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer') : [];
+        return (
         <div className="card-surface rounded-2xl p-6 mb-5">
-          <h2 className="text-white font-semibold mb-4">My Commission</h2>
+          <h2 className="text-white font-semibold mb-4">{isTrainerOnDeal ? 'My Commission (Trainer)' : 'My Commission'}</h2>
           {(() => {
             // Compute the rep's total once so both the payroll view and the
             // "projected" view use the same hero number. Matches the
@@ -1344,6 +1347,35 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
             const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
             const isSetterRep = project.setterId === effectiveRepId;
+            const isCloserRep2 = project.repId === effectiveRepId;
+            const isTrainerRep = project.trainerId === effectiveRepId && !isCloserRep2 && !isSetterRep;
+
+            // Trainer path: single lump paid at Trainer stage, no M1/M2/M3.
+            // Projected as trainerRate × kW × 1000; paid entries override if
+            // they exist.
+            if (isTrainerRep) {
+              const trainerEntries = payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer');
+              const paidTotal = trainerEntries.filter((e) => e.status === 'Paid').reduce((s, e) => s + e.amount, 0);
+              const pendingTotal = trainerEntries.filter((e) => e.status !== 'Paid').reduce((s, e) => s + e.amount, 0);
+              const projected = (project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000;
+              const myTotal = trainerEntries.length > 0 ? (paidTotal + pendingTotal) : projected;
+              return myTotal > 0 ? (
+                <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
+                     style={{ background: 'linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                  <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
+                       style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
+                  <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission (Trainer)</p>
+                  <p className="text-[var(--accent-green)] text-4xl font-black tabular-nums">
+                    ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
+                  <p className="text-[var(--text-secondary)] text-sm mt-1">
+                    Trainer payout on this deal
+                    {project.trainerRate != null && ` · $${project.trainerRate.toFixed(2)}/W × ${project.kWSize} kW`}
+                  </p>
+                </div>
+              ) : null;
+            }
+
             const myExpM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
             const myExpM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
             const myExpM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
@@ -1361,7 +1393,35 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             ) : null;
           })()}
-          {myEntries.length > 0 ? (
+          {/* Trainer branch: they don't have M1/M2/M3 — the hero above is
+              their full total. If Trainer-stage entries exist, list them;
+              else show "no payments yet" (phase will trigger generation). */}
+          {isTrainerOnDeal ? (
+            trainerOnlyEntries.length > 0 ? (
+              <div className="space-y-2">
+                {trainerOnlyEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-[var(--text-secondary)] text-sm font-medium">{entry.paymentStage}</p>
+                      <p className="text-[var(--text-muted)] text-xs mt-0.5">{formatDate(entry.date)}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                        entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                        entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                        'bg-[var(--border)] text-[var(--text-secondary)]'
+                      }`}>{entry.status}</span>
+                      <span className="text-[var(--accent-green)] font-bold">${entry.amount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[var(--text-muted)] text-sm">
+                No payments yet &mdash; trainer payout is released when the deal progresses past Acceptance.
+              </p>
+            )
+          ) : myEntries.length > 0 ? (
             <div className="space-y-2">
               {myEntries.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
@@ -1428,7 +1488,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               );
             })()}
         </div>
-      )}
+        );
+      })()}
 
       {/* Commission breakdown (admin) */}
       {effectiveRole === 'admin' && !isPM && (

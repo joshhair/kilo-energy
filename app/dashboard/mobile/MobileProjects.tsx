@@ -119,7 +119,17 @@ export default function MobileProjects() {
   const visibleProjects = useMemo(() => {
     if (effectiveRole === 'admin' || effectiveRole === 'project_manager') return projects;
     if (isSubDealer) return projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId);
-    return projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
+    // Trainer (per-project override) + co-closer/co-setter must appear
+    // in the rep's list too — same logic desktop uses. Matches the
+    // "isOnDeal" helper in app/dashboard/projects/page.tsx so both
+    // devices show the exact same set of projects for a given rep.
+    return projects.filter((p) =>
+      p.repId === effectiveRepId
+      || p.setterId === effectiveRepId
+      || p.trainerId === effectiveRepId
+      || !!p.additionalClosers?.some((c) => c.userId === effectiveRepId)
+      || !!p.additionalSetters?.some((s) => s.userId === effectiveRepId),
+    );
   }, [effectiveRole, effectiveRepId, projects, isSubDealer]);
 
   const phaseCounts = useMemo(() => {

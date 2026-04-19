@@ -50,6 +50,37 @@ export function myCommissionOnProject(
   const isViewerCloser = project.repId === repId;
   const isViewerSetter = project.setterId === repId;
   const isViewerSubDealer = project.subDealerId === repId;
+  const isViewerTrainer = project.trainerId === repId;
+
+  // ─ Trainer path ─
+  // A rep who's the per-project trainer (or resolves to it via the
+  // assignment chain) gets paid as one lump sum at the Trainer paymentStage,
+  // not split into M1/M2/M3. Their total = trainerRate × kW × 1000, paid
+  // on the project's phase progression (same trigger as closer M2).
+  if (isViewerTrainer && !isViewerCloser && !isViewerSetter) {
+    const trainerEntries = payrollEntries.filter(
+      (e) => e.projectId === project.id && e.repId === repId && e.paymentStage === "Trainer",
+    );
+    const paidEntries = trainerEntries.filter((e) => e.status === "Paid");
+    const totalFromEntries = trainerEntries.reduce((s, e) => s + e.amount, 0);
+    const projected = (project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000;
+    const total = trainerEntries.length > 0 ? totalFromEntries : projected;
+    const allPaid = trainerEntries.length > 0 && paidEntries.length === trainerEntries.length;
+    const anyPaid = paidEntries.length > 0;
+
+    // Represent trainer payout on the M2 slot since that's the phase
+    // it's released on — lets existing UI (which iterates m1/m2/m3)
+    // render trainer totals without needing a new code path. M1/M3
+    // are N/A for trainers.
+    const stages = {
+      m1: { applicable: false, amount: 0, paid: false },
+      m2: { applicable: true, amount: total, paid: allPaid },
+      m3: { applicable: false, amount: 0, paid: false },
+    };
+
+    const status: CommissionStatus = allPaid ? "paid" : anyPaid ? "partial" : "projected";
+    return { total, status, stages };
+  }
 
   // ─ Try payroll entries first (authoritative) ─
   const myEntries = payrollEntries.filter(

@@ -113,12 +113,24 @@ function ProjectsPageInner() {
 
   // All projects the current user is allowed to see.
   // Admins see everything; reps ONLY see their own deals; sub-dealers see their sub-dealer deals.
+  // A rep is "on" a project if they occupy ANY commission-earning role:
+  // primary closer, primary setter, co-closer, co-setter, OR trainer.
+  // Trainer (via per-project override or assignment chain that resolves
+  // to trainerId) was previously missing — reps earning trainer payouts
+  // couldn't see those deals in their Projects list. Paul-Tupou class.
+  const isOnDeal = (p: { repId: string; setterId?: string | null; trainerId?: string | null; additionalClosers?: ReadonlyArray<{ userId: string }>; additionalSetters?: ReadonlyArray<{ userId: string }> }) =>
+    p.repId === effectiveRepId
+    || p.setterId === effectiveRepId
+    || p.trainerId === effectiveRepId
+    || !!p.additionalClosers?.some((c) => c.userId === effectiveRepId)
+    || !!p.additionalSetters?.some((s) => s.userId === effectiveRepId);
+
   const visibleProjects =
     effectiveRole === 'admin' || effectiveRole === 'project_manager'
-      ? (dealScope === 'mine' ? projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId || p.additionalClosers?.some((c) => c.userId === effectiveRepId) || p.additionalSetters?.some((s) => s.userId === effectiveRepId)) : projects)
+      ? (dealScope === 'mine' ? projects.filter(isOnDeal) : projects)
       : isSubDealer
         ? projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
-        : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId || p.additionalClosers?.some((c) => c.userId === effectiveRepId) || p.additionalSetters?.some((s) => s.userId === effectiveRepId));
+        : projects.filter(isOnDeal);
 
   const statusFiltered = applyStatusFilter(visibleProjects, statusFilter);
 
