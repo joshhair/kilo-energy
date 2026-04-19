@@ -43,10 +43,12 @@ const eslintConfig = defineConfig([
   ]),
   {
     rules: {
-      // Quality-of-life downgrades — warnings, not CI-blocking errors.
-      "@typescript-eslint/no-explicit-any": "warn",
+      // Lint-to-zero ratchet (A+ Phase 1.2). Once we cleared all existing
+      // violations, promoted these from warn to error so new ones fail CI
+      // immediately rather than silently accumulating again.
+      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
@@ -54,9 +56,12 @@ const eslintConfig = defineConfig([
           destructuredArrayIgnorePattern: "^_",
         },
       ],
+      "@typescript-eslint/no-unused-expressions": "error",
+      "react/no-unescaped-entities": "error",
+      // exhaustive-deps stays as warn: each missing dep is a judgment call
+      // (adding can cause infinite loops). All existing sites carry inline
+      // disables with rationale; new ones surface as warnings for PR review.
       "react-hooks/exhaustive-deps": "warn",
-      "@typescript-eslint/no-unused-expressions": "warn",
-      "react/no-unescaped-entities": "warn",
       // React 19's new strict-mode-adjacent diagnostics. Real signals
       // that some code patterns are risky, but many occurrences are
       // legitimate (initialization from props, derived state that must
