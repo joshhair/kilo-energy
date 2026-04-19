@@ -11,7 +11,7 @@ import {
   IncentiveType,
 } from '../../../lib/data';
 import { useToast } from '../../../lib/toast';
-import { Trophy, Plus, Gift, Target, Loader2 } from 'lucide-react';
+import { Trophy, Plus, Gift, Target, Loader2, Zap } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -105,6 +105,54 @@ export default function MobileIncentives() {
   const activeIncentives = visible.filter((i) => !isExpired(i.endDate) && i.active);
   const expiredIncentives = visible.filter((i) => isExpired(i.endDate));
 
+  // Pending Rewards — admin-only. Milestones where progress crossed the
+  // threshold but admin hasn't yet flipped achieved=true. Parity with
+  // the desktop incentives page. Shows trigger-ready bonuses so admin
+  // can mark them fulfilled (and in a future iteration, auto-generate
+  // the payroll entry).
+  const pendingRewards = useMemo(() => {
+    if (!isAdmin) return [] as { incentive: Incentive; milestone: Incentive['milestones'][number]; progress: number }[];
+    const items: { incentive: Incentive; milestone: Incentive['milestones'][number]; progress: number }[] = [];
+    for (const inc of incentives) {
+      if (!inc.active || isExpired(inc.endDate)) continue;
+      const progress = computeIncentiveProgress(inc, projects, payrollEntries);
+      for (const ms of inc.milestones) {
+        if (progress >= ms.threshold && !ms.achieved) {
+          items.push({ incentive: inc, milestone: ms, progress });
+        }
+      }
+    }
+    return items;
+  }, [isAdmin, incentives, projects, payrollEntries]);
+
+  const markMilestoneFulfilled = (incId: string, milestoneId: string) => {
+    // Optimistic — matches the desktop page handler pattern. Sets achieved
+    // locally, then PATCHes the incentive with the updated milestones list.
+    const target = incentives.find((i) => i.id === incId);
+    if (!target) return;
+    const prev = target.milestones;
+    const next = target.milestones.map((m) => m.id === milestoneId ? { ...m, achieved: true } : m);
+    setIncentives((list) => list.map((i) => i.id === incId ? { ...i, milestones: next } : i));
+    fetch(`/api/incentives/${incId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: target.title,
+        description: target.description,
+        active: target.active,
+        endDate: target.endDate,
+        metric: target.metric,
+        period: target.period,
+        startDate: target.startDate,
+        type: target.type,
+        targetRepId: target.targetRepId,
+        milestones: next.map((m) => ({ ...(m.id ? { id: m.id } : {}), threshold: m.threshold, reward: m.reward, achieved: m.achieved })),
+      }),
+    })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reward marked fulfilled', 'success'); })
+      .catch(() => { setIncentives((list) => list.map((i) => i.id === incId ? { ...i, milestones: prev } : i)); toast('Failed to update', 'error'); });
+  };
+
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader
@@ -123,6 +171,51 @@ export default function MobileIncentives() {
           </button>
         ) : undefined}
       />
+
+      {/* Pending Rewards (admin only) — milestones whose progress crossed
+          the threshold but haven't been marked achieved yet. One-tap
+          "Mark Fulfilled" matches the desktop page. */}
+      {isAdmin && pendingRewards.length > 0 && (
+        <MobileSection title="Pending Rewards" count={pendingRewards.length} collapsible defaultOpen>
+          <div className="space-y-2">
+            {pendingRewards.map(({ incentive, milestone }) => (
+              <div
+                key={`${incentive.id}-${milestone.id}`}
+                className="rounded-2xl px-4 py-3"
+                style={{
+                  background: 'rgba(245,158,11,0.08)',
+                  border: '1px solid rgba(245,158,11,0.22)',
+                }}
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.2)' }}>
+                      <Zap className="w-4 h-4" style={{ color: 'var(--accent-amber)' }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{incentive.title}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                        At {formatIncentiveMetric(incentive.metric, milestone.threshold)}
+                        <span style={{ color: 'var(--accent-amber)' }}> · {milestone.reward}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => markMilestoneFulfilled(incentive.id, milestone.id)}
+                  className="w-full min-h-[40px] rounded-lg text-xs font-semibold"
+                  style={{
+                    background: 'rgba(0,229,160,0.15)',
+                    color: 'var(--accent-emerald)',
+                  }}
+                >
+                  Mark Fulfilled
+                </button>
+              </div>
+            ))}
+          </div>
+        </MobileSection>
+      )}
 
       {/* Active Incentives */}
       <MobileSection title="Active Incentives" count={activeIncentives.length}>
