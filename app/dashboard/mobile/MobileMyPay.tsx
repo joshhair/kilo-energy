@@ -196,8 +196,11 @@ export default function MobileMyPay() {
   }, [myEntries]);
 
   // ── Reimbursements — only show active ones ──
+  // Show all non-archived reimbursements (including Denied) so reps see
+  // rejection feedback, not just their in-flight requests. Archived rows
+  // are still hidden since admin explicitly hid them.
   const activeReimbs = useMemo(
-    () => reimbursements.filter((r) => r.repId === effectiveRepId && (r.status === 'Pending' || r.status === 'Approved')),
+    () => reimbursements.filter((r) => r.repId === effectiveRepId && !r.archivedAt),
     [reimbursements, effectiveRepId],
   );
 
@@ -406,7 +409,7 @@ export default function MobileMyPay() {
                             {entry.paymentStage} &middot; {entry.date}
                           </p>
                         </div>
-                        <p className="font-bold tabular-nums" style={{ color: statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>
+                        <p className="font-bold tabular-nums" style={{ color: entry.amount < 0 ? 'var(--accent-red, #ef4444)' : statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>
                           {fmt$(entry.amount)}
                         </p>
                       </div>

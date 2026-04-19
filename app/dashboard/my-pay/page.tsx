@@ -803,7 +803,7 @@ function MyPayPageInner() {
                               <td className="px-3 py-3"><StageBadge stage={entry.paymentStage} /></td>
                               <td className="px-3 py-3"><StatusBadge status={entry.status} /></td>
                               <td className="px-5 py-3 text-right">
-                                <span className={`font-semibold tabular-nums ${entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-green)]' : 'text-white'}`}>
+                                <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-red-400' : (entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-green)]' : 'text-white')}`}>
                                   {fmt$(entry.amount)}
                                 </span>
                               </td>

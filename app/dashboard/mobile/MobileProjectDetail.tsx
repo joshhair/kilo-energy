@@ -632,6 +632,59 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotalExpected)}</span>
                   </div>
                 )}
+                {/* Co-closers — desktop renders these as full cards with
+                    M1/M2/M3 breakdown; mobile keeps it compact with one
+                    row per party showing the sum. Only rendered for
+                    admin/PM since scrubber zeros these amounts for reps. */}
+                {(project.additionalClosers ?? []).map((co) => {
+                  const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
+                  if (coTotal <= 0) return null;
+                  return (
+                    <div key={`cc-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                      <div>
+                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{co.userName} (co-closer · #{co.position})</p>
+                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
+                          M1 ${co.m1Amount.toLocaleString()} · M2 ${co.m2Amount.toLocaleString()}
+                          {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
+                    </div>
+                  );
+                })}
+                {(project.additionalSetters ?? []).map((co) => {
+                  const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
+                  if (coTotal <= 0) return null;
+                  return (
+                    <div key={`cs-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                      <div>
+                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{co.userName} (co-setter · #{co.position})</p>
+                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
+                          M1 ${co.m1Amount.toLocaleString()} · M2 ${co.m2Amount.toLocaleString()}
+                          {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
+                    </div>
+                  );
+                })}
+                {/* Trainer row — matches desktop's dedicated trainer card.
+                    trainerId/trainerName/trainerRate are scrubbed server-
+                    side for non-admin/PM viewers, so this block only
+                    renders for admin. */}
+                {project.trainerId && (project.trainerRate ?? 0) > 0 && (
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <div>
+                      <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.trainerName ?? 'Trainer'} (trainer)</p>
+                      <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
+                        ${project.trainerRate!.toFixed(2)}/W × {project.kWSize} kW
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      {fmt$((project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 

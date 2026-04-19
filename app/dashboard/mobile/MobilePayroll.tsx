@@ -286,7 +286,13 @@ export default function MobilePayroll() {
                       {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-lg font-bold tabular-nums text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(entry.amount)}</span>
+                      <span
+                        className="text-lg font-bold tabular-nums"
+                        style={{
+                          color: entry.amount < 0 ? 'var(--accent-red, #ef4444)' : '#fff',
+                          fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                        }}
+                      >{fmt$(entry.amount)}</span>
                       <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{entry.paymentStage}</span>
                     </div>
                   </button>

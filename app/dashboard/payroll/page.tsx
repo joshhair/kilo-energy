@@ -725,7 +725,7 @@ function PayrollPageInner() {
                         {entry.paymentStage}
                       </span>
                     </td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded`} style={
                         entry.status === 'Paid'
