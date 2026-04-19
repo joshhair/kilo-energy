@@ -1059,3 +1059,44 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .nav-more-icon { transition: none !important; }
 }
+
+/* ─── Modal entrance animations ───────────────────────────────────────────
+ *  The .animate-modal-backdrop and .animate-modal-panel utility classes
+ *  are sprinkled across ~10 modals and popups (Edit Project, ConfirmDialog,
+ *  Blitz add-participant, payroll modals, RepSelector, SetterPickerPopover,
+ *  SearchableSelect, etc.). They've been referenced for a while without
+ *  any CSS definition — silent no-ops. These keyframes give the whole app
+ *  a consistent fade-in backdrop + scale-up-and-fade panel entrance.
+ *
+ *  Durations are intentionally short (140ms / 180ms) so they feel snappy
+ *  on interaction and don't delay the user. Easing is a gentle back-out
+ *  (cubic-bezier) so the panel settles with just a touch of overshoot. */
+@keyframes modalBackdropFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modalPanelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-modal-backdrop {
+  animation: modalBackdropFade 140ms ease-out both;
+}
+.animate-modal-panel {
+  animation: modalPanelEnter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-modal-backdrop,
+  .animate-modal-panel {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

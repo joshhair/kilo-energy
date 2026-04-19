@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../../../lib/context';
@@ -711,23 +712,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return () => window.removeEventListener('keydown', handler);
   }, [showEditModal]);
 
-  // Lock body scroll while the Edit modal is open + reset window scroll
-  // to top so the fixed-inset-0 backdrop is always predictably centered
-  // in the user's viewport. Users were reporting the modal "opens
-  // somewhere random" when they clicked Edit after scrolling deep on a
-  // long project page — the modal was centered correctly, but ambient
-  // page scroll below a collapsed parent made it feel misplaced.
+  // Lock scroll on the actual scroll container while the Edit modal is
+  // open. The dashboard's scroller is <main> (see app/dashboard/layout.tsx),
+  // not <body> or window — the previous implementation scrolled window
+  // which is a no-op because window isn't the scroll context. That's
+  // what was causing the "modal pops up somewhere random, have to scroll
+  // to it" bug: the modal was correctly fixed to the viewport, but the
+  // <main> scrolled independently behind it, and nothing prevented the
+  // user from scrolling the page content away while the modal was open.
+  // Combined with createPortal (modal renders as a direct child of body,
+  // sidestepping any ancestor transform/filter issues), this pins the
+  // modal and keeps the background stable.
   useEffect(() => {
     if (!showEditModal) return;
-    const prevOverflow = document.body.style.overflow;
-    const prevScrollY = window.scrollY;
+    const mainEl = document.querySelector('main');
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevMainOverflow = mainEl instanceof HTMLElement ? mainEl.style.overflow : '';
     document.body.style.overflow = 'hidden';
-    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    if (mainEl instanceof HTMLElement) mainEl.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = prevOverflow;
-      // Restore prior scroll position on close so admin lands back where
-      // they were — avoids the jarring "lose my place" feeling.
-      window.scrollTo({ top: prevScrollY, behavior: 'instant' as ScrollBehavior });
+      document.body.style.overflow = prevBodyOverflow;
+      if (mainEl instanceof HTMLElement) mainEl.style.overflow = prevMainOverflow;
     };
   }, [showEditModal]);
 
@@ -1828,8 +1833,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Chatter */}
       <ProjectChatter projectId={id} />
 
-      {/* Edit Project Modal */}
-      {showEditModal && (
+      {/* Edit Project Modal
+          Portaled to document.body so fixed positioning is relative to the
+          actual viewport, not the <main> scroll container. Without the
+          portal, if Josh opens the modal from a deep scroll position, the
+          ancestor's scroll context can trap the modal below the fold. */}
+      {showEditModal && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) { setShowEditModal(false); setEditErrors({}); } }}>
           <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -2225,7 +2234,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Cancel Confirm Modal */}
