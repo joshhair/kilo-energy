@@ -42,3 +42,18 @@ jobs:
         # tests/api/* need a real test DB. Run locally before PRs
         # land; CI unit covers property tests on commission math +
         # field-visibility contract + form validation for ship-gate.
+
+      - name: Production build
+        # Catches Next.js build errors (missing imports, server/client
+        # boundary violations, JSX that only fails in prod mode) before
+        # Vercel's deploy tries the same build. With Vercel's "Only
+        # deploy on passing checks" setting, a failing build here blocks
+        # the deploy entirely instead of letting it 500 in prod.
+        env:
+          # Minimal env for build-time — Prisma generate + Next compile
+          # don't need real secrets, but DATABASE_URL is checked at
+          # client init. File URL satisfies the parser without a real DB.
+          DATABASE_URL: file:./ci-noop.db
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_dummy
+          CLERK_SECRET_KEY: sk_test_dummy
+        run: npm run build
