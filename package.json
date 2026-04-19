@@ -20,7 +20,13 @@
     "test:e2e:setup": "tsx scripts/seed-e2e-users.mts",
     "load:test": "tsx scripts/load-test.mts",
     "wipe:dry": "tsx scripts/wipe-dummy-data.mts",
-    "wipe:confirm": "tsx scripts/wipe-dummy-data.mts --confirm"
+    "wipe:confirm": "tsx scripts/wipe-dummy-data.mts --confirm",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,mts}": [
+      "eslint --max-warnings=9999"
+    ]
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -60,6 +66,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "fast-check": "^4.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prisma": "^7.6.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, type ReactNode } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 interface Props {
   children: ReactNode;
@@ -22,7 +23,21 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // Keep the console log for dev visibility.
     console.error('[ErrorBoundary]', error, info.componentStack);
+    // Forward to Sentry with the componentStack attached as context so
+    // the trace shows WHICH part of the tree threw, not just the raw
+    // error. PII scrubbing applies from instrumentation-client.ts.
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: info.componentStack ?? 'unavailable',
+        },
+      },
+      tags: {
+        errorBoundary: 'dashboard-root',
+      },
+    });
   }
 
   render() {

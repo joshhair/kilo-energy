@@ -1,0 +1,10 @@
+# A+ Phase 1.2: local pre-commit gate.
+#
+# Runs lint-staged so only the files you're about to commit are
+# checked (fast), rather than the full repo. Keeps commit latency
+# low while still catching local errors before they reach CI.
+#
+# Lint errors block the commit. Warnings pass through — fix them at
+# your own pace. Bypass with --no-verify ONLY in emergencies; every
+# bypass becomes tech debt.
+npx lint-staged
