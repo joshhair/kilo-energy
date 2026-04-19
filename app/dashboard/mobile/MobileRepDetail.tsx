@@ -79,6 +79,27 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const subDealer = !rep ? subDealers.find((s) => s.id === repId) : null;
   const [fetchedUser, setFetchedUser] = useState<MobileFetchedUser | null>(null);
   const [lookupFailed, setLookupFailed] = useState(false);
+  // userMeta carries Clerk + invitation + relation-count info that the
+  // rep-only API response doesn't include. Admin needs this to gate the
+  // Invite button (don't offer if account already exists), show pending
+  // invitation age, and safely delete-permanently (zero relations only).
+  const [userMeta, setUserMeta] = useState<{ hasClerkAccount: boolean; pendingInvitation: { id: string; createdAt: number } | null; relationCount: number } | null>(null);
+
+  useEffect(() => {
+    if (effectiveRole !== 'admin') return;
+    fetch(`/api/users/${repId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setUserMeta({
+            hasClerkAccount: !!data.hasClerkAccount,
+            pendingInvitation: data.pendingInvitation ?? null,
+            relationCount: data.relationCount ?? 0,
+          });
+        }
+      })
+      .catch(() => { /* silent; gate falls through to ungated state */ });
+  }, [repId, effectiveRole]);
 
   useEffect(() => {
     if (rep || subDealer) return;
@@ -490,11 +511,23 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               onTap={convertRole}
             />
 
-            <MobileBottomSheet.Item
-              label="Send invite"
-              icon={Mail}
-              onTap={sendInvite}
-            />
+            {/* Invite gating mirrors desktop users/[id] page: hide when
+                Clerk account already exists + account is active; otherwise
+                show "Resend invite" if there's a pending invitation, else
+                "Send invite" for new users. */}
+            {(() => {
+              const hasClerk = userMeta?.hasClerkAccount ?? false;
+              const hasPending = !!userMeta?.pendingInvitation;
+              const isInactive = resolvedUser.active === false;
+              if (hasClerk && !isInactive) return null;
+              return (
+                <MobileBottomSheet.Item
+                  label={hasPending ? 'Resend invite' : 'Send invite'}
+                  icon={Mail}
+                  onTap={sendInvite}
+                />
+              );
+            })()}
 
             <MobileBottomSheet.Item
               label={resolvedUser.active === false ? 'Reactivate' : 'Deactivate'}

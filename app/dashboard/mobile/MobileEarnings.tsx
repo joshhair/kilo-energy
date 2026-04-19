@@ -3,7 +3,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
+import { useToast } from '../../../lib/toast';
 import { fmt$ } from '../../../lib/utils';
+import { CheckCircle2, XCircle, Archive } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -66,12 +68,59 @@ export default function MobileEarnings() {
     effectiveRepId,
     payrollEntries,
     reimbursements,
+    setReimbursements,
   } = useApp();
   const isHydrated = useIsHydrated();
+  const { toast } = useToast();
+  const isAdmin = effectiveRole === 'admin';
 
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
 
   const [period, setPeriod] = useState<Period>('all');
+  const [adminShowArchived, setAdminShowArchived] = useState(false);
+
+  // Admin mobile reimbursement review — parity with desktop earnings tab.
+  // Previously admin on mobile couldn't approve/deny/archive/delete
+  // reimbursements. Now has the same row actions and show-archived toggle.
+  const adminReimbsForReview = useMemo(() => {
+    if (!isAdmin) return [];
+    return reimbursements
+      .filter((r) => adminShowArchived ? true : !r.archivedAt)
+      .sort((a, b) => {
+        // Pending first, then Approved, then Denied — admins pull from the top.
+        const rank = (s: string) => s === 'Pending' ? 0 : s === 'Approved' ? 1 : s === 'Denied' ? 2 : 3;
+        const d = rank(a.status) - rank(b.status);
+        if (d !== 0) return d;
+        return b.date.localeCompare(a.date);
+      });
+  }, [isAdmin, reimbursements, adminShowArchived]);
+
+  const setReimbStatus = (id: string, status: 'Approved' | 'Denied') => {
+    const prev = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
+    setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, status } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement ${status.toLowerCase()}`, 'success'); })
+      .catch(() => { setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, status: prev } : r)); toast(`Failed to ${status.toLowerCase()}`, 'error'); });
+  };
+  const archiveReimbAdmin = (id: string) => {
+    const row = reimbursements.find((r) => r.id === id);
+    if (!row) return;
+    const already = !!row.archivedAt;
+    const nowIso = new Date().toISOString();
+    setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, archivedAt: already ? undefined : nowIso } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archived: !already }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(already ? 'Reimbursement restored' : 'Reimbursement archived', 'success'); })
+      .catch(() => { setReimbursements((rs) => rs.map((r) => r.id === id ? row : r)); toast('Failed to update', 'error'); });
+  };
+  const deleteReimbAdmin = (id: string) => {
+    const row = reimbursements.find((r) => r.id === id);
+    if (!row) return;
+    if (!window.confirm(`Permanently delete this reimbursement?\n\n${row.repName} — $${row.amount.toFixed(2)} — ${row.description}\n\nAlso deletes any attached receipt. Cannot be undone.`)) return;
+    setReimbursements((rs) => rs.filter((r) => r.id !== id));
+    fetch(`/api/reimbursements/${id}`, { method: 'DELETE' })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement deleted', 'success'); })
+      .catch(() => { setReimbursements((rs) => [...rs, row]); toast('Failed to delete — rolled back', 'error'); });
+  };
 
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
@@ -121,6 +170,106 @@ export default function MobileEarnings() {
           {fmt$(totalEarned)}
         </p>
       </MobileCard>
+
+      {/* ── Admin reimbursement review (mobile parity with desktop) ─────── */}
+      {isAdmin && (
+        <MobileSection
+          title="Reimbursement Review"
+          count={adminReimbsForReview.filter((r) => r.status === 'Pending').length}
+          collapsible
+          defaultOpen
+        >
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+              {adminReimbsForReview.filter((r) => r.status === 'Pending').length} pending · {adminReimbsForReview.length} total
+            </span>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+              <input
+                type="checkbox"
+                checked={adminShowArchived}
+                onChange={(e) => setAdminShowArchived(e.target.checked)}
+                className="accent-[var(--accent-green)]"
+              />
+              Show archived
+            </label>
+          </div>
+          {adminReimbsForReview.length === 0 ? (
+            <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              {adminShowArchived ? 'No reimbursements' : 'All caught up — no pending reimbursements'}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {adminReimbsForReview.map((r) => (
+                <div
+                  key={r.id}
+                  className="rounded-2xl p-3"
+                  style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: r.archivedAt ? 0.55 : 1 }}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{r.description}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <StatusDot status={r.status} />
+                        <span className="text-xs" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>{r.date}</span>
+                        {r.receiptName && <span className="text-xs" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>· 📎 receipt</span>}
+                      </div>
+                    </div>
+                    <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      {fmt$(r.amount)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {r.status === 'Pending' && (
+                      <>
+                        <button
+                          onClick={() => setReimbStatus(r.id, 'Approved')}
+                          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                          style={{ background: 'rgba(0,229,160,0.15)', color: 'var(--accent-emerald)' }}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button
+                          onClick={() => setReimbStatus(r.id, 'Denied')}
+                          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                          style={{ background: 'rgba(239,68,68,0.15)', color: 'rgb(248,113,113)' }}
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Deny
+                        </button>
+                      </>
+                    )}
+                    {r.receiptUrl && (
+                      <a
+                        href={r.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        style={{ background: 'rgba(0,180,216,0.15)', color: 'var(--accent-cyan)' }}
+                      >
+                        View receipt
+                      </a>
+                    )}
+                    <button
+                      onClick={() => archiveReimbAdmin(r.id)}
+                      className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: 'var(--m-border, var(--border-mobile))', color: 'var(--m-text-secondary, var(--text-mobile-secondary))' }}
+                    >
+                      <Archive className="w-3.5 h-3.5" /> {r.archivedAt ? 'Restore' : 'Archive'}
+                    </button>
+                    <button
+                      onClick={() => deleteReimbAdmin(r.id)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: 'rgba(239,68,68,0.08)', color: 'rgb(248,113,113)', border: '1px solid rgba(239,68,68,0.2)' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </MobileSection>
+      )}
 
       {/* ── Period tabs ─────────────────────────────────────────────────── */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
