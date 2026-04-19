@@ -8,6 +8,7 @@ import { enforceRateLimit } from '../../../lib/rate-limit';
 import { REP_PUBLIC_SELECT } from '../../../lib/redact';
 import { serializePayrollEntry, dollarsToCents } from '../../../lib/serialize';
 import { fromDollars } from '../../../lib/money';
+import { logger } from '../../../lib/logger';
 
 // POST /api/payroll — Create a payroll entry (admin or project manager).
 //
@@ -88,6 +89,16 @@ export async function POST(req: NextRequest) {
       status: entry.status,
     },
   });
+  logger.info('payroll_created', {
+    entryId: entry.id,
+    actorId: actor.id,
+    repId: entry.repId,
+    projectId: entry.projectId,
+    amountCents: entry.amountCents,
+    paymentStage: entry.paymentStage,
+    status: entry.status,
+    type: entry.type,
+  });
 
   return NextResponse.json(serializePayrollEntry(entry), { status: 201 });
 }
@@ -123,6 +134,13 @@ export async function PATCH(req: NextRequest) {
   const result = await prisma.payrollEntry.updateMany({
     where: { id: { in: ids }, status: sourceStatus },
     data: updateData,
+  });
+  logger.info('payroll_bulk_transition', {
+    actorId: actor.id,
+    fromStatus: sourceStatus,
+    toStatus: status,
+    requestedIds: ids.length,
+    updated: result.count,
   });
   return NextResponse.json({ success: true, updated: result.count });
 }

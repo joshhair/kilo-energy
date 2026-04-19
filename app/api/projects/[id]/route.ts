@@ -9,6 +9,7 @@ import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNulla
 import { computeProjectCommission, COMMISSION_INPUT_KEYS } from '../../../../lib/commission-server';
 import { fromDollars } from '../../../../lib/money';
 import type { InstallerBaseline } from '../../../../lib/data';
+import { logger } from '../../../../lib/logger';
 
 // Financial fields project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
@@ -380,6 +381,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     after: project as unknown as Record<string, unknown>,
     fields: AUDITED_FIELDS.Project,
   });
+  logger.info('project_updated', {
+    projectId: id,
+    actorId: user.id,
+    actorRole: user.role,
+    phaseChanged: !!phaseChanged,
+    phase: project.phase,
+    fieldsChanged: Object.keys(data).length,
+  });
 
   const dto = {
     ...serializeProject(project),
@@ -399,7 +408,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 // DELETE /api/projects/[id] — Admin only
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let viewer;
+  try { viewer = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   // Delete related records first (activity, messages, payroll entries)
   await prisma.projectActivity.deleteMany({ where: { projectId: id } });
@@ -408,5 +418,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   await prisma.projectMessage.deleteMany({ where: { projectId: id } });
   await prisma.payrollEntry.deleteMany({ where: { projectId: id } });
   await prisma.project.delete({ where: { id } });
+  logger.info('project_deleted', { projectId: id, actorId: viewer.id });
   return NextResponse.json({ success: true });
 }

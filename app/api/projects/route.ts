@@ -5,6 +5,7 @@ import { parseJsonBody } from '../../../lib/api-validation';
 import { createProjectSchema } from '../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../lib/serialize';
+import { logger } from '../../../lib/logger';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -223,6 +224,18 @@ export async function POST(req: NextRequest) {
     trainerId: project.trainerId,
     additionalClosers: dto.additionalClosers.map((c) => ({ userId: c.userId })),
     additionalSetters: dto.additionalSetters.map((s) => ({ userId: s.userId })),
+  });
+  logger.info('project_created', {
+    projectId: project.id,
+    actorId: user.id,
+    actorRole: user.role,
+    closerId: project.closerId,
+    setterId: project.setterId,
+    kWSize: project.kWSize,
+    netPPW: project.netPPW,
+    m1Cents: project.m1AmountCents,
+    m2Cents: project.m2AmountCents,
+    m3Cents: project.m3AmountCents,
   });
   return NextResponse.json(scrubProjectForViewer(dto, rel), { status: 201 });
 }

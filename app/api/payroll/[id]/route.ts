@@ -5,10 +5,12 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchPayrollEntrySchema } from '../../../../lib/schemas/pricing';
 import { REP_PUBLIC_SELECT } from '../../../../lib/redact';
 import { serializePayrollEntry, dollarsToCents } from '../../../../lib/serialize';
+import { logger } from '../../../../lib/logger';
 
 // PATCH /api/payroll/[id] — Update a single payroll entry (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   const parsed = await parseJsonBody(req, patchPayrollEntrySchema);
@@ -78,6 +80,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data,
     include: { rep: { select: REP_PUBLIC_SELECT }, project: true },
   });
+  logger.info('payroll_updated', {
+    entryId: id,
+    actorId: actor.id,
+    fieldsChanged: Object.keys(data),
+    newStatus: entry.status,
+  });
   return NextResponse.json(serializePayrollEntry(entry));
 }
 
@@ -100,5 +108,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   await prisma.payrollEntry.delete({ where: { id } });
+  logger.info('payroll_deleted', { entryId: id, actorId: actor.id, actorRole: actor.role });
   return NextResponse.json({ success: true });
 }
