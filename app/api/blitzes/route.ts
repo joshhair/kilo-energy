@@ -4,6 +4,7 @@ import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzSchema } from '../../../lib/schemas/business';
 import { serializeProject, serializeBlitzCost } from '../../../lib/serialize';
+import { logger } from '../../../lib/logger';
 
 // GET /api/blitzes — List blitzes scoped to the current user's role.
 // Admin: all blitzes. PM: all blitzes if canAccessBlitz is true. Others:
@@ -129,5 +130,12 @@ export async function POST(req: NextRequest) {
     projects: blitz.projects.map(serializeProject),
     costs: blitz.costs.map(serializeBlitzCost),
   };
+  logger.info('blitz_created', {
+    blitzId: blitz.id,
+    actorId: user.id,
+    ownerId,
+    startDate: blitz.startDate,
+    endDate: blitz.endDate,
+  });
   return NextResponse.json(serialized, { status: 201 });
 }

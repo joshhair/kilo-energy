@@ -4,6 +4,7 @@ import { requireAdmin, requireInternalUser, relationshipToProject } from '../../
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchBlitzSchema } from '../../../../lib/schemas/business';
 import { serializeProject, serializeProjectParty, serializeBlitzCost, scrubProjectForViewer } from '../../../../lib/serialize';
+import { logger } from '../../../../lib/logger';
 
 // GET /api/blitzes/[id] — Get a single blitz. Access:
 // - admin, project_manager: yes
@@ -178,6 +179,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  logger.info('blitz_updated', {
+    blitzId: id,
+    actorId: user.id,
+    fieldsChanged: Object.keys(data),
+  });
   return NextResponse.json({
     ...blitz,
     costs: blitz.costs.map(serializeBlitzCost),
@@ -194,9 +200,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 // DELETE /api/blitzes/[id] — Admin only
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
   await prisma.project.updateMany({ where: { blitzId: id }, data: { blitzId: null } });
   await prisma.blitz.delete({ where: { id } });
+  logger.info('blitz_deleted', { blitzId: id, actorId: actor.id });
   return NextResponse.json({ success: true });
 }
