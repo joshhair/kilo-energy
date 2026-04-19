@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
+import { useToast } from '../../../lib/toast';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCompactKW } from '../../../lib/utils';
-import { ArrowLeft, FolderKanban, DollarSign } from 'lucide-react';
+import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, RefreshCw } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
 import MobileEmptyState from './shared/MobileEmptyState';
+import MobileBottomSheet from './shared/MobileBottomSheet';
 
 const STATUS_AMOUNT_COLORS: Record<string, string> = {
   Paid: 'var(--accent-emerald)',
@@ -40,9 +42,38 @@ type MobileFetchedUser = {
 
 export default function MobileRepDetail({ repId }: { repId: string }) {
   const router = useRouter();
-  const { projects, payrollEntries, effectiveRole, reps, subDealers } = useApp();
+  const {
+    projects,
+    payrollEntries,
+    effectiveRole,
+    reps,
+    subDealers,
+    updateRepContact,
+    updateSubDealerContact,
+    updateRepType,
+    deactivateRep,
+    reactivateRep,
+    deactivateSubDealer,
+    reactivateSubDealer,
+    convertUserRole,
+  } = useApp();
   const hydrated = useIsHydrated();
+  const { toast } = useToast();
   const isPM = effectiveRole === 'project_manager';
+  const isAdmin = effectiveRole === 'admin';
+
+  // Admin action sheet state + local edit buffers. Editing name/email/
+  // phone inline keeps the UI simple; rep-type / activate / convert
+  // are single-tap actions wired to the same helpers the desktop page
+  // uses, so behavior stays consistent across devices.
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editFirst, setEditFirst] = useState('');
+  const [editLast, setEditLast] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   let rep = reps.find((r) => r.id === repId);
   const subDealer = !rep ? subDealers.find((s) => s.id === repId) : null;
@@ -188,6 +219,113 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
   const repType = REP_TYPE_LABELS[rep.repType ?? ''] ?? rep.repType ?? 'Rep';
+  const isSubDealer = resolvedUser.role === 'sub-dealer';
+
+  // Open the edit sheet pre-populated with the current rep's values.
+  const openEdit = () => {
+    setEditFirst(resolvedUser.firstName ?? '');
+    setEditLast(resolvedUser.lastName ?? '');
+    setEditEmail(resolvedUser.email ?? '');
+    setEditPhone(resolvedUser.phone ?? '');
+    setEditMode(true);
+    setActionSheetOpen(false);
+  };
+
+  const saveContact = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const updates = {
+        firstName: editFirst.trim(),
+        lastName: editLast.trim(),
+        email: editEmail.trim(),
+        phone: editPhone.trim(),
+      };
+      if (isSubDealer) {
+        updateSubDealerContact(repId, updates);
+      } else {
+        updateRepContact(repId, updates);
+      }
+      toast('Contact info updated', 'success');
+      setEditMode(false);
+    } catch {
+      toast('Failed to update contact info', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setRepTypeValue = (v: 'closer' | 'setter' | 'both') => {
+    if (isSubDealer) return; // repType is fixed to 'both' for sub-dealers
+    updateRepType(repId, v);
+    toast(`Rep type set to ${REP_TYPE_LABELS[v] ?? v}`, 'success');
+  };
+
+  // Activate / deactivate goes through context helpers which manage
+  // optimistic UI + Clerk sync + cascade cleanup. Same as desktop.
+  const toggleActive = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const wasActive = resolvedUser.active !== false;
+      if (isSubDealer) {
+        if (wasActive) await deactivateSubDealer(repId);
+        else await reactivateSubDealer(repId);
+      } else {
+        if (wasActive) await deactivateRep(repId);
+        else await reactivateRep(repId);
+      }
+      toast(wasActive ? `${resolvedUser.firstName} deactivated` : `${resolvedUser.firstName} reactivated`, 'success');
+      setActionSheetOpen(false);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to update status', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const convertRole = useCallback(async () => {
+    if (busy) return;
+    const targetRole: 'rep' | 'sub-dealer' = isSubDealer ? 'rep' : 'sub-dealer';
+    const targetLabel = targetRole === 'sub-dealer' ? 'Sub-Dealer' : 'Rep';
+    const msg = `Convert ${resolvedUser.firstName} ${resolvedUser.lastName} to ${targetLabel}?\n\nDeals, payroll history, commission records, and their Clerk login remain unchanged. The user moves to the ${targetLabel}s list with that role's login + permission defaults.`;
+    if (!window.confirm(msg)) return;
+
+    setBusy(true);
+    try {
+      await convertUserRole(repId, targetRole);
+      toast(`Converted to ${targetLabel}`, 'success');
+      setActionSheetOpen(false);
+      // User moved to a different roster; navigate back to list.
+      router.push('/dashboard/users');
+    } catch {
+      // Error toast surfaced by persistFetch inside the helper.
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, isSubDealer, resolvedUser.firstName, resolvedUser.lastName, convertUserRole, repId, toast, router]);
+
+  const sendInvite = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/users/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: repId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Invite failed');
+      }
+      toast('Invite sent', 'success');
+      setActionSheetOpen(false);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to send invite', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
@@ -201,12 +339,39 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       </button>
 
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{rep.name}</h1>
-        <div className="mt-1.5">
-          <MobileBadge value={repType} variant="status" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{rep.name}</h1>
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+            <MobileBadge value={repType} variant="status" />
+            {isSubDealer && <MobileBadge value="Sub-Dealer" variant="status" />}
+            {resolvedUser.active === false && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(136,153,170,0.15)', color: 'var(--text-mobile-muted)' }}>
+                Inactive
+              </span>
+            )}
+          </div>
+          <p className="text-base mt-1 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
+          {resolvedUser.phone && (
+            <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{resolvedUser.phone}</p>
+          )}
         </div>
-        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
+        {isAdmin && (
+          <button
+            onClick={() => setActionSheetOpen(true)}
+            className="shrink-0 min-h-[44px] px-3 rounded-xl flex items-center gap-1.5 text-sm font-semibold"
+            style={{
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
+              color: 'var(--accent-emerald)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+            aria-label="Manage user"
+          >
+            <Settings className="w-4 h-4" />
+            Manage
+          </button>
+        )}
       </div>
 
       {/* Inline stats */}
@@ -275,6 +440,157 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
             </div>
           )}
         </MobileSection>
+      )}
+
+      {/* ── Admin action sheet ───────────────────────────────────────── */}
+      {isAdmin && (
+        <MobileBottomSheet
+          open={actionSheetOpen}
+          onClose={() => setActionSheetOpen(false)}
+          title="Manage user"
+        >
+          <div className="px-5 space-y-1 pb-2">
+            <MobileBottomSheet.Item
+              label="Edit contact info"
+              icon={Pencil}
+              onTap={openEdit}
+            />
+
+            {/* Rep type — only for reps (sub-dealer repType is fixed) */}
+            {!isSubDealer && (
+              <div className="py-2">
+                <p className="text-xs uppercase tracking-widest mb-2 px-1" style={{ color: 'var(--m-text-dim, #445577)' }}>Rep Type</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['closer', 'setter', 'both'] as const).map((v) => {
+                    const active = rep?.repType === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setRepTypeValue(v)}
+                        className="min-h-[44px] rounded-xl text-sm font-semibold"
+                        style={{
+                          background: active ? 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))' : 'var(--m-card, var(--surface-mobile-card))',
+                          color: active ? '#050d18' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                          border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                        }}
+                      >
+                        {REP_TYPE_LABELS[v]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <MobileBottomSheet.Item
+              label={isSubDealer ? 'Convert to Rep' : 'Convert to Sub-Dealer'}
+              icon={UserCog}
+              onTap={convertRole}
+            />
+
+            <MobileBottomSheet.Item
+              label="Send invite"
+              icon={Mail}
+              onTap={sendInvite}
+            />
+
+            <MobileBottomSheet.Item
+              label={resolvedUser.active === false ? 'Reactivate' : 'Deactivate'}
+              icon={resolvedUser.active === false ? UserCheck : UserX}
+              onTap={toggleActive}
+              danger={resolvedUser.active !== false}
+            />
+          </div>
+        </MobileBottomSheet>
+      )}
+
+      {/* ── Edit contact modal ───────────────────────────────────────── */}
+      {editMode && (
+        <MobileBottomSheet
+          open={editMode}
+          onClose={() => setEditMode(false)}
+          title="Edit contact"
+        >
+          <div className="px-5 pb-5 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>First name</label>
+                <input
+                  type="text"
+                  value={editFirst}
+                  onChange={(e) => setEditFirst(e.target.value)}
+                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                  style={{
+                    background: 'var(--m-card, var(--surface-mobile-card))',
+                    border: '1px solid var(--m-border, var(--border-mobile))',
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>Last name</label>
+                <input
+                  type="text"
+                  value={editLast}
+                  onChange={(e) => setEditLast(e.target.value)}
+                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                  style={{
+                    background: 'var(--m-card, var(--surface-mobile-card))',
+                    border: '1px solid var(--m-border, var(--border-mobile))',
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>Email</label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                style={{
+                  background: 'var(--m-card, var(--surface-mobile-card))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>Phone</label>
+              <input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                style={{
+                  background: 'var(--m-card, var(--surface-mobile-card))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                }}
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={saveContact}
+                disabled={saving}
+                className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold"
+                style={{
+                  background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))',
+                  color: '#050d18',
+                  opacity: saving ? 0.6 : 1,
+                }}
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                onClick={() => setEditMode(false)}
+                className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'var(--m-border, var(--border-mobile))' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </MobileBottomSheet>
       )}
     </div>
   );
