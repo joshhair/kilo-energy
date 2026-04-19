@@ -31,5 +31,11 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "prisma/seed.mts"]
+  "exclude": [
+    "node_modules",
+    "prisma/seed.mts",
+    "scripts/find-timothy.mts",
+    "scripts/.local/**",
+    "scripts/*.mts.bak"
+  ]
 }

@@ -73,3 +73,17 @@ state/backups/*.json
 # them into git is a credential leak. Regenerate via `npm run test:e2e`
 # (the setup project runs the sign-in flow and writes these files).
 tests/e2e/.auth/
+
+# Local ad-hoc debug scripts — keep the content but don't let them
+# break typecheck / lint / CI. If a script is worth keeping long-
+# term, move it out of .local/ and rename to something descriptive.
+scripts/.local/
+scripts/*.mts.bak
+scripts/*.mts.local
+
+# scripts/find-timothy.mts — orphan from an early debugging session,
+# references sqlite3/sqlite modules that aren't in package.json.
+# Breaks typecheck every time it's present. Content is preserved
+# as a .bak when any ci-sensitive script runs. Not worth keeping
+# in the tree under its real name.
+scripts/find-timothy.mts

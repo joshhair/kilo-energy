@@ -81,7 +81,31 @@ export default function MobileIncentives() {
   const isAdmin = currentRole === 'admin';
   const [showCreate, setShowCreate] = useState(false);
 
-  // PM guard
+  // Pending Rewards — admin-only. Milestones where progress crossed the
+  // threshold but admin hasn't yet flipped achieved=true. Parity with
+  // the desktop incentives page.
+  //
+  // Hook order rule: this useMemo must run on EVERY render, including
+  // when the PM guard below returns early. Placing it above the early
+  // return keeps the hook ordering stable — React counts hook calls by
+  // position, and a conditional hook triggers "called conditionally"
+  // rules-of-hooks violations.
+  const pendingRewards = useMemo(() => {
+    if (!isAdmin) return [] as { incentive: Incentive; milestone: Incentive['milestones'][number]; progress: number }[];
+    const items: { incentive: Incentive; milestone: Incentive['milestones'][number]; progress: number }[] = [];
+    for (const inc of incentives) {
+      if (!inc.active || isExpired(inc.endDate)) continue;
+      const progress = computeIncentiveProgress(inc, projects, payrollEntries);
+      for (const ms of inc.milestones) {
+        if (progress >= ms.threshold && !ms.achieved) {
+          items.push({ incentive: inc, milestone: ms, progress });
+        }
+      }
+    }
+    return items;
+  }, [isAdmin, incentives, projects, payrollEntries]);
+
+  // PM guard — rendered AFTER hooks so hook ordering stays stable.
   if (effectiveRole === 'project_manager') {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4">
@@ -104,26 +128,6 @@ export default function MobileIncentives() {
 
   const activeIncentives = visible.filter((i) => !isExpired(i.endDate) && i.active);
   const expiredIncentives = visible.filter((i) => isExpired(i.endDate));
-
-  // Pending Rewards — admin-only. Milestones where progress crossed the
-  // threshold but admin hasn't yet flipped achieved=true. Parity with
-  // the desktop incentives page. Shows trigger-ready bonuses so admin
-  // can mark them fulfilled (and in a future iteration, auto-generate
-  // the payroll entry).
-  const pendingRewards = useMemo(() => {
-    if (!isAdmin) return [] as { incentive: Incentive; milestone: Incentive['milestones'][number]; progress: number }[];
-    const items: { incentive: Incentive; milestone: Incentive['milestones'][number]; progress: number }[] = [];
-    for (const inc of incentives) {
-      if (!inc.active || isExpired(inc.endDate)) continue;
-      const progress = computeIncentiveProgress(inc, projects, payrollEntries);
-      for (const ms of inc.milestones) {
-        if (progress >= ms.threshold && !ms.achieved) {
-          items.push({ incentive: inc, milestone: ms, progress });
-        }
-      }
-    }
-    return items;
-  }, [isAdmin, incentives, projects, payrollEntries]);
 
   const markMilestoneFulfilled = (incId: string, milestoneId: string) => {
     // Optimistic — matches the desktop page handler pattern. Sets achieved

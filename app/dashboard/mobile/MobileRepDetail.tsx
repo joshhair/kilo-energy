@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
@@ -305,7 +305,12 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     }
   };
 
-  const convertRole = useCallback(async () => {
+  // Note: defined as a regular async function (not useCallback) because
+  // it's called after multiple early returns above, which would make
+  // useCallback a conditional hook and break rules-of-hooks. Identity
+  // stability isn't needed here — the only callsite is an onTap prop
+  // deep in the admin sheet, not a React.memo boundary.
+  const convertRole = async () => {
     if (busy) return;
     const targetRole: 'rep' | 'sub-dealer' = isSubDealer ? 'rep' : 'sub-dealer';
     const targetLabel = targetRole === 'sub-dealer' ? 'Sub-Dealer' : 'Rep';
@@ -324,7 +329,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     } finally {
       setBusy(false);
     }
-  }, [busy, isSubDealer, resolvedUser.firstName, resolvedUser.lastName, convertUserRole, repId, toast, router]);
+  };
 
   const sendInvite = async () => {
     if (busy) return;
