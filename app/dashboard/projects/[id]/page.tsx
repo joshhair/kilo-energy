@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { use, useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -12,10 +12,10 @@ import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   calculateCommission,
-  INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
+  DEFAULT_INSTALL_PAY_PCT,
 } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
-import { Flag, FlagOff, AlertTriangle, X, Clock, Pencil, ChevronLeft, ChevronRight, Copy, Plus, Trash2 } from 'lucide-react';
+import { Flag, FlagOff, AlertTriangle, X, Pencil, ChevronLeft, ChevronRight, Copy, Trash2 } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ProjectChatter from '../../components/ProjectChatter';
@@ -29,7 +29,7 @@ import { ActivityTimeline } from '../components/detail/ActivityTimeline';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { currentRole, effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
@@ -566,7 +566,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const setterPerW = 'setterPerW' in projectBaselines && projectBaselines.setterPerW != null
     ? projectBaselines.setterPerW
     : Math.round((projectBaselines.closerPerW + 0.10) * 100) / 100;
-  const m1Flat = project.kWSize >= 5 ? 1000 : 500;
+  const _m1Flat = project.kWSize >= 5 ? 1000 : 500;
 
   // Per-person total expected commission (sum of all milestones). Displayed
   // under each rep's name on the admin commission breakdown so admin can

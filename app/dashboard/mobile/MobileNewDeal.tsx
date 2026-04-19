@@ -11,7 +11,7 @@ import {
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
-import { Check, Loader2, ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, RotateCcw, Pencil } from 'lucide-react';
+import { Check, Loader2, ChevronLeft, CheckCircle2, ArrowRight, RotateCcw, Pencil } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import { evenSplit } from '../../../lib/commission-split';
@@ -200,7 +200,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
 
 export default function MobileNewDeal() {
   const {
-    dbReady, currentRole, effectiveRole, currentRepId, effectiveRepId, currentRepName, effectiveRepName,
+    dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName,
     addDeal, projects, trainerAssignments,
     activeInstallers, activeFinancers, reps,
     installerPricingVersions, productCatalogInstallerConfigs,
@@ -209,7 +209,6 @@ export default function MobileNewDeal() {
     installerPayConfigs, solarTechProducts,
   } = useApp();
   const { toast } = useToast();
-  const router = useRouter();
   const isSubDealer = effectiveRole === 'sub-dealer';
 
   // ── Form state ──────────────────────────────────────────────────────────────
@@ -241,9 +240,9 @@ export default function MobileNewDeal() {
 
   const [form, setForm] = useState(blankForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [_touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
-  const [stepping, setStepping] = useState(false);
+  const [_stepping, setStepping] = useState(false);
   const [exitAnimClass, setExitAnimClass] = useState('');
   // Synchronous lock — React batches state updates inside the same event
   // tick, so `submitting` (state) still reads false on a rapid double-tap.
@@ -278,7 +277,7 @@ export default function MobileNewDeal() {
   }, [currentStep]);
 
   // Blitz list
-  const [rawBlitzes, setRawBlitzes] = useState<any[]>([]);
+  const [_rawBlitzes, setRawBlitzes] = useState<any[]>([]);
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.json()).then((data) => {

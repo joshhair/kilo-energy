@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, Suspense, type CSSProperties } from 'react';
+import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
@@ -22,15 +22,8 @@ type StatusTab = 'Draft' | 'Pending' | 'Paid';
 type TypeTab = 'Deal' | 'Bonus';
 type PageView = 'payroll' | 'reimbursements';
 
-/** Maps accent-gradient strings to an RGBA radial glow colour for --card-accent */
-const ACCENT_COLOR_MAP: Record<string, string> = {
-  'from-blue-500 to-blue-400':       'rgba(59,130,246,0.08)',
-  'from-emerald-500 to-emerald-400': 'rgba(16,185,129,0.08)',
-  'from-yellow-500 to-yellow-400':   'rgba(234,179,8,0.08)',
-};
-
 /** Returns the Tailwind gradient string that matches the active status tab */
-const STATUS_ACCENT: Record<StatusTab, string> = {
+const _STATUS_ACCENT: Record<StatusTab, string> = {
   Draft:   'from-blue-500 to-blue-400',
   Pending: 'from-yellow-500 to-yellow-400',
   Paid:    'from-emerald-500 to-emerald-400',
@@ -65,7 +58,7 @@ export default function PayrollPage() {
 function PayrollPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, effectiveRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements, installerPayConfigs, dbReady } = useApp();
+  const { effectiveRole, effectiveRepId, payrollEntries, setPayrollEntries, markForPayroll, persistPayrollEntry, reps, projects, reimbursements, setReimbursements, installerPayConfigs, dbReady } = useApp();
   const { toast } = useToast();
   const isHydrated = useIsHydrated();
   useEffect(() => { document.title = 'Payroll | Kilo Energy'; }, []);
