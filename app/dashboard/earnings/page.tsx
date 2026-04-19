@@ -8,6 +8,7 @@ import { useIsHydrated, useMediaQuery, useSearchParamTab } from '../../../lib/ho
 import MobileEarnings from '../mobile/MobileEarnings';
 import { useToast } from '../../../lib/toast';
 import { Reimbursement } from '../../../lib/data';
+import { type Period, PERIODS, isInPeriod } from '../components/dashboard-utils';
 import { formatDate, downloadCSV, fmt$, todayLocalDateStr, localDateString } from '../../../lib/utils';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import { RelativeDate } from '../components/RelativeDate';
@@ -1358,18 +1359,22 @@ function AdminFinancialsView() {
       .catch((err) => { console.error(err); setReimbursements((prev) => [...prev, row]); toast('Failed to delete — rolled back', 'error'); });
   };
 
-  // By Rep summary
+  // By Rep summary — period filter scopes paid/pending/draft to entries
+  // whose `date` falls in the selected window. Reimbursements use their
+  // own `date` field; "All time" shows everything (default). Mobile
+  // already exposes this same filter on MobileEarnings.
+  const [byRepPeriod, setByRepPeriod] = useState<Period>('all');
   const repSummary = useMemo(() => {
     return reps.map((rep) => {
-      const entries = payrollEntries.filter((e) => e.repId === rep.id);
+      const entries = payrollEntries.filter((e) => e.repId === rep.id && isInPeriod(e.date, byRepPeriod));
       const paid    = entries.filter((e) => e.status === 'Paid' && e.date <= todayStr).reduce((s, e) => s + e.amount, 0);
       const pending = entries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0);
       const draft   = entries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0);
-      const reimbs  = reimbursements.filter((r) => r.repId === rep.id);
+      const reimbs  = reimbursements.filter((r) => r.repId === rep.id && isInPeriod(r.date, byRepPeriod));
       const reimbPending = reimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
       return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft };
     }).sort((a, b) => b.total - a.total);
-  }, [reps, payrollEntries, reimbursements, todayStr]);
+  }, [reps, payrollEntries, reimbursements, todayStr, byRepPeriod]);
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
@@ -1678,7 +1683,23 @@ function AdminFinancialsView() {
 
         {/* By Rep tab */}
         {tab === 'by-rep' && (
-          <div key="by-rep" className="animate-tab-enter card-surface rounded-2xl overflow-hidden">
+          <div key="by-rep" className="animate-tab-enter space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={byRepPeriod}
+                onChange={(e) => setByRepPeriod(e.target.value as Period)}
+                className={selectCls}
+                aria-label="Period"
+              >
+                {PERIODS.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+              <span className="text-xs text-[var(--text-muted)]">
+                Paid/Pending/Draft scoped to this period · {repSummary.filter((s) => s.total > 0).length} active rep{repSummary.filter((s) => s.total > 0).length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <div className="card-surface rounded-2xl overflow-hidden">
             <div className="overflow-x-auto scroll-smooth">
               <table className="w-full text-sm">
                 <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
@@ -1718,6 +1739,7 @@ function AdminFinancialsView() {
                   )}
                 </tbody>
               </table>
+            </div>
             </div>
           </div>
         )}
