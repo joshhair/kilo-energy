@@ -8,11 +8,11 @@ import {
   calculateCommission,
   getInstallerRatesForDeal,
   getProductCatalogBaseline,
-  getTrainerOverrideRate,
   SOLARTECH_FAMILIES,
   SOLARTECH_FAMILY_FINANCER,
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
+import { splitCloserSetterPay } from '../../../lib/commission';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 
@@ -28,13 +28,8 @@ function fmt$(n: number | null | undefined): string {
 
 export default function MobileCalculator() {
   const {
-    currentRepId,
-    currentRole,
     effectiveRole,
-    trainerAssignments,
-    projects,
     activeInstallers,
-    reps,
     installerPricingVersions,
     productCatalogInstallerConfigs,
     productCatalogProducts,
@@ -53,6 +48,13 @@ export default function MobileCalculator() {
   const [pcSelectedFamily, setPcSelectedFamily] = useState('');
   const [kWSize, setKWSize] = useState('');
   const [netPPW, setNetPPW] = useState('');
+  // Paired deal = closer + setter. Off = self-gen (all commission routes
+  // to the closer side). Matches desktop calculator's role toggle.
+  const [isPaired, setIsPaired] = useState(true);
+  // Optional trainer override ($/W). Desktop supports this too — shifts
+  // the 50/50 split point up, reducing closer and setter halves equally
+  // while the trainer gets trainerRate × kW × 1000 on top.
+  const [trainerRateStr, setTrainerRateStr] = useState('');
 
   // ── Derived installer flags ──────────────────────────────────────────────
   const isSolarTech = installer === 'SolarTech';
@@ -97,11 +99,33 @@ export default function MobileCalculator() {
 
   const kiloTotal = soldPPW > 0 ? calculateCommission(closerPerW, kiloPerW, kW) : 0;
 
-  // No setter toggle on mobile — simplified: closer-only calc
-  const closerTotal = soldPPW > 0 && hasInput ? calculateCommission(soldPPW, closerPerW, kW) : 0;
-  const setterTotal = 0;
+  // Trainer override rate (only meaningful on paired deals — self-gen
+  // has no split point for a trainer to sit above). Falls back to 0 if
+  // user typed garbage.
+  const trainerRateNum = parseFloat(trainerRateStr);
+  const trainerRate = isPaired && Number.isFinite(trainerRateNum) && trainerRateNum > 0 ? trainerRateNum : 0;
 
-  const grandTotal = closerTotal + setterTotal;
+  // Commission split via the same resolver the server uses on POST +
+  // PATCH (Batch 2b.4), so the mobile preview matches what a deal in
+  // these exact conditions would actually pay. Self-gen = paired=false,
+  // which routes setterBaselinePerW=0 and sends all commission to the
+  // closer side with M1 flat $1000 (if kW ≥ 5) or $500.
+  const installPayPct = (installerPayConfigs[installer]?.installPayPct) ?? DEFAULT_INSTALL_PAY_PCT;
+  const split = hasInput && soldPPW > 0
+    ? splitCloserSetterPay(
+        soldPPW,
+        closerPerW,
+        isPaired ? setterBaselinePerW : 0,
+        trainerRate,
+        kW,
+        installPayPct,
+      )
+    : { closerTotal: 0, setterTotal: 0, closerM1: 0, closerM2: 0, closerM3: 0, setterM1: 0, setterM2: 0, setterM3: 0 };
+  const closerTotal = split.closerTotal;
+  const setterTotal = split.setterTotal;
+  const trainerTotal = hasInput && soldPPW > 0 && trainerRate > 0 ? trainerRate * kW * 1000 : 0;
+
+  const grandTotal = closerTotal + setterTotal + trainerTotal;
 
   // ── Animated commission counter ──────────────────────────────────────────
   const prevTotalRef = useRef(0);
@@ -281,6 +305,56 @@ export default function MobileCalculator() {
           </>
         )}
 
+        {/* Deal type toggle: Paired (closer + setter) vs Self-gen. Self-gen
+            routes the full commission to the closer with M1 flat. */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Deal Type</label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: true,  label: 'Paired' },
+              { value: false, label: 'Self-gen' },
+            ].map((opt) => {
+              const active = isPaired === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setIsPaired(opt.value)}
+                  className="min-h-[44px] rounded-xl text-sm font-semibold transition-colors active:scale-[0.97]"
+                  style={{
+                    background: active ? 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))' : 'var(--m-card, var(--surface-mobile-card))',
+                    color: active ? '#050d18' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                    border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Optional trainer override — only meaningful on paired deals. */}
+        {isPaired && (
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Trainer Override ($/W)</label>
+            <input
+              type="number"
+              inputMode="decimal"
+              pattern="[0-9]*\.?[0-9]*"
+              autoComplete="off"
+              step="0.01"
+              min="0"
+              placeholder="e.g. 0.10 (leave blank for none)"
+              value={trainerRateStr}
+              onChange={(e) => setTrainerRateStr(e.target.value)}
+              className={inputCls}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+            />
+          </div>
+        )}
+
         {/* kW + PPW */}
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -337,6 +411,12 @@ export default function MobileCalculator() {
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
               </div>
             )}
+            {trainerTotal > 0 && (
+              <div className="calc-row-2 flex items-center justify-between">
+                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(trainerTotal)}</span>
+              </div>
+            )}
             {effectiveRole === 'admin' && (
               <div className="calc-row-2 flex items-center justify-between">
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
@@ -348,7 +428,12 @@ export default function MobileCalculator() {
           {/* Baseline info */}
           <div className="calc-row-3 mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
             <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              Baseline: ${closerPerW.toFixed(2)}/W &middot; Sold: ${soldPPW.toFixed(2)}/W &middot; {kW.toFixed(1)} kW
+              Closer baseline: ${closerPerW.toFixed(2)}/W
+              {isPaired && setterBaselinePerW > 0 && ` · Setter: $${setterBaselinePerW.toFixed(2)}/W`}
+              {trainerRate > 0 && ` · Trainer: +$${trainerRate.toFixed(2)}/W`}
+            </p>
+            <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Sold: ${soldPPW.toFixed(2)}/W · {kW.toFixed(1)} kW
             </p>
           </div>
         </MobileCard>
