@@ -138,7 +138,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                     <button
                       onClick={() => setSelectedFinancers((prev) => {
                         const next = new Set(prev);
-                        next.has(fin.name) ? next.delete(fin.name) : next.add(fin.name);
+                        if (next.has(fin.name)) next.delete(fin.name); else next.add(fin.name);
                         return next;
                       })}
                       className="flex-shrink-0"
@@ -257,7 +257,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                     <button
                       onClick={() => setSelectedFinancers((prev) => {
                         const next = new Set(prev);
-                        next.has(fin.name) ? next.delete(fin.name) : next.add(fin.name);
+                        if (next.has(fin.name)) next.delete(fin.name); else next.add(fin.name);
                         return next;
                       })}
                       className="flex-shrink-0"

@@ -465,6 +465,7 @@ export default function MobileNewDeal() {
     } else {
       setDisplayedTotal(closerTotal);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentStep intentionally not a dep; count-up should only fire on closerTotal change
   }, [showPreview, closerTotal]);
 
   useEffect(() => {

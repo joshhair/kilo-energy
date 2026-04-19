@@ -435,6 +435,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Brand mark — use the real PWA icon so the loading screen
             matches the app icon on the home screen and the favicon.
             One source of truth for the logo. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- static SVG icon, next/image loader overhead isn't worth it */}
         <img
           src="/icons/icon-192.svg"
           alt="Kilo Energy"

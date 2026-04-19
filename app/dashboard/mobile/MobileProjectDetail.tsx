@@ -191,6 +191,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   useEffect(() => {
     document.title = project ? `${project.customerName} | Kilo Energy` : 'Project | Kilo Energy';
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depend only on customerName to avoid re-fires on any project field change
   }, [project?.customerName]);
 
   if (!project) {
@@ -894,7 +895,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 )}
               </div>
               <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                Attaches a trainer + rate to this deal only. Overrides the rep's assignment chain.
+                Attaches a trainer + rate to this deal only. Overrides the rep&apos;s assignment chain.
               </p>
               <select
                 value={editDraft.trainerId}

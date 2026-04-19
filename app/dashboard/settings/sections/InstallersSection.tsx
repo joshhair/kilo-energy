@@ -241,7 +241,7 @@ export function InstallersSection({
                         <button
                           onClick={() => setSelectedInstallers((prev) => {
                             const next = new Set(prev);
-                            next.has(inst.name) ? next.delete(inst.name) : next.add(inst.name);
+                            if (next.has(inst.name)) next.delete(inst.name); else next.add(inst.name);
                             return next;
                           })}
                           className="flex-shrink-0"
@@ -492,7 +492,7 @@ export function InstallersSection({
                     <button
                       onClick={() => setSelectedInstallers((prev) => {
                         const next = new Set(prev);
-                        next.has(inst.name) ? next.delete(inst.name) : next.add(inst.name);
+                        if (next.has(inst.name)) next.delete(inst.name); else next.add(inst.name);
                         return next;
                       })}
                       className="flex-shrink-0"

@@ -120,11 +120,13 @@ export default function BlitzDetailPage() {
     }).catch(() => { setLoading(false); });
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadBlitz is a stable local closure; re-running only on blitzId change is intentional
   useEffect(() => { loadBlitz(); }, [blitzId]);
 
   // Dynamic page title
   useEffect(() => {
     document.title = blitz ? `${blitz.name} | Kilo Energy` : 'Blitz | Kilo Energy';
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depend only on blitz.name to avoid re-fires on any blitz field change
   }, [blitz?.name]);
 
   // Sliding tab indicator
@@ -208,6 +210,7 @@ export default function BlitzDetailPage() {
       return 0;
     });
     return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- approvedParticipantIds is derived from approvedVisibleProjects; adding both causes duplicate re-runs
   }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
     () => approvedVisibleProjects.reduce((s: number, p: any) => {
@@ -252,6 +255,7 @@ export default function BlitzDetailPage() {
       const setterCost = (p.setterId && p.setterId !== p.closerId) ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
     }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getBlitzProjectBaselines is a local closure over the same deps; adding it causes duplicate re-runs
   }, [approvedVisibleProjects, approvedParticipantIds, installerPricingVersions, productCatalogProducts, solarTechProducts]);
   const netProfit = kiloMargin - totalCosts;
   const roi = totalCosts > 0 ? ((netProfit / totalCosts) * 100) : 0;

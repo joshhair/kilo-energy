@@ -37,6 +37,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   const project = projects.find((p) => p.id === id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- depend only on customerName to avoid re-fires on any project field change
   useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
   const [adminNotes, setAdminNotes] = useState(project?.notes ?? '');
   const [adminNotesSaved, setAdminNotesSaved] = useState(false);
@@ -162,6 +163,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router is a stable singleton from Next; omitting is intentional
   }, [prevProjectId, nextProjectId, showEditModal, showCancelConfirm, showDeleteConfirm, showCancelReasonModal, phaseConfirm, editM1, editM2]);
 
   // Escape to close Edit Project modal

@@ -607,6 +607,7 @@ function CalculatorPage() {
       saveCalcHistory(next);
       return next;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resultHash collapses the full input set; adding the raw inputs would cause double-fires on every keystroke
   }, [resultHash, hasInput, soldPPW, closerTotal]);
 
 

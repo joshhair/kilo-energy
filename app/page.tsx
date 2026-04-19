@@ -83,6 +83,7 @@ export default function LoginPage() {
         {/* Logo icon — uses the designed PWA icon so splash matches the
             app icon on the home screen and the dashboard loading variant */}
         <div className="animate-splash flex flex-col items-center gap-6">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG icon, next/image loader overhead isn't worth it */}
           <img
             src="/icons/icon-192.svg"
             alt="Kilo Energy"

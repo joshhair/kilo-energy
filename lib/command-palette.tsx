@@ -274,7 +274,7 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
       // ⌘K / Ctrl+K — toggle palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        open ? onClose() : onOpen();
+        if (open) onClose(); else onOpen();
         return;
       }
 
@@ -464,7 +464,7 @@ export function ShortcutsOverlay({
         target.isContentEditable
       ) return;
       e.preventDefault();
-      open ? onClose() : onOpen();
+      if (open) onClose(); else onOpen();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);

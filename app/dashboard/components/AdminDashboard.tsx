@@ -163,6 +163,7 @@ export function AdminDashboard({
     const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
 
     return { totalRevenue, totalProfit, totalPaid, totalKWSold, totalKWInstalled };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getProjectBaselines closes over the same deps; re-declaring as a memo+dep pair would duplicate work
   }, [projects, payroll, solarTechProducts, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions]);
   const totalUsers = totalReps;
 

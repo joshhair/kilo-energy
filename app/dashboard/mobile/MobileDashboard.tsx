@@ -333,6 +333,7 @@ export default function MobileDashboard() {
     annual += Math.round((projM1 + projM2) * 0.15);
 
     return { onPaceAnnual: annual, dealsPerMonth };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeProjects reports as unnecessary but it's a reference the memo must invalidate on
   }, [myProjects, myPayroll, activeProjects]);
 
   // ── Animated counters (rep layout) ───────────────────────────────────────

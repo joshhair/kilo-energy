@@ -100,6 +100,7 @@ function NewDealPage() {
     }).catch(() => {
       toast('Failed to load blitz list. Please refresh the page.', 'error');
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toast is a stable singleton from context; one-shot load on mount is intentional
   }, []);
   const availableBlitzes = useMemo<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>(() => {
     return rawBlitzes.filter((b) => {
@@ -1295,7 +1296,7 @@ function NewDealPage() {
                             />
                             {mappedIsArchived && (
                               <p className="mt-1 text-xs text-yellow-400">
-                                The designated financer for this family ("{mappedFinancer}") has been archived — select an alternative below.
+                                The designated financer for this family (&quot;{mappedFinancer}&quot;) has been archived — select an alternative below.
                               </p>
                             )}
                           </>

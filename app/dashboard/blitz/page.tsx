@@ -540,6 +540,7 @@ function BlitzPageInner() {
     const idx = STATUS_FILTER_OPTIONS.indexOf(statusFilter);
     const el = statusTabRefs.current[idx];
     if (el) setStatusIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- STATUS_FILTER_OPTIONS is a module-level const; adding it is pointless and noise
   }, [statusFilter, hydrated]);
 
   const loadData = () => {

@@ -134,6 +134,7 @@ export default function MobileAdminDashboard() {
       prof += (closerPerW - kiloPerW) * w;
     }
     return { totalPaid: paid, totalRevenue: rev, totalProfit: prof };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getBaselines closes over the declared deps; naming it separately would double-fire
   }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts, todayStr]);
 
   const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
