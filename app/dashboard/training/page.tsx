@@ -23,6 +23,7 @@ import { sortForSelection } from '../../../lib/sorting';
 import { isPaidAndEffective, formatDate } from '../../../lib/utils';
 import { PHASE_PILL } from '../projects/components/shared';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { EmptyState } from '../components/EmptyState';
 import {
   GraduationCap,
   DollarSign,
@@ -1074,9 +1075,9 @@ function TrainingPageInner() {
           />
           {activeTrainees.length === 0 ? (
             <EmptyState
-              icon={<GraduationCap className="w-12 h-12 text-[var(--text-dim)]" />}
+              icon={GraduationCap}
               title={traineeSearch ? 'No active trainees match your search' : 'No active trainees'}
-              subtitle={traineeSearch ? 'Try a different search or check Residuals' : 'Mark a trainee as graduated to move them to Residuals'}
+              description={traineeSearch ? 'Try a different search or check Residuals' : 'Mark a trainee as graduated to move them to Residuals'}
             />
           ) : (
             <div className="space-y-4">
@@ -1107,9 +1108,9 @@ function TrainingPageInner() {
           />
           {residualTrainees.length === 0 ? (
             <EmptyState
-              icon={<Sparkles className="w-12 h-12 text-[var(--text-dim)]" />}
+              icon={Sparkles}
               title={traineeSearch ? 'No residuals match your search' : 'No residual trainees'}
-              subtitle={traineeSearch ? 'Try a different search' : 'Graduated trainees appear here — their overrides still earn until tiers max out'}
+              description={traineeSearch ? 'Try a different search' : 'Graduated trainees appear here — their overrides still earn until tiers max out'}
             />
           ) : (
             <div className="space-y-4">
@@ -1164,9 +1165,9 @@ function TrainingPageInner() {
 
           {filteredPayments.length === 0 ? (
             <EmptyState
-              icon={<DollarSign className="w-12 h-12 text-[var(--text-dim)]" />}
+              icon={DollarSign}
               title={paymentSearch || paymentStatusFilter !== 'all' ? 'No payments match your filters' : 'No trainer payments yet'}
-              subtitle={paymentSearch || paymentStatusFilter !== 'all' ? 'Try adjusting your search or status filter' : 'Override payments appear here when trainees close deals'}
+              description={paymentSearch || paymentStatusFilter !== 'all' ? 'Try adjusting your search or status filter' : 'Override payments appear here when trainees close deals'}
             />
           ) : (
             <div className="card-surface rounded-2xl overflow-clip">
@@ -1371,18 +1372,6 @@ function TraineeSearch({
             {sort === s && <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>}
           </button>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl bg-[var(--surface)]/30 border border-dashed border-[var(--border-subtle)]">
-      {icon}
-      <div className="text-center">
-        <p className="text-lg font-semibold text-white">{title}</p>
-        <p className="text-sm text-[var(--text-muted)] mt-1">{subtitle}</p>
       </div>
     </div>
   );

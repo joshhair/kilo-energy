@@ -19,6 +19,7 @@ import { useToast } from '../../../lib/toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { EmptyState } from '../components/EmptyState';
 
 // ─── Incentive Templates ──────────────────────────────────────────────────────
 
@@ -732,7 +733,7 @@ export default function IncentivesPage() {
               Company-Wide
             </h2>
             {company.length === 0 ? (
-              <EmptyState message={incentiveFilter !== 'all' ? 'No company-wide incentives match this filter' : 'No company-wide incentives yet'} subtitle={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : 'Company incentives apply to all reps — create one to boost team performance'} />
+              <EmptyState icon={Trophy} title={incentiveFilter !== 'all' ? 'No company-wide incentives match this filter' : 'No company-wide incentives yet'} description={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : 'Company incentives apply to all reps — create one to boost team performance'} />
             ) : (
               <div className="grid gap-4 xl:grid-cols-2">
                 {company.map((inc, index) => (
@@ -767,7 +768,7 @@ export default function IncentivesPage() {
               {isAdmin ? 'Personal Goals' : 'Your Personal Goals'}
             </h2>
             {personal.length === 0 ? (
-              <EmptyState message={incentiveFilter !== 'all' ? 'No personal incentives match this filter' : isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} subtitle={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
+              <EmptyState icon={Trophy} title={incentiveFilter !== 'all' ? 'No personal incentives match this filter' : isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} description={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
             ) : (
               <div className="grid gap-4 xl:grid-cols-2">
                 {personal.map((inc, index) => (
@@ -1686,18 +1687,6 @@ function CreateIncentiveModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ message, subtitle }: { message: string; subtitle?: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
-      <Trophy className="w-12 h-12" style={{ color: 'var(--text-dim)' }} />
-      <div className="text-center">
-        <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{message}</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{subtitle || 'Create an incentive to motivate your team and track progress'}</p>
       </div>
     </div>
   );
