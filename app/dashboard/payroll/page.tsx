@@ -807,9 +807,59 @@ function PayrollPageInner() {
               disabled={filtered.length === 0}
               className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
-              title="Download filtered payroll as CSV"
+              title="Download filtered payroll as CSV (one row per entry)"
             >
               <Download className="w-3.5 h-3.5" /> CSV
+            </button>
+            <button
+              onClick={() => {
+                // ADP-shape CSV: one row per rep per pay period. Sums gross
+                // pay (positive) and chargebacks (negative) separately so
+                // deductions line up with ADP's import template.
+                //
+                // Pay Period From/To = min/max date in the filtered set.
+                // If the user's filter spans multiple periods this
+                // collapses to the outer envelope — intentional; admin
+                // should filter to one period before export.
+                const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+                const periodFrom = sorted[0]?.date ?? '';
+                const periodTo = sorted[sorted.length - 1]?.date ?? '';
+
+                // Group: repName → { gross, chargebacks, entries }
+                const byRep = new Map<string, { gross: number; chargebacks: number; count: number }>();
+                for (const e of filtered) {
+                  const key = e.repName;
+                  const row = byRep.get(key) ?? { gross: 0, chargebacks: 0, count: 0 };
+                  if (e.amount < 0) row.chargebacks += Math.abs(e.amount);
+                  else row.gross += e.amount;
+                  row.count += 1;
+                  byRep.set(key, row);
+                }
+
+                // ADP import template columns. Adjust per your specific
+                // ADP instance — the four below are the universal core.
+                const adpHeaders = ['Employee Name', 'Gross Pay', 'Deductions', 'Net Pay', 'Pay Period From', 'Pay Period To', 'Entry Count'];
+                const adpRows = Array.from(byRep.entries())
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([repName, { gross, chargebacks, count }]) => [
+                    repName,
+                    gross.toFixed(2),
+                    chargebacks.toFixed(2),
+                    (gross - chargebacks).toFixed(2),
+                    periodFrom,
+                    periodTo,
+                    String(count),
+                  ]);
+
+                const filename = `adp-payroll-${periodFrom || todayLocalDateStr()}-to-${periodTo || todayLocalDateStr()}.csv`;
+                downloadCSV(filename, adpHeaders, adpRows);
+              }}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+              title="Export for ADP: one row per rep with gross/deductions/net, period-bounded"
+            >
+              <Download className="w-3.5 h-3.5" /> ADP
             </button>
             <button
               onClick={() => window.print()}
