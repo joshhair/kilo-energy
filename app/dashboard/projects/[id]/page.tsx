@@ -21,6 +21,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import ProjectChatter from '../../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../components/CoPartySection';
 import { PipelineStepper, PhaseBadge, PIPELINE_STEPS } from '../components/detail/PipelineStepper';
+import { RepCommissionCard } from '../components/detail/RepCommissionCard';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
 import { InlineNotesEditor } from '../components/detail/InlineNotesEditor';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
@@ -977,95 +978,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
           <div className="space-y-4">
             {/* ── Closer ── */}
-            <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-white text-sm font-semibold">{project.repName}</p>
-                  <p className="text-[var(--text-muted)] text-xs">Closer</p>
-                  <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${closerTotalExpected.toLocaleString()}</p>
-                </div>
-                <div className="text-right">
-                  {!project.setterId && (
-                    <>
-                      <p className="text-[var(--text-secondary)] text-xs">Expected M1</p>
-                      <p className="text-[var(--accent-green)] font-bold text-sm mb-1">${(project.m1Amount ?? 0).toLocaleString()}</p>
-                    </>
-                  )}
-                  <p className="text-[var(--text-secondary)] text-xs">Expected M2</p>
-                  <p className="text-[var(--accent-green)] font-bold text-sm">${closerExpectedM2.toLocaleString()}</p>
-                </div>
-              </div>
-              {closerEntries.length > 0 ? (
-                <div className="space-y-1.5">
-                  {closerEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
-                      <div>
-                        <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
-                        {entry.notes ? <span className="text-[var(--text-muted)] text-xs ml-1.5">({entry.notes})</span> : null}
-                        <p className="text-[var(--text-dim)] text-xs">{formatDate(entry.date)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                          entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
-                          'bg-[var(--border)] text-[var(--text-secondary)]'
-                        }`}>{entry.status}</span>
-                        <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[var(--text-dim)] text-xs italic">No payroll entries yet.</p>
-              )}
-            </div>
+            <RepCommissionCard
+              name={project.repName}
+              role="Closer"
+              totalExpected={closerTotalExpected}
+              expectedAmounts={[
+                ...(!project.setterId ? [{ label: 'Expected M1', amount: project.m1Amount ?? 0 }] : []),
+                { label: 'Expected M2', amount: closerExpectedM2 },
+              ]}
+              entries={closerEntries}
+            />
 
             {/* ── Setter ── */}
             {project.setterId ? (
-              <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-white text-sm font-semibold">{project.setterName}</p>
-                    <p className="text-[var(--text-muted)] text-xs">Setter</p>
-                    <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${setterTotalExpected.toLocaleString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[var(--text-secondary)] text-xs">Expected M1</p>
-                    <p className="text-[var(--accent-green)] font-bold text-sm mb-1">${(project.setterM1Amount ?? 0).toLocaleString()}</p>
-                    <p className="text-[var(--text-secondary)] text-xs">Expected M2</p>
-                    <p className="text-[var(--accent-green)] font-bold text-sm mb-1">${(project.setterM2Amount ?? 0).toLocaleString()}</p>
-                    {(project.setterM3Amount ?? 0) > 0 && (
-                      <>
-                        <p className="text-[var(--text-secondary)] text-xs">Expected M3</p>
-                        <p className="text-[var(--accent-green)] font-bold text-sm">${(project.setterM3Amount ?? 0).toLocaleString()}</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {setterEntries.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {setterEntries.map((entry) => (
-                      <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
-                        <div>
-                          <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
-                          {entry.notes ? <span className="text-[var(--text-muted)] text-xs ml-1.5">({entry.notes})</span> : null}
-                          <p className="text-[var(--text-dim)] text-xs">{formatDate(entry.date)}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                            entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
-                            'bg-[var(--border)] text-[var(--text-secondary)]'
-                          }`}>{entry.status}</span>
-                          <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[var(--text-dim)] text-xs italic">No payroll entries yet.</p>
-                )}
-              </div>
+              <RepCommissionCard
+                name={project.setterName ?? ''}
+                role="Setter"
+                totalExpected={setterTotalExpected}
+                expectedAmounts={[
+                  { label: 'Expected M1', amount: project.setterM1Amount ?? 0 },
+                  { label: 'Expected M2', amount: project.setterM2Amount ?? 0 },
+                  ...((project.setterM3Amount ?? 0) > 0 ? [{ label: 'Expected M3', amount: project.setterM3Amount ?? 0 }] : []),
+                ]}
+                entries={setterEntries}
+              />
             ) : (
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                 <p className="text-white text-sm font-semibold mb-0.5">{project.repName} <span className="text-[var(--text-muted)] font-normal text-xs">(self-gen)</span></p>
