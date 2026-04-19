@@ -6,7 +6,7 @@ import { parseJsonBody } from '../../../lib/api-validation';
 import { createPayrollSchema, patchPayrollSchema } from '../../../lib/schemas/payroll';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { REP_PUBLIC_SELECT } from '../../../lib/redact';
-import { serializePayrollEntry, dollarsToCents } from '../../../lib/serialize';
+import { serializePayrollEntry } from '../../../lib/serialize';
 import { fromDollars } from '../../../lib/money';
 import { logger } from '../../../lib/logger';
 

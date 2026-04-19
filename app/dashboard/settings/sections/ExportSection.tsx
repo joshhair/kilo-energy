@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Download, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
-import { getTrainerOverrideRate } from '../../../../lib/data';
 import { SectionHeader } from '../components/SectionHeader';
 
 export function ExportSection() {

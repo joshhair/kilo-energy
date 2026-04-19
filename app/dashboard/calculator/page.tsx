@@ -139,6 +139,7 @@ function FieldTooltip({ text }: { text: string }) {
 }
 
 // ─── Commission Bar ────────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- WIP visualization, keep for future page wire-up
 function CommissionBar({
   closer,
   setter,
@@ -202,7 +203,7 @@ export default function CalculatorPageWrapper() {
 function CalculatorPage() {
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
-  const { currentRepId, currentRole, effectiveRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
+  const { currentRepId, effectiveRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
   const [installer, setInstaller] = useState('');
   const [solarTechFamily, setSolarTechFamily] = useState('');

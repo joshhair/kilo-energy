@@ -14,7 +14,6 @@ import MobileCard from './shared/MobileCard';
 
 export default function MobileTraining() {
   const {
-    currentRepId,
     effectiveRole,
     effectiveRepId,
     trainerAssignments,

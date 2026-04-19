@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -35,7 +35,6 @@ import {
   ChevronDown,
   Home,
   MoreHorizontal,
-  Pencil,
   Pause,
   Play,
   Archive,
@@ -1766,7 +1765,7 @@ function NewAssignmentModal({
   onClose: () => void;
   onCreated: (assignment: TrainerAssignment) => void;
 }) {
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
   const [trainerId, setTrainerId] = useState('');
   const [traineeId, setTraineeId] = useState('');
   const [isActiveTraining, setIsActiveTraining] = useState(true);

@@ -7,7 +7,7 @@ import { DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import {
   ArrowLeft, Layers, Tent, Users, Handshake,
   Building2, Landmark, BookOpen, Shield, Download,
-  Plus, Trash2, CheckSquare, Square,
+  Trash2, CheckSquare, Square,
 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -234,7 +234,7 @@ function Toggle({ value, onChange, color }: { value: boolean; onChange: (v: bool
 // ─── Installers Section ─────────────────────────────────────────────────────
 
 function InstallersSection() {
-  const { installers, setInstallerActive, installerPayConfigs, updateInstallerPayConfig } = useApp();
+  const { installers, setInstallerActive, installerPayConfigs } = useApp();
 
   return (
     <div className="space-y-3">

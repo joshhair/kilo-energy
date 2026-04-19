@@ -10,7 +10,7 @@ import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/dat
 import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
-import { ChevronRight, ChevronLeft, ChevronDown, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
 import { RepSelector } from '../../components/RepSelector';
 import { Sparkline } from '../../../../lib/sparkline';
 import ConfirmDialog from '../../components/ConfirmDialog';

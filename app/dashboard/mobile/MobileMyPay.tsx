@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
@@ -91,7 +90,6 @@ interface PayPeriod {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function MobileMyPay() {
-  const router = useRouter();
   const { effectiveRole, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();
   const [showReimbSheet, setShowReimbSheet] = useState(false);
@@ -125,7 +123,7 @@ export default function MobileMyPay() {
     [payrollEntries, effectiveRepId, todayStr],
   );
 
-  const draftTotal = useMemo(
+  const _draftTotal = useMemo(
     () =>
       payrollEntries
         .filter((p) => p.repId === effectiveRepId && p.status === 'Draft')

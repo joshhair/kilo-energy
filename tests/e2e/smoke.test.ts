@@ -18,7 +18,7 @@ test.describe('App boot & health', () => {
 
   test('sign-in page loads', async ({ page }) => {
     await page.goto('/sign-in');
-    const response = await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('domcontentloaded');
     // Clerk sign-in widget should render
     expect(await page.title()).toBeTruthy();
   });

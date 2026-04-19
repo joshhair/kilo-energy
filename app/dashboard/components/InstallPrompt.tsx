@@ -11,7 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 export default function InstallPrompt() {
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [bannerHeight, setBannerHeight] = useState(0);
+  const [_bannerHeight, setBannerHeight] = useState(0);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
 

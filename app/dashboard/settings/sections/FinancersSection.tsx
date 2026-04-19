@@ -19,7 +19,7 @@ export interface FinancersSectionProps {
   setSelectedFinancers: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConfirm, financerSelectMode, setFinancerSelectMode, selectedFinancers, setSelectedFinancers }: FinancersSectionProps) {
+export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfirm, setDeleteConfirm, financerSelectMode, setFinancerSelectMode, selectedFinancers, setSelectedFinancers }: FinancersSectionProps) {
   const ctx = useApp();
   const { setFinancerActive, addFinancer, projects } = ctx;
   // Hide the 'Cash' financer from this admin section. It's a system-managed
@@ -27,7 +27,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm, setDeleteConf
   // should never be archived or deleted by an admin (doing so breaks Cash
   // deal saves). Removed from the listing entirely so it can't be touched.
   const financers = ctx.financers.filter((f) => f.name !== 'Cash');
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   const [newFinancer, setNewFinancer] = useState('');
   const [financerSearch, setFinancerSearch] = useState('');

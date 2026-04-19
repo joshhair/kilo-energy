@@ -140,7 +140,7 @@ export async function POST(
 
       if (alreadyExists) {
         // Check specifically for this milestone
-        const milestoneExists = existingEntries.some(
+        const _milestoneExists = existingEntries.some(
           (e) =>
             e.repId === resolution.trainerId &&
             e.projectId === project.id &&

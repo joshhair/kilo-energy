@@ -11,7 +11,7 @@ import { MyTasksSection, PipelineOverview, PhaseBadge, MilestoneDot, type Mentio
 
 export function SubDealerDashboard({
   projects,
-  allProjects,
+  allProjects: _allProjects,
   payroll,
   mentions,
   setMentions,

@@ -172,7 +172,7 @@ describe('Trainer Backfill — Database Integration', () => {
     });
 
     const res = await POST(req as Parameters<typeof POST>[0], { params: Promise.resolve({ id: assignmentId }) });
-    const data = await res.json();
+    await res.json();
 
     expect(res.status).toBe(200);
     // Should have skipped because entries already exist from previous test

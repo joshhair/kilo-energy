@@ -43,7 +43,7 @@ const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> =
 
 export default function MobileReps() {
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep } = useApp();
+  const { currentRole, projects, payrollEntries, reps, subDealers, addRep } = useApp();
   const { toast } = useToast();
 
   const isAdmin = currentRole === 'admin';

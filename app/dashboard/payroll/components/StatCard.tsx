@@ -6,7 +6,7 @@ const STAT_CARD_STYLES: Record<string, { bg: string; border: string; accent: str
   'from-emerald-500 to-emerald-400': { bg: 'linear-gradient(135deg, #00160d, #001c10)', border: '#00e07a30', accent: 'var(--accent-green)', textColor: 'var(--accent-green)' },
 };
 
-export function StatCard({ label, value, color, accentGradient, className, entryCount }: { label: string; value: number; color: string; border?: string; accentGradient?: string; className?: string; entryCount?: number }) {
+export function StatCard({ label, value, color: _color, accentGradient, className, entryCount }: { label: string; value: number; color: string; border?: string; accentGradient?: string; className?: string; entryCount?: number }) {
   const accent = accentGradient ?? 'from-blue-500 to-blue-400';
   const s = STAT_CARD_STYLES[accent] ?? { bg: 'var(--surface-card)', border: 'var(--border)', accent: 'var(--accent-blue)', textColor: 'var(--accent-blue)' };
   return (

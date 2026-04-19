@@ -12,7 +12,6 @@ import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
 import { ArrowLeft, Plus, Trash2, FolderKanban, Users, DollarSign, Loader2 } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
-import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
@@ -194,7 +193,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   }
 
   const statusLabel = blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1);
-  const badgeVariantValue = STATUS_BADGE_MAP[blitz.status] ?? 'Draft';
+  const _badgeVariantValue = STATUS_BADGE_MAP[blitz.status] ?? 'Draft';
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'overview', label: 'Overview' },

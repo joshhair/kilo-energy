@@ -302,7 +302,7 @@ async function main() {
         m1Amount: p.m1Amount,
         m2Paid: p.m2Paid,
         m2Amount: p.m2Amount,
-        m3Amount: (p as any).m3Amount ?? null,
+        m3Amount: (p as { m3Amount?: number | null }).m3Amount ?? null,
         notes: p.notes,
         flagged: p.flagged,
         installerPricingVersionId: isSolarTech ? null : pvMap[p.installer] ?? null,

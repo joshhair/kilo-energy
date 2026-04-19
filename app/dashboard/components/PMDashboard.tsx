@@ -8,7 +8,7 @@ import type { Period } from './dashboard-utils';
 
 export function PMDashboard({
   projects,
-  allProjects,
+  allProjects: _allProjects,
   period,
   setPeriod,
   PERIODS,

@@ -22,10 +22,10 @@ function SetterPopover({
   customerName,
   currentSetterId,
   currentSetterName,
-  additionalSetters,
+  additionalSetters: _additionalSetters,
   reps,
   trainerAssignments,
-  setProjects,
+  setProjects: _setProjects,
   updateProject,
 }: {
   projectId: string;

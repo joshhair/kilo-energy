@@ -24,7 +24,7 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageInner() {
-  const { currentRole, effectiveRole, currentRepId, effectiveRepId, projects, setProjects, updateProject, activeInstallers, dbReady } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, updateProject, activeInstallers, dbReady } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();

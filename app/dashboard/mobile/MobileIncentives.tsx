@@ -18,7 +18,6 @@ import { Trophy, Plus, Gift, Target, Loader2, Zap } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
-import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 

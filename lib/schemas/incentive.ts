@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idSchema, optionalId, optionalString } from '../api-validation';
+import { optionalId, optionalString } from '../api-validation';
 
 const metricEnum = z.enum(['deals', 'kw', 'commission', 'revenue']);
 const periodEnum = z.enum(['month', 'quarter', 'year', 'alltime']);

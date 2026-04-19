@@ -27,18 +27,18 @@ export interface InstallersSectionProps {
 
 export function InstallersSection({
   editingPrepaid, setEditingPrepaid,
-  deleteConfirm, setDeleteConfirm,
+  deleteConfirm: _deleteConfirm, setDeleteConfirm,
   setBaselineTab,
   installerSelectMode, setInstallerSelectMode,
   selectedInstallers, setSelectedInstallers,
   payScheduleExpanded, setPayScheduleExpanded,
 }: InstallersSectionProps) {
   const {
-    installers, setInstallerActive, addInstaller, deleteInstaller,
+    installers, setInstallerActive, addInstaller,
     projects,
     installerPricingVersions, solarTechProducts, productCatalogProducts,
     productCatalogInstallerConfigs,
-    installerPrepaidOptions, getInstallerPrepaidOptions, addInstallerPrepaidOption, updateInstallerPrepaidOption, removeInstallerPrepaidOption,
+    getInstallerPrepaidOptions, addInstallerPrepaidOption, updateInstallerPrepaidOption, removeInstallerPrepaidOption,
     addProductCatalogInstaller,
     installerPayConfigs, updateInstallerPayConfig,
   } = useApp();

@@ -6,7 +6,7 @@ import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCompactKW } from '../../../lib/utils';
-import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, RefreshCw } from 'lucide-react';
+import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';

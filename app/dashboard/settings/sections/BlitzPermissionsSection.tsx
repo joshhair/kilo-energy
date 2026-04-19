@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, CheckSquare, Square } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { PaginationBar } from '../../components/PaginationBar';

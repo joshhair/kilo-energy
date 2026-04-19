@@ -258,7 +258,7 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentRole, currentRepName, currentRepId, currentUserRepType, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, effectiveRepName, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers } = useApp();
+  const { currentRole, currentRepName, currentRepId, currentUserRepType, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers } = useApp();
   const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();

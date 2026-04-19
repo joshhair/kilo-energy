@@ -115,11 +115,10 @@ export default function MobileDashboard() {
     effectiveRole,
     effectiveRepId,
     effectiveRepName,
-    reps,
   } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
-  const [statVersion, setStatVersion] = useState(0);
+  const [_statVersion, setStatVersion] = useState(0);
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const [pillReady, setPillReady] = useState(false);

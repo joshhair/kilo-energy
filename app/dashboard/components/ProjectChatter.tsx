@@ -100,7 +100,7 @@ interface MentionDropdownProps {
   highlightIdx: number;
 }
 
-function MentionDropdown({ query, anchorRect, reps, onSelect, onClose, highlightIdx }: MentionDropdownProps) {
+function MentionDropdown({ query, anchorRect, reps, onSelect, onClose: _onClose, highlightIdx }: MentionDropdownProps) {
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     return reps.filter((r) => r.name.toLowerCase().includes(q)).slice(0, 8);

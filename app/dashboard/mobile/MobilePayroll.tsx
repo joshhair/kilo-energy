@@ -5,7 +5,7 @@ import { useApp } from '../../../lib/context';
 import { fmt$ } from '../../../lib/utils';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
-import { Check, Edit2, Trash2, Plus } from 'lucide-react';
+import { Check, Trash2, Plus } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 

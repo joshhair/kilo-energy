@@ -72,7 +72,6 @@ const ROLE_BADGE_HOVER = {
   setter: 'hover:brightness-125',
   both:   'hover:brightness-125',
 } as const;
-const ROLE_NEXT = { closer: 'setter', setter: 'both', both: 'closer' } as const;
 
 // r=22 inside a 48×48 viewBox  →  circumference ≈ 138.23
 const REP_RING_CIRCUMFERENCE = 2 * Math.PI * 22;
@@ -94,7 +93,7 @@ export default function UsersPage() {
 function UsersPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, updateRepType, convertUserRole, trainerAssignments, setTrainerAssignments, dbReady } = useApp();
+  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, updateRepType, convertUserRole, setTrainerAssignments, dbReady } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Users | Kilo Energy'; }, []);
   const [search, setSearch] = useState('');

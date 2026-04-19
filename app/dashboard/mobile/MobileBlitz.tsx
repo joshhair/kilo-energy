@@ -55,7 +55,7 @@ const STATUS_BADGE_MAP: Record<BlitzStatus, string> = {
 
 export default function MobileBlitz() {
   const router = useRouter();
-  const { effectiveRole, effectiveRepId, pmPermissions, reps } = useApp();
+  const { effectiveRole, effectiveRepId, pmPermissions } = useApp();
   const { toast } = useToast();
 
   const isAdmin = effectiveRole === 'admin';

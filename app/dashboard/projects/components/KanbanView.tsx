@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useMediaQuery } from '../../../../lib/hooks';
-import { PHASES, ACTIVE_PHASES, Phase } from '../../../../lib/data';
+import { PHASES, Phase } from '../../../../lib/data';
 import { Search, Flag, X, ChevronDown, FolderKanban, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import { PHASE_COLORS, PHASE_PILL, StaleBadge, type ProjectList } from './shared';
@@ -15,7 +15,7 @@ export default function KanbanView({
   currentRepId,
   dealScope,
   onPhaseChange,
-  readOnly = false,
+  readOnly: _readOnly = false,
   hideFinancials = false,
 }: {
   projects: ProjectList;
@@ -27,7 +27,7 @@ export default function KanbanView({
   readOnly?: boolean;
   hideFinancials?: boolean;
 }) {
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const activePhasesForKanban = PHASES.filter((p) => p !== 'Cancelled' && p !== 'On Hold');
   const cancelledAndHold = ['Cancelled', 'On Hold'] as Phase[];

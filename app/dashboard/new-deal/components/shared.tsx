@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Check } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
