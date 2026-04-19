@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useApp } from '../../lib/context';
 import { useIsHydrated, useScrollReveal, useMediaQuery } from '../../lib/hooks';
 import MobileDashboard from './mobile/MobileDashboard';
@@ -640,14 +639,13 @@ export function MilestoneDot({ label, paid, amount }: { label: string; paid: boo
 // ─── Main Dashboard Page ─────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { currentRole, currentRepId, currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs, dbReady } = useApp();
+  const { currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs, dbReady } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
   const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [periodIndicator, setPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
   const isHydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
-  const router = useRouter();
 
   // Scroll-triggered reveal refs for below-fold dashboard sections
   const [statsRef, statsVisible] = useScrollReveal<HTMLDivElement>();
@@ -784,7 +782,7 @@ export default function DashboardPage() {
         : 0;
       return s + Math.max(0, totalExpected - (allMtdPayrollByProject.get(p.id) ?? 0));
     }, 0);
-  const mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
+  const _mtdCommission = mtdPayrollCommission + mtdUnmatchedCommission;
 
 
   // Fetch @mentions for Needs Attention section (reps + sub-dealers)
@@ -980,7 +978,7 @@ export default function DashboardPage() {
               : 0;
       return sum + m3;
     }, 0);
-  const totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
+  const _totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
 
   // Only count as "paid" once the pay date has actually passed
   const totalPaid = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
@@ -991,13 +989,13 @@ export default function DashboardPage() {
   const outstandingChargebacks = myPayroll.filter((p) => p.amount < 0 && (p.status === 'Draft' || p.status === 'Pending'));
   const totalChargebacks = Math.abs(outstandingChargebacks.reduce((sum, p) => sum + p.amount, 0));
   const chargebackCount = outstandingChargebacks.length;
-  const totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const _totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
   const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // Period-scoped pipeline value for the trend badge — apples-to-apples vs prevInPipeline
-  const periodInPipeline = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase)).reduce((sum, p) => {
+  const _periodInPipeline = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase)).reduce((sum, p) => {
     const closerM1 = p.m1Amount ?? 0;
     const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
     const closerM3Net = payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0);
@@ -1111,9 +1109,9 @@ export default function DashboardPage() {
               : 0;
       return sum + m3;
     }, 0);
-  const prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay + prevPendingM3Pay;
+  const _prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay + prevPendingM3Pay;
   const prevTotalPaid = myPrevPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
-  const prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const _prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWSold = myPrevProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWInstalled = myPrevProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
@@ -1134,7 +1132,7 @@ export default function DashboardPage() {
     return { date: p.soldDate, amount };
   }));
   const chargebackSparkData: number[] = []; // flat / empty — no chargeback data yet
-  const estPaySparkData     = computeSparklineData(myPayroll.filter((p) => p.status !== 'Paid').map((p) => ({ date: p.date, amount: p.amount })));
+  const _estPaySparkData     = computeSparklineData(myPayroll.filter((p) => p.status !== 'Paid').map((p) => ({ date: p.date, amount: p.amount })));
   const paidSparkData       = computeSparklineData(myPayroll.filter((p) => p.status === 'Paid').map((p) => ({ date: p.date, amount: p.amount })));
   const systemSizeSparkData = computeSparklineData(activeProjects.map((p) => ({ date: p.soldDate, amount: p.kWSize })));
   const installedSparkData = computeSparklineData(myProjects.filter((p) => installedPhases.includes(p.phase)).map((p) => ({ date: p.soldDate, amount: p.kWSize })));
@@ -1145,8 +1143,8 @@ export default function DashboardPage() {
   const thisWeekTotal = thisWeekPayroll.reduce((s, p) => s + p.amount, 0);
 
   // MTD deal count + kW — derived from mtdProjects, which is hoisted above the isHydrated guard
-  const mtdDeals = mtdProjects.length;
-  const mtdKW = mtdProjects.reduce((s, p) => s + p.kWSize, 0);
+  const _mtdDeals = mtdProjects.length;
+  const _mtdKW = mtdProjects.reduce((s, p) => s + p.kWSize, 0);
 
 
   // Next Payout: Pending entries dated for the upcoming Friday (matches Earnings page).

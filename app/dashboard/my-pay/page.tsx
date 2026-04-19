@@ -7,13 +7,13 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileMyPay from '../mobile/MobileMyPay';
 import { useToast } from '../../../lib/toast';
-import { formatDate, getM1PayDate, getM2PayDate, fmt$, localDateString } from '../../../lib/utils';
+import { fmt$, localDateString } from '../../../lib/utils';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
   Wallet as PayIcon, DollarSign, Clock, TrendingUp, ChevronDown, ChevronRight,
-  Search, Filter, ArrowRight, Receipt, Banknote, Calendar, ChevronLeft,
+  Search, Receipt, Banknote, Calendar, ChevronLeft,
 } from 'lucide-react';
 import { buildPageRange } from '../components/PaginationBar';
 
@@ -106,7 +106,7 @@ export default function MyPayPage() {
 function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRole, effectiveRole, currentRepId, currentRepName, currentUserRepType, effectiveRepId, effectiveRepName, isViewingAs, payrollEntries, projects, reimbursements, setReimbursements, dbReady } = useApp();
+  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -238,13 +238,13 @@ function MyPayPageInner() {
     [payrollEntries, effectiveRepId]
   );
 
-  const pendingTotal = useMemo(() =>
+  const _pendingTotal = useMemo(() =>
     payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')
       .reduce((s, p) => s + p.amount, 0),
     [payrollEntries, effectiveRepId]
   );
 
-  const draftTotal = useMemo(() =>
+  const _draftTotal = useMemo(() =>
     payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Draft')
       .reduce((s, p) => s + p.amount, 0),
     [payrollEntries, effectiveRepId]
