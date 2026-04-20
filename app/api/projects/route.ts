@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
     }
     const sold = new Date(body.soldDate);
     const start = new Date(blitz.startDate);
-    const end = new Date(blitz.endDate);
-    if (sold < start || sold > end) {
+    const end = blitz.endDate ? new Date(blitz.endDate) : null;
+    if (sold < start || (end !== null && sold > end)) {
       return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
     }
 

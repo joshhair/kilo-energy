@@ -358,10 +358,13 @@ export default function BlitzDetailPage() {
           bump(setterId, 0, sM1 + sM2 + sM3);
         }
       }
+      const primaryCloserCredited = !!(closerId && participantIds.has(closerId));
+      let coCloserKwCredited = false;
       for (const cc of (proj as any).additionalClosers ?? []) {
         if (cc.userId && participantIds.has(cc.userId)) {
-          // Give kW to this additional closer only if the primary closer isn't already credited
-          const ccKw = (!closerId || !participantIds.has(closerId)) ? kW : 0;
+          // Credit kW to at most one co-closer when the primary closer isn't already credited
+          const ccKw = (!primaryCloserCredited && !coCloserKwCredited) ? kW : 0;
+          if (ccKw > 0) coCloserKwCredited = true;
           bump(cc.userId, ccKw, (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0));
         }
       }

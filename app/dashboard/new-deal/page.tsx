@@ -217,6 +217,10 @@ function NewDealPage() {
     setForm((prev) => ({ ...prev, additionalSetters: [] }));
   }, [form.setterId]);
 
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, additionalClosers: [] }));
+  }, [form.repId]);
+
   // ── Field helpers ──────────────────────────────────────────────────────────
 
   const update = (field: string, value: string) => {

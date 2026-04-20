@@ -122,7 +122,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       owner: true,
       participants: { include: { user: true } },
       costs: true,
-      projects: true,
+      projects: {
+        include: {
+          closer: true, setter: true, installer: true, financer: true,
+          additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
+          additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
+        },
+      },
     },
   });
 
