@@ -239,13 +239,15 @@ function MyPayPageInner() {
   // Pending chargebacks the rep still owes (Draft + Pending, amount < 0).
   // Paid chargebacks already flowed through past paychecks; don't show
   // them here (no double-count).
+  // No asOf — future-dated pending chargebacks still count as "yet to
+  // be charged" and must appear in the list and the net-pay reduction.
   const pendingChargebackTotal = useMemo(
-    () => Math.abs(sumPendingChargebacks(payrollEntries, { asOf: todayStr, repId: effectiveRepId ?? undefined })),
-    [payrollEntries, effectiveRepId, todayStr],
+    () => Math.abs(sumPendingChargebacks(payrollEntries, { repId: effectiveRepId ?? undefined })),
+    [payrollEntries, effectiveRepId],
   );
   const pendingChargebackCount = useMemo(
-    () => countPendingChargebacks(payrollEntries, { asOf: todayStr, repId: effectiveRepId ?? undefined }),
-    [payrollEntries, effectiveRepId, todayStr],
+    () => countPendingChargebacks(payrollEntries, { repId: effectiveRepId ?? undefined }),
+    [payrollEntries, effectiveRepId],
   );
 
   const nextPayoutTotal = useMemo(() =>

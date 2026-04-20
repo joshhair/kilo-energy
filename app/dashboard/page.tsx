@@ -1003,8 +1003,10 @@ export default function DashboardPage() {
   // Draft or Pending. Paid negatives have already been deducted from a
   // past paycheck and aren't owed anymore; including them would double-
   // count the historical claw-back.
-  const totalChargebacks = Math.abs(sumPendingChargebacks(myPayroll, { asOf: todayStr }));
-  const chargebackCount = countPendingChargebacks(myPayroll, { asOf: todayStr });
+  // No asOf: future-dated pending chargebacks are still "yet to be
+  // charged" and must surface on the tile.
+  const totalChargebacks = Math.abs(sumPendingChargebacks(myPayroll));
+  const chargebackCount = countPendingChargebacks(myPayroll);
   const _totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
   const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);

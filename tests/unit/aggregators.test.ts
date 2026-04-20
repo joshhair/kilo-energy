@@ -93,7 +93,7 @@ describe('sumPending / sumDraft', () => {
 describe('sumPendingChargebacks — forward-looking clawback view', () => {
   it('includes Draft + Pending with amount < 0', () => {
     // -150 (Pending) + -50 (Draft) = -200.
-    expect(sumPendingChargebacks(entries, { asOf: today })).toBe(-200);
+    expect(sumPendingChargebacks(entries)).toBe(-200);
   });
 
   it('excludes already-Paid chargebacks', () => {
@@ -102,17 +102,33 @@ describe('sumPendingChargebacks — forward-looking clawback view', () => {
     const paidChargebacks = entries.filter((e) => e.status === 'Paid' && e.amount < 0);
     expect(paidChargebacks.length).toBe(1);
     // sumPendingChargebacks should NOT touch these.
-    expect(sumPendingChargebacks(entries, { asOf: today })).toBe(-200);
+    expect(sumPendingChargebacks(entries)).toBe(-200);
   });
 
   it('excludes positive entries', () => {
     // Only negative amounts count as chargebacks.
     const positiveOnly = entries.filter((e) => e.amount > 0 && (e.status === 'Draft' || e.status === 'Pending'));
-    expect(sumPendingChargebacks(positiveOnly, { asOf: today })).toBe(0);
+    expect(sumPendingChargebacks(positiveOnly)).toBe(0);
   });
 
   it('counts them', () => {
-    expect(countPendingChargebacks(entries, { asOf: today })).toBe(2);
+    expect(countPendingChargebacks(entries)).toBe(2);
+  });
+
+  it('INCLUDES future-dated pending chargebacks (regression: tile was going blank)', () => {
+    // Pending chargebacks scheduled for a future deduction date ARE
+    // "yet to be charged" by definition — they should surface on the
+    // tile even though their date is after asOf. The old inline
+    // filter on the dashboard had no date clause; the first pass of
+    // this helper wrongly inherited the asOf filter from sumPaid and
+    // silently dropped these. Paul Tupou's chargeback tile went blank
+    // for exactly this reason on 2026-04-19.
+    const futureDated: PayrollAggregable[] = [
+      { status: 'Pending', date: '2026-05-15', amount: -300, type: 'Deal', repId: 'r1' },
+      { status: 'Draft',   date: '2026-06-01', amount: -75,  type: 'Deal', repId: 'r1' },
+    ];
+    expect(sumPendingChargebacks(futureDated)).toBe(-375);
+    expect(countPendingChargebacks(futureDated)).toBe(2);
   });
 });
 

@@ -255,14 +255,14 @@ function PayrollPageInner() {
   // on the inputs that actually matter.
   const today = todayLocalDateStr();
 
-  const { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid, combinedTotalPaid } = useMemo(() => {
+  const { filtered, filteredByDateRep, totalDraft, totalPending, combinedTotalPaid, combinedPaidCount } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
     const filteredByDateRep: typeof payrollEntries = [];
     const allTypesInScope: typeof payrollEntries = [];
     // Walk once. filteredByDateRep keeps the legacy per-type semantic for
     // existing count badges. allTypesInScope is the same date+rep scope
-    // without the type filter — used for the combined-paid aggregator
-    // that compares to the dashboard tile.
+    // without the type filter — feeds the combined "Total Paid" tile
+    // (primary display; matches the dashboard "Paid Out" number).
     for (const p of payrollEntries) {
       if (payFilterFrom && p.date < payFilterFrom) continue;
       if (payFilterTo && p.date > payFilterTo) continue;
@@ -277,15 +277,16 @@ function PayrollPageInner() {
       }
     }
 
-    // Per-type totals for the currently-selected tab's tiles.
+    // Per-type totals for Draft / Pending tiles (the per-tab view).
     const totalDraft = sumDraft(filteredByDateRep, { asOf: today });
     const totalPending = sumPending(filteredByDateRep, { asOf: today });
-    const totalPaid = sumPaid(filteredByDateRep, { asOf: today });
-    // Combined across all types — matches dashboard "Paid Out" when
-    // date/rep filters align.
+    // Combined across all types (Deal + Bonus + Trainer). This is the
+    // "Total Paid" card reps + admins see by default — matches the
+    // dashboard tile when filters align.
     const combinedTotalPaid = sumPaid(allTypesInScope, { asOf: today });
+    const combinedPaidCount = allTypesInScope.filter((p) => p.status === 'Paid' && p.date <= today).length;
 
-    return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid, combinedTotalPaid };
+    return { filtered, filteredByDateRep, totalDraft, totalPending, combinedTotalPaid, combinedPaidCount };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId, today]);
 
   // Derived selection state — used by the floating action bar.
@@ -1112,20 +1113,16 @@ function PayrollPageInner() {
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
           <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today).length} entries</p>
         </div>
-        {/* Total */}
+        {/* Total Paid — combined across all types (Deal + Bonus + Trainer)
+            by default. Matches the dashboard "Paid Out" tile when
+            date/rep filters align. The per-tab breakdown is available
+            in the Draft / Pending tiles beside it and in the table
+            below (switchable via the Deal / Bonus tabs). */}
         <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid · {typeTab}</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
-          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Paid' && p.date <= today).length} entries</p>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${combinedTotalPaid.toLocaleString()}</p>
+          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{combinedPaidCount} entries · all types</p>
         </div>
-      </div>
-
-      {/* Combined total across all types (Deal + Bonus + Trainer). Matches
-          the dashboard "Paid Out" tile when the dashboard period aligns
-          with this tab's date range + rep filter. Shown as a small row so
-          per-type tiles remain the primary display. */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: -12, marginBottom: 20, fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>
-        <span>Combined paid (all types): <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>${combinedTotalPaid.toLocaleString()}</span></span>
       </div>
 
       {/* Status tabs */}

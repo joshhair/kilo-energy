@@ -137,23 +137,47 @@ export function sumDraft<T extends PayrollAggregable>(
  * negative balances still owed back, not yet deducted from a
  * paycheck. Paid chargebacks already flowed through past paycheck
  * history and aren't owed.
+ *
+ * Importantly: this helper does NOT apply the asOf date filter that
+ * sumPaid/sumPending use. A pending chargeback dated in the future
+ * is still "yet to be charged back" (by definition — it hasn't been
+ * deducted yet). Filtering by date would silently drop scheduled-
+ * future chargebacks from the tile, even though those are exactly
+ * the things the tile is supposed to surface.
+ *
+ * Type + rep filters still apply if passed.
  */
 export function sumPendingChargebacks<T extends PayrollAggregable>(
   entries: ReadonlyArray<T>,
-  opts?: PaidOutOptions,
+  opts?: Pick<PaidOutOptions, 'types' | 'repId'>,
 ): number {
-  return applyCommonFilters(entries, opts, (s) => s === 'Draft' || s === 'Pending')
-    .filter((e) => e.amount < 0)
-    .reduce((s, e) => s + e.amount, 0);
+  return filterPendingChargebacks(entries, opts).reduce((s, e) => s + e.amount, 0);
 }
 
 /**
  * Count of pending chargebacks (for the tile's "N to be charged back" display).
+ * Shares the no-date-filter semantic with sumPendingChargebacks.
  */
 export function countPendingChargebacks<T extends PayrollAggregable>(
   entries: ReadonlyArray<T>,
-  opts?: PaidOutOptions,
+  opts?: Pick<PaidOutOptions, 'types' | 'repId'>,
 ): number {
-  return applyCommonFilters(entries, opts, (s) => s === 'Draft' || s === 'Pending')
-    .filter((e) => e.amount < 0).length;
+  return filterPendingChargebacks(entries, opts).length;
+}
+
+function filterPendingChargebacks<T extends PayrollAggregable>(
+  entries: ReadonlyArray<T>,
+  opts: Pick<PaidOutOptions, 'types' | 'repId'> | undefined,
+): T[] {
+  const typeSet = opts?.types ? new Set(opts.types) : null;
+  const repId = opts?.repId;
+  const out: T[] = [];
+  for (const e of entries) {
+    if (e.status !== 'Draft' && e.status !== 'Pending') continue;
+    if (e.amount >= 0) continue;
+    if (typeSet && e.type != null && !typeSet.has(e.type)) continue;
+    if (repId && e.repId !== repId) continue;
+    out.push(e);
+  }
+  return out;
 }
