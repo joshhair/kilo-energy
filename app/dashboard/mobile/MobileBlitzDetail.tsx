@@ -9,22 +9,29 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate } from '../../../lib/utils';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, XCircle, Loader2 } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
+import MobileBottomSheet from './shared/MobileBottomSheet';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
+import { computeBlitzLeaderboard, computeBlitzKiloMargin, computeCostsByCategory } from '../../../lib/blitzComputed';
+import { useToast } from '../../../lib/toast';
 import BlitzTabs, { BlitzTabKey, BlitzTab } from './blitz-detail/BlitzTabs';
 import BlitzOverview from './blitz-detail/BlitzOverview';
 import BlitzParticipants from './blitz-detail/BlitzParticipants';
 import BlitzDeals from './blitz-detail/BlitzDeals';
 import BlitzCosts from './blitz-detail/BlitzCosts';
+import BlitzProfitability from './blitz-detail/BlitzProfitability';
+import BlitzLeaderboard from './blitz-detail/BlitzLeaderboard';
+import BlitzEditSheet from './blitz-detail/BlitzEditSheet';
 
-const TAB_ORDER: BlitzTabKey[] = ['overview', 'participants', 'deals', 'costs'];
+const TAB_ORDER_BASE: BlitzTabKey[] = ['overview', 'participants', 'deals', 'costs', 'profitability'];
 
 export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const router = useRouter();
-  const { effectiveRole, effectiveRepId, reps } = useApp();
+  const { effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts, solarTechProducts } = useApp();
   const hydrated = useIsHydrated();
   const isAdmin = effectiveRole === 'admin';
+  const { toast } = useToast();
 
   const [blitz, setBlitz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -33,9 +40,15 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const [panelDir, setPanelDir] = useState<'right' | 'left'>('right');
   const [tab, setTab] = useState<BlitzTabKey>('overview');
 
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [showCancelRequest, setShowCancelRequest] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [submittingAction, setSubmittingAction] = useState(false);
+
   const handleTabChange = useCallback((next: BlitzTabKey) => {
-    const prevIdx = TAB_ORDER.indexOf(prevTabRef.current);
-    const nextIdx = TAB_ORDER.indexOf(next);
+    const prevIdx = TAB_ORDER_BASE.indexOf(prevTabRef.current);
+    const nextIdx = TAB_ORDER_BASE.indexOf(next);
     setPanelDir(nextIdx >= prevIdx ? 'right' : 'left');
     scrollPos.current[prevTabRef.current] = window.scrollY;
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -69,6 +82,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   const projects = useMemo<any[]>(() => blitz?.projects ?? [], [blitz]);
   const participants = useMemo<any[]>(() => blitz?.participants ?? [], [blitz]);
+  const costs = useMemo<any[]>(() => blitz?.costs ?? [], [blitz]);
 
   const approvedParticipants = useMemo(
     () => participants.filter((p: any) => p.joinStatus === 'approved'),
@@ -86,9 +100,10 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   }, [projects, isAdmin, isOwner, effectiveRepId]);
 
   const approvedParticipantIds = useMemo(
-    () => new Set(participants.filter((p: any) => p.joinStatus === 'approved').map((p: any) => p.user.id)),
+    () => new Set<string>(participants.filter((p: any) => p.joinStatus === 'approved').map((p: any) => p.user.id)),
     [participants],
   );
+
   const approvedVisibleProjects = useMemo(
     () => (isAdmin || isOwner)
       ? visibleProjects.filter((p: any) =>
@@ -104,6 +119,40 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
     [approvedVisibleProjects],
   );
+
+  const leaderboard = useMemo(() => computeBlitzLeaderboard(blitz), [blitz]);
+  const totalCosts = useMemo(() => costs.reduce((s: number, c: any) => s + c.amount, 0), [costs]);
+  const costsByCategory = useMemo(() => computeCostsByCategory(blitz), [blitz]);
+  const kiloMargin = useMemo(
+    () => computeBlitzKiloMargin(approvedVisibleProjects, approvedParticipantIds, { solarTechProducts, productCatalogProducts, installerPricingVersions }),
+    [approvedVisibleProjects, approvedParticipantIds, solarTechProducts, productCatalogProducts, installerPricingVersions],
+  );
+
+  const handleDelete = async () => {
+    setSubmittingAction(true);
+    try {
+      const r = await fetch(`/api/blitzes/${blitzId}`, { method: 'DELETE' });
+      if (!r.ok) { toast('Failed to delete blitz', 'error'); return; }
+      toast('Blitz deleted');
+      router.push('/dashboard/blitz');
+    } finally { setSubmittingAction(false); }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!cancelReason.trim()) { toast('Please provide a reason', 'error'); return; }
+    setSubmittingAction(true);
+    try {
+      const r = await fetch(`/api/blitzes/${blitzId}/cancel-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: cancelReason.trim() }),
+      });
+      if (!r.ok) { toast('Failed to submit cancellation request', 'error'); return; }
+      toast('Cancellation requested');
+      setShowCancelRequest(false);
+      setCancelReason('');
+    } finally { setSubmittingAction(false); }
+  };
 
   if (!hydrated || loading) {
     return (
@@ -137,17 +186,54 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     { key: 'participants', label: 'Participants' },
     { key: 'deals', label: 'Deals' },
     ...(isAdmin ? [{ key: 'costs' as BlitzTabKey, label: 'Costs' }] : []),
+    ...(isAdmin ? [{ key: 'profitability' as BlitzTabKey, label: 'Profit' }] : []),
   ];
+
+  const canCancelRequest = isOwner && (blitz.status === 'upcoming' || blitz.status === 'active');
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-      <button
-        onClick={() => router.push('/dashboard/blitz')}
-        className="flex items-center gap-1.5 text-base min-h-[48px]"
-        style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-      >
-        <ArrowLeft className="w-4 h-4" /> Blitz
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => router.push('/dashboard/blitz')}
+          className="flex items-center gap-1.5 text-base min-h-[48px]"
+          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        >
+          <ArrowLeft className="w-4 h-4" /> Blitz
+        </button>
+        <div className="flex items-center gap-3">
+          {canManage && (
+            <button
+              onClick={() => setShowEdit(true)}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Edit blitz"
+              style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {canCancelRequest && (
+            <button
+              onClick={() => setShowCancelRequest(true)}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Request cancellation"
+              style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setShowDelete(true)}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Delete blitz"
+              style={{ color: 'var(--m-danger, var(--accent-danger))' }}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
 
       <div>
         <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{blitz.name}</h1>
@@ -164,36 +250,109 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
       <div key={tab} className={panelDir === 'right' ? 'animate-panel-right' : 'animate-panel-left'}>
         {tab === 'overview' && (
-          <BlitzOverview
-            participantCount={approvedParticipants.length}
-            totalDeals={approvedVisibleProjects.length}
-            totalKW={totalKW}
-            notes={blitz.notes}
-          />
+          <div className="space-y-4">
+            <BlitzOverview
+              participantCount={approvedParticipants.length}
+              totalDeals={approvedVisibleProjects.length}
+              totalKW={totalKW}
+              notes={blitz.notes}
+            />
+            <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
+          </div>
         )}
 
         {tab === 'participants' && (
           <BlitzParticipants
             blitzId={blitzId}
-            participants={blitz.participants ?? []}
+            blitzOwnerId={blitz.owner?.id}
+            participants={participants}
             reps={reps}
             canManage={canManage}
+            leaderboard={leaderboard}
             onRefresh={loadBlitz}
           />
         )}
 
         {tab === 'deals' && (
-          <BlitzDeals projects={visibleProjects} />
+          <BlitzDeals
+            projects={visibleProjects}
+            approvedParticipantIds={approvedParticipantIds}
+            showPayout={isAdmin || isOwner}
+          />
         )}
 
         {tab === 'costs' && isAdmin && (
-          <BlitzCosts
-            blitzId={blitzId}
-            costs={blitz.costs ?? []}
-            onRefresh={loadBlitz}
+          <BlitzCosts blitzId={blitzId} costs={costs} onRefresh={loadBlitz} />
+        )}
+
+        {tab === 'profitability' && isAdmin && (
+          <BlitzProfitability
+            approvedVisibleProjects={approvedVisibleProjects}
+            approvedParticipantIds={approvedParticipantIds}
+            totalCosts={totalCosts}
+            kiloMargin={kiloMargin}
+            costsByCategory={costsByCategory}
+            solarTechProducts={solarTechProducts}
+            productCatalogProducts={productCatalogProducts}
+            installerPricingVersions={installerPricingVersions}
           />
         )}
       </div>
+
+      <BlitzEditSheet
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        onSaved={loadBlitz}
+        blitz={blitz}
+        isAdmin={isAdmin}
+        reps={reps}
+      />
+
+      <MobileBottomSheet open={showDelete} onClose={() => setShowDelete(false)} title="Delete Blitz?">
+        <div className="px-5 space-y-4">
+          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            This permanently removes the blitz, all participant records, and all tracked costs. Deals stay; they&apos;ll just unlink. Cannot be undone.
+          </p>
+          <button
+            onClick={handleDelete}
+            disabled={submittingAction}
+            className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-white rounded-lg transition-colors disabled:opacity-40"
+            style={{ background: 'var(--m-danger, var(--accent-danger))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            {submittingAction ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            {submittingAction ? 'Deleting...' : 'Delete blitz'}
+          </button>
+        </div>
+      </MobileBottomSheet>
+
+      <MobileBottomSheet open={showCancelRequest} onClose={() => { setShowCancelRequest(false); setCancelReason(''); }} title="Request Cancellation">
+        <div className="px-5 space-y-4">
+          <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            Submits a cancellation request to admin. The blitz stays active until an admin reviews.
+          </p>
+          <textarea
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            rows={3}
+            placeholder="Reason for cancellation"
+            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[80px] resize-none focus:outline-none focus:ring-1"
+            style={{
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              '--tw-ring-color': 'var(--accent-emerald)',
+            } as React.CSSProperties}
+          />
+          <button
+            onClick={handleCancelRequest}
+            disabled={submittingAction || !cancelReason.trim()}
+            className="w-full min-h-[48px] text-base font-semibold rounded-lg transition-colors disabled:opacity-40"
+            style={{ color: 'var(--m-danger, var(--accent-danger))', border: '1px solid var(--m-danger, var(--accent-danger))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            {submittingAction ? 'Submitting...' : 'Submit request'}
+          </button>
+        </div>
+      </MobileBottomSheet>
     </div>
   );
 }

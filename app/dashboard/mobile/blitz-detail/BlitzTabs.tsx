@@ -1,6 +1,6 @@
 'use client';
 
-export type BlitzTabKey = 'overview' | 'participants' | 'deals' | 'costs';
+export type BlitzTabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 
 export interface BlitzTab {
   key: BlitzTabKey;

@@ -1,0 +1,151 @@
+'use client';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useRouter } from 'next/navigation';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import { formatCurrency } from '../../../../lib/utils';
+import { getBlitzProjectBaselines } from '../../../../lib/blitzComputed';
+
+const COST_BAR: Record<string, string> = {
+  housing: 'var(--accent-emerald)',
+  travel: '#a78bfa',
+  gas: '#f59e0b',
+  meals: 'var(--accent-emerald)',
+  incentives: '#ec4899',
+  swag: '#fb923c',
+  other: 'var(--m-text-dim, #445577)',
+};
+
+interface Props {
+  approvedVisibleProjects: any[];
+  approvedParticipantIds: Set<string>;
+  totalCosts: number;
+  kiloMargin: number;
+  costsByCategory: Record<string, number>;
+  solarTechProducts: any[];
+  productCatalogProducts: any[];
+  installerPricingVersions: any[];
+}
+
+export default function BlitzProfitability({
+  approvedVisibleProjects,
+  approvedParticipantIds,
+  totalCosts,
+  kiloMargin,
+  costsByCategory,
+  solarTechProducts,
+  productCatalogProducts,
+  installerPricingVersions,
+}: Props) {
+  const router = useRouter();
+  const netProfit = kiloMargin - totalCosts;
+  const roi = totalCosts > 0 ? (netProfit / totalCosts) * 100 : 0;
+  const deps = { solarTechProducts, productCatalogProducts, installerPricingVersions };
+
+  const categories = Object.entries(costsByCategory).sort((a, b) => b[1] - a[1]);
+
+  const perProject = approvedVisibleProjects
+    .map((p: any) => {
+      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+      const anyAddl = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+      if (!isSelfGen && !closerApproved && !anyAddl) return null;
+      const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p, deps);
+      const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
+      const margin = (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
+      return { p, margin };
+    })
+    .filter((e): e is { p: any; margin: number } => e !== null)
+    .sort((a, b) => b.margin - a.margin);
+
+  const kpis = [
+    { label: 'Kilo Margin', value: formatCurrency(Math.round(kiloMargin)), tone: 'emerald' as const, sub: 'Baseline spread × kW' },
+    { label: 'Blitz Costs', value: formatCurrency(totalCosts), tone: 'amber' as const },
+    { label: 'Net Profit', value: formatCurrency(Math.round(netProfit)), tone: netProfit >= 0 ? 'emerald' as const : 'red' as const, sub: 'Margin − Costs' },
+    { label: 'ROI', value: `${roi.toFixed(0)}%`, tone: roi >= 0 ? 'emerald' as const : 'red' as const, icon: roi >= 0 },
+  ];
+
+  const toneColor = (t: 'emerald' | 'amber' | 'red') =>
+    t === 'emerald' ? 'var(--accent-emerald)' : t === 'amber' ? '#f59e0b' : '#f87171';
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        {kpis.map((k, i) => (
+          <div
+            key={k.label}
+            className="rounded-xl p-3"
+            style={{
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
+              animation: 'fadeUpIn 350ms cubic-bezier(0.16, 1, 0.3, 1) both',
+              animationDelay: `${i * 70}ms`,
+            }}
+          >
+            <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{k.label}</p>
+            <p className="text-xl font-bold mt-1 flex items-center gap-1.5 leading-none" style={{ color: toneColor(k.tone), fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              {k.value}
+              {k.icon !== undefined && (k.icon ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />)}
+            </p>
+            {k.sub && <p className="text-[10px] mt-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{k.sub}</p>}
+          </div>
+        ))}
+      </div>
+
+      {categories.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Cost Breakdown</p>
+          <div className="space-y-2.5">
+            {categories.map(([cat, amt], idx) => {
+              const pct = totalCosts > 0 ? (amt / totalCosts) * 100 : 0;
+              const color = COST_BAR[cat] ?? COST_BAR.other;
+              return (
+                <div key={cat} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs capitalize font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{cat}</span>
+                    <span className="text-xs tabular-nums" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(amt)} · {pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
+                    <div
+                      className="h-full rounded-full bar-grow-anim"
+                      style={{ background: color, '--bar-w': `${pct}%`, '--bar-delay': `${80 + idx * 70}ms` } as React.CSSProperties}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {perProject.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Projects by margin</p>
+          <div className="space-y-2">
+            {perProject.map(({ p, margin }) => {
+              const closerName = p.closer ? `${p.closer.firstName} ${p.closer.lastName}` : '—';
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                  className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 active:opacity-70 min-h-[56px]"
+                  style={{ background: 'rgba(0,0,0,0.15)' }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{closerName} · {p.kWSize?.toFixed(1)} kW</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--m-text-dim, #445577)' }}>Margin</p>
+                    <p className="text-sm font-bold tabular-nums" style={{ color: margin >= 0 ? 'var(--accent-emerald)' : '#f87171', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(margin))}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

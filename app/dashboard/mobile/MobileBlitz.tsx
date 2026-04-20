@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
-import { Plus, Tent, Inbox, AlertCircle } from 'lucide-react';
+import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2 } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -95,6 +95,7 @@ export default function MobileBlitz() {
     canRequestBlitz: false,
     canCreateBlitz: false,
   });
+  const [joiningBlitzId, setJoiningBlitzId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -162,6 +163,21 @@ export default function MobileBlitz() {
       setBlitzes(normalized);
       setRequests(r);
     });
+  };
+
+  const handleJoinBlitz = async (blitzId: string) => {
+    if (!effectiveRepId) return;
+    setJoiningBlitzId(blitzId);
+    try {
+      const res = await fetch(`/api/blitzes/${blitzId}/participants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: effectiveRepId, joinStatus: 'pending' }),
+      });
+      if (!res.ok) { toast('Failed to join blitz', 'error'); return; }
+      toast('Join request sent');
+      loadData();
+    } finally { setJoiningBlitzId(null); }
   };
 
   const handleCreateBlitz = async (e: React.FormEvent) => {
@@ -313,6 +329,17 @@ export default function MobileBlitz() {
                 const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
                   .filter(Boolean)
                   .join(' \u00B7 ');
+                const isOwner = blitz.owner?.id === effectiveRepId;
+                const myParticipation = blitz.participants.find((p) => p.user.id === effectiveRepId);
+                const canJoin = !isAdmin && !isOwner
+                  && (!myParticipation || myParticipation.joinStatus === 'declined')
+                  && (blitz.status === 'upcoming' || blitz.status === 'active');
+                const participationLabel = myParticipation
+                  ? myParticipation.joinStatus === 'approved' ? 'Joined'
+                    : myParticipation.joinStatus === 'declined' ? 'Declined'
+                    : 'Pending'
+                  : null;
+                const joining = joiningBlitzId === blitz.id;
 
                 return (
                   <div
@@ -330,6 +357,33 @@ export default function MobileBlitz() {
                         </div>
                         <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
                       </div>
+                      {(canJoin || participationLabel || isOwner) && (
+                        <div className="mt-3 flex items-center gap-2">
+                          {isOwner && (
+                            <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald)', background: 'rgba(0,229,160,0.12)' }}>Leader</span>
+                          )}
+                          {canJoin && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleJoinBlitz(blitz.id); }}
+                              disabled={joining}
+                              className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-40"
+                              style={{ color: 'var(--accent-emerald)', border: '1px solid var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                            >
+                              {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
+                              {joining ? 'Joining...' : 'Join'}
+                            </button>
+                          )}
+                          {participationLabel && !canJoin && !isOwner && (
+                            <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded" style={{
+                              color: participationLabel === 'Joined' ? 'var(--accent-emerald)' : participationLabel === 'Declined' ? 'var(--m-danger, var(--accent-danger))' : '#f59e0b',
+                              background: participationLabel === 'Joined' ? 'rgba(0,229,160,0.12)' : participationLabel === 'Declined' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                            }}>
+                              <UserCheck className="w-3 h-3" /> {participationLabel}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </MobileCard>
                   </div>
                 );

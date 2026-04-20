@@ -1,0 +1,72 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { Trophy } from 'lucide-react';
+import { formatCurrency } from '../../../../lib/utils';
+import type { LeaderboardEntry } from '../../../../lib/blitzComputed';
+
+const RANK_GRAD = [
+  'linear-gradient(135deg, #fbbf24, #d97706)',
+  'linear-gradient(135deg, #cbd5e1, #64748b)',
+  'linear-gradient(135deg, #d97706, #92400e)',
+];
+const RANK_COLOR = ['#fbbf24', '#cbd5e1', '#fb923c'];
+
+interface Props {
+  entries: LeaderboardEntry[];
+  showPayout: boolean;
+}
+
+export default function BlitzLeaderboard({ entries, showPayout }: Props) {
+  const router = useRouter();
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+      <div className="flex items-center gap-2 mb-3">
+        <Trophy className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Leaderboard</span>
+      </div>
+      <div className="space-y-1.5">
+        {entries.slice(0, 5).map((rep, idx) => {
+          const rank = idx + 1;
+          const isTop3 = rank <= 3;
+          return (
+            <button
+              key={rep.userId}
+              onClick={() => router.push(`/dashboard/users/${rep.userId}`)}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg active:opacity-70"
+              style={{
+                background: isTop3 ? 'rgba(0,0,0,0.15)' : 'transparent',
+                animation: 'fadeUpIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                animationDelay: `${idx * 50}ms`,
+              }}
+            >
+              <span
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                style={{
+                  background: isTop3 ? RANK_GRAD[rank - 1] : 'var(--m-border, var(--border-mobile))',
+                  color: isTop3 ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                  fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                }}
+              >
+                {rank}
+              </span>
+              <span className="flex-1 text-sm font-semibold truncate text-left" style={{ color: isTop3 ? RANK_COLOR[rank - 1] : 'white', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                {rep.name}
+              </span>
+              <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                {rep.deals}d · {rep.kW.toFixed(1)}kW
+              </span>
+              {showPayout && rep.payout > 0 && (
+                <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  {formatCurrency(Math.round(rep.payout))}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
