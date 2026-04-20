@@ -25,7 +25,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,mts}": [
-      "eslint --max-warnings=9999"
+      "eslint --max-warnings=9999 --cache --cache-location node_modules/.cache/eslint/lint-staged"
     ]
   },
   "prisma": {

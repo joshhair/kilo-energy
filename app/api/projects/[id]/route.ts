@@ -230,8 +230,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const solarTechProducts = productCatalogProductsRaw
       .filter((p) => p.installerId === solarTechInstaller?.id)
       .map((p) => {
-        const now = new Date();
-        const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= now)
+        const effectiveSoldDate = new Date(body.soldDate ?? current.soldDate);
+        const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= effectiveSoldDate)
           ?? p.pricingVersions[0];
         const familyFinancerMap: Record<string, string> = {
           'Goodleap': 'Goodleap',

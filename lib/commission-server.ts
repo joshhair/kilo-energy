@@ -125,8 +125,9 @@ function resolveBaselines(
     try {
       const b = getSolarTechBaseline(inputs.solarTechProductId, inputs.kWSize, deps.solarTechProducts);
       return { ...b, source: 'solartech' };
-    } catch {
-      // Fall through to zero if product missing — preserves original client behavior.
+    } catch (err) {
+      console.warn(`[commission] SolarTech product lookup failed for productId=${inputs.solarTechProductId}: ${err instanceof Error ? err.message : String(err)}. Commission will be $0.`);
+      return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, source: 'fallback' };
     }
   }
 

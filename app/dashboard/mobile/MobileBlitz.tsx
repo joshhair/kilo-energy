@@ -304,8 +304,8 @@ export default function MobileBlitz() {
           {filteredBlitzes.length === 0 ? (
             <MobileEmptyState icon={Tent} title="No blitzes found" subtitle="Try a different status filter" />
           ) : (
-            <div className="space-y-3">
-              {filteredBlitzes.map((blitz) => {
+            <div key={statusFilter} className="space-y-3">
+              {filteredBlitzes.map((blitz, index) => {
                 const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
                 const dateLabel = blitzDateLabel(blitz.status, blitz.startDate, blitz.endDate);
                 const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
@@ -313,15 +313,23 @@ export default function MobileBlitz() {
                   .join(' \u00B7 ');
 
                 return (
-                  <MobileCard key={blitz.id} onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
-                        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
+                  <div
+                    key={blitz.id}
+                    style={{
+                      animation: 'blitzCardIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                      animationDelay: `${index * 40}ms`,
+                    }}
+                  >
+                    <MobileCard onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
+                          <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
+                        </div>
+                        <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
                       </div>
-                      <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
-                    </div>
-                  </MobileCard>
+                    </MobileCard>
+                  </div>
                 );
               })}
             </div>

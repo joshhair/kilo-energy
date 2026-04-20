@@ -53,11 +53,12 @@ export function SubDealerDashboard({
   const today = todayLocalDateStr();
   // Sub-dealers earn M1 when acting as setter; include those entries too
   const setterProjectIds = new Set(myProjects.filter((p) => p.setterId === currentRepId).map((p) => p.id));
+  const closerProjectIds = new Set(myProjects.filter((p) => p.repId === currentRepId).map((p) => p.id));
   const totalEarned = myPayroll
     .filter((e) => e.status === 'Paid' && e.date <= today && (
       e.paymentStage === 'M2' ||
       e.paymentStage === 'M3' ||
-      (e.paymentStage === 'M1' && e.projectId !== null && setterProjectIds.has(e.projectId))
+      (e.paymentStage === 'M1' && e.projectId !== null && (setterProjectIds.has(e.projectId) || closerProjectIds.has(e.projectId)))
     ))
     .reduce((sum, e) => sum + e.amount, 0);
 
