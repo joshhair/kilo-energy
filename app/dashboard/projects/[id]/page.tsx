@@ -11,7 +11,7 @@ import MobileProjectDetail from '../../mobile/MobileProjectDetail';
 import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
-  calculateCommission,
+  calculateCommission, resolveTrainerRate,
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
@@ -30,7 +30,7 @@ import { AdminNotesEditor } from '../components/detail/AdminNotesEditor';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
@@ -226,6 +226,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     effectiveRole === 'rep' &&
     project.repId !== effectiveRepId &&
     project.setterId !== effectiveRepId &&
+    project.trainerId !== effectiveRepId &&
     !project.additionalClosers?.some((p) => p.userId === effectiveRepId) &&
     !project.additionalSetters?.some((p) => p.userId === effectiveRepId)
   ) {
@@ -543,7 +544,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   // All payroll entries for this project (admin view)
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
-  const closerEntries = projectEntries.filter((e) => e.repId === project.repId);
+  const closerEntries = projectEntries.filter((e) => e.repId === project.repId && e.paymentStage !== 'Trainer');
   const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId) : [];
   const coCloserIds = new Set((project.additionalClosers ?? []).map((c) => c.userId));
   const coSetterIds = new Set((project.additionalSetters ?? []).map((c) => c.userId));
@@ -580,7 +581,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const setterTotalExpected = project.setterId
     ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
     : 0;
-  const trainerTotalExpected = (project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000;
+  const effectiveTrainerRate = resolveTrainerRate(
+    { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
+    project.repId,
+    trainerAssignments,
+    payrollEntries,
+  ).rate;
+  const trainerTotalExpected = effectiveTrainerRate * (project.kWSize ?? 0) * 1000;
 
   const inputCls =
     'bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]';
@@ -1109,7 +1116,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="text-white text-sm font-semibold">{project.trainerName ?? '(trainer)'}</p>
-                    <p className="text-[var(--text-muted)] text-xs">Trainer{project.trainerRate != null ? ` · $${project.trainerRate.toFixed(2)}/W` : ''}</p>
+                    <p className="text-[var(--text-muted)] text-xs">Trainer{effectiveTrainerRate > 0 ? ` · $${effectiveTrainerRate.toFixed(2)}/W` : ''}</p>
                     {trainerTotalExpected > 0 && (
                       <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                     )}

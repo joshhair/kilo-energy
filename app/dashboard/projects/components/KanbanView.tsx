@@ -238,7 +238,7 @@ export default function KanbanView({
                   )}
                   {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
                     const myRole = !isAdmin
-                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : null)
+                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : proj.trainerId === currentRepId ? 'Trainer' : null)
                       : null;
                     const isMyCard = myRole !== null;
                     let commissionTotal: number;
@@ -511,7 +511,7 @@ export default function KanbanView({
                   )}
                   {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
                     const myRole = !isAdmin
-                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : null)
+                      ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : proj.trainerId === currentRepId ? 'Trainer' : null)
                       : null;
                     const isMyCard = myRole !== null;
                     let commissionTotal: number;
