@@ -792,7 +792,7 @@ export function createM3Payroll(
     }
   }
 
-  return newEntries.filter((e) => e.amount > 0 && !existingM3RepIds.has(e.repId));
+  return newEntries.filter((e) => e.amount > 0 && (e.paymentStage === 'Trainer' || !existingM3RepIds.has(e.repId)));
 }
 
 // ─── 7. syncPayrollAmounts ───────────────────────────────────────────────────

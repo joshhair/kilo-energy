@@ -755,7 +755,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // returned for the not-found case + admin/PM case above).
   if (!rep) return null;
 
-  const repProjects = projects.filter((p) => p.repId === id || p.setterId === id || p.additionalClosers?.some((c) => c.userId === id));
+  const repProjects = projects.filter((p) => p.repId === id || p.setterId === id || p.additionalClosers?.some((c) => c.userId === id) || p.additionalSetters?.some((c) => c.userId === id));
   const repPayroll = payrollEntries.filter((p) => p.repId === id);
 
   // Payment history pagination
@@ -836,7 +836,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   const assignment = trainerAssignments.find((a) => a.traineeId === id);
   const trainerRep = assignment ? reps.find((r) => r.id === assignment.trainerId) : null;
-  const completedDeals = repProjects.filter((p) => p.repId === id && (p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed')).length;
+  const completedDeals = repProjects.filter((p) => p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed').length;
   const currentOverrideRate = assignment ? getTrainerOverrideRate(assignment, completedDeals) : 0;
 
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
