@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
 import { ACTIVE_PHASES } from '../../../lib/data';
+import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
 import { CheckCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -191,8 +192,8 @@ export default function MobileDashboard() {
     [myPayroll],
   );
   const totalChargebacks = useMemo(
-    () => Math.abs(outstandingChargebacks.reduce((s, p) => s + p.amount, 0)),
-    [outstandingChargebacks],
+    () => Math.abs(sumPendingChargebacks(myPayroll)),
+    [myPayroll],
   );
 
   const totalKW = useMemo(
@@ -263,8 +264,10 @@ export default function MobileDashboard() {
     [myPayroll, period],
   );
 
+  // Net paid-out (includes chargebacks). Matches the payroll tab's combined
+  // total + the desktop dashboard, so the two views agree.
   const periodPaid = useMemo(
-    () => periodPayroll.filter((p) => p.status === 'Paid' && p.amount > 0).reduce((s, p) => s + p.amount, 0),
+    () => sumPaid(periodPayroll),
     [periodPayroll],
   );
 
@@ -309,10 +312,11 @@ export default function MobileDashboard() {
     const dealsPerMonth = (totalDeals / effectiveDays) * 30.44;
     const paceBasedAnnual = dealsPerMonth * avgCommissionPerDeal * 12;
 
-    // Actual paid history
-    const totalPaidPositive = myPayroll
-      .filter((p) => p.status === 'Paid' && p.amount > 0 && p.date <= todayISO)
-      .reduce((s, p) => s + p.amount, 0);
+    // Actual paid history. Uses GROSS paid (excludes chargebacks) because
+    // this drives the monthly-rate averaging — we want how fast the rep is
+    // earning, not net-of-claw-backs. For any cumulative "paid-out" total
+    // shown to the user, use sumPaid (net) instead.
+    const totalPaidPositive = sumGrossPaid(myPayroll, { asOf: todayISO });
 
     let annual: number;
     if (daysSinceFirst >= 60 && totalPaidPositive > 0) {

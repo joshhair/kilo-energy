@@ -7,6 +7,7 @@ import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$, localDateString, todayLocalDateStr } from '../../../lib/utils';
+import { sumPaid, sumPending, sumDraft } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer, Trash2 } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
@@ -254,30 +255,37 @@ function PayrollPageInner() {
   // on the inputs that actually matter.
   const today = todayLocalDateStr();
 
-  const { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid } = useMemo(() => {
+  const { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid, combinedTotalPaid } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
     const filteredByDateRep: typeof payrollEntries = [];
-    let totalDraft = 0;
-    let totalPending = 0;
-    let totalPaid = 0;
+    const allTypesInScope: typeof payrollEntries = [];
+    // Walk once. filteredByDateRep keeps the legacy per-type semantic for
+    // existing count badges. allTypesInScope is the same date+rep scope
+    // without the type filter — used for the combined-paid aggregator
+    // that compares to the dashboard tile.
     for (const p of payrollEntries) {
-      if (p.type !== typeTab) continue;
       if (payFilterFrom && p.date < payFilterFrom) continue;
       if (payFilterTo && p.date > payFilterTo) continue;
       if (filterRepId && p.repId !== filterRepId) continue;
 
-      // Row passed the date/rep/type filters — it's in filteredByDateRep.
+      allTypesInScope.push(p);
+      if (p.type !== typeTab) continue;
       filteredByDateRep.push(p);
-      if (p.status === 'Draft' && p.date <= today) totalDraft += p.amount;
-      else if (p.status === 'Pending' && p.date <= today) totalPending += p.amount;
-      else if (p.status === 'Paid' && p.date <= today) totalPaid += p.amount;
 
-      // And it's in `filtered` (the visible table) only if its status
-      // also matches the active status tab.
-      if (p.status === statusTab && (statusTab !== 'Paid' || p.date <= today)) filtered.push(p);
+      if (p.status === statusTab && (statusTab !== 'Paid' || p.date <= today)) {
+        filtered.push(p);
+      }
     }
 
-    return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid };
+    // Per-type totals for the currently-selected tab's tiles.
+    const totalDraft = sumDraft(filteredByDateRep, { asOf: today });
+    const totalPending = sumPending(filteredByDateRep, { asOf: today });
+    const totalPaid = sumPaid(filteredByDateRep, { asOf: today });
+    // Combined across all types — matches dashboard "Paid Out" when
+    // date/rep filters align.
+    const combinedTotalPaid = sumPaid(allTypesInScope, { asOf: today });
+
+    return { filtered, filteredByDateRep, totalDraft, totalPending, totalPaid, combinedTotalPaid };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId, today]);
 
   // Derived selection state — used by the floating action bar.
@@ -612,9 +620,9 @@ function PayrollPageInner() {
   if (!isAdmin) {
     const myEntries = payrollEntries.filter((p) => p.repId === effectiveRepId);
     const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);
-    const myDraft = myTypeFiltered.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-    const myPending = myTypeFiltered.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-    const myPaid = myTypeFiltered.filter((p) => p.status === 'Paid' && p.date <= today).reduce((s, p) => s + p.amount, 0);
+    const myDraft = sumDraft(myTypeFiltered, { asOf: today });
+    const myPending = sumPending(myTypeFiltered, { asOf: today });
+    const myPaid = sumPaid(myTypeFiltered, { asOf: today });
     const myFiltered = myTypeFiltered
       .filter((p) => (repStatusFilter === 'All' || p.status === repStatusFilter) && (p.status !== 'Paid' || p.date <= today))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
@@ -1110,6 +1118,14 @@ function PayrollPageInner() {
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${totalPaid.toLocaleString()}</p>
           <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Paid' && p.date <= today).length} entries</p>
         </div>
+      </div>
+
+      {/* Combined total across all types (Deal + Bonus + Trainer). Matches
+          the dashboard "Paid Out" tile when the dashboard period aligns
+          with this tab's date range + rep filter. Shown as a small row so
+          per-type tiles remain the primary display. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: -12, marginBottom: 20, fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>
+        <span>Combined paid (all types): <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>${combinedTotalPaid.toLocaleString()}</span></span>
       </div>
 
       {/* Status tabs */}

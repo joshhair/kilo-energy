@@ -8,6 +8,7 @@ import {
   Project, InstallerPricingVersion, ProductCatalogProduct, ProductCatalogPricingVersion, ACTIVE_PHASES,
 } from '../../../lib/data';
 import { formatDate, fmt$, fmtCompact$, formatCompactKW, todayLocalDateStr } from '../../../lib/utils';
+import { sumPaid } from '../../../lib/aggregators';
 import { DollarSign, CheckCircle, Zap, Users, BarChart2, FolderKanban, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, AlertCircle, HelpCircle, Trophy } from 'lucide-react';
 import { PaginationBar } from './PaginationBar';
 import { type Period, getGreeting, getPhaseStuckThresholds, AnimatedStatValue } from './dashboard-utils';
@@ -158,7 +159,9 @@ export function AdminDashboard({
     );
 
     const todayStr = todayLocalDateStr();
-    const totalPaid = payroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
+    // Net paid-out across ALL types (Deal + Bonus + Trainer), all reps, all
+    // in the selected period. Matches the payroll-tab "combined" total.
+    const totalPaid = sumPaid(payroll, { asOf: todayStr });
     const totalKWSold = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
     const totalKWInstalled = projects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0);
 

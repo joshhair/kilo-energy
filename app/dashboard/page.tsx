@@ -13,6 +13,7 @@ import {
   DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS,
 } from '../../lib/data';
 import { fmt$, formatCompactKW } from '../../lib/utils';
+import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../lib/aggregators';
 import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle } from 'lucide-react';
 
 // ── Extracted component imports ──────────────────────────────────────────────
@@ -995,15 +996,15 @@ export default function DashboardPage() {
     }, 0);
   const _totalEstimatedPay = unpaidPayroll + unmatchedProjectPay + pendingM3Pay;
 
-  // Only count as "paid" once the pay date has actually passed
-  const totalPaid = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
+  // Canonical net paid-out (incl. chargebacks; excludes future-dated).
+  // Matches payroll-tab combined total + mobile dashboard.
+  const totalPaid = sumPaid(myPayroll, { asOf: todayStr });
   // Chargebacks tile shows ONLY currently-owed negatives — entries still
   // Draft or Pending. Paid negatives have already been deducted from a
   // past paycheck and aren't owed anymore; including them would double-
   // count the historical claw-back.
-  const outstandingChargebacks = myPayroll.filter((p) => p.amount < 0 && (p.status === 'Draft' || p.status === 'Pending'));
-  const totalChargebacks = Math.abs(outstandingChargebacks.reduce((sum, p) => sum + p.amount, 0));
-  const chargebackCount = outstandingChargebacks.length;
+  const totalChargebacks = Math.abs(sumPendingChargebacks(myPayroll, { asOf: todayStr }));
+  const chargebackCount = countPendingChargebacks(myPayroll, { asOf: todayStr });
   const _totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
   const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
@@ -1125,7 +1126,7 @@ export default function DashboardPage() {
       return sum + m3;
     }, 0);
   const _prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay + prevPendingM3Pay;
-  const prevTotalPaid = myPrevPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((sum, p) => sum + p.amount, 0);
+  const prevTotalPaid = sumPaid(myPrevPayroll, { asOf: todayStr });
   const _prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWSold = myPrevProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWInstalled = myPrevProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);

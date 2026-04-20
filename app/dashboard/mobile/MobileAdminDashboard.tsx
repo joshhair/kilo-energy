@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, formatCompactKW } from '../../../lib/utils';
+import { sumPaid } from '../../../lib/aggregators';
 import {
   ACTIVE_PHASES,
   getSolarTechBaseline,
@@ -124,8 +125,8 @@ export default function MobileAdminDashboard() {
   const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
 
   const { totalPaid, totalRevenue, totalProfit } = useMemo(() => {
-    let paid = 0, rev = 0, prof = 0;
-    for (const e of periodPayroll) { if (e.status === 'Paid' && e.date <= todayStr) paid += e.amount; }
+    const paid = sumPaid(periodPayroll, { asOf: todayStr });
+    let rev = 0, prof = 0;
     for (const p of periodProjects) {
       if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
       const { closerPerW, kiloPerW } = getBaselines(p);
