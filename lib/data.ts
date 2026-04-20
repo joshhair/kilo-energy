@@ -1411,7 +1411,7 @@ export function getInstallerRatesForDeal(
   const { rates } = version;
   if (rates.type === 'tiered') {
     const band = rates.bands.find((b) => kW >= b.minKW && (b.maxKW === null || kW < b.maxKW));
-    if (!band) return { closerPerW: 0, setterPerW: 0, kiloPerW: 0, versionId: version.id };
+    if (!band) throw new Error(`No tiered pricing band covers ${kW} kW for installer "${installer}" (version ${version.id}). Add a band or update the pricing version.`);
     const setter = band.setterPerW != null ? band.setterPerW : Math.round((band.closerPerW + 0.10) * 100) / 100;
     return { closerPerW: band.closerPerW, setterPerW: setter, kiloPerW: band.kiloPerW, subDealerPerW: band.subDealerPerW, versionId: version.id };
   }
@@ -1522,7 +1522,12 @@ export function computeIncentiveProgress(
 
   let relevantProjects = projects.filter((p) => inRange(p.soldDate) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');
   if (incentive.type === 'personal' && incentive.targetRepId) {
-    relevantProjects = relevantProjects.filter((p) => p.repId === incentive.targetRepId || p.setterId === incentive.targetRepId);
+    relevantProjects = relevantProjects.filter((p) =>
+      p.repId === incentive.targetRepId ||
+      p.setterId === incentive.targetRepId ||
+      p.additionalClosers?.some((c) => c.userId === incentive.targetRepId) ||
+      p.additionalSetters?.some((s) => s.userId === incentive.targetRepId)
+    );
   }
 
   switch (incentive.metric) {

@@ -51,6 +51,7 @@ const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: st
   'Pending Install': { bar: 'bg-orange-500',   text: 'text-orange-300',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
   'Installed':       { bar: 'bg-teal-500',     text: 'text-teal-300',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
   'PTO':             { bar: 'bg-[var(--accent-green)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
+  'Completed':       { bar: 'bg-slate-500',     text: 'text-slate-300',   dot: 'bg-slate-400',   chipBg: 'bg-gradient-to-r from-slate-900/40 to-slate-800/20',       chipBorder: 'border-slate-700/30'    },
 };
 
 // ─── Needs Attention ──────────────────────────────────────────────────────────
