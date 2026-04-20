@@ -636,7 +636,8 @@ function BlitzPageInner() {
           return visible.reduce((s, p) => {
             const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
             const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-            return s + (isSelfGen || closerApproved ? p.kWSize : 0);
+            const setterApproved = p.setter?.id && approvedIds.has(p.setter.id);
+            return s + (isSelfGen || closerApproved || setterApproved ? p.kWSize : 0);
           }, 0);
         };
         sorted.sort((a, b) => scopedKW(b) - scopedKW(a));
