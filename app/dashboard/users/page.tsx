@@ -1620,7 +1620,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '0ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif", background: 'rgba(240,242,247,0.05)' }}>{repProjects.length}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif", background: 'rgba(240,242,247,0.05)' }}>{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Total Deals</p>
                   </div>

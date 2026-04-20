@@ -306,7 +306,11 @@ export function createMilestonePayroll(
 ): PayrollEntry[] {
   const { projectId, old, updatedProjects, stage, isAcceptance, isInstalled, installPayPct, deps } = params;
   const payDate = isAcceptance ? getM1PayDate() : getM2PayDate();
-  const freshProject = updatedProjects.find((p) => p.id === projectId)!;
+  const freshProject = updatedProjects.find((p) => p.id === projectId);
+  if (!freshProject) {
+    console.error(`createMilestonePayroll: project ${projectId} not found in updatedProjects`);
+    return [];
+  }
   const fullAmount = isAcceptance ? freshProject.m1Amount : freshProject.m2Amount;
 
   // Suppress M1 if M2 entries already exist — project previously reached Installed,
@@ -550,10 +554,14 @@ export function createM3Payroll(
   const { installerPayConfigs } = deps;
   const proj = updatedProjects.find((p) => p.id === projectId);
 
-  const m3AlreadyExists = prevEntries.some(
-    (e) => e.projectId === projectId && e.paymentStage === 'M3'
+  // Role-specific guard: track which repIds already have an M3 entry so a
+  // partial network failure (e.g. setter M3 persisted but closer M3 did not)
+  // doesn't permanently block re-generating the missing closer entry.
+  const existingM3RepIds = new Set(
+    prevEntries
+      .filter((e) => e.projectId === projectId && e.paymentStage === 'M3')
+      .map((e) => e.repId)
   );
-  if (m3AlreadyExists) return [];
 
   // Guard: only draft M3 if M2 was previously created for this project.
   const hasM2Entry = prevEntries.some(
@@ -783,7 +791,7 @@ export function createM3Payroll(
     }
   }
 
-  return newEntries.filter((e) => e.amount > 0);
+  return newEntries.filter((e) => e.amount > 0 && !existingM3RepIds.has(e.repId));
 }
 
 // ─── 7. syncPayrollAmounts ───────────────────────────────────────────────────
@@ -830,6 +838,7 @@ export function syncPayrollAmounts(
       const position = parseInt(coCloserMatch[1], 10);
       const coParty = updates.additionalClosers.find((c) => c.position === position);
       if (!coParty) return e;
+      if (e.paymentStage === 'M3' && coParty.m3Amount == null) return e;
       const newAmount = e.paymentStage === 'M2' ? coParty.m2Amount : (e.paymentStage === 'M1' ? coParty.m1Amount : (coParty.m3Amount ?? 0));
       if (newAmount === e.amount) return e;
       patches.push({ id: e.id, newAmount });
@@ -843,6 +852,7 @@ export function syncPayrollAmounts(
       const position = parseInt(coSetterMatch[1], 10);
       const coParty = updates.additionalSetters.find((s) => s.position === position);
       if (!coParty) return e;
+      if (e.paymentStage === 'M3' && coParty.m3Amount == null) return e;
       const newAmount = e.paymentStage === 'M2' ? coParty.m2Amount : (e.paymentStage === 'M1' ? coParty.m1Amount : (coParty.m3Amount ?? 0));
       if (newAmount === e.amount) return e;
       patches.push({ id: e.id, newAmount });
