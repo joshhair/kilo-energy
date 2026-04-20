@@ -163,10 +163,14 @@ function NavGroup({
 
 // ─── View As Selector (admin only) ──────────────────────────────────────────
 
-function ViewAsSelector({ reps, subDealers, onSelect }: {
+function ViewAsSelector({ reps, subDealers, onSelect, self }: {
   reps: Array<{ id: string; name: string }>;
   subDealers: Array<{ id: string; name: string }>;
   onSelect: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+  /** When the current admin also sells (has repType), pass their own
+   *  identity so the picker offers "My Rep View" as a first-class
+   *  option. Replaces Glide's two-account hack for selling admins. */
+  self?: { id: string; name: string } | null;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -236,6 +240,15 @@ function ViewAsSelector({ reps, subDealers, onSelect }: {
             </button>
           </div>
           <div className="max-h-48 overflow-y-auto">
+            {self && !search.trim() && (
+              <button
+                onClick={() => { onSelect({ id: self.id, name: self.name, role: 'rep' }); close(); }}
+                className="w-full text-left px-3 py-2 text-xs text-[var(--accent-green)] hover:bg-[var(--surface-card)] transition-colors flex items-center justify-between border-b border-[var(--border-subtle)]"
+              >
+                <span className="font-semibold">My Rep View</span>
+                <span className="text-[10px] text-[var(--text-dim)]">see your own rep page</span>
+              </button>
+            )}
             {filtered.length === 0 ? (
               <p className="text-xs text-[var(--text-dim)] p-3 text-center">No matches</p>
             ) : filtered.map((u) => (
@@ -722,7 +735,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             expanded; compact icon button when collapsed so admin doesn't
             lose the feature just because they narrowed the sidebar. */}
         {currentRole === 'admin' && !isViewingAs && !showCollapsed && (
-          <ViewAsSelector reps={reps} subDealers={subDealers} onSelect={setViewAsUser} />
+          <ViewAsSelector
+            reps={reps}
+            subDealers={subDealers}
+            onSelect={setViewAsUser}
+            self={currentUserRepType && currentRepId && currentRepName ? { id: currentRepId, name: currentRepName } : null}
+          />
         )}
         {currentRole === 'admin' && !isViewingAs && showCollapsed && (
           <div className="px-2 pb-1 flex justify-center">
@@ -804,17 +822,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
         {/* View As banner */}
-        {isViewingAs && viewAsUser && (
-          <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-amber-400" />
-              <span className="text-amber-300 text-sm font-medium">Viewing as <span className="text-white font-semibold">{viewAsUser.name}</span> <span className="text-amber-400/60 capitalize">({viewAsUser.role})</span></span>
+        {isViewingAs && viewAsUser && (() => {
+          const isSelfView = viewAsUser.id === currentRepId;
+          return (
+            <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-amber-400" />
+                <span className="text-amber-300 text-sm font-medium">
+                  {isSelfView
+                    ? <>My Rep View <span className="text-amber-400/60">— same as any rep sees</span></>
+                    : <>Viewing as <span className="text-white font-semibold">{viewAsUser.name}</span> <span className="text-amber-400/60 capitalize">({viewAsUser.role})</span></>
+                  }
+                </span>
+              </div>
+              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-amber-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
+                <XCircle className="w-3.5 h-3.5" /> Back to admin
+              </button>
             </div>
-            <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-amber-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
-              <XCircle className="w-3.5 h-3.5" /> Exit
-            </button>
-          </div>
-        )}
+          );
+        })()}
         {/* key={pathname} forces unmount/remount on route change so the
             animate-page-enter animation fires every time. The CSS class maps
             to mobileTabEnter (0.25s fade + 20px upward slide) at mobile widths

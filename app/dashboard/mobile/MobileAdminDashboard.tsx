@@ -76,7 +76,10 @@ export default function MobileAdminDashboard() {
     productCatalogPricingVersions,
     solarTechProducts,
     currentRepName,
+    currentRepId,
+    currentUserRepType,
     dbReady,
+    setViewAsUser,
   } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
@@ -248,7 +251,22 @@ export default function MobileAdminDashboard() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
+        {/* "My Rep View" toggle — only offered when the admin also sells
+            (has repType). Flips into rep-view for themselves, replacing
+            Glide's two-account hack. The layout's "Viewing as …" banner
+            shows above and offers an Exit button back to admin view. */}
+        {currentUserRepType && currentRepId && currentRepName && (
+          <button
+            onClick={() => setViewAsUser({ id: currentRepId, name: currentRepName, role: 'rep' })}
+            className="text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap"
+            style={{ background: 'rgba(0,229,160,0.12)', borderColor: 'rgba(0,229,160,0.3)', color: 'var(--accent-emerald)' }}
+          >
+            My Rep View
+          </button>
+        )}
+      </div>
 
       {/* Period filter — sliding pill (matches rep dashboard) */}
       <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
