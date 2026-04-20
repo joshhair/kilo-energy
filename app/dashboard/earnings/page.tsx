@@ -492,7 +492,7 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDealsBase.filter(r => r.kind === 'payroll').length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
+            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
           </button>
         ))}
       </div>
@@ -818,6 +818,7 @@ function AdminFinancialsView() {
   const [payrollSortKey, setPayrollSortKey] = useState<'repName' | 'customerName' | 'paymentStage' | 'amount' | 'status' | 'date'>('date');
   const [payrollSortDir, setPayrollSortDir] = useState<SortDir>('desc');
   const [markAllConfirmOpen, setMarkAllConfirmOpen] = useState(false);
+  const [deleteReimConfirm, setDeleteReimConfirm] = useState<{ id: string; label: string } | null>(null);
 
   const handlePayrollSort = (key: typeof payrollSortKey) => {
     setPayrollPage(1);
@@ -954,8 +955,15 @@ function AdminFinancialsView() {
     const row = reimbursements.find((r) => r.id === id);
     if (!row) return;
     const label = `${row.repName} — $${row.amount.toFixed(2)} — ${row.description}`;
-    if (!window.confirm(`Permanently delete this reimbursement?\n\n${label}\n\nThis also deletes any attached receipt file. Cannot be undone. Use "Archive" for reversible hide.`)) return;
+    setDeleteReimConfirm({ id, label });
+  };
 
+  const confirmDeleteReim = () => {
+    if (!deleteReimConfirm) return;
+    const { id } = deleteReimConfirm;
+    const row = reimbursements.find((r) => r.id === id);
+    setDeleteReimConfirm(null);
+    if (!row) return;
     setReimbursements((prev) => prev.filter((r) => r.id !== id));
     fetch(`/api/reimbursements/${id}`, { method: 'DELETE' })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement deleted', 'success'); })
@@ -1356,6 +1364,14 @@ function AdminFinancialsView() {
         title="Mark All Pending Paid"
         message={`Mark all ${filteredPayroll.filter((e) => e.status === 'Pending').length} pending entr${filteredPayroll.filter((e) => e.status === 'Pending').length === 1 ? 'y' : 'ies'} as paid?`}
         confirmLabel="Mark Paid"
+      />
+      <ConfirmDialog
+        open={!!deleteReimConfirm}
+        onClose={() => setDeleteReimConfirm(null)}
+        onConfirm={confirmDeleteReim}
+        title="Delete Reimbursement"
+        message={`Permanently delete this reimbursement?\n\n${deleteReimConfirm?.label ?? ''}\n\nThis also deletes any attached receipt file. Cannot be undone. Use "Archive" for reversible hide.`}
+        confirmLabel="Delete"
       />
     </div>
   );
