@@ -906,7 +906,7 @@ function NewDealPage() {
                       use the same canonical ordering from lib/sorting.ts. */}
                   <RepSelector
                     value={form.repId}
-                    onChange={(repId) => { update('repId', repId); update('setterId', ''); handleBlur('repId'); }}
+                    onChange={(repId) => { update('repId', repId); update('setterId', ''); update('blitzId', ''); setErrors((prev) => ({ ...prev, repId: validateField('repId', repId) })); }}
                     reps={closerPickerReps.filter((r) => r.id !== form.setterId)}
                     placeholder="— Select closer —"
                     clearLabel="— Select closer —"

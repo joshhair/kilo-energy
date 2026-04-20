@@ -218,11 +218,8 @@ export default function BlitzDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- approvedParticipantIds is derived from approvedVisibleProjects; adding both causes duplicate re-runs
   }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => {
-      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
-      return s + (closerApproved ? p.kWSize : 0);
-    }, 0),
-    [approvedVisibleProjects, approvedParticipantIds],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
+    [approvedVisibleProjects],
   );
   const totalCosts = useMemo(
     () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,

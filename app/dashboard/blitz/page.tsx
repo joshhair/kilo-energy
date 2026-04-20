@@ -122,7 +122,8 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const totalKW = visibleProjects.reduce((s, p) => {
     const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
     const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-    return s + (isSelfGen || closerApproved ? p.kWSize : 0);
+    const setterApproved = p.setter?.id && approvedIds.has(p.setter.id);
+    return s + (isSelfGen || closerApproved || setterApproved ? p.kWSize : 0);
   }, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
@@ -778,7 +779,8 @@ function BlitzPageInner() {
     return s + visibleProjects.reduce((ps, p) => {
       const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
       const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-      return ps + (isSelfGen || closerApproved ? p.kWSize : 0);
+      const setterApproved = p.setter?.id && approvedIds.has(p.setter.id);
+      return ps + (isSelfGen || closerApproved || setterApproved ? p.kWSize : 0);
     }, 0);
   }, 0);
   const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
