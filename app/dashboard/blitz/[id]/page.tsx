@@ -20,6 +20,7 @@ import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDe
 import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, Trophy, ChevronUp } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import { sortForSelection } from '../../../../lib/sorting';
+import { deriveBlitzStatus } from '../../../../lib/blitzStatus';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Link from 'next/link';
 
@@ -114,7 +115,11 @@ export default function BlitzDetailPage() {
   const loadBlitz = (forceUpdateForm = false) => {
     fetch(`/api/blitzes/${blitzId}`).then((r) => r.json()).then((data) => {
       if (data.error) { router.push('/dashboard/blitz'); return; }
-      setBlitz(data);
+      // Derive status from dates if the stored column is stale (upcoming
+      // blitz whose startDate has arrived). Respects cancelled/completed
+      // terminals unchanged.
+      const normalized = { ...data, status: deriveBlitzStatus(data) };
+      setBlitz(normalized);
       if (!editing || forceUpdateForm) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
       setLoading(false);
     }).catch(() => { setLoading(false); });

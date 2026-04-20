@@ -11,6 +11,7 @@ import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, Trending
 import { useToast } from '../../../lib/toast';
 import { PaginationBar } from '../components/PaginationBar';
 import { EmptyState } from '../components/EmptyState';
+import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
 type TabKey = 'blitzes' | 'requests';
@@ -548,7 +549,15 @@ function BlitzPageInner() {
       fetch('/api/blitzes').then((r) => r.json()),
       fetch('/api/blitz-requests').then((r) => r.json()),
     ]).then(([b, r]) => {
-      setBlitzes(Array.isArray(b) ? b : []);
+      // Normalize the stored blitz.status against today's dates. The DB
+      // column only transitions manually, so a blitz whose startDate
+      // already arrived would still say 'upcoming'. deriveBlitzStatus
+      // respects cancelled/completed as terminals and otherwise
+      // computes from startDate/endDate vs today.
+      const normalized = Array.isArray(b)
+        ? b.map((blitz: BlitzData) => ({ ...blitz, status: deriveBlitzStatus(blitz) }))
+        : [];
+      setBlitzes(normalized);
       setRequests(Array.isArray(r) ? r : []);
       setLoading(false);
     }).catch(() => setLoading(false));

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate } from '../../../lib/utils';
+import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { Plus, Tent, Inbox, AlertCircle } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -79,7 +80,10 @@ export default function MobileBlitz() {
       isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
     ])
       .then(([b, r]) => {
-        setBlitzes(b);
+        const normalized = Array.isArray(b)
+          ? b.map((blitz: BlitzData) => ({ ...blitz, status: deriveBlitzStatus(blitz) }))
+          : [];
+        setBlitzes(normalized);
         setRequests(r);
         setLoading(false);
       })
@@ -129,7 +133,13 @@ export default function MobileBlitz() {
     Promise.all([
       fetch('/api/blitzes').then((r) => r.json()),
       isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
-    ]).then(([b, r]) => { setBlitzes(b); setRequests(r); });
+    ]).then(([b, r]) => {
+      const normalized = Array.isArray(b)
+        ? b.map((blitz: BlitzData) => ({ ...blitz, status: deriveBlitzStatus(blitz) }))
+        : [];
+      setBlitzes(normalized);
+      setRequests(r);
+    });
   };
 
   const handleCreateBlitz = async (e: React.FormEvent) => {
