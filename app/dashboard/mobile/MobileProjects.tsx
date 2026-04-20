@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { Phase } from '../../../lib/data';
+import { Phase, ACTIVE_PHASES } from '../../../lib/data';
 import { Search, Plus } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -152,6 +152,8 @@ export default function MobileProjects() {
 
     if (phaseFilter !== 'All') {
       result = result.filter((p) => p.phase === phaseFilter);
+    } else {
+      result = result.filter((p) => ACTIVE_PHASES.includes(p.phase));
     }
 
     if (installerFilter) {

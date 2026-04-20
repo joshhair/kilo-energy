@@ -174,6 +174,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelNotes, setCancelNotes] = useState('');
   const [_notesExpanded, _setNotesExpanded] = useState(false);
   // Mobile edit sheet. Intentionally scoped to the edits mobile admins
   // reach for most often — setter, notes, flag, co-closer/co-setter
@@ -203,7 +206,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     );
   }
 
-  if (effectiveRole === 'rep' && project.repId !== effectiveRepId && project.setterId !== effectiveRepId) {
+  if (
+    effectiveRole === 'rep' &&
+    project.repId !== effectiveRepId &&
+    project.setterId !== effectiveRepId &&
+    project.trainerId !== effectiveRepId &&
+    !project.additionalClosers?.some((p) => p.userId === effectiveRepId) &&
+    !project.additionalSetters?.some((p) => p.userId === effectiveRepId)
+  ) {
     return (
       <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         You don&apos;t have permission to view this project.
@@ -308,12 +318,27 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const handlePhaseChange = (phase: Phase) => {
     setPhaseSheetOpen(false);
     if (phase === 'Cancelled') {
-      updateProject({ phase: 'Cancelled' } as Partial<typeof project>);
-      toast('Project cancelled', 'info');
-      router.push('/dashboard/projects');
+      setCancelReason('');
+      setCancelNotes('');
+      setShowCancelReasonModal(true);
       return;
     }
     doPhaseChange(phase);
+  };
+
+  const confirmCancelWithReason = () => {
+    if (!cancelReason) {
+      toast('Please select a cancellation reason', 'error');
+      return;
+    }
+    updateProject({
+      phase: 'Cancelled',
+      cancellationReason: cancelReason,
+      cancellationNotes: cancelNotes || undefined,
+    } as Partial<typeof project>);
+    setShowCancelReasonModal(false);
+    toast('Project cancelled', 'info');
+    router.push('/dashboard/projects');
   };
 
   const handleFlag = () => {
@@ -325,9 +350,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const handleCancel = () => {
     setMoreSheetOpen(false);
-    updateProject({ phase: 'Cancelled' } as Partial<typeof project>);
-    toast('Project cancelled', 'info');
-    router.push('/dashboard/projects');
+    setCancelReason('');
+    setCancelNotes('');
+    setShowCancelReasonModal(true);
   };
 
   const handleDelete = async () => {
@@ -876,7 +901,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             rows={editDraft.additionalClosers}
             primaryUserId={project.repId}
             excludeUserIds={[editDraft.setterId, ...editDraft.additionalClosers.map((c) => c.userId), ...editDraft.additionalSetters.map((s) => s.userId)].filter(Boolean)}
-            repTypeFilter={(r) => r.repType !== 'setter'}
+            repTypeFilter={(r) => r.repType === 'closer' || r.repType === 'both'}
             reps={reps}
             onChange={(rows) => setEditDraft((d) => ({ ...d, additionalClosers: rows }))}
           />
@@ -957,6 +982,67 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           </div>
         </div>
       </MobileBottomSheet>
+
+      {/* Cancellation reason modal */}
+      {showCancelReasonModal && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center p-4 pb-8"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}
+        >
+          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <span className="text-white font-bold text-base">Cancel Project</span>
+              <button onClick={() => setShowCancelReasonModal(false)} className="text-slate-400 p-1"><XIcon className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-slate-400 text-sm">Please provide a reason for cancelling <span className="text-white font-medium">{project.customerName}</span>.</p>
+              <div>
+                <label className="block text-xs uppercase tracking-wider mb-1.5 text-slate-400">Reason</label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full min-h-[44px] rounded-xl px-3 py-2.5 text-sm text-white outline-none"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Customer changed mind">Customer changed mind</option>
+                  <option value="Credit denied">Credit denied</option>
+                  <option value="Roof not suitable">Roof not suitable</option>
+                  <option value="Competitor won">Competitor won</option>
+                  <option value="Pricing issue">Pricing issue</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-wider mb-1.5 text-slate-400">Notes <span className="normal-case font-normal text-slate-500">(optional)</span></label>
+                <textarea
+                  rows={3}
+                  value={cancelNotes}
+                  onChange={(e) => setCancelNotes(e.target.value)}
+                  placeholder="Additional details..."
+                  className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none resize-none placeholder-slate-500"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setShowCancelReasonModal(false)}
+                  className="flex-1 font-medium text-sm rounded-xl py-3"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={confirmCancelWithReason}
+                  className="flex-1 font-semibold text-sm rounded-xl py-3 bg-red-600 active:bg-red-500 text-white"
+                >
+                  Cancel Project
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
