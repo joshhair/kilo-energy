@@ -22,6 +22,7 @@ export function PMDashboard({
   totalReps: number;
 }) {
   const activeProjects = projects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  const inProgressProjects = activeProjects.filter((p) => p.phase !== 'Completed');
   const phaseCounts = ACTIVE_PHASES.reduce((acc, phase) => {
     acc[phase] = projects.filter((p) => p.phase === phase).length;
     return acc;
@@ -59,7 +60,7 @@ export function PMDashboard({
         <div className="space-y-2">
           {ACTIVE_PHASES.map((phase) => {
             const count = phaseCounts[phase] || 0;
-            const pct = activeProjects.length > 0 ? (count / activeProjects.length) * 100 : 0;
+            const pct = inProgressProjects.length > 0 ? (count / inProgressProjects.length) * 100 : 0;
             return (
               <div key={phase} className="flex items-center gap-3">
                 <span className="text-xs text-[var(--text-secondary)] w-28 shrink-0">{phase}</span>

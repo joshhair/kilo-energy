@@ -32,11 +32,6 @@ function getRelativeLabel(dateStr: string): string {
     return target.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  // Future >30 days
-  if (diffDays > 30) {
-    return target.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
-
   return formatDate(dateStr);
 }
 

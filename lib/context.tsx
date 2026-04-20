@@ -912,7 +912,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const syncResult = syncPayrollAmounts(id, updates, payrollEntriesRef.current, closerM2TrainerDeduction, closerM3TrainerDeduction, effectiveKWSize, effectiveInstallPayPct, setterM2TrainerDeduction, setterM3TrainerDeduction);
       const pendingPatches = syncResult.patches;
       if (syncResult.patches.length > 0) {
-        setPayrollEntries(() => syncResult.updatedEntries);
+        setPayrollEntries((prev) => {
+          const staleIds = new Set(payrollEntriesRef.current.map((e) => e.id));
+          const newEntries = prev.filter((e) => !staleIds.has(e.id));
+          return [...syncResult.updatedEntries, ...newEntries];
+        });
       }
       // Persist each patch to DB.
       // Skip entries with temp client IDs (pay_${ts}_...) — they were created in
