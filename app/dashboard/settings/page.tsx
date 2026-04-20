@@ -112,6 +112,7 @@ function SettingsPageInner() {
 
   useEffect(() => {
     const p = searchParams.get('section') as string | null;
+    if (p === 'trainers') return; // legacy redirect effect handles this
     const next: SettingsSection = p && (validSections as string[]).includes(p)
       ? (p as SettingsSection)
       : 'blitz-permissions';

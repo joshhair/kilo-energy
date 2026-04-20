@@ -785,6 +785,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // even before payrollEntriesRef.current is updated (relevant on phase-skip to PTO).
       let newlyCreatedM2Entries: PayrollEntry[] = [];
 
+      // Recovery: Cancelled → Installed/PTO when no prior Paid M1 exists.
+      // During cancellation, Draft/Pending M1 entries are deleted (not chargebacked).
+      // Un-cancelling directly to PTO sets isInstalled=true and creates M2/M3, but
+      // skippedAcceptance excludes 'Cancelled', leaving a permanent M1 gap.
+      const cancelledToPostAcceptance = old.phase === 'Cancelled' && isInstalled && !isSubDealerDeal
+        && !postRollbackEntries.some((e) => e.projectId === id && e.paymentStage === 'M1' && e.status === 'Paid');
+      if (cancelledToPostAcceptance) {
+        const freshProject = updated.find((p) => p.id === id);
+        if (freshProject) {
+          const m1Entries = createMilestonePayroll({
+            projectId: id, old, updatedProjects: updated,
+            stage: 'M1',
+            isAcceptance: true, isInstalled: false, installPayPct: 100,
+            computedM3Amount: null, deps: transitionDeps,
+          }, postRollbackEntries);
+          if (m1Entries.length > 0) {
+            m1Entries.forEach((entry) => persistPayrollEntry(entry));
+            setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
+          }
+        }
+      }
+
       // Phase-skip recovery: New → Installed/PTO bypasses the Acceptance branch, so
       // synthesize an M1 Draft now before M2 is created below.
       if (skippedAcceptance) {
@@ -809,8 +831,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (freshProject) {
           const fullAmount = isAcceptance ? old.m1Amount : freshProject.m2Amount;
 
-          // Guard: m2Amount must be present for M2 payroll
-          if (isInstalled && fullAmount == null) {
+          // Guard: milestone amount must be present for payroll
+          if (isAcceptance && fullAmount == null) {
+            emitPersistError(`M1 payroll skipped for ${old.customerName} — m1Amount is missing. Re-save the project to recalculate.`);
+          } else if (isInstalled && fullAmount == null) {
             emitPersistError(`M2 payroll skipped for ${old.customerName} — m2Amount is missing. Re-save the project to recalculate.`);
           } else {
             const installPayPct = isInstalled
@@ -856,7 +880,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const hasAmountUpdates = updates.m1Amount !== undefined || updates.m2Amount !== undefined
       || updates.m3Amount !== undefined || updates.setterM1Amount !== undefined
       || updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined
-      || updates.additionalClosers !== undefined || updates.additionalSetters !== undefined;
+      || updates.additionalClosers !== undefined || updates.additionalSetters !== undefined
+      || updates.kWSize !== undefined;
     if (hasAmountUpdates) {
       // Re-compute trainer deductions so syncPayrollAmounts subtracts them,
       // mirroring the deduction logic at createMilestonePayroll / createM3Payroll

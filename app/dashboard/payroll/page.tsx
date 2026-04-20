@@ -1163,7 +1163,7 @@ function PayrollPageInner() {
           >
             {s}
             <span className="ml-1.5 text-xs opacity-70">
-              ({filteredByDateRep.filter((p) => p.status === s && p.type === typeTab && (s !== 'Paid' || p.date <= today)).length})
+              ({filteredByDateRep.filter((p) => p.status === s && p.type === typeTab && (s === 'Draft' || p.date <= today)).length})
             </span>
           </button>
         ))}

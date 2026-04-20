@@ -125,7 +125,7 @@ export default function BlitzDetailPage() {
       const normalized = { ...data, status: deriveBlitzStatus(data) };
       setBlitz(normalized);
       rawBlitzStatus.current = data.status;
-      if (!editing || forceUpdateForm) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
+      if (!editing || forceUpdateForm) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: normalized.status, ownerId: data.owner?.id ?? '' });
       setLoading(false);
     }).catch(() => { setLoading(false); });
   };

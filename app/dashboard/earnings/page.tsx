@@ -492,7 +492,7 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
+            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDeals.filter(r => r.kind === 'payroll').length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
           </button>
         ))}
       </div>
@@ -873,7 +873,7 @@ function AdminFinancialsView() {
   const totalPaid     = repFilteredPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending  = repFilteredPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const totalDraft    = repFilteredPayroll.filter((p) => p.status === 'Draft').reduce((s, p) => s + p.amount, 0);
-  const repFilteredReimbs = reimbRepFilter ? reimbursements.filter((r) => r.repId === reimbRepFilter) : reimbursements;
+  const repFilteredReimbs = repFilter ? reimbursements.filter((r) => r.repId === repFilter) : reimbursements;
   const pendingReimbs = repFilteredReimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
 
   const reimbTotal      = filteredReimbs.length;
@@ -1000,7 +1000,6 @@ function AdminFinancialsView() {
   const pendingReimbCount   = repFilteredReimbs.filter((r) => r.status === 'Pending').length;
 
   const payrollFilterLabel = repFilter ? (reps.find((r) => r.id === repFilter)?.name ?? null) : null;
-  const reimbFilterLabel   = reimbRepFilter ? (reps.find((r) => r.id === reimbRepFilter)?.name ?? null) : null;
 
   const selectCls = 'bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-all input-focus-glow';
 
@@ -1056,7 +1055,7 @@ function AdminFinancialsView() {
           </div>
           <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
           {pendingReimbCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingReimbCount} requests</p>}
-          {reimbFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{reimbFilterLabel}</p>}
+          {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
       </div>
 

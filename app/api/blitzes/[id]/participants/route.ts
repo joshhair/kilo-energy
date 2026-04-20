@@ -147,11 +147,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // If the participant is re-approved after being unlinked, re-link their deals within the blitz window.
   if (body.joinStatus === 'approved' && existing.joinStatus !== 'approved') {
+    // Scope re-linking to deals where the other primary party is also a participant of THIS blitz.
+    // Without this, overlapping blitz windows would allow re-approval in Blitz B to steal deals
+    // that were originally linked to Blitz A (their blitzId was set to null when unlinked from A).
+    const thisBlitzParticipants = await prisma.blitzParticipant.findMany({
+      where: { blitzId, joinStatus: 'approved' },
+      select: { userId: true },
+    });
+    const thisBlitzParticipantIds = thisBlitzParticipants.map(p => p.userId);
+
+    // Re-link deals where user is closer: setter must be absent or a participant of this blitz
     await prisma.project.updateMany({
       where: {
         blitzId: null,
         soldDate: { gte: blitz.startDate, lte: blitz.endDate },
-        OR: [{ closerId: body.userId }, { setterId: body.userId }],
+        closerId: body.userId,
+        OR: [{ setterId: null }, { setterId: { in: thisBlitzParticipantIds } }],
+      },
+      data: { blitzId },
+    });
+    // Re-link deals where user is setter: closer must be a participant of this blitz
+    await prisma.project.updateMany({
+      where: {
+        blitzId: null,
+        soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+        setterId: body.userId,
+        closerId: { in: thisBlitzParticipantIds },
       },
       data: { blitzId },
     });
@@ -164,10 +185,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           { additionalSetters: { some: { userId: body.userId } } },
         ],
       },
-      select: { id: true },
+      select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
     });
     for (const project of coRoleProjects) {
-      await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
+      // Only re-link if the primary closer or setter is a participant of this blitz
+      const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
+      if (primaryIds.some(id => thisBlitzParticipantIds.includes(id))) {
+        await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
+      }
     }
   }
 

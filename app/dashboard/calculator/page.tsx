@@ -437,7 +437,7 @@ function CalculatorPage() {
     ? projects.filter((p) => {
         const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
         const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return (p.setterId === effectiveSetterId || p.repId === effectiveSetterId) && fullyPaid;
+        return (p.setterId === effectiveSetterId || p.additionalSetters?.some((s) => s.userId === effectiveSetterId)) && fullyPaid;
       }).length
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
@@ -456,7 +456,7 @@ function CalculatorPage() {
     ? projects.filter((p) => {
         const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
         const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return (p.repId === effectiveCloserId || p.setterId === effectiveCloserId) && fullyPaid;
+        return (p.repId === effectiveCloserId || p.additionalClosers?.some((c) => c.userId === effectiveCloserId)) && fullyPaid;
       }).length
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;

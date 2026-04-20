@@ -1548,14 +1548,14 @@ export function computeIncentiveProgress(
           .filter((e) => {
             if (e.projectId === null || !isPaidAndEffective(e) || e.type !== 'Deal' || e.paymentStage === 'Trainer' || e.repId !== targetId) return false;
             if (closerProjectIds.has(e.projectId)) return e.notes !== 'Setter';
-            if (setterOnlyProjectIds.has(e.projectId)) return e.notes === 'Setter';
+            if (setterOnlyProjectIds.has(e.projectId)) return e.notes === 'Setter' || (e.notes?.startsWith('Co-setter') ?? false);
             return false;
           })
           .reduce((s, e) => s + e.amount, 0);
       }
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
       return payrollEntries
-        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && isPaidAndEffective(e) && e.type === 'Deal' && e.paymentStage !== 'Trainer')
+        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && isPaidAndEffective(e) && e.type === 'Deal' && e.paymentStage !== 'Trainer' && e.notes !== 'Setter' && !(e.notes?.startsWith('Co-setter') ?? false))
         .reduce((s, e) => s + e.amount, 0);
     }
     default:

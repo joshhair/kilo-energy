@@ -50,6 +50,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -274,6 +275,9 @@ function TrainingPageInner() {
   // Payment filters
   const [paymentSearch, setPaymentSearch] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>('all');
+
+  // Delete assignment confirmation dialog
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string; message: string } | null>(null);
 
   // Row actions menu (admin) — stores the assignment id whose menu is open.
   // Menu is portaled to document.body with viewport-fixed positioning so it
@@ -544,17 +548,22 @@ function TrainingPageInner() {
   const markGraduated = (id: string) => patchAssignment(id, { isActiveTraining: false }, 'Marked as graduated');
   const resumeTraining = (id: string) => patchAssignment(id, { isActiveTraining: true }, 'Training resumed');
 
-  // Destructive. Confirms via browser dialog, then optimistically removes the
-  // row + tier rows server-side via DELETE /api/trainer-assignments. On
-  // failure, restores the local state.
-  const deleteAssignment = async (id: string) => {
+  const deleteAssignment = (id: string) => {
     const assignment = trainerAssignments.find((a) => a.id === id);
     if (!assignment) return;
     const trainerName = reps.find((r) => r.id === assignment.trainerId)?.name ?? 'trainer';
     const traineeName = reps.find((r) => r.id === assignment.traineeId)?.name ?? 'trainee';
-    const msg = `Delete the ${trainerName} → ${traineeName} assignment?\n\nThis removes the assignment and all of its rate tiers. Historical Trainer payroll rows are kept. This cannot be undone.`;
-    if (!window.confirm(msg)) return;
+    setDeleteConfirm({
+      id,
+      title: 'Delete Assignment',
+      message: `Delete the ${trainerName} → ${traineeName} assignment? This removes the assignment and all of its rate tiers. Historical Trainer payroll rows are kept. This cannot be undone.`,
+    });
+  };
 
+  const confirmDeleteAssignment = async () => {
+    if (!deleteConfirm) return;
+    const { id } = deleteConfirm;
+    setDeleteConfirm(null);
     const snapshot = trainerAssignments;
     setTrainerAssignments((list) => list.filter((a) => a.id !== id));
     try {
@@ -1294,6 +1303,18 @@ function TrainingPageInner() {
           onClose={() => setSlideProjectId(null)}
         />
       )}
+
+      {deleteConfirm && (
+        <ConfirmDialog
+          open
+          onClose={() => setDeleteConfirm(null)}
+          onConfirm={confirmDeleteAssignment}
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          confirmLabel="Delete"
+          danger
+        />
+      )}
     </div>
   );
 }
@@ -1822,6 +1843,9 @@ function NewAssignmentModal({
         if (isNaN(cap) || cap <= 0 || !Number.isInteger(cap)) {
           return `Tier ${i + 1}: cap must be a positive integer or Perpetuity`;
         }
+        if (i > 0 && tiers[i - 1].perpetuity) {
+          return `Tier ${i + 1}: no tiers can follow a perpetuity tier`;
+        }
         if (i > 0 && !tiers[i - 1].perpetuity) {
           const prevCap = parseInt(tiers[i - 1].upToDeal);
           if (cap <= prevCap) {
@@ -2199,7 +2223,7 @@ function BackfillWizard({
 
     for (const p of selected) {
       const resolution = resolveTrainerRate(
-        { id: p.id, trainerId: p.trainerId, trainerRate: p.trainerRate },
+        { id: p.id, trainerId: p.trainerId ?? null, trainerRate: p.trainerRate ?? null },
         p.repId === assignment.traineeId ? p.repId : p.setterId,
         resolverAssignments,
         workingEntries,

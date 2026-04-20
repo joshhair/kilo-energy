@@ -108,7 +108,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.startDate !== undefined) data.startDate = body.startDate;
   if (body.endDate !== undefined) data.endDate = body.endDate;
   if (body.notes !== undefined) data.notes = body.notes;
-  if (body.status !== undefined) data.status = body.status;
+  if (body.status !== undefined) {
+    if (user.role !== 'admin' && (body.status === 'cancelled' || body.status === 'completed')) {
+      return NextResponse.json({ error: 'Only admins can set a blitz to cancelled or completed' }, { status: 403 });
+    }
+    data.status = body.status;
+  }
   if (body.ownerId !== undefined) {
     if (user.role !== 'admin') return NextResponse.json({ error: 'Only admins can transfer blitz ownership' }, { status: 403 });
     data.ownerId = body.ownerId;

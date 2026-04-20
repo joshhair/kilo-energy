@@ -331,7 +331,7 @@ export function createMilestonePayroll(
   let closerM2TrainerDeduction = 0;
   if (isInstalled) {
     const res = resolveTrainerRate(
-      { id: projectId, trainerId: old.trainerId, trainerRate: old.trainerRate },
+      { id: projectId, trainerId: freshProject.trainerId, trainerRate: freshProject.trainerRate },
       old.repId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
@@ -466,7 +466,7 @@ export function createMilestonePayroll(
     // Closer's trainer — honors the per-project override (project.trainerId +
     // project.trainerRate) before falling back to the tier chain.
     const closerRes = resolveTrainerRate(
-      { id: projectId, trainerId: old.trainerId, trainerRate: old.trainerRate },
+      { id: projectId, trainerId: freshProject.trainerId, trainerRate: freshProject.trainerRate },
       old.repId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
@@ -474,8 +474,9 @@ export function createMilestonePayroll(
     if (closerRes.rate > 0 && closerRes.trainerId) {
       const trainerRep = deps.repsRef.current.find(r => r.id === closerRes.trainerId);
       const m2TrainerAmount = Math.round(closerRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+      const closerTraineeNotesPrefix = `Trainer override M2 — ${closerRep?.name ?? old.repName ?? ''}`;
       const closerTrainerAlreadyExists = prevEntries.some(
-        (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerRes.trainerId
+        (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(closerTraineeNotesPrefix) && e.repId === closerRes.trainerId
       );
       if (m2TrainerAmount > 0 && !closerTrainerAlreadyExists) {
         newEntries.push({

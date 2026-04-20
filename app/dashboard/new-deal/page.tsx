@@ -218,14 +218,15 @@ function NewDealPage() {
   }, [form.setterId]);
 
   useEffect(() => {
-    setForm((prev) => ({ ...prev, additionalClosers: [] }));
+    setForm((prev) => ({ ...prev, additionalClosers: [], blitzId: '' }));
   }, [form.repId]);
 
   // ── Field helpers ──────────────────────────────────────────────────────────
 
   const update = (field: string, value: string) => {
     isDirty.current = true;
-    setForm((prev) => ({ ...prev, [field]: value }));
+    const coPartyReset = (field === 'kWSize' || field === 'netPPW') ? { additionalClosers: [], additionalSetters: [] } : {};
+    setForm((prev) => ({ ...prev, [field]: value, ...coPartyReset }));
     setErrors((prev) => {
       if (!prev[field]) return prev;
       const next = { ...prev };
