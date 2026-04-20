@@ -244,7 +244,7 @@ function PayrollPageInner() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, effectiveRole, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId, adminPage, adminRowsPerPage, markingForPayroll]);
+  }, [isMobile, effectiveRole, statusTab, selectedIds, payrollEntries, typeTab, payFilterFrom, payFilterTo, filterRepId, adminPage, adminRowsPerPage, markingForPayroll, showPaymentModal]);
 
   // ── Single-pass filter + totals ───────────────────────────────────────
   // Was: 5 separate passes over payrollEntries (2700+ rows) per render:
@@ -504,7 +504,8 @@ function PayrollPageInner() {
     e.preventDefault();
     if (!editingEntry) return;
     const amt = parseFloat(editEntryForm.amount);
-    if (!Number.isFinite(amt) || amt <= 0) { toast('Amount must be greater than $0', 'error'); return; }
+    const isChargebackEntry = editingEntry.amount < 0;
+    if (!Number.isFinite(amt) || amt === 0 || (!isChargebackEntry && amt < 0)) { toast(isChargebackEntry ? 'Amount must be non-zero' : 'Amount must be greater than $0', 'error'); return; }
     if (processingEntryIds.has(editingEntry.id)) return;
     setProcessingEntryIds((prev) => new Set(prev).add(editingEntry.id));
     const snapshot = editingEntry;
@@ -1105,13 +1106,13 @@ function PayrollPageInner() {
         <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
-          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft' && p.date <= today).length} entries</p>
+          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft').length} entries</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending · {typeTab}</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
-          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today).length} entries</p>
+          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending').length} entries</p>
         </div>
         {/* Total Paid — combined across all types (Deal + Bonus + Trainer)
             by default. Matches the dashboard "Paid Out" tile when
@@ -1604,7 +1605,7 @@ function PayrollPageInner() {
             <form onSubmit={handleSaveEditEntry} className="space-y-4">
               <div>
                 <label className={labelCls}>Amount ($)</label>
-                <input required type="number" min="0.01" step="0.01"
+                <input required type="number" min={editingEntry.amount < 0 ? undefined : "0.01"} step="0.01"
                   value={editEntryForm.amount}
                   onChange={(e) => setEditEntryForm((f) => ({ ...f, amount: e.target.value }))}
                   className={inputCls} />
