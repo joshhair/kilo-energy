@@ -14,6 +14,7 @@ import {
   Rep,
 } from '../../../lib/data';
 import { useToast } from '../../../lib/toast';
+import { todayLocalDateStr } from '../../../lib/utils';
 import { Trophy, Plus, Gift, Target, Loader2, Zap } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -62,14 +63,13 @@ function metricLabel(metric: IncentiveMetric): string {
 }
 
 function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  return todayLocalDateStr();
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function MobileIncentives() {
   const {
-    currentRole,
     effectiveRole,
     currentRepId,
     incentives,
@@ -80,7 +80,7 @@ export default function MobileIncentives() {
   } = useApp();
   const { toast } = useToast();
 
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = effectiveRole === 'admin';
   const [showCreate, setShowCreate] = useState(false);
 
   // Pending Rewards — admin-only. Milestones where progress crossed the
@@ -128,7 +128,7 @@ export default function MobileIncentives() {
         (inc) => inc.active && (inc.type === 'company' || inc.targetRepId === currentRepId)
       );
 
-  const activeIncentives = visible.filter((i) => !isExpired(i.endDate) && i.active);
+  const activeIncentives = visible.filter((i) => !isExpired(i.endDate));
   const expiredIncentives = visible.filter((i) => isExpired(i.endDate));
 
   const markMilestoneFulfilled = (incId: string, milestoneId: string) => {

@@ -243,7 +243,11 @@ export default function BlitzDetailPage() {
       }
     }
     if (p.installer?.name === 'SolarTech' && p.productId) {
-      return getSolarTechBaseline(p.productId, p.kWSize, solarTechProducts);
+      try {
+        return getSolarTechBaseline(p.productId, p.kWSize, solarTechProducts);
+      } catch {
+        // Product deactivated — fall through to generic installer rates
+      }
     }
     if (p.productId) {
       return getProductCatalogBaseline(productCatalogProducts, p.productId, p.kWSize);

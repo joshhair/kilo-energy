@@ -43,10 +43,10 @@ const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> =
 
 export default function MobileReps() {
   const router = useRouter();
-  const { currentRole, projects, payrollEntries, reps, subDealers, addRep } = useApp();
+  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep } = useApp();
   const { toast } = useToast();
 
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = effectiveRole === 'admin';
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -202,12 +202,12 @@ export default function MobileReps() {
           roleFilter === 'all'
             ? [
                 ...reps.filter((r) => r.active !== false && r.role === 'rep').map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
-                ...subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
+                ...subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
                 ...pmUsers,
                 ...adminUsers,
               ]
             : roleFilter === 'sub-dealer'
-            ? subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
+            ? subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
             : roleFilter === 'project_manager'
             ? pmUsers
             : adminUsers;

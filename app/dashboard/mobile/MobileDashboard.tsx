@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKW, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES } from '../../../lib/data';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
 import { CheckCircle } from 'lucide-react';
@@ -148,7 +148,12 @@ export default function MobileDashboard() {
       effectiveRole === 'project_manager'
         ? projects
         : projects.filter(
-            (p) => p.repId === effectiveRepId || p.setterId === effectiveRepId,
+            (p) =>
+              p.repId === effectiveRepId ||
+              p.setterId === effectiveRepId ||
+              p.trainerId === effectiveRepId ||
+              p.additionalClosers?.some((c) => c.userId === effectiveRepId) ||
+              p.additionalSetters?.some((s) => s.userId === effectiveRepId),
           ),
     [projects, effectiveRole, effectiveRepId],
   );
@@ -167,7 +172,7 @@ export default function MobileDashboard() {
 
   // ── Rep / Sub-dealer shared data ──────────────────────────────────────────
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateString(new Date());
 
   const myPayroll = useMemo(
     () => payrollEntries.filter((p) => p.repId === effectiveRepId),
@@ -207,7 +212,7 @@ export default function MobileDashboard() {
     const d = (5 - today.getDay() + 7) % 7;
     const nf = new Date(today);
     nf.setDate(today.getDate() + d);
-    return nf.toISOString().split('T')[0];
+    return localDateString(nf);
   }, []);
 
   const pendingPayrollTotal = useMemo(
@@ -217,7 +222,7 @@ export default function MobileDashboard() {
           (p) =>
             p.repId === effectiveRepId &&
             p.date === nextFridayDate &&
-            (p.status === 'Pending' || p.status === 'Paid'),
+            p.status === 'Pending',
         )
         .reduce((s, p) => s + p.amount, 0),
     [payrollEntries, effectiveRepId, nextFridayDate],
@@ -287,7 +292,7 @@ export default function MobileDashboard() {
       let v = 0;
       if (!p.m1Paid) v += p.m1Amount || 0;
       if (!p.m2Paid) v += p.m2Amount || 0;
-      v += p.m3Amount || 0;
+      if (!p.m3Paid) v += p.m3Amount || 0;
       return s + v;
     }, 0),
     [activeProjects],
@@ -296,7 +301,7 @@ export default function MobileDashboard() {
   // On Pace: annual projection — matches desktop My Pay calculation exactly
   const { onPaceAnnual, dealsPerMonth: paceDPM } = useMemo(() => {
     const now = new Date();
-    const todayISO = now.toISOString().split('T')[0];
+    const todayISO = localDateString(now);
     const allMyProjects = myProjects.filter((p) => p.phase !== 'Cancelled');
     const totalDeals = allMyProjects.length;
     if (totalDeals === 0) return { onPaceAnnual: 0, dealsPerMonth: 0 };

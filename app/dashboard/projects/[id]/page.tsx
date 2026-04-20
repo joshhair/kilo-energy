@@ -559,7 +559,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const projectBaselines = (() => {
     if (project.baselineOverride) return project.baselineOverride;
     if (project.installer === 'SolarTech' && project.solarTechProductId) {
-      return getSolarTechBaseline(project.solarTechProductId, project.kWSize, solarTechProducts);
+      try {
+        return getSolarTechBaseline(project.solarTechProductId, project.kWSize, solarTechProducts);
+      } catch {
+        // Product deactivated — fall through to generic installer rates
+      }
     }
     if (project.installerProductId) {
       return getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, project.kWSize, project.soldDate, productCatalogPricingVersions);

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { fmt$, formatDate } from '../../../lib/utils';
+import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
 import { Banknote, Receipt, ChevronRight } from 'lucide-react';
@@ -42,7 +42,7 @@ function getFridayForDate(dateStr: string): string {
   if (day === 5) return dateStr;
   const nf = new Date(d);
   nf.setDate(d.getDate() + diff);
-  return nf.toISOString().split('T')[0];
+  return localDateString(nf);
 }
 
 function formatFridayLabel(dateStr: string): string {
@@ -97,9 +97,9 @@ export default function MobileMyPay() {
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
   const [reimbFile, setReimbFile] = useState<File | undefined>(undefined);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateString(new Date());
   const nextFriday = useMemo(() => getNextFriday(), []);
-  const nextFridayStr = useMemo(() => nextFriday.toISOString().split('T')[0], [nextFriday]);
+  const nextFridayStr = useMemo(() => localDateString(nextFriday), [nextFriday]);
 
   // ── Filter entries to this rep ──
   const myEntries = useMemo(

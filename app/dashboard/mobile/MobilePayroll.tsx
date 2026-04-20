@@ -15,6 +15,7 @@ export default function MobilePayroll() {
   const {
     payrollEntries,
     setPayrollEntries,
+    markForPayroll,
     reps,
     effectiveRole,
     effectiveRepId,
@@ -29,8 +30,8 @@ export default function MobilePayroll() {
   // ── Summaries ─────────────────────────────────────────────────────────────
 
   const pendingTotal = useMemo(
-    () => payrollEntries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0),
-    [payrollEntries],
+    () => payrollEntries.filter((e) => e.status === 'Pending' && (effectiveRole === 'admin' || e.repId === effectiveRepId)).reduce((s, e) => s + e.amount, 0),
+    [payrollEntries, effectiveRole, effectiveRepId],
   );
 
   // ── Filtered entries ──────────────────────────────────────────────────────
@@ -323,8 +324,9 @@ export default function MobilePayroll() {
       {statusTab === 'Draft' && filtered.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
           <button
-            onClick={() => {
+            onClick={async () => {
               const ids = filtered.map((e) => e.id);
+              await markForPayroll(ids);
               setPayrollEntries((prev) =>
                 prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p)),
               );

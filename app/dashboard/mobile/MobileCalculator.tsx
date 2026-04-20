@@ -7,12 +7,14 @@ import {
   getSolarTechBaseline,
   calculateCommission,
   getInstallerRatesForDeal,
-  getProductCatalogBaseline,
+  getProductCatalogBaselineVersioned,
   SOLARTECH_FAMILIES,
   SOLARTECH_FAMILY_FINANCER,
   DEFAULT_INSTALL_PAY_PCT,
+  INSTALLER_PAY_CONFIGS,
 } from '../../../lib/data';
 import { splitCloserSetterPay } from '../../../lib/commission';
+import { todayLocalDateStr } from '../../../lib/utils';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 
@@ -33,6 +35,7 @@ export default function MobileCalculator() {
     installerPricingVersions,
     productCatalogInstallerConfigs,
     productCatalogProducts,
+    productCatalogPricingVersions,
     installerPayConfigs,
     solarTechProducts,
   } = useApp();
@@ -85,19 +88,23 @@ export default function MobileCalculator() {
   const { closerPerW, setterBaselinePerW, kiloPerW } = (() => {
     if (!hasInput) return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 };
     if (isSolarTech) {
-      const b = getSolarTechBaseline(solarTechProductId, kW, solarTechProducts);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      try {
+        const b = getSolarTechBaseline(solarTechProductId, kW, solarTechProducts);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
     if (isPcInstaller) {
-      const b = getProductCatalogBaseline(productCatalogProducts, pcProductId, kW);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      try {
+        const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, todayLocalDateStr(), productCatalogPricingVersions);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
+      } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocalDateStr();
     const r = getInstallerRatesForDeal(installer, today, kW, installerPricingVersions);
     return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
   })();
 
-  const kiloTotal = soldPPW > 0 ? calculateCommission(closerPerW, kiloPerW, kW) : 0;
+  const kiloTotal = soldPPW > 0 ? calculateCommission(soldPPW, kiloPerW, kW) : 0;
 
   // Trainer override rate (only meaningful on paired deals — self-gen
   // has no split point for a trainer to sit above). Falls back to 0 if
@@ -110,7 +117,7 @@ export default function MobileCalculator() {
   // these exact conditions would actually pay. Self-gen = paired=false,
   // which routes setterBaselinePerW=0 and sends all commission to the
   // closer side with M1 flat $1000 (if kW ≥ 5) or $500.
-  const installPayPct = (installerPayConfigs[installer]?.installPayPct) ?? DEFAULT_INSTALL_PAY_PCT;
+  const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const split = hasInput && soldPPW > 0
     ? splitCloserSetterPay(
         soldPPW,

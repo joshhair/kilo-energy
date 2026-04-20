@@ -32,31 +32,94 @@ export default function MobileTraining() {
   // PM guard return below this block would otherwise cause a rules-of-hooks
   // violation (hooks called in different order depending on role).
   const myAssignments = trainerAssignments.filter((a) => a.trainerId === effectiveRepId);
-  const isTrainer = myAssignments.length > 0;
+
+  // Direct-trainer projects: the admin set project.trainerId to this rep
+  // manually, but there's no TrainerAssignment record for the closer/setter.
+  // Without this pass those projects silently disappear from the Trainer tab
+  // — the viewer can open them but can't see them listed (Luckie Judson,
+  // 2026-04-20). We synthesize a one-tier pseudo-assignment per closer so
+  // the existing UI can render them with no structural changes.
+  const assignmentTraineeIds = new Set(myAssignments.map((a) => a.traineeId));
+  const directTrainerProjects = projects.filter((p) =>
+    p.trainerId === effectiveRepId &&
+    p.phase !== 'Cancelled' &&
+    p.phase !== 'On Hold' &&
+    !assignmentTraineeIds.has(p.repId ?? '') &&
+    !assignmentTraineeIds.has(p.setterId ?? ''),
+  );
+
+  const isTrainer = myAssignments.length > 0 || directTrainerProjects.length > 0;
 
   const trainerEntries = payrollEntries.filter(
     (e) => e.repId === effectiveRepId && e.paymentStage === 'Trainer',
   );
 
+  // Pseudo-assignments for direct-trainer projects, grouped by closer.
+  // One synthesized entry per unique closer; tier = that project's
+  // trainerRate. Rendered alongside real assignments under My Trainees.
+  const directPseudoAssignments = useMemo(() => {
+    const byCloser = new Map<string, typeof projects>();
+    for (const p of directTrainerProjects) {
+      const key = p.repId ?? '';
+      if (!key) continue;
+      if (!byCloser.has(key)) byCloser.set(key, []);
+      byCloser.get(key)!.push(p);
+    }
+    return Array.from(byCloser.entries()).map(([closerId, projs]) => {
+      const sample = projs[0];
+      const rate = sample?.trainerRate ?? 0;
+      return {
+        id: `direct-${closerId}`,
+        trainerId: effectiveRepId!,
+        traineeId: closerId,
+        tiers: [{ upToDeal: null, ratePerW: rate }],
+        isActiveTraining: true,
+      };
+    });
+  }, [directTrainerProjects, effectiveRepId]);
+
   const traineeData = useMemo(() => {
-    return myAssignments.map((assignment) => {
+    const all = [
+      ...myAssignments.map((a) => ({ ...a, _isDirect: false })),
+      ...directPseudoAssignments.map((a) => ({ ...a, _isDirect: true })),
+    ];
+    return all.map((assignment) => {
       const trainee = reps.find((r) => r.id === assignment.traineeId);
       const traineeName = trainee ? trainee.name : assignment.traineeId;
 
+      // Real assignments: all active deals the trainee is on.
+      // Pseudo (direct-trainer): only deals where viewer is the project's
+      // trainer — avoids pulling in unrelated deals from this closer.
       const traineeDeals = projects.filter(
         (p) =>
           (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
           p.phase !== 'Cancelled' &&
-          p.phase !== 'On Hold',
+          p.phase !== 'On Hold' &&
+          (!assignment._isDirect || p.trainerId === effectiveRepId),
       );
       const dealCount = traineeDeals.length;
-      const currentRate = getTrainerOverrideRate(assignment, dealCount);
+
+      // Count only distinct projectIds where this trainer earned a Trainer payroll
+      // entry for this trainee — matches the desktop getConsumedDeals logic.
+      const seenProjects = new Set<string>();
+      for (const e of payrollEntries) {
+        if (e.paymentStage !== 'Trainer') continue;
+        if (e.repId !== assignment.trainerId) continue;
+        if (e.projectId == null) continue;
+        const p = projects.find((proj) => proj.id === e.projectId);
+        if (!p) continue;
+        if (p.repId !== assignment.traineeId && p.setterId !== assignment.traineeId) continue;
+        seenProjects.add(e.projectId);
+      }
+      const consumedDeals = seenProjects.size;
+
+      const currentRate = getTrainerOverrideRate(assignment, consumedDeals);
 
       // Find active tier
       let activeTierIndex = 0;
       for (let i = 0; i < assignment.tiers.length; i++) {
         const tier = assignment.tiers[i];
-        if (tier.upToDeal === null || dealCount < tier.upToDeal) {
+        if (tier.upToDeal === null || consumedDeals < tier.upToDeal) {
           activeTierIndex = i;
           break;
         }
@@ -71,7 +134,7 @@ export default function MobileTraining() {
         activeTierIndex,
       };
     });
-  }, [myAssignments, reps, projects]);
+  }, [myAssignments, directPseudoAssignments, reps, projects, payrollEntries, effectiveRepId]);
 
   const sortedOverrides = [...trainerEntries].sort((a, b) => b.date.localeCompare(a.date));
 

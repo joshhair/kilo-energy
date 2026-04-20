@@ -340,7 +340,42 @@ function TrainingPageInner() {
     [trainerAssignments, effectiveRepId, effectiveRole]
   );
 
-  const isTrainer = myAssignments.length > 0;
+  // Direct-trainer projects: admin set project.trainerId directly with no
+  // matching TrainerAssignment for the closer. Without this those projects
+  // silently disappear from the Trainer tab — viewer can open them but
+  // can't see them listed. Synthesize pseudo-assignments so the existing
+  // render path picks them up.
+  const directTrainerProjects = useMemo(() => {
+    if (effectiveRole === 'admin') return []; // admin sees every assignment already
+    const assignmentTraineeIds = new Set(myAssignments.map((a) => a.traineeId));
+    return projects.filter((p) =>
+      p.trainerId === effectiveRepId &&
+      p.phase !== 'Cancelled' &&
+      p.phase !== 'On Hold' &&
+      !assignmentTraineeIds.has(p.repId ?? '') &&
+      !assignmentTraineeIds.has(p.setterId ?? ''),
+    );
+  }, [projects, effectiveRepId, effectiveRole, myAssignments]);
+
+  const directPseudoAssignments = useMemo<TrainerAssignment[]>(() => {
+    if (!effectiveRepId) return [];
+    const byCloser = new Map<string, typeof projects>();
+    for (const p of directTrainerProjects) {
+      const key = p.repId ?? '';
+      if (!key) continue;
+      if (!byCloser.has(key)) byCloser.set(key, []);
+      byCloser.get(key)!.push(p);
+    }
+    return Array.from(byCloser.entries()).map(([closerId, projs]) => ({
+      id: `direct-${closerId}`,
+      trainerId: effectiveRepId,
+      traineeId: closerId,
+      tiers: [{ upToDeal: null, ratePerW: projs[0]?.trainerRate ?? 0 }],
+      isActiveTraining: true,
+    }));
+  }, [directTrainerProjects, effectiveRepId]);
+
+  const isTrainer = myAssignments.length > 0 || directPseudoAssignments.length > 0;
 
   // Trainer payroll entries — all trainers for admin, self-only for reps
   const trainerEntries = useMemo(
@@ -370,16 +405,24 @@ function TrainingPageInner() {
 
   // Build trainee info for rep-trainer view
   const traineeData = useMemo(() => {
-    return myAssignments.map((assignment) => {
+    const all = [
+      ...myAssignments.map((a) => ({ ...a, _isDirect: false })),
+      ...directPseudoAssignments.map((a) => ({ ...a, _isDirect: true })),
+    ];
+    return all.map((assignment) => {
       const trainee = reps.find((r) => r.id === assignment.traineeId);
       const traineeName = trainee ? trainee.name : assignment.traineeId;
       const traineeRole = trainee?.repType ?? 'closer';
 
+      // Real assignments: every active deal the trainee is on.
+      // Pseudo (direct-trainer): only deals where viewer is the project's
+      // trainer — prevents unrelated closer deals from leaking in.
       const traineeDeals = projects.filter(
         (p) =>
           (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
           p.phase !== 'Cancelled' &&
-          p.phase !== 'On Hold'
+          p.phase !== 'On Hold' &&
+          (!assignment._isDirect || p.trainerId === effectiveRepId)
       );
       const dealCount = traineeDeals.length;
 
@@ -421,7 +464,7 @@ function TrainingPageInner() {
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myAssignments, reps, projects, trainerEntries, payrollEntries]);
+  }, [myAssignments, directPseudoAssignments, reps, projects, trainerEntries, payrollEntries, effectiveRepId]);
 
   // Filter + sort (rep view — Rate Schedule / search is across all trainees)
   const filteredTrainees = useMemo(() => {

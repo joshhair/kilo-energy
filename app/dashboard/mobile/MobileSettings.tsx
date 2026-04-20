@@ -162,7 +162,7 @@ function SectionContent({ section }: { section: SettingsSection }) {
     case 'project-managers': return <ProjectManagersSection />;
     case 'blitz-permissions': return <BlitzPermissionsSection />;
     case 'export': return <ExportSection />;
-    case 'trainers': return <ReadOnlyListSection title="Trainer Overrides" description="View and edit trainer overrides on desktop for the full experience." />;
+    case 'trainers': return <ReadOnlyListSection title="Trainer Overrides" description="Manage trainer overrides in the Training page." />;
     case 'baselines': return <ReadOnlyListSection title="Baselines" description="View and edit baseline pricing on desktop for the full experience." />;
     case 'sub-dealers': return <SubDealersSection />;
     default: return null;

@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
-import { fmt$ } from '../../../lib/utils';
+import { fmt$, localDateString } from '../../../lib/utils';
 import { CheckCircle2, XCircle, Archive } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -140,7 +140,7 @@ export default function MobileEarnings() {
   const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus' && matchesPeriod(p.date, period));
   const myReimbs = reimbursements.filter((r) => r.repId === effectiveRepId && matchesPeriod(r.date, period));
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDateString(new Date());
   const totalEarned = myPayroll
     .filter((p) => p.status === 'Paid' && p.date <= todayStr && matchesPeriod(p.date, period))
     .reduce((s, p) => s + p.amount, 0);

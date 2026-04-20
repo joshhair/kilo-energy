@@ -259,7 +259,8 @@ export async function GET() {
     pricingVersionId: p.installerPricingVersionId ?? undefined,
     pcPricingVersionId: p.productPricingVersionId ?? undefined,
     baselineOverride: stripFinancials ? undefined : (p.baselineOverrideJson ? (() => {
-      const bo = JSON.parse(p.baselineOverrideJson);
+      let bo: Record<string, unknown> | undefined;
+      try { bo = JSON.parse(p.baselineOverrideJson); } catch { bo = undefined; }
       if (!isAdmin && bo) { delete bo.kiloPerW; }
       return bo;
     })() : undefined),

@@ -316,7 +316,8 @@ export default function MobileNewDeal() {
   // ── Field helpers ─────────────────────────────────────────────────────────
 
   const update = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    const coPartyReset = (field === 'kWSize' || field === 'netPPW') ? { additionalClosers: [], additionalSetters: [] } : {};
+    setForm((prev) => ({ ...prev, [field]: value, ...coPartyReset }));
   };
 
   const handleBlur = (field: string) => {
@@ -327,7 +328,7 @@ export default function MobileNewDeal() {
   };
 
   const handleInstallerChange = (value: string) => {
-    setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
+    setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '' }));
   };
 
@@ -341,7 +342,7 @@ export default function MobileNewDeal() {
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer }));
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
@@ -350,7 +351,7 @@ export default function MobileNewDeal() {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
   };
@@ -376,7 +377,7 @@ export default function MobileNewDeal() {
     return pct < 100 ? p.m3Paid === true : p.m2Paid === true;
   };
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => (p.setterId === form.setterId || p.repId === form.setterId) && isFullyPaidOut(p)).length
+    ? projects.filter((p) => (p.setterId === form.setterId || p.additionalSetters?.some((s) => s.userId === form.setterId)) && isFullyPaidOut(p)).length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -386,12 +387,20 @@ export default function MobileNewDeal() {
 
   const { closerPerW, setterBaselinePerW, kiloPerW, activeVersionId } = (() => {
     if (form.installer === 'SolarTech' && hasSolarTechProducts && form.solarTechProductId && kW > 0) {
-      const b = getSolarTechBaseline(form.solarTechProductId, kW, solarTechProducts);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: null };
+      try {
+        const b = getSolarTechBaseline(form.solarTechProductId, kW, solarTechProducts);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: null };
+      } catch {
+        return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
+      }
     } else if (isPcInstaller && hasPcProducts && form.installerProductId && kW > 0) {
-      const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
-      const b = getProductCatalogBaselineVersioned(productCatalogProducts, form.installerProductId, kW, soldDate, productCatalogPricingVersions);
-      return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: b.pcPricingVersionId };
+      try {
+        const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+        const b = getProductCatalogBaselineVersioned(productCatalogProducts, form.installerProductId, kW, soldDate, productCatalogPricingVersions);
+        return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: b.pcPricingVersionId };
+      } catch {
+        return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
+      }
     } else if (form.installer && form.installer !== 'SolarTech' && !isPcInstaller && kW > 0) {
       const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
       const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
