@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { getInternalUser, relationshipToProject } from '../../../lib/api-auth';
+import { getInternalUser, relationshipToProject, loadChainTrainees } from '../../../lib/api-auth';
 import { logger } from '../../../lib/logger';
 import { toDollars, fromCents } from '../../../lib/money';
 import { scrubProjectForViewer } from '../../../lib/serialize';
@@ -18,8 +18,18 @@ export async function GET() {
   const isRep = user.role === 'rep';
   const isSubDealer = user.role === 'sub-dealer';
 
+  // ─── Trainer-chain lookup ──────────────────────────────────────────────
+  // A rep who's assigned as trainer to other reps needs to see those reps'
+  // projects (to verify own override, not for coaching UI — the Training
+  // tab handles that). Loaded once per request; empty Set for non-reps.
+  // The field-visibility matrix scrubs trainer views down to their own
+  // override; closer/setter commission + kiloMargin stay hidden.
+  const chainTrainees = isRep ? await loadChainTrainees(user.id) : new Set<string>();
+  const chainTraineeIds = Array.from(chainTrainees);
+
   // ─── Project filter: who sees which projects? ───
-  // Admin: all. PM: all. Rep: closer or setter. Sub-dealer: subDealerId match.
+  // Admin: all. PM: all. Rep: closer/setter/co-party + projects they train.
+  // Sub-dealer: subDealerId match.
   const projectWhere: Record<string, unknown> = {};
   if (isRep) {
     projectWhere.OR = [
@@ -27,6 +37,10 @@ export async function GET() {
       { setterId: user.id },
       { additionalClosers: { some: { userId: user.id } } },
       { additionalSetters: { some: { userId: user.id } } },
+      // Per-project trainer override
+      { trainerId: user.id },
+      // Rep-chain trainer: projects where this user trains the closer
+      ...(chainTraineeIds.length > 0 ? [{ closerId: { in: chainTraineeIds } }] : []),
     ];
   } else if (isSubDealer) {
     projectWhere.OR = [{ subDealerId: user.id }, { closerId: user.id }];
@@ -291,7 +305,7 @@ export async function GET() {
       trainerId: raw.trainerId,
       additionalClosers: raw.additionalClosers.map((c) => ({ userId: c.userId })),
       additionalSetters: raw.additionalSetters.map((s) => ({ userId: s.userId })),
-    });
+    }, chainTrainees);
     return scrubProjectForViewer(dto, rel);
   });
 

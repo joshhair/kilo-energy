@@ -83,11 +83,30 @@ export async function userCanAccessProject(
   if (user.role === 'admin' || user.role === 'project_manager') return true;
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { closerId: true, setterId: true, subDealerId: true },
+    select: { closerId: true, setterId: true, subDealerId: true, trainerId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
   });
   if (!project) return false;
+
+  // Trainer visibility: the trainer of a project should be able to open it
+  // to verify their own override amount. Two ways a user qualifies:
+  //   1. Per-project trainer override (project.trainerId === user.id)
+  //   2. Rep-chain trainer: active TrainerAssignment where this user is
+  //      the trainer and the project's closer is the trainee.
+  // Note: this is purely for access; what they *see* once inside is scrubbed
+  // by the field-visibility matrix (trainer relationship), which hides
+  // closer/setter commission and kiloMargin.
+  if (project.trainerId === user.id) return true;
+  const chainTrainer = await prisma.trainerAssignment.findFirst({
+    where: { trainerId: user.id, traineeId: project.closerId, active: true },
+    select: { id: true },
+  });
+  if (chainTrainer) return true;
+
   if (user.role === 'rep') {
-    return project.closerId === user.id || project.setterId === user.id;
+    if (project.closerId === user.id || project.setterId === user.id) return true;
+    if (project.additionalClosers.some((c) => c.userId === user.id)) return true;
+    if (project.additionalSetters.some((s) => s.userId === user.id)) return true;
+    return false;
   }
   if (user.role === 'sub-dealer') {
     return project.subDealerId === user.id || project.closerId === user.id;
@@ -126,16 +145,41 @@ export interface ProjectRelationshipInputs {
 export function relationshipToProject(
   viewer: Pick<InternalUser, 'id' | 'role'>,
   project: ProjectRelationshipInputs,
+  /** Optional: set of closer user IDs this viewer trains via an active
+   *  rep-chain TrainerAssignment. Callers that serve project data to
+   *  trainers (e.g. /api/data, /api/projects/[id]) pre-load these once
+   *  per request and pass them in; without this context, a rep-chain
+   *  trainer would fall through to 'none' and see nothing. */
+  chainTrainees?: ReadonlySet<string>,
 ): ProjectRelationship {
   if (viewer.role === 'admin') return 'admin';
   if (viewer.role === 'project_manager') return 'pm';
   if (project.trainerId === viewer.id) return 'trainer';
+  if (chainTrainees?.has(project.closerId)) return 'trainer';
   if (project.closerId === viewer.id) return 'closer';
   if (project.additionalClosers?.some((c) => c.userId === viewer.id)) return 'closer';
   if (project.setterId === viewer.id) return 'setter';
   if (project.additionalSetters?.some((s) => s.userId === viewer.id)) return 'setter';
   if (project.subDealerId === viewer.id) return 'sub-dealer';
   return 'none';
+}
+
+/**
+ * Loads the set of closer IDs this user trains via an active
+ * TrainerAssignment. Use at the top of any API route that serializes
+ * projects for a non-admin viewer, then pass the result into every
+ * relationshipToProject call in that request.
+ *
+ * Returns an empty set for non-reps or users with no trainer assignments;
+ * this means the fast path is cheap (one indexed query, one row per
+ * trainee) and the function is safe to call unconditionally.
+ */
+export async function loadChainTrainees(userId: string): Promise<ReadonlySet<string>> {
+  const rows = await prisma.trainerAssignment.findMany({
+    where: { trainerId: userId, active: true },
+    select: { traineeId: true },
+  });
+  return new Set(rows.map((r) => r.traineeId));
 }
 
 /**

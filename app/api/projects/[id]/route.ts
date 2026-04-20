@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { requireAdmin, requireInternalUser, userCanAccessProject, relationshipToProject } from '../../../../lib/api-auth';
+import { requireAdmin, requireInternalUser, userCanAccessProject, relationshipToProject, loadChainTrainees } from '../../../../lib/api-auth';
 import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/schemas/project';
@@ -395,6 +395,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     additionalClosers: project.additionalClosers.map(serializeProjectParty),
     additionalSetters: project.additionalSetters.map(serializeProjectParty),
   };
+  const chainTrainees = user.role === 'rep' ? await loadChainTrainees(user.id) : undefined;
   const rel = relationshipToProject(user, {
     closerId: project.closerId,
     setterId: project.setterId,
@@ -402,7 +403,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     trainerId: project.trainerId,
     additionalClosers: dto.additionalClosers.map((c) => ({ userId: c.userId })),
     additionalSetters: dto.additionalSetters.map((s) => ({ userId: s.userId })),
-  });
+  }, chainTrainees);
   return NextResponse.json(scrubProjectForViewer(dto, rel));
 }
 
