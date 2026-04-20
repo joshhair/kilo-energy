@@ -791,7 +791,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main
         id="main-content"
         ref={mainRef}
-        className="flex-1 overflow-y-auto md:pt-0 pb-20 md:pb-0 relative"
+        className="flex-1 overflow-y-auto overflow-x-hidden md:pt-0 pb-20 md:pb-0 relative"
         style={{ backgroundColor: 'var(--navy-base)', paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         {dataError && (
