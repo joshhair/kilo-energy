@@ -254,7 +254,7 @@ export default function BlitzDetailPage() {
       const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
       if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
-      const setterCost = (p.setterId && p.setterId !== p.closerId) ? 0.10 * p.kWSize * 1000 : 0;
+      const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
     }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- getBlitzProjectBaselines is a local closure over the same deps; adding it causes duplicate re-runs
@@ -483,7 +483,7 @@ export default function BlitzDetailPage() {
       return;
     }
     fetch(`/api/blitzes/${blitzId}`).then((res) => res.json()).then((data) => {
-      if (!data.error) setBlitz(data);
+      if (!data.error) setBlitz({ ...data, status: deriveBlitzStatus(data) });
     }).catch(() => {
       toast('Failed to reload blitz', 'error');
     }).finally(() => {
@@ -1281,7 +1281,7 @@ export default function BlitzDetailPage() {
                   const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
                   if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return null;
                   const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
-                  const setterCost = (p.setterId && p.setterId !== p.closerId) ? 0.10 * p.kWSize * 1000 : 0;
+                  const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
                   const margin = (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
                   const closerName = p.closer ? `${p.closer.firstName} ${p.closer.lastName}` : '—';
                   return (

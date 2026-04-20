@@ -2339,7 +2339,7 @@ function BackfillWizard({
                         <th className="px-3 py-2 w-8">
                           <input
                             type="checkbox"
-                            checked={selectedIds.size === filteredProjects.length && filteredProjects.length > 0}
+                            checked={filteredProjects.length > 0 && filteredProjects.every(p => selectedIds.has(p.id))}
                             onChange={toggleAll}
                             className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
                           />

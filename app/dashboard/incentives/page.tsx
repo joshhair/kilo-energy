@@ -1372,12 +1372,12 @@ function CreateIncentiveModal({
     const errs: Record<string, string> = {};
     if (!form.title.trim()) errs.title = 'Title is required';
     milestones.forEach((m, i) => {
-      const hasThreshold = !!m.threshold;
+      const hasThreshold = parseFloat(m.threshold) > 0;
       const hasReward = !!m.reward;
       if (hasThreshold && !hasReward) errs[`milestone_${i}`] = 'Reward is required';
       if (!hasThreshold && hasReward) errs[`milestone_${i}`] = 'Threshold is required';
     });
-    const validMilestones = milestones.filter((m) => m.threshold && m.reward);
+    const validMilestones = milestones.filter((m) => parseFloat(m.threshold) > 0 && m.reward);
     if (validMilestones.length === 0) errs.milestones = 'At least one milestone with threshold and reward is required';
     if (form.type === 'personal' && !form.targetRepId) errs.targetRepId = 'Select a rep for personal incentives';
     return errs;
@@ -1643,7 +1643,7 @@ function CreateIncentiveModal({
                 <div key={i}>
                   <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     <input
-                      type="number" min="0" step="any"
+                      type="number" min="1" step="any"
                       placeholder="Threshold (e.g. 10)"
                       value={m.threshold}
                       onChange={(e) => updMilestone(i, 'threshold', e.target.value)}
