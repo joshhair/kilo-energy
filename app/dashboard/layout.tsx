@@ -532,28 +532,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         Skip to main content
       </a>
 
-      {/* ── Mobile top bar (hidden on md+) — minimal: logo only ────────── */}
-      <div
-        className="md:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-center px-4"
-        style={{
-          background: 'rgba(6,11,19,0.9)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          paddingBottom: '0px',
-          minHeight: 'calc(48px + env(safe-area-inset-top, 0px))',
-        }}
-      >
-        <div className="flex items-center gap-1.5">
-          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 10px var(--accent-emerald)', flexShrink: 0 }} />
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-white font-black tracking-tighter text-xl leading-none" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kilo</span>
-            <span className="tracking-[0.2em] uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '10px', fontWeight: 400 }}>energy</span>
-          </div>
-        </div>
-      </div>
-
       {/* ── Backdrop (mobile only, shown when sidebar is open) ──────────── */}
       {mobileOpen && (
         <div
@@ -809,12 +787,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      {/* pt-[48px] reserves space for the fixed mobile top bar; reset on md+ */}
+      {/* Mobile: respect safe-area notch only (top bar removed). Desktop: no top padding. */}
       <main
         id="main-content"
         ref={mainRef}
-        className="flex-1 overflow-y-auto pt-[48px] md:pt-0 pb-20 md:pb-0 relative"
-        style={{ backgroundColor: 'var(--navy-base)', paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}
+        className="flex-1 overflow-y-auto md:pt-0 pb-20 md:pb-0 relative"
+        style={{ backgroundColor: 'var(--navy-base)', paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         {dataError && (
           <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">

@@ -288,12 +288,14 @@ export default function MobileBlitz() {
             }}
           >
             Requests
-            <span
-              className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-full"
-              style={{ background: 'var(--m-danger, var(--accent-danger))' }}
-            >
-              {pendingRequests.length}
-            </span>
+            {pendingRequests.length > 0 && (
+              <span
+                className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-full"
+                style={{ background: 'var(--m-danger, var(--accent-danger))' }}
+              >
+                {pendingRequests.length}
+              </span>
+            )}
           </button>
         </div>
       )}
