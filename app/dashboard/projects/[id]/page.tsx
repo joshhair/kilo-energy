@@ -25,6 +25,7 @@ import { RepCommissionCard } from '../components/detail/RepCommissionCard';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
 import { InlineNotesEditor } from '../components/detail/InlineNotesEditor';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
+import { AdminNotesEditor } from '../components/detail/AdminNotesEditor';
 
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -39,9 +40,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const project = projects.find((p) => p.id === id);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- depend only on customerName to avoid re-fires on any project field change
   useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
-  const [adminNotes, setAdminNotes] = useState(project?.notes ?? '');
-  const [adminNotesSaved, setAdminNotesSaved] = useState(false);
-  const adminNotesDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [notesDraft, setNotesDraft] = useState(project?.notes ?? '');
+  const [notesDraftSaved, setNotesDraftSaved] = useState(false);
+  const notesDraftDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track the last project.notes value we synced from so we can detect external
   // changes (e.g. the Edit modal saving new notes) without clobbering unsaved
   // local edits the admin is actively typing.
@@ -52,53 +53,53 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       // project.notes changed externally — only overwrite local textarea if the
       // admin hasn't started typing something new (i.e. textarea still matches
       // the previous synced value).
-      if (adminNotes === lastSyncedNotes.current) {
-        setAdminNotes(incoming);
+      if (notesDraft === lastSyncedNotes.current) {
+        setNotesDraft(incoming);
       }
       // Cancel any pending debounce so it cannot overwrite the externally-saved value.
-      if (adminNotesDebounce.current) { clearTimeout(adminNotesDebounce.current); adminNotesDebounce.current = null; }
+      if (notesDraftDebounce.current) { clearTimeout(notesDraftDebounce.current); notesDraftDebounce.current = null; }
       lastSyncedNotes.current = incoming;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.notes]);
 
   // Auto-save admin notes with 1s debounce
-  const doSaveAdminNotes = useCallback((value: string) => {
+  const doSaveNotesDraft = useCallback((value: string) => {
     if (project && value !== (project.notes ?? '')) {
       ctxUpdateProject(id, { notes: value });
       lastSyncedNotes.current = value;
-      setAdminNotesSaved(true);
-      setTimeout(() => setAdminNotesSaved(false), 2000);
+      setNotesDraftSaved(true);
+      setTimeout(() => setNotesDraftSaved(false), 2000);
     }
   }, [project, id, ctxUpdateProject]);
 
-  const handleAdminNotesChange = (value: string) => {
-    setAdminNotes(value);
-    if (adminNotesDebounce.current) clearTimeout(adminNotesDebounce.current);
-    adminNotesDebounce.current = setTimeout(() => doSaveAdminNotes(value), 1000);
+  const handleNotesDraftChange = (value: string) => {
+    setNotesDraft(value);
+    if (notesDraftDebounce.current) clearTimeout(notesDraftDebounce.current);
+    notesDraftDebounce.current = setTimeout(() => doSaveNotesDraft(value), 1000);
   };
 
   // Save on blur immediately (cancel pending debounce)
-  const handleAdminNotesBlur = () => {
-    if (adminNotesDebounce.current) { clearTimeout(adminNotesDebounce.current); adminNotesDebounce.current = null; }
-    doSaveAdminNotes(adminNotes);
+  const handleNotesDraftBlur = () => {
+    if (notesDraftDebounce.current) { clearTimeout(notesDraftDebounce.current); notesDraftDebounce.current = null; }
+    doSaveNotesDraft(notesDraft);
   };
 
   // Cancel debounce timer on unmount
   useEffect(() => {
-    return () => { if (adminNotesDebounce.current) clearTimeout(adminNotesDebounce.current); };
+    return () => { if (notesDraftDebounce.current) clearTimeout(notesDraftDebounce.current); };
   }, []);
 
   // Warn on navigation if notes are dirty
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (project && adminNotes !== (project.notes ?? '')) {
+      if (project && notesDraft !== (project.notes ?? '')) {
         e.preventDefault();
       }
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [adminNotes, project]);
+  }, [notesDraft, project]);
   const [editM1, setEditM1] = useState(false);
   const [editM2, setEditM2] = useState(false);
   const [m1Val, setM1Val] = useState('');
@@ -390,7 +391,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       netPPW: String(project.netPPW),
       setterId: project.setterId ?? '',
       soldDate: project.soldDate,
-      notes: adminNotes ?? '',
+      notes: notesDraft ?? '',
       useBaselineOverride: !!project.baselineOverride,
       overrideCloserPerW: project.baselineOverride ? String(project.baselineOverride.closerPerW) : '',
       overrideSetterPerW: project.baselineOverride?.setterPerW != null ? String(project.baselineOverride.setterPerW) : '',
@@ -1284,23 +1285,23 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div>
             <textarea
               rows={4}
-              value={adminNotes}
-              onChange={(e) => handleAdminNotesChange(e.target.value)}
-              onBlur={handleAdminNotesBlur}
+              value={notesDraft}
+              onChange={(e) => handleNotesDraftChange(e.target.value)}
+              onBlur={handleNotesDraftBlur}
               placeholder="Add notes about this project..."
               maxLength={1000}
               className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-slate-500 resize-none"
             />
             <div className="flex items-center justify-between mt-1">
               <p className={`text-xs transition-colors duration-200 ${
-                adminNotes.length >= 960 ? 'text-red-400' :
-                adminNotes.length >= 800 ? 'text-amber-400' :
+                notesDraft.length >= 960 ? 'text-red-400' :
+                notesDraft.length >= 800 ? 'text-amber-400' :
                 'text-[var(--text-muted)]'
               }`}>
-                {adminNotes.length} / 1000
+                {notesDraft.length} / 1000
               </p>
-              {adminNotesSaved && <span className="text-xs text-[var(--accent-green)] animate-fade-in-up">Saved</span>}
-              {!adminNotesSaved && adminNotes !== (project.notes ?? '') && (
+              {notesDraftSaved && <span className="text-xs text-[var(--accent-green)] animate-fade-in-up">Saved</span>}
+              {!notesDraftSaved && notesDraft !== (project.notes ?? '') && (
                 <span className="text-xs text-[var(--text-muted)]">Auto-saving...</span>
               )}
             </div>
@@ -1312,6 +1313,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           />
         )}
       </div>
+
+      {/* Admin Notes — visible only to admin + PM. Reps, trainers, and
+          sub-dealers never receive this field (scrubbed server-side by
+          fieldVisibility.ts). Distinct from the regular Notes above;
+          this is for private admin reference. */}
+      {(effectiveRole === 'admin' || isPM) && (
+        <AdminNotesEditor
+          projectId={id}
+          initial={project.adminNotes ?? ''}
+          onPatch={(text) => ctxUpdateProject(id, { adminNotes: text })}
+        />
+      )}
 
       {/* Activity Timeline */}
       <ActivityTimeline projectId={id} />

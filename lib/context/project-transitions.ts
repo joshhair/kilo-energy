@@ -31,6 +31,7 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   const dbUpdates: Record<string, unknown> = {};
   if (updates.phase !== undefined) dbUpdates.phase = updates.phase;
   if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+  if (updates.adminNotes !== undefined) dbUpdates.adminNotes = updates.adminNotes;
   if (updates.flagged !== undefined) dbUpdates.flagged = updates.flagged;
   if (updates.m1Paid !== undefined) dbUpdates.m1Paid = updates.m1Paid;
   if (updates.m1Amount !== undefined) dbUpdates.m1Amount = updates.m1Amount;

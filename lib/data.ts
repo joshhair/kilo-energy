@@ -193,6 +193,9 @@ export interface Project {
   m2Paid: boolean;
   m2Amount: number;
   notes: string;
+  /** Admin/PM-only reference notes. Scrubbed out of reps' / trainers'
+   *  payloads server-side; never appears on the wire for non-admin viewers. */
+  adminNotes?: string;
   flagged: boolean;
   // SolarTech-specific: stores the product ID so historical pricing is preserved
   // when SolarTech updates their rates (archived pricing model)

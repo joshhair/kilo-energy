@@ -123,6 +123,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body[key] !== undefined) data[key] = body[key];
   }
 
+  // adminNotes — gated on admin/PM role. A rep cannot set this field even
+  // if they include it in the request body; we 403 rather than silently
+  // drop so a buggy client fails loudly rather than sending a no-op.
+  if (body.adminNotes !== undefined) {
+    if (user.role !== 'admin' && user.role !== 'project_manager') {
+      return NextResponse.json({ error: 'Forbidden — adminNotes is admin/PM only' }, { status: 403 });
+    }
+    data.adminNotes = body.adminNotes;
+  }
+
   // Money fields: wire dollars → Int cents at the DB seam.
   if (body.m1Amount !== undefined) data.m1AmountCents = dollarsToCents(body.m1Amount);
   if (body.m2Amount !== undefined) data.m2AmountCents = dollarsToCents(body.m2Amount);

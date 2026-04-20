@@ -737,6 +737,20 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         )}
       </MobileSection>
 
+      {/* Admin Notes — admin + PM only. Scrubbed server-side for every
+          other relationship; the gate here is belt+suspenders (the
+          field arrives as undefined for reps anyway). */}
+      {(isAdmin || isPM) && (
+        <MobileSection title="Admin Notes" collapsible defaultOpen={false}>
+          <p className="text-[11px] text-amber-400/80 mb-2 uppercase tracking-wider font-semibold">Admin · PM only · reps cannot see</p>
+          {project.adminNotes ? (
+            <p className="text-base text-slate-200 leading-relaxed whitespace-pre-wrap">{project.adminNotes}</p>
+          ) : (
+            <p className="text-base text-slate-500 italic">No admin notes — add from desktop.</p>
+          )}
+        </MobileSection>
+      )}
+
       {/* Messages / Chatter */}
       <ProjectChatter projectId={projectId} />
 

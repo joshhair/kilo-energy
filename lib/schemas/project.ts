@@ -71,6 +71,10 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export const patchProjectSchema = z.object({
   phase: phaseEnum.optional(),
   notes: optionalString,
+  // Admin + PM only. Zod accepts the field; the PATCH handler enforces
+  // the role check before writing and returns 403 if a non-admin/PM
+  // includes it in the payload.
+  adminNotes: optionalString,
   flagged: z.boolean().optional(),
 
   // Milestone money

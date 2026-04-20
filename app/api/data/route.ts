@@ -249,6 +249,10 @@ export async function GET() {
     setterM2Amount: stripFinancials ? undefined : toDollars(fromCents(p.setterM2AmountCents)),
     setterM3Amount: stripFinancials ? undefined : (p.setterM3AmountCents == null ? undefined : toDollars(fromCents(p.setterM3AmountCents))),
     notes: p.notes,
+    // adminNotes is included unconditionally in the raw DTO; the
+    // scrubProjectForViewer pass below strips it for every viewer
+    // relationship except admin + pm via the fieldVisibility matrix.
+    adminNotes: p.adminNotes,
     flagged: p.flagged,
     solarTechProductId: p.installer.name === 'SolarTech' ? (p.productId ?? undefined) : undefined,
     installerProductId: p.installer.name !== 'SolarTech' ? (p.productId ?? undefined) : undefined,

@@ -296,6 +296,11 @@ model Project {
   setterM3AmountCents Int?
 
   notes              String  @default("")
+  // Admin + PM only. Reps / trainers / sub-dealers never receive this
+  // field in their /api/data payload (scrubbed by fieldVisibility.ts).
+  // Replaces the "glide admin-only notes" concept: private reference
+  // notes on a project separate from the rep-visible `notes` field.
+  adminNotes         String  @default("")
   flagged            Boolean @default(false)
   cancellationReason String?
   cancellationNotes  String?

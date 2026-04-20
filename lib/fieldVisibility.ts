@@ -71,6 +71,19 @@ export const ProjectFieldVisibility: Record<string, FieldPolicy> = {
   trainerName: { closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
   trainerRate: { closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
 
+  // Admin-only notes — strip the key entirely for everyone except
+  // admin + pm. Reps / trainers / sub-dealers never see these in any
+  // payload. Intended for private admin reference notes that replace
+  // Glide's admin-notes concept; separate from the rep-visible `notes`
+  // field which everyone with edit access can still write to.
+  adminNotes: {
+    closer: 'undefined',
+    setter: 'undefined',
+    trainer: 'undefined',
+    'sub-dealer': 'undefined',
+    none: 'undefined',
+  },
+
   // Co-party arrays — nuanced per relationship.
   //   admin/pm/sub-dealer: passthrough (full structure + amounts).
   //   closer: own co-closers passthrough; co-setters zero-party (keep
