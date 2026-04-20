@@ -533,6 +533,15 @@ select {
   }
 }
 
+/* Active blitz badge glow pulse */
+@keyframes activeBadgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
+  50%       { box-shadow: 0 0 0 4px rgba(0,229,160,0.18); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .badge-active-pulse { animation: activeBadgePulse 2.4s ease-in-out infinite; }
+}
+
 /* Progress bar shrinks from full width to nothing over the visible duration */
 @keyframes shrink {
   from { width: 100%; }

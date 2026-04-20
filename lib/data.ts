@@ -1541,8 +1541,8 @@ export function computeIncentiveProgress(
       if (incentive.targetRepId) {
         const targetId = incentive.targetRepId;
         // Split into closer projects and setter-only projects to avoid double-counting self-gen deals
-        const closerProjectIds = new Set(relevantProjects.filter((p) => p.repId === targetId).map((p) => p.id));
-        const setterOnlyProjectIds = new Set(relevantProjects.filter((p) => p.setterId === targetId && p.repId !== targetId).map((p) => p.id));
+        const closerProjectIds = new Set(relevantProjects.filter((p) => p.repId === targetId || p.additionalClosers?.some((c) => c.userId === targetId)).map((p) => p.id));
+        const setterOnlyProjectIds = new Set(relevantProjects.filter((p) => (p.setterId === targetId || p.additionalSetters?.some((s) => s.userId === targetId)) && p.repId !== targetId && !p.additionalClosers?.some((c) => c.userId === targetId)).map((p) => p.id));
         return payrollEntries
           .filter((e) => {
             if (e.projectId === null || !isPaidAndEffective(e) || e.type !== 'Deal' || e.paymentStage === 'Trainer' || e.repId !== targetId) return false;

@@ -18,12 +18,16 @@ export const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  'Draft':    { bg: 'rgba(136,153,170,0.12)', text: 'var(--text-mobile-muted)' },
-  'Pending':  { bg: 'rgba(245,166,35,0.12)',  text: '#f5a623' },
-  'Paid':     { bg: 'rgba(0,229,160,0.12)',   text: 'var(--accent-emerald)' },
-  'Approved': { bg: 'rgba(0,229,160,0.12)',   text: 'var(--accent-emerald)' },
-  'Denied':   { bg: 'rgba(255,107,107,0.12)', text: 'var(--accent-danger)' },
-  'Rejected': { bg: 'rgba(255,107,107,0.12)', text: 'var(--accent-danger)' },
+  'Draft':     { bg: 'rgba(136,153,170,0.12)', text: 'var(--text-mobile-muted)' },
+  'Pending':   { bg: 'rgba(245,166,35,0.12)',  text: '#f5a623' },
+  'Paid':      { bg: 'rgba(0,229,160,0.12)',   text: 'var(--accent-emerald)' },
+  'Approved':  { bg: 'rgba(0,229,160,0.12)',   text: 'var(--accent-emerald)' },
+  'Denied':    { bg: 'rgba(255,107,107,0.12)', text: 'var(--accent-danger)' },
+  'Rejected':  { bg: 'rgba(255,107,107,0.12)', text: 'var(--accent-danger)' },
+  'Upcoming':  { bg: 'rgba(0,180,216,0.13)',   text: 'var(--accent-cyan2)' },
+  'Active':    { bg: 'rgba(0,229,160,0.14)',   text: 'var(--accent-emerald)' },
+  'Completed': { bg: 'rgba(0,229,160,0.08)',   text: 'var(--accent-emerald)' },
+  'Cancelled': { bg: 'rgba(255,107,107,0.12)', text: 'var(--accent-danger)' },
 };
 
 export default function MobileBadge({ value, variant = 'phase' }: { value: string; variant?: 'phase' | 'status' }) {
@@ -31,7 +35,7 @@ export default function MobileBadge({ value, variant = 'phase' }: { value: strin
   const c = colors[value] ?? { bg: 'rgba(136,153,170,0.12)', text: 'var(--text-mobile-muted)' };
   return (
     <span
-      className="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full"
+      className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full${value === 'Active' ? ' badge-active-pulse' : ''}`}
       style={{ background: c.bg, color: c.text, fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
     >
       {value}

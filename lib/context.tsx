@@ -701,11 +701,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { closer: repairedM3, setter: repairedSetterM3 } = repairM3AmountAtPTO(old, updates, installerPayConfigs);
       if (repairedM3 !== null) {
         dbUpdates.m3Amount = repairedM3;
-        updates.m3Amount = repairedM3;
       }
       if (repairedSetterM3 !== null) {
         dbUpdates.setterM3Amount = repairedSetterM3;
-        updates.setterM3Amount = repairedSetterM3;
       }
     }
     // Derive m3 from m2 edits on projects past Installed

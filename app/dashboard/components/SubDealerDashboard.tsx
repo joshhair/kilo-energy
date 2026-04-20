@@ -51,10 +51,15 @@ export function SubDealerDashboard({
   const totalDeals = myProjects.length;
   const activePipeline = activeProjects.length;
   const totalKW = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
-  // Total Earned = M2 + M3 payroll only (sub-dealers don't get M1)
   const today = todayLocalDateStr();
+  // Sub-dealers earn M1 when acting as setter; include those entries too
+  const setterProjectIds = new Set(myProjects.filter((p) => p.setterId === currentRepId).map((p) => p.id));
   const totalEarned = myPayroll
-    .filter((e) => (e.paymentStage === 'M2' || e.paymentStage === 'M3') && e.status === 'Paid' && e.date <= today)
+    .filter((e) => e.status === 'Paid' && e.date <= today && (
+      e.paymentStage === 'M2' ||
+      e.paymentStage === 'M3' ||
+      (e.paymentStage === 'M1' && e.projectId !== null && setterProjectIds.has(e.projectId))
+    ))
     .reduce((sum, e) => sum + e.amount, 0);
 
   const stats = [
@@ -244,6 +249,9 @@ export function SubDealerDashboard({
                       <div className="flex items-center gap-2.5 ml-auto">
                         {proj.setterId === currentRepId ? (
                           <>
+                            {(proj.setterM1Amount ?? 0) > 0 && (
+                              <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.setterM1Amount ?? 0} />
+                            )}
                             <MilestoneDot label="M2" paid={proj.m2Paid} amount={proj.setterM2Amount ?? 0} />
                             {(proj.setterM3Amount ?? 0) > 0 && (
                               <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.setterM3Amount ?? 0} />
