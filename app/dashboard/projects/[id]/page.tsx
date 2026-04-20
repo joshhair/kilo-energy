@@ -428,6 +428,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     if (!editVals.soldDate) errs.soldDate = 'Sold date is required';
     if (!editVals.kWSize || isNaN(kw) || kw <= 0) errs.kWSize = 'Must be a number greater than 0';
     if (!editVals.netPPW || isNaN(ppw) || ppw <= 0) errs.netPPW = 'Must be a number greater than 0';
+    if (editVals.productType !== 'Cash' && !editVals.financer) errs.financer = 'Financer is required';
     if (editVals.useBaselineOverride) {
       const oc = parseFloat(editVals.overrideCloserPerW);
       const ok = parseFloat(editVals.overrideKiloPerW);
@@ -1796,8 +1797,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         danger={false}
       />
 
-      {/* Cancellation Reason Modal */}
-      {showCancelReasonModal && (
+      {/* Cancellation Reason Modal — portaled to document.body for the same
+          reason as the Edit modal: ancestor transform/filter contexts trap
+          fixed descendants relative to the ancestor, not the viewport. */}
+      {showCancelReasonModal && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}>
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
@@ -1855,7 +1858,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 }

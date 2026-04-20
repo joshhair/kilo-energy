@@ -109,13 +109,13 @@ export async function POST(req: NextRequest) {
   if (!closerRep) {
     return NextResponse.json({ error: 'Closer not found' }, { status: 400 });
   }
-  if (closerRep.repType === 'setter') {
+  if (closerRep.repType !== 'closer' && closerRep.repType !== 'both') {
     return NextResponse.json({ error: 'Setter-type rep cannot be assigned as closer' }, { status: 400 });
   }
 
   if (body.setterId) {
     const setterRep = await prisma.user.findUnique({ where: { id: body.setterId }, select: { repType: true } });
-    if (setterRep && setterRep.repType === 'closer') {
+    if (setterRep && setterRep.repType !== 'setter' && setterRep.repType !== 'both') {
       return NextResponse.json({ error: 'Closer-type rep cannot be assigned as setter' }, { status: 400 });
     }
   }

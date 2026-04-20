@@ -300,14 +300,14 @@ function NewDealPage() {
 
   // When a blitz is selected, restrict the admin closer dropdown to approved blitz participants.
   const closerPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active && r.repType !== 'setter');
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'closer' || r.repType === 'both'));
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
         .filter((p) => p.joinStatus === 'approved')
         .map((p) => p.userId),
     );
-    return reps.filter((r) => r.active && approvedIds.has(r.id) && r.repType !== 'setter');
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Trainer override tier progression counts deals where the FINAL milestone
@@ -332,14 +332,14 @@ function NewDealPage() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => p.setterId === form.setterId && isFullyPaidOut(p)).length
+    ? projects.filter((p) => (p.setterId === form.setterId || p.additionalSetters?.some((s) => s.userId === form.setterId)) && isFullyPaidOut(p)).length
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
   const closerCompletedDeals = closerId
-    ? projects.filter((p) => p.repId === closerId && isFullyPaidOut(p)).length
+    ? projects.filter((p) => (p.repId === closerId || p.additionalClosers?.some((c) => c.userId === closerId)) && isFullyPaidOut(p)).length
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
