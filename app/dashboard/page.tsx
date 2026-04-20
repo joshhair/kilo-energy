@@ -1013,39 +1013,6 @@ export default function DashboardPage() {
   const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
-  // Period-scoped pipeline value for the trend badge — apples-to-apples vs prevInPipeline
-  const _periodInPipeline = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase)).reduce((sum, p) => {
-    const closerM1 = p.m1Amount ?? 0;
-    const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
-    const closerM3Net = payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0);
-    const coCloserPartyP = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-    const coSetterPartyP = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
-    const totalExpected = p.repId === effectiveRepId
-      ? closerM1 + closerM2Net + closerM3Net
-      : p.setterId === effectiveRepId
-        ? (p.setterM1Amount ?? 0) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
-        : coCloserPartyP
-          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserPartyP.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserPartyP.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserPartyP.m3Amount ?? 0))
-          : coSetterPartyP
-            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterPartyP.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterPartyP.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterPartyP.m3Amount ?? 0))
-            : 0;
-    const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
-    return sum + Math.max(0, totalExpected - alreadyPaid);
-  }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
-    const completedDeals = projects.filter(p =>
-      (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
-      ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
-    ).length;
-    const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
-    return sum + periodProjects
-      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
-      .reduce((pSum, p) => {
-        const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
-        const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
-        return pSum + Math.max(0, expected - alreadyPaid);
-      }, 0);
-  }, 0);
-
   // ── Previous-period equivalents for trend-badge percentage changes ──────────
   const prevActiveProjects = myPrevProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
   const prevPaidByProject = myPrevPayroll.filter((p) => p.status === 'Paid').reduce((map, p) => {
@@ -1061,13 +1028,13 @@ export default function DashboardPage() {
     return map;
   }, new Map<string, number>());
   const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
-    const closerM1 = p.m1Amount ?? 0;
+    const closerM1 = prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0);
     const coCloserPartyPrev = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
     const coSetterPartyPrev = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
     const totalExpected = p.repId === effectiveRepId
       ? closerM1 + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
       : p.setterId === effectiveRepId
-        ? (p.setterM1Amount ?? 0) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
+        ? (prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
         : coCloserPartyPrev
           ? (prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserPartyPrev.m1Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserPartyPrev.m2Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserPartyPrev.m3Amount ?? 0))
           : coSetterPartyPrev

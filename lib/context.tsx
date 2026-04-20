@@ -1028,7 +1028,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           phase: project.phase || 'New',
           m1Amount: project.m1Amount || 0,
           m2Amount: project.m2Amount || 0,
-          m3Amount: project.m3Amount || 0,
+          m3Amount: project.m3Amount ?? null,
           setterM1Amount: project.setterM1Amount || 0,
           setterM2Amount: project.setterM2Amount || 0,
           setterM3Amount: project.setterM3Amount || 0,

@@ -157,7 +157,7 @@ function ProjectsPageInner() {
 
   const doPhaseChange = (projectId: string, phase: Phase, silent?: boolean) => {
     const project = projects.find((p) => p.id === projectId);
-    if (isRep && project?.repId !== effectiveRepId && project?.setterId !== effectiveRepId && !project?.additionalClosers?.some((c) => c.userId === effectiveRepId) && !project?.additionalSetters?.some((s) => s.userId === effectiveRepId)) { toast('You can only update your own projects.', 'error'); return; }
+    if (isRep && project?.repId !== effectiveRepId && project?.setterId !== effectiveRepId && project?.trainerId !== effectiveRepId && !project?.additionalClosers?.some((c) => c.userId === effectiveRepId) && !project?.additionalSetters?.some((s) => s.userId === effectiveRepId)) { toast('You can only update your own projects.', 'error'); return; }
     const previousPhase = project?.phase;
     updateProject(projectId, { phase });
     if (!silent && project) toast(
@@ -192,7 +192,7 @@ function ProjectsPageInner() {
       return;
     }
     const cancelProject = projects.find((p) => p.id === cancelReasonModal.projectId);
-    if (isRep && cancelProject?.repId !== effectiveRepId && cancelProject?.setterId !== effectiveRepId && !cancelProject?.additionalClosers?.some((c) => c.userId === effectiveRepId) && !cancelProject?.additionalSetters?.some((s) => s.userId === effectiveRepId)) { toast('You can only update your own projects.', 'error'); setCancelReasonModal(null); return; }
+    if (isRep && cancelProject?.repId !== effectiveRepId && cancelProject?.setterId !== effectiveRepId && cancelProject?.trainerId !== effectiveRepId && !cancelProject?.additionalClosers?.some((c) => c.userId === effectiveRepId) && !cancelProject?.additionalSetters?.some((s) => s.userId === effectiveRepId)) { toast('You can only update your own projects.', 'error'); setCancelReasonModal(null); return; }
     updateProject(cancelReasonModal.projectId, {
       phase: 'Cancelled',
       cancellationReason: cancelReason || undefined,
