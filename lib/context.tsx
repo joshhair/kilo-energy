@@ -359,7 +359,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateProject = (id: string, updates: Partial<Project>) => {
     // ── 1. Find old project & log activity ──
-    const old = projects.find((p) => p.id === id);
+    const old = projectsRef.current.find((p) => p.id === id);
     if (old) {
       if (updates.phase !== undefined && updates.phase !== old.phase) {
         logProjectActivity(id, 'phase_change', `Phase changed from ${old.phase} to ${updates.phase}`, JSON.stringify({ oldPhase: old.phase, newPhase: updates.phase }));

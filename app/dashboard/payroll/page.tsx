@@ -14,6 +14,7 @@ import { PaginationBar } from '../components/PaginationBar';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { DateRangeFilter } from '../components/DateRangeFilter';
+import ConfirmDialog from '../components/ConfirmDialog';
 import Link from 'next/link';
 import MobilePayroll from '../mobile/MobilePayroll';
 import { PayrollSkeleton } from './components/PayrollSkeleton';
@@ -110,6 +111,7 @@ function PayrollPageInner() {
   const [reimFilterTo, setReimFilterTo] = useState('');
   const [reimFilterStatus, setReimFilterStatus] = useState<'All' | 'Pending' | 'Approved' | 'Denied'>('Pending');
   const [processingReimIds, setProcessingReimIds] = useState<Set<string>>(new Set());
+  const [pendingDeleteEntry, setPendingDeleteEntry] = useState<PayrollEntry | null>(null);
   // Archived-visibility toggle for reimbursements.
   //   false  → hide archived (default)
   //   true   → show everything (archived mixed in)
@@ -468,14 +470,20 @@ function PayrollPageInner() {
     }
   };
 
-  const handleDeleteEntry = async (entry: PayrollEntry) => {
+  const handleDeleteEntry = (entry: PayrollEntry) => {
     if (entry.status === 'Paid') { toast('Paid entries cannot be deleted', 'error'); return; }
-    const ok = window.confirm(`Delete this ${entry.type.toLowerCase()} payment?\n\n${entry.repName} — $${entry.amount.toFixed(2)}\n${entry.notes || entry.customerName || ''}\n\nThis cannot be undone.`);
-    if (!ok) return;
+    setPendingDeleteEntry(entry);
+  };
+
+  const confirmDeleteEntry = async () => {
+    const entry = pendingDeleteEntry;
+    if (!entry) return;
+    setPendingDeleteEntry(null);
     if (processingEntryIds.has(entry.id)) return;
     setProcessingEntryIds((prev) => new Set(prev).add(entry.id));
     const snapshot = entry;
-    setPayrollEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    let snapshotIndex = -1;
+    setPayrollEntries((prev) => { snapshotIndex = prev.findIndex((e) => e.id === entry.id); return prev.filter((e) => e.id !== entry.id); });
     setSelectedIds((prev) => { const s = new Set(prev); s.delete(entry.id); return s; });
     try {
       const res = await fetch(`/api/payroll/${entry.id}`, { method: 'DELETE' });
@@ -484,7 +492,7 @@ function PayrollPageInner() {
     } catch (err) {
       console.error(err);
       toast('Failed to delete — restoring', 'error');
-      setPayrollEntries((prev) => [...prev, snapshot]);
+      setPayrollEntries((prev) => { const next = [...prev]; next.splice(snapshotIndex === -1 ? prev.length : snapshotIndex, 0, snapshot); return next; });
     } finally {
       setProcessingEntryIds((prev) => { const s = new Set(prev); s.delete(entry.id); return s; });
     }
@@ -1031,7 +1039,11 @@ function PayrollPageInner() {
                           if (!ok) return;
                           setProcessingReimIds((prev) => new Set(prev).add(r.id));
                           const snapshot = r;
-                          setReimbursements((prev) => prev.filter((x) => x.id !== r.id));
+                          let snapshotIndex = -1;
+                          setReimbursements((prev) => {
+                            snapshotIndex = prev.findIndex((x) => x.id === r.id);
+                            return prev.filter((x) => x.id !== r.id);
+                          });
                           try {
                             const res = await fetch(`/api/reimbursements/${r.id}`, { method: 'DELETE' });
                             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1039,7 +1051,11 @@ function PayrollPageInner() {
                           } catch (err) {
                             console.error(err);
                             toast('Failed to delete — restoring', 'error');
-                            setReimbursements((prev) => [...prev, snapshot]);
+                            setReimbursements((prev) => {
+                              const next = [...prev];
+                              next.splice(snapshotIndex === -1 ? next.length : snapshotIndex, 0, snapshot);
+                              return next;
+                            });
                           } finally {
                             setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; });
                           }
@@ -1068,7 +1084,7 @@ function PayrollPageInner() {
                               </button>
                             )}
                             {r.archivedAt && (
-                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ archived: false }, `Reimbursement unarchived`, { archivedAt: new Date().toISOString() })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border-subtle)]`}>
+                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ archived: false }, `Reimbursement unarchived`, { archivedAt: r.archivedAt })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border-subtle)]`}>
                                 Unarchive
                               </button>
                             )}
@@ -1697,6 +1713,15 @@ function PayrollPageInner() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={pendingDeleteEntry !== null}
+        onClose={() => setPendingDeleteEntry(null)}
+        onConfirm={confirmDeleteEntry}
+        title="Delete payment entry"
+        message={pendingDeleteEntry ? `${pendingDeleteEntry.repName} — $${pendingDeleteEntry.amount.toFixed(2)}${pendingDeleteEntry.notes || pendingDeleteEntry.customerName ? `\n${pendingDeleteEntry.notes || pendingDeleteEntry.customerName}` : ''}\n\nThis cannot be undone.` : ''}
+        confirmLabel="Delete"
+        danger
+      />
     </div>
   );
 }

@@ -791,7 +791,7 @@ export default function DashboardPage() {
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
   const fetchMentions = useCallback(() => {
     if (!effectiveRepId) return;
-    fetch(`/api/mentions?userId=${effectiveRepId}`)
+    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();
