@@ -82,7 +82,7 @@ export function AdminDashboard({
       lastCount = count;
       lastRank = rank;
       const rep = reps.find((r) => r.id === id);
-      return { name: rep?.name ?? 'Unknown', count, rank };
+      return { id, name: rep?.name ?? 'Unknown', count, rank };
     });
   }, [projects, reps]);
 
@@ -227,7 +227,7 @@ export function AdminDashboard({
 
       const prev = periodInstallerMap.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
       prev.deals++;
-      prev.kW += p.kWSize;
+      if (p.phase !== 'Cancelled' && p.phase !== 'On Hold') prev.kW += p.kWSize;
       if (p.phase === 'Cancelled') prev.cancelled++;
       periodInstallerMap.set(p.installer, prev);
     }
@@ -493,7 +493,7 @@ export function AdminDashboard({
             <div className="collapsible-inner">
               <div className="mt-4 space-y-2">
                 {topReps.map((r) => (
-                  <div key={r.name} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors">
+                  <div key={r.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors">
                     <span
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums"
                       style={{
@@ -699,9 +699,8 @@ export function AdminDashboard({
                   <tbody>
                     {paginated.map((proj) => {
                       const isCancelled = proj.phase === 'Cancelled';
-                      const coCloserPay = (proj.additionalClosers ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
                       const coSetterPay = (proj.additionalSetters ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
-                      const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + coCloserPay);
+                      const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0));
                       const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) + coSetterPay);
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">

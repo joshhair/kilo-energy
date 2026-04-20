@@ -148,7 +148,7 @@ export function getTrainerOverrideRate(
       return tier.ratePerW;
     }
   }
-  return assignment.tiers[assignment.tiers.length - 1]?.ratePerW ?? 0;
+  return 0;
 }
 
 export const TRAINER_ASSIGNMENTS: TrainerAssignment[] = [

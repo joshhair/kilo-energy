@@ -208,7 +208,7 @@ export default function MobileAdminDashboard() {
       lastCount = count;
       lastRank = rank;
       const rep = reps.find((r) => r.id === id);
-      return { name: rep?.name ?? 'Unknown', count, rank };
+      return { id, name: rep?.name ?? 'Unknown', count, rank };
     });
   }, [periodProjects, reps]);
 
@@ -440,7 +440,7 @@ export default function MobileAdminDashboard() {
           </div>
           <div className="space-y-3">
             {topReps.map((r) => (
-              <div key={r.name} className="flex items-center gap-3">
+              <div key={r.id} className="flex items-center gap-3">
                 <span
                   className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                   style={{
