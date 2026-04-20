@@ -123,7 +123,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: { blitzId: null },
     });
     await prisma.project.updateMany({
-      where: { blitzId, setterId: body.userId, closerId: { notIn: approvedIds } },
+      where: {
+        blitzId,
+        setterId: body.userId,
+        closerId: { notIn: approvedIds },
+        additionalClosers: { none: { userId: { in: approvedIds } } },
+        additionalSetters: { none: { userId: { in: approvedIds } } },
+      },
       data: { blitzId: null },
     });
     // Also unlink deals where the user is only an additionalCloser or additionalSetter
@@ -210,7 +216,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     data: { blitzId: null },
   });
   await prisma.project.updateMany({
-    where: { blitzId, setterId: userId, closerId: { notIn: approvedIds } },
+    where: {
+      blitzId,
+      setterId: userId,
+      closerId: { notIn: approvedIds },
+      additionalClosers: { none: { userId: { in: approvedIds } } },
+      additionalSetters: { none: { userId: { in: approvedIds } } },
+    },
     data: { blitzId: null },
   });
   // Also unlink deals where the user is only an additionalCloser or additionalSetter

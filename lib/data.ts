@@ -121,6 +121,7 @@ export interface SubDealer {
 }
 
 export interface TrainerOverrideTier {
+  id?: string;
   upToDeal: number | null; // null = perpetual
   ratePerW: number;        // e.g. 0.20 = $0.20/W
 }

@@ -18,6 +18,7 @@ export function AdminDashboard({
   projects,
   allProjects,
   payroll,
+  allPayroll,
   period,
   setPeriod,
   PERIODS,
@@ -33,6 +34,7 @@ export function AdminDashboard({
   projects: ReturnType<typeof useApp>['projects'];
   allProjects: ReturnType<typeof useApp>['projects'];
   payroll: ReturnType<typeof useApp>['payrollEntries'];
+  allPayroll: ReturnType<typeof useApp>['payrollEntries'];
   period: Period;
   setPeriod: (p: Period) => void;
   PERIODS: { value: Period; label: string }[];
@@ -117,8 +119,7 @@ export function AdminDashboard({
   const [adminPeriodIndicator, setAdminPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
-    const PERIOD_VALUES: Period[] = ['all', 'this-month', 'last-month', 'this-year'];
-    const idx = PERIOD_VALUES.indexOf(period);
+    const idx = PERIODS.map(p => p.value).indexOf(period);
     const el = adminPeriodTabRefs.current[idx];
     if (el) setAdminPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
   }, [period]);
@@ -140,7 +141,11 @@ export function AdminDashboard({
         return { closerPerW: 0, kiloPerW: 0 };
       }
     }
-    return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
+    try {
+      return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
+    } catch {
+      return { closerPerW: 0, kiloPerW: 0 };
+    }
   }
 
   // Revenue = netPPW × kW × 1000 (actual contract value)
@@ -289,6 +294,7 @@ export function AdminDashboard({
       if (proj.flagged) continue;
       if (proj.phase === 'On Hold') count++;
     }
+    count += allPayroll.filter((e) => e.status === 'Draft' || e.status === 'Pending').length;
     return count;
   })();
 
@@ -359,7 +365,7 @@ export function AdminDashboard({
           const gc = gradCardConfig[stat.label] ?? { color: stat.accentHex, grad: 'linear-gradient(135deg, #101012, #141416)' };
           return (
             <Link key={stat.label} href={stat.href} className="group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px]" style={{ textDecoration: 'none' }}>
-              <div style={{
+              <div title={stat.tooltip} style={{
                 background: gc.grad,
                 border: `1px solid ${gc.color}40`,
                 borderRadius: 16,
@@ -460,6 +466,7 @@ export function AdminDashboard({
             activeProjects={attentionActiveProjects}
             isAdmin
             onUnflag={(projectId) => updateProject(projectId, { flagged: false })}
+            payrollAttentionCount={allPayroll.filter((e) => e.status === 'Draft' || e.status === 'Pending').length}
           />
         </div>
       )}
@@ -700,7 +707,8 @@ export function AdminDashboard({
                     {paginated.map((proj) => {
                       const isCancelled = proj.phase === 'Cancelled';
                       const coSetterPay = (proj.additionalSetters ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
-                      const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0));
+                      const coCloserPay = (proj.additionalClosers ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
+                      const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + coCloserPay);
                       const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) + coSetterPay);
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">

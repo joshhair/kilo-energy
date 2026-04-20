@@ -30,7 +30,7 @@ export default function BlitzParticipants({ blitzId, participants, reps, canMana
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
 
   const availableReps = useMemo(() => {
-    const participantIds = new Set(participants.map((p: any) => p.user.id));
+    const participantIds = new Set(participants.filter((p: any) => p.joinStatus !== 'declined').map((p: any) => p.user.id));
     return sortForSelection(reps.filter((r) => !participantIds.has(r.id)));
   }, [reps, participants]);
 

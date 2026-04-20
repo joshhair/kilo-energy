@@ -116,7 +116,7 @@ function SettingsPageInner() {
       ? (p as SettingsSection)
       : 'blitz-permissions';
     // URL changed externally (back/forward, manual edit) — guard unsaved edits
-    if (next !== section && hasUnsavedChanges()) {
+    if (next !== section && hasUnsavedChangesRef.current) {
       setPendingSection(next);
       router.replace(`/dashboard/settings?section=${section}`, { scroll: false });
       return;
@@ -174,6 +174,21 @@ function SettingsPageInner() {
     newVersionFor !== null ||
     pcNewVersionFor !== null ||
     dupAllOpen;
+
+  // Ref always holds the current unsaved-changes status so the searchParams
+  // effect (which intentionally omits editing state from its dep array) can
+  // read the live value rather than a stale closure capture.
+  const hasUnsavedChangesRef = useRef(false);
+  useEffect(() => {
+    hasUnsavedChangesRef.current =
+      editingInstaller !== null ||
+      editingAssignmentId !== null ||
+      editingPrepaid !== null ||
+      editingProductName !== null ||
+      newVersionFor !== null ||
+      pcNewVersionFor !== null ||
+      !!dupAllOpen;
+  }, [editingInstaller, editingAssignmentId, editingPrepaid, editingProductName, newVersionFor, pcNewVersionFor, dupAllOpen]);
 
   // ── Unsaved-changes guard state ────────────────────────────────────────────
   const [pendingSection, setPendingSection] = useState<SettingsSection | null>(null);

@@ -44,7 +44,7 @@ type UserMeta = {
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, effectiveRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact, updateRepType, removeRep } = useApp();
+  const { projects, payrollEntries, trainerAssignments, setTrainerAssignments, currentRole, effectiveRole, currentRepId, effectiveRepId, reps, subDealers, deactivateRep, reactivateRep, deleteRepPermanently, deactivateSubDealer, reactivateSubDealer, deleteSubDealerPermanently, updateRepContact, updateSubDealerContact, updateRepType } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -74,7 +74,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Commission-by-Role drill-down — admin-only slide-over that lists the
   // PayrollEntries making up a total when the amount cell is clicked.
-  const [drillRole, setDrillRole] = useState<'Closer' | 'Setter' | 'Trainer' | 'Bonus' | null>(null);
+  const [drillRole, setDrillRole] = useState<'Closer' | 'Co-closer' | 'Setter' | 'Trainer' | 'Bonus' | null>(null);
   const [drillEntries, setDrillEntries] = useState<Array<{ id: string; customerName?: string; projectId?: string | null; amount: number; date: string; paymentStage: string; status: string; notes?: string }>>([]);
   const [drillTotal, setDrillTotal] = useState(0);
 
@@ -581,9 +581,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     }
                     if (repInContext && newRepType) {
                       updateRepType(id, newRepType as 'closer' | 'setter' | 'both');
-                    } else if (repInContext && !newRepType) {
-                      removeRep(id);
                     }
+                    // Do NOT call removeRep() here — it sends PATCH {active:false}
+                    // which deactivates the Clerk account. Clearing repType only
+                    // removes the selling role; the next /api/data hydration drops
+                    // them from the reps array automatically.
                     setMetaRefreshKey((k) => k + 1);
                     toast(newRepType ? `Saved — ${resolvedUser.id === currentRepId ? 'you' : 'they'} now appear as a ${newRepType}` : 'Saved — pure-admin mode', 'success');
                   } catch (err) {
@@ -753,7 +755,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // returned for the not-found case + admin/PM case above).
   if (!rep) return null;
 
-  const repProjects = projects.filter((p) => p.repId === id || p.setterId === id);
+  const repProjects = projects.filter((p) => p.repId === id || p.setterId === id || p.additionalClosers?.some((c) => c.userId === id));
   const repPayroll = payrollEntries.filter((p) => p.repId === id);
 
   // Payment history pagination
@@ -789,9 +791,15 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       // Self-gen: rep is also the setter; m1Amount holds the full M1 (setterM1Amount is 0 for self-gen)
       const selfGenM1 = p.setterId === id ? (p.m1Amount ?? 0) : 0;
       return s + closerM1 + selfGenM1 + p.m2Amount + (p.m3Amount ?? 0) + (p.setterId === id ? (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
-    } else {
+    } else if (p.setterId === id) {
       // Setter: earns setterM1Amount + setter's M2/M3
       return s + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+    } else {
+      // Additional closer or additional setter: sum amounts from whichever entry exists
+      const closerEntry = p.additionalClosers?.find((c) => c.userId === id);
+      const setterEntry = p.additionalSetters?.find((c) => c.userId === id);
+      return s + (closerEntry ? (closerEntry.m1Amount ?? 0) + (closerEntry.m2Amount ?? 0) + (closerEntry.m3Amount ?? 0) : 0)
+               + (setterEntry ? (setterEntry.m1Amount ?? 0) + (setterEntry.m2Amount ?? 0) + (setterEntry.m3Amount ?? 0) : 0);
     }
   }, 0);
   const todayStr = todayLocalDateStr();
@@ -1063,13 +1071,15 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         // the row below so totals and drill-down sets are guaranteed to match.
         const closerDealCount = projects.filter((p) => p.repId === id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
         const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
-        const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId)).size;
+        const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId as string)).size;
         const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && !e.notes?.startsWith('Co-setter') && !e.notes?.startsWith('Co-closer') && e.paymentStage !== 'Trainer');
+        const coCloserEntries = repPayroll.filter((e) => e.notes?.startsWith('Co-closer'));
         const setterEntries = repPayroll.filter((e) => e.notes === 'Setter' || e.notes?.startsWith('Co-setter'));
         const trainerEntries = repPayroll.filter((e) => e.paymentStage === 'Trainer');
         const bonusEntries = repPayroll.filter((e) => e.type !== 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer');
         const sum = (arr: typeof repPayroll) => arr.reduce((s, e) => s + e.amount, 0);
         const closerPay = sum(closerEntries);
+        const coCloserPay = sum(coCloserEntries);
         const setterPay = sum(setterEntries);
         const trainerPay = sum(trainerEntries);
         const bonusPay = sum(bonusEntries);
@@ -1099,6 +1109,13 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <td className="py-2.5 text-[var(--text-secondary)]">{closerDealCount}</td>
                   <td className={amountCls} onClick={() => openDrill('Closer', closerEntries, closerPay)}>${closerPay.toLocaleString()}</td>
                 </tr>
+                {coCloserPay > 0 && (
+                  <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                    <td className="py-2.5 text-white">Co-closer</td>
+                    <td className="py-2.5 text-[var(--text-secondary)]">{coCloserEntries.length}</td>
+                    <td className={amountCls} onClick={() => openDrill('Co-closer', coCloserEntries, coCloserPay)}>${coCloserPay.toLocaleString()}</td>
+                  </tr>
+                )}
                 <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                   <td className="py-2.5 text-white">Setter</td>
                   <td className="py-2.5 text-[var(--text-secondary)]">{setterDealCount}</td>
@@ -1243,7 +1260,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </td>
                 <td className="px-5 py-3">
                   <span className="text-xs text-[var(--text-secondary)]">
-                    {proj.repId === id && proj.setterId === id ? 'Self-gen' : proj.repId === id ? 'Closer' : 'Setter'}
+                    {proj.repId === id && proj.setterId === id ? 'Self-gen' : proj.repId === id ? 'Closer' : proj.setterId === id ? 'Setter' : 'Add. Closer'}
                   </span>
                 </td>
                 <td className="px-5 py-3">
@@ -1277,7 +1294,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <td className="px-5 py-3 text-right text-[var(--accent-green)] font-semibold tabular-nums">
                     {(proj.phase === 'Cancelled' || proj.phase === 'On Hold') ? '$0' : `$${(proj.repId === id
                         ? (proj.setterId === id ? (proj.m1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
-                        : (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                        : proj.setterId === id
+                          ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                          : (() => {
+              const ce = proj.additionalClosers?.find((c) => c.userId === id);
+              if (ce) return (ce.m1Amount ?? 0) + (ce.m2Amount ?? 0) + (ce.m3Amount ?? 0);
+              const se = proj.additionalSetters?.find((s) => s.userId === id);
+              return se ? (se.m1Amount ?? 0) + (se.m2Amount ?? 0) + (se.m3Amount ?? 0) : 0;
+            })()
                       ).toLocaleString()}`}
                   </td>
                 )}
@@ -1593,7 +1617,7 @@ function TrainerOverrideCard({
 
           return (
             <div
-              key={i}
+              key={tier.id}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
                 isActive && !editing
                   ? 'bg-amber-500/10 border border-amber-500/30'

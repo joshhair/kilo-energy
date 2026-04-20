@@ -545,7 +545,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // All payroll entries for this project (admin view)
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
   const closerEntries = projectEntries.filter((e) => e.repId === project.repId && e.paymentStage !== 'Trainer');
-  const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId) : [];
+  const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId && e.paymentStage !== 'Trainer') : [];
   const coCloserIds = new Set((project.additionalClosers ?? []).map((c) => c.userId));
   const coSetterIds = new Set((project.additionalSetters ?? []).map((c) => c.userId));
   // Trainer payouts belong in their own card so the admin view shows a
@@ -805,7 +805,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Commission — rep view shows their own payroll entries */}
       {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (() => {
-        const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId;
+        const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId);
         const trainerOnlyEntries = isTrainerOnDeal ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer') : [];
         return (
         <div className="card-surface rounded-2xl p-6 mb-5">
@@ -820,7 +820,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
             const isSetterRep = project.setterId === effectiveRepId;
             const isCloserRep2 = project.repId === effectiveRepId;
-            const isTrainerRep = project.trainerId === effectiveRepId && !isCloserRep2 && !isSetterRep;
+            const isTrainerRep = project.trainerId === effectiveRepId && !isCloserRep2 && !isSetterRep && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId);
 
             // Trainer path: single lump paid at Trainer stage, no M1/M2/M3.
             // Projected as trainerRate × kW × 1000; paid entries override if
@@ -995,6 +995,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               expectedAmounts={[
                 ...(!project.setterId ? [{ label: 'Expected M1', amount: project.m1Amount ?? 0 }] : []),
                 { label: 'Expected M2', amount: closerExpectedM2 },
+                ...((project.m3Amount ?? 0) > 0 ? [{ label: 'Expected M3', amount: project.m3Amount ?? 0 }] : []),
               ]}
               entries={closerEntries}
             />

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idSchema, optionalId, optionalString, finiteNumber, moneyAmount } from '../api-validation';
+import { idSchema, optionalId, nullableId, optionalString, finiteNumber, moneyAmount } from '../api-validation';
 
 const phaseEnum = z.enum([
   'New',
@@ -101,8 +101,8 @@ export const patchProjectSchema = z.object({
   productType: z.string().min(1).optional(),
   kWSize: finiteNumber.positive().max(1000).optional(),  // kW bound — 1MW residential cap
   netPPW: finiteNumber.min(0).max(10).optional(),        // $/W sanity bound
-  closerId: optionalId,
-  setterId: optionalId,
+  closerId: nullableId,
+  setterId: nullableId,
   soldDate: z.string().min(1).optional(),                 // ISO date
 
   // FK resolution via name (API resolves to installerId/financerId)

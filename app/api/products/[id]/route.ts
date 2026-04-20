@@ -21,32 +21,45 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   if (body.tiers) {
+    const today = new Date().toISOString().slice(0, 10);
     const activeVersion = await prisma.productPricingVersion.findFirst({
       where: { productId: id, effectiveTo: null },
     });
     if (activeVersion) {
-      await prisma.productPricingTier.deleteMany({ where: { versionId: activeVersion.id } });
-      await prisma.productPricingTier.createMany({
-        data: body.tiers.map((t) => ({
-          versionId: activeVersion.id,
-          minKW: t.minKW,
-          maxKW: t.maxKW ?? null,
-          closerPerW: t.closerPerW,
-          setterPerW: t.setterPerW,
-          kiloPerW: t.kiloPerW,
-          subDealerPerW: t.subDealerPerW ?? null,
-        })),
+      await prisma.productPricingVersion.update({
+        where: { id: activeVersion.id },
+        data: { effectiveTo: today },
       });
     }
+    await prisma.productPricingVersion.create({
+      data: {
+        productId: id,
+        label: today,
+        effectiveFrom: today,
+        effectiveTo: null,
+        tiers: {
+          create: body.tiers.map((t) => ({
+            minKW: t.minKW,
+            maxKW: t.maxKW ?? null,
+            closerPerW: t.closerPerW,
+            setterPerW: t.setterPerW,
+            kiloPerW: t.kiloPerW,
+            subDealerPerW: t.subDealerPerW ?? null,
+          })),
+        },
+      },
+    });
   }
 
   return NextResponse.json({ success: true });
 }
 
-// DELETE /api/products/[id] — Delete a product catalog product (admin only)
+// DELETE /api/products/[id] — Soft-archive a product (admin only).
+// Hard delete is intentionally avoided: existing projects reference this product via
+// installerProductId; deleting it would orphan those FKs and break commission recompute.
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
-  await prisma.product.delete({ where: { id } });
+  await prisma.product.update({ where: { id }, data: { active: false } });
   return NextResponse.json({ success: true });
 }

@@ -315,6 +315,26 @@ body {
   animation: mobileTabEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes panelEnterRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes panelEnterLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-panel-right {
+  animation: panelEnterRight 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-panel-left {
+  animation: panelEnterLeft 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-panel-right, .animate-panel-left {
+    animation: none;
+  }
+}
+
 /* Splash logo fade-in with scale */
 @keyframes splashIn {
   from {
@@ -1067,6 +1087,24 @@ select {
 
 @media (prefers-reduced-motion: reduce) {
   .nav-more-icon { transition: none !important; }
+}
+
+/* ─── Bar grow animation — Blitz Profitability cost/rep bars ──────────────
+   Uses CSS custom properties so each bar can declare its own target width
+   and stagger delay without JavaScript needing to measure anything.        */
+@keyframes bar-grow {
+  from { width: 0; }
+  to   { width: var(--bar-w, 0%); }
+}
+.bar-grow-anim {
+  animation: bar-grow 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--bar-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-grow-anim {
+    animation: none;
+    width: var(--bar-w, 0%);
+  }
 }
 
 /* ─── Modal entrance animations ───────────────────────────────────────────

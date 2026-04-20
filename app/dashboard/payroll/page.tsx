@@ -112,6 +112,7 @@ function PayrollPageInner() {
   const [reimFilterStatus, setReimFilterStatus] = useState<'All' | 'Pending' | 'Approved' | 'Denied'>('Pending');
   const [processingReimIds, setProcessingReimIds] = useState<Set<string>>(new Set());
   const [pendingDeleteEntry, setPendingDeleteEntry] = useState<PayrollEntry | null>(null);
+  const [pendingDeleteReim, setPendingDeleteReim] = useState<Reimbursement | null>(null);
   // Archived-visibility toggle for reimbursements.
   //   false  → hide archived (default)
   //   true   → show everything (archived mixed in)
@@ -274,7 +275,7 @@ function PayrollPageInner() {
       if (p.type !== typeTab) continue;
       filteredByDateRep.push(p);
 
-      if (p.status === statusTab && (statusTab !== 'Paid' || p.date <= today)) {
+      if (p.status === statusTab && (statusTab === 'Draft' || p.date <= today)) {
         filtered.push(p);
       }
     }
@@ -498,6 +499,33 @@ function PayrollPageInner() {
     }
   };
 
+  const confirmDeleteReim = async () => {
+    const reim = pendingDeleteReim;
+    if (!reim) return;
+    setPendingDeleteReim(null);
+    setProcessingReimIds((prev) => new Set(prev).add(reim.id));
+    let snapshotIndex = -1;
+    setReimbursements((prev) => {
+      snapshotIndex = prev.findIndex((x) => x.id === reim.id);
+      return prev.filter((x) => x.id !== reim.id);
+    });
+    try {
+      const res = await fetch(`/api/reimbursements/${reim.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast('Reimbursement deleted', 'success');
+    } catch (err) {
+      console.error(err);
+      toast('Failed to delete — restoring', 'error');
+      setReimbursements((prev) => {
+        const next = [...prev];
+        next.splice(snapshotIndex === -1 ? next.length : snapshotIndex, 0, reim);
+        return next;
+      });
+    } finally {
+      setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(reim.id); return s; });
+    }
+  };
+
   const openEditEntry = (entry: PayrollEntry) => {
     if (entry.status === 'Paid') { toast('Paid entries cannot be edited — add a negative adjustment entry instead', 'error'); return; }
     setEditEntryForm({
@@ -514,6 +542,7 @@ function PayrollPageInner() {
     const amt = parseFloat(editEntryForm.amount);
     const isChargebackEntry = editingEntry.amount < 0;
     if (!Number.isFinite(amt) || amt === 0 || (!isChargebackEntry && amt < 0)) { toast(isChargebackEntry ? 'Amount must be non-zero' : 'Amount must be greater than $0', 'error'); return; }
+    if (!editEntryForm.date) { toast('Date is required', 'error'); return; }
     if (processingEntryIds.has(editingEntry.id)) return;
     setProcessingEntryIds((prev) => new Set(prev).add(editingEntry.id));
     const snapshot = editingEntry;
@@ -838,11 +867,11 @@ function PayrollPageInner() {
                 const periodFrom = sorted[0]?.date ?? '';
                 const periodTo = sorted[sorted.length - 1]?.date ?? '';
 
-                // Group: repName → { gross, chargebacks, entries }
-                const byRep = new Map<string, { gross: number; chargebacks: number; count: number }>();
+                // Group: repId → { repName, gross, chargebacks, entries }
+                const byRep = new Map<string, { repName: string; gross: number; chargebacks: number; count: number }>();
                 for (const e of filtered) {
-                  const key = e.repName;
-                  const row = byRep.get(key) ?? { gross: 0, chargebacks: 0, count: 0 };
+                  const key = e.repId;
+                  const row = byRep.get(key) ?? { repName: e.repName, gross: 0, chargebacks: 0, count: 0 };
                   if (e.amount < 0) row.chargebacks += Math.abs(e.amount);
                   else row.gross += e.amount;
                   row.count += 1;
@@ -852,9 +881,9 @@ function PayrollPageInner() {
                 // ADP import template columns. Adjust per your specific
                 // ADP instance — the four below are the universal core.
                 const adpHeaders = ['Employee Name', 'Gross Pay', 'Deductions', 'Net Pay', 'Pay Period From', 'Pay Period To', 'Entry Count'];
-                const adpRows = Array.from(byRep.entries())
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([repName, { gross, chargebacks, count }]) => [
+                const adpRows = Array.from(byRep.values())
+                  .sort((a, b) => a.repName.localeCompare(b.repName))
+                  .map(({ repName, gross, chargebacks, count }) => [
                     repName,
                     gross.toFixed(2),
                     chargebacks.toFixed(2),
@@ -1029,37 +1058,7 @@ function PayrollPageInner() {
                             .catch((err) => { console.error(err); toast('Failed to persist change', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, ...rollback } : x)); })
                             .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
                         };
-                        const deleteReim = async () => {
-                          // Native confirm — payroll page doesn't have a
-                          // shared ConfirmDialog state machine. Matches the
-                          // existing delete patterns elsewhere in this file.
-                          const ok = window.confirm(
-                            `Delete reimbursement permanently?\n\n$${r.amount.toFixed(2)} for ${r.repName}\n\nThis cannot be undone. Prefer Archive unless this is a typo.`,
-                          );
-                          if (!ok) return;
-                          setProcessingReimIds((prev) => new Set(prev).add(r.id));
-                          const snapshot = r;
-                          let snapshotIndex = -1;
-                          setReimbursements((prev) => {
-                            snapshotIndex = prev.findIndex((x) => x.id === r.id);
-                            return prev.filter((x) => x.id !== r.id);
-                          });
-                          try {
-                            const res = await fetch(`/api/reimbursements/${r.id}`, { method: 'DELETE' });
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            toast(`Reimbursement deleted`, 'success');
-                          } catch (err) {
-                            console.error(err);
-                            toast('Failed to delete — restoring', 'error');
-                            setReimbursements((prev) => {
-                              const next = [...prev];
-                              next.splice(snapshotIndex === -1 ? next.length : snapshotIndex, 0, snapshot);
-                              return next;
-                            });
-                          } finally {
-                            setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; });
-                          }
-                        };
+                        const deleteReim = () => { setPendingDeleteReim(r); };
                         const btnCls = 'flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
                         return (
                           <div className="flex gap-2 flex-wrap">
@@ -1628,7 +1627,7 @@ function PayrollPageInner() {
               </div>
               <div>
                 <label className={labelCls}>Date</label>
-                <input type="date" value={editEntryForm.date}
+                <input type="date" value={editEntryForm.date} required
                   onChange={(e) => setEditEntryForm((f) => ({ ...f, date: e.target.value }))}
                   className={inputCls} />
               </div>
@@ -1719,6 +1718,15 @@ function PayrollPageInner() {
         onConfirm={confirmDeleteEntry}
         title="Delete payment entry"
         message={pendingDeleteEntry ? `${pendingDeleteEntry.repName} — $${pendingDeleteEntry.amount.toFixed(2)}${pendingDeleteEntry.notes || pendingDeleteEntry.customerName ? `\n${pendingDeleteEntry.notes || pendingDeleteEntry.customerName}` : ''}\n\nThis cannot be undone.` : ''}
+        confirmLabel="Delete"
+        danger
+      />
+      <ConfirmDialog
+        open={pendingDeleteReim !== null}
+        onClose={() => setPendingDeleteReim(null)}
+        onConfirm={confirmDeleteReim}
+        title="Delete reimbursement"
+        message={pendingDeleteReim ? `$${pendingDeleteReim.amount.toFixed(2)} for ${pendingDeleteReim.repName}\n\nThis cannot be undone. Prefer Archive unless this is a typo.` : ''}
         confirmLabel="Delete"
         danger
       />

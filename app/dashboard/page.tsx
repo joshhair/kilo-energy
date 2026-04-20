@@ -19,6 +19,7 @@ import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Tar
 // ── Extracted component imports ──────────────────────────────────────────────
 import {
   type Period,
+  PERIODS as SHARED_PERIODS,
   isInPeriod, isInPreviousPeriod, isThisWeek, isThisMonth,
   getPhaseStuckThresholds, relativeTimeShort, formatDueDate, isOverdue,
   getGreeting, TrendBadge,
@@ -83,6 +84,7 @@ export function NeedsAttentionSection({
   activeProjects,
   isAdmin = false,
   onUnflag,
+  payrollAttentionCount = 0,
 }: {
   activeProjects: Array<{
     id: string;
@@ -97,6 +99,7 @@ export function NeedsAttentionSection({
   }>;
   isAdmin?: boolean;
   onUnflag?: (projectId: string) => void;
+  payrollAttentionCount?: number;
 }) {
   const [sectionRef, sectionVisible] = useScrollReveal<HTMLDivElement>();
   const PHASE_STUCK_THRESHOLDS = getPhaseStuckThresholds();
@@ -180,12 +183,13 @@ export function NeedsAttentionSection({
 
   const capped = items.slice(0, 5);
   const hasMore = items.length > 5;
+  const totalCount = items.length + payrollAttentionCount;
 
   return (
     <div
       ref={sectionRef}
       className={`card-surface rounded-2xl mb-6 ${sectionVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
-      style={items.length === 0 ? { borderLeft: '3px solid var(--accent-green)' } : undefined}
+      style={totalCount === 0 ? { borderLeft: '3px solid var(--accent-green)' } : undefined}
     >
       {/* Collapsible header */}
       <button
@@ -194,19 +198,19 @@ export function NeedsAttentionSection({
         className="w-full px-6 py-4 flex items-center justify-between hover:bg-[var(--surface-card)]/30 transition-colors rounded-2xl"
       >
         <div className="flex items-center gap-3">
-          <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${items.length > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
-          <div className={`p-1.5 rounded-lg ${items.length > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-green)]/15'}`}>
-            {items.length > 0
+          <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${totalCount > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
+          <div className={`p-1.5 rounded-lg ${totalCount > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-green)]/15'}`}>
+            {totalCount > 0
               ? <AlertCircle className="w-4 h-4 text-amber-400" />
               : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
             }
           </div>
           <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            {items.length > 0 ? 'Needs Attention' : 'All Clear'}
+            {totalCount > 0 ? 'Needs Attention' : 'All Clear'}
           </h2>
-          {items.length > 0 && (
+          {totalCount > 0 && (
             <span className="bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full">
-              {items.length}
+              {totalCount}
             </span>
           )}
         </div>
@@ -220,7 +224,7 @@ export function NeedsAttentionSection({
         <div className="collapsible-inner">
           <div className="divider-gradient-animated" />
 
-          {items.length === 0 ? (
+          {totalCount === 0 ? (
             /* ── Empty / all-clear state ── */
             <div className="flex items-center gap-3 px-6 py-6">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
@@ -342,6 +346,23 @@ export function NeedsAttentionSection({
                     View all projects →
                   </Link>
                 </div>
+              )}
+
+              {/* Payroll attention row */}
+              {payrollAttentionCount > 0 && (
+                <Link
+                  href="/dashboard/payroll"
+                  className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[var(--surface-card)]/40 transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-500/15">
+                    <DollarSign className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">Payroll needs review</p>
+                    <p className="text-xs text-[var(--text-muted)]">{payrollAttentionCount} entr{payrollAttentionCount !== 1 ? 'ies' : 'y'} in Draft or Pending</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
+                </Link>
               )}
             </div>
           )}
@@ -720,17 +741,11 @@ export default function DashboardPage() {
     return ((current - prev) / prev) * 100;
   };
 
-  const PERIODS: { value: Period; label: string }[] = [
-    { value: 'all', label: 'All Time' },
-    { value: 'this-month', label: 'This Month' },
-    { value: 'last-month', label: 'Last Month' },
-    { value: 'this-year', label: 'This Year' },
-  ];
+  const PERIODS = SHARED_PERIODS;
 
   // Measure the active period tab so the sliding pill can follow it
   useEffect(() => {
-    const PERIOD_VALUES: Period[] = ['all', 'this-month', 'last-month', 'this-year'];
-    const idx = PERIOD_VALUES.indexOf(period);
+    const idx = PERIODS.findIndex(p => p.value === period);
     const el = periodTabRefs.current[idx];
     if (el) setPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
   }, [period]);
@@ -741,6 +756,13 @@ export default function DashboardPage() {
   // Use all payroll entries (not period-filtered) so MTD unmatched detection is
   // correct regardless of which period tab is selected.
   const allMyPayroll = payrollEntries.filter((p) => p.repId === effectiveRepId);
+  const allMyProjects = projects.filter(
+    (p) =>
+      p.repId === effectiveRepId ||
+      p.setterId === effectiveRepId ||
+      p.additionalClosers?.some((c) => c.userId === effectiveRepId) ||
+      p.additionalSetters?.some((s) => s.userId === effectiveRepId),
+  );
   const mtdProjects = projects.filter(
     (p) =>
       (p.repId === effectiveRepId ||
@@ -850,6 +872,7 @@ export default function DashboardPage() {
       projects={periodProjects}
       allProjects={projects}
       payroll={periodPayroll}
+      allPayroll={payrollEntries}
       period={period}
       setPeriod={setPeriod}
       PERIODS={PERIODS}
@@ -1301,7 +1324,7 @@ export default function DashboardPage() {
       {/* MTD ring charts removed — financial detail lives in My Pay */}
 
       {/* ── Zero-project onboarding hero ─────────────────────────────────── */}
-      {myProjects.length === 0 && (
+      {allMyProjects.length === 0 && (
         <div className="card-surface rounded-2xl p-8 mb-6 flex flex-col items-center text-center gap-6">
           {/* Inline SVG — solar panel with a plus badge */}
           <div className="flex-shrink-0">
@@ -1366,7 +1389,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats grid — only shown once at least one deal exists */}
-      {myProjects.length > 0 && (
+      {allMyProjects.length > 0 && (
         <>
           <div
             ref={statsRef}
@@ -1530,7 +1553,7 @@ export default function DashboardPage() {
                       className="h-1.5 rounded-full transition-all"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 100 ? 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))' : 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))',
+                        background: pct >= 100 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))',
                       }}
                     />
                   </div>
@@ -1653,11 +1676,20 @@ export default function DashboardPage() {
               const setterM1Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M1' && e.status === 'Paid');
               const setterM2Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M2' && e.status === 'Paid');
               const setterM3Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M3' && e.status === 'Paid');
+              const coCloserEntry = (proj.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
+              const coSetterEntry = (proj.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
+              const coPartyM1Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'M1' && e.status === 'Paid');
+              const coPartyM2Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'M2' && e.status === 'Paid');
+              const coPartyM3Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'M3' && e.status === 'Paid');
               const estPay = proj.repId === effectiveRepId
                 ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
                 : proj.setterId === effectiveRepId
                   ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                  : 0;
+                  : coCloserEntry
+                    ? coCloserEntry.m1Amount + coCloserEntry.m2Amount + (coCloserEntry.m3Amount ?? 0)
+                    : coSetterEntry
+                      ? coSetterEntry.m1Amount + coSetterEntry.m2Amount + (coSetterEntry.m3Amount ?? 0)
+                      : 0;
               const soldLabel = (() => {
                 if (!proj.soldDate) return '—';
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
@@ -1692,6 +1724,22 @@ export default function DashboardPage() {
                             <MilestoneDot label="M2" paid={setterM2Paid} amount={proj.setterM2Amount ?? 0} />
                             {(proj.setterM3Amount ?? 0) > 0 && (
                               <MilestoneDot label="M3" paid={setterM3Paid} amount={proj.setterM3Amount ?? 0} />
+                            )}
+                          </>
+                        ) : coCloserEntry ? (
+                          <>
+                            <MilestoneDot label="M1" paid={coPartyM1Paid} amount={coCloserEntry.m1Amount} />
+                            <MilestoneDot label="M2" paid={coPartyM2Paid} amount={coCloserEntry.m2Amount} />
+                            {(coCloserEntry.m3Amount ?? 0) > 0 && (
+                              <MilestoneDot label="M3" paid={coPartyM3Paid} amount={coCloserEntry.m3Amount ?? 0} />
+                            )}
+                          </>
+                        ) : coSetterEntry ? (
+                          <>
+                            <MilestoneDot label="M1" paid={coPartyM1Paid} amount={coSetterEntry.m1Amount} />
+                            <MilestoneDot label="M2" paid={coPartyM2Paid} amount={coSetterEntry.m2Amount} />
+                            {(coSetterEntry.m3Amount ?? 0) > 0 && (
+                              <MilestoneDot label="M3" paid={coPartyM3Paid} amount={coSetterEntry.m3Amount ?? 0} />
                             )}
                           </>
                         ) : (

@@ -4,7 +4,7 @@
  * Mirror of desktop blitz/[id]/page.tsx — consumes the same
  * /api/blitzes/[id] response with dynamic shape. */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
@@ -18,6 +18,8 @@ import BlitzParticipants from './blitz-detail/BlitzParticipants';
 import BlitzDeals from './blitz-detail/BlitzDeals';
 import BlitzCosts from './blitz-detail/BlitzCosts';
 
+const TAB_ORDER: BlitzTabKey[] = ['overview', 'participants', 'deals', 'costs'];
+
 export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const router = useRouter();
   const { effectiveRole, effectiveRepId, reps } = useApp();
@@ -26,7 +28,20 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   const [blitz, setBlitz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const prevTabRef = useRef<BlitzTabKey>('overview');
+  const scrollPos = useRef<Partial<Record<BlitzTabKey, number>>>({});
+  const [panelDir, setPanelDir] = useState<'right' | 'left'>('right');
   const [tab, setTab] = useState<BlitzTabKey>('overview');
+
+  const handleTabChange = useCallback((next: BlitzTabKey) => {
+    const prevIdx = TAB_ORDER.indexOf(prevTabRef.current);
+    const nextIdx = TAB_ORDER.indexOf(next);
+    setPanelDir(nextIdx >= prevIdx ? 'right' : 'left');
+    scrollPos.current[prevTabRef.current] = window.scrollY;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    prevTabRef.current = next;
+    setTab(next);
+  }, []);
 
   const loadBlitz = useCallback(() => {
     fetch(`/api/blitzes/${blitzId}`)
@@ -40,6 +55,14 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   }, [blitzId, router]);
 
   useEffect(() => { loadBlitz(); }, [loadBlitz]);
+
+  useEffect(() => {
+    const saved = scrollPos.current[tab];
+    if (saved) {
+      const id = requestAnimationFrame(() => window.scrollTo({ top: saved, behavior: 'instant' }));
+      return () => cancelAnimationFrame(id);
+    }
+  }, [tab]);
 
   const isOwner = !isAdmin && effectiveRepId != null && blitz?.owner?.id === effectiveRepId;
   const canManage = isAdmin || isOwner;
@@ -68,18 +91,18 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   );
   const approvedVisibleProjects = useMemo(
     () => (isAdmin || isOwner)
-      ? visibleProjects.filter((p: any) => approvedParticipantIds.has(p.closer?.id) || approvedParticipantIds.has(p.setter?.id))
+      ? visibleProjects.filter((p: any) =>
+          approvedParticipantIds.has(p.closer?.id) ||
+          approvedParticipantIds.has(p.setter?.id) ||
+          (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId)) ||
+          (p.additionalSetters ?? []).some((cs: any) => approvedParticipantIds.has(cs.userId)))
       : visibleProjects,
     [visibleProjects, isAdmin, isOwner, approvedParticipantIds],
   );
 
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => {
-      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
-      return s + (isSelfGen || closerApproved ? p.kWSize : 0);
-    }, 0),
-    [approvedVisibleProjects, approvedParticipantIds],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
+    [approvedVisibleProjects],
   );
 
   if (!hydrated || loading) {
@@ -137,38 +160,40 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
         </p>
       </div>
 
-      <BlitzTabs tabs={tabs} active={tab} onChange={setTab} />
+      <BlitzTabs tabs={tabs} active={tab} onChange={handleTabChange} />
 
-      {tab === 'overview' && (
-        <BlitzOverview
-          participantCount={approvedParticipants.length}
-          totalDeals={approvedVisibleProjects.length}
-          totalKW={totalKW}
-          notes={blitz.notes}
-        />
-      )}
+      <div key={tab} className={panelDir === 'right' ? 'animate-panel-right' : 'animate-panel-left'}>
+        {tab === 'overview' && (
+          <BlitzOverview
+            participantCount={approvedParticipants.length}
+            totalDeals={approvedVisibleProjects.length}
+            totalKW={totalKW}
+            notes={blitz.notes}
+          />
+        )}
 
-      {tab === 'participants' && (
-        <BlitzParticipants
-          blitzId={blitzId}
-          participants={blitz.participants ?? []}
-          reps={reps}
-          canManage={canManage}
-          onRefresh={loadBlitz}
-        />
-      )}
+        {tab === 'participants' && (
+          <BlitzParticipants
+            blitzId={blitzId}
+            participants={blitz.participants ?? []}
+            reps={reps}
+            canManage={canManage}
+            onRefresh={loadBlitz}
+          />
+        )}
 
-      {tab === 'deals' && (
-        <BlitzDeals projects={visibleProjects} />
-      )}
+        {tab === 'deals' && (
+          <BlitzDeals projects={visibleProjects} />
+        )}
 
-      {tab === 'costs' && isAdmin && (
-        <BlitzCosts
-          blitzId={blitzId}
-          costs={blitz.costs ?? []}
-          onRefresh={loadBlitz}
-        />
-      )}
+        {tab === 'costs' && isAdmin && (
+          <BlitzCosts
+            blitzId={blitzId}
+            costs={blitz.costs ?? []}
+            onRefresh={loadBlitz}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -654,7 +654,7 @@ function UsersPageInner() {
       case 'active': arr.sort((a, b) => (activeDealsByRep.get(b.id) ?? 0) - (activeDealsByRep.get(a.id) ?? 0)); break;
       case 'deals': {
         const dealsByRep = new Map<string, number>();
-        for (const p of projects.filter(p => !PIPELINE_EXCLUDED.has(p.phase))) {
+        for (const p of projects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold')) {
           if (p.repId)                       dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
           if (p.setterId && p.setterId !== p.repId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
         }
@@ -663,7 +663,7 @@ function UsersPageInner() {
       }
       case 'kw': {
         const kwByRep = new Map<string, number>();
-        for (const p of projects.filter(p => !PIPELINE_EXCLUDED.has(p.phase))) {
+        for (const p of projects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold')) {
           if (p.repId)                       kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + p.kWSize);
           if (p.setterId && p.setterId !== p.repId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + p.kWSize);
         }
@@ -1843,7 +1843,7 @@ function UsersPageInner() {
                   <button
                     key={r}
                     type="button"
-                    onClick={() => setNewUserRole(r)}
+                    onClick={() => { setNewUserRole(r); setSendInvite(false); }}
                     className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
                       newUserRole === r
                         ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'

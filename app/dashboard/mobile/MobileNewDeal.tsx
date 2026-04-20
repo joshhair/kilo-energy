@@ -372,7 +372,7 @@ export default function MobileNewDeal() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const isFullyPaidOut = (p: Project): boolean => {
-    const pct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
     return pct < 100 ? p.m3Paid === true : p.m2Paid === true;
   };
   const setterCompletedDeals = form.setterId
@@ -408,7 +408,7 @@ export default function MobileNewDeal() {
   // compute server-side (Batch 2b.4). Prevents the ±1¢ drift the old
   // manual float math produced when setter baseline + trainer rate +
   // installPayPct combined in edge cases.
-  const installPayPct = (installerPayConfigs ?? INSTALLER_PAY_CONFIGS)[form.installer]?.installPayPct || DEFAULT_INSTALL_PAY_PCT;
+  const installPayPct = installerPayConfigs[form.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
   const isSelfGen = !form.setterId || setterBaselinePerW === 0;
 
@@ -1108,6 +1108,16 @@ export default function MobileNewDeal() {
                         <option value="">-- Select financer --</option>
                         {activeFinancers.filter((f) => f !== 'Cash').map((f) => <option key={f} value={f}>{f}</option>)}
                       </select>
+                      {(() => {
+                        const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[form.solarTechFamily] ?? '';
+                        const hasFamilyMap = !!rawMappedFinancer && form.productType !== 'Loan';
+                        const mappedIsArchived = hasFamilyMap && !activeFinancers.includes(rawMappedFinancer);
+                        return mappedIsArchived ? (
+                          <p className="mt-1 text-sm text-yellow-400">
+                            The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
+                          </p>
+                        ) : null;
+                      })()}
                       <FieldError errors={errors} field="financer" />
                     </div>
                   )}

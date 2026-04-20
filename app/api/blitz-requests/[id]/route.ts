@@ -17,56 +17,62 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.status !== undefined) data.status = body.status;
   if (body.adminNotes !== undefined) data.adminNotes = body.adminNotes;
 
-  const request = await prisma.$transaction(async (tx) => {
-    const updated = await tx.blitzRequest.update({
-      where: { id },
-      data,
-      include: { requestedBy: true, blitz: true },
-    });
-
-    // If approving a cancellation request, also cancel the blitz and unlink projects
-    if (body.status === 'approved' && updated.type === 'cancel' && updated.blitzId) {
-      const currentBlitz = await tx.blitz.findUnique({ where: { id: updated.blitzId }, select: { status: true } });
-      if (!currentBlitz || !['upcoming', 'active'].includes(currentBlitz.status)) {
-        throw new Error(`Cannot cancel blitz in '${currentBlitz?.status ?? 'unknown'}' status`);
-      }
-      await tx.blitz.update({
-        where: { id: updated.blitzId },
-        data: { status: 'cancelled' },
-      });
-      await tx.project.updateMany({
-        where: { blitzId: updated.blitzId },
-        data: { blitzId: null },
-      });
-    }
-
-    // If approving a create request, create the blitz (idempotency: skip if already linked)
-    if (body.status === 'approved' && updated.type === 'create' && !updated.blitzId) {
-      const newBlitz = await tx.blitz.create({
-        data: {
-          name: updated.name,
-          location: updated.location,
-          startDate: updated.startDate,
-          endDate: updated.endDate,
-          housing: updated.housing,
-          notes: updated.notes,
-          createdById: updated.requestedById,
-          ownerId: updated.requestedById,
-          participants: {
-            create: { userId: updated.requestedById, joinStatus: 'approved' },
-          },
-        },
-      });
-      const updatedWithBlitz = await tx.blitzRequest.update({
+  let request;
+  try {
+    request = await prisma.$transaction(async (tx) => {
+      const updated = await tx.blitzRequest.update({
         where: { id },
-        data: { blitzId: newBlitz.id },
+        data,
         include: { requestedBy: true, blitz: true },
       });
-      return updatedWithBlitz;
-    }
 
-    return updated;
-  });
+      // If approving a cancellation request, also cancel the blitz and unlink projects
+      if (body.status === 'approved' && updated.type === 'cancel' && updated.blitzId) {
+        const currentBlitz = await tx.blitz.findUnique({ where: { id: updated.blitzId }, select: { status: true } });
+        if (!currentBlitz || !['upcoming', 'active'].includes(currentBlitz.status)) {
+          throw new Error(`Cannot cancel blitz in '${currentBlitz?.status ?? 'unknown'}' status`);
+        }
+        await tx.blitz.update({
+          where: { id: updated.blitzId },
+          data: { status: 'cancelled' },
+        });
+        await tx.project.updateMany({
+          where: { blitzId: updated.blitzId },
+          data: { blitzId: null },
+        });
+      }
+
+      // If approving a create request, create the blitz (idempotency: skip if already linked)
+      if (body.status === 'approved' && updated.type === 'create' && !updated.blitzId) {
+        const newBlitz = await tx.blitz.create({
+          data: {
+            name: updated.name,
+            location: updated.location,
+            startDate: updated.startDate,
+            endDate: updated.endDate,
+            housing: updated.housing,
+            notes: updated.notes,
+            createdById: updated.requestedById,
+            ownerId: updated.requestedById,
+            participants: {
+              create: { userId: updated.requestedById, joinStatus: 'approved' },
+            },
+          },
+        });
+        const updatedWithBlitz = await tx.blitzRequest.update({
+          where: { id },
+          data: { blitzId: newBlitz.id },
+          include: { requestedBy: true, blitz: true },
+        });
+        return updatedWithBlitz;
+      }
+
+      return updated;
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Request failed';
+    return NextResponse.json({ error: msg }, { status: 409 });
+  }
 
   return NextResponse.json(request);
 }

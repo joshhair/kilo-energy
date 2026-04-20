@@ -9,7 +9,7 @@ import {
   PRODUCT_TYPES, Project,
   getTrainerOverrideRate, calculateCommission, splitCloserSetterPay,
   SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER,
-  getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
+  getSolarTechBaseline, getInstallerRatesForDeal, getActiveInstallerVersion, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
 import { Check, Loader2, RotateCcw } from 'lucide-react';
@@ -260,7 +260,7 @@ function NewDealPage() {
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     const financerCleared = !effectiveFinancer && !!form.financer;
     setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: (touched.has('financer') || financerCleared) ? validateField('financer', effectiveFinancer) : '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); if (financerCleared) next.add('financer'); return next; });
@@ -271,7 +271,7 @@ function NewDealPage() {
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     // Loan deals must not inherit a financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
-    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '' }));
+    setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     const financerCleared = !effectiveFinancer && !!form.financer;
     setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: (touched.has('financer') || financerCleared) ? validateField('financer', effectiveFinancer) : '' }));
     setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); if (financerCleared) next.add('financer'); return next; });
@@ -402,11 +402,12 @@ function NewDealPage() {
   // Commission = (subDealerPerW - kiloPerW) * kW * 1000
   const subDealerRate = (() => {
     if (!isSubDealer || !form.installer) return 0;
-    const baseline = installerBaselines[form.installer];
-    if (baseline) return baseline.subDealerPerW ?? 0;
-    // Tiered installer: resolve the correct band using the deal's kW
-    if (kW <= 0) return 0;
     const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+    const activeVersion = getActiveInstallerVersion(form.installer, soldDate, installerPricingVersions);
+    const baseline = installerBaselines[form.installer];
+    // installerBaselines collapses tiered installers to their first band — skip it for tiered.
+    if (baseline && activeVersion?.rates.type !== 'tiered') return baseline.subDealerPerW ?? 0;
+    if (kW <= 0) return 0;
     const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
     return r.subDealerPerW ?? 0;
   })();
@@ -602,6 +603,20 @@ function NewDealPage() {
         submittingRef.current = false;
         return;
       }
+      const unapprovedCoCloser = form.additionalClosers.find((c) => !approvedIds.has(c.userId));
+      if (unapprovedCoCloser) {
+        setSlideDirection('backward');
+        setCurrentStep(0);
+        toast('A co-closer is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
+      const unapprovedCoSetter = form.additionalSetters.find((s) => !approvedIds.has(s.userId));
+      if (unapprovedCoSetter) {
+        toast('A co-setter is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
     }
 
     if (closerPerW === 0 && kW > 0 && soldPPW > 0) {
@@ -745,7 +760,8 @@ function NewDealPage() {
     } catch (e) {
       setSubmitting(false);
       submittingRef.current = false;
-      throw e;
+      console.error('Unexpected error during deal submission:', e);
+      toast('Something went wrong. Please try again.', 'error');
     }
   };
 
@@ -1171,14 +1187,28 @@ function NewDealPage() {
                       <label className={labelCls} style={labelStyle}>
                         <span className="inline-flex items-center gap-1">Financer {fieldCheck('financer')}</span>
                       </label>
-                      <SearchableSelect
-                        value={form.financer}
-                        onChange={(val) => handleFinancerChange(val)}
-                        options={activeFinancers.filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }))}
-                        placeholder="— Select financer —"
-                        label="Financer"
-                        error={!!errors.financer}
-                      />
+                      {(() => {
+                        const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[form.solarTechFamily] ?? '';
+                        const hasFamilyMap = !!rawMappedFinancer && form.productType !== 'Loan';
+                        const mappedIsArchived = hasFamilyMap && !activeFinancers.includes(rawMappedFinancer);
+                        return (
+                          <>
+                            <SearchableSelect
+                              value={form.financer}
+                              onChange={(val) => handleFinancerChange(val)}
+                              options={activeFinancers.filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }))}
+                              placeholder="— Select financer —"
+                              label="Financer"
+                              error={!!errors.financer}
+                            />
+                            {mappedIsArchived && (
+                              <p className="mt-1 text-xs text-yellow-400">
+                                The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                       <FieldError errors={errors} field="financer" />
                     </div>
                   )}

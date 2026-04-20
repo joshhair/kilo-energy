@@ -36,11 +36,10 @@ export function SubDealerDashboard({
   const [periodIndicator, setPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
-    const PERIOD_VALUES: Period[] = ['all', 'this-month', 'last-month', 'this-year'];
-    const idx = PERIOD_VALUES.indexOf(period);
+    const idx = PERIODS.findIndex((p) => p.value === period);
     const el = periodTabRefs.current[idx];
     if (el) setPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [period]);
+  }, [period, PERIODS]);
 
   // Filter to sub-dealer's own deals
   const myProjects = projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId);

@@ -179,7 +179,7 @@ export async function loadChainTrainees(userId: string): Promise<ReadonlySet<str
     where: { trainerId: userId, active: true },
     select: { traineeId: true },
   });
-  return new Set(rows.map((r) => r.traineeId));
+  return new Set<string>(rows.map((r) => r.traineeId));
 }
 
 /**

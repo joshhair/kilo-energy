@@ -196,11 +196,19 @@ export function createInstallerActions(deps: InstallerDeps) {
         };
         const instId = idMaps.installerNameToId[installer];
         if (instId) {
+          const tempId = newVersion.id;
           fetch('/api/installer-pricing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ installerId: instId, label: 'v1', effectiveFrom: '2020-01-01', rateType: 'flat', tiers: [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW, kiloPerW: baseline.kiloPerW, subDealerPerW: baseline.subDealerPerW ?? null }] }),
-          }).catch(console.error);
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data?.id) {
+                setInstallerPricingVersions((prev) => prev.map((v) => (v.id === tempId ? { ...v, id: data.id } : v)));
+              }
+            })
+            .catch(console.error);
         }
         return [...prev, newVersion];
       }

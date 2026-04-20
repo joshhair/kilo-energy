@@ -17,11 +17,13 @@ import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
 import { formatDate, formatCurrency, formatCompactKW } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
-import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, Trophy, ChevronUp } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, ChevronUp } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import { sortForSelection } from '../../../../lib/sorting';
 import { deriveBlitzStatus } from '../../../../lib/blitzStatus';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { BlitzLeaderboard } from './BlitzLeaderboard';
+import { BlitzProfitability } from './BlitzProfitability';
 import Link from 'next/link';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
@@ -72,11 +74,13 @@ export default function BlitzDetailPage() {
   const [blitz, setBlitz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>('overview');
+  const [profAnimKey, setProfAnimKey] = useState(0);
   const [dealsSort, setDealsSort] = useState<{ col: 'customer' | 'kw' | 'ppw' | 'payout'; dir: 'asc' | 'desc' }>({ col: 'kw', dir: 'desc' });
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [tabIndicator, setTabIndicator] = useState<{ left: number; width: number } | null>(null);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '', ownerId: '' });
+  const rawBlitzStatus = useRef<string>('');
 
   // Confirmation dialog
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void; confirmLabel?: string } | null>(null);
@@ -120,6 +124,7 @@ export default function BlitzDetailPage() {
       // terminals unchanged.
       const normalized = { ...data, status: deriveBlitzStatus(data) };
       setBlitz(normalized);
+      rawBlitzStatus.current = data.status;
       if (!editing || forceUpdateForm) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: data.status, ownerId: data.owner?.id ?? '' });
       setLoading(false);
     }).catch(() => { setLoading(false); });
@@ -175,7 +180,7 @@ export default function BlitzDetailPage() {
   }, [blitz?.projects, isAdmin, isOwner, effectiveRepId]);
 
   const approvedParticipantIds = useMemo(
-    () => new Set((blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved').map((p: any) => p.user.id)),
+    () => new Set<string>((blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved').map((p: any) => p.user.id as string)),
     [blitz?.participants],
   );
   const approvedVisibleProjects = useMemo(
@@ -218,14 +223,8 @@ export default function BlitzDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- approvedParticipantIds is derived from approvedVisibleProjects; adding both causes duplicate re-runs
   }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => {
-      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
-      const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
-      if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
-      return s + p.kWSize;
-    }, 0),
-    [approvedVisibleProjects, approvedParticipantIds],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
+    [approvedVisibleProjects],
   );
   const totalCosts = useMemo(
     () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,
@@ -361,7 +360,9 @@ export default function BlitzDetailPage() {
       }
       for (const cc of (proj as any).additionalClosers ?? []) {
         if (cc.userId && participantIds.has(cc.userId)) {
-          bump(cc.userId, 0, (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0));
+          // Give kW to this additional closer only if the primary closer isn't already credited
+          const ccKw = (!closerId || !participantIds.has(closerId)) ? kW : 0;
+          bump(cc.userId, ccKw, (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0));
         }
       }
       for (const cs of (proj as any).additionalSetters ?? []) {
@@ -592,7 +593,7 @@ export default function BlitzDetailPage() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'participants', label: `Participants (${approvedParticipants.length})` },
+    { key: 'participants', label: `Participants (${blitz.participants.length})` },
     { key: 'deals', label: `Deals (${totalDeals})` },
     ...(isAdmin ? [
       { key: 'costs' as TabKey, label: `Costs (${blitz.costs?.length ?? 0})` },
@@ -672,7 +673,7 @@ export default function BlitzDetailPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: blitz.status, ownerId: blitz.owner?.id ?? '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white disabled:opacity-50 transition-colors">Cancel</button>
+              <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: rawBlitzStatus.current, ownerId: blitz.owner?.id ?? '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white disabled:opacity-50 transition-colors">Cancel</button>
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -725,7 +726,7 @@ export default function BlitzDetailPage() {
       <div className="flex gap-0.5 border-b border-[var(--border-subtle)]/50 overflow-x-auto tab-bar-container">
         {tabIndicator && <div className="tab-indicator" style={tabIndicator} />}
         {tabs.map((t, i) => (
-          <button key={t.key} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t.key)} className={`relative z-10 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === t.key ? 'text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>
+          <button key={t.key} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => { setTab(t.key); if (t.key === 'profitability') setProfAnimKey(k => k + 1); }} className={`relative z-10 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === t.key ? 'text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>
             {t.label}
           </button>
         ))}
@@ -780,7 +781,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">Deal{visibleProjects.length !== 1 ? 's' : ''} Attributed</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{visibleProjects.reduce((s: number, p: any) => s + (p.closer?.id === effectiveRepId ? p.kWSize : 0), 0).toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-white">{visibleProjects.reduce((s: number, p: any) => { const isAdditionalCloser = (p.additionalClosers ?? []).some((cc: any) => cc.userId === effectiveRepId); return s + (p.closer?.id === effectiveRepId || isAdditionalCloser ? p.kWSize : 0); }, 0).toFixed(1)}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">kW Sold</p>
                 </div>
                 <div>
@@ -817,31 +818,9 @@ export default function BlitzDetailPage() {
               Uses the shared `leaderboard` memo — computed once per render
               instead of re-running the O(participants × projects) scan
               inside an IIFE. */}
-          {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (() => {
-            const RANK_GRADIENTS_OV = ['from-yellow-400 to-amber-600', 'from-slate-300 to-slate-500', 'from-amber-600 to-amber-800'];
-            const RANK_BG_OV = ['bg-yellow-900/20 border-yellow-600/30', 'bg-[var(--surface-card)]/40 border-[var(--border)]/30', 'bg-amber-900/20 border-amber-700/30'];
-            const RANK_TEXT_OV = ['text-yellow-400', 'text-[var(--text-secondary)]', 'text-amber-400'];
-            return (
-              <div className="card-surface rounded-2xl p-4">
-                <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-2"><Trophy className="w-3.5 h-3.5 text-amber-400" /> Leaderboard</h3>
-                <div className="space-y-2">
-                  {leaderboard.slice(0, 5).map((rep, idx) => {
-                    const rank = idx + 1;
-                    const isTop3 = rank <= 3;
-                    return (
-                      <div key={rep.userId} className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${isTop3 ? RANK_BG_OV[rank - 1] : 'bg-[var(--surface)]/40 border-[var(--border-subtle)]/40'}`}>
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS_OV[rank - 1]} text-white` : 'bg-[var(--surface-card)] text-[var(--text-secondary)]'}`}>{rank}</span>
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS_OV[rank - 1]} text-white` : 'bg-[var(--border)] text-[var(--text-secondary)]'}`}>{rep.initials}</div>
-                        <Link href={`/dashboard/users/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[var(--accent-cyan)] transition-colors ${isTop3 ? RANK_TEXT_OV[rank - 1] : 'text-[var(--text-secondary)]'}`}>{rep.name}</Link>
-                        <span className="text-xs text-[var(--text-secondary)] tabular-nums">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
-                        <span className="text-xs text-[var(--text-muted)] tabular-nums">{rep.kW.toFixed(1)} kW</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
+          {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (
+            <BlitzLeaderboard entries={leaderboard} />
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Blitz details */}
@@ -913,47 +892,9 @@ export default function BlitzDetailPage() {
         <div key="participants" className="animate-tab-enter space-y-4">
           {/* Mini-leaderboard — same shared `leaderboard` memo as the
               overview panel. No second scan. */}
-          {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (() => {
-            const RANK_GRADIENTS = [
-              'from-yellow-400 to-amber-600',
-              'from-slate-300 to-slate-500',
-              'from-amber-600 to-amber-800',
-            ];
-            const RANK_BG = [
-              'bg-yellow-900/20 border-yellow-600/30',
-              'bg-[var(--surface-card)]/40 border-[var(--border)]/30',
-              'bg-amber-900/20 border-amber-700/30',
-            ];
-            const RANK_TEXT = ['text-yellow-400', 'text-[var(--text-secondary)]', 'text-amber-400'];
-            return (
-              <div className="card-surface rounded-2xl p-4">
-                <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Leaderboard</h3>
-                <div className="space-y-2">
-                  {leaderboard.slice(0, 5).map((rep, idx) => {
-                    const rank = idx + 1;
-                    const isTop3 = rank <= 3;
-                    return (
-                      <div key={rep.userId} className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${isTop3 ? RANK_BG[rank - 1] : 'bg-[var(--surface)]/40 border-[var(--border-subtle)]/40'}`}>
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                          isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS[rank - 1]} text-white` : 'bg-[var(--surface-card)] text-[var(--text-secondary)]'
-                        }`}>
-                          {rank}
-                        </span>
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                          isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS[rank - 1]} text-white` : 'bg-[var(--border)] text-[var(--text-secondary)]'
-                        }`}>
-                          {rep.initials}
-                        </div>
-                        <Link href={`/dashboard/users/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[var(--accent-cyan)] transition-colors ${isTop3 ? RANK_TEXT[rank - 1] : 'text-[var(--text-secondary)]'}`}>{rep.name}</Link>
-                        <span className="text-xs text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
-                        <span className="text-xs text-[var(--text-muted)] tabular-nums whitespace-nowrap">{rep.kW.toFixed(1)} kW</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
+          {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (
+            <BlitzLeaderboard entries={leaderboard} />
+          )}
 
           {canManage && (
             <div className="flex justify-end">
@@ -1225,132 +1166,20 @@ export default function BlitzDetailPage() {
 
       {/* Profitability (admin only) */}
       {tab === 'profitability' && isAdmin && (
-        <div key="profitability" className="animate-tab-enter space-y-6">
-          {/* Top-level P&L */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-0" style={{ '--card-accent': 'var(--accent-cyan)' } as React.CSSProperties}>
-              <p className="text-xs text-[var(--text-muted)] mb-1">Kilo Margin</p>
-              <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(Math.round(kiloMargin))}</p>
-              <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Baseline spread × kW</p>
-            </div>
-            <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-1" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
-              <p className="text-xs text-[var(--text-muted)] mb-1">Blitz Costs</p>
-              <p className="text-2xl font-bold text-amber-400">{formatCurrency(totalCosts)}</p>
-            </div>
-            <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-2" style={{ '--card-accent': 'var(--accent-green)' } as React.CSSProperties}>
-              <p className="text-xs text-[var(--text-muted)] mb-1">Net Profit</p>
-              <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>{formatCurrency(Math.round(netProfit))}</p>
-              <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Margin − Costs</p>
-            </div>
-            <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-3" style={{ '--card-accent': '#8b5cf6' } as React.CSSProperties}>
-              <p className="text-xs text-[var(--text-muted)] mb-1">ROI</p>
-              <p className={`text-2xl font-bold flex items-center gap-1.5 ${roi > 100 ? 'text-[var(--accent-green)]' : roi >= 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>
-                {roi.toFixed(0)}%
-                {roi >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-              </p>
-            </div>
-          </div>
-
-          {/* Cost breakdown */}
-          {Object.keys(costsByCategory).length > 0 && (
-            <div className="card-surface rounded-2xl p-5">
-              <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">Cost Breakdown</h3>
-              <div className="space-y-2">
-                {Object.entries(costsByCategory).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
-                  const pct = totalCosts > 0 ? (amt / totalCosts) * 100 : 0;
-                  return (
-                    <div key={cat} className="flex items-center gap-3">
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full w-22 text-center ${COST_CATEGORY_STYLES[cat]?.badge ?? COST_CATEGORY_STYLES.other.badge}`}>{cat}</span>
-                      <div className="flex-1 bg-[var(--surface-card)] rounded-full h-2 overflow-hidden">
-                        <div className={`${COST_CATEGORY_STYLES[cat]?.bar ?? 'bg-[var(--text-muted)]'} h-full rounded-full transition-all`} style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="text-sm font-medium text-white w-20 text-right">{formatCurrency(amt)}</span>
-                      <span className="text-xs text-[var(--text-muted)] w-12 text-right">{pct.toFixed(0)}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Per-project margin breakdown — admin-facing. Each approved
-              deal listed with kW, PPW, and kilo margin for that deal,
-              computed via the same baselines-based formula that rolls up
-              to the top-level Kilo Margin card. */}
-          {approvedVisibleProjects.length > 0 && (
-            <div className="card-surface rounded-2xl p-5">
-              <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">Projects in this blitz</h3>
-              <div className="space-y-2">
-                {approvedVisibleProjects.map((p: any) => {
-                  const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-                  const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
-                  const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
-                  if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return null;
-                  const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
-                  const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
-                  const margin = (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
-                  const closerName = p.closer ? `${p.closer.firstName} ${p.closer.lastName}` : '—';
-                  return (
-                    <Link
-                      key={p.id}
-                      href={`/dashboard/projects/${p.id}`}
-                      className="flex items-center justify-between bg-[var(--surface-card)]/50 hover:bg-[var(--surface-card)] rounded-xl px-4 py-2.5 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-white font-medium truncate">{p.customerName}</p>
-                        <p className="text-[11px] text-[var(--text-muted)]">{closerName} · {p.kWSize?.toFixed(1)} kW · ${p.netPPW?.toFixed(2)}/W</p>
-                      </div>
-                      <div className="text-right shrink-0 pl-3">
-                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Kilo margin</p>
-                        <p className={`text-sm font-bold ${margin >= 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>{formatCurrency(Math.round(margin))}</p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Per-rep performance — uses the shared `leaderboard` memo
-              which now carries deals/kW/payout per approved participant.
-              Renamed fields from the memo (kW → kw) to match the
-              downstream render. */}
-          {approvedParticipants.length > 0 && blitz.projects?.length > 0 && (() => {
-            const repStats = leaderboard.map((r) => ({ user: r.user, deals: r.deals, kw: r.kW, payout: r.payout }));
-            const maxKW = Math.max(...repStats.map((r) => r.kw), 1);
-
-            return (
-            <div className="card-surface rounded-2xl p-5">
-              <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">Rep Performance</h3>
-              <div className="space-y-3">
-                {repStats.map((rep: { user: { id: string; firstName: string; lastName: string }; deals: number; kw: number; payout: number }, idx: number) => (
-                  <div key={rep.user.id} className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : idx === 1 ? 'bg-[var(--text-muted)]/20 text-[var(--text-secondary)] border border-[var(--border-subtle)]/30' : idx === 2 ? 'bg-orange-800/30 text-orange-300 border border-orange-700/30' : 'bg-[var(--surface-card)] text-[var(--text-muted)] border border-[var(--border)]'}`}>
-                          {idx + 1}
-                        </div>
-                        <Link href={`/dashboard/users/${rep.user.id}`} className="text-sm text-white font-medium hover:text-[var(--accent-cyan)] transition-colors">{rep.user.firstName} {rep.user.lastName}</Link>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs">
-                        <span className="text-[var(--text-secondary)]">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
-                        <span className="text-[var(--text-secondary)] font-semibold">{rep.kw.toFixed(1)} kW</span>
-                        <span className="text-[var(--accent-green)] font-semibold">{formatCurrency(rep.payout)}</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-[var(--surface-card)] rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-[var(--text-muted)]' : idx === 2 ? 'bg-orange-600' : 'bg-[var(--text-dim)]'}`}
-                        style={{ width: `${(rep.kw / maxKW) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            );
-          })()}
-        </div>
+        <BlitzProfitability
+          blitz={blitz}
+          leaderboard={leaderboard}
+          approvedParticipants={approvedParticipants}
+          approvedParticipantIds={approvedParticipantIds}
+          approvedVisibleProjects={approvedVisibleProjects}
+          totalCosts={totalCosts}
+          kiloMargin={kiloMargin}
+          netProfit={netProfit}
+          roi={roi}
+          costsByCategory={costsByCategory}
+          getBlitzProjectBaselines={getBlitzProjectBaselines}
+          animKey={profAnimKey}
+        />
       )}
 
       {/* Cancellation request dialog with reason input */}

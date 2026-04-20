@@ -144,19 +144,20 @@ export default function MobileAdminDashboard() {
   const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
   const flaggedCount = useMemo(() => projects.filter((p) => p.flagged && p.phase !== 'Cancelled' && p.phase !== 'Completed').length, [projects]);
 
-  // Stalled projects — cumulative days-from-sold thresholds (intentional design: simpler than phase-entry age).
-  // A project still in a given phase after this many total days from soldDate is "stuck".
-  // Desktop stuck detection uses phaseChangedAt for accuracy; mobile uses soldDate for simplicity.
+  // Stalled projects — uses phaseChangedAt with soldDate fallback, matching desktop AdminDashboard logic.
   // Uses full `projects` (not period-scoped) so Needs Attention matches desktop regardless of selected period.
   const stalledProjects = useMemo(() => {
-    const now = Date.now();
+    const now = new Date(); now.setHours(0, 0, 0, 0);
     return projects.filter((p) => ACTIVE_PHASES.includes(p.phase) && !p.flagged).filter((p) => {
       const threshold = PHASE_STUCK_THRESHOLDS[p.phase];
       if (threshold == null) return false;
-      if (!p.soldDate) return false;
-      const [y, m, d] = p.soldDate.split('-').map(Number);
-      const sold = new Date(y, m - 1, d).getTime();
-      const days = Math.floor((now - sold) / 86400000);
+      const phaseSince = p.phaseChangedAt ? new Date(p.phaseChangedAt) : (() => {
+        if (!p.soldDate) return null;
+        const [y, m, d] = p.soldDate.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      })();
+      if (!phaseSince) return false;
+      const days = Math.floor((now.getTime() - phaseSince.getTime()) / 86400000);
       return days > threshold;
     });
   }, [projects]);

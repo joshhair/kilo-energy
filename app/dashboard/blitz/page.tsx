@@ -119,12 +119,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
     : activeProjects.filter((p) => p.closer?.id === currentUserId || p.setter?.id === currentUserId
         || p.additionalClosers?.some((ac) => ac.userId === currentUserId)
         || p.additionalSetters?.some((as) => as.userId === currentUserId));
-  const totalKW = visibleProjects.reduce((s, p) => {
-    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-    const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-    const setterApproved = p.setter?.id && approvedIds.has(p.setter.id);
-    return s + (isSelfGen || closerApproved || setterApproved ? p.kWSize : 0);
-  }, 0);
+  const totalKW = visibleProjects.reduce((s, p) => s + p.kWSize, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
   const progress = getBlitzProgress(blitz);
@@ -780,8 +775,8 @@ function BlitzPageInner() {
     return s + visibleProjects.reduce((ps, p) => {
       const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
       const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-      const setterApproved = p.setter?.id && approvedIds.has(p.setter.id);
-      return ps + (isSelfGen || closerApproved || setterApproved ? p.kWSize : 0);
+      const anyAdditionalCloserApproved = p.additionalClosers?.some((ac: { userId: string }) => approvedIds.has(ac.userId));
+      return ps + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
     }, 0);
   }, 0);
   const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
@@ -977,7 +972,7 @@ function BlitzPageInner() {
               />
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {paginatedAdminBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={isAdmin} onJoin={handleJoinBlitz} index={i} />)}
                 </div>
                 {adminBlitzTotal > blitzPerPage && (
@@ -1003,7 +998,7 @@ function BlitzPageInner() {
                   <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <UserCheck className="w-4 h-4" /> My Blitzes
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {myBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
                   </div>
                 </div>
@@ -1015,7 +1010,7 @@ function BlitzPageInner() {
                   <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-400" /> Pending Approval
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {pendingBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
                   </div>
                 </div>
@@ -1027,7 +1022,7 @@ function BlitzPageInner() {
                   <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Search className="w-4 h-4" /> Browse Available
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {browseBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
                   </div>
                 </div>
@@ -1220,9 +1215,9 @@ function BlitzSkeleton() {
         ))}
       </div>
 
-      {/* Blitz card grid — 4 placeholders */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[...Array(4)].map((_, i) => {
+      {/* Blitz card grid — 6 placeholders */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {[...Array(6)].map((_, i) => {
           const delay = i * 75;
           return (
             <div key={i} className="card-surface rounded-2xl p-5 space-y-4">

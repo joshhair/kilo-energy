@@ -279,7 +279,7 @@ export const COMMISSION_INPUT_KEYS = [
   'installerProductId',
   'trainerId',
   'trainerRate',
-  'baselineOverride',
+  'baselineOverrideJson',
   'additionalClosers',
   'additionalSetters',
 ] as const;

@@ -81,7 +81,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           }
         }
       }
-      const closerId = body.closerId ?? existing?.closerId;
+      const closerId = body.closerId !== undefined ? body.closerId : (existing?.closerId ?? null);
       if (closerId) {
         const participation = await prisma.blitzParticipant.findFirst({
           where: { blitzId: effectiveBlitzId, userId: closerId, joinStatus: 'approved' },
@@ -90,7 +90,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
         }
       }
-      const setterId = body.setterId ?? existing?.setterId;
+      const setterId = body.setterId !== undefined ? body.setterId : (existing?.setterId ?? null);
       if (setterId) {
         const setterParticipation = await prisma.blitzParticipant.findFirst({
           where: { blitzId: effectiveBlitzId, userId: setterId, joinStatus: 'approved' },
@@ -182,6 +182,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
     if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+    // Sub-dealer deals don't use the standard commission formula — skip the
+    // recompute entirely so we don't overwrite stored amounts with zeros.
+    if (current.subDealerId) {
+      // Remove any client-sent commission amounts from data so the stored
+      // values are left untouched.
+      delete data.m1AmountCents;
+      delete data.m2AmountCents;
+      delete data.m3AmountCents;
+      delete data.setterM1AmountCents;
+      delete data.setterM2AmountCents;
+      delete data.setterM3AmountCents;
+    } else {
+
     // Load the pricing/trainer data needed by the resolver.
     const [
       installerPricingVersionsRaw,
@@ -213,20 +226,51 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         : { type: 'flat' as const, closerPerW: v.tiers[0]?.closerPerW ?? 0, kiloPerW: v.tiers[0]?.kiloPerW ?? 0, setterPerW: v.tiers[0]?.setterPerW ?? undefined, subDealerPerW: v.tiers[0]?.subDealerPerW ?? undefined },
     }));
 
-    const productCatalogProducts = productCatalogProductsRaw.map((p) => ({
-      id: p.id,
-      installer: installers.find((i) => i.id === p.installerId)?.name ?? '',
-      family: p.family,
-      name: p.name,
-      tiers: (p.pricingVersions.find((pv) => pv.effectiveTo === null)?.tiers ?? []).map((t) => ({
-        minKW: t.minKW,
-        maxKW: t.maxKW,
-        closerPerW: t.closerPerW,
-        setterPerW: t.setterPerW,
-        kiloPerW: t.kiloPerW,
-        subDealerPerW: t.subDealerPerW ?? undefined,
-      })),
-    }));
+    const solarTechInstaller = installers.find((i) => i.name === 'SolarTech');
+    const solarTechProducts = productCatalogProductsRaw
+      .filter((p) => p.installerId === solarTechInstaller?.id)
+      .map((p) => {
+        const now = new Date();
+        const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= now)
+          ?? p.pricingVersions[0];
+        const familyFinancerMap: Record<string, string> = {
+          'Goodleap': 'Goodleap',
+          'Enfin': 'Enfin',
+          'Lightreach': 'LightReach',
+          'Cash/HDM/PE': 'Cash',
+        };
+        return {
+          id: p.id,
+          family: p.family,
+          financer: familyFinancerMap[p.family] ?? p.family,
+          name: p.name,
+          tiers: (activeVersion?.tiers ?? []).map((t) => ({
+            minKW: t.minKW,
+            maxKW: t.maxKW ?? null,
+            closerPerW: t.closerPerW,
+            setterPerW: t.setterPerW,
+            kiloPerW: t.kiloPerW,
+            subDealerPerW: t.subDealerPerW ?? undefined,
+          })),
+        };
+      });
+
+    const productCatalogProducts = productCatalogProductsRaw
+      .filter((p) => p.installerId !== solarTechInstaller?.id)
+      .map((p) => ({
+        id: p.id,
+        installer: installers.find((i) => i.id === p.installerId)?.name ?? '',
+        family: p.family,
+        name: p.name,
+        tiers: (p.pricingVersions.find((pv) => pv.effectiveTo === null)?.tiers ?? []).map((t) => ({
+          minKW: t.minKW,
+          maxKW: t.maxKW,
+          closerPerW: t.closerPerW,
+          setterPerW: t.setterPerW,
+          kiloPerW: t.kiloPerW,
+          subDealerPerW: t.subDealerPerW ?? undefined,
+        })),
+      }));
 
     const productCatalogPricingVersions = productCatalogPricingVersionsRaw.map((v) => ({
       id: v.id,
@@ -301,7 +345,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
       {
         installerPricingVersions,
-        solarTechProducts: [],
+        solarTechProducts,
         productCatalogProducts,
         productCatalogPricingVersions,
         trainerAssignments,
@@ -318,6 +362,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data.setterM1AmountCents = fromDollars(result.setterM1Amount).cents;
     data.setterM2AmountCents = fromDollars(result.setterM2Amount).cents;
     data.setterM3AmountCents = result.setterM3Amount == null ? null : fromDollars(result.setterM3Amount).cents;
+    } // end else (not sub-dealer)
   }
 
   // Snapshot before-state for audit diff (only fields we care about).

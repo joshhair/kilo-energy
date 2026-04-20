@@ -127,8 +127,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
 
   // Unlink projects whose soldDate falls outside the updated date window
+  let unlinkedCount = 0;
   if (body.startDate !== undefined || body.endDate !== undefined) {
-    await prisma.project.updateMany({
+    const unlinkResult = await prisma.project.updateMany({
       where: {
         blitzId: id,
         OR: [
@@ -138,6 +139,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
       data: { blitzId: null },
     });
+    unlinkedCount = unlinkResult.count;
     blitz.projects = await prisma.project.findMany({
       where: { blitzId: id },
       include: {
@@ -188,6 +190,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
   return NextResponse.json({
     ...blitz,
+    unlinkedCount,
     costs: blitz.costs.map(serializeBlitzCost),
     projects: blitz.projects.map((p) => {
       const s = serializeProject(p);

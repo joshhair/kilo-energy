@@ -54,6 +54,28 @@ const STATUS_BADGE_MAP: Record<BlitzStatus, string> = {
   cancelled: 'Cancelled',
 };
 
+function blitzDateLabel(status: BlitzStatus, startDate: string, endDate: string): string {
+  if (status === 'completed' || status === 'cancelled') {
+    return `${formatDate(startDate)} – ${formatDate(endDate)}`;
+  }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (status === 'upcoming') {
+    const start = new Date(startDate); start.setHours(0, 0, 0, 0);
+    const days = Math.ceil((start.getTime() - today.getTime()) / 86400000);
+    if (days <= 0) return 'Starts today';
+    if (days === 1) return 'Starts tomorrow';
+    if (days <= 7) return `Starts in ${days} days`;
+    return formatDate(startDate);
+  }
+  // active
+  const end = new Date(endDate); end.setHours(0, 0, 0, 0);
+  const days = Math.ceil((end.getTime() - today.getTime()) / 86400000);
+  if (days <= 0) return 'Ended today';
+  if (days === 1) return 'Last day';
+  if (days <= 3) return `${days} days left`;
+  return formatDate(endDate);
+}
+
 export default function MobileBlitz() {
   const router = useRouter();
   const { effectiveRole, effectiveRepId, pmPermissions } = useApp();
@@ -145,26 +167,41 @@ export default function MobileBlitz() {
   const handleCreateBlitz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim() || !createForm.startDate || !createForm.endDate) return;
-    const res = await fetch('/api/blitzes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: createForm.name.trim(),
-        location: createForm.location.trim(),
-        startDate: createForm.startDate,
-        endDate: createForm.endDate,
-        notes: createForm.notes.trim(),
-        createdById: effectiveRepId,
-        ownerId: effectiveRepId,
-      }),
-    });
+    const isRequest = canRequest && !canCreate;
+    const res = isRequest
+      ? await fetch('/api/blitz-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'create',
+            requestedById: effectiveRepId,
+            name: createForm.name.trim(),
+            location: createForm.location.trim(),
+            startDate: createForm.startDate,
+            endDate: createForm.endDate,
+            notes: createForm.notes.trim(),
+          }),
+        })
+      : await fetch('/api/blitzes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: createForm.name.trim(),
+            location: createForm.location.trim(),
+            startDate: createForm.startDate,
+            endDate: createForm.endDate,
+            notes: createForm.notes.trim(),
+            createdById: effectiveRepId,
+            ownerId: effectiveRepId,
+          }),
+        });
     if (res.ok) {
-      toast('Blitz created');
+      toast(isRequest ? 'Blitz request submitted' : 'Blitz created');
       setShowCreate(false);
       setCreateForm({ name: '', location: '', startDate: '', endDate: '', notes: '' });
       loadData();
     } else {
-      toast('Failed to create blitz', 'error');
+      toast(isRequest ? 'Failed to submit request' : 'Failed to create blitz', 'error');
     }
   };
 
@@ -228,7 +265,7 @@ export default function MobileBlitz() {
       </div>
 
       {/* Admin tabs: Blitzes / Requests */}
-      {isAdmin && pendingRequests.length > 0 && (
+      {isAdmin && (
         <div className="flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           <button
             onClick={() => setTab('blitzes')}
@@ -270,8 +307,8 @@ export default function MobileBlitz() {
             <div className="space-y-3">
               {filteredBlitzes.map((blitz) => {
                 const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
-                const dateRange = `${formatDate(blitz.startDate)} - ${formatDate(blitz.endDate)}`;
-                const details = [blitz.location, dateRange, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
+                const dateLabel = blitzDateLabel(blitz.status, blitz.startDate, blitz.endDate);
+                const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
                   .filter(Boolean)
                   .join(' \u00B7 ');
 

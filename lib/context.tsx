@@ -146,18 +146,12 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [currentRole, setCurrentRole] = useState<Role>(() => {
-    if (typeof window === 'undefined') return null;
-    return (localStorage.getItem('kilo-role') as Role) ?? null;
-  });
-  const [currentRepId, setCurrentRepId] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('kilo-rep-id') ?? null;
-  });
-  const [currentRepName, setCurrentRepName] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('kilo-rep-name') ?? null;
-  });
+  // Role is intentionally NOT seeded from localStorage — always start null and
+  // require a server roundtrip to /api/auth/me so spoofed localStorage values
+  // cannot grant admin UI access before the role is server-validated.
+  const [currentRole, setCurrentRole] = useState<Role>(null);
+  const [currentRepId, setCurrentRepId] = useState<string | null>(null);
+  const [currentRepName, setCurrentRepName] = useState<string | null>(null);
   // Signed-in user's own repType, populated from /api/auth/me. Changes when
   // the admin toggles their sales preferences (next /api/auth/me refresh)
   // or during view-as mode (below — we swap to the target's repType so
@@ -300,8 +294,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { rates } = active;
       // Tiered installers cannot be collapsed to a single baseline without knowing kW.
       // Callers needing tiered rates must use getInstallerRatesForDeal() with the deal's kW.
-      if (rates.type === 'tiered') continue;
-      const flatRates = rates;
+      // For display purposes (Settings → Baselines), use the first band's rates.
+      const flatRates = rates.type === 'tiered' ? rates.bands[0] : rates;
+      if (!flatRates) continue;
       result[name] = { closerPerW: flatRates.closerPerW, kiloPerW: flatRates.kiloPerW, ...(flatRates.setterPerW != null ? { setterPerW: flatRates.setterPerW } : {}), ...(flatRates.subDealerPerW != null ? { subDealerPerW: flatRates.subDealerPerW } : {}) };
     }
     // Also include any NON_SOLARTECH_BASELINES entries without a pricing version
@@ -690,11 +685,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // ── 3. Build DB updates ──
     const dbUpdates = mapProjectUpdateToDb(updates);
 
-    // Bundle m3Amount into the same PATCH as the Installed phase transition
+    // m3Amount is computed penny-perfectly by the server at project creation
+    // (via $.allocate in splitCloserSetterPay). Do NOT overwrite it here —
+    // the client formula Math.round(m2 × ratio) can diverge by $0.01 when
+    // the commission remainder is not evenly divisible by the installPayPct split.
     let m3AtInstalled: number | null = null;
     if (old && updates.phase === 'Installed' && old.phase !== 'Installed' && !old.subDealerId) {
       m3AtInstalled = computeM3Amount(old, updates, installerPayConfigs);
-      if (m3AtInstalled !== null) dbUpdates.m3Amount = m3AtInstalled;
+      // Intentionally NOT writing m3AtInstalled to dbUpdates — server value is authoritative.
     }
     // Repair m3Amount / setterM3Amount at PTO
     if (old && updates.phase === 'PTO' && old.phase !== 'PTO') {
@@ -725,7 +723,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Instead, compute `updated` eagerly from the already-snapshotted `old`
     // (same value as prev.find(...) would return) and call all state setters at
     // the same React batch level, outside any updater function.
-    let updated = projects.map((p) => p.id === id ? { ...p, ...updates } : p);
+    let updated = projectsRef.current.map((p) => p.id === id ? { ...p, ...updates } : p);
 
     if (old && updates.phase && updates.phase !== old.phase) {
       const newPhase = updates.phase as Phase;
@@ -781,7 +779,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const isPTO = newPhase === 'PTO' && old.phase !== 'PTO';
       // True when a phase jump to Installed/PTO skips over Acceptance entirely.
       // Pre-Acceptance phases: New, On Hold (reachable from New before Acceptance).
-      const skippedAcceptance = isInstalled && ['New', 'On Hold'].includes(old.phase) && !isSubDealerDeal;
+      const skippedAcceptance = isInstalled && !['Acceptance', 'Installed', 'PTO', 'Completed', 'Cancelled'].includes(old.phase) && !isSubDealerDeal;
 
       // Tracks M2 entries created in this transition so createM3Payroll can see them
       // even before payrollEntriesRef.current is updated (relevant on phase-skip to PTO).
@@ -870,7 +868,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let setterM2TrainerDeduction = 0;
       let setterM3TrainerDeduction = 0;
       if (old) {
-        const installPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+        const effectiveInstaller = updates.installer ?? old.installer;
+        const installPayPct = installerPayConfigs[effectiveInstaller]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
         const effectiveTrainerId = updates.trainerId !== undefined ? updates.trainerId : old.trainerId;
         const effectiveTrainerRate = updates.trainerRate !== undefined ? updates.trainerRate : old.trainerRate;
         if (updates.m2Amount !== undefined || updates.m3Amount !== undefined) {
@@ -907,7 +906,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
       const effectiveKWSize = old ? (updates.kWSize ?? old.kWSize) : 0;
-      const effectiveInstallPayPct = old ? (installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) : 100;
+      const effectiveInstallPayPct = old ? (installerPayConfigs[updates.installer ?? old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) : 100;
       // Compute outside the updater so React Strict Mode's double-invocation
       // does not push patches twice (same hazard documented above for setProjects).
       const syncResult = syncPayrollAmounts(id, updates, payrollEntriesRef.current, closerM2TrainerDeduction, closerM3TrainerDeduction, effectiveKWSize, effectiveInstallPayPct, setterM2TrainerDeduction, setterM3TrainerDeduction);

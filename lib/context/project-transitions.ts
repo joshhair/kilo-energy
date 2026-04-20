@@ -318,14 +318,13 @@ export function createMilestonePayroll(
   if (stage === 'M1' && prevEntries.some((e) => e.projectId === projectId && e.paymentStage === 'M2')) {
     return [];
   }
-  const alreadyExists = prevEntries.some(
-    (e) => e.projectId === projectId && e.paymentStage === stage
-  );
-  if (alreadyExists) return [];
-
   const ts = Date.now();
   const newEntries: PayrollEntry[] = [];
   const closerRep = deps.repsRef.current.find((r) => r.id === old.repId);
+
+  // Per-rep dedup helper: skip if this rep already has an entry for this project+stage.
+  const repAlreadyExists = (repId: string) =>
+    prevEntries.some((e) => e.projectId === projectId && e.paymentStage === stage && e.repId === repId);
 
   // Pre-compute closer trainer deduction for M2 so the trainer's cut comes out of
   // the closer's share rather than being paid on top (mirrors setter's splitPoint logic).
@@ -344,7 +343,7 @@ export function createMilestonePayroll(
 
   // Closer entry (skip M1 when a setter exists — M1 goes entirely to the setter)
   // Use freshProject.setterId (post-update) so a simultaneously-added setter suppresses the closer M1.
-  if ((fullAmount ?? 0) > 0 && !(isAcceptance && freshProject.setterId)) {
+  if ((fullAmount ?? 0) > 0 && !(isAcceptance && freshProject.setterId) && !repAlreadyExists(old.repId)) {
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_c`,
       repId: old.repId,
@@ -362,7 +361,7 @@ export function createMilestonePayroll(
 
   // Setter entry (M1 goes to setter if one exists)
   // Use freshProject.setterId (post-update) so a simultaneously-added setter is included.
-  if (freshProject.setterId && isAcceptance && (freshProject.setterM1Amount ?? 0) > 0) {
+  if (freshProject.setterId && isAcceptance && (freshProject.setterM1Amount ?? 0) > 0 && !repAlreadyExists(freshProject.setterId)) {
     const setterRep = deps.repsRef.current.find((r) => r.id === freshProject.setterId);
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_s`,
@@ -398,7 +397,7 @@ export function createMilestonePayroll(
   }
 
   // Setter entry (M2 at Installed — setterM2Amount is already post-installPayPct)
-  if (freshProject.setterId && isInstalled && (freshProject.setterM2Amount ?? 0) > 0) {
+  if (freshProject.setterId && isInstalled && (freshProject.setterM2Amount ?? 0) > 0 && !repAlreadyExists(freshProject.setterId)) {
     const setterRep = deps.repsRef.current.find((r) => r.id === freshProject.setterId);
     newEntries.push({
       id: `pay_${ts}_m2_s`,
@@ -423,6 +422,7 @@ export function createMilestonePayroll(
     const amount = isAcceptance ? (co.m1Amount ?? 0) : (co.m2Amount ?? 0);
     if (amount <= 0) continue;
     if (isAcceptance && freshProject.setterId) continue;
+    if (repAlreadyExists(co.userId)) continue;
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_cc${co.position}`,
       repId: co.userId,
@@ -445,6 +445,7 @@ export function createMilestonePayroll(
   for (const co of freshProject.additionalSetters ?? []) {
     const amount = isAcceptance ? (co.m1Amount ?? 0) : (co.m2Amount ?? 0);
     if (amount <= 0) continue;
+    if (repAlreadyExists(co.userId)) continue;
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_cs${co.position}`,
       repId: co.userId,

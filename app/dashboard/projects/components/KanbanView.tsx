@@ -17,6 +17,7 @@ export default function KanbanView({
   onPhaseChange,
   readOnly: _readOnly = false,
   hideFinancials = false,
+  resetKey,
 }: {
   projects: ProjectList;
   isAdmin: boolean;
@@ -26,6 +27,7 @@ export default function KanbanView({
   onPhaseChange: (id: string, phase: Phase) => void;
   readOnly?: boolean;
   hideFinancials?: boolean;
+  resetKey?: number;
 }) {
   const { toast: _toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -44,6 +46,12 @@ export default function KanbanView({
     const timer = setTimeout(() => setKanbanDebouncedSearch(kanbanSearchInput), delay);
     return () => clearTimeout(timer);
   }, [kanbanSearchInput]);
+
+  useEffect(() => {
+    if (resetKey === undefined || resetKey === 0) return;
+    setKanbanSearchInput('');
+    setKanbanDebouncedSearch('');
+  }, [resetKey]);
 
   const kanbanFiltered = kanbanDebouncedSearch
     ? projects.filter((p) => {
@@ -212,9 +220,12 @@ export default function KanbanView({
                             if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
                             const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
                             if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                            if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
                             return sum + mine;
                           }
-                          return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                          const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+                          const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+                          return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal;
                         }, 0).toLocaleString()}
                       </p>
                     )}
@@ -251,7 +262,9 @@ export default function KanbanView({
                       const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
                       if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
                     } else {
-                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                        + (proj.additionalClosers?.reduce((sum, c) => sum + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0)
+                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0);
                     }
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -470,7 +483,9 @@ export default function KanbanView({
                           if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
                           return sum + mine;
                         }
-                        return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                        const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+                        const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+                        return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal;
                       }, 0).toLocaleString()}
                     </p>
                   )}
@@ -524,7 +539,9 @@ export default function KanbanView({
                       const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
                       if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
                     } else {
-                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
+                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
+                        + (proj.additionalClosers?.reduce((sum, c) => sum + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0)
+                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0);
                     }
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>

@@ -204,6 +204,8 @@ function ProjectsPageInner() {
 
   const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '' || qaOnly || dealScope !== (isRep ? 'mine' : 'all');
 
+  const [kanbanResetKey, setKanbanResetKey] = useState(0);
+
   const clearAllFilters = () => {
     setStatusFilter('active');
     setInstallerFilter('');
@@ -212,6 +214,7 @@ function ProjectsPageInner() {
     setPhaseFilter('');
     setQaOnly(false);
     setDealScope(isRep ? 'mine' : 'all');
+    setKanbanResetKey((k) => k + 1);
     toast('Filters cleared', 'info');
   };
 
@@ -443,6 +446,7 @@ function ProjectsPageInner() {
           onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
           readOnly={isSubDealer}
           hideFinancials={isPM}
+          resetKey={kanbanResetKey}
         />
       ) : (
         <TableView

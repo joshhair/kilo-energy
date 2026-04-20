@@ -79,6 +79,14 @@ export const optionalId = z.preprocess(
   (v) => (v === '' || v === null ? undefined : v),
   z.string().min(1).max(100).optional(),
 );
+/** Nullable ID for PATCH fields that support explicit clearing.
+ *  "" → null, null → null, undefined → undefined, string → string.
+ *  Use for closerId/setterId on project patches where the client
+ *  sends "" or null to unlink the rep. */
+export const nullableId = z.preprocess(
+  (v) => (v === '' ? null : v),
+  z.string().min(1).max(100).nullable().optional(),
+);
 export const nonEmptyString = z.string().min(1);
 export const optionalString = z.string().optional().nullable();
 /** Finite, non-NaN number. */

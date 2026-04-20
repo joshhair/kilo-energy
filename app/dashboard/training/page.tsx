@@ -1456,12 +1456,14 @@ function ActiveTraineeCard({
             <span className="text-[var(--text-muted)] text-[10px]">Final tier</span>
           )}
         </div>
-        <div className="h-1.5 bg-[var(--surface-card)] rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
+        {nextThreshold && (
+          <div className="h-1.5 bg-[var(--surface-card)] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        )}
       </div>
 
       {expanded && (
@@ -1554,12 +1556,16 @@ function ResidualTraineeCard({
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Tier Progress</p>
           <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-1.5 bg-[var(--surface-card)] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-slate-400 to-slate-500 transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
+            {nextThreshold ? (
+              <div className="flex-1 h-1.5 bg-[var(--surface-card)] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-slate-400 to-slate-500 transition-all duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 h-1.5 bg-[var(--surface-card)] rounded-full overflow-hidden" />
+            )}
             <span className="text-[10px] text-[var(--text-muted)] tabular-nums">
               {nextThreshold ? `${consumedDeals}/${nextThreshold}` : '∞'}
             </span>
@@ -1815,6 +1821,12 @@ function NewAssignmentModal({
         const cap = parseInt(tiers[i].upToDeal);
         if (isNaN(cap) || cap <= 0 || !Number.isInteger(cap)) {
           return `Tier ${i + 1}: cap must be a positive integer or Perpetuity`;
+        }
+        if (i > 0 && !tiers[i - 1].perpetuity) {
+          const prevCap = parseInt(tiers[i - 1].upToDeal);
+          if (cap <= prevCap) {
+            return `Tier ${i + 1}: cap must be greater than tier ${i} cap (${prevCap})`;
+          }
         }
       }
     }
@@ -2099,6 +2111,7 @@ function BackfillWizard({
   onComplete: (created: number, skipped: number) => void;
 }) {
   const { toast } = useToast();
+  const { installerPayConfigs } = useApp();
   const trainer = reps.find((r) => r.id === assignment.trainerId);
   const trainee = reps.find((r) => r.id === assignment.traineeId);
   const trainerName = trainer?.name ?? 'Unknown Trainer';
@@ -2197,10 +2210,11 @@ function BackfillWizard({
         continue;
       }
 
-      const installPayPct = INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      const installPayPct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
       const kW = p.kWSize;
       const rate = resolution.rate;
 
+      const entriesBefore = entries.length;
       // M2
       if (p.m2Paid || ['Installed', 'PTO', 'Completed'].includes(p.phase)) {
         const amt = Math.round(rate * kW * 1000 * (installPayPct / 100) * 100) / 100;
@@ -2212,11 +2226,14 @@ function BackfillWizard({
         if (amt > 0) entries.push({ projectId: p.id, customerName: p.customerName, milestone: 'M3', amount: amt, rate });
       }
 
-      if (!entries.some((e) => e.projectId === p.id)) {
+      const addedCount = entries.length - entriesBefore;
+      if (addedCount === 0) {
         skipped.push({ projectId: p.id, customerName: p.customerName, reason: 'No milestones qualify' });
       } else {
-        // Track for tier counting
-        workingEntries.push({ repId: assignment.trainerId, projectId: p.id, paymentStage: 'Trainer' });
+        // Push one workingEntry per milestone so tier deal count matches actual payroll processing
+        for (let i = 0; i < addedCount; i++) {
+          workingEntries.push({ repId: assignment.trainerId, projectId: p.id, paymentStage: 'Trainer' });
+        }
       }
     }
 
