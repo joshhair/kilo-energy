@@ -864,7 +864,7 @@ export default function DashboardPage() {
   if (isMobile) return <MobileDashboard />;
 
   if (effectiveRole === 'project_manager') {
-    return <PMDashboard projects={periodProjects} allProjects={projects} period={period} setPeriod={setPeriod} PERIODS={PERIODS} totalReps={reps.filter(r => r.active).length} />;
+    return <PMDashboard projects={periodProjects} allProjects={projects} period={period} setPeriod={setPeriod} PERIODS={PERIODS} totalReps={reps.filter(r => r.active !== false).length} />;
   }
 
   if (effectiveRole === 'admin') {
@@ -876,7 +876,7 @@ export default function DashboardPage() {
       period={period}
       setPeriod={setPeriod}
       PERIODS={PERIODS}
-      totalReps={reps.filter(r => r.active).length}
+      totalReps={reps.filter(r => r.active !== false).length}
       installerPricingVersions={installerPricingVersions}
       productCatalogProducts={productCatalogProducts}
       productCatalogPricingVersions={productCatalogPricingVersions}
