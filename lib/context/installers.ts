@@ -303,7 +303,17 @@ export function createInstallerActions(deps: InstallerDeps) {
           );
         }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setInstallerPricingVersions((prev) =>
+          prev.filter((v) => v.id !== tempId).map((v) =>
+            v.installer === installer && v.effectiveTo === effectiveTo
+              ? { ...v, effectiveTo: null }
+              : v,
+          ),
+        );
+        emitPersistError('Failed to save new pricing version — please try again');
+      });
   };
 
   const updateSolarTechProduct = (id: string, updates: Partial<SolarTechProduct>) => {
@@ -434,7 +444,8 @@ export function createInstallerActions(deps: InstallerDeps) {
     }
   };
 
-  const updateProductCatalogTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) =>
+  const updateProductCatalogTier = async (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => {
+    let updatedTiers: ProductCatalogTier[] | undefined;
     setProductCatalogProducts((prev) => {
       const newProducts = prev.map((p) => p.id !== productId ? p : {
         ...p,
@@ -445,16 +456,27 @@ export function createInstallerActions(deps: InstallerDeps) {
           ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
         }),
       });
-      const updatedProduct = newProducts.find((p) => p.id === productId);
-      if (updatedProduct) {
-        fetch(`/api/products/${productId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tiers: updatedProduct.tiers }),
-        }).catch(console.error);
-      }
+      updatedTiers = newProducts.find((p) => p.id === productId)?.tiers;
       return newProducts;
     });
+    if (updatedTiers) {
+      try {
+        const res = await fetch(`/api/products/${productId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tiers: updatedTiers }),
+        });
+        const data = await res.json();
+        if (data.newVersion) {
+          const today = new Date().toISOString().slice(0, 10);
+          setProductCatalogPricingVersions((prev) => [
+            ...prev.map((v) => v.productId === productId && v.effectiveTo === null ? { ...v, effectiveTo: today } : v),
+            data.newVersion,
+          ]);
+        }
+      } catch (e) { console.error(e); }
+    }
+  };
 
   const removeProductCatalogProduct = async (id: string) => {
     const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
@@ -497,7 +519,17 @@ export function createInstallerActions(deps: InstallerDeps) {
           );
         }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setProductCatalogPricingVersions((prev) =>
+          prev.filter((v) => v.id !== tempId).map((v) =>
+            v.productId === productId && v.effectiveTo === effectiveTo
+              ? { ...v, effectiveTo: null }
+              : v,
+          ),
+        );
+        emitPersistError('Failed to save new pricing version — please try again');
+      });
   };
 
   const deleteProductCatalogPricingVersions = (versionIds: string[]) => {

@@ -202,11 +202,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const s = serializeProject(p);
       type WithParties = { additionalClosers?: Array<Parameters<typeof serializeProjectParty>[0]>; additionalSetters?: Array<Parameters<typeof serializeProjectParty>[0]> };
       const pWithParties = p as WithParties;
-      return {
+      const withParties = {
         ...s,
         additionalClosers: pWithParties.additionalClosers?.map(serializeProjectParty) ?? [],
         additionalSetters: pWithParties.additionalSetters?.map(serializeProjectParty) ?? [],
       };
+      if (user.role !== 'admin') {
+        const rel = relationshipToProject(user, {
+          closerId: p.closerId,
+          setterId: p.setterId,
+          subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,
+          trainerId: (p as { trainerId?: string | null }).trainerId ?? null,
+          additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
+          additionalSetters: withParties.additionalSetters.map((sv) => ({ userId: sv.userId })),
+        });
+        return scrubProjectForViewer(withParties, rel);
+      }
+      return withParties;
     }),
   });
 }

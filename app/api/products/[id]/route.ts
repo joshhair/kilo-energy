@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         data: { effectiveTo: today },
       });
     }
-    await prisma.productPricingVersion.create({
+    const newVersion = await prisma.productPricingVersion.create({
       data: {
         productId: id,
         label: today,
@@ -47,6 +47,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             subDealerPerW: t.subDealerPerW ?? null,
           })),
         },
+      },
+      include: { tiers: true },
+    });
+    return NextResponse.json({
+      success: true,
+      newVersion: {
+        id: newVersion.id,
+        productId: newVersion.productId,
+        label: newVersion.label,
+        effectiveFrom: newVersion.effectiveFrom,
+        effectiveTo: newVersion.effectiveTo,
+        tiers: newVersion.tiers.map((t) => ({
+          minKW: t.minKW,
+          maxKW: t.maxKW,
+          closerPerW: t.closerPerW,
+          setterPerW: t.setterPerW,
+          kiloPerW: t.kiloPerW,
+          subDealerPerW: t.subDealerPerW ?? undefined,
+        })),
       },
     });
   }
