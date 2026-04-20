@@ -957,12 +957,17 @@ function CalculatorPage() {
 
             {hasData ? (
               <div key={resultHash}>
-                {/* System Value */}
-                <p style={{ fontSize: 32, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4 }}>
-                  ${Math.round(systemValue).toLocaleString()}
+                {/* Closer earnings — this is the answer reps actually come
+                    to the calculator for. System value drops below as
+                    secondary context. */}
+                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 6 }}>
+                  Your Earnings {hasSetter && setterTotal > 0 ? '(Closer)' : ''}
+                </p>
+                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px rgba(0,229,160,0.25)' }}>
+                  ${Math.round(closerTotal).toLocaleString()}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
-                  {kW.toFixed(1)} kW x ${soldPPW.toFixed(2)} PPW x 1,000
+                  on ${Math.round(systemValue).toLocaleString()} system ({kW.toFixed(1)} kW × ${soldPPW.toFixed(2)}/W)
                 </p>
 
                 {/* Below-baseline warning */}
