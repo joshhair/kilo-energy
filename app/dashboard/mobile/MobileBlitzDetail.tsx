@@ -40,6 +40,15 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const [panelDir, setPanelDir] = useState<'right' | 'left'>('right');
   const [tab, setTab] = useState<BlitzTabKey>('overview');
 
+  const [canRequestBlitz, setCanRequestBlitz] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin || !effectiveRepId) return;
+    fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
+      setCanRequestBlitz(u.canRequestBlitz ?? false);
+    }).catch(() => {});
+  }, [effectiveRepId, isAdmin]);
+
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showCancelRequest, setShowCancelRequest] = useState(false);
@@ -142,10 +151,18 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     if (!cancelReason.trim()) { toast('Please provide a reason', 'error'); return; }
     setSubmittingAction(true);
     try {
-      const r = await fetch(`/api/blitzes/${blitzId}/cancel-request`, {
+      const r = await fetch('/api/blitz-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: cancelReason.trim() }),
+        body: JSON.stringify({
+          type: 'cancel',
+          requestedById: effectiveRepId,
+          blitzId,
+          name: blitz?.name ?? '',
+          notes: cancelReason.trim(),
+          startDate: blitz?.startDate ?? '',
+          endDate: blitz?.endDate ?? '',
+        }),
       });
       if (!r.ok) { toast('Failed to submit cancellation request', 'error'); return; }
       toast('Cancellation requested');
@@ -189,7 +206,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     ...(isAdmin ? [{ key: 'profitability' as BlitzTabKey, label: 'Profit' }] : []),
   ];
 
-  const canCancelRequest = isOwner && (blitz.status === 'upcoming' || blitz.status === 'active');
+  const blitzActive = blitz.status === 'upcoming' || blitz.status === 'active';
+  const canCancelRequest = canRequestBlitz && blitzActive && (isOwner || blitz.createdById === effectiveRepId);
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">

@@ -100,7 +100,7 @@ export default function MobileBlitz() {
   useEffect(() => {
     Promise.all([
       fetch('/api/blitzes').then((r) => r.json()),
-      isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
+      fetch('/api/blitz-requests').then((r) => r.json()),
     ])
       .then(([b, r]) => {
         const normalized = Array.isArray(b)
@@ -155,7 +155,7 @@ export default function MobileBlitz() {
   const loadData = () => {
     Promise.all([
       fetch('/api/blitzes').then((r) => r.json()),
-      isAdmin ? fetch('/api/blitz-requests').then((r) => r.json()) : Promise.resolve([]),
+      fetch('/api/blitz-requests').then((r) => r.json()),
     ]).then(([b, r]) => {
       const normalized = Array.isArray(b)
         ? b.map((blitz: BlitzData) => ({ ...blitz, status: deriveBlitzStatus(blitz) }))
@@ -393,7 +393,7 @@ export default function MobileBlitz() {
         </>
       )}
 
-      {/* Requests tab */}
+      {/* Requests tab — admin: see all pending */}
       {tab === 'requests' && isAdmin && (
         <>
           {pendingRequests.length === 0 ? (
@@ -407,6 +407,30 @@ export default function MobileBlitz() {
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
                   <MobileBadge value="Pending" variant="status" />
+                </MobileCard>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Requests tab — rep: see own submissions */}
+      {tab === 'requests' && !isAdmin && userPerms.canRequestBlitz && (
+        <>
+          {requests.filter((r) => r.requestedBy.id === effectiveRepId).length === 0 ? (
+            <MobileEmptyState icon={Inbox} title="No requests submitted" />
+          ) : (
+            <div className="space-y-3">
+              {requests.filter((r) => r.requestedBy.id === effectiveRepId).map((req) => (
+                <MobileCard key={req.id}>
+                  <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    {req.type === 'create' ? 'New blitz request' : 'Cancel request'}
+                  </p>
+                  <MobileBadge
+                    value={req.status === 'approved' ? 'Approved' : req.status === 'denied' ? 'Denied' : 'Pending'}
+                    variant="status"
+                  />
                 </MobileCard>
               ))}
             </div>
