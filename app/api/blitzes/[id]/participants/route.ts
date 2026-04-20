@@ -80,7 +80,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // Only the blitz owner or an admin may approve/decline participants
-  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true } });
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
   if (caller.role !== 'admin' && caller.id !== blitz.ownerId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -136,6 +136,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!involvedIds.some(id => approvedIds.includes(id))) {
         await prisma.project.update({ where: { id: project.id }, data: { blitzId: null } });
       }
+    }
+  }
+
+  // If the participant is re-approved after being unlinked, re-link their deals within the blitz window.
+  if (body.joinStatus === 'approved' && existing.joinStatus !== 'approved') {
+    await prisma.project.updateMany({
+      where: {
+        blitzId: null,
+        soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+        OR: [{ closerId: body.userId }, { setterId: body.userId }],
+      },
+      data: { blitzId },
+    });
+    const coRoleProjects = await prisma.project.findMany({
+      where: {
+        blitzId: null,
+        soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+        OR: [
+          { additionalClosers: { some: { userId: body.userId } } },
+          { additionalSetters: { some: { userId: body.userId } } },
+        ],
+      },
+      select: { id: true },
+    });
+    for (const project of coRoleProjects) {
+      await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
     }
   }
 
