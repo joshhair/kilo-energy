@@ -16,6 +16,7 @@ import { Sparkline } from '../../../../lib/sparkline';
 import ConfirmDialog from '../../components/ConfirmDialog';
 
 const PIPELINE_PHASES = ['New','Acceptance','Site Survey','Design','Permitting','Pending Install','Installed','PTO','Completed'] as const;
+const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
 
 type FetchedUser = {
   id: string;
@@ -783,8 +784,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const projEnd = Math.min(projStart + projPageSize, projTotal);
   const pagedProjects = repProjects.slice(projStart, projEnd);
 
-  const totalKW = repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
-  const totalEst = repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => {
+  const totalKW = repProjects.filter(p => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0);
+  const totalEst = repProjects.filter(p => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => {
     if (p.repId === id) {
       // Closer: gets $0 M1 when a setter exists (setter takes M1); otherwise earns m1Amount
       const closerM1 = p.setterId ? 0 : p.m1Amount;
@@ -1260,7 +1261,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </td>
                 <td className="px-5 py-3">
                   <span className="text-xs text-[var(--text-secondary)]">
-                    {proj.repId === id && proj.setterId === id ? 'Self-gen' : proj.repId === id ? 'Closer' : proj.setterId === id ? 'Setter' : 'Add. Closer'}
+                    {proj.repId === id && proj.setterId === id ? 'Self-gen' : proj.repId === id ? 'Closer' : proj.setterId === id ? 'Setter' : proj.additionalSetters?.some((s: { userId: string }) => s.userId === id) ? 'Add. Setter' : 'Add. Closer'}
                   </span>
                 </td>
                 <td className="px-5 py-3">

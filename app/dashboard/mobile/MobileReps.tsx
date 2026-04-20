@@ -103,6 +103,7 @@ export default function MobileReps() {
   const kwByRep = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of projects) {
+      if (PIPELINE_EXCLUDED.has(p.phase)) continue;
       const kw = p.kWSize ?? 0;
       map.set(p.repId, (map.get(p.repId) ?? 0) + kw);
       if (p.setterId && p.setterId !== p.repId) {
@@ -125,6 +126,8 @@ export default function MobileReps() {
 
   const filtered = useMemo(() => {
     return reps.filter((r) => {
+      if (r.active === false) return false;
+      if (r.role !== 'rep') return false;
       if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
       return true;
     });
@@ -198,7 +201,7 @@ export default function MobileReps() {
         const pool: SimpleUser[] =
           roleFilter === 'all'
             ? [
-                ...reps.map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
+                ...reps.filter((r) => r.active !== false && r.role === 'rep').map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
                 ...subDealers.map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
                 ...pmUsers,
                 ...adminUsers,
