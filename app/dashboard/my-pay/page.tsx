@@ -8,6 +8,7 @@ import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileMyPay from '../mobile/MobileMyPay';
 import { useToast } from '../../../lib/toast';
 import { fmt$, localDateString } from '../../../lib/utils';
+import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { ReimbursementModal } from '../components/ReimbursementModal';
@@ -226,28 +227,25 @@ function MyPayPageInner() {
   const pagedPeriods = payPeriods.slice((safePeriodPage - 1) * periodsPerPage, safePeriodPage * periodsPerPage);
 
   // ── Overview stats ──
-  const lifetimeEarned = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date <= todayStr && p.amount > 0)
-      .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, effectiveRepId, todayStr]
+  // "Lifetime Earned" is the NET cumulative paid-out — chargebacks that
+  // have already been clawed back (status=Paid with amount<0) are deducted
+  // here. The separate "N pending chargebacks" tile shows forward-looking
+  // claw-backs not yet applied.
+  const lifetimeEarned = useMemo(
+    () => sumPaid(payrollEntries, { asOf: todayStr, repId: effectiveRepId ?? undefined }),
+    [payrollEntries, effectiveRepId, todayStr],
   );
 
-  const chargebackTotal = useMemo(() =>
-    Math.abs(payrollEntries.filter((p) => p.repId === effectiveRepId && p.amount < 0)
-      .reduce((s, p) => s + p.amount, 0)),
-    [payrollEntries, effectiveRepId]
+  // Pending chargebacks the rep still owes (Draft + Pending, amount < 0).
+  // Paid chargebacks already flowed through past paychecks; don't show
+  // them here (no double-count).
+  const pendingChargebackTotal = useMemo(
+    () => Math.abs(sumPendingChargebacks(payrollEntries, { asOf: todayStr, repId: effectiveRepId ?? undefined })),
+    [payrollEntries, effectiveRepId, todayStr],
   );
-
-  const _pendingTotal = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')
-      .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, effectiveRepId]
-  );
-
-  const _draftTotal = useMemo(() =>
-    payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Draft')
-      .reduce((s, p) => s + p.amount, 0),
-    [payrollEntries, effectiveRepId]
+  const pendingChargebackCount = useMemo(
+    () => countPendingChargebacks(payrollEntries, { asOf: todayStr, repId: effectiveRepId ?? undefined }),
+    [payrollEntries, effectiveRepId, todayStr],
   );
 
   const nextPayoutTotal = useMemo(() =>
@@ -478,6 +476,39 @@ function MyPayPageInner() {
       {/* ── Gradient divider ── */}
       <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent mb-4" />
 
+      {/* ── Pending Chargebacks — deals still to be clawed back ── */}
+      {pendingChargebackCount > 0 && (() => {
+        const pendingEntries = payrollEntries
+          .filter((p) => p.repId === effectiveRepId && p.amount < 0 && (p.status === 'Draft' || p.status === 'Pending'))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        return (
+          <div id="pending-chargebacks" className="card-surface rounded-2xl p-5 mb-6 border-l-2 border-l-amber-500/40 scroll-mt-20"
+               style={{ '--card-accent': 'rgba(245,158,11,0.08)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest">Pending Chargebacks</p>
+                <p className="text-[var(--text-dim)] text-[11px] mt-0.5">Amounts to be clawed back from a future paycheck.</p>
+              </div>
+              <p className="font-black tabular-nums text-amber-400 text-2xl">-{fmt$(pendingChargebackTotal)}</p>
+            </div>
+            <div className="space-y-2">
+              {pendingEntries.map((e) => (
+                <div key={e.id} className="card-surface rounded-xl p-3 flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-medium truncate">{e.customerName || '(no project)'}</p>
+                    <p className="text-[var(--text-dim)] text-[11px]">
+                      {e.paymentStage} · {e.status} · <RelativeDate date={e.date} />
+                      {e.notes && <span className="ml-2 text-[var(--text-muted)]">· {e.notes}</span>}
+                    </p>
+                  </div>
+                  <p className="text-red-400 font-bold tabular-nums ml-3 shrink-0">{fmt$(e.amount)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Financial Summary ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {/* Lifetime Earned — anchor card with emerald left border */}
@@ -489,8 +520,10 @@ function MyPayPageInner() {
           </div>
           <p className="font-black tabular-nums text-[var(--accent-green)] stat-value break-words"
              style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
-          {chargebackTotal > 0 && (
-            <p className="text-red-400/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">- {fmt$(chargebackTotal)} chargebacks</p>
+          {pendingChargebackCount > 0 && (
+            <p className="text-amber-400/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
+              {pendingChargebackCount} pending chargeback{pendingChargebackCount === 1 ? '' : 's'} · -{fmt$(pendingChargebackTotal)}
+            </p>
           )}
         </div>
         {/* On Pace For — standout card with amber left border + larger number */}

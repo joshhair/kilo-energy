@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate } from '../../../lib/utils';
+import { sumPaid } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
 import { Banknote, Receipt, ChevronRight } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -107,11 +108,9 @@ export default function MobileMyPay() {
   );
 
   // ── Overview stats ──
+  // Net cumulative paid-out (incl. chargebacks already applied).
   const lifetimeEarned = useMemo(
-    () =>
-      payrollEntries
-        .filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date <= todayStr && p.amount > 0)
-        .reduce((s, p) => s + p.amount, 0),
+    () => sumPaid(payrollEntries, { asOf: todayStr, repId: effectiveRepId ?? undefined }),
     [payrollEntries, effectiveRepId, todayStr],
   );
 

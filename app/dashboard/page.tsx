@@ -1268,8 +1268,8 @@ export default function DashboardPage() {
       sparkData: chargebackSparkData,
       sparkStroke: '#ef4444',
       pctChange: undefined as number | null | undefined,
-      href: '/dashboard/my-pay',
-      tooltip: 'Total negative adjustments from cancelled or clawed-back deals',
+      href: '/dashboard/my-pay#pending-chargebacks',
+      tooltip: 'Chargebacks still pending — click to see which deals.',
     }] : []),
   ];
 
