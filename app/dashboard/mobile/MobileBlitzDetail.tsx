@@ -17,6 +17,7 @@ import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import { useToast } from '../../../lib/toast';
 import { sortForSelection } from '../../../lib/sorting';
+import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
 
@@ -59,7 +60,9 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       .then((r) => r.json())
       .then((data) => {
         if (data.error) { router.push('/dashboard/blitz'); return; }
-        setBlitz(data);
+        // Derive blitz status from today's dates — the stored column
+        // doesn't auto-transition. See lib/blitzStatus.ts.
+        setBlitz({ ...data, status: deriveBlitzStatus(data) });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -225,13 +228,16 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
         </p>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
+      {/* Tab bar — each tab gets equal width via flex-1, but the button
+          needs horizontal padding or labels of different lengths end up
+          touching on narrow screens. Also drops to a slightly smaller
+          type scale so "Participants" fits comfortably on a 375pt viewport. */}
+      <div className="flex gap-1" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className="flex-1 text-center text-base font-medium min-h-[48px] transition-colors"
+            className="flex-1 text-center text-sm font-semibold min-h-[48px] px-2 transition-colors"
             style={{
               color: tab === t.key ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
               borderBottom: tab === t.key ? '2px solid var(--accent-emerald)' : '2px solid transparent',
