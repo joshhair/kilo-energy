@@ -128,7 +128,7 @@ export default function MobileBlitz() {
           ? b.map((blitz: BlitzData) => ({ ...blitz, status: deriveBlitzStatus(blitz) }))
           : [];
         setBlitzes(normalized);
-        setRequests(r);
+        setRequests(Array.isArray(r) ? r : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -156,7 +156,9 @@ export default function MobileBlitz() {
       const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
       return b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (
         approvedIds.has(p.closer?.id ?? '')
+        || approvedIds.has(p.setter?.id ?? '')
         || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+        || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
       ));
     };
     return [...list].sort((a, b) => {
@@ -363,7 +365,7 @@ export default function MobileBlitz() {
       </div>
 
       {/* Admin tabs: Blitzes / Requests */}
-      {isAdmin && (
+      {(isAdmin || userPerms.canRequestBlitz) && (
         <div className="flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           <button
             onClick={() => setTab('blitzes')}
@@ -416,7 +418,9 @@ export default function MobileBlitz() {
                 const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
                 const blitzProjects = activeProjects.filter((p) =>
                   approvedIds.has(p.closer?.id ?? '')
+                  || approvedIds.has(p.setter?.id ?? '')
                   || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+                  || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
                 );
                 const totalDeals = blitzProjects.length;
                 const totalKW = blitzProjects.reduce((s, p) => s + p.kWSize, 0);

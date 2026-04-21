@@ -81,8 +81,6 @@ export default function BlitzDetailPage() {
   const [tabIndicator, setTabIndicator] = useState<{ left: number; width: number } | null>(null);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '', ownerId: '' });
-  const rawBlitzStatus = useRef<string>('');
-
   // Confirmation dialog
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void; confirmLabel?: string } | null>(null);
 
@@ -125,7 +123,6 @@ export default function BlitzDetailPage() {
       // terminals unchanged.
       const normalized = { ...data, status: deriveBlitzStatus(data) };
       setBlitz(normalized);
-      rawBlitzStatus.current = data.status;
       if (!editing || forceUpdateForm) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: normalized.status, ownerId: data.owner?.id ?? '' });
       setLoading(false);
     }).catch(() => { setLoading(false); });
@@ -606,7 +603,7 @@ export default function BlitzDetailPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: rawBlitzStatus.current, ownerId: blitz.owner?.id ?? '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white disabled:opacity-50 transition-colors">Cancel</button>
+              <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: blitz.status, ownerId: blitz.owner?.id ?? '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white disabled:opacity-50 transition-colors">Cancel</button>
               <button
                 onClick={handleSave}
                 disabled={saving}
