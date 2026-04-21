@@ -119,7 +119,11 @@ export default function MobileAdminDashboard() {
         return { closerPerW: 0, kiloPerW: 0 };
       }
     }
-    return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
+    try {
+      return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
+    } catch {
+      return { closerPerW: 0, kiloPerW: 0 };
+    }
   }
 
   // ── Computations (period-filtered) ───────────────────────────────────────
