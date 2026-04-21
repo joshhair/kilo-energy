@@ -1195,13 +1195,18 @@ function NewDealPage() {
                       {(() => {
                         const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[form.solarTechFamily] ?? '';
                         const hasFamilyMap = !!rawMappedFinancer && form.productType !== 'Loan';
-                        const mappedIsArchived = hasFamilyMap && !activeFinancers.includes(rawMappedFinancer);
+                        const mappedIsActive = hasFamilyMap && activeFinancers.includes(rawMappedFinancer);
+                        const mappedIsArchived = hasFamilyMap && !mappedIsActive;
+                        const financerOptions = (
+                          mappedIsActive ? activeFinancers.filter((f) => f === rawMappedFinancer) :
+                          activeFinancers
+                        ).filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }));
                         return (
                           <>
                             <SearchableSelect
                               value={form.financer}
                               onChange={(val) => handleFinancerChange(val)}
-                              options={activeFinancers.filter((f) => f !== 'Cash').map((f) => ({ value: f, label: f }))}
+                              options={financerOptions}
                               placeholder="— Select financer —"
                               label="Financer"
                               error={!!errors.financer}

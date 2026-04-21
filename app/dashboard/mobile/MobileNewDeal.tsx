@@ -1180,7 +1180,13 @@ export default function MobileNewDeal() {
                         className={selectCls('financer')} style={v0InputStyle('financer')}
                       >
                         <option value="">-- Select financer --</option>
-                        {activeFinancers.filter((f) => f !== 'Cash').map((f) => <option key={f} value={f}>{f}</option>)}
+                        {((() => {
+                          const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[form.solarTechFamily] ?? '';
+                          const hasFamilyMap = !!rawMappedFinancer && form.productType !== 'Loan';
+                          return hasFamilyMap && activeFinancers.includes(rawMappedFinancer)
+                            ? activeFinancers.filter((f) => f === rawMappedFinancer)
+                            : activeFinancers;
+                        })()).filter((f) => f !== 'Cash').map((f) => <option key={f} value={f}>{f}</option>)}
                       </select>
                       {(() => {
                         const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[form.solarTechFamily] ?? '';

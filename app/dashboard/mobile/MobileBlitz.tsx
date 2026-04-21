@@ -225,37 +225,37 @@ export default function MobileBlitz() {
     if (submittingCreate) return;
     setSubmittingCreate(true);
     const isRequest = canRequest && !canCreate;
-    const res = isRequest
-      ? await fetch('/api/blitz-requests', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'create',
-            requestedById: effectiveRepId,
-            name: createForm.name.trim(),
-            location: createForm.location.trim(),
-            housing: createForm.housing.trim(),
-            startDate: createForm.startDate,
-            endDate: createForm.endDate,
-            notes: createForm.notes.trim(),
-            expectedHeadcount: parseInt(createForm.headcount) || 0,
-          }),
-        })
-      : await fetch('/api/blitzes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: createForm.name.trim(),
-            location: createForm.location.trim(),
-            housing: createForm.housing.trim(),
-            startDate: createForm.startDate,
-            endDate: createForm.endDate,
-            notes: createForm.notes.trim(),
-            createdById: effectiveRepId,
-            ownerId: createForm.ownerId || effectiveRepId,
-          }),
-        });
     try {
+      const res = isRequest
+        ? await fetch('/api/blitz-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'create',
+              requestedById: effectiveRepId,
+              name: createForm.name.trim(),
+              location: createForm.location.trim(),
+              housing: createForm.housing.trim(),
+              startDate: createForm.startDate,
+              endDate: createForm.endDate,
+              notes: createForm.notes.trim(),
+              expectedHeadcount: parseInt(createForm.headcount) || 0,
+            }),
+          })
+        : await fetch('/api/blitzes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: createForm.name.trim(),
+              location: createForm.location.trim(),
+              housing: createForm.housing.trim(),
+              startDate: createForm.startDate,
+              endDate: createForm.endDate,
+              notes: createForm.notes.trim(),
+              createdById: effectiveRepId,
+              ownerId: createForm.ownerId || effectiveRepId,
+            }),
+          });
       if (res.ok) {
         toast(isRequest ? 'Blitz request submitted' : 'Blitz created');
         setShowCreate(false);
