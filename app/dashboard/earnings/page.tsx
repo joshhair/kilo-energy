@@ -95,7 +95,7 @@ function RepEarningsView() {
   const totalPaid         = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && (!monthFilter || p.date.startsWith(monthFilter))).reduce((s, p) => s + p.amount, 0);
   const totalPending      = pendingItems.reduce((s, p) => s + p.amount, 0);
   const pendingCount      = pendingItems.length;
-  const nextPayoutItems   = myPayroll.filter((p) => p.status === 'Pending' && p.date === nextFridayDate && (!monthFilter || p.date.startsWith(monthFilter)));
+  const nextPayoutItems   = myPayroll.filter((p) => p.status === 'Pending' && p.date === nextFridayDate);
   const nextPayoutTotal   = nextPayoutItems.reduce((s, p) => s + p.amount, 0);
   const nextPayoutCount   = nextPayoutItems.length;
   const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === effectiveRepId), [reimbursements, effectiveRepId]);

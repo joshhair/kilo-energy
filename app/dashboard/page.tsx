@@ -1043,7 +1043,7 @@ export default function DashboardPage() {
   const chargebackCount = countPendingChargebacks(myPayroll);
   const _totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
-  const totalKWSold = myProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const totalKWSold = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // ── Previous-period equivalents for trend-badge percentage changes ──────────
@@ -1131,7 +1131,7 @@ export default function DashboardPage() {
   const _prevTotalEstimatedPay = prevUnpaidPayroll + prevUnmatchedPay + prevPendingM3Pay;
   const prevTotalPaid = sumPaid(myPrevPayroll, { asOf: todayStr });
   const _prevTotalKW = prevActiveProjects.reduce((sum, p) => sum + p.kWSize, 0);
-  const prevTotalKWSold = myPrevProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const prevTotalKWSold = myPrevProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   const prevTotalKWInstalled = myPrevProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // Sparkline data for the five stat cards — last 7 unique dates, summed per day

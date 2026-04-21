@@ -232,8 +232,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .filter((p) => p.installerId === solarTechInstaller?.id)
       .map((p) => {
         const effectiveSoldDate = new Date(body.soldDate ?? current.soldDate);
-        const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= effectiveSoldDate)
-          ?? p.pricingVersions[0];
+        const versionCandidates = p.pricingVersions.filter((v) =>
+          new Date(v.effectiveFrom) <= effectiveSoldDate &&
+          (v.effectiveTo === null || new Date(v.effectiveTo) >= effectiveSoldDate)
+        );
+        const activeVersion = versionCandidates.length > 0
+          ? versionCandidates.reduce((a, b) => (a.effectiveFrom >= b.effectiveFrom ? a : b))
+          : p.pricingVersions[0];
         const familyFinancerMap: Record<string, string> = {
           'Goodleap': 'Goodleap',
           'Enfin': 'Enfin',

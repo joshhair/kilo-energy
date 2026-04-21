@@ -214,7 +214,7 @@ export default function MobileDashboard() {
   );
 
   const totalKW = useMemo(
-    () => myProjects.reduce((s, p) => s + p.kWSize, 0),
+    () => myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0),
     [myProjects],
   );
 
