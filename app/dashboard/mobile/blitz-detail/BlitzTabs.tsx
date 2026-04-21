@@ -24,7 +24,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
         <button
           key={t.key}
           onClick={() => onChange(t.key)}
-          className="text-center text-xs font-semibold min-h-[48px] px-1 transition-colors truncate"
+          className="text-center text-sm font-semibold min-h-[48px] px-2 transition-colors truncate"
           style={{
             color: active === t.key ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
