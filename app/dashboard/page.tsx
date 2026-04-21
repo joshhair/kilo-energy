@@ -693,6 +693,7 @@ export default function DashboardPage() {
           (p) =>
             p.repId === effectiveRepId ||
             p.setterId === effectiveRepId ||
+            p.trainerId === effectiveRepId ||
             (p.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) ||
             (p.additionalSetters ?? []).some((s) => s.userId === effectiveRepId),
         );

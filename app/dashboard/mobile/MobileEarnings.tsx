@@ -375,7 +375,7 @@ export default function MobileEarnings() {
       )}
 
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
-      <MobileSection title="Deal Payments" count={sortedDeals.length} collapsible defaultOpen>
+      <MobileSection title="Deal Payments" count={dealPayments.length} collapsible defaultOpen>
         <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
           {([['date', 'Date'], ['customerName', 'Name'], ['paymentStage', 'Stage'], ['amount', '$'], ['status', 'Status']] as [DealSortKey, string][]).map(([key, label]) => (
             <button
