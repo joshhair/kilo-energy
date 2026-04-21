@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKW, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { getPhaseStuckThresholds } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
 import { CheckCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -179,6 +180,47 @@ export default function MobileDashboard() {
     () => myProjects.filter((p) => p.flagged),
     [myProjects],
   );
+
+  const _attentionItems = useMemo(() => {
+    const PHASE_STUCK_THRESHOLDS = getPhaseStuckThresholds();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    type AttentionItem = { id: string; customerName: string; phase: string; soldDate: string; suffix: string };
+    const items: AttentionItem[] = [];
+    for (const proj of activeProjects) {
+      if (proj.flagged) {
+        items.push({ id: proj.id, customerName: proj.customerName, phase: proj.phase, soldDate: proj.soldDate, suffix: stalledDays(proj.phaseChangedAt ?? proj.soldDate) !== null ? `Stalled ${stalledDays(proj.phaseChangedAt ?? proj.soldDate)}d` : 'Flagged' });
+      }
+    }
+    for (const proj of activeProjects) {
+      if (proj.flagged) continue;
+      const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
+      if (threshold == null) continue;
+      const phaseSince = proj.phaseChangedAt ? new Date(proj.phaseChangedAt) : (() => {
+        if (!proj.soldDate) return null;
+        const [sy, sm, sd] = proj.soldDate.split('-').map(Number);
+        return new Date(sy, sm - 1, sd);
+      })();
+      if (!phaseSince) continue;
+      const diffDays = Math.floor((today.getTime() - phaseSince.getTime()) / 86_400_000);
+      if (diffDays > threshold) {
+        items.push({ id: proj.id, customerName: proj.customerName, phase: proj.phase, soldDate: proj.soldDate, suffix: `${diffDays}d in ${proj.phase}` });
+      }
+    }
+    for (const proj of activeProjects) {
+      if (proj.flagged) continue;
+      if (proj.phase === 'On Hold') {
+        const holdSince = proj.phaseChangedAt ? new Date(proj.phaseChangedAt) : (() => {
+          if (!proj.soldDate) return today;
+          const [y, m, d] = proj.soldDate.split('-').map(Number);
+          return new Date(y, m - 1, d);
+        })();
+        const holdDays = Math.floor((today.getTime() - holdSince.getTime()) / 86_400_000);
+        items.push({ id: proj.id, customerName: proj.customerName, phase: proj.phase, soldDate: proj.soldDate, suffix: `${holdDays}d on hold` });
+      }
+    }
+    return items;
+  }, [activeProjects]);
 
   // PM dispatch is rendered at the end, after all hooks — see rules-of-hooks.
 
@@ -462,7 +504,7 @@ export default function MobileDashboard() {
       await fetch(`/api/projects/${projectId}/messages/${messageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toggleCheckItem: checkItemId, completed: !wasChecked }),
+        body: JSON.stringify({ checkItemId, completed: !wasChecked }),
       });
     } catch {
       setCheckedTaskIds((prev) => { const next = new Set(prev); if (wasChecked) { next.add(checkItemId); } else { next.delete(checkItemId); } return next; });
@@ -613,7 +655,7 @@ export default function MobileDashboard() {
                     <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                     <MobileBadge value={p.phase} />
                   </div>
-                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{stalledDays(p.soldDate) !== null ? `Stalled ${stalledDays(p.soldDate)}d` : '—'}</span>
+                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{stalledDays(p.phaseChangedAt ?? p.soldDate) !== null ? `Stalled ${stalledDays(p.phaseChangedAt ?? p.soldDate)}d` : '—'}</span>
                 </button>
               ))}
             </MobileCard>
@@ -769,7 +811,7 @@ export default function MobileDashboard() {
                 <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                 <MobileBadge value={p.phase} />
               </div>
-              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{stalledDays(p.soldDate) !== null ? `Stalled ${stalledDays(p.soldDate)}d` : '—'}</span>
+              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{stalledDays(p.phaseChangedAt ?? p.soldDate) !== null ? `Stalled ${stalledDays(p.phaseChangedAt ?? p.soldDate)}d` : '—'}</span>
             </button>
           ))}
         </MobileCard>
