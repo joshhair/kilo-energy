@@ -5,10 +5,11 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { getTrainerOverrideRate } from '../../../lib/data';
 import { fmt$ } from '../../../lib/utils';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, GraduationCap, Banknote } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
+import MobileEmptyState from './shared/MobileEmptyState';
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -215,9 +216,11 @@ export default function MobileTraining() {
       <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Training" />
         <MobileCard>
-          <div className="py-8 text-center">
-            <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have any trainees</p>
-          </div>
+          <MobileEmptyState
+            icon={GraduationCap}
+            title="No trainees yet"
+            subtitle="You'll appear here once assigned a trainee"
+          />
         </MobileCard>
       </div>
     );
@@ -297,7 +300,7 @@ export default function MobileTraining() {
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
         {sortedOverrides.length === 0 ? (
-          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No override payments yet</p>
+          <MobileEmptyState icon={Banknote} title="No override payments yet" />
         ) : (
           <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
             {sortedOverrides.map((entry, idx) => (

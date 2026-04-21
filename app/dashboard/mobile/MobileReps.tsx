@@ -88,7 +88,7 @@ export default function MobileReps() {
     lastName: '',
     email: '',
     phone: '',
-    repType: 'closer' as 'closer' | 'setter' | 'both',
+    repType: 'both' as 'closer' | 'setter' | 'both',
     userRole: 'rep' as 'rep' | 'admin' | 'sub-dealer' | 'project_manager',
     trainerId: '',
   });
