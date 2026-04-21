@@ -76,7 +76,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const effectiveSoldDate = body.soldDate ?? existing?.soldDate;
         if (effectiveSoldDate) {
           const sold = new Date(effectiveSoldDate);
-          if (sold < new Date(blitz.startDate) || sold > new Date(blitz.endDate)) {
+          const end = blitz.endDate !== null ? new Date(blitz.endDate) : null;
+          if (sold < new Date(blitz.startDate) || (end !== null && sold > end)) {
             return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
           }
         }

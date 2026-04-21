@@ -1712,7 +1712,7 @@ export default function MobileNewDeal() {
                 onChange={(e) => {
                   const val = e.target.value;
                   update('leadSource', val);
-                  if (val !== 'blitz') update('blitzId', '');
+                  if (val !== 'blitz') { update('blitzId', ''); update('setterId', ''); }
                 }}
                 className={selectCls('')} style={v0InputStyle('')}
               >

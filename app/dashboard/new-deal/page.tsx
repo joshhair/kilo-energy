@@ -1597,6 +1597,7 @@ function NewDealPage() {
                       update('leadSource', form.leadSource === value ? '' : value);
                       if (value !== 'blitz' || form.leadSource === 'blitz') {
                         update('blitzId', '');
+                        if (form.leadSource === 'blitz') { update('setterId', ''); }
                       }
                       if (form.leadSource !== 'blitz' && value === 'blitz' && !form.soldDate) {
                         update('soldDate', new Date().toLocaleDateString('en-CA'));

@@ -134,8 +134,6 @@ export default function MobileCalculator() {
   const setterTotal = split.setterTotal;
   const trainerTotal = hasInput && soldPPW > 0 && trainerRate > 0 ? trainerRate * kW * 1000 : 0;
 
-  const grandTotal = closerTotal + setterTotal + trainerTotal;
-
   // ── Animated commission counter ──────────────────────────────────────────
   const prevTotalRef = useRef(0);
   const rafRef = useRef<number | null>(null);
@@ -143,7 +141,7 @@ export default function MobileCalculator() {
 
   useEffect(() => {
     const start = prevTotalRef.current;
-    const end = grandTotal;
+    const end = closerTotal;
     prevTotalRef.current = end;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -158,7 +156,7 @@ export default function MobileCalculator() {
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [grandTotal]);
+  }, [closerTotal]);
 
   // ── Result card mount/unmount with exit animation ────────────────────────
   const [resultMounted, setResultMounted] = useState(false);

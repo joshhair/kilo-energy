@@ -24,6 +24,7 @@ import { deriveBlitzStatus } from '../../../../lib/blitzStatus';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { BlitzLeaderboard } from './BlitzLeaderboard';
 import { BlitzProfitability } from './BlitzProfitability';
+import { computeBlitzLeaderboard, LeaderboardEntry } from '../../../../lib/blitzComputed';
 import Link from 'next/link';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
@@ -318,88 +319,7 @@ export default function BlitzDetailPage() {
   //       m1 + m2 + m3 (closer always gets m1Amount; setter gets setterM1Amount independently)
   //   person is the closer (no setter on project):
   //       m1 + m2 + m3
-  type LeaderboardEntry = {
-    userId: string;
-    user: { id: string; firstName: string; lastName: string };
-    name: string;
-    initials: string;
-    deals: number;
-    kW: number;
-    payout: number;
-  };
-  const leaderboard: LeaderboardEntry[] = useMemo(() => {
-    const participants = (blitz?.participants ?? []).filter((p: any) => p.joinStatus === 'approved');
-    if (participants.length === 0) return [];
-
-    const participantIds = new Set(participants.map((p: any) => p.user.id));
-    const statsByUserId = new Map<string, { deals: number; kW: number; payout: number }>();
-    const bump = (userId: string, dKw: number, dPayout: number) => {
-      const s = statsByUserId.get(userId) ?? { deals: 0, kW: 0, payout: 0 };
-      s.deals += 1;
-      s.kW += dKw;
-      s.payout += dPayout;
-      statsByUserId.set(userId, s);
-    };
-
-    for (const proj of blitz?.projects ?? []) {
-      if (proj.phase === 'Cancelled' || proj.phase === 'On Hold') continue;
-      const closerId = proj.closer?.id;
-      const setterId = proj.setter?.id;
-      const m1 = proj.m1Amount ?? 0;
-      const m2 = proj.m2Amount ?? 0;
-      const m3 = proj.m3Amount ?? 0;
-      const sM1 = proj.setterM1Amount ?? 0;
-      const sM2 = proj.setterM2Amount ?? 0;
-      const sM3 = proj.setterM3Amount ?? 0;
-      const kW = proj.kWSize ?? 0;
-
-      if (closerId && setterId && closerId === setterId) {
-        // Same person closed and set (self-gen) — gets everything
-        if (participantIds.has(closerId)) bump(closerId, kW, m1 + m2 + m3 + sM1 + sM2 + sM3);
-      } else {
-        if (closerId && participantIds.has(closerId)) {
-          // Closer always gets M1/M2/M3; setter has separate setterM1Amount.
-          const closerPayout = m1 + m2 + m3;
-          bump(closerId, kW, closerPayout);
-        }
-        if (setterId && setterId !== closerId && participantIds.has(setterId)) {
-          // Setter owns M1 when present, plus setterM2/M3.
-          // kW is attributed to the closer; pass 0 here to avoid double-counting.
-          bump(setterId, 0, sM1 + sM2 + sM3);
-        }
-      }
-      const primaryCloserCredited = !!(closerId && participantIds.has(closerId));
-      let coCloserKwCredited = false;
-      for (const cc of (proj as any).additionalClosers ?? []) {
-        if (cc.userId && participantIds.has(cc.userId)) {
-          // Credit kW to at most one co-closer when the primary closer isn't already credited
-          const ccKw = (!primaryCloserCredited && !coCloserKwCredited) ? kW : 0;
-          if (ccKw > 0) coCloserKwCredited = true;
-          bump(cc.userId, ccKw, (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0));
-        }
-      }
-      for (const cs of (proj as any).additionalSetters ?? []) {
-        if (cs.userId && participantIds.has(cs.userId)) {
-          bump(cs.userId, 0, (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0));
-        }
-      }
-    }
-
-    const entries: LeaderboardEntry[] = participants.map((p: any) => {
-      const stats = statsByUserId.get(p.user.id) ?? { deals: 0, kW: 0, payout: 0 };
-      return {
-        userId: p.user.id,
-        user: p.user, // full user object, so Rep Performance card can render firstName/lastName
-        name: `${p.user.firstName ?? ''} ${p.user.lastName ?? ''}`.trim(),
-        initials: `${(p.user.firstName?.[0] ?? '').toUpperCase()}${(p.user.lastName?.[0] ?? '').toUpperCase()}`,
-        deals: stats.deals,
-        kW: stats.kW,
-        payout: stats.payout,
-      };
-    });
-    entries.sort((a, b) => b.deals - a.deals || b.kW - a.kW);
-    return entries;
-  }, [blitz?.participants, blitz?.projects]);
+  const leaderboard: LeaderboardEntry[] = useMemo(() => computeBlitzLeaderboard(blitz), [blitz]);
 
   const handleSave = async () => {
     if (!editForm.name?.trim()) {
