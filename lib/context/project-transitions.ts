@@ -762,13 +762,14 @@ export function createM3Payroll(
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
+    const setterTraineeName = deps.repsRef.current.find(r => r.id === old.setterId)?.name ?? old.setterName ?? '';
+    const setterTraineeNotesPrefix = `Trainer override M3 — ${setterTraineeName}`;
     const setterTrainerM3AlreadyExists = setterResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(
-      (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === setterResM3Entry.trainerId
+      (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterResM3Entry.trainerId
     ) : false;
     if (setterResM3Entry.rate > 0 && setterResM3Entry.trainerId && setterM3 > 0 && !setterTrainerM3AlreadyExists) {
       const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterResM3Entry.trainerId);
       // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
-      const setterTraineeName = deps.repsRef.current.find(r => r.id === old.setterId)?.name ?? old.setterName ?? '';
       const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterResM3Entry.trainerId && (setterTraineeName ? e.notes?.includes(`— ${setterTraineeName} (`) : true));
       const m2SetterRateMatch = m2SetterTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
       const m2SetterParsed = m2SetterRateMatch ? parseFloat(m2SetterRateMatch[1]) : NaN;

@@ -899,7 +899,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if ((isAcceptance && !isSubDealerDeal) || isInstalled) {
         const freshProject = updated.find((p) => p.id === id);
         if (freshProject) {
-          const fullAmount = isAcceptance ? old.m1Amount : freshProject.m2Amount;
+          const fullAmount = isAcceptance ? freshProject.m1Amount : freshProject.m2Amount;
 
           // Guard: milestone amount must be present for payroll
           if (isAcceptance && fullAmount == null) {

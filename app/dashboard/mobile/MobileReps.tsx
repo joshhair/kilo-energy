@@ -59,9 +59,9 @@ export default function MobileReps() {
   const [adminUsers, setAdminUsers] = useState<SimpleUser[]>([]);
   const [pmUsers, setPmUsers] = useState<SimpleUser[]>([]);
 
-  // Fetch admins + PMs for admin viewers so the role filter can show them.
+  // Fetch admins + PMs for admin/PM viewers so the role filter can show them.
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin && !isPM) return;
     fetch('/api/reps?role=admin')
       .then((r) => r.ok ? r.json() : [])
       .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
@@ -74,7 +74,7 @@ export default function MobileReps() {
         setPmUsers(data.map((u) => ({ ...u, role: 'project_manager' })));
       })
       .catch(() => {});
-  }, [isAdmin]);
+  }, [isAdmin, isPM]);
   const [showAddRep, setShowAddRep] = useState(false);
   const [addForm, setAddForm] = useState({
     firstName: '',
@@ -84,7 +84,7 @@ export default function MobileReps() {
     repType: 'closer' as 'closer' | 'setter' | 'both',
     userRole: 'rep' as 'rep' | 'admin' | 'sub-dealer' | 'project_manager',
   });
-  const [, setIsAddingUser] = useState(false);
+  const [isAddingUser, setIsAddingUser] = useState(false);
 
   // Inactive section expand/collapse state
   const [showInactiveReps, setShowInactiveReps] = useState(false);
@@ -816,7 +816,8 @@ export default function MobileReps() {
           </div>
           <button
             type="submit"
-            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors"
+            disabled={isAddingUser}
+            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors disabled:opacity-50"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
               boxShadow: '0 0 20px rgba(0,229,160,0.3)',
