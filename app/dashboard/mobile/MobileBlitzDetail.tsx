@@ -201,7 +201,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   const tabs: BlitzTab[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'participants', label: 'Participants' },
+    { key: 'participants', label: 'Reps' },
     { key: 'deals', label: 'Deals' },
     ...(isAdmin ? [{ key: 'costs' as BlitzTabKey, label: 'Costs' }] : []),
     ...(isAdmin ? [{ key: 'profitability' as BlitzTabKey, label: 'Profit' }] : []),

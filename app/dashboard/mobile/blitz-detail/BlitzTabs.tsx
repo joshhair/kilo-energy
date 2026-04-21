@@ -16,12 +16,15 @@ interface Props {
 export default function BlitzTabs({ tabs, active, onChange }: Props) {
   const activeIndex = tabs.findIndex((t) => t.key === active);
   return (
-    <div className="flex gap-1 relative" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
+    <div className="grid relative" style={{
+      gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+      borderBottom: '1px solid var(--m-border, var(--border-mobile))',
+    }}>
       {tabs.map((t) => (
         <button
           key={t.key}
           onClick={() => onChange(t.key)}
-          className="flex-1 text-center text-sm font-semibold min-h-[48px] px-2 transition-colors"
+          className="text-center text-xs font-semibold min-h-[48px] px-1 transition-colors truncate"
           style={{
             color: active === t.key ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
