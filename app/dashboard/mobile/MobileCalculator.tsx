@@ -42,7 +42,7 @@ export default function MobileCalculator() {
     solarTechProducts,
     reps,
     trainerAssignments,
-    projects,
+    payrollEntries,
   } = useApp();
   const isHydrated = useIsHydrated();
 
@@ -121,12 +121,8 @@ export default function MobileCalculator() {
   const setterAssignment = effectiveSetterId
     ? trainerAssignments.find((a) => a.traineeId === effectiveSetterId) ?? null
     : null;
-  const setterDealCount = effectiveSetterId
-    ? projects.filter((p) => {
-        const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-        const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return (p.setterId === effectiveSetterId || p.additionalSetters?.some((s) => s.userId === effectiveSetterId)) && fullyPaid;
-      }).length
+  const setterDealCount = setterAssignment
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) ?? null : null;
@@ -135,12 +131,8 @@ export default function MobileCalculator() {
   const closerAssignment = currentRepId
     ? trainerAssignments.find((a) => a.traineeId === currentRepId)
     : null;
-  const closerDealCount = currentRepId
-    ? projects.filter((p) => {
-        const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-        const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return (p.repId === currentRepId || p.additionalClosers?.some((c) => c.userId === currentRepId)) && fullyPaid;
-      }).length
+  const closerDealCount = closerAssignment
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) ?? null : null;

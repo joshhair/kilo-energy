@@ -47,8 +47,10 @@ export function fmt$(amount: number): string {
  */
 export function fmtCompact$(amount: number): string {
   const n = amount || 0;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 10_000) return `$${(n / 1_000).toFixed(1)}K`;
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 10_000) return `${sign}$${(abs / 1_000).toFixed(1)}K`;
   return fmt$(n);
 }
 

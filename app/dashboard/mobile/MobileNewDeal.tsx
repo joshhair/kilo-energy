@@ -201,12 +201,12 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
 export default function MobileNewDeal() {
   const {
     dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName,
-    addDeal, projects, trainerAssignments,
+    addDeal, projects: _projects, trainerAssignments,
     activeInstallers, activeFinancers, reps,
     installerPricingVersions, productCatalogInstallerConfigs,
     productCatalogProducts, productCatalogPricingVersions,
     getInstallerPrepaidOptions, installerBaselines,
-    installerPayConfigs, solarTechProducts,
+    installerPayConfigs, solarTechProducts, payrollEntries,
   } = useApp();
   const { toast } = useToast();
   const isSubDealer = effectiveRole === 'sub-dealer';
@@ -405,12 +405,8 @@ export default function MobileNewDeal() {
   const hasPcProducts = isPcInstaller && pcFamily !== '' && pcFamilyProducts.length > 0;
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
-  const isFullyPaidOut = (p: Project): boolean => {
-    const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-    return pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-  };
-  const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => (p.setterId === form.setterId || p.additionalSetters?.some((s) => s.userId === form.setterId)) && isFullyPaidOut(p)).length
+  const setterCompletedDeals = setterAssignment
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -1368,6 +1364,16 @@ export default function MobileNewDeal() {
                           : activeFinancers
                         ).filter((f) => f !== 'Cash').map((f) => <option key={f} value={f}>{f}</option>)}
                       </select>
+                      {(() => {
+                        const rawMappedFinancer = pcConfig?.familyFinancerMap?.[form.pcFamily] ?? '';
+                        const hasFamilyMap = !!rawMappedFinancer && form.productType !== 'Loan';
+                        const mappedIsArchived = hasFamilyMap && !activeFinancers.includes(rawMappedFinancer);
+                        return mappedIsArchived ? (
+                          <p className="mt-1 text-sm text-yellow-400">
+                            The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
+                          </p>
+                        ) : null;
+                      })()}
                       <FieldError errors={errors} field="financer" />
                     </div>
                   )}

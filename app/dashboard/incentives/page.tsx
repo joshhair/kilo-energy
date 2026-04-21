@@ -20,6 +20,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { EmptyState } from '../components/EmptyState';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 
 // ─── Incentive Templates ──────────────────────────────────────────────────────
 
@@ -162,6 +163,12 @@ export default function IncentivesPage() {
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [incentiveFilter, setIncentiveFilter] = useState('all');
   const [incentiveSort, setIncentiveSort] = useState('newest');
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsScrolled(window.scrollY > 72)
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
   const [editingIncentiveId, setEditingIncentiveId] = useState<string | null>(null);
   const [pendingRewardsOpen, setPendingRewardsOpen] = useState(true);
   const [pastIncentivesOpen, setPastIncentivesOpen] = useState(false);
@@ -541,6 +548,15 @@ export default function IncentivesPage() {
 
   // ── Filter/Sort toolbar (reusable for both sections) ──
   const filterSortToolbar = (
+    <div
+      className={[
+        'sticky top-0 z-20 -mx-4 px-4 md:-mx-8 md:px-8 py-3',
+        'backdrop-blur-md bg-[var(--navy-base)]/80',
+        'border-b border-white/5',
+        'motion-reduce:transition-none transition-shadow duration-200',
+        isScrolled ? 'shadow-[0_4px_24px_rgba(0,0,0,0.40)]' : 'shadow-none',
+      ].join(' ')}
+    >
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 xl:mb-6 xl:border-b xl:border-[var(--border)] xl:pb-4 flex-wrap">
       <div className="w-full sm:w-40">
         <SearchableSelect
@@ -589,6 +605,7 @@ export default function IncentivesPage() {
           {selectMode ? 'Cancel Select' : 'Select'}
         </button>
       )}
+    </div>
     </div>
   );
 
@@ -735,7 +752,7 @@ export default function IncentivesPage() {
             {company.length === 0 ? (
               <EmptyState icon={Trophy} title={incentiveFilter !== 'all' ? 'No company-wide incentives match this filter' : 'No company-wide incentives yet'} description={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : 'Company incentives apply to all reps — create one to boost team performance'} />
             ) : (
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                 {company.map((inc, index) => (
                   <IncentiveCard
                     key={inc.id}
@@ -770,7 +787,7 @@ export default function IncentivesPage() {
             {personal.length === 0 ? (
               <EmptyState icon={Trophy} title={incentiveFilter !== 'all' ? 'No personal incentives match this filter' : isAdmin ? 'No personal incentives created yet' : 'No personal goals assigned to you yet'} description={incentiveFilter !== 'all' ? 'Try a different filter to see more incentives' : isAdmin ? 'Assign personal goals to individual reps to track their milestones' : 'Your admin will assign personal goals when they are ready'} />
             ) : (
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                 {personal.map((inc, index) => (
                   <IncentiveCard
                     key={inc.id}
@@ -797,20 +814,17 @@ export default function IncentivesPage() {
       {/* Pending Rewards section (admin only) */}
       {isAdmin && pendingRewards.length > 0 && (
         <div className="mt-8">
-          <button
-            onClick={() => setPendingRewardsOpen((v) => !v)}
-            className="flex items-center gap-2 mb-4 group"
+          <CollapsibleSection
+            title="Pending Rewards"
+            icon={<Gift className="w-4 h-4 text-amber-400" />}
+            badge={
+              <span className="text-xs bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">
+                {pendingRewards.length}
+              </span>
+            }
+            isOpen={pendingRewardsOpen}
+            onToggle={() => setPendingRewardsOpen((v) => !v)}
           >
-            <Gift className="w-4 h-4 text-amber-400" />
-            <h2 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider group-hover:text-[var(--text-secondary)] transition-colors">
-              Pending Rewards
-            </h2>
-            <span className="text-xs bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">
-              {pendingRewards.length}
-            </span>
-            {pendingRewardsOpen ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
-          </button>
-          {pendingRewardsOpen && (
             <div className="space-y-2">
               {pendingRewards.map(({ incentive, milestone }) => (
                 <div
@@ -837,27 +851,24 @@ export default function IncentivesPage() {
                 </div>
               ))}
             </div>
-          )}
+          </CollapsibleSection>
         </div>
       )}
 
       {/* Past Incentives (expired archive) */}
       {expiredVisible.length > 0 && incentiveFilter === 'all' && (
         <div className="mt-8">
-          <button
-            onClick={() => setPastIncentivesOpen((v) => !v)}
-            className="flex items-center gap-2 mb-4 group"
+          <CollapsibleSection
+            title="Past Incentives"
+            icon={<Archive className="w-4 h-4 text-[var(--text-muted)]" />}
+            badge={
+              <span className="text-xs bg-[var(--border)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full font-medium">
+                {expiredVisible.length}
+              </span>
+            }
+            isOpen={pastIncentivesOpen}
+            onToggle={() => setPastIncentivesOpen((v) => !v)}
           >
-            <Archive className="w-4 h-4 text-[var(--text-muted)]" />
-            <h2 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider group-hover:text-[var(--text-secondary)] transition-colors">
-              Past Incentives
-            </h2>
-            <span className="text-xs bg-[var(--border)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full font-medium">
-              {expiredVisible.length}
-            </span>
-            {pastIncentivesOpen ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
-          </button>
-          {pastIncentivesOpen && (
             <div className="grid gap-3">
               {filterAndSort(expiredVisible).map((inc) => {
                 const progress = computeIncentiveProgress(inc, projects, payrollEntries);
@@ -903,7 +914,7 @@ export default function IncentivesPage() {
                 );
               })}
             </div>
-          )}
+          </CollapsibleSection>
         </div>
       )}
 
@@ -1053,7 +1064,7 @@ function IncentiveCard({
 
   return (
     <div
-      className={`relative rounded-2xl border overflow-hidden transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-[var(--accent-green)]/5 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[var(--accent-green)]/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${Math.min(cardIndex, 6)} ${!incentive.active ? 'opacity-50' : ''}`}
+      className={`relative rounded-2xl border overflow-hidden transition-[transform,box-shadow] duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 hover:translate-y-[-3px] hover:shadow-[0_0_28px_rgba(16,185,129,0.13),0_8px_32px_rgba(0,0,0,0.32)] active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[var(--accent-green)]/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${Math.min(cardIndex, 6)} ${!incentive.active ? 'opacity-50' : ''}`}
       style={{ borderColor: incentive.type === 'company' ? 'rgba(77,159,255,0.3)' : 'rgba(180,125,255,0.3)', background: 'var(--surface)' }}
     >
       {/* Header */}

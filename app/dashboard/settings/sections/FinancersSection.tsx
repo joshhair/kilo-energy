@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  Plus, EyeOff, Eye, Trash2, Search, ChevronRight, ChevronDown,
+  Plus, EyeOff, Eye, Trash2, Search, ChevronDown,
   ListChecks, CheckSquare, Square, Landmark,
 } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
@@ -220,9 +220,13 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
             onClick={() => setArchivedFinancersOpen((v) => !v)}
             className="flex items-center gap-2 mb-2 px-1 w-full text-left group"
           >
-            {archivedFinancersOpen
-              ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-dim)]" />
-              : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-dim)]" />}
+            <ChevronDown
+              className="w-3.5 h-3.5 text-[var(--text-dim)]"
+              style={{
+                transform: archivedFinancersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 350ms cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            />
             <p className="text-xs font-semibold text-[var(--text-dim)] uppercase tracking-wider">Archived</p>
             <span className="text-[10px] font-medium text-[var(--text-dim)] bg-[var(--surface-card)] border border-[var(--border-subtle)]/50 px-1.5 py-0.5 rounded-full">
               {archivedFinancers.length}
@@ -248,7 +252,15 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               </span>
             )}
           </button>
-          {archivedFinancersOpen && (
+          <div
+            className="motion-reduce:transition-none"
+            style={{
+              display: 'grid',
+              gridTemplateRows: archivedFinancersOpen ? '1fr' : '0fr',
+              transition: 'grid-template-rows 350ms cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+          <div style={{ overflow: 'hidden' }}>
           <div className="grid grid-cols-2 gap-2">
             {archivedFinancers.map((fin) => (
               <div key={fin.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group opacity-60 hover:opacity-90 transition-opacity ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-green)]/40 opacity-90' : ''}`}>
@@ -300,7 +312,8 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               </div>
             ))}
           </div>
-          )}
+          </div>
+          </div>
         </div>
         );
       })()}

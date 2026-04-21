@@ -203,7 +203,7 @@ export default function CalculatorPageWrapper() {
 function CalculatorPage() {
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
-  const { currentRepId, effectiveRole, trainerAssignments, projects, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
+  const { currentRepId, effectiveRole, trainerAssignments, projects, payrollEntries, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
   const [installer, setInstaller] = useState('');
   const [solarTechFamily, setSolarTechFamily] = useState('');
@@ -435,12 +435,8 @@ function CalculatorPage() {
   const setterAssignment = effectiveSetterId
     ? trainerAssignments.find((a) => a.traineeId === effectiveSetterId)
     : null;
-  const setterDealCount = effectiveSetterId
-    ? projects.filter((p) => {
-        const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-        const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return (p.setterId === effectiveSetterId || p.additionalSetters?.some((s) => s.userId === effectiveSetterId)) && fullyPaid;
-      }).length
+  const setterDealCount = setterAssignment
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -454,12 +450,8 @@ function CalculatorPage() {
   const closerAssignment = effectiveCloserId
     ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;
-  const closerDealCount = effectiveCloserId
-    ? projects.filter((p) => {
-        const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-        const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
-        return (p.repId === effectiveCloserId || p.additionalClosers?.some((c) => c.userId === effectiveCloserId)) && fullyPaid;
-      }).length
+  const closerDealCount = closerAssignment
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
@@ -624,7 +616,8 @@ function CalculatorPage() {
   const animatedSetterTotal  = useCountUp(setterTotal);
   const animatedTrainerTotal        = useCountUp(trainerTotal);
   const animatedCloserTrainerTotal  = useCountUp(closerTrainerTotal);
-  const animatedKiloTotal           = useCountUp(kiloTotal);
+  const kiloNetMargin               = Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal);
+  const animatedKiloTotal           = useCountUp(kiloNetMargin);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
   if (effectiveRole === 'project_manager') {
@@ -1110,7 +1103,7 @@ function CalculatorPage() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${animatedKiloTotal.toLocaleString()}</span>
-                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>{Math.round((kiloTotal / breakdownTotal) * 100)}%</span>}
+                        {breakdownTotal > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>{Math.round((kiloNetMargin / breakdownTotal) * 100)}%</span>}
                       </div>
                     </div>
                   )}

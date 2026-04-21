@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireInternalUser } from '../../../lib/api-auth';
+import { requireInternalUser, relationshipToProject } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzSchema } from '../../../lib/schemas/business';
-import { serializeProject, serializeBlitzCost, serializeProjectParty } from '../../../lib/serialize';
+import { serializeProject, serializeBlitzCost, serializeProjectParty, scrubProjectForViewer } from '../../../lib/serialize';
 import { logger } from '../../../lib/logger';
 
 // GET /api/blitzes — List blitzes scoped to the current user's role.
@@ -50,48 +50,39 @@ export async function GET() {
     orderBy: { startDate: 'desc' },
   });
 
-  // Non-admins: strip other reps' financial data from projects + hide costs
+  // Non-admins: hide costs for blitzes they don't own.
   if (user.role !== 'admin') {
     for (const b of blitzes) {
       const isBlitzOwner = b.ownerId === user.id || b.createdById === user.id;
       if (!isBlitzOwner) (b as { costs: unknown[] }).costs = [];
-      for (const p of b.projects) {
-        const isMyDeal = p.closerId === user.id || p.setterId === user.id
-          || p.additionalClosers.some((ac: { userId: string }) => ac.userId === user.id)
-          || p.additionalSetters.some((as: { userId: string }) => as.userId === user.id);
-        if (!isMyDeal) {
-          p.netPPW = 0;
-          p.m1AmountCents = 0;
-          p.m2AmountCents = 0;
-          p.m3AmountCents = 0;
-          p.setterM1AmountCents = 0;
-          p.setterM2AmountCents = 0;
-          p.setterM3AmountCents = 0;
-          for (const ac of p.additionalClosers) {
-            ac.m1AmountCents = 0;
-            ac.m2AmountCents = 0;
-            ac.m3AmountCents = 0;
-          }
-          for (const as of p.additionalSetters) {
-            as.m1AmountCents = 0;
-            as.m2AmountCents = 0;
-            as.m3AmountCents = 0;
-          }
-        }
-      }
     }
   }
 
-  // Wire format is dollars; convert at the seam.
+  // Wire format is dollars; per-project financial scrubbing uses
+  // scrubProjectForViewer (same as GET /api/blitzes/[id]) so co-party
+  // relationships are classified correctly and only the viewer's own
+  // commission amounts are visible.
   const serialized = blitzes.map((b) => ({
     ...b,
     projects: b.projects.map((p) => {
       const sp = serializeProject(p);
-      return {
+      const withParties = {
         ...sp,
         additionalClosers: p.additionalClosers.map(serializeProjectParty),
         additionalSetters: p.additionalSetters.map(serializeProjectParty),
       };
+      if (user.role !== 'admin') {
+        const rel = relationshipToProject(user, {
+          closerId: p.closerId,
+          setterId: p.setterId,
+          subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,
+          trainerId: (p as { trainerId?: string | null }).trainerId ?? null,
+          additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
+          additionalSetters: withParties.additionalSetters.map((sv) => ({ userId: sv.userId })),
+        });
+        return scrubProjectForViewer(withParties, rel);
+      }
+      return withParties;
     }),
     costs: b.costs.map(serializeBlitzCost),
   }));
@@ -175,8 +166,8 @@ export async function POST(req: NextRequest) {
       blitzId: null,
       soldDate: { gte: blitz.startDate, lte: blitz.endDate },
       OR: [
-        { additionalClosers: { some: { userId: ownerId } } },
-        { additionalSetters: { some: { userId: ownerId } } },
+        { additionalClosers: { some: { userId: ownerId } }, closerId: { in: approvedIds } },
+        { additionalSetters: { some: { userId: ownerId } }, setterId: { in: approvedIds } },
       ],
     },
     select: { id: true },

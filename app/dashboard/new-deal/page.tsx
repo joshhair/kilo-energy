@@ -37,7 +37,7 @@ export default function NewDealPageWrapper() {
 }
 
 function NewDealPage() {
-  const { dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
+  const { dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName, addDeal, projects, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts, payrollEntries } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
   const isHydrated = useIsHydrated();
@@ -318,36 +318,16 @@ function NewDealPage() {
     setForm((prev) => ({ ...prev, setterId: '' }));
   }, [form.setterId, setterPickerReps]);
 
-  // Trainer override tier progression counts deals where the FINAL milestone
-  // payment has actually been paid out. The "final" milestone depends on
-  // the installer's payment model:
-  //   installPayPct < 100  → installer pays at Installed AND PTO. Final
-  //                          payment is M3 (paid at PTO). Count m3Paid.
-  //   installPayPct === 100 → installer pays in full at Installed (no
-  //                          M3 leg, e.g. SolarTech). Final payment is
-  //                          M2. Count m2Paid.
-  // Phase-based counting was wrong on both ends: it credited deals before
-  // money flowed (Installed phase) and ignored that some installers skip
-  // M3 entirely (would never reach Completed under the agent's restricted
-  // logic if admin doesn't manually advance them).
-  const isFullyPaidOut = (p: typeof projects[number]): boolean => {
-    const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-    if (pct < 100) {
-      return p.m3Paid === true;
-    }
-    return p.m2Paid === true;
-  };
-
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
-  const setterCompletedDeals = form.setterId
-    ? projects.filter((p) => (p.setterId === form.setterId || p.additionalSetters?.some((s) => s.userId === form.setterId)) && isFullyPaidOut(p)).length
+  const setterCompletedDeals = setterAssignment
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
-  const closerCompletedDeals = closerId
-    ? projects.filter((p) => (p.repId === closerId || p.additionalClosers?.some((c) => c.userId === closerId)) && isFullyPaidOut(p)).length
+  const closerCompletedDeals = closerAssignment
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;

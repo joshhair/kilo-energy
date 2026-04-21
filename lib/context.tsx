@@ -568,6 +568,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const newEntries: PayrollEntry[] = [];
 
             let baseEntries = prevEntries;
+            const closerHasPaidM1 = !old.setterId && prevEntries.some(
+              (e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1' && e.status === 'Paid'
+            );
             if (!old.setterId && pastAcceptance) {
               const closerM1 = prevEntries.filter(
                 (e) => e.projectId === id && e.repId === old.repId && e.paymentStage === 'M1' && (e.status === 'Draft' || e.status === 'Pending')
@@ -581,7 +584,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const effectiveSetterM1 = updates.setterM1Amount ?? old.setterM1Amount;
             const effectiveSetterM2 = updates.setterM2Amount ?? old.setterM2Amount;
             const effectiveSetterM3 = updates.setterM3Amount ?? old.setterM3Amount;
-            if (shouldCreateSetterM1OnSetterAdd({
+            if (!closerHasPaidM1 && shouldCreateSetterM1OnSetterAdd({
               pastAcceptance,
               effectiveSetterM1,
               projectId: id,
