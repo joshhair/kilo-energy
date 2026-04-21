@@ -112,7 +112,11 @@ export default function MobileMyPay() {
     let entries = payrollEntries.filter((p) => p.repId === effectiveRepId);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      entries = entries.filter((e) => (e.customerName ?? '').toLowerCase().includes(q));
+      entries = entries.filter((e) =>
+        (e.customerName ?? '').toLowerCase().includes(q) ||
+        (e.notes ?? '').toLowerCase().includes(q) ||
+        (e.repName ?? '').toLowerCase().includes(q)
+      );
     }
     if (filterType !== 'all') {
       entries = entries.filter((e) => e.paymentStage === filterType);
@@ -168,11 +172,7 @@ export default function MobileMyPay() {
     () =>
       projects.filter(
         (p) =>
-          (p.repId === effectiveRepId ||
-            p.setterId === effectiveRepId ||
-            p.trainerId === effectiveRepId ||
-            (p.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) ||
-            (p.additionalSetters ?? []).some((s) => s.userId === effectiveRepId)) &&
+          (p.repId === effectiveRepId || p.setterId === effectiveRepId) &&
           p.phase !== 'Cancelled' &&
           p.phase !== 'On Hold',
       ),

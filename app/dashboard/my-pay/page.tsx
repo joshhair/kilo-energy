@@ -276,6 +276,13 @@ function MyPayPageInner() {
       .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
   }, [myProjects, effectiveRepId]);
 
+  const projectedM3 = useMemo(() => {
+    const prePTO = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'];
+    return myProjects
+      .filter((p) => prePTO.includes(p.phase))
+      .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM3Amount ?? 0) : (p.m3Amount ?? 0)), 0);
+  }, [myProjects, effectiveRepId]);
+
   // ── Annual Projection ──
   // Uses multiple signals: deal closing pace, average commission per deal, paid history, and pipeline.
   const annualProjection = useMemo(() => {
@@ -555,7 +562,7 @@ function MyPayPageInner() {
             <TrendingUp className="w-4 h-4 text-[var(--accent-green)]/50" />
           </div>
           <p className="font-black tabular-nums text-[var(--accent-green)] stat-value break-words"
-             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2)}</p>
+             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
       </div>
@@ -563,7 +570,7 @@ function MyPayPageInner() {
       {/* ── Projected Pipeline ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
         {/* Projected pipeline */}
-        {(projectedM1 > 0 || projectedM2 > 0) && (
+        {(projectedM1 > 0 || projectedM2 > 0 || projectedM3 > 0) && (
           <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-6">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-4 h-4 text-[var(--accent-green)]" />
@@ -600,6 +607,22 @@ function MyPayPageInner() {
                   </div>
                   <p className="text-violet-400 font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
                     {fmt$(projectedM2)}
+                  </p>
+                </div>
+              )}
+              {projectedM3 > 0 && (
+                <div className="card-surface rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                      <span className="text-teal-400 text-xs font-bold">M3</span>
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold">Pending M3</p>
+                      <p className="text-[var(--text-dim)] text-[10px]">Awaiting PTO</p>
+                    </div>
+                  </div>
+                  <p className="text-teal-400 font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(20,184,166,0.3)' }}>
+                    {fmt$(projectedM3)}
                   </p>
                 </div>
               )}

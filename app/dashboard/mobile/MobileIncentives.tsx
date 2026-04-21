@@ -274,6 +274,28 @@ export default function MobileIncentives() {
       .catch(() => { setIncentives((list) => list.map((i) => i.id === incId ? { ...i, milestones: prev } : i)); toast('Failed to update', 'error'); });
   };
 
+  const handleToggleActive = (inc: Incentive) => {
+    const next = !inc.active;
+    setIncentives((prev) => prev.map((i) => i.id === inc.id ? { ...i, active: next } : i));
+    fetch(`/api/incentives/${inc.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: next }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(next ? 'Incentive activated' : 'Incentive deactivated'); })
+      .catch(() => { setIncentives((prev) => prev.map((i) => i.id === inc.id ? { ...i, active: inc.active } : i)); toast('Failed to update incentive', 'error'); });
+  };
+
+  const handleDelete = (inc: Incentive) => {
+    setConfirmAction({
+      title: 'Delete incentive?',
+      message: `Permanently delete "${inc.title}"? This cannot be undone.`,
+      onConfirm: () => {
+        setIncentives((prev) => prev.filter((i) => i.id !== inc.id));
+        fetch(`/api/incentives/${inc.id}`, { method: 'DELETE' })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Incentive deleted'); })
+          .catch(() => { setIncentives((prev) => [...prev, inc]); toast('Failed to delete incentive', 'error'); });
+        setConfirmAction(null);
+      },
+    });
+  };
+
   const handleDuplicate = async (source: Incentive) => {
     try {
       const res = await fetch('/api/incentives', {
@@ -472,7 +494,7 @@ export default function MobileIncentives() {
           ) : (
             <div className="space-y-3">
               {filteredList.map((inc) => (
-                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired={isExpired(inc.endDate)} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired={isExpired(inc.endDate)} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
               ))}
             </div>
           )}
@@ -570,21 +592,19 @@ function CreateIncentiveSheet({
   const [startDate, setStartDate] = useState<string>(todayISO());
   const [endDate, setEndDate] = useState<string>('');
   const [targetRepId, setTargetRepId] = useState<string>('');
-  const [threshold, setThreshold] = useState<string>('');
-  const [reward, setReward] = useState<string>('');
+  const [milestones, setMilestones] = useState<{ threshold: string; reward: string }[]>([{ threshold: '', reward: '' }]);
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
     setTitle(''); setType('company'); setMetric('deals'); setPeriod('month');
     setStartDate(todayISO()); setEndDate(''); setTargetRepId('');
-    setThreshold(''); setReward(''); setSubmitting(false);
+    setMilestones([{ threshold: '', reward: '' }]); setSubmitting(false);
   };
 
   const canSubmit =
     title.trim().length > 0 &&
-    threshold.trim().length > 0 &&
-    Number(threshold) > 0 &&
-    reward.trim().length > 0 &&
+    milestones.length > 0 &&
+    milestones.every((m) => Number(m.threshold) > 0 && m.reward.trim().length > 0) &&
     (type === 'company' || !!targetRepId);
 
   const handleSubmit = async () => {
@@ -601,7 +621,7 @@ function CreateIncentiveSheet({
         endDate: endDate || undefined,
         targetRepId: type === 'personal' ? targetRepId : undefined,
         active: true,
-        milestones: [{ threshold: Number(threshold), reward: reward.trim() }],
+        milestones: milestones.map((m) => ({ threshold: Number(m.threshold), reward: m.reward.trim() })),
       };
       const res = await fetch('/api/incentives', {
         method: 'POST',
@@ -718,14 +738,49 @@ function CreateIncentiveSheet({
           </div>
         )}
 
-        {/* Single milestone (multi-milestone editing happens on desktop) */}
+        {/* Milestones */}
         <div>
-          <label className={labelCls}>Goal</label>
-          <div className="grid grid-cols-[1fr_2fr] gap-2">
-            <input className={inputCls} style={inputStyle} type="number" min="0" placeholder="10" value={threshold} onChange={(e) => setThreshold(e.target.value)} />
-            <input className={inputCls} style={inputStyle} placeholder="Reward (e.g. $500)" value={reward} onChange={(e) => setReward(e.target.value)} />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className={labelCls} style={{ marginBottom: 0 }}>Goals</label>
+            <button
+              onClick={() => setMilestones((prev) => [...prev, { threshold: '', reward: '' }])}
+              className="text-xs font-semibold px-2.5 py-1 rounded-lg"
+              style={{ background: 'rgba(0,229,160,0.12)', color: 'var(--accent-emerald)' }}
+            >
+              + Add
+            </button>
           </div>
-          <p className="text-[11px] text-[var(--m-text-dim,#445577)] mt-1">Need multiple goal tiers? Add them on the desktop view after creating.</p>
+          <div className="space-y-2">
+            {milestones.map((ms, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] w-20 shrink-0"
+                  style={inputStyle}
+                  type="number"
+                  min="0"
+                  placeholder="Goal"
+                  value={ms.threshold}
+                  onChange={(e) => setMilestones((prev) => prev.map((m, i) => i === idx ? { ...m, threshold: e.target.value } : m))}
+                />
+                <input
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] flex-1 min-w-0"
+                  style={inputStyle}
+                  placeholder="Reward (e.g. $500)"
+                  value={ms.reward}
+                  onChange={(e) => setMilestones((prev) => prev.map((m, i) => i === idx ? { ...m, reward: e.target.value } : m))}
+                />
+                {milestones.length > 1 && (
+                  <button
+                    onClick={() => setMilestones((prev) => prev.filter((_, i) => i !== idx))}
+                    className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Submit */}
@@ -965,6 +1020,8 @@ function IncentiveCard({
   isAdmin,
   onEdit,
   onDuplicate,
+  onToggleActive,
+  onDelete,
   selectMode,
   selected,
   onToggleSelect,
@@ -977,6 +1034,8 @@ function IncentiveCard({
   isAdmin?: boolean;
   onEdit?: () => void;
   onDuplicate?: () => void;
+  onToggleActive?: () => void;
+  onDelete?: () => void;
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -1113,6 +1172,22 @@ function IncentiveCard({
             style={{ background: 'rgba(160,108,246,0.12)', color: '#a06cf6' }}
           >
             <Copy className="w-3.5 h-3.5" /> Duplicate
+          </button>
+          <button
+            onClick={onToggleActive}
+            className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
+            style={incentive.active
+              ? { background: 'rgba(245,158,11,0.12)', color: 'var(--accent-amber, #f5a623)' }
+              : { background: 'rgba(0,229,160,0.12)', color: 'var(--accent-emerald)' }}
+          >
+            {incentive.active ? 'Deactivate' : 'Activate'}
+          </button>
+          <button
+            onClick={onDelete}
+            className="w-9 min-h-[36px] rounded-lg flex items-center justify-center shrink-0 active:scale-[0.97] transition-transform"
+            style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       )}

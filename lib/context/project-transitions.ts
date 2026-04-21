@@ -188,7 +188,7 @@ export function handleChargebacks(
 ): ChargebackResult {
   // Remove Draft/Pending entries immediately
   const draftOrPendingEntries = prevEntries.filter(
-    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && (e.status === 'Draft' || e.status === 'Pending')
+    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && e.paymentStage !== 'Trainer' && (e.status === 'Draft' || e.status === 'Pending')
   );
   const toDeleteIds = draftOrPendingEntries.map((e) => e.id);
 
@@ -204,7 +204,7 @@ export function handleChargebacks(
     : prevEntries;
 
   const paidEntries = remaining.filter(
-    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && e.status === 'Paid'
+    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && e.paymentStage !== 'Trainer' && e.status === 'Paid'
   );
   if (paidEntries.length === 0) return { toAdd: [], toDeleteIds };
 

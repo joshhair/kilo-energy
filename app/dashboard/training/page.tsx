@@ -674,7 +674,7 @@ function TrainingPageInner() {
 
   if (!isHydrated) return <TrainingSkeleton />;
 
-  if (isMobile) return <MobileTraining />;
+  if (isMobile && effectiveRole !== 'admin') return <MobileTraining />;
 
   if (effectiveRole === 'project_manager') {
     return (

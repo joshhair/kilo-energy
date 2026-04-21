@@ -80,7 +80,9 @@ function PayrollPageInner() {
   const paymentSubmitting = useRef(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [publishingPayroll, setPublishingPayroll] = useState(false);
+  const publishingPayrollRef = useRef(false);
   const [markingForPayroll, setMarkingForPayroll] = useState(false);
+  const markingForPayrollRef = useRef(false);
   // Unified add-payment form — covers Deal (requires project + stage) and
   // Bonus (just amount + notes + date). Toggle in the modal switches the
   // field set. Replaced the standalone Add Bonus modal in Batch 4.
@@ -338,7 +340,8 @@ function PayrollPageInner() {
   // repGroups removed — flat table rendering uses paginatedFiltered directly
 
   const handlePublish = async () => {
-    if (publishingPayroll) return;
+    if (publishingPayrollRef.current) return;
+    publishingPayrollRef.current = true;
     setPublishingPayroll(true);
     // Publish only Pending entries matching the active type tab
     const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending' && e.date <= today);
@@ -350,7 +353,7 @@ function PayrollPageInner() {
     setShowPublishConfirm(false);
     setAdminPage(1);
     changeStatusTab('Paid');
-    toast(`Payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
+    toast(`${typeTab} payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
     // Persist to DB via bulk endpoint for atomicity
     try {
       const res = await fetch('/api/payroll', {
@@ -414,12 +417,14 @@ function PayrollPageInner() {
       }
       toast(`Payroll failed to save — rolled back`, 'error');
     } finally {
+      publishingPayrollRef.current = false;
       setPublishingPayroll(false);
     }
   };
 
   const handleMarkForPayroll = async () => {
-    if (markingForPayroll) return;
+    if (markingForPayrollRef.current) return;
+    markingForPayrollRef.current = true;
     setMarkingForPayroll(true);
     const amount = filtered
       .filter((e) => selectedIds.has(e.id))
@@ -433,6 +438,7 @@ function PayrollPageInner() {
     } catch {
       toast('Failed to move entries to Pending', 'error');
     } finally {
+      markingForPayrollRef.current = false;
       setMarkingForPayroll(false);
     }
   };

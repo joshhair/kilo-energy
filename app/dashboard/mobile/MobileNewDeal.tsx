@@ -542,8 +542,8 @@ export default function MobileNewDeal() {
       return 0;
     }
   })();
-  const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0
-    ? Math.max(0, (subDealerRate - kiloPerW) * kW * 1000)
+  const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0 && subDealerRate > kiloPerW
+    ? Math.round((subDealerRate - kiloPerW) * kW * 1000 * 100) / 100
     : 0;
 
   // ── Step validation ───────────────────────────────────────────────────────

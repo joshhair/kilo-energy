@@ -90,6 +90,7 @@ export default function MobileReps() {
     phone: '',
     repType: 'closer' as 'closer' | 'setter' | 'both',
     userRole: 'rep' as 'rep' | 'admin' | 'sub-dealer' | 'project_manager',
+    trainerId: '',
   });
   const [isAddingUser, setIsAddingUser] = useState(false);
 
@@ -703,7 +704,7 @@ export default function MobileReps() {
         open={showAddRep}
         onClose={() => {
           setShowAddRep(false);
-          setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep' });
+          setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep', trainerId: '' });
         }}
         title="Add User"
       >
@@ -725,6 +726,8 @@ export default function MobileReps() {
               const ln = addForm.lastName.trim();
               const em = addForm.email.trim();
               const ph = addForm.phone.trim();
+              const trainerIdSnapshot = addForm.userRole === 'rep' ? addForm.trainerId : '';
+              let newRepId: string | null = null;
               if (needsInvite) {
                 const res = await fetch('/api/users/invite', {
                   method: 'POST',
@@ -753,11 +756,22 @@ export default function MobileReps() {
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
+                newRepId = data.id;
                 addRep(fn, ln, em, ph, addForm.repType, data.id);
                 toast(`${fn} ${ln} added`, 'success');
               }
+              if (trainerIdSnapshot && newRepId) {
+                fetch('/api/trainer-assignments', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ trainerId: trainerIdSnapshot, traineeId: newRepId, tiers: [{ upToDeal: null, ratePerW: 0.05 }] }),
+                })
+                  .then((r) => { if (!r.ok) throw new Error(); })
+                  .then(() => toast('Trainer assigned', 'success'))
+                  .catch(() => toast('Failed to assign trainer', 'error'));
+              }
               setShowAddRep(false);
-              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep' });
+              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep', trainerId: '' });
             } catch (err) {
               toast((err as Error).message || 'Failed to add user', 'error');
             } finally {
@@ -840,27 +854,49 @@ export default function MobileReps() {
               } as React.CSSProperties}
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
-            <div className="flex gap-2">
-              {(['closer', 'setter', 'both'] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
-                  className="flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors"
-                  style={{
-                    background: addForm.repType === type ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                    color: addForm.repType === type ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                    border: addForm.repType === type ? '1px solid var(--accent-emerald)' : '1px solid var(--m-border, var(--border-mobile))',
-                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  }}
-                >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </button>
-              ))}
+          {addForm.userRole === 'rep' && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
+              <div className="flex gap-2">
+                {(['closer', 'setter', 'both'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
+                    className="flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors"
+                    style={{
+                      background: addForm.repType === type ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                      color: addForm.repType === type ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                      border: addForm.repType === type ? '1px solid var(--accent-emerald)' : '1px solid var(--m-border, var(--border-mobile))',
+                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    }}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+          {addForm.userRole === 'rep' && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer (optional)</label>
+              <select
+                value={addForm.trainerId}
+                onChange={(e) => setAddForm((f) => ({ ...f, trainerId: e.target.value }))}
+                className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+                style={{
+                  background: 'var(--m-card, var(--surface-mobile-card))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                <option value="">-- No trainer --</option>
+                {reps.filter((r) => r.active !== false && r.role === 'rep').map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="submit"
             disabled={isAddingUser}

@@ -20,6 +20,8 @@ const COST_BAR: Record<string, string> = {
 interface Props {
   approvedVisibleProjects: any[];
   approvedParticipantIds: Set<string>;
+  approvedParticipants: any[];
+  leaderboard: any[];
   totalCosts: number;
   kiloMargin: number;
   costsByCategory: Record<string, number>;
@@ -31,6 +33,8 @@ interface Props {
 export default function BlitzProfitability({
   approvedVisibleProjects,
   approvedParticipantIds,
+  approvedParticipants,
+  leaderboard,
   totalCosts,
   kiloMargin,
   costsByCategory,
@@ -146,6 +150,44 @@ export default function BlitzProfitability({
           </div>
         </div>
       )}
+
+      {approvedParticipants.length > 0 && leaderboard.length > 0 && (() => {
+        const repStats = leaderboard.map((r) => ({ user: r.user, deals: r.deals, kw: r.kW, payout: r.payout }));
+        const maxKW = Math.max(...repStats.map((r) => r.kw), 1);
+        const barColors = ['#f59e0b', 'var(--m-text-dim, #445577)', '#ea580c', 'var(--m-text-dim, #445577)'];
+        return (
+          <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Performance</p>
+            <div className="space-y-3">
+              {repStats.map((rep, idx) => (
+                <div key={rep.user.id} className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                        style={{ background: idx === 0 ? 'rgba(245,158,11,0.2)' : 'rgba(68,85,119,0.3)', color: idx === 0 ? '#fcd34d' : 'var(--m-text-muted, var(--text-mobile-muted))', border: `1px solid ${idx === 0 ? 'rgba(245,158,11,0.3)' : 'var(--m-border, var(--border-mobile))'}` }}
+                      >
+                        {idx + 1}
+                      </div>
+                      <span className="text-sm font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.user.firstName} {rep.user.lastName}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 text-xs tabular-nums">
+                      <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.deals}d · {rep.kw.toFixed(1)} kW</span>
+                      <span className="font-semibold" style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(rep.payout)}</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
+                    <div
+                      className="h-full rounded-full bar-grow-anim"
+                      style={{ background: barColors[Math.min(idx, barColors.length - 1)], '--bar-w': `${(rep.kw / maxKW) * 100}%`, '--bar-delay': `${idx * 60}ms` } as React.CSSProperties}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

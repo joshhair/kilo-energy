@@ -1028,7 +1028,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           icon={project.flagged ? FlagOff : Flag}
           onTap={handleFlag}
         />
-        {project.phase !== 'Cancelled' && (isAdmin || isPM || effectiveRepId === project.repId) && (
+        {project.phase !== 'Cancelled' && (isAdmin || isPM) && (
           <MobileBottomSheet.Item
             label="Cancel Project"
             icon={XIcon}

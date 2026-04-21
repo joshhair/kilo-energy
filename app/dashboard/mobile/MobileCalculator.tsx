@@ -31,6 +31,7 @@ function fmt$(n: number | null | undefined): string {
 
 export default function MobileCalculator() {
   const {
+    currentRepId,
     effectiveRole,
     activeInstallers,
     installerPricingVersions,
@@ -61,6 +62,8 @@ export default function MobileCalculator() {
   // Selected setter rep ID — when set, trainer rate is auto-derived from
   // the setter's trainer assignment, matching desktop calculator behavior.
   const [selectedSetterId, setSelectedSetterId] = useState('');
+  // Optional sold date for historical pricing lookups (admin use case)
+  const [pricingDate, setPricingDate] = useState('');
 
   // ── Derived installer flags ──────────────────────────────────────────────
   const isSolarTech = installer === 'SolarTech';
@@ -87,6 +90,8 @@ export default function MobileCalculator() {
     true
   );
 
+  const effectivePricingDate = pricingDate || todayLocalDateStr();
+
   // ── Commission calculation ───────────────────────────────────────────────
   const { closerPerW, setterBaselinePerW, kiloPerW } = (() => {
     if (!hasInput) return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 };
@@ -98,13 +103,12 @@ export default function MobileCalculator() {
     }
     if (isPcInstaller) {
       try {
-        const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, todayLocalDateStr(), productCatalogPricingVersions);
+        const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, effectivePricingDate, productCatalogPricingVersions);
         return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
       } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
-    const today = todayLocalDateStr();
     try {
-      const r = getInstallerRatesForDeal(installer, today, kW, installerPricingVersions);
+      const r = getInstallerRatesForDeal(installer, effectivePricingDate, kW, installerPricingVersions);
       return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
     } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
   })();
@@ -127,6 +131,23 @@ export default function MobileCalculator() {
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) ?? null : null;
 
+  // Closer trainer — mirrors desktop calculator logic
+  const closerAssignment = currentRepId
+    ? trainerAssignments.find((a) => a.traineeId === currentRepId)
+    : null;
+  const closerDealCount = currentRepId
+    ? projects.filter((p) => {
+        const pct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+        const fullyPaid = pct < 100 ? p.m3Paid === true : p.m2Paid === true;
+        return (p.repId === currentRepId || p.additionalClosers?.some((c) => c.userId === currentRepId)) && fullyPaid;
+      }).length
+    : 0;
+  const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
+  const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) ?? null : null;
+  const closerTrainerTotal = closerTrainerRate > 0 && kW > 0 && soldPPW > 0
+    ? Math.round(closerTrainerRate * kW * 1000 * 100) / 100
+    : 0;
+
   // Commission split via the same resolver the server uses on POST +
   // PATCH (Batch 2b.4), so the mobile preview matches what a deal in
   // these exact conditions would actually pay. Self-gen = paired=false,
@@ -134,6 +155,7 @@ export default function MobileCalculator() {
   // closer side with M1 flat $1000 (if kW ≥ 5) or $500.
   const isSelfGen = !isPaired || !selectedSetterId || setterBaselinePerW === 0;
   const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+  const hasM3Split = installPayPct < 100;
   const split = hasInput && soldPPW > 0
     ? splitCloserSetterPay(
         soldPPW,
@@ -382,6 +404,20 @@ export default function MobileCalculator() {
           </div>
         )}
 
+        {/* Pricing date — for modeling past deals with historical rates */}
+        {effectiveRole === 'admin' && (
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Pricing Date (optional)</label>
+            <input
+              type="date"
+              value={pricingDate}
+              onChange={(e) => setPricingDate(e.target.value)}
+              className={inputCls}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+            />
+          </div>
+        )}
+
         {/* kW + PPW */}
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -428,22 +464,74 @@ export default function MobileCalculator() {
           </p>
 
           <div className="mt-5 space-y-2.5">
+            {/* Closer row + M1/M2/M3 breakdown */}
             <div className="calc-row-1 flex items-center justify-between">
               <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
               <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
             </div>
-            {setterTotal > 0 && (
-              <div className="calc-row-2 flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
-                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
+            <div className="flex gap-2 ml-2">
+              <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M1</p>
+                <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM1)}</p>
               </div>
+              <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M2</p>
+                <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM2)}</p>
+              </div>
+              {hasM3Split && (
+                <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M3</p>
+                  <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM3)}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Setter row + M1/M2/M3 breakdown */}
+            {setterTotal > 0 && (
+              <>
+                <div className="calc-row-2 flex items-center justify-between">
+                  <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
+                  <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
+                </div>
+                <div className="flex gap-2 ml-2">
+                  <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M1</p>
+                    <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM1)}</p>
+                  </div>
+                  <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M2</p>
+                    <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM2)}</p>
+                  </div>
+                  {hasM3Split && (
+                    <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M3</p>
+                      <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM3)}</p>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
+
+            {/* Setter trainer override */}
             {trainerTotal > 0 && (
               <div className="calc-row-2 flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer</span>
+                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  Trainer{trainerRep ? `: ${trainerRep.name}` : ''}
+                </span>
                 <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(trainerTotal)}</span>
               </div>
             )}
+
+            {/* Closer trainer override */}
+            {closerTrainerTotal > 0 && (
+              <div className="calc-row-2 flex items-center justify-between">
+                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  Trainer{closerTrainerRep ? `: ${closerTrainerRep.name}` : ''}
+                </span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTrainerTotal)}</span>
+              </div>
+            )}
+
             {effectiveRole === 'admin' && (
               <div className="calc-row-2 flex items-center justify-between">
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>

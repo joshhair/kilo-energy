@@ -4,14 +4,16 @@ import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../../lib/context';
 import { fmt$, todayLocalDateStr } from '../../../lib/utils';
 import { useToast } from '../../../lib/toast';
-import { PayrollEntry } from '../../../lib/data';
-import { Check, Trash2, Plus, Pencil } from 'lucide-react';
+import { PayrollEntry, Reimbursement } from '../../../lib/data';
+import { Check, Trash2, Plus, Pencil, X, Receipt, Archive, ArchiveRestore } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
 type TypeTab = 'Deal' | 'Bonus';
+type PageView = 'payroll' | 'reimbursements';
+type ReimFilterStatus = 'All' | 'Pending' | 'Approved' | 'Denied';
 
 export default function MobilePayroll() {
   const {
@@ -22,12 +24,15 @@ export default function MobilePayroll() {
     reps,
     projects,
     installerPayConfigs,
+    reimbursements,
+    setReimbursements,
     effectiveRole,
     effectiveRepId,
   } = useApp();
   const { toast } = useToast();
 
-  const [statusTab, setStatusTab] = useState<StatusTab>('Pending');
+  const [pageView, setPageView] = useState<PageView>('payroll');
+  const [statusTab, setStatusTab] = useState<StatusTab>('Draft');
   const [typeTab, setTypeTab] = useState<TypeTab>('Deal');
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
   const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<PayrollEntry | null>(null);
@@ -36,6 +41,70 @@ export default function MobilePayroll() {
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'Bonus' as string });
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
+
+  // ── Admin filters ─────────────────────────────────────────────────────────
+  const [filterRepId, setFilterRepId] = useState('');
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
+
+  // ── Reimbursements state ──────────────────────────────────────────────────
+  const [reimFilterStatus, setReimFilterStatus] = useState<ReimFilterStatus>('Pending');
+  const [showArchivedReim, setShowArchivedReim] = useState<boolean | 'only'>(false);
+  const [selectedReim, setSelectedReim] = useState<Reimbursement | null>(null);
+  const [confirmDeleteReim, setConfirmDeleteReim] = useState<Reimbursement | null>(null);
+  const [processingReimIds, setProcessingReimIds] = useState<Set<string>>(new Set());
+
+  // ── Reimbursement derived state ───────────────────────────────────────────
+
+  const pendingReimCount = useMemo(
+    () => reimbursements.filter((r) => r.status === 'Pending').length,
+    [reimbursements],
+  );
+
+  const filteredReimbursements = useMemo(() => {
+    return reimbursements.filter((r) => {
+      if (!showArchivedReim && r.archivedAt) return false;
+      if (showArchivedReim === 'only' && !r.archivedAt) return false;
+      if (reimFilterStatus !== 'All' && r.status !== reimFilterStatus) return false;
+      return true;
+    });
+  }, [reimbursements, showArchivedReim, reimFilterStatus]);
+
+  // ── Reimbursement handlers ────────────────────────────────────────────────
+
+  const patchReim = useCallback(
+    (reim: Reimbursement, updates: Partial<{ status: Reimbursement['status']; archived: boolean }>, successMsg: string, rollback: Partial<Reimbursement>) => {
+      if (processingReimIds.has(reim.id)) return;
+      setProcessingReimIds((prev) => new Set(prev).add(reim.id));
+      const optimistic: Partial<Reimbursement> = {};
+      if (updates.status) optimistic.status = updates.status;
+      if (updates.archived !== undefined) optimistic.archivedAt = updates.archived ? new Date().toISOString() : undefined;
+      setReimbursements((prev) => prev.map((x) => x.id === reim.id ? { ...x, ...optimistic } : x));
+      setSelectedReim(null);
+      fetch(`/api/reimbursements/${reim.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
+        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(successMsg, 'success'); })
+        .catch(() => { toast('Failed to persist change', 'error'); setReimbursements((prev) => prev.map((x) => x.id === reim.id ? { ...x, ...rollback } : x)); })
+        .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(reim.id); return s; }));
+    },
+    [processingReimIds, setReimbursements, toast],
+  );
+
+  const handleDeleteReim = useCallback(
+    async (reim: Reimbursement) => {
+      const snapshot = [...reimbursements];
+      setReimbursements((prev) => prev.filter((x) => x.id !== reim.id));
+      setConfirmDeleteReim(null);
+      toast('Reimbursement deleted', 'success');
+      try {
+        const res = await fetch(`/api/reimbursements/${reim.id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch {
+        setReimbursements(snapshot);
+        toast('Failed to delete — rolled back', 'error');
+      }
+    },
+    [reimbursements, setReimbursements, toast],
+  );
 
   // ── Summaries ─────────────────────────────────────────────────────────────
 
@@ -54,9 +123,12 @@ export default function MobilePayroll() {
       e.status === statusTab &&
       e.type === typeTab &&
       (statusTab !== 'Pending' || e.date <= today) &&
-      (effectiveRole === 'admin' || e.repId === effectiveRepId)
+      (effectiveRole === 'admin' || e.repId === effectiveRepId) &&
+      (!filterRepId || e.repId === filterRepId) &&
+      (!filterFrom || e.date >= filterFrom) &&
+      (!filterTo || e.date <= filterTo)
     );
-  }, [payrollEntries, statusTab, typeTab, effectiveRole, effectiveRepId]);
+  }, [payrollEntries, statusTab, typeTab, effectiveRole, effectiveRepId, filterRepId, filterFrom, filterTo]);
 
   // ── Group by rep ──────────────────────────────────────────────────────────
 
@@ -97,22 +169,16 @@ export default function MobilePayroll() {
       setStatusTab('Paid');
       toast(`Payroll published — ${fmt$(amount)} marked as Paid`, 'success');
 
-      const results = await Promise.allSettled(
-        ids.map((id) =>
-          fetch(`/api/payroll/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'Paid' }),
-          }).then((res) => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res;
-          }),
-        ),
-      );
-      const failures = results.filter((r) => r.status === 'rejected');
-      if (failures.length > 0) {
+      try {
+        const res = await fetch('/api/payroll', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids, status: 'Paid' }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch {
         setPayrollEntries(snapshot);
-        toast(`${failures.length} entries failed to save — rolled back`, 'error');
+        toast('Payroll failed to save — rolled back', 'error');
       }
     }
   }, [filtered, payrollEntries, setPayrollEntries, toast, statusTab, effectiveRole, effectiveRepId]);
@@ -271,20 +337,193 @@ export default function MobilePayroll() {
       <MobilePageHeader
         title="Payroll"
         right={
-          <button
-            onClick={() => setShowAddPayment(true)}
-            className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
-            style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Payment
-          </button>
+          pageView === 'payroll' ? (
+            <button
+              onClick={() => setShowAddPayment(true)}
+              className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
+              style={{
+                background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+                boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Payment
+            </button>
+          ) : null
         }
       />
+
+      {/* ── Page view tabs (admin only) ── */}
+      {effectiveRole === 'admin' && (
+        <div className="flex gap-2">
+          {(['payroll', 'reimbursements'] as PageView[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setPageView(v)}
+              className="flex-1 min-h-[44px] rounded-xl text-sm font-semibold capitalize transition-colors relative"
+              style={{
+                background: pageView === v ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                color: pageView === v ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: pageView === v ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {v}
+              {v === 'reimbursements' && pendingReimCount > 0 && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center"
+                  style={{ background: 'var(--accent-amber)', color: '#000' }}
+                >
+                  {pendingReimCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Reimbursements view ── */}
+      {pageView === 'reimbursements' && (
+        <div className="space-y-3">
+          {/* Filters */}
+          <div className="flex gap-2">
+            <select
+              value={reimFilterStatus}
+              onChange={(e) => setReimFilterStatus(e.target.value as ReimFilterStatus)}
+              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            >
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Denied">Denied</option>
+              <option value="All">All</option>
+            </select>
+            <select
+              value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
+              onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
+              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            >
+              <option value="active">Active only</option>
+              <option value="all">Inc. archived</option>
+              <option value="only">Archived only</option>
+            </select>
+          </div>
+
+          {/* List */}
+          {filteredReimbursements.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-12">
+              <Receipt className="w-10 h-10" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+              <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                {reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match filters'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredReimbursements.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => setSelectedReim(r)}
+                  className="w-full rounded-2xl p-4 text-left active:opacity-80 transition-colors"
+                  style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                      <p className="text-sm truncate mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.description}</p>
+                      {r.archivedAt && (
+                        <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--m-text-dim, var(--text-dim))' }}>archived</p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-green)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${r.amount.toFixed(2)}</p>
+                      <span
+                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                        style={
+                          r.status === 'Approved'
+                            ? { background: 'rgba(0,224,122,0.15)', color: 'var(--accent-green)' }
+                            : r.status === 'Denied'
+                            ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444' }
+                            : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber)' }
+                        }
+                      >
+                        {r.status}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Reimbursement action sheet ── */}
+      <MobileBottomSheet
+        open={!!selectedReim}
+        onClose={() => setSelectedReim(null)}
+        title={selectedReim ? `${selectedReim.repName} — $${selectedReim.amount.toFixed(2)}` : ''}
+      >
+        {selectedReim && (
+          <div className="px-5 space-y-1 pb-2">
+            {selectedReim.status === 'Pending' && (
+              <>
+                <MobileBottomSheet.Item
+                  label="Approve"
+                  icon={Check}
+                  onTap={() => patchReim(selectedReim, { status: 'Approved' }, `Approved for ${selectedReim.repName}`, { status: 'Pending' })}
+                />
+                <MobileBottomSheet.Item
+                  label="Deny"
+                  icon={X}
+                  onTap={() => patchReim(selectedReim, { status: 'Denied' }, `Denied for ${selectedReim.repName}`, { status: 'Pending' })}
+                  danger
+                />
+              </>
+            )}
+            {(selectedReim.status === 'Approved' || selectedReim.status === 'Denied') && (
+              <MobileBottomSheet.Item
+                label="Reset to Pending"
+                icon={Receipt}
+                onTap={() => patchReim(selectedReim, { status: 'Pending' }, 'Reset to Pending', { status: selectedReim.status })}
+              />
+            )}
+            {!selectedReim.archivedAt ? (
+              <MobileBottomSheet.Item
+                label="Archive"
+                icon={Archive}
+                onTap={() => patchReim(selectedReim, { archived: true }, 'Reimbursement archived', { archivedAt: undefined })}
+              />
+            ) : (
+              <MobileBottomSheet.Item
+                label="Unarchive"
+                icon={ArchiveRestore}
+                onTap={() => patchReim(selectedReim, { archived: false }, 'Reimbursement unarchived', { archivedAt: selectedReim.archivedAt })}
+              />
+            )}
+            <MobileBottomSheet.Item
+              label="Delete"
+              icon={Trash2}
+              onTap={() => { setSelectedReim(null); setConfirmDeleteReim(selectedReim); }}
+              danger
+            />
+          </div>
+        )}
+      </MobileBottomSheet>
+
+      <ConfirmDialog
+        open={!!confirmDeleteReim}
+        title="Delete Reimbursement"
+        message={confirmDeleteReim ? `Delete this reimbursement request?\n\n${confirmDeleteReim.repName} — ${confirmDeleteReim.description} $${confirmDeleteReim.amount.toFixed(2)}\n\nThis cannot be undone.` : ''}
+        confirmLabel="Delete"
+        onConfirm={() => confirmDeleteReim && handleDeleteReim(confirmDeleteReim)}
+        onClose={() => setConfirmDeleteReim(null)}
+      />
+
+      {/* ── Payroll view ── */}
+      {pageView === 'payroll' && (
+      <div className="space-y-4">
 
       {/* ── Hero ── */}
       <div>
@@ -328,6 +567,48 @@ export default function MobilePayroll() {
           </button>
         ))}
       </div>
+
+      {/* ── Admin filters ── */}
+      {effectiveRole === 'admin' && (
+        <div className="space-y-2">
+          <select
+            value={filterRepId}
+            onChange={(e) => setFilterRepId(e.target.value)}
+            className="w-full min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: filterRepId ? 'var(--text-primary)' : 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            <option value="">All Reps</option>
+            {reps.filter((r) => r.active !== false).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={filterFrom}
+              onChange={(e) => setFilterFrom(e.target.value)}
+              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: filterFrom ? 'var(--text-primary)' : 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            />
+            <input
+              type="date"
+              value={filterTo}
+              onChange={(e) => setFilterTo(e.target.value)}
+              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: filterTo ? 'var(--text-primary)' : 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            />
+            {(filterFrom || filterTo) && (
+              <button
+                onClick={() => { setFilterFrom(''); setFilterTo(''); }}
+                className="min-h-[44px] px-3 rounded-xl text-sm"
+                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Grouped entry list ── */}
       {groupedByRep.length === 0 ? (
@@ -685,6 +966,8 @@ export default function MobilePayroll() {
         onConfirm={() => confirmDeleteEntry && handleDelete(confirmDeleteEntry)}
         onClose={() => setConfirmDeleteEntry(null)}
       />
+      </div>
+      )}
     </div>
   );
 }

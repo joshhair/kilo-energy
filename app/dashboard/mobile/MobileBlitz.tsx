@@ -244,7 +244,7 @@ export default function MobileBlitz() {
       });
       if (!r.ok) { toast('Failed to approve request', 'error'); return; }
       toast('Request approved');
-      loadData();
+      await loadData();
     } catch { toast('Failed to approve request', 'error'); }
     finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
   };
@@ -259,7 +259,7 @@ export default function MobileBlitz() {
       });
       if (!r.ok) { toast('Failed to deny request', 'error'); return; }
       toast('Request denied');
-      loadData();
+      await loadData();
     } catch { toast('Failed to deny request', 'error'); }
     finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
   };
@@ -275,7 +275,7 @@ export default function MobileBlitz() {
       });
       if (!res.ok) { toast('Failed to join blitz', 'error'); return; }
       toast('Join request sent');
-      loadData();
+      await loadData();
     } finally { setJoiningBlitzId(null); }
   };
 
@@ -320,7 +320,7 @@ export default function MobileBlitz() {
         toast(isRequest ? 'Blitz request submitted' : 'Blitz created');
         setShowCreate(false);
         setCreateForm({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', headcount: '', ownerId: '' });
-        loadData();
+        await loadData();
       } else {
         toast(isRequest ? 'Failed to submit request' : 'Failed to create blitz', 'error');
       }
@@ -378,9 +378,10 @@ export default function MobileBlitz() {
         );
     const totalDeals = blitzProjects.length;
     const totalKW = blitzProjects.reduce((s, p) => {
+      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
       const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
       const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
-      return s + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+      return s + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
     }, 0);
     const myParticipation = blitz.participants.find((p) => p.user.id === effectiveRepId);
     const canJoin = !isAdmin && !isBlitzOwner
