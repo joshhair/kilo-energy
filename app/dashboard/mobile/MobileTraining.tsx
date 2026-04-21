@@ -117,7 +117,7 @@ export default function MobileTraining() {
       const currentRate = getTrainerOverrideRate(assignment, consumedDeals);
 
       // Find active tier
-      let activeTierIndex = 0;
+      let activeTierIndex = assignment.tiers.length - 1;
       for (let i = 0; i < assignment.tiers.length; i++) {
         const tier = assignment.tiers[i];
         if (tier.upToDeal === null || consumedDeals < tier.upToDeal) {
