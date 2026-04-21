@@ -23,6 +23,7 @@ import BlitzCosts from './blitz-detail/BlitzCosts';
 import BlitzProfitability from './blitz-detail/BlitzProfitability';
 import BlitzLeaderboard from './blitz-detail/BlitzLeaderboard';
 import BlitzEditSheet from './blitz-detail/BlitzEditSheet';
+import BlitzProgressBar from './blitz-detail/BlitzProgressBar';
 
 const TAB_ORDER_BASE: BlitzTabKey[] = ['overview', 'participants', 'deals', 'costs', 'profitability'];
 
@@ -310,15 +311,15 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 <div className="rounded-xl p-4 border-l-2 border-l-blue-500/60" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
                   <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Blitz Summary</p>
                   <div className="grid grid-cols-3 gap-2 text-center">
-                    <div>
+                    <div className="blitz-stat-0">
                       <p className="text-xl font-bold text-white leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{visibleProjects.length}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Deal{visibleProjects.length !== 1 ? 's' : ''} Attributed</p>
                     </div>
-                    <div>
+                    <div className="blitz-stat-1">
                       <p className="text-xl font-bold text-white leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(myKW)}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kW Sold</p>
                     </div>
-                    <div>
+                    <div className="blitz-stat-2">
                       <p className="text-xl font-bold leading-none" style={{ color: 'var(--accent-green)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(myPay)}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>My Pay</p>
                     </div>
@@ -329,31 +330,9 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
             <BlitzLeaderboard entries={leaderboard} showPayout={true} />
 
             {/* Progress bar */}
-            {(blitz.status === 'active' || blitz.status === 'completed') && (() => {
-              const startMs = new Date(blitz.startDate + 'T00:00:00').getTime();
-              const endMs = new Date(blitz.endDate + 'T00:00:00').getTime();
-              const nowMs = new Date().setHours(0, 0, 0, 0);
-              const totalDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
-              const elapsed = Math.max(0, Math.min(totalDays, Math.round((nowMs - startMs) / 86400000) + 1));
-              const progressPct = blitz.status === 'completed' ? 100 : Math.round((elapsed / totalDays) * 100);
-              return (
-                <div className="rounded-xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Progress</p>
-                    <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      {blitz.status === 'completed' ? 'Completed' : `Day ${elapsed} of ${totalDays}`}
-                    </p>
-                  </div>
-                  <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%`, background: 'var(--accent-emerald)' }} />
-                  </div>
-                  <div className="flex justify-between mt-1.5 text-[11px]" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    <span>{formatDate(blitz.startDate)}</span>
-                    <span>{formatDate(blitz.endDate)}</span>
-                  </div>
-                </div>
-              );
-            })()}
+            {(blitz.status === 'active' || blitz.status === 'completed') && (
+              <BlitzProgressBar startDate={blitz.startDate} endDate={blitz.endDate} status={blitz.status} />
+            )}
 
             {/* Details card */}
             {(() => {

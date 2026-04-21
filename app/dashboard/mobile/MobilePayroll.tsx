@@ -122,7 +122,7 @@ export default function MobilePayroll() {
     return payrollEntries.filter((e) =>
       e.status === statusTab &&
       e.type === typeTab &&
-      (statusTab !== 'Pending' || e.date <= today) &&
+      (statusTab === 'Draft' || e.date <= today) &&
       (effectiveRole === 'admin' || e.repId === effectiveRepId) &&
       (!filterRepId || e.repId === filterRepId) &&
       (!filterFrom || e.date >= filterFrom) &&
@@ -150,12 +150,7 @@ export default function MobilePayroll() {
   const handlePublishOrApproveAll = useCallback(async () => {
     const today = todayLocalDateStr();
     const target = statusTab === 'Pending'
-      ? payrollEntries.filter((e) =>
-          e.status === 'Pending' &&
-          e.type === typeTab &&
-          e.date <= today &&
-          (effectiveRole === 'admin' || e.repId === effectiveRepId),
-        )
+      ? filtered.filter((e) => e.status === 'Pending' && e.date <= today)
       : filtered;
     const ids = target.map((e) => e.id);
     const amount = target.reduce((s, e) => s + e.amount, 0);
@@ -181,7 +176,7 @@ export default function MobilePayroll() {
         toast('Payroll failed to save — rolled back', 'error');
       }
     }
-  }, [filtered, payrollEntries, setPayrollEntries, toast, statusTab, effectiveRole, effectiveRepId]);
+  }, [filtered, payrollEntries, setPayrollEntries, toast, statusTab]);
 
   const handleStatusChange = useCallback(
     async (entry: PayrollEntry, newStatus: 'Draft' | 'Pending' | 'Paid') => {
@@ -268,7 +263,7 @@ export default function MobilePayroll() {
         type: dbType,
         paymentStage: dbStage as 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer',
         status: 'Draft',
-        date: paymentForm.date || new Date().toISOString().split('T')[0],
+        date: paymentForm.date || todayLocalDateStr(),
         notes: notesOut,
       };
       setPayrollEntries((prev) => [...prev, newEntry]);
