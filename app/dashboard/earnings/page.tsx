@@ -102,7 +102,7 @@ function RepEarningsView() {
   const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs, [myReimbs, monthFilter]);
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM) && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
+  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(monthFilter ?? currentYYYYMM) && (!monthFilter || p.date <= todayStr)).reduce((s, p) => s + p.amount, 0);
   const approvedReimbs  = filteredReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);
@@ -452,7 +452,7 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">This Month</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ?? 'This Month'}</span>
             <DollarSign className="w-4 h-4 text-[var(--accent-green)] shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-green)] animate-count-up">

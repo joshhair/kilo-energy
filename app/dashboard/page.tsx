@@ -961,13 +961,18 @@ export default function DashboardPage() {
     const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+    const isTraineeParty = (p: typeof projects[number]) =>
+      p.repId === assignment.traineeId ||
+      p.setterId === assignment.traineeId ||
+      p.additionalClosers?.some(c => c.userId === assignment.traineeId) ||
+      p.additionalSetters?.some(s => s.userId === assignment.traineeId);
     const completedDeals = projects.filter(p =>
-      (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+      isTraineeParty(p) &&
       ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
     return sum + projects
-      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+      .filter(p => ACTIVE_PHASES.includes(p.phase) && isTraineeParty(p))
       .reduce((pSum, p) => {
         const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
         const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;

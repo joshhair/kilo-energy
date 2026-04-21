@@ -166,13 +166,14 @@ export default function MobileEarnings() {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const myPayroll = payrollEntries.filter((p) => p.repId === effectiveRepId);
-  const dealPayments = myPayroll.filter((p) => p.type === 'Deal' && matchesPeriod(p.date, period) && (!monthFilter || p.date.startsWith(monthFilter)));
-  const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus' && matchesPeriod(p.date, period) && (!monthFilter || p.date.startsWith(monthFilter)));
-  const myReimbs = reimbursements.filter((r) => r.repId === effectiveRepId && matchesPeriod(r.date, period) && (!monthFilter || r.date.startsWith(monthFilter)));
+  const matchesFilter = (date: string) => monthFilter ? date.startsWith(monthFilter) : matchesPeriod(date, period);
+  const dealPayments = myPayroll.filter((p) => p.type === 'Deal' && matchesFilter(p.date));
+  const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus' && matchesFilter(p.date));
+  const myReimbs = reimbursements.filter((r) => r.repId === effectiveRepId && matchesFilter(r.date));
 
   const todayStr = localDateString(new Date());
   const totalEarned = myPayroll
-    .filter((p) => p.status === 'Paid' && p.date <= todayStr && matchesPeriod(p.date, period) && (!monthFilter || p.date.startsWith(monthFilter)))
+    .filter((p) => p.status === 'Paid' && p.date <= todayStr && matchesFilter(p.date))
     .reduce((s, p) => s + p.amount, 0);
 
   const isSetterNote = (notes: string | null | undefined) => notes === 'Setter' || (notes ?? '').startsWith('Co-setter');

@@ -330,13 +330,18 @@ export default function MobileDashboard() {
         return s + v;
       }, 0);
       const trainerOverride = trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+        const isTraineeParty = (p: typeof projects[number]) =>
+          p.repId === assignment.traineeId ||
+          p.setterId === assignment.traineeId ||
+          p.additionalClosers?.some(c => c.userId === assignment.traineeId) ||
+          p.additionalSetters?.some(s => s.userId === assignment.traineeId);
         const completedDeals = projects.filter(p =>
-          (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+          isTraineeParty(p) &&
           ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
         ).length;
         const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
         return sum + projects
-          .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+          .filter(p => ACTIVE_PHASES.includes(p.phase) && isTraineeParty(p))
           .reduce((pSum, p) => pSum + Math.round(overrideRate * p.kWSize * 1000 * 100) / 100, 0);
       }, 0);
       return base + trainerOverride;

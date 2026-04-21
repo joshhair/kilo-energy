@@ -311,6 +311,13 @@ function NewDealPage() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
   }, [form.blitzId, rawBlitzes, reps]);
 
+  // Clear setterId when blitzId changes and the selected setter is no longer an approved participant.
+  useEffect(() => {
+    if (!form.setterId) return;
+    if (setterPickerReps.some((r) => r.id === form.setterId)) return;
+    setForm((prev) => ({ ...prev, setterId: '' }));
+  }, [form.setterId, setterPickerReps]);
+
   // Trainer override tier progression counts deals where the FINAL milestone
   // payment has actually been paid out. The "final" milestone depends on
   // the installer's payment model:

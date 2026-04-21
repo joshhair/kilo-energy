@@ -367,6 +367,24 @@ export default function MobileNewDeal() {
   const currentRep = reps.find((r) => r.id === effectiveRepId);
   const closerId = effectiveRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (effectiveRepId ?? ''));
 
+  const setterPickerReps = useMemo(() => {
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both' || r.repType == null));
+    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+    const approvedIds = new Set(
+      (selectedBlitz?.participants ?? [])
+        .filter((p) => p.joinStatus === 'approved')
+        .map((p) => p.userId),
+    );
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both' || r.repType == null));
+  }, [form.blitzId, rawBlitzes, reps]);
+
+  // Clear setterId when blitzId changes and the selected setter is no longer an approved participant.
+  useEffect(() => {
+    if (!form.setterId) return;
+    if (setterPickerReps.some((r) => r.id === form.setterId)) return;
+    setForm((prev) => ({ ...prev, setterId: '' }));
+  }, [form.setterId, setterPickerReps]);
+
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
   const solarTechFamilyProducts = solarTechProducts.filter((p) => p.family === solarTechFamily);
   const hasSolarTechProducts = solarTechFamilyProducts.length > 0;
