@@ -6,7 +6,8 @@ import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCompactKW } from '../../../lib/utils';
-import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail } from 'lucide-react';
+import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2 } from 'lucide-react';
+import { getTrainerOverrideRate } from '../../../lib/data';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
@@ -49,6 +50,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     effectiveRole,
     reps,
     subDealers,
+    trainerAssignments,
+    setTrainerAssignments,
     updateRepContact,
     updateSubDealerContact,
     updateRepType,
@@ -76,6 +79,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmConvert, setConfirmConvert] = useState<{ targetRole: 'rep' | 'sub-dealer'; targetLabel: string; msg: string } | null>(null);
+  const [showTrainerPicker, setShowTrainerPicker] = useState(false);
 
   let rep = reps.find((r) => r.id === repId);
   const subDealer = !rep ? subDealers.find((s) => s.id === repId) : null;
@@ -235,6 +239,10 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   const repProjects = projects.filter((p) => p.repId === repId || p.setterId === repId);
   const repPayroll = payrollEntries.filter((p) => p.repId === repId);
+  const trainerAssignment = trainerAssignments.find((a) => a.traineeId === repId);
+  const trainerRep = trainerAssignment ? reps.find((r) => r.id === trainerAssignment.trainerId) : null;
+  const completedDeals = repProjects.filter((p) => p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed').length;
+  const currentOverrideRate = trainerAssignment ? getTrainerOverrideRate(trainerAssignment, completedDeals) : 0;
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
   const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -419,6 +427,130 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           </>
         )}
       </p>
+
+      {/* Trainer Assignment — admin only */}
+      {isAdmin && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4" style={{ color: 'var(--accent-amber, #f5a623)' }} />
+              <span className="text-sm font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer Assignment</span>
+            </div>
+            {!trainerAssignment && !showTrainerPicker && (
+              <button
+                onClick={() => setShowTrainerPicker(true)}
+                className="text-sm font-medium min-h-[36px] px-2"
+                style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                + Assign
+              </button>
+            )}
+          </div>
+
+          {trainerAssignment && (
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(245,166,35,0.15)', color: 'var(--accent-amber, #f5a623)' }}>
+                  {trainerRep ? trainerRep.name.split(' ').map((n: string) => n[0]).join('') : '?'}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    {trainerRep ? trainerRep.name : 'Unknown trainer'}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                    ${currentOverrideRate.toFixed(2)}/W override rate
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const snapshot = trainerAssignment;
+                  const snapshotIndex = trainerAssignments.findIndex((a) => a.id === snapshot.id);
+                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
+                  fetch('/api/trainer-assignments', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: snapshot.id }),
+                  }).then((res) => {
+                    if (!res.ok) throw new Error();
+                  }).catch(() => {
+                    setTrainerAssignments((prev) => {
+                      const next = [...prev];
+                      const idx = snapshotIndex >= 0 ? snapshotIndex : next.length;
+                      next.splice(idx, 0, snapshot);
+                      return next;
+                    });
+                    toast('Failed to remove trainer assignment', 'error');
+                  });
+                }}
+                className="flex items-center gap-1 text-xs min-h-[36px] px-2"
+                style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Remove
+              </button>
+            </div>
+          )}
+
+          {!trainerAssignment && showTrainerPicker && (
+            <div className="mt-1 space-y-2">
+              <select
+                className="w-full min-h-[44px] rounded-xl px-3 text-base text-white outline-none"
+                style={{
+                  background: 'var(--navy-base, #0a1628)',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+                defaultValue=""
+                onChange={(e) => {
+                  const trainerId = e.target.value;
+                  if (!trainerId) return;
+                  const tempId = `ta_${Date.now()}`;
+                  setTrainerAssignments((prev) => [
+                    ...prev,
+                    { id: tempId, trainerId, traineeId: repId, tiers: [{ upToDeal: null, ratePerW: 0.05 }] },
+                  ]);
+                  setShowTrainerPicker(false);
+                  fetch('/api/trainer-assignments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trainerId, traineeId: repId, tiers: [{ upToDeal: null, ratePerW: 0.05 }] }),
+                  })
+                    .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+                    .then((saved) => {
+                      setTrainerAssignments((prev) =>
+                        prev.map((a) =>
+                          a.id === tempId
+                            ? { id: saved.id, trainerId: saved.trainerId, traineeId: saved.traineeId, tiers: (saved.tiers ?? []).map((t: { upToDeal: number | null; ratePerW: number }) => ({ upToDeal: t.upToDeal, ratePerW: t.ratePerW })) }
+                            : a
+                        )
+                      );
+                    })
+                    .catch(() => {
+                      setTrainerAssignments((prev) => prev.filter((a) => a.id !== tempId));
+                      toast('Failed to assign trainer', 'error');
+                    });
+                }}
+              >
+                <option value="">— Select trainer —</option>
+                {reps.filter((r) => r.active !== false && r.id !== repId).map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => setShowTrainerPicker(false)}
+                className="w-full min-h-[44px] rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {!trainerAssignment && !showTrainerPicker && (
+            <p className="text-xs mt-1" style={{ color: 'var(--m-text-dim, #445577)' }}>No trainer assigned.</p>
+          )}
+        </div>
+      )}
 
       {/* Active Projects */}
       <MobileSection title="Active Projects" count={activeProjects.length}>

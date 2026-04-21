@@ -475,7 +475,7 @@ export function createMilestonePayroll(
       const trainerRep = deps.repsRef.current.find(r => r.id === closerRes.trainerId);
       const m2TrainerAmount = Math.round(closerRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
       const closerTraineeNotesPrefix = `Trainer override M2 — ${closerRep?.name ?? old.repName ?? ''}`;
-      const closerTrainerAlreadyExists = prevEntries.some(
+      const closerTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
         (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(closerTraineeNotesPrefix) && e.repId === closerRes.trainerId
       );
       if (m2TrainerAmount > 0 && !closerTrainerAlreadyExists) {
@@ -725,7 +725,7 @@ export function createM3Payroll(
     deps.trainerAssignmentsRef.current,
     prevEntries,
   );
-  const closerTrainerM3AlreadyExists = closerResM3Entry.trainerId ? prevEntries.some(
+  const closerTrainerM3AlreadyExists = closerResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(
     (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === closerResM3Entry.trainerId
   ) : false;
   if (closerResM3Entry.rate > 0 && closerResM3Entry.trainerId && m3 > 0 && !old.subDealerId && !closerTrainerM3AlreadyExists) {

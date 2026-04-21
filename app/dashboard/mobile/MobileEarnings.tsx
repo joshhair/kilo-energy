@@ -179,6 +179,7 @@ export default function MobileEarnings() {
   const closerCount  = dealPayments.filter((p) => !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Trainer override')).length;
   const setterCount  = dealPayments.filter((p) => isSetterNote(p.notes)).length;
   const trainerCount = dealPayments.filter((p) => (p.notes ?? '').startsWith('Trainer override')).length;
+  const reimbCount   = myReimbs.length;
 
   const filteredDeals = dealRoleFilter
     ? dealPayments.filter((p) => {
@@ -403,6 +404,7 @@ export default function MobileEarnings() {
               { key: 'Closer',   label: `Closer (${closerCount})`,   show: closerCount > 0 },
               { key: 'Setter',   label: `Setter (${setterCount})`,   show: setterCount > 0 },
               { key: 'Trainer',  label: `Trainer (${trainerCount})`, show: trainerCount > 0 },
+              { key: 'Reimb.',   label: `Reimb. (${reimbCount})`,    show: reimbCount > 0 },
             ].filter((p) => p.key === null || p.show).map(({ key, label }) => (
               <button
                 key={key ?? 'all'}
@@ -420,7 +422,33 @@ export default function MobileEarnings() {
             ))}
           </div>
         )}
-        {sortedDeals.length === 0 ? (
+        {dealRoleFilter === 'Reimb.' ? (
+          sortedReimbs.length === 0 ? (
+            <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reimbursements for this period</p>
+          ) : (
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+              {sortedReimbs.map((entry, idx) => (
+                <div
+                  key={entry.id}
+                  className="px-4 py-3 flex items-center justify-between gap-3"
+                  style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <StatusDot status={entry.status} />
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Reimb.</span>
+                      <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
+                    </div>
+                  </div>
+                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                    {fmt$(entry.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )
+        ) : sortedDeals.length === 0 ? (
           <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No deal payments for this period</p>
         ) : (
           <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>

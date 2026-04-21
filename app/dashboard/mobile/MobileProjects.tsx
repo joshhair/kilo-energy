@@ -291,6 +291,34 @@ export default function MobileProjects() {
         </select>
       </div>
 
+      {/* My Deals / All Deals toggle — admin/PM only */}
+      {!isRep && (
+        <div className="flex gap-0.5 rounded-xl p-1 self-start" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          {(['all', 'mine'] as const).map((scope) => (
+            <button
+              key={scope}
+              onClick={() => setDealScope(scope)}
+              className="min-h-[40px] px-4 rounded-lg text-sm font-semibold transition-all duration-150"
+              style={dealScope === scope
+                ? {
+                    background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
+                    border: '1px solid rgba(0, 224, 122, 0.45)',
+                    color: '#fff',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }
+                : {
+                    border: '1px solid transparent',
+                    color: 'var(--m-text-muted, var(--text-mobile-muted))',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }
+              }
+            >
+              {scope === 'all' ? 'All Deals' : 'My Deals'}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Phase filter pills */}
       <div className="relative flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
         {spotlight && (

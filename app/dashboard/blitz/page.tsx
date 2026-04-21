@@ -460,9 +460,10 @@ export default function BlitzPage() {
 function BlitzPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentRepId, effectiveRole, effectiveRepId, reps } = useApp();
+  const { currentRepId, effectiveRole, effectiveRepId, reps, pmPermissions } = useApp();
   const hydrated = useIsHydrated();
   const isAdmin = effectiveRole === 'admin';
+  const isPM = effectiveRole === 'project_manager';
 
   // URL-persisted state
   const initialTab = (searchParams.get('tab') ?? 'blitzes') as TabKey;
@@ -746,6 +747,18 @@ function BlitzPageInner() {
   if (!hydrated) return <BlitzSkeleton />;
 
   if (isMobile) return <MobileBlitz />;
+
+  // PM access guard -- mirrors MobileBlitz.tsx line 173
+  if (isPM && pmPermissions && !pmPermissions.canAccessBlitz) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-3">
+        <p className="text-lg font-medium text-[var(--text-muted)]">Access Denied</p>
+        <p className="text-sm text-center max-w-xs text-[var(--text-muted)]">
+          You don&apos;t have permission to access Blitz. Contact an admin to request access.
+        </p>
+      </div>
+    );
+  }
 
   // Summary stats
   const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;

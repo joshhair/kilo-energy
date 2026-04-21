@@ -28,6 +28,7 @@ export default function MobilePayroll() {
   const [statusTab, setStatusTab] = useState<StatusTab>('Pending');
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
   const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<PayrollEntry | null>(null);
+  const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'Bonus' as string });
 
@@ -42,13 +43,14 @@ export default function MobilePayroll() {
 
   // ── Filtered entries ──────────────────────────────────────────────────────
 
-  const filtered = useMemo(
-    () => payrollEntries.filter((e) =>
+  const filtered = useMemo(() => {
+    const today = todayLocalDateStr();
+    return payrollEntries.filter((e) =>
       e.status === statusTab &&
+      (statusTab !== 'Pending' || e.date <= today) &&
       (effectiveRole === 'admin' || e.repId === effectiveRepId)
-    ),
-    [payrollEntries, statusTab, effectiveRole, effectiveRepId],
-  );
+    );
+  }, [payrollEntries, statusTab, effectiveRole, effectiveRepId]);
 
   // ── Group by rep ──────────────────────────────────────────────────────────
 
@@ -347,19 +349,7 @@ export default function MobilePayroll() {
       {statusTab === 'Draft' && filtered.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
           <button
-            onClick={async () => {
-              const ids = filtered.map((e) => e.id);
-              try {
-                await markForPayroll(ids);
-                setPayrollEntries((prev) =>
-                  prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p)),
-                );
-                toast('All draft entries moved to Pending', 'success');
-                setStatusTab('Pending');
-              } catch {
-                toast('Failed to approve entries', 'error');
-              }
-            }}
+            onClick={() => setShowApproveAllConfirm(true)}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
@@ -371,6 +361,28 @@ export default function MobilePayroll() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showApproveAllConfirm}
+        title="Approve All Draft Entries"
+        message={`Move all ${filtered.length} draft ${filtered.length === 1 ? 'entry' : 'entries'} to Pending? This will queue them for the next payroll run.`}
+        confirmLabel="Approve All"
+        onConfirm={async () => {
+          setShowApproveAllConfirm(false);
+          const ids = filtered.map((e) => e.id);
+          try {
+            await markForPayroll(ids);
+            setPayrollEntries((prev) =>
+              prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p)),
+            );
+            toast('All draft entries moved to Pending', 'success');
+            setStatusTab('Pending');
+          } catch {
+            toast('Failed to approve entries', 'error');
+          }
+        }}
+        onClose={() => setShowApproveAllConfirm(false)}
+      />
 
       {/* ── Entry action sheet ── */}
       <MobileBottomSheet

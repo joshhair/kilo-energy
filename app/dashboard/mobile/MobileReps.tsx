@@ -15,6 +15,13 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { TopPerformersPodium } from '../users/components/TopPerformersPodium';
 
 const REP_TYPE_LABELS: Record<string, string> = { closer: 'Closer', setter: 'Setter', both: 'Both' };
+const REP_TYPE_FILTERS = [
+  { value: 'all',    label: 'All' },
+  { value: 'closer', label: 'Closers' },
+  { value: 'setter', label: 'Setters' },
+  { value: 'both',   label: 'Both' },
+] as const;
+type RepTypeFilter = typeof REP_TYPE_FILTERS[number]['value'];
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
 
 // Top-level role filter — matches the desktop Users page.
@@ -56,6 +63,7 @@ export default function MobileReps() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [repTypeFilter, setRepTypeFilter] = useState<RepTypeFilter>('all');
   const [adminUsers, setAdminUsers] = useState<SimpleUser[]>([]);
   const [pmUsers, setPmUsers] = useState<SimpleUser[]>([]);
 
@@ -178,10 +186,11 @@ export default function MobileReps() {
     return reps.filter((r) => {
       if (r.active === false) return false;
       if (r.role !== 'rep') return false;
+      if (repTypeFilter !== 'all' && r.repType !== repTypeFilter && r.repType !== 'both') return false;
       if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase()) && !r.email?.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
       return true;
     });
-  }, [reps, debouncedSearch]);
+  }, [reps, debouncedSearch, repTypeFilter]);
 
   // Inactive lists — filtered by search, not by role pill
   const inactiveReps = reps.filter((r) => {
@@ -240,7 +249,7 @@ export default function MobileReps() {
           return (
             <button
               key={rf.value}
-              onClick={() => setRoleFilter(rf.value)}
+              onClick={() => { setRoleFilter(rf.value); setRepTypeFilter('all'); }}
               className={`shrink-0 min-h-[40px] px-4 rounded-xl text-sm font-semibold transition-colors`}
               style={{
                 background: active ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
@@ -254,6 +263,30 @@ export default function MobileReps() {
           );
         })}
       </div>
+
+      {/* Rep-type sub-filter — only shown when viewing reps */}
+      {roleFilter === 'rep' && (
+        <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
+          {REP_TYPE_FILTERS.map((rt) => {
+            const active = repTypeFilter === rt.value;
+            return (
+              <button
+                key={rt.value}
+                onClick={() => setRepTypeFilter(rt.value)}
+                className="shrink-0 min-h-[36px] px-3 rounded-xl text-xs font-semibold transition-colors"
+                style={{
+                  background: active ? 'rgba(0,196,240,0.2)' : 'var(--m-card, var(--surface-mobile-card))',
+                  color: active ? 'var(--accent-cyan)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                  border: active ? '1px solid rgba(0,196,240,0.4)' : '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                {rt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">
