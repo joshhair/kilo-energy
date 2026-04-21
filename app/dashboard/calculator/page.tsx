@@ -649,7 +649,7 @@ function CalculatorPage() {
     ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan)' }] : []),
     ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
     ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: '#b47dff' }] : []),
-    ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: kiloTotal, color: 'var(--accent-amber)' }] : []),
+    ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal), color: 'var(--accent-amber)' }] : []),
   ].filter(s => s.value > 0);
   const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
 
@@ -843,7 +843,7 @@ function CalculatorPage() {
                     reps={reps}
                     placeholder="-- Select setter --"
                     clearLabel="No setter"
-                    filterFn={(r) => r.active && (r.repType === 'setter' || r.repType === 'both') && (r.id !== effectiveCloserId || reps.find((rep) => rep.id === currentRepId)?.repType === 'setter')}
+                    filterFn={(r) => r.active && (r.repType === 'setter' || r.repType === 'both') && (r.id !== effectiveCloserId || reps.find((rep) => rep.id === effectiveCloserId)?.repType === 'setter')}
                     renderExtra={(r) => {
                       const ta = trainerAssignments.find((a) => a.traineeId === r.id);
                       const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
@@ -1128,7 +1128,7 @@ function CalculatorPage() {
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-green), transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
                   <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
-                    ${((reps.find(r => r.id === currentRepId)?.repType === 'setter' && selectedSetterId === currentRepId || (reps.find(r => r.id === currentRepId)?.repType === 'both' && selectedSetterId === currentRepId)) && !isSelfGen ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
+                    ${((reps.find(r => r.id === effectiveCloserId)?.repType === 'setter' && selectedSetterId === effectiveCloserId || (reps.find(r => r.id === effectiveCloserId)?.repType === 'both' && selectedSetterId === effectiveCloserId)) && !isSelfGen ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>
 

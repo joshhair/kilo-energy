@@ -164,7 +164,7 @@ export function createUserActions(deps: UserDeps) {
       await persistFetch(`/api/users/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: targetRole }),
+        body: JSON.stringify(targetRole === 'rep' ? { role: targetRole, repType: 'both' } : { role: targetRole }),
       }, 'Failed to convert user role');
     } catch (err) {
       if (targetRole === 'sub-dealer' && repSnap) {
