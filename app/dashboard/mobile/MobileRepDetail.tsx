@@ -164,11 +164,20 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     );
   }
 
-  // ─── Early branch: admin / project_manager → simple detail card ───
-  if (resolvedUser.role === 'admin' || resolvedUser.role === 'project_manager') {
-    const roleLabel = resolvedUser.role === 'admin' ? 'Admin' : 'Project Manager';
-    const badgeColor = resolvedUser.role === 'admin' ? 'var(--accent-amber)' : 'var(--accent-cyan)';
-    const badgeBg = resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)' : 'rgba(0,196,240,0.12)';
+  // ─── Early branch: admin / project_manager / sub-dealer → simple detail card ───
+  if (resolvedUser.role === 'admin' || resolvedUser.role === 'project_manager' || resolvedUser.role === 'sub-dealer') {
+    const roleLabel =
+      resolvedUser.role === 'admin' ? 'Admin'
+      : resolvedUser.role === 'project_manager' ? 'Project Manager'
+      : 'Sub-Dealer';
+    const badgeColor =
+      resolvedUser.role === 'admin' ? 'var(--accent-amber)'
+      : resolvedUser.role === 'project_manager' ? 'var(--accent-cyan)'
+      : '#b47dff';
+    const badgeBg =
+      resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)'
+      : resolvedUser.role === 'project_manager' ? 'rgba(0,196,240,0.12)'
+      : 'rgba(180,125,255,0.12)';
     const initials = `${resolvedUser.firstName[0] ?? ''}${resolvedUser.lastName[0] ?? ''}`.toUpperCase();
     const fu = fetchedUser; // PM permission flags only available from fetched payload
 
@@ -229,22 +238,22 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     );
   }
 
-  // Below this point, role is 'rep' or 'sub-dealer'. Reassign rep so the
+  // Below this point, role is 'rep'. Reassign rep so the
   // existing rep-detail JSX (which reads rep.name + rep.email) works for
-  // sub-dealers + freshly-fetched users too.
+  // freshly-fetched users too.
   if (!rep) {
     rep = resolvedUser as unknown as typeof rep;
   }
   if (!rep) return null;
 
-  const repProjects = projects.filter((p) => p.repId === repId || p.setterId === repId);
+  const repProjects = projects.filter((p) => p.repId === repId || p.setterId === repId || p.additionalClosers?.some((c) => c.userId === repId) || p.additionalSetters?.some((c) => c.userId === repId));
   const repPayroll = payrollEntries.filter((p) => p.repId === repId);
   const trainerAssignment = trainerAssignments.find((a) => a.traineeId === repId);
   const trainerRep = trainerAssignment ? reps.find((r) => r.id === trainerAssignment.trainerId) : null;
   const completedDeals = repProjects.filter((p) => p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed').length;
   const currentOverrideRate = trainerAssignment ? getTrainerOverrideRate(trainerAssignment, completedDeals) : 0;
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
-  const totalKW = repProjects.reduce((s, p) => s + p.kWSize, 0);
+  const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
   const todayStr = new Date().toISOString().slice(0, 10);
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
@@ -350,10 +359,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     if (busy) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/users/invite', {
+      const res = await fetch(`/api/users/${repId}/invite`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: repId }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
