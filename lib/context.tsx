@@ -445,6 +445,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const PIPELINE_PHASES = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
           const effectiveIdx = PIPELINE_PHASES.indexOf(effectivePhase);
           const pastAcceptance = effectiveIdx >= PIPELINE_PHASES.indexOf('Acceptance');
+          const pastInstalled = effectiveIdx >= PIPELINE_PHASES.indexOf('Installed');
+          const pastPTO = effectiveIdx >= PIPELINE_PHASES.indexOf('PTO');
           let closerM1Amount = updates.m1Amount ?? old.m1Amount;
           // For set deals, old.m1Amount is 0 (closer had no M1 while a setter was
           // present). Recompute self-gen M1 from the closer's total commission so the
@@ -476,8 +478,76 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 date: getM1PayDate(),
                 notes: '',
               };
+              const closerRes = resolveTrainerRate(
+                { id, trainerId: old.trainerId, trainerRate: old.trainerRate },
+                old.repId,
+                trainerAssignmentsRef.current,
+                prevEntries,
+              );
+              const trainerEntries: PayrollEntry[] = [];
+              if (closerRes.rate > 0 && closerRes.trainerId) {
+                const closerTrainerRep = repsRef.current.find((r) => r.id === closerRes.trainerId);
+                const closerOverrideRate = closerRes.rate;
+                const trainerInstallPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+                const closerName = closerRep?.name ?? '';
+                if (pastInstalled) {
+                  const hasTrainerM2 = prevEntries.some((e) =>
+                    e.projectId === id &&
+                    e.repId === closerRes.trainerId &&
+                    e.paymentStage === 'Trainer' &&
+                    e.notes?.startsWith('Trainer override M2') &&
+                    (closerName ? e.notes?.includes(`— ${closerName} (`) : true)
+                  );
+                  if (!hasTrainerM2) {
+                    const m2TrainerAmount = Math.round(closerOverrideRate * old.kWSize * 1000 * (trainerInstallPayPct / 100) * 100) / 100;
+                    if (m2TrainerAmount > 0) {
+                      trainerEntries.push({
+                        id: `pay_${ts}_m2_trainer_c`,
+                        repId: closerRes.trainerId,
+                        repName: closerTrainerRep?.name ?? '',
+                        projectId: id,
+                        customerName: old.customerName,
+                        amount: m2TrainerAmount,
+                        type: 'Deal',
+                        paymentStage: 'Trainer',
+                        status: 'Draft',
+                        date: getM2PayDate(),
+                        notes: `Trainer override M2 — ${closerName} ($${closerOverrideRate.toFixed(2)}/W)`,
+                      });
+                    }
+                  }
+                }
+                if (pastPTO) {
+                  const hasTrainerM3 = prevEntries.some((e) =>
+                    e.projectId === id &&
+                    e.repId === closerRes.trainerId &&
+                    e.paymentStage === 'Trainer' &&
+                    e.notes?.startsWith('Trainer override M3') &&
+                    (closerName ? e.notes?.includes(`— ${closerName} (`) : true)
+                  );
+                  if (!hasTrainerM3) {
+                    const m3TrainerAmount = Math.round(closerOverrideRate * old.kWSize * 1000 * ((100 - trainerInstallPayPct) / 100) * 100) / 100;
+                    if (m3TrainerAmount > 0) {
+                      trainerEntries.push({
+                        id: `pay_${ts}_m3_trainer_c`,
+                        repId: closerRes.trainerId,
+                        repName: closerTrainerRep?.name ?? '',
+                        projectId: id,
+                        customerName: old.customerName,
+                        amount: m3TrainerAmount,
+                        type: 'Deal',
+                        paymentStage: 'Trainer',
+                        status: 'Draft',
+                        date: getM3PayDate(),
+                        notes: `Trainer override M3 — ${closerName} ($${closerOverrideRate.toFixed(2)}/W)`,
+                      });
+                    }
+                  }
+                }
+              }
               persistPayrollEntry(newEntry);
-              return [...prevEntries, newEntry];
+              trainerEntries.forEach((entry) => persistPayrollEntry(entry));
+              return [...prevEntries, newEntry, ...trainerEntries];
             });
           }
         }

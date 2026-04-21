@@ -1555,7 +1555,7 @@ export function computeIncentiveProgress(
       }
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
       return payrollEntries
-        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && isPaidAndEffective(e) && e.type === 'Deal' && e.paymentStage !== 'Trainer' && e.notes !== 'Setter' && !(e.notes?.startsWith('Co-setter') ?? false))
+        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && isPaidAndEffective(e) && e.type === 'Deal' && e.paymentStage !== 'Trainer')
         .reduce((s, e) => s + e.amount, 0);
     }
     default:
