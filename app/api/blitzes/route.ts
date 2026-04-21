@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzSchema } from '../../../lib/schemas/business';
-import { serializeProject, serializeBlitzCost } from '../../../lib/serialize';
+import { serializeProject, serializeBlitzCost, serializeProjectParty } from '../../../lib/serialize';
 import { logger } from '../../../lib/logger';
 
 // GET /api/blitzes — List blitzes scoped to the current user's role.
@@ -53,7 +53,8 @@ export async function GET() {
   // Non-admins: strip other reps' financial data from projects + hide costs
   if (user.role !== 'admin') {
     for (const b of blitzes) {
-      (b as { costs: unknown[] }).costs = [];
+      const isBlitzOwner = b.ownerId === user.id || b.createdById === user.id;
+      if (!isBlitzOwner) (b as { costs: unknown[] }).costs = [];
       for (const p of b.projects) {
         const isMyDeal = p.closerId === user.id || p.setterId === user.id
           || p.additionalClosers.some((ac: { userId: string }) => ac.userId === user.id)
@@ -66,6 +67,16 @@ export async function GET() {
           p.setterM1AmountCents = 0;
           p.setterM2AmountCents = 0;
           p.setterM3AmountCents = 0;
+          for (const ac of p.additionalClosers) {
+            ac.m1AmountCents = 0;
+            ac.m2AmountCents = 0;
+            ac.m3AmountCents = 0;
+          }
+          for (const as of p.additionalSetters) {
+            as.m1AmountCents = 0;
+            as.m2AmountCents = 0;
+            as.m3AmountCents = 0;
+          }
         }
       }
     }
@@ -74,7 +85,14 @@ export async function GET() {
   // Wire format is dollars; convert at the seam.
   const serialized = blitzes.map((b) => ({
     ...b,
-    projects: b.projects.map(serializeProject),
+    projects: b.projects.map((p) => {
+      const sp = serializeProject(p);
+      return {
+        ...sp,
+        additionalClosers: p.additionalClosers.map(serializeProjectParty),
+        additionalSetters: p.additionalSetters.map(serializeProjectParty),
+      };
+    }),
     costs: b.costs.map(serializeBlitzCost),
   }));
   return NextResponse.json(serialized);

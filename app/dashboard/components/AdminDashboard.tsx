@@ -628,6 +628,7 @@ export function AdminDashboard({
       {/* Recent projects */}
       {(() => {
         const searchFiltered = projects.filter((p) => {
+          if (p.phase === 'Cancelled' || p.phase === 'On Hold') return false;
           if (!recentSearch.trim()) return true;
           const q = recentSearch.trim().toLowerCase();
           return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q) || (p.subDealerName ?? '').toLowerCase().includes(q);

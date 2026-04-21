@@ -86,6 +86,7 @@ export default function MobileTraining() {
     return all.map((assignment) => {
       const trainee = reps.find((r) => r.id === assignment.traineeId);
       const traineeName = trainee ? trainee.name : assignment.traineeId;
+      const traineeRole = trainee?.repType ?? 'closer';
 
       // Real assignments: all active deals the trainee is on.
       // Pseudo (direct-trainer): only deals where viewer is the project's
@@ -129,6 +130,7 @@ export default function MobileTraining() {
         assignment,
         traineeId: assignment.traineeId,
         traineeName,
+        traineeRole,
         dealCount,
         currentRate,
         activeTierIndex,
@@ -136,7 +138,7 @@ export default function MobileTraining() {
     });
   }, [myAssignments, directPseudoAssignments, reps, projects, payrollEntries, effectiveRepId]);
 
-  const sortedOverrides = [...trainerEntries].sort((a, b) => b.date.localeCompare(a.date));
+  const sortedOverrides = [...trainerEntries].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 
   if (!isHydrated) {
     return (
@@ -235,7 +237,7 @@ export default function MobileTraining() {
                   <div className="min-w-0 flex-1 text-left">
                     <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>
                     <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{td.dealCount}</span> deals &middot; <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${td.currentRate.toFixed(2)}/W</span>
+                      <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{td.dealCount}</span> deals &middot; <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${td.currentRate.toFixed(2)}/W</span> &middot; {td.traineeRole === 'both' ? 'Closer/Setter' : td.traineeRole.charAt(0).toUpperCase() + td.traineeRole.slice(1)}
                     </p>
                   </div>
                   <ChevronDown

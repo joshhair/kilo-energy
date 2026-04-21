@@ -9,7 +9,7 @@ import {
   getTrainerOverrideRate, calculateCommission,
   SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER,
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
-  INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT,
+  INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT, getActiveInstallerVersion,
 } from '../../../lib/data';
 import { Check, Loader2, ChevronLeft, CheckCircle2, ArrowRight, RotateCcw, Pencil } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
@@ -215,7 +215,7 @@ export default function MobileNewDeal() {
 
   const blankForm = () => ({
     customerName: '',
-    soldDate: new Date().toISOString().split('T')[0],
+    soldDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
     installer: '',
     financer: '',
     productType: '',
@@ -285,7 +285,7 @@ export default function MobileNewDeal() {
     endDate?: string;
     participants?: Array<{ userId: string; joinStatus: string }>;
   };
-  const [_rawBlitzes, setRawBlitzes] = useState<BlitzListItem[]>([]);
+  const [rawBlitzes, setRawBlitzes] = useState<BlitzListItem[]>([]);
   const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.json()).then((data: BlitzListItem[]) => {
@@ -342,7 +342,7 @@ export default function MobileNewDeal() {
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
-    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, additionalClosers: [], additionalSetters: [] }));
+    setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', effectiveFinancer) }));
     setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
   };
@@ -395,14 +395,14 @@ export default function MobileNewDeal() {
       }
     } else if (isPcInstaller && hasPcProducts && form.installerProductId && kW > 0) {
       try {
-        const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+        const soldDate = form.soldDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
         const b = getProductCatalogBaselineVersioned(productCatalogProducts, form.installerProductId, kW, soldDate, productCatalogPricingVersions);
         return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW, activeVersionId: b.pcPricingVersionId };
       } catch {
         return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
       }
     } else if (form.installer && form.installer !== 'SolarTech' && !isPcInstaller && kW > 0) {
-      const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+      const soldDate = form.soldDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
       return { closerPerW: r.closerPerW, setterBaselinePerW: r.setterPerW, kiloPerW: r.kiloPerW, activeVersionId: r.versionId };
     }
@@ -492,11 +492,12 @@ export default function MobileNewDeal() {
   // Sub-dealer commission
   const subDealerRate = (() => {
     if (!isSubDealer || !form.installer) return 0;
+    const soldDate = form.soldDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+    const activeVersion = getActiveInstallerVersion(form.installer, soldDate, installerPricingVersions);
     const baseline = installerBaselines[form.installer];
-    if (baseline) return baseline.subDealerPerW ?? 0;
-    // Tiered installer: resolve the correct band using the deal's kW
+    // installerBaselines collapses tiered installers to their first band — skip it for tiered.
+    if (baseline && activeVersion?.rates.type !== 'tiered') return baseline.subDealerPerW ?? 0;
     if (kW <= 0) return 0;
-    const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
     const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
     return r.subDealerPerW ?? 0;
   })();
@@ -521,6 +522,11 @@ export default function MobileNewDeal() {
     ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
     ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
     ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
+    ...(getInstallerPrepaidOptions(form.installer).length > 0 && (
+      form.solarTechFamily === 'Cash/HDM/PE' ||
+      (isPcInstaller && !!pcConfig?.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily) ||
+      (!isPcInstaller && form.installer !== 'SolarTech' && (form.productType === 'Cash' || form.productType === 'Loan'))
+    ) ? ['prepaidSubType'] : []),
     'kWSize',
     'netPPW',
   ];
@@ -594,6 +600,12 @@ export default function MobileNewDeal() {
       ...(form.installer === 'SolarTech' && hasSolarTechProducts ? ['solarTechProductId'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' ? ['pcFamily'] : []),
       ...(isPcInstaller && form.installer !== 'SolarTech' && hasPcProducts ? ['installerProductId'] : []),
+      ...(getInstallerPrepaidOptions(form.installer).length > 0 && (
+        form.solarTechFamily === 'Cash/HDM/PE' ||
+        (isPcInstaller && !!pcConfig?.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily) ||
+        (!isPcInstaller && form.installer !== 'SolarTech' && (form.productType === 'Cash' || form.productType === 'Loan'))
+      ) ? ['prepaidSubType'] : []),
+      ...(form.leadSource === 'blitz' ? ['blitzId'] : []),
     ];
 
     const newErrors: Record<string, string> = {};
@@ -611,6 +623,45 @@ export default function MobileNewDeal() {
       return;
     }
 
+    // Guard: setter-type reps cannot be the closer on a deal.
+    if (!closerId) {
+      toast('Setter accounts cannot submit deals directly. Please contact an admin.', 'error');
+      submittingRef.current = false;
+      return;
+    }
+
+    // Guard: all selected reps must be approved participants of the selected blitz.
+    if (form.blitzId) {
+      const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+      const approvedIds = new Set(
+        (selectedBlitz?.participants ?? [])
+          .filter((p) => p.joinStatus === 'approved')
+          .map((p) => p.userId),
+      );
+      if (form.repId && !approvedIds.has(form.repId)) {
+        toast('Selected closer is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
+      if (form.setterId && !approvedIds.has(form.setterId)) {
+        toast('Selected setter is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
+      const unapprovedCoCloser = form.additionalClosers.find((c) => !approvedIds.has(c.userId));
+      if (unapprovedCoCloser) {
+        toast('A co-closer is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
+      const unapprovedCoSetter = form.additionalSetters.find((s) => !approvedIds.has(s.userId));
+      if (unapprovedCoSetter) {
+        toast('A co-setter is not an approved participant of this blitz.', 'error');
+        submittingRef.current = false;
+        return;
+      }
+    }
+
     if (closerPerW === 0 && kW > 0 && soldPPW > 0) {
       toast('No pricing baseline found for this system size. Check that a matching tier exists for this product and kW.', 'error');
       submittingRef.current = false;
@@ -625,6 +676,7 @@ export default function MobileNewDeal() {
 
     setSubmitting(true);
 
+    try {
     const rep = reps.find((r) => r.id === closerId);
     const setter = form.setterId ? reps.find((r) => r.id === form.setterId) : null;
     const projectId = genId('proj');
@@ -733,6 +785,12 @@ export default function MobileNewDeal() {
     });
     setSubmitting(false);
     submittingRef.current = false;
+    } catch (e) {
+      setSubmitting(false);
+      submittingRef.current = false;
+      console.error('Unexpected error during deal submission:', e);
+      toast('Something went wrong. Please try again.', 'error');
+    }
   };
 
   // ── Style helpers ─────────────────────────────────────────────────────────
@@ -1078,7 +1136,7 @@ export default function MobileNewDeal() {
 
                   {/* SolarTech prepaid sub-type */}
                   {getInstallerPrepaidOptions(form.installer).length > 0 && (
-                    form.solarTechFamily === 'Cash/HDM/PE' || (form.productType === 'Cash' || form.productType === 'Loan')
+                    form.solarTechFamily === 'Cash/HDM/PE'
                   ) && (
                     <div>
                       <label className={labelCls} style={labelStyle}>Prepaid Type</label>
@@ -1194,8 +1252,7 @@ export default function MobileNewDeal() {
 
                   {/* PC prepaid sub-type */}
                   {getInstallerPrepaidOptions(form.installer).length > 0 && (
-                    (form.productType === 'Cash' || form.productType === 'Loan') ||
-                    (pcConfig.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily)
+                    pcConfig.prepaidFamily && form.pcFamily === pcConfig.prepaidFamily
                   ) && (
                     <div>
                       <label className={labelCls} style={labelStyle}>Prepaid Type</label>

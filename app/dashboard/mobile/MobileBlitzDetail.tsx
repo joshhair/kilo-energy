@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
-import { formatDate } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
 import { ArrowLeft, Pencil, Trash2, XCircle, Loader2 } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
@@ -125,8 +125,10 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   );
 
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
-    [approvedVisibleProjects],
+    () => approvedVisibleProjects
+      .filter((p: any) => approvedParticipantIds.has(p.closer?.id) || (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId)))
+      .reduce((s: number, p: any) => s + (p.kWSize ?? 0), 0),
+    [approvedVisibleProjects, approvedParticipantIds],
   );
 
   const leaderboard = useMemo(() => computeBlitzLeaderboard(blitz), [blitz]);
@@ -148,7 +150,6 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   };
 
   const handleCancelRequest = async () => {
-    if (!cancelReason.trim()) { toast('Please provide a reason', 'error'); return; }
     setSubmittingAction(true);
     try {
       const r = await fetch('/api/blitz-requests', {
@@ -159,7 +160,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           requestedById: effectiveRepId,
           blitzId,
           name: blitz?.name ?? '',
-          notes: cancelReason.trim(),
+          notes: cancelReason.trim() || 'No reason provided',
           startDate: blitz?.startDate ?? '',
           endDate: blitz?.endDate ?? '',
         }),
@@ -275,7 +276,44 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               totalKW={totalKW}
               notes={blitz.notes}
             />
-            <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
+            {!isAdmin && effectiveRepId && visibleProjects.length > 0 && (() => {
+              const myPay = visibleProjects.reduce((s: number, p: any) => {
+                const ccEntry = (p.additionalClosers ?? []).find((cc: any) => cc.userId === effectiveRepId);
+                const csEntry = (p.additionalSetters ?? []).find((cs: any) => cs.userId === effectiveRepId);
+                return s + (p.closer?.id === effectiveRepId
+                  ? (p.setter?.id === effectiveRepId
+                    ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+                    : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0))
+                  : (p.setter?.id === effectiveRepId
+                    ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+                    : (ccEntry ? (ccEntry.m1Amount ?? 0) + (ccEntry.m2Amount ?? 0) + (ccEntry.m3Amount ?? 0)
+                      : (csEntry ? (csEntry.m1Amount ?? 0) + (csEntry.m2Amount ?? 0) + (csEntry.m3Amount ?? 0) : 0))));
+              }, 0);
+              const myKW = visibleProjects.reduce((s: number, p: any) => {
+                const isAdditionalCloser = (p.additionalClosers ?? []).some((cc: any) => cc.userId === effectiveRepId);
+                return s + (p.closer?.id === effectiveRepId || isAdditionalCloser ? p.kWSize : 0);
+              }, 0);
+              return (
+                <div className="rounded-xl p-4 border-l-2 border-l-blue-500/60" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Blitz Summary</p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-xl font-bold text-white leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{visibleProjects.length}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Deal{visibleProjects.length !== 1 ? 's' : ''} Attributed</p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-white leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(myKW)}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kW Sold</p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold leading-none" style={{ color: 'var(--accent-green)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(myPay)}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>My Pay</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            <BlitzLeaderboard entries={leaderboard} showPayout={true} />
           </div>
         )}
 
@@ -293,9 +331,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
         {tab === 'deals' && (
           <BlitzDeals
-            projects={visibleProjects}
+            projects={approvedVisibleProjects}
             approvedParticipantIds={approvedParticipantIds}
-            showPayout={isAdmin || isOwner}
+            showPayout={isAdmin}
+            isAdmin={isAdmin}
+            isOwner={isOwner}
+            effectiveRepId={effectiveRepId}
           />
         )}
 
@@ -363,7 +404,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           />
           <button
             onClick={handleCancelRequest}
-            disabled={submittingAction || !cancelReason.trim()}
+            disabled={submittingAction}
             className="w-full min-h-[48px] text-base font-semibold rounded-lg transition-colors disabled:opacity-40"
             style={{ color: 'var(--m-danger, var(--accent-danger))', border: '1px solid var(--m-danger, var(--accent-danger))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >

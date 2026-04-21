@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKW, localDateString } from '../../../lib/utils';
-import { ACTIVE_PHASES } from '../../../lib/data';
+import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
 import { CheckCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -15,6 +15,16 @@ import MobileBadge, { PHASE_COLORS } from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
 
 type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year' | 'last-year';
+
+type MentionItem = {
+  id: string;
+  projectId: string;
+  projectCustomerName: string;
+  messageId: string;
+  authorName: string;
+  checkItems: Array<{ id: string; text: string; completed: boolean; dueDate?: string | null }>;
+  createdAt: string;
+};
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'this-month', label: 'This Month' },
@@ -113,6 +123,8 @@ export default function MobileDashboard() {
   const {
     projects,
     payrollEntries,
+    trainerAssignments,
+    installerPayConfigs,
     effectiveRole,
     effectiveRepId,
     effectiveRepName,
@@ -206,6 +218,11 @@ export default function MobileDashboard() {
     [myProjects],
   );
 
+  const totalKWInstalled = useMemo(
+    () => myProjects.filter((p) => ['Installed', 'PTO', 'Completed'].includes(p.phase)).reduce((s, p) => s + p.kWSize, 0),
+    [myProjects],
+  );
+
   // Next payout calculation
   const nextFridayDate = useMemo(() => {
     const today = new Date();
@@ -230,7 +247,7 @@ export default function MobileDashboard() {
 
   const daysUntilPayday = useMemo(() => {
     const today = new Date();
-    return ((5 - today.getDay() + 7) % 7) || 7;
+    return (5 - today.getDay() + 7) % 7;
   }, []);
 
   const nextFridayLabel = useMemo(() => {
@@ -286,16 +303,45 @@ export default function MobileDashboard() {
     [periodProjects],
   );
 
-  // Pipeline: sum of unpaid M1 + M2 + M3 on active projects
+  // Pipeline: sum of unpaid M1 + M2 + M3 on active projects, role-aware
   const pipelineValue = useMemo(
-    () => activeProjects.reduce((s, p) => {
-      let v = 0;
-      if (!p.m1Paid) v += p.m1Amount || 0;
-      if (!p.m2Paid) v += p.m2Amount || 0;
-      if (!p.m3Paid) v += p.m3Amount || 0;
-      return s + v;
-    }, 0),
-    [activeProjects],
+    () => {
+      const base = activeProjects.reduce((s, p) => {
+        let v = 0;
+        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
+        if (p.repId === effectiveRepId) {
+          if (!p.m1Paid) v += p.m1Amount || 0;
+          if (!p.m2Paid) v += p.m2Amount || 0;
+          if (!p.m3Paid) v += p.m3Amount || 0;
+        } else if (p.setterId === effectiveRepId) {
+          if (!p.m1Paid) v += p.setterM1Amount || 0;
+          if (!p.m2Paid) v += p.setterM2Amount || 0;
+          if (!p.m3Paid) v += p.setterM3Amount || 0;
+        } else if (coCloserParty) {
+          if (!p.m1Paid) v += coCloserParty.m1Amount || 0;
+          if (!p.m2Paid) v += coCloserParty.m2Amount || 0;
+          if (!p.m3Paid) v += coCloserParty.m3Amount || 0;
+        } else if (coSetterParty) {
+          if (!p.m1Paid) v += coSetterParty.m1Amount || 0;
+          if (!p.m2Paid) v += coSetterParty.m2Amount || 0;
+          if (!p.m3Paid) v += coSetterParty.m3Amount || 0;
+        }
+        return s + v;
+      }, 0);
+      const trainerOverride = trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+        const completedDeals = projects.filter(p =>
+          (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+          ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
+        ).length;
+        const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
+        return sum + projects
+          .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+          .reduce((pSum, p) => pSum + Math.round(overrideRate * p.kWSize * 1000 * 100) / 100, 0);
+      }, 0);
+      return base + trainerOverride;
+    },
+    [activeProjects, effectiveRepId, trainerAssignments, projects, installerPayConfigs],
   );
 
   // On Pace: annual projection — matches desktop My Pay calculation exactly
@@ -306,8 +352,17 @@ export default function MobileDashboard() {
     const totalDeals = allMyProjects.length;
     if (totalDeals === 0) return { onPaceAnnual: 0, dealsPerMonth: 0 };
 
-    // Average commission per deal (M1 + M2)
-    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => s + (p.m1Amount ?? 0) + (p.m2Amount ?? 0), 0) / totalDeals;
+    // Average commission per deal (M1 + M2), role-aware
+    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
+      const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
+      let commission = 0;
+      if (p.repId === effectiveRepId) commission = (p.m1Amount ?? 0) + (p.m2Amount ?? 0);
+      else if (p.setterId === effectiveRepId) commission = (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0);
+      else if (coCloserParty) commission = (coCloserParty.m1Amount ?? 0) + (coCloserParty.m2Amount ?? 0);
+      else if (coSetterParty) commission = (coSetterParty.m1Amount ?? 0) + (coSetterParty.m2Amount ?? 0);
+      return s + commission;
+    }, 0) / totalDeals;
 
     // Deal closing pace
     const sorted = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
@@ -337,8 +392,8 @@ export default function MobileDashboard() {
     // Pipeline boost: 15% of projected M1 + M2 (same as desktop My Pay)
     const preAcceptance = ['New'];
     const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => s + (p.m1Amount ?? 0), 0);
-    const projM2 = allMyProjects.filter((p) => preInstalled.includes(p.phase)).reduce((s, p) => s + (p.m2Amount ?? 0), 0);
+    const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0)), 0);
+    const projM2 = allMyProjects.filter((p) => preInstalled.includes(p.phase)).reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
     annual += Math.round((projM1 + projM2) * 0.15);
 
     return { onPaceAnnual: annual, dealsPerMonth };
@@ -351,6 +406,63 @@ export default function MobileDashboard() {
   const animatedPayout = useCountUp(pendingPayrollTotal, 300);
   const animatedPaid = useCountUp(periodPaid, 300);
   const animatedPipeline = useCountUp(pipelineValue, 300);
+
+  // ── @mentions / My Tasks (fetched for rep + sub-dealer) ──────────────────
+  const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
+  const fetchMentions = useCallback(() => {
+    if (!effectiveRepId) return;
+    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`)
+      .then((res) => { if (!res.ok) throw new Error('Failed'); return res.json(); })
+      .then((rawMentions: unknown[]) => {
+        const items: MentionItem[] = (rawMentions ?? []).map((raw) => {
+          const m = raw as {
+            id: string; messageId?: string;
+            message?: { id?: string; projectId?: string; project?: { customerName?: string }; text?: string; authorName?: string; checkItems?: Array<{ id: string; text: string; completed: boolean }> };
+          };
+          return {
+            id: m.id,
+            projectId: m.message?.projectId ?? '',
+            projectCustomerName: m.message?.project?.customerName ?? 'Unknown',
+            messageId: m.messageId ?? m.message?.id ?? '',
+            authorName: m.message?.authorName ?? 'Unknown',
+            checkItems: (m.message?.checkItems ?? []).map((ci) => ({
+              id: ci.id, text: ci.text, completed: ci.completed,
+              dueDate: (ci as { dueDate?: string | null }).dueDate ?? null,
+            })),
+            createdAt: (m.message as { createdAt?: string } | undefined)?.createdAt ?? new Date().toISOString(),
+          };
+        });
+        setDashMentions(items);
+      })
+      .catch(() => setDashMentions([]));
+  }, [effectiveRepId]);
+  useEffect(() => { fetchMentions(); }, [fetchMentions]);
+
+  const mobileTasks = useMemo(() => {
+    const tasks: Array<{ checkItemId: string; text: string; projectId: string; projectName: string; messageId: string; authorName: string; createdAt: string; dueDate?: string | null }> = [];
+    for (const mention of dashMentions) {
+      for (const ci of mention.checkItems) {
+        if (!ci.completed) {
+          tasks.push({ checkItemId: ci.id, text: ci.text, projectId: mention.projectId, projectName: mention.projectCustomerName, messageId: mention.messageId, authorName: mention.authorName, createdAt: mention.createdAt, dueDate: ci.dueDate });
+        }
+      }
+    }
+    return tasks;
+  }, [dashMentions]);
+
+  const [checkedTaskIds, setCheckedTaskIds] = useState<Set<string>>(new Set());
+  const handleToggleTask = useCallback(async (projectId: string, messageId: string, checkItemId: string, wasChecked: boolean) => {
+    setCheckedTaskIds((prev) => { const next = new Set(prev); if (wasChecked) { next.delete(checkItemId); } else { next.add(checkItemId); } return next; });
+    try {
+      await fetch(`/api/projects/${projectId}/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toggleCheckItem: checkItemId, completed: !wasChecked }),
+      });
+    } catch {
+      setCheckedTaskIds((prev) => { const next = new Set(prev); if (wasChecked) { next.add(checkItemId); } else { next.delete(checkItemId); } return next; });
+    }
+  }, []);
 
   // ── Admin dispatch (after all hooks — rules-of-hooks) ─────────────────────
   if (effectiveRole === 'admin') return <MobileAdminDashboard />;
@@ -365,7 +477,7 @@ export default function MobileDashboard() {
         <MobileCard hero>
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
           <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; {daysUntilPayday} days</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? 'Today' : `${nextFridayLabel} \u00b7 ${daysUntilPayday} days`}</p>
           <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
             <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%`, background: ACCENT }} />
           </div>
@@ -374,9 +486,9 @@ export default function MobileDashboard() {
         {/* Stat grid — 2x2, +1 conditional chargeback tile when owed */}
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
-          <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color={ACCENT2} />
-          <MobileStatCard label="Active Deals" value={activeProjects.length} color="#fff" />
-          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
+          <MobileStatCard label="In Pipeline" value={fmt$(pipelineValue)} color={ACCENT2} />
+          <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color="#fff" />
+          <MobileStatCard label="kW Installed" value={formatCompactKW(totalKWInstalled)} color="#fff" />
           {outstandingChargebacks.length > 0 && (
             <MobileStatCard
               label="Chargebacks"
@@ -385,6 +497,24 @@ export default function MobileDashboard() {
             />
           )}
         </div>
+
+        {/* My Tasks */}
+        {mobileTasks.length > 0 && (
+          <MobileSection title="My Tasks" collapsible count={mobileTasks.length}>
+            <MobileCard>
+              {mobileTasks.map((task, i, arr) => (
+                <div key={task.checkItemId} className={`flex items-start gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`} style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+                  <input type="checkbox" checked={checkedTaskIds.has(task.checkItemId)} onChange={() => handleToggleTask(task.projectId, task.messageId, task.checkItemId, checkedTaskIds.has(task.checkItemId))} className="mt-1 w-5 h-5 rounded cursor-pointer flex-shrink-0" style={{ accentColor: ACCENT }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}>{task.text}</p>
+                    <button onClick={() => router.push(`/dashboard/projects/${task.projectId}`)} className="text-left" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{task.projectName}</button>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>from {task.authorName}</p>
+                  </div>
+                </div>
+              ))}
+            </MobileCard>
+          </MobileSection>
+        )}
 
         {/* Recent */}
         <MobileSection title="Recent">
@@ -581,7 +711,7 @@ export default function MobileDashboard() {
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
               <div className="flex items-baseline justify-between">
                 <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
-                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></p>
+                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: '#fff' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></>}</p>
               </div>
               <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
             </div>
@@ -590,7 +720,7 @@ export default function MobileDashboard() {
           <div>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? <span style={{ color: '#fff' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></>}</p>
           </div>
         )}
 
@@ -638,6 +768,24 @@ export default function MobileDashboard() {
             </button>
           ))}
         </MobileCard>
+      )}
+
+      {/* My Tasks */}
+      {mobileTasks.length > 0 && (
+        <MobileSection title="My Tasks" collapsible count={mobileTasks.length}>
+          <MobileCard>
+            {mobileTasks.map((task, i, arr) => (
+              <div key={task.checkItemId} className={`flex items-start gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`} style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+                <input type="checkbox" checked={checkedTaskIds.has(task.checkItemId)} onChange={() => handleToggleTask(task.projectId, task.messageId, task.checkItemId, checkedTaskIds.has(task.checkItemId))} className="mt-1 w-5 h-5 rounded cursor-pointer flex-shrink-0" style={{ accentColor: ACCENT }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}>{task.text}</p>
+                  <button onClick={() => router.push(`/dashboard/projects/${task.projectId}`)} className="text-left" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{task.projectName}</button>
+                  <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>from {task.authorName}</p>
+                </div>
+              </div>
+            ))}
+          </MobileCard>
+        </MobileSection>
       )}
 
       {/* Recent */}

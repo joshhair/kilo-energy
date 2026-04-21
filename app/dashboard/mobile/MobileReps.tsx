@@ -4,12 +4,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { Search, Plus, Users } from 'lucide-react';
+import { Search, Plus, Users, ChevronRight, Mail, Clock, UserCog } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import ConfirmDialog from '../components/ConfirmDialog';
+import { TopPerformersPodium } from '../users/components/TopPerformersPodium';
 
 const REP_TYPE_LABELS: Record<string, string> = { closer: 'Closer', setter: 'Setter', both: 'Both' };
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
@@ -32,6 +35,7 @@ type SimpleUser = {
   phone?: string;
   role: string;
   repType?: string;
+  active?: boolean;
 };
 
 const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
@@ -43,10 +47,11 @@ const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> =
 
 export default function MobileReps() {
   const router = useRouter();
-  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep } = useApp();
+  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, reactivateRep, reactivateSubDealer, convertUserRole } = useApp();
   const { toast } = useToast();
 
   const isAdmin = effectiveRole === 'admin';
+  const isPM = effectiveRole === 'project_manager';
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -77,7 +82,35 @@ export default function MobileReps() {
     email: '',
     phone: '',
     repType: 'closer' as 'closer' | 'setter' | 'both',
+    userRole: 'rep' as 'rep' | 'admin' | 'sub-dealer' | 'project_manager',
   });
+  const [, setIsAddingUser] = useState(false);
+
+  // Inactive section expand/collapse state
+  const [showInactiveReps, setShowInactiveReps] = useState(false);
+  const [showInactiveSubDealers, setShowInactiveSubDealers] = useState(false);
+  const [showInactivePMs, setShowInactivePMs] = useState(false);
+  const [showInactiveAdmins, setShowInactiveAdmins] = useState(false);
+
+  // Pending Clerk invitations (admin only)
+  type PendingInvitation = { id: string; emailAddress: string; createdAt: number };
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
+  const [, setConfirmAction] = useState<{ title: string; message: string; confirmLabel: string; onConfirm: () => Promise<void> } | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch('/api/users/invitations')
+      .then((r) => r.ok ? r.json() : { invitations: [] })
+      .then((data) => setPendingInvitations(data.invitations ?? []))
+      .catch(() => {});
+  }, [isAdmin]);
+
+  // Reactivating state per user
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+  const [reactivatingSubDealerId, setReactivatingSubDealerId] = useState<string | null>(null);
+  const [reactivatingPmId, setReactivatingPmId] = useState<string | null>(null);
+  const [reactivatingAdminId, setReactivatingAdminId] = useState<string | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -91,10 +124,11 @@ export default function MobileReps() {
     const map = new Map<string, number>();
     for (const p of projects) {
       if (PIPELINE_EXCLUDED.has(p.phase)) continue;
-      map.set(p.repId, (map.get(p.repId) ?? 0) + 1);
-      if (p.setterId && p.setterId !== p.repId) {
-        map.set(p.setterId, (map.get(p.setterId) ?? 0) + 1);
-      }
+      const ids = new Set<string>([p.repId]);
+      if (p.setterId) ids.add(p.setterId);
+      p.additionalClosers?.forEach((c) => ids.add(c.userId));
+      p.additionalSetters?.forEach((c) => ids.add(c.userId));
+      for (const id of ids) map.set(id, (map.get(id) ?? 0) + 1);
     }
     return map;
   }, [projects]);
@@ -125,14 +159,55 @@ export default function MobileReps() {
     return map;
   }, [payrollEntries]);
 
+  const podiumDisplay = useMemo(() => {
+    const top3 = [...reps]
+      .filter((r) => r.role === 'rep' && r.active !== false)
+      .map((r) => ({ rep: { id: r.id, name: r.name }, paid: paidByRep.get(r.id) ?? 0 }))
+      .filter(({ paid }) => paid > 0)
+      .sort((a, b) => b.paid - a.paid)
+      .slice(0, 3);
+    if (top3.length < 3) return [];
+    return [
+      { ...top3[1], rank: 2, order: 1 },
+      { ...top3[0], rank: 1, order: 2 },
+      { ...top3[2], rank: 3, order: 3 },
+    ];
+  }, [reps, paidByRep]);
+
   const filtered = useMemo(() => {
     return reps.filter((r) => {
       if (r.active === false) return false;
       if (r.role !== 'rep') return false;
-      if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+      if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase()) && !r.email?.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
       return true;
     });
   }, [reps, debouncedSearch]);
+
+  // Inactive lists — filtered by search, not by role pill
+  const inactiveReps = reps.filter((r) => {
+    if (r.active !== false) return false;
+    if (r.role !== 'rep') return false;
+    if (debouncedSearch && !r.name.toLowerCase().includes(debouncedSearch.toLowerCase()) && !r.email?.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
+  });
+  const inactiveSubDealers = subDealers.filter((s) => {
+    if (s.active !== false) return false;
+    const name = `${s.firstName} ${s.lastName}`;
+    if (debouncedSearch && !name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
+  });
+  const inactivePMs = pmUsers.filter((u) => {
+    if (u.active !== false) return false;
+    const name = `${u.firstName} ${u.lastName}`;
+    if (debouncedSearch && !name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
+  });
+  const inactiveAdmins = adminUsers.filter((u) => {
+    if (u.active !== false) return false;
+    const name = `${u.firstName} ${u.lastName}`;
+    if (debouncedSearch && !name.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
+    return true;
+  });
 
   const getInitials = (name: string) => {
     const parts = name.split(' ').filter(Boolean);
@@ -197,6 +272,59 @@ export default function MobileReps() {
         />
       </div>
 
+      {/* Pending invitations panel — admin only */}
+      {isAdmin && pendingInvitations.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid rgba(255,176,32,0.25)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Mail className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending Invitations</span>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">{pendingInvitations.length}</span>
+          </div>
+          <div className="space-y-2">
+            {pendingInvitations.map((inv) => (
+              <div key={inv.id} className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                <Clock className="w-3.5 h-3.5 text-amber-400/60 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-medium truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inv.emailAddress}</p>
+                  <p className="text-[11px]" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    Invited {new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+                <button
+                  disabled={revokingInvitationId === inv.id}
+                  onClick={() => {
+                    if (revokingInvitationId) return;
+                    setConfirmAction({
+                      title: 'Revoke Invitation',
+                      message: `Revoke invitation for ${inv.emailAddress}?`,
+                      confirmLabel: 'Revoke',
+                      onConfirm: async () => {
+                        setConfirmAction(null);
+                        setRevokingInvitationId(inv.id);
+                        try {
+                          const res = await fetch(`/api/users/invitations/${inv.id}`, { method: 'DELETE' });
+                          if (!res.ok) throw new Error('Revoke failed');
+                          setPendingInvitations((prev) => prev.filter((i) => i.id !== inv.id));
+                          toast(`Invitation for ${inv.emailAddress} revoked`, 'success');
+                        } catch {
+                          toast('Failed to revoke invitation', 'error');
+                        } finally {
+                          setRevokingInvitationId(null);
+                        }
+                      },
+                    });
+                  }}
+                  className="shrink-0 text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                  style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                >
+                  {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Non-rep simple user list — shown for all filters except 'rep' */}
       {roleFilter !== 'rep' && (() => {
         const pool: SimpleUser[] =
@@ -204,14 +332,14 @@ export default function MobileReps() {
             ? [
                 ...reps.filter((r) => r.active !== false && r.role === 'rep').map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
                 ...subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
-                ...pmUsers,
-                ...adminUsers,
+                ...pmUsers.filter((u) => u.active !== false),
+                ...adminUsers.filter((u) => u.active !== false),
               ]
             : roleFilter === 'sub-dealer'
             ? subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
             : roleFilter === 'project_manager'
-            ? pmUsers
-            : adminUsers;
+            ? pmUsers.filter((u) => u.active !== false)
+            : adminUsers.filter((u) => u.active !== false);
 
         const q = debouncedSearch.trim().toLowerCase();
         const filteredPool = q
@@ -242,6 +370,21 @@ export default function MobileReps() {
                       )}
                     </div>
                     <MobileBadge value={badge.label} />
+                    {isAdmin && u.role === 'sub-dealer' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          convertUserRole(u.id, 'rep')
+                            .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
+                            .catch(() => {});
+                        }}
+                        title="Convert to Rep"
+                        className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                        style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                      >
+                        <UserCog className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </MobileCard>
               );
@@ -249,6 +392,9 @@ export default function MobileReps() {
           </div>
         );
       })()}
+
+      {/* Top Performers Podium — reps view, non-PM only */}
+      {roleFilter === 'rep' && !isPM && <TopPerformersPodium entries={podiumDisplay} />}
 
       {/* Rep list — shown only when the role filter is 'rep' */}
       {roleFilter === 'rep' && (filtered.length === 0 ? (
@@ -293,11 +439,226 @@ export default function MobileReps() {
         </div>
       ))}
 
-      {/* Add Rep Bottom Sheet */}
+      {/* Inactive reps — shown for rep or all filter */}
+      {isAdmin && (roleFilter === 'rep' || roleFilter === 'all') && inactiveReps.length > 0 && (
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+          <button
+            type="button"
+            onClick={() => setShowInactiveReps((v) => !v)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          >
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveReps ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Inactive reps ({inactiveReps.length})
+            </span>
+          </button>
+          {showInactiveReps && (
+            <div className="mt-2 space-y-2">
+              {inactiveReps.map((rep) => (
+                <div key={rep.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                    {(rep.firstName?.[0] ?? '') + (rep.lastName?.[0] ?? '')}
+                  </div>
+                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${rep.id}`)}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {rep.name} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                    </p>
+                    {rep.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>}
+                  </div>
+                  <button
+                    disabled={reactivatingId === rep.id}
+                    onClick={async () => {
+                      setReactivatingId(rep.id);
+                      try {
+                        await reactivateRep(rep.id);
+                        toast(`${rep.name} reactivated`, 'success');
+                      } catch {
+                        toast('Failed to reactivate rep', 'error');
+                      } finally {
+                        setReactivatingId(null);
+                      }
+                    }}
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                    style={{ background: 'rgba(0,229,160,0.12)', color: 'var(--accent-emerald)', border: '1px solid rgba(0,229,160,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Inactive sub-dealers — shown for sub-dealer or all filter */}
+      {isAdmin && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+          <button
+            type="button"
+            onClick={() => setShowInactiveSubDealers((v) => !v)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          >
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveSubDealers ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Inactive sub-dealers ({inactiveSubDealers.length})
+            </span>
+          </button>
+          {showInactiveSubDealers && (
+            <div className="mt-2 space-y-2">
+              {inactiveSubDealers.map((sd) => (
+                <div key={sd.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                    {(sd.firstName[0] ?? '') + (sd.lastName[0] ?? '')}
+                  </div>
+                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${sd.id}`)}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {sd.firstName} {sd.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                    </p>
+                    {sd.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
+                  </div>
+                  <button
+                    disabled={reactivatingSubDealerId === sd.id}
+                    onClick={async () => {
+                      setReactivatingSubDealerId(sd.id);
+                      try {
+                        await reactivateSubDealer(sd.id);
+                        toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
+                      } catch {
+                        toast('Failed to reactivate sub-dealer', 'error');
+                      } finally {
+                        setReactivatingSubDealerId(null);
+                      }
+                    }}
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                    style={{ background: 'rgba(180,125,255,0.12)', color: '#b47dff', border: '1px solid rgba(180,125,255,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Inactive PMs — shown for project_manager or all filter */}
+      {isAdmin && (roleFilter === 'project_manager' || roleFilter === 'all') && inactivePMs.length > 0 && (
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+          <button
+            type="button"
+            onClick={() => setShowInactivePMs((v) => !v)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          >
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactivePMs ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Inactive project managers ({inactivePMs.length})
+            </span>
+          </button>
+          {showInactivePMs && (
+            <div className="mt-2 space-y-2">
+              {inactivePMs.map((u) => (
+                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                    {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
+                  </div>
+                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                    </p>
+                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
+                  </div>
+                  <button
+                    disabled={reactivatingPmId === u.id}
+                    onClick={async () => {
+                      setReactivatingPmId(u.id);
+                      try {
+                        const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                        if (!res.ok) throw new Error();
+                        setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
+                        toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                      } catch {
+                        toast('Failed to reactivate project manager', 'error');
+                      } finally {
+                        setReactivatingPmId(null);
+                      }
+                    }}
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                    style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,196,240,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Inactive admins — shown for admin or all filter */}
+      {isAdmin && (roleFilter === 'admin' || roleFilter === 'all') && inactiveAdmins.length > 0 && (
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+          <button
+            type="button"
+            onClick={() => setShowInactiveAdmins((v) => !v)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          >
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveAdmins ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Inactive admins ({inactiveAdmins.length})
+            </span>
+          </button>
+          {showInactiveAdmins && (
+            <div className="mt-2 space-y-2">
+              {inactiveAdmins.map((u) => (
+                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                    {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
+                  </div>
+                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                    </p>
+                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
+                  </div>
+                  <button
+                    disabled={reactivatingAdminId === u.id}
+                    onClick={async () => {
+                      setReactivatingAdminId(u.id);
+                      try {
+                        const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                        if (!res.ok) throw new Error();
+                        setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
+                        toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                      } catch {
+                        toast('Failed to reactivate admin', 'error');
+                      } finally {
+                        setReactivatingAdminId(null);
+                      }
+                    }}
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                    style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add User Bottom Sheet */}
       <MobileBottomSheet
         open={showAddRep}
-        onClose={() => setShowAddRep(false)}
-        title="Add Rep"
+        onClose={() => {
+          setShowAddRep(false);
+          setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep' });
+        }}
+        title="Add User"
       >
         <form
           onSubmit={async (e) => {
@@ -306,30 +667,82 @@ export default function MobileReps() {
               toast('First and last name are required', 'error');
               return;
             }
+            const needsInvite = addForm.userRole === 'admin' || addForm.userRole === 'project_manager';
+            if (needsInvite && !addForm.email.trim()) {
+              toast('Email is required for this role', 'error');
+              return;
+            }
+            setIsAddingUser(true);
             try {
-              const res = await fetch('/api/reps', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  firstName: addForm.firstName.trim(),
-                  lastName: addForm.lastName.trim(),
-                  email: addForm.email.trim(),
-                  phone: addForm.phone.trim(),
-                  repType: addForm.repType,
-                }),
-              });
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const data = await res.json();
-              addRep(addForm.firstName.trim(), addForm.lastName.trim(), addForm.email.trim(), addForm.phone.trim(), addForm.repType, data.id);
+              const fn = addForm.firstName.trim();
+              const ln = addForm.lastName.trim();
+              const em = addForm.email.trim();
+              const ph = addForm.phone.trim();
+              if (needsInvite) {
+                const res = await fetch('/api/users/invite', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ firstName: fn, lastName: ln, email: em, phone: ph, role: addForm.userRole }),
+                });
+                if (!res.ok) {
+                  const body = await res.json().catch(() => ({}));
+                  throw new Error(body.error ?? `HTTP ${res.status}`);
+                }
+                const data = await res.json();
+                if (addForm.userRole === 'admin') {
+                  setAdminUsers((prev) => [...prev, { id: data.user.id, firstName: fn, lastName: ln, email: em, phone: ph, role: 'admin' }]);
+                } else {
+                  setPmUsers((prev) => [...prev, { id: data.user.id, firstName: fn, lastName: ln, email: em, phone: ph, role: 'project_manager' }]);
+                }
+                toast(`Invitation sent to ${em}`, 'success');
+              } else if (addForm.userRole === 'sub-dealer') {
+                await addSubDealer(fn, ln, em, ph);
+                toast(`${fn} ${ln} added`, 'success');
+              } else {
+                const res = await fetch('/api/reps', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ firstName: fn, lastName: ln, email: em, phone: ph, repType: addForm.repType }),
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                addRep(fn, ln, em, ph, addForm.repType, data.id);
+                toast(`${fn} ${ln} added`, 'success');
+              }
               setShowAddRep(false);
-              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer' });
-              toast(`${addForm.firstName} ${addForm.lastName} added`, 'success');
-            } catch {
-              toast('Failed to add rep', 'error');
+              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep' });
+            } catch (err) {
+              toast((err as Error).message || 'Failed to add user', 'error');
+            } finally {
+              setIsAddingUser(false);
             }
           }}
           className="px-5 space-y-4 pb-2"
         >
+          <div>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Role</label>
+            <div className="flex gap-2 flex-wrap">
+              {(['rep', 'admin', 'sub-dealer', 'project_manager'] as const).map((role) => {
+                const labels: Record<string, string> = { rep: 'Rep', admin: 'Admin', 'sub-dealer': 'Sub-Dealer', project_manager: 'PM' };
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setAddForm((f) => ({ ...f, userRole: role }))}
+                    className="flex-1 min-h-[40px] rounded-2xl text-sm font-semibold transition-colors"
+                    style={{
+                      background: addForm.userRole === role ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                      color: addForm.userRole === role ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                      border: addForm.userRole === role ? '1px solid var(--accent-emerald)' : '1px solid var(--m-border, var(--border-mobile))',
+                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    }}
+                  >
+                    {labels[role]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div>
             <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>First Name</label>
             <input

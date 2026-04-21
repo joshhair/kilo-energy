@@ -541,7 +541,7 @@ function TrainingPageInner() {
     () => trainerEntries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0),
     [trainerEntries]
   );
-  const activeTraineeCount = new Set(myAssignments.filter((a) => a.isActiveTraining).map((a) => a.traineeId)).size;
+  const activeTraineeCount = new Set(traineeData.filter((t) => t.assignment.isActiveTraining !== false).map((t) => t.traineeId)).size;
   const uniqueTraineeData = [...traineeData.reduce((m, t) => {
     const prev = m.get(t.traineeId);
     if (!prev || t.currentRate > prev.currentRate) m.set(t.traineeId, t);

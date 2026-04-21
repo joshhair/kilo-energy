@@ -4,8 +4,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { Phase, ACTIVE_PHASES } from '../../../lib/data';
+import { Phase } from '../../../lib/data';
 import { Search, Plus } from 'lucide-react';
+import { applyStatusFilter, type StatusFilter } from '../projects/components/shared';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
@@ -67,6 +68,8 @@ export default function MobileProjects() {
   const searchParams = useSearchParams();
 
   const isSubDealer = effectiveRole === 'sub-dealer';
+  const isPM = effectiveRole === 'project_manager';
+  const isRep = effectiveRole !== 'admin' && !isPM;
 
   // Initial values read from URL so filters survive project-detail round trips,
   // matching desktop Projects page behaviour.
@@ -76,11 +79,31 @@ export default function MobileProjects() {
     const v = searchParams.get('phase');
     return v && (PHASE_FILTERS as readonly string[]).includes(v) ? (v as Phase | 'All') : 'All';
   });
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const v = searchParams.get('status') as StatusFilter | null;
+    return v && ['active', 'all', 'completed', 'cancelled', 'on-hold', 'inactive'].includes(v) ? v : 'active';
+  });
+  const [dealScope, setDealScope] = useState<'mine' | 'all'>(() => {
+    const v = searchParams.get('scope');
+    if (v === 'mine' || v === 'all') return v;
+    return 'all';
+  });
+  const didInitDealScope = useRef(false);
   const [installerFilter, setInstallerFilter] = useState<string>(() => searchParams.get('installer') ?? '');
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     const v = searchParams.get('sort');
     return v && SORT_OPTIONS.some((o) => o.value === v) ? (v as SortMode) : 'soldDesc';
   });
+
+  // Re-initialise dealScope once effectiveRole resolves from null on first hydration.
+  useEffect(() => {
+    if (!didInitDealScope.current && effectiveRole !== null) {
+      didInitDealScope.current = true;
+      const scopeParam = searchParams.get('scope');
+      if (scopeParam === 'mine' || scopeParam === 'all') return;
+      setDealScope(effectiveRole !== 'admin' && effectiveRole !== 'project_manager' ? 'mine' : 'all');
+    }
+  }, [effectiveRole, searchParams]);
 
   // Persist filters to URL — fires only after debounce lands so keystrokes
   // don't spam router.replace.
@@ -90,10 +113,12 @@ export default function MobileProjects() {
     if (phaseFilter !== 'All') params.set('phase', phaseFilter); else params.delete('phase');
     if (installerFilter) params.set('installer', installerFilter); else params.delete('installer');
     if (sortMode !== 'soldDesc') params.set('sort', sortMode); else params.delete('sort');
+    if (statusFilter !== 'active') params.set('status', statusFilter); else params.delete('status');
+    if (dealScope === 'mine') params.set('scope', 'mine'); else params.delete('scope');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, phaseFilter, installerFilter, sortMode]);
+  }, [debouncedSearch, phaseFilter, installerFilter, sortMode, statusFilter, dealScope]);
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
   const [listKey, setListKey] = useState(0);
@@ -117,20 +142,23 @@ export default function MobileProjects() {
   }, [phaseFilter, debouncedSearch]);
 
   const visibleProjects = useMemo(() => {
-    if (effectiveRole === 'admin' || effectiveRole === 'project_manager') return projects;
+    const isOnDeal = (p: typeof projects[0]) =>
+      p.repId === effectiveRepId
+      || p.setterId === effectiveRepId
+      || p.trainerId === effectiveRepId
+      || !!p.additionalClosers?.some((c) => c.userId === effectiveRepId)
+      || !!p.additionalSetters?.some((s) => s.userId === effectiveRepId);
+
+    if (effectiveRole === 'admin' || effectiveRole === 'project_manager') {
+      return dealScope === 'mine' ? projects.filter(isOnDeal) : projects;
+    }
     if (isSubDealer) return projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId);
     // Trainer (per-project override) + co-closer/co-setter must appear
     // in the rep's list too — same logic desktop uses. Matches the
     // "isOnDeal" helper in app/dashboard/projects/page.tsx so both
     // devices show the exact same set of projects for a given rep.
-    return projects.filter((p) =>
-      p.repId === effectiveRepId
-      || p.setterId === effectiveRepId
-      || p.trainerId === effectiveRepId
-      || !!p.additionalClosers?.some((c) => c.userId === effectiveRepId)
-      || !!p.additionalSetters?.some((s) => s.userId === effectiveRepId),
-    );
-  }, [effectiveRole, effectiveRepId, projects, isSubDealer]);
+    return projects.filter(isOnDeal);
+  }, [effectiveRole, effectiveRepId, projects, isSubDealer, dealScope]);
 
   const phaseCounts = useMemo(() => {
     const acc: Record<string, number> = {};
@@ -153,7 +181,7 @@ export default function MobileProjects() {
     if (phaseFilter !== 'All') {
       result = result.filter((p) => p.phase === phaseFilter);
     } else {
-      result = result.filter((p) => ACTIVE_PHASES.includes(p.phase));
+      result = applyStatusFilter(result, statusFilter);
     }
 
     if (installerFilter) {
@@ -162,7 +190,13 @@ export default function MobileProjects() {
 
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
-      result = result.filter((p) => p.customerName.toLowerCase().includes(q));
+      result = result.filter((p) =>
+        p.customerName.toLowerCase().includes(q) ||
+        (p.repName ?? '').toLowerCase().includes(q) ||
+        (p.setterName ?? '').toLowerCase().includes(q) ||
+        p.phase.toLowerCase().includes(q) ||
+        p.installer.toLowerCase().includes(q)
+      );
     }
 
     const sorted = [...result];
@@ -175,11 +209,11 @@ export default function MobileProjects() {
       default:         sorted.sort((a, b) => b.soldDate.localeCompare(a.soldDate));
     }
     return sorted;
-  }, [visibleProjects, phaseFilter, installerFilter, debouncedSearch, sortMode]);
+  }, [visibleProjects, phaseFilter, statusFilter, installerFilter, debouncedSearch, sortMode]);
 
   // "Are any non-default filters active?" — drives the empty-state CTA:
   // if yes, show Clear Filters; otherwise show Submit Deal.
-  const hasActiveFilters = phaseFilter !== 'All' || !!installerFilter || !!debouncedSearch;
+  const hasActiveFilters = phaseFilter !== 'All' || !!installerFilter || !!debouncedSearch || statusFilter !== 'active' || dealScope !== (isRep ? 'mine' : 'all');
 
   // Average days in each phase (based on days since sold for all projects in that phase)
   const phaseAvgDays = useMemo(() => {
@@ -189,9 +223,8 @@ export default function MobileProjects() {
     const terminalPhases = ['Cancelled', 'Completed', 'PTO'];
     for (const p of visibleProjects) {
       if (terminalPhases.includes(p.phase)) continue;
-      const [y, m, d] = p.soldDate.split('-').map(Number);
-      const sold = new Date(y, m - 1, d);
-      const days = Math.max(0, Math.floor((now.getTime() - sold.getTime()) / 86400000));
+      const phaseStart = p.phaseChangedAt ? new Date(p.phaseChangedAt) : (() => { const [y, m, d] = p.soldDate.split('-').map(Number); return new Date(y, m - 1, d); })();
+      const days = Math.max(0, Math.floor((now.getTime() - phaseStart.getTime()) / 86400000));
       if (!acc[p.phase]) acc[p.phase] = { total: 0, count: 0 };
       acc[p.phase].total += days;
       acc[p.phase].count += 1;
@@ -334,7 +367,7 @@ export default function MobileProjects() {
                   Try a different phase, installer, or clear your search.
                 </p>
                 <button
-                  onClick={() => { setPhaseFilter('All'); setInstallerFilter(''); setSearch(''); setSortMode('soldDesc'); }}
+                  onClick={() => { setPhaseFilter('All'); setInstallerFilter(''); setSearch(''); setSortMode('soldDesc'); setStatusFilter('active'); setDealScope(isRep ? 'mine' : 'all'); }}
                   className="mt-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold text-white"
                   style={{ background: 'var(--m-border, var(--border-mobile))' }}
                 >
@@ -367,7 +400,7 @@ export default function MobileProjects() {
           </div>
         ) : (
           filtered.map((project, index) => {
-            const showCommission = effectiveRole === 'rep' || effectiveRole === 'sub-dealer';
+            const showCommission = !isPM && (effectiveRole === 'rep' || effectiveRole === 'sub-dealer');
             const commission = showCommission
               ? myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries)
               : null;

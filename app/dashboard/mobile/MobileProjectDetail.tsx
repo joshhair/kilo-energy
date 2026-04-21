@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import {
-  PHASES, Phase,
+  PHASES, Phase, InstallerBaseline, DEFAULT_INSTALL_PAY_PCT,
+  getSolarTechBaseline, getProductCatalogBaselineVersioned,
+  getInstallerRatesForDeal, calculateCommission,
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
@@ -17,6 +19,7 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 import ProjectChatter from '../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { AdminNotesEditor } from '../projects/components/detail/AdminNotesEditor';
 
 // ── Pipeline steps ──
 
@@ -164,7 +167,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const {
     effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps,
-    updateProject: ctxUpdateProject,
+    updateProject: ctxUpdateProject, installerPayConfigs,
+    installerPricingVersions,
+    productCatalogProducts, productCatalogPricingVersions, solarTechProducts,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
@@ -181,19 +186,37 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
   const [_notesExpanded, _setNotesExpanded] = useState(false);
-  // Mobile edit sheet. Intentionally scoped to the edits mobile admins
-  // reach for most often — setter, notes, flag, co-closer/co-setter
-  // management. Heavier fields (installer, financer, kW, PPW, baseline
-  // override) stay on desktop where the commission preview renders.
+  const [editM1, setEditM1] = useState(false);
+  const [editM2, setEditM2] = useState(false);
+  const [m1Val, setM1Val] = useState('');
+  const [m2Val, setM2Val] = useState('');
   const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [, setEditErrors] = useState<Record<string, string>>({});
   const [editDraft, setEditDraft] = useState<{
+    installer: string;
+    financer: string;
+    productType: string;
+    kWSize: string;
+    netPPW: string;
+    soldDate: string;
     setterId: string;
     notes: string;
+    useBaselineOverride: boolean;
+    overrideCloserPerW: string;
+    overrideSetterPerW: string;
+    overrideKiloPerW: string;
+    solarTechProductId: string;
     additionalClosers: CoPartyDraft[];
     additionalSetters: CoPartyDraft[];
     trainerId: string;
     trainerRate: string;
-  }>({ setterId: '', notes: '', additionalClosers: [], additionalSetters: [], trainerId: '', trainerRate: '' });
+  }>({
+    installer: '', financer: '', productType: '', kWSize: '', netPPW: '', soldDate: '',
+    setterId: '', notes: '', useBaselineOverride: false,
+    overrideCloserPerW: '', overrideSetterPerW: '', overrideKiloPerW: '',
+    solarTechProductId: '', additionalClosers: [], additionalSetters: [],
+    trainerId: '', trainerRate: '',
+  });
 
   useEffect(() => {
     document.title = project ? `${project.customerName} | Kilo Energy` : 'Project | Kilo Energy';
@@ -238,11 +261,65 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     ctxUpdateProject(projectId, updates);
   };
 
+  const handleToggleM1 = () => {
+    const previousM1Paid = project.m1Paid;
+    const next = !previousM1Paid;
+    updateProject({ m1Paid: next });
+    toast(`M1 marked as ${next ? 'Paid' : 'Unpaid'}`, 'success', { label: 'Undo', onClick: () => { updateProject({ m1Paid: previousM1Paid }); } });
+  };
+
+  const handleToggleM2 = () => {
+    const previousM2Paid = project.m2Paid;
+    const next = !previousM2Paid;
+    updateProject({ m2Paid: next });
+    toast(`M2 marked as ${next ? 'Paid' : 'Unpaid'}`, 'success', { label: 'Undo', onClick: () => { updateProject({ m2Paid: previousM2Paid }); } });
+  };
+
+  const saveM1 = () => {
+    const val = parseFloat(m1Val);
+    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
+    else { toast('Invalid amount', 'error'); }
+  };
+
+  const saveM2 = () => {
+    const val = parseFloat(m2Val);
+    if (!isNaN(val)) {
+      const installPayPct = installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      const newM3 = installPayPct < 100 && !project.subDealerId
+        ? Math.round(val * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0;
+      const originalM2 = project.m2Amount ?? 0;
+      const scale = originalM2 > 0 ? val / originalM2 : 1;
+      const newSetterM2 = Math.round((project.setterM2Amount ?? 0) * scale * 100) / 100;
+      const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
+        ? Math.round(newSetterM2 * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0;
+      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
+      if (originalM2 === 0 && project.setterId) {
+        toast('M2 updated — closer M2 was $0 so setter M2 could not be auto-scaled.', 'error');
+      } else {
+        toast('M2 amount updated', 'success');
+      }
+      setEditM2(false);
+    } else { toast('Invalid amount', 'error'); }
+  };
+
   // ── Edit sheet handlers ─────────────────────────────────────────────
   const openEditSheet = () => {
     setEditDraft({
+      installer: project.installer,
+      financer: project.financer,
+      productType: project.productType,
+      kWSize: String(project.kWSize),
+      netPPW: String(project.netPPW),
+      soldDate: project.soldDate,
       setterId: project.setterId ?? '',
       notes: project.notes ?? '',
+      useBaselineOverride: !!project.baselineOverride,
+      overrideCloserPerW: project.baselineOverride ? String(project.baselineOverride.closerPerW) : '',
+      overrideSetterPerW: project.baselineOverride?.setterPerW != null ? String(project.baselineOverride.setterPerW) : '',
+      overrideKiloPerW: project.baselineOverride ? String(project.baselineOverride.kiloPerW) : '',
+      solarTechProductId: project.solarTechProductId ?? '',
       additionalClosers: (project.additionalClosers ?? []).map((c) => ({
         userId: c.userId,
         m1Amount: String(c.m1Amount ?? 0),
@@ -258,6 +335,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       trainerId: project.trainerId ?? '',
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
     });
+    setEditErrors({});
     setMoreSheetOpen(false);
     setEditSheetOpen(true);
   };
@@ -293,6 +371,37 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const nextTrainerRate = nextTrainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : undefined;
     const trainerRep = nextTrainerId ? reps.find((r) => r.id === nextTrainerId) : undefined;
 
+    // Recalculate milestone amounts — setter presence changes closer M1 ($0 with setter, flat without)
+    const kw = project.kWSize;
+    const ppw = project.netPPW;
+    let baseline: InstallerBaseline;
+    if (project.baselineOverride) {
+      baseline = project.baselineOverride;
+    } else if (project.installer === 'SolarTech' && project.solarTechProductId) {
+      baseline = getSolarTechBaseline(project.solarTechProductId, kw, solarTechProducts);
+    } else if (project.installerProductId) {
+      baseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, project.soldDate, productCatalogPricingVersions);
+    } else {
+      baseline = getInstallerRatesForDeal(project.installer, project.soldDate, kw, installerPricingVersions);
+    }
+    const closerTotal = calculateCommission(ppw, baseline.closerPerW, kw);
+    const m1Flat = kw >= 5 ? 1000 : 500;
+    const setterPerW = 'setterPerW' in baseline && baseline.setterPerW != null
+      ? baseline.setterPerW
+      : Math.round((baseline.closerPerW + 0.10) * 100) / 100;
+    const setterTotal = calculateCommission(ppw, setterPerW, kw);
+    const hasSetter = !!editDraft.setterId;
+    const newSetterM1Amount = hasSetter ? Math.min(m1Flat, Math.max(0, setterTotal)) : 0;
+    const installPayPct = installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const hasM3 = installPayPct < 100 && !project.subDealerId;
+    const newM1Amount = hasSetter ? 0 : Math.min(m1Flat, Math.max(0, closerTotal));
+    const closerM2Full = Math.max(0, closerTotal - newM1Amount);
+    const setterM2Full = Math.max(0, setterTotal - newSetterM1Amount);
+    const newM2Amount = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
+    const newM3Amount = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+    const newSetterM2Amount = hasSetter ? Math.round(setterM2Full * (installPayPct / 100) * 100) / 100 : 0;
+    const newSetterM3Amount = hasSetter && hasM3 ? Math.round(setterM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+
     updateProject({
       setterId: editDraft.setterId || undefined,
       setterName: setterRep?.name ?? (editDraft.setterId ? project.setterName : undefined),
@@ -302,6 +411,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       trainerId: nextTrainerId,
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
+      m1Amount: newM1Amount,
+      m2Amount: newM2Amount,
+      m3Amount: newM3Amount,
+      setterM1Amount: newSetterM1Amount,
+      setterM2Amount: newSetterM2Amount,
+      setterM3Amount: newSetterM3Amount,
     });
     setEditSheetOpen(false);
     toast('Project updated', 'success');
@@ -738,28 +853,74 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   />
                 </>
               )}
-              {visibleStages.map((stage, i) => (
-                <div key={stage.key} className="flex flex-col items-center gap-1.5 relative z-10">
-                  <div
-                    className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{
-                      background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' : 'var(--m-card, var(--surface-mobile-card))',
-                      border: `2px solid ${stage.paid ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
-                      color: stage.paid ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                      animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
-                    }}
-                  >{stage.key}</div>
-                  <span
-                    className="milestone-amount text-sm font-bold tabular-nums"
-                    style={{
-                      color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                      fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
-                      animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
-                    }}
-                  >{fmt$(stage.amount)}</span>
-                  <MobileBadge value={stage.paid ? 'Paid' : 'Pending'} variant="status" />
-                </div>
-              ))}
+              {visibleStages.map((stage, i) => {
+                const isEditableStage = !isMeView && isAdmin && (stage.key === 'M1' || stage.key === 'M2');
+                const isEditing = stage.key === 'M1' ? editM1 : editM2;
+                return (
+                  <div key={stage.key} className="flex flex-col items-center gap-1.5 relative z-10">
+                    <div
+                      className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
+                      style={{
+                        background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' : 'var(--m-card, var(--surface-mobile-card))',
+                        border: `2px solid ${stage.paid ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
+                        color: stage.paid ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                        animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
+                      }}
+                    >{stage.key}</div>
+                    {isEditableStage && isEditing ? (
+                      <div className="flex flex-col items-center gap-1">
+                        <input
+                          type="number"
+                          value={stage.key === 'M1' ? m1Val : m2Val}
+                          onChange={(e) => stage.key === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
+                          className="w-20 text-xs text-center rounded px-1 py-0.5 text-white"
+                          style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+                        />
+                        <div className="flex gap-1.5">
+                          <button onClick={stage.key === 'M1' ? saveM1 : saveM2} className="text-[10px] font-medium" style={{ color: 'var(--accent-emerald)' }}>Save</button>
+                          <button onClick={() => stage.key === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-[10px]" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {isEditableStage ? (
+                          <button
+                            onClick={() => {
+                              if (stage.key === 'M1') { setM1Val(String(stage.amount)); setEditM1(true); }
+                              else { setM2Val(String(stage.amount)); setEditM2(true); }
+                            }}
+                            className="milestone-amount text-sm font-bold tabular-nums underline-offset-2"
+                            style={{
+                              color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                              fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                              animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
+                            }}
+                          >{fmt$(stage.amount)}</button>
+                        ) : (
+                          <span
+                            className="milestone-amount text-sm font-bold tabular-nums"
+                            style={{
+                              color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                              fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                              animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
+                            }}
+                          >{fmt$(stage.amount)}</span>
+                        )}
+                        <MobileBadge value={stage.paid ? 'Paid' : 'Pending'} variant="status" />
+                        {isEditableStage && (
+                          <button
+                            onClick={stage.key === 'M1' ? handleToggleM1 : handleToggleM2}
+                            className="text-[10px] px-1.5 py-0.5 rounded-md font-medium min-h-[28px]"
+                            style={{ background: stage.paid ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: stage.paid ? 'var(--accent-emerald)' : '#f59e0b' }}
+                          >
+                            {stage.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </MobileCard>
         );
@@ -778,14 +939,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           other relationship; the gate here is belt+suspenders (the
           field arrives as undefined for reps anyway). */}
       {(isAdmin || isPM) && (
-        <MobileSection title="Admin Notes" collapsible defaultOpen={false}>
-          <p className="text-[11px] text-amber-400/80 mb-2 uppercase tracking-wider font-semibold">Admin · PM only · reps cannot see</p>
-          {project.adminNotes ? (
-            <p className="text-base text-slate-200 leading-relaxed whitespace-pre-wrap">{project.adminNotes}</p>
-          ) : (
-            <p className="text-base text-slate-500 italic">No admin notes — add from desktop.</p>
-          )}
-        </MobileSection>
+        <AdminNotesEditor
+          projectId={projectId}
+          initial={project.adminNotes ?? ''}
+          onPatch={(text) => ctxUpdateProject(projectId, { adminNotes: text })}
+        />
       )}
 
       {/* Messages / Chatter */}
@@ -850,7 +1008,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           icon={project.flagged ? FlagOff : Flag}
           onTap={handleFlag}
         />
-        {project.phase !== 'Cancelled' && (isAdmin || effectiveRepId === project.repId) && (
+        {project.phase !== 'Cancelled' && (isAdmin || isPM || effectiveRepId === project.repId) && (
           <MobileBottomSheet.Item
             label="Cancel Project"
             icon={XIcon}

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
-import { sumPaid } from '../../../lib/aggregators';
+import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
 import { Banknote, Receipt, ChevronRight } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -29,7 +29,7 @@ const WARNING = 'var(--m-warning, #f5a623)';
 function getNextFriday(): Date {
   const d = new Date();
   const day = d.getDay();
-  const diff = ((5 - day + 7) % 7) || 7;
+  const diff = (5 - day + 7) % 7;
   const nf = new Date(d);
   nf.setDate(d.getDate() + diff);
   return nf;
@@ -117,7 +117,7 @@ export default function MobileMyPay() {
   const pendingTotal = useMemo(
     () =>
       payrollEntries
-        .filter((p) => p.repId === effectiveRepId && (p.status === 'Pending' || (p.status === 'Paid' && p.date > todayStr)))
+        .filter((p) => p.repId === effectiveRepId && p.status === 'Pending')
         .reduce((s, p) => s + p.amount, 0),
     [payrollEntries, effectiveRepId, todayStr],
   );
@@ -130,10 +130,19 @@ export default function MobileMyPay() {
     [payrollEntries, effectiveRepId],
   );
 
+  const pendingChargebackTotal = useMemo(
+    () => Math.abs(sumPendingChargebacks(payrollEntries, { repId: effectiveRepId ?? undefined })),
+    [payrollEntries, effectiveRepId],
+  );
+  const pendingChargebackCount = useMemo(
+    () => countPendingChargebacks(payrollEntries, { repId: effectiveRepId ?? undefined }),
+    [payrollEntries, effectiveRepId],
+  );
+
   const nextPayoutTotal = useMemo(
     () =>
       payrollEntries
-        .filter((p) => p.repId === effectiveRepId && p.date === nextFridayStr && p.status !== 'Draft')
+        .filter((p) => p.repId === effectiveRepId && p.date === nextFridayStr && p.status === 'Pending')
         .reduce((s, p) => s + p.amount, 0),
     [payrollEntries, effectiveRepId, nextFridayStr],
   );
@@ -154,15 +163,15 @@ export default function MobileMyPay() {
     const preAcceptance = ['New'];
     return myProjects
       .filter((p) => preAcceptance.includes(p.phase))
-      .reduce((s, p) => s + (p.m1Amount ?? 0), 0);
-  }, [myProjects]);
+      .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0)), 0);
+  }, [myProjects, effectiveRepId]);
 
   const projectedM2 = useMemo(() => {
     const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
     return myProjects
       .filter((p) => preInstalled.includes(p.phase))
-      .reduce((s, p) => s + (p.m2Amount ?? 0), 0);
-  }, [myProjects]);
+      .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
+  }, [myProjects, effectiveRepId]);
 
   const pipelineTotal = projectedM1 + projectedM2;
 
@@ -332,6 +341,39 @@ export default function MobileMyPay() {
           </MobileCard>
         </MobileSection>
       )}
+
+      {/* ── Pending Chargebacks ── */}
+      {pendingChargebackCount > 0 && (() => {
+        const pendingEntries = payrollEntries
+          .filter((p) => p.repId === effectiveRepId && p.amount < 0 && (p.status === 'Draft' || p.status === 'Pending'))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        return (
+          <MobileSection title="Pending Chargebacks" count={pendingChargebackCount}>
+            <MobileCard>
+              <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem', marginBottom: '0.75rem' }}>
+                Amounts to be clawed back from a future paycheck.
+              </p>
+              <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+                <span className="tracking-widest uppercase" style={{ color: WARNING, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600 }}>Total</span>
+                <span className="tabular-nums font-bold" style={{ color: 'var(--accent-red, #ef4444)', fontFamily: FONT_DISPLAY, fontSize: '1.3rem' }}>-{fmt$(pendingChargebackTotal)}</span>
+              </div>
+              {pendingEntries.map((e, i) => (
+                <div
+                  key={e.id}
+                  className={`flex items-center justify-between py-3 ${i < pendingEntries.length - 1 ? 'border-b' : ''}`}
+                  style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                >
+                  <div>
+                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{e.customerName || '(no project)'}</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{e.paymentStage} · {e.status} · {e.date}</p>
+                  </div>
+                  <p className="font-bold tabular-nums" style={{ color: 'var(--accent-red, #ef4444)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{fmt$(e.amount)}</p>
+                </div>
+              ))}
+            </MobileCard>
+          </MobileSection>
+        );
+      })()}
 
       {/* ── Reimbursement link ── */}
       <button

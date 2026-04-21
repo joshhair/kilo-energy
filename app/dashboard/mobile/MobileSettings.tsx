@@ -5,22 +5,23 @@ import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import {
-  ArrowLeft, Layers, Tent, Users, Handshake,
+  ArrowLeft, Tent, Users, Handshake,
   Building2, Landmark, BookOpen, Shield, Download,
-  Trash2, CheckSquare, Square,
+  Trash2, CheckSquare, Square, SlidersHorizontal,
 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileListItem from './shared/MobileListItem';
 import MobileSection from './shared/MobileSection';
 import MobileEmptyState from './shared/MobileEmptyState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type SettingsSection =
   | 'trainers' | 'blitz-permissions' | 'project-managers' | 'sub-dealers'
   | 'installers' | 'financers' | 'baselines'
-  | 'users' | 'export';
+  | 'users' | 'export' | 'customization';
 
 interface NavItem {
   id: SettingsSection;
@@ -37,7 +38,6 @@ const NAV: NavGroup[] = [
   {
     group: 'Team',
     items: [
-      { id: 'trainers', label: 'Trainer Overrides', icon: Layers },
       { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
       { id: 'project-managers', label: 'Project Managers', icon: Users },
       { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
@@ -56,6 +56,7 @@ const NAV: NavGroup[] = [
     items: [
       { id: 'users', label: 'Admin Users', icon: Shield },
       { id: 'export', label: 'Export', icon: Download },
+      { id: 'customization', label: 'Customization', icon: SlidersHorizontal },
     ],
   },
 ];
@@ -165,6 +166,7 @@ function SectionContent({ section }: { section: SettingsSection }) {
     case 'trainers': return <ReadOnlyListSection title="Trainer Overrides" description="Manage trainer overrides in the Training page." />;
     case 'baselines': return <ReadOnlyListSection title="Baselines" description="View and edit baseline pricing on desktop for the full experience." />;
     case 'sub-dealers': return <SubDealersSection />;
+    case 'customization': return <CustomizationSection />;
     default: return null;
   }
 }
@@ -250,7 +252,7 @@ function InstallersSection() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inst.name}</p>
-                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{Math.round(installPct * 100)}%</span></p>
+                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{installPct}%</span></p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span
@@ -289,7 +291,7 @@ function FinancersSection() {
       {financers.length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
-        financers.map((fin) => (
+        financers.filter(fin => fin.name !== 'Cash').map((fin) => (
           <MobileCard key={fin.name}>
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
@@ -328,6 +330,7 @@ function AdminUsersSection() {
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadAdmins = useCallback(() => {
     fetch('/api/reps?role=admin')
@@ -346,13 +349,13 @@ function AdminUsersSection() {
     const firstName = parts[0] ?? '';
     const lastName = parts.slice(1).join(' ');
     if (!firstName || !newEmail.trim()) return;
-    const res = await fetch('/api/reps', {
+    const res = await fetch('/api/users/invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ firstName, lastName, email: newEmail.trim(), role: 'admin' }),
     });
     if (res.ok) {
-      toast('Admin user added');
+      toast('Admin user invited');
       setNewName('');
       setNewEmail('');
       loadAdmins();
@@ -361,8 +364,9 @@ function AdminUsersSection() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+  const handleDelete = async () => {
+    if (!confirmDeleteId) return;
+    const res = await fetch(`/api/users/${confirmDeleteId}`, { method: 'DELETE' });
     if (res.ok) {
       toast('Admin removed');
       loadAdmins();
@@ -441,7 +445,7 @@ function AdminUsersSection() {
                   <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.email}</p>
                 </div>
                 <button
-                  onClick={() => handleDelete(admin.id)}
+                  onClick={() => setConfirmDeleteId(admin.id)}
                   className="p-2 active:opacity-70 transition-colors"
                   style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
                 >
@@ -452,6 +456,14 @@ function AdminUsersSection() {
           ))}
         </MobileCard>
       )}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Remove Admin User"
+        message="Are you sure you want to remove this admin user? This cannot be undone."
+        confirmLabel="Remove"
+        onConfirm={handleDelete}
+        onClose={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }
@@ -465,6 +477,7 @@ function ProjectManagersSection() {
     canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean;
   }>>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadPMs = useCallback(() => {
     fetch('/api/reps?role=project_manager')
@@ -487,9 +500,11 @@ function ProjectManagersSection() {
     }
   };
 
-  const handleDelete = async (pmId: string) => {
-    const res = await fetch(`/api/users/${pmId}`, { method: 'DELETE' });
+  const handleDelete = async () => {
+    if (!confirmDeleteId) return;
+    const res = await fetch(`/api/users/${confirmDeleteId}`, { method: 'DELETE' });
     if (res.ok) { toast('PM removed'); loadPMs(); }
+    setConfirmDeleteId(null);
   };
 
   if (loading) return <SettingsSkeleton rows={4} />;
@@ -508,7 +523,7 @@ function ProjectManagersSection() {
                 <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.email}</p>
               </div>
               <button
-                onClick={() => handleDelete(pm.id)}
+                onClick={() => setConfirmDeleteId(pm.id)}
                 className="p-2 active:opacity-70 transition-colors shrink-0"
                 style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
               >
@@ -540,6 +555,14 @@ function ProjectManagersSection() {
           </MobileCard>
         ))
       )}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Remove Project Manager"
+        message="Are you sure you want to remove this project manager? This cannot be undone."
+        confirmLabel="Remove"
+        onConfirm={handleDelete}
+        onClose={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }
@@ -728,6 +751,93 @@ function ExportSection() {
           >{type}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+// ─── Customization Section ──────────────────────────────────────────────────
+
+const PIPELINE_THRESHOLDS_KEY = 'kilo-pipeline-thresholds';
+const THRESHOLD_DEFAULTS: Record<string, number> = {
+  'New': 5, 'Acceptance': 10, 'Site Survey': 20, 'Design': 30,
+  'Permitting': 50, 'Pending Install': 65, 'Installed': 75,
+};
+const THRESHOLD_PHASES = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'];
+
+function CustomizationSection() {
+  const { toast } = useToast();
+  const [thresholds, setThresholds] = useState<Record<string, number>>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(PIPELINE_THRESHOLDS_KEY) : null;
+      return stored ? { ...THRESHOLD_DEFAULTS, ...JSON.parse(stored) } : { ...THRESHOLD_DEFAULTS };
+    } catch { return { ...THRESHOLD_DEFAULTS }; }
+  });
+
+  const handleSave = () => {
+    localStorage.setItem(PIPELINE_THRESHOLDS_KEY, JSON.stringify(thresholds));
+    toast('Thresholds saved');
+  };
+
+  const handleReset = () => {
+    setThresholds({ ...THRESHOLD_DEFAULTS });
+    localStorage.removeItem(PIPELINE_THRESHOLDS_KEY);
+    toast('Thresholds reset');
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        Days from sold date before a project is flagged as &ldquo;stuck&rdquo; in each phase.
+      </p>
+      <MobileCard>
+        <div className="space-y-3">
+          {THRESHOLD_PHASES.map((phase) => (
+            <div key={phase} className="flex items-center justify-between gap-4">
+              <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{phase}</span>
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={thresholds[phase] ?? THRESHOLD_DEFAULTS[phase]}
+                onChange={(e) => setThresholds((prev) => ({ ...prev, [phase]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                inputMode="numeric"
+                className="w-20 rounded-xl px-3 py-2 text-base text-white text-center focus:outline-none focus:ring-1"
+                style={{
+                  background: 'var(--m-card, var(--surface-mobile-card))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  '--tw-ring-color': 'var(--accent-emerald)',
+                } as React.CSSProperties}
+              />
+            </div>
+          ))}
+        </div>
+      </MobileCard>
+      <div className="flex gap-3">
+        <button
+          onClick={handleSave}
+          className="flex-1 min-h-[48px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors"
+          style={{
+            background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+            boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
+        >
+          Save
+        </button>
+        <button
+          onClick={handleReset}
+          className="flex-1 min-h-[48px] rounded-2xl text-base font-medium active:opacity-80 transition-colors"
+          style={{
+            background: 'var(--m-card, var(--surface-mobile-card))',
+            border: '1px solid var(--m-border, var(--border-mobile))',
+            color: 'var(--m-text-muted, var(--text-mobile-muted))',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
+        >
+          Reset
+        </button>
+      </div>
     </div>
   );
 }

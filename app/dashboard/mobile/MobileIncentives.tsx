@@ -15,7 +15,8 @@ import {
 } from '../../../lib/data';
 import { useToast } from '../../../lib/toast';
 import { todayLocalDateStr } from '../../../lib/utils';
-import { Trophy, Plus, Gift, Target, Loader2, Zap } from 'lucide-react';
+import { Trophy, Plus, Gift, Target, Loader2, Zap, Pencil, Copy, Trash2, Square, CheckSquare, Archive } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -54,6 +55,17 @@ function isExpired(endDate: string | null): boolean {
   return end < today;
 }
 
+function isEndingSoon(endDate: string | null): boolean {
+  if (!endDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [y, m, d] = endDate.split('-').map(Number);
+  const end = new Date(y, m - 1, d);
+  if (end < today) return false;
+  const diff = (end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+  return diff <= 7;
+}
+
 function metricLabel(metric: IncentiveMetric): string {
   if (metric === 'deals') return 'Deals';
   if (metric === 'kw') return 'kW Sold';
@@ -71,7 +83,7 @@ function todayISO(): string {
 export default function MobileIncentives() {
   const {
     effectiveRole,
-    currentRepId,
+    effectiveRepId,
     incentives,
     setIncentives,
     projects,
@@ -82,6 +94,12 @@ export default function MobileIncentives() {
 
   const isAdmin = effectiveRole === 'admin';
   const [showCreate, setShowCreate] = useState(false);
+  const [editingIncentive, setEditingIncentive] = useState<Incentive | null>(null);
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'ending_soon'>('all');
+  const [sort, setSort] = useState<'newest' | 'progress' | 'ending_soonest'>('newest');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // Pending Rewards — admin-only. Milestones where progress crossed the
   // threshold but admin hasn't yet flipped achieved=true. Parity with
@@ -125,11 +143,108 @@ export default function MobileIncentives() {
   const visible = isAdmin
     ? incentives
     : incentives.filter(
-        (inc) => inc.active && (inc.type === 'company' || inc.targetRepId === currentRepId)
+        (inc) => inc.active && (inc.type === 'company' || (effectiveRepId != null && inc.targetRepId === effectiveRepId))
       );
 
-  const activeIncentives = visible.filter((i) => !isExpired(i.endDate));
-  const expiredIncentives = visible.filter((i) => isExpired(i.endDate));
+  const filterAndSort = (list: Incentive[]): Incentive[] => {
+    let filtered = list;
+    if (filter === 'active') filtered = list.filter((i) => !isExpired(i.endDate) && i.active);
+    else if (filter === 'ending_soon') filtered = list.filter((i) => isEndingSoon(i.endDate));
+    else if (filter === 'expired') filtered = list.filter((i) => isExpired(i.endDate));
+    const sorted = [...filtered];
+    if (sort === 'newest') {
+      sorted.sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
+    } else if (sort === 'progress') {
+      sorted.sort((a, b) => {
+        const pA = computeIncentiveProgress(a, projects, payrollEntries);
+        const pB = computeIncentiveProgress(b, projects, payrollEntries);
+        const maxA = a.milestones.length ? Math.max(...a.milestones.map(m => m.threshold)) : 1;
+        const maxB = b.milestones.length ? Math.max(...b.milestones.map(m => m.threshold)) : 1;
+        return (pB / maxB) - (pA / maxA);
+      });
+    } else if (sort === 'ending_soonest') {
+      sorted.sort((a, b) => {
+        if (!a.endDate && !b.endDate) return 0;
+        if (!a.endDate) return 1;
+        if (!b.endDate) return -1;
+        return a.endDate.localeCompare(b.endDate);
+      });
+    }
+    return sorted;
+  };
+
+  const clearSelection = () => { setSelectMode(false); setSelectedIds(new Set()); };
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  };
+
+  const expiredActiveCount = visible.filter((i) => isExpired(i.endDate) && i.active).length;
+
+  const handleBulkArchiveExpired = () => {
+    const count = expiredActiveCount;
+    setConfirmAction({
+      title: 'Archive all expired?',
+      message: `Deactivate ${count} expired incentive${count !== 1 ? 's' : ''}?`,
+      onConfirm: () => {
+        const expired = incentives.filter((i) => isExpired(i.endDate) && i.active);
+        setIncentives((prev) => prev.map((i) => (isExpired(i.endDate) && i.active ? { ...i, active: false } : i)));
+        Promise.all(expired.map((i) =>
+          fetch(`/api/incentives/${i.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
+            .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return true; })
+            .catch(() => { toast('Failed to archive some incentives', 'error'); setIncentives((prev) => prev.map((x) => x.id === i.id ? { ...x, active: true } : x)); return false; })
+        )).then((results) => { const succeeded = results.filter(Boolean).length; if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} archived`); });
+        setConfirmAction(null);
+      },
+    });
+  };
+
+  const handleBulkDeactivate = () => {
+    const count = selectedIds.size;
+    setConfirmAction({
+      title: 'Deactivate selected?',
+      message: `Deactivate ${count} incentive${count !== 1 ? 's' : ''}?`,
+      onConfirm: () => {
+        const ids = Array.from(selectedIds);
+        const origStates = new Map(incentives.filter((i) => selectedIds.has(i.id)).map((i) => [i.id, i.active]));
+        setIncentives((prev) => prev.map((i) => (selectedIds.has(i.id) ? { ...i, active: false } : i)));
+        Promise.all(ids.map((id) =>
+          fetch(`/api/incentives/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) })
+            .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return true; })
+            .catch(() => { toast('Failed to deactivate some incentives', 'error'); setIncentives((prev) => prev.map((i) => i.id === id ? { ...i, active: origStates.get(id) ?? i.active } : i)); return false; })
+        )).then((results) => { const succeeded = results.filter(Boolean).length; if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deactivated`); });
+        clearSelection();
+        setConfirmAction(null);
+      },
+    });
+  };
+
+  const handleBulkDelete = () => {
+    const count = selectedIds.size;
+    setConfirmAction({
+      title: 'Delete selected?',
+      message: `Permanently delete ${count} incentive${count !== 1 ? 's' : ''}? This cannot be undone.`,
+      onConfirm: () => {
+        const ids = Array.from(selectedIds);
+        const deletedItems = incentives.filter((i) => selectedIds.has(i.id));
+        setIncentives((prev) => prev.filter((i) => !selectedIds.has(i.id)));
+        Promise.allSettled(ids.map((id) =>
+          fetch(`/api/incentives/${id}`, { method: 'DELETE' })
+            .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return id; })
+        )).then((results) => {
+          const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'));
+          if (failedIds.size > 0) { toast('Failed to delete some incentives', 'error'); setIncentives((prev) => [...prev, ...deletedItems.filter((i) => failedIds.has(i.id))]); }
+          const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+          if (succeeded > 0) toast(`${succeeded} incentive${succeeded !== 1 ? 's' : ''} deleted`);
+        });
+        clearSelection();
+        setConfirmAction(null);
+      },
+    });
+  };
+
+  const activeIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => !isExpired(i.endDate))) : [];
+  const expiredIncentives = filter === 'all' ? visible.filter((i) => isExpired(i.endDate)) : [];
+  const filteredList = filter !== 'all' ? filterAndSort(visible) : [];
 
   const markMilestoneFulfilled = (incId: string, milestoneId: string) => {
     // Optimistic — matches the desktop page handler pattern. Sets achieved
@@ -159,6 +274,64 @@ export default function MobileIncentives() {
       .catch(() => { setIncentives((list) => list.map((i) => i.id === incId ? { ...i, milestones: prev } : i)); toast('Failed to update', 'error'); });
   };
 
+  const handleDuplicate = async (source: Incentive) => {
+    try {
+      const res = await fetch('/api/incentives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `${source.title} (copy)`,
+          description: source.description,
+          type: source.type,
+          metric: source.metric,
+          period: source.period,
+          startDate: source.startDate,
+          endDate: source.endDate,
+          targetRepId: source.targetRepId,
+          active: source.active,
+          milestones: source.milestones.map((m) => ({ threshold: m.threshold, reward: m.reward })),
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created: Incentive = await res.json();
+      setIncentives((prev) => [...prev, { ...source, id: created.id, milestones: created.milestones }]);
+      toast('Incentive duplicated', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to duplicate incentive', 'error');
+    }
+  };
+
+  const handleEditSave = async (updated: Incentive) => {
+    const prev = incentives.find((i) => i.id === updated.id);
+    setIncentives((list) => list.map((i) => i.id === updated.id ? updated : i));
+    setEditingIncentive(null);
+    try {
+      const res = await fetch(`/api/incentives/${updated.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: updated.title,
+          description: updated.description,
+          active: updated.active,
+          endDate: updated.endDate,
+          metric: updated.metric,
+          period: updated.period,
+          startDate: updated.startDate,
+          type: updated.type,
+          targetRepId: updated.targetRepId,
+          milestones: updated.milestones.map((m) => ({ ...(m.id ? { id: m.id } : {}), threshold: m.threshold, reward: m.reward, achieved: m.achieved })),
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const saved: Incentive = await res.json();
+      setIncentives((list) => list.map((i) => i.id === updated.id ? { ...i, milestones: saved.milestones } : i));
+      toast('Incentive updated', 'success');
+    } catch (err) {
+      if (prev) setIncentives((list) => list.map((i) => i.id === updated.id ? prev : i));
+      toast(err instanceof Error ? err.message : 'Failed to save incentive', 'error');
+    }
+  };
+
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader
@@ -177,6 +350,74 @@ export default function MobileIncentives() {
           </button>
         ) : undefined}
       />
+
+      {/* Filter / Sort / Select toolbar */}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <select
+            value={filter}
+            onChange={(e) => { setFilter(e.target.value as typeof filter); clearSelection(); }}
+            className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--m-border, var(--border-mobile))', color: '#fff' }}
+          >
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="ending_soon">Ending Soon</option>
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as typeof sort)}
+            className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--m-border, var(--border-mobile))', color: '#fff' }}
+          >
+            <option value="newest">Newest</option>
+            <option value="progress">Progress %</option>
+            <option value="ending_soonest">Ending Soonest</option>
+          </select>
+          {isAdmin && (
+            <button
+              onClick={() => { if (selectMode) clearSelection(); else setSelectMode(true); }}
+              className="flex items-center justify-center w-10 shrink-0 rounded-lg"
+              style={selectMode
+                ? { background: 'rgba(0,196,240,0.15)', color: 'var(--accent-cyan2)', border: '1px solid rgba(0,196,240,0.3)' }
+                : { background: 'var(--m-surface, var(--surface))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }
+              }
+            >
+              {selectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
+        {isAdmin && expiredActiveCount > 0 && (
+          <button
+            onClick={handleBulkArchiveExpired}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
+            style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--accent-amber, #f5a623)', border: '1px solid rgba(245,158,11,0.25)' }}
+          >
+            <Archive className="w-3.5 h-3.5" />
+            Archive All Expired ({expiredActiveCount})
+          </button>
+        )}
+        {isAdmin && selectMode && selectedIds.size > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="flex-1 text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{selectedIds.size} selected</span>
+            <button
+              onClick={handleBulkDeactivate}
+              className="px-3 py-2 rounded-lg text-xs font-semibold"
+              style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--accent-amber, #f5a623)', border: '1px solid rgba(245,158,11,0.25)' }}
+            >
+              Deactivate
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="px-3 py-2 rounded-lg text-xs font-semibold"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Pending Rewards (admin only) — milestones whose progress crossed
           the threshold but haven't been marked achieved yet. One-tap
@@ -223,33 +464,71 @@ export default function MobileIncentives() {
         </MobileSection>
       )}
 
-      {/* Active Incentives */}
-      <MobileSection title="Active Incentives" count={activeIncentives.length}>
-        {activeIncentives.length === 0 ? (
-          <MobileEmptyState
-            icon={Trophy}
-            title="No active incentives"
-            subtitle="Check back later for new challenges."
-          />
-        ) : (
-          <div className="space-y-3">
-            {activeIncentives.map((inc) => (
-              <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} />
-            ))}
-          </div>
-        )}
-      </MobileSection>
+      {/* Filtered list (when filter is not 'all') */}
+      {filter !== 'all' && (
+        <MobileSection title={filter === 'active' ? 'Active' : filter === 'expired' ? 'Expired' : 'Ending Soon'} count={filteredList.length}>
+          {filteredList.length === 0 ? (
+            <MobileEmptyState icon={Trophy} title="No incentives match this filter" subtitle="Try a different filter." />
+          ) : (
+            <div className="space-y-3">
+              {filteredList.map((inc) => (
+                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired={isExpired(inc.endDate)} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+              ))}
+            </div>
+          )}
+        </MobileSection>
+      )}
 
-      {/* Expired / Past Incentives */}
-      {expiredIncentives.length > 0 && (
+      {/* Active Incentives (filter === 'all') */}
+      {filter === 'all' && (
+        <MobileSection title="Active Incentives" count={activeIncentives.length}>
+          {activeIncentives.length === 0 ? (
+            <MobileEmptyState
+              icon={Trophy}
+              title="No active incentives"
+              subtitle="Check back later for new challenges."
+            />
+          ) : (
+            <div className="space-y-3">
+              {activeIncentives.map((inc) => (
+                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+              ))}
+            </div>
+          )}
+        </MobileSection>
+      )}
+
+      {/* Expired / Past Incentives (filter === 'all') */}
+      {filter === 'all' && expiredIncentives.length > 0 && (
         <MobileSection title="Past Incentives" count={expiredIncentives.length} collapsible defaultOpen={false}>
           <div className="space-y-3">
             {expiredIncentives.map((inc) => (
-              <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired />
+              <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
             ))}
           </div>
         </MobileSection>
       )}
+
+      {/* Admin: edit-incentive bottom sheet */}
+      {isAdmin && editingIncentive && (
+        <EditIncentiveSheet
+          open={!!editingIncentive}
+          incentive={editingIncentive}
+          onClose={() => setEditingIncentive(null)}
+          reps={reps}
+          onSaved={handleEditSave}
+          onError={(msg) => toast(msg, 'error')}
+        />
+      )}
+
+      {/* Confirm dialog for bulk operations */}
+      <ConfirmDialog
+        open={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        title={confirmAction?.title ?? ''}
+        message={confirmAction?.message ?? ''}
+        onConfirm={confirmAction?.onConfirm ?? (() => {})}
+      />
 
       {/* Admin: create-incentive bottom sheet */}
       {isAdmin && (
@@ -464,7 +743,218 @@ function CreateIncentiveSheet({
   );
 }
 
-// ─── Incentive Card (unchanged) ─────────────────────────────────────────────
+// ─── Edit-Incentive Bottom Sheet ────────────────────────────────────────────
+
+function EditIncentiveSheet({
+  open,
+  incentive,
+  onClose,
+  reps,
+  onSaved,
+  onError,
+}: {
+  open: boolean;
+  incentive: Incentive;
+  onClose: () => void;
+  reps: { id: string; name: string; active?: boolean }[];
+  onSaved: (updated: Incentive) => void;
+  onError: (msg: string) => void;
+}) {
+  const [title, setTitle] = useState(incentive.title);
+  const [type, setType] = useState<IncentiveType>(incentive.type);
+  const [metric, setMetric] = useState<IncentiveMetric>(incentive.metric);
+  const [period, setPeriod] = useState<IncentivePeriod>(incentive.period);
+  const [startDate, setStartDate] = useState<string>(incentive.startDate ?? todayISO());
+  const [endDate, setEndDate] = useState<string>(incentive.endDate ?? '');
+  const [targetRepId, setTargetRepId] = useState<string>(incentive.targetRepId ?? '');
+  const [milestones, setMilestones] = useState<{ id?: string; threshold: string; reward: string; achieved: boolean }[]>(
+    incentive.milestones.map((m) => ({ id: m.id, threshold: String(m.threshold), reward: m.reward, achieved: m.achieved }))
+  );
+  const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit =
+    title.trim().length > 0 &&
+    milestones.length > 0 &&
+    milestones.every((m) => Number(m.threshold) > 0 && m.reward.trim().length > 0) &&
+    (type === 'company' || !!targetRepId);
+
+  const handleSave = async () => {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    try {
+      const updated: Incentive = {
+        ...incentive,
+        title: title.trim(),
+        type,
+        metric,
+        period,
+        startDate: period === 'alltime' ? (incentive.startDate ?? todayISO()) : startDate,
+        endDate: endDate || null,
+        targetRepId: type === 'personal' ? targetRepId : null,
+        milestones: milestones.map((m) => ({
+          id: m.id ?? '',
+          threshold: Number(m.threshold),
+          reward: m.reward.trim(),
+          achieved: m.achieved,
+        })),
+      };
+      onSaved(updated);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Failed to save incentive');
+      setSubmitting(false);
+    }
+  };
+
+  const addMilestone = () => setMilestones((prev) => [...prev, { threshold: '', reward: '', achieved: false }]);
+  const removeMilestone = (idx: number) => setMilestones((prev) => prev.filter((_, i) => i !== idx));
+  const updateMilestone = (idx: number, field: 'threshold' | 'reward', val: string) =>
+    setMilestones((prev) => prev.map((m, i) => i === idx ? { ...m, [field]: val } : m));
+
+  const inputCls = 'w-full px-3 py-2.5 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)]';
+  const inputStyle: React.CSSProperties = {
+    background: 'var(--m-surface, var(--surface))',
+    border: '1px solid var(--m-border, var(--border-mobile))',
+    color: '#fff',
+    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+  };
+  const labelCls = 'block text-xs font-medium uppercase tracking-wider mb-1.5 text-[var(--m-text-muted,var(--text-mobile-muted))]';
+
+  return (
+    <MobileBottomSheet
+      open={open}
+      onClose={() => { if (!submitting) onClose(); }}
+      title="Edit Incentive"
+    >
+      <div className="px-5 space-y-3 max-h-[70vh] overflow-y-auto pb-3">
+        {/* Title */}
+        <div>
+          <label className={labelCls}>Title</label>
+          <input className={inputCls} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+
+        {/* Type */}
+        <div>
+          <label className={labelCls}>Type</label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['company', 'personal'] as IncentiveType[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setType(t)}
+                className={`py-2.5 rounded-lg text-sm transition-colors ${type === t ? 'filter-tab-active' : ''}`}
+                style={type !== t ? inputStyle : undefined}
+              >
+                {t === 'company' ? 'Company-wide' : 'Personal'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Target rep (only for personal) */}
+        {type === 'personal' && (
+          <div>
+            <label className={labelCls}>Target Rep</label>
+            <select className={inputCls} style={inputStyle} value={targetRepId} onChange={(e) => setTargetRepId(e.target.value)}>
+              <option value="">— Select rep —</option>
+              {reps.filter((r) => r.active !== false).map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Metric */}
+        <div>
+          <label className={labelCls}>Metric</label>
+          <select className={inputCls} style={inputStyle} value={metric} onChange={(e) => setMetric(e.target.value as IncentiveMetric)}>
+            <option value="deals">Deals</option>
+            <option value="kw">kW Sold</option>
+            <option value="commission">Commission ($)</option>
+            <option value="revenue">Revenue ($)</option>
+          </select>
+        </div>
+
+        {/* Period */}
+        <div>
+          <label className={labelCls}>Period</label>
+          <select className={inputCls} style={inputStyle} value={period} onChange={(e) => setPeriod(e.target.value as IncentivePeriod)}>
+            <option value="month">Monthly</option>
+            <option value="quarter">Quarterly</option>
+            <option value="year">Yearly</option>
+            <option value="alltime">All Time</option>
+          </select>
+        </div>
+
+        {/* Dates */}
+        {period !== 'alltime' && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelCls}>Start</label>
+              <input type="date" className={inputCls} style={inputStyle} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>End (optional)</label>
+              <input type="date" className={inputCls} style={inputStyle} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+          </div>
+        )}
+
+        {/* Milestones */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className={labelCls} style={{ marginBottom: 0 }}>Milestones</label>
+            <button
+              onClick={addMilestone}
+              className="text-xs font-semibold px-2.5 py-1 rounded-lg"
+              style={{ background: 'rgba(0,229,160,0.12)', color: 'var(--accent-emerald)' }}
+            >
+              + Add
+            </button>
+          </div>
+          <div className="space-y-2">
+            {milestones.map((ms, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] w-20 shrink-0"
+                  style={inputStyle}
+                  type="number"
+                  min="0"
+                  placeholder="Goal"
+                  value={ms.threshold}
+                  onChange={(e) => updateMilestone(idx, 'threshold', e.target.value)}
+                />
+                <input
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] flex-1 min-w-0"
+                  style={inputStyle}
+                  placeholder="Reward"
+                  value={ms.reward}
+                  onChange={(e) => updateMilestone(idx, 'reward', e.target.value)}
+                />
+                {milestones.length > 1 && (
+                  <button onClick={() => removeMilestone(idx)} className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Save */}
+        <button
+          onClick={handleSave}
+          disabled={!canSubmit || submitting}
+          className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-white active:scale-[0.97] transition-transform disabled:opacity-40"
+          style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' }}
+        >
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {submitting ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+    </MobileBottomSheet>
+  );
+}
+
+// ─── Incentive Card ──────────────────────────────────────────────────────────
 
 function IncentiveCard({
   incentive,
@@ -472,12 +962,24 @@ function IncentiveCard({
   payrollEntries,
   reps,
   expired,
+  isAdmin,
+  onEdit,
+  onDuplicate,
+  selectMode,
+  selected,
+  onToggleSelect,
 }: {
   incentive: Incentive;
   projects: Project[];
   payrollEntries: PayrollEntry[];
   reps: Rep[];
   expired?: boolean;
+  isAdmin?: boolean;
+  onEdit?: () => void;
+  onDuplicate?: () => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }) {
   const progress = useMemo(
     () => computeIncentiveProgress(incentive, projects, payrollEntries),
@@ -504,10 +1006,17 @@ function IncentiveCard({
       : 'var(--m-accent2, var(--accent-cyan2))';
 
   return (
-    <MobileCard className={expired ? 'opacity-60' : ''}>
+    <MobileCard className={expired ? 'opacity-60' : ''} onTap={selectMode ? () => onToggleSelect?.(incentive.id) : undefined}>
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-base font-semibold text-white leading-snug" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{incentive.title}</p>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {selectMode && (
+            <div className="shrink-0 w-5 h-5 rounded flex items-center justify-center" style={{ border: '1.5px solid var(--m-border, var(--border-mobile))', background: selected ? 'var(--accent-cyan2)' : 'transparent' }}>
+              {selected && <CheckSquare className="w-3.5 h-3.5 text-white" />}
+            </div>
+          )}
+          <p className="text-base font-semibold text-white leading-snug truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{incentive.title}</p>
+        </div>
         <span
           className="inline-flex items-center px-2.5 py-0.5 text-base font-semibold rounded-lg shrink-0"
           style={typeBadgeStyle}
@@ -585,6 +1094,26 @@ function IncentiveCard({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Admin actions */}
+      {isAdmin && (
+        <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <button
+            onClick={onEdit}
+            className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
+            style={{ background: 'rgba(0,180,216,0.12)', color: 'var(--accent-cyan2)' }}
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </button>
+          <button
+            onClick={onDuplicate}
+            className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
+            style={{ background: 'rgba(160,108,246,0.12)', color: '#a06cf6' }}
+          >
+            <Copy className="w-3.5 h-3.5" /> Duplicate
+          </button>
         </div>
       )}
     </MobileCard>

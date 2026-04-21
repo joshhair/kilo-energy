@@ -91,8 +91,8 @@ function RepEarningsView() {
   const nextFriday     = getNextFriday(today);
   const nextFridayDate = `${nextFriday.getFullYear()}-${String(nextFriday.getMonth() + 1).padStart(2, '0')}-${String(nextFriday.getDate()).padStart(2, '0')}`;
 
-  const pendingItems      = myPayroll.filter((p) => p.status === 'Pending');
-  const totalPaid         = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
+  const pendingItems      = myPayroll.filter((p) => p.status === 'Pending' && (!monthFilter || p.date.startsWith(monthFilter)));
+  const totalPaid         = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && (!monthFilter || p.date.startsWith(monthFilter))).reduce((s, p) => s + p.amount, 0);
   const totalPending      = pendingItems.reduce((s, p) => s + p.amount, 0);
   const pendingCount      = pendingItems.length;
   const nextPayoutItems   = myPayroll.filter((p) => p.status === 'Pending' && p.date === nextFridayDate);
@@ -492,7 +492,7 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDeals.filter(r => r.kind === 'payroll').length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
+            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDeals.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
           </button>
         ))}
       </div>
@@ -832,7 +832,7 @@ function AdminFinancialsView() {
       .sort((a, b) => {
         let cmp = 0;
         switch (payrollSortKey) {
-          case 'repName':      cmp = a.repName.localeCompare(b.repName); break;
+          case 'repName':      cmp = (a.repName ?? '').localeCompare(b.repName ?? ''); break;
           case 'customerName': cmp = (a.customerName ?? '').localeCompare(b.customerName ?? ''); break;
           case 'paymentStage': cmp = (a.paymentStage ?? '').localeCompare(b.paymentStage ?? ''); break;
           case 'amount':       cmp = a.amount - b.amount; break;

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
-import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2 } from 'lucide-react';
+import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -14,6 +14,15 @@ import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
+type SortKey = 'newest' | 'oldest' | 'deals' | 'kw' | 'name';
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'newest', label: 'Newest' },
+  { key: 'oldest', label: 'Oldest' },
+  { key: 'deals', label: 'Most Deals' },
+  { key: 'kw', label: 'Most kW' },
+  { key: 'name', label: 'Name A–Z' },
+];
 
 interface BlitzData {
   id: string;
@@ -28,7 +37,16 @@ interface BlitzData {
     joinStatus: string;
     user: { id: string; firstName: string; lastName: string };
   }>;
-  projects: Array<{ id: string }>;
+  projects: Array<{
+    id: string;
+    phase: string;
+    kWSize: number;
+    closer?: { id: string } | null;
+    setter?: { id: string } | null;
+    additionalClosers?: Array<{ userId: string }>;
+    additionalSetters?: Array<{ userId: string }>;
+  }>;
+  costs: Array<{ amount: number }>;
 }
 
 interface BlitzRequestData {
@@ -78,7 +96,7 @@ function blitzDateLabel(status: BlitzStatus, startDate: string, endDate: string)
 
 export default function MobileBlitz() {
   const router = useRouter();
-  const { effectiveRole, effectiveRepId, pmPermissions } = useApp();
+  const { effectiveRole, effectiveRepId, pmPermissions, reps } = useApp();
   const { toast } = useToast();
 
   const isAdmin = effectiveRole === 'admin';
@@ -90,12 +108,15 @@ export default function MobileBlitz() {
   const [statusFilter, setStatusFilter] = useState<BlitzStatus | 'all'>('all');
   const [tab, setTab] = useState<'blitzes' | 'requests'>('blitzes');
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', location: '', startDate: '', endDate: '', notes: '' });
+  const [createForm, setCreateForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', headcount: '', ownerId: '' });
   const [userPerms, setUserPerms] = useState<{ canRequestBlitz: boolean; canCreateBlitz: boolean }>({
     canRequestBlitz: false,
     canCreateBlitz: false,
   });
   const [joiningBlitzId, setJoiningBlitzId] = useState<string | null>(null);
+  const [submittingCreate, setSubmittingCreate] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('newest');
 
   useEffect(() => {
     Promise.all([
@@ -127,8 +148,26 @@ export default function MobileBlitz() {
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
     if (statusFilter !== 'all') list = list.filter((b) => b.status === statusFilter);
-    return [...list].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  }, [blitzes, statusFilter]);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
+    }
+    const blitzDeals = (b: BlitzData) => {
+      const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
+      return b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (
+        approvedIds.has(p.closer?.id ?? '')
+        || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+      ));
+    };
+    return [...list].sort((a, b) => {
+      if (sortKey === 'newest') return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      if (sortKey === 'oldest') return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      if (sortKey === 'deals') return blitzDeals(b).length - blitzDeals(a).length;
+      if (sortKey === 'kw') return blitzDeals(b).reduce((s, p) => s + p.kWSize, 0) - blitzDeals(a).reduce((s, p) => s + p.kWSize, 0);
+      if (sortKey === 'name') return a.name.localeCompare(b.name);
+      return 0;
+    });
+  }, [blitzes, statusFilter, search, sortKey]);
 
   // PM access guard -- placed after all hooks
   if (isPM && pmPermissions && !pmPermissions.canAccessBlitz) {
@@ -183,6 +222,8 @@ export default function MobileBlitz() {
   const handleCreateBlitz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim() || !createForm.startDate || !createForm.endDate) return;
+    if (submittingCreate) return;
+    setSubmittingCreate(true);
     const isRequest = canRequest && !canCreate;
     const res = isRequest
       ? await fetch('/api/blitz-requests', {
@@ -193,9 +234,11 @@ export default function MobileBlitz() {
             requestedById: effectiveRepId,
             name: createForm.name.trim(),
             location: createForm.location.trim(),
+            housing: createForm.housing.trim(),
             startDate: createForm.startDate,
             endDate: createForm.endDate,
             notes: createForm.notes.trim(),
+            expectedHeadcount: parseInt(createForm.headcount) || 0,
           }),
         })
       : await fetch('/api/blitzes', {
@@ -204,20 +247,25 @@ export default function MobileBlitz() {
           body: JSON.stringify({
             name: createForm.name.trim(),
             location: createForm.location.trim(),
+            housing: createForm.housing.trim(),
             startDate: createForm.startDate,
             endDate: createForm.endDate,
             notes: createForm.notes.trim(),
             createdById: effectiveRepId,
-            ownerId: effectiveRepId,
+            ownerId: createForm.ownerId || effectiveRepId,
           }),
         });
-    if (res.ok) {
-      toast(isRequest ? 'Blitz request submitted' : 'Blitz created');
-      setShowCreate(false);
-      setCreateForm({ name: '', location: '', startDate: '', endDate: '', notes: '' });
-      loadData();
-    } else {
-      toast(isRequest ? 'Failed to submit request' : 'Failed to create blitz', 'error');
+    try {
+      if (res.ok) {
+        toast(isRequest ? 'Blitz request submitted' : 'Blitz created');
+        setShowCreate(false);
+        setCreateForm({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', headcount: '', ownerId: '' });
+        loadData();
+      } else {
+        toast(isRequest ? 'Failed to submit request' : 'Failed to create blitz', 'error');
+      }
+    } finally {
+      setSubmittingCreate(false);
     }
   };
 
@@ -280,6 +328,40 @@ export default function MobileBlitz() {
         ))}
       </div>
 
+      {/* Search + Sort */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search blitzes…"
+            className="w-full min-h-[44px] rounded-xl pl-9 pr-3 text-base text-white focus:outline-none focus:ring-1"
+            style={{
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              '--tw-ring-color': 'var(--accent-emerald)',
+            } as React.CSSProperties}
+          />
+        </div>
+        <select
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value as SortKey)}
+          className="min-h-[44px] rounded-xl px-3 text-sm text-white focus:outline-none focus:ring-1"
+          style={{
+            background: 'var(--m-card, var(--surface-mobile-card))',
+            border: '1px solid var(--m-border, var(--border-mobile))',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            '--tw-ring-color': 'var(--accent-emerald)',
+          } as React.CSSProperties}
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.key} value={o.key}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
       {/* Admin tabs: Blitzes / Requests */}
       {isAdmin && (
         <div className="flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
@@ -320,7 +402,7 @@ export default function MobileBlitz() {
       {tab === 'blitzes' && (
         <>
           {filteredBlitzes.length === 0 ? (
-            <MobileEmptyState icon={Tent} title="No blitzes found" subtitle="Try a different status filter" />
+            <MobileEmptyState icon={Tent} title="No blitzes found" subtitle="Try a different filter or search" />
           ) : (
             <div key={statusFilter} className="space-y-3">
               {filteredBlitzes.map((blitz, index) => {
@@ -329,6 +411,15 @@ export default function MobileBlitz() {
                 const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
                   .filter(Boolean)
                   .join(' \u00B7 ');
+                const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
+                const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
+                const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+                const blitzProjects = activeProjects.filter((p) =>
+                  approvedIds.has(p.closer?.id ?? '')
+                  || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+                );
+                const totalDeals = blitzProjects.length;
+                const totalKW = blitzProjects.reduce((s, p) => s + p.kWSize, 0);
                 const isOwner = blitz.owner?.id === effectiveRepId;
                 const myParticipation = blitz.participants.find((p) => p.user.id === effectiveRepId);
                 const canJoin = !isAdmin && !isOwner
@@ -354,6 +445,13 @@ export default function MobileBlitz() {
                         <div className="flex-1 min-w-0">
                           <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
                           <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
+                          {isAdmin && totalCosts > 0 && (
+                            <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                              Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
+                              {' \u00B7 '}
+                              Cost/kW: ${totalKW > 0 ? (totalCosts / totalKW).toFixed(2) : '--'}
+                            </p>
+                          )}
                         </div>
                         <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
                       </div>
@@ -470,6 +568,21 @@ export default function MobileBlitz() {
               } as React.CSSProperties}
             />
           </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing / Address</label>
+            <input
+              value={createForm.housing}
+              onChange={(e) => setCreateForm((f) => ({ ...f, housing: e.target.value }))}
+              placeholder="e.g. 123 Main St, Apt 4"
+              className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+              style={{
+                background: 'var(--m-card, var(--surface-mobile-card))',
+                border: '1px solid var(--m-border, var(--border-mobile))',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                '--tw-ring-color': 'var(--accent-emerald)',
+              } as React.CSSProperties}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Start</label>
@@ -502,9 +615,64 @@ export default function MobileBlitz() {
               />
             </div>
           </div>
+          {isAdmin && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Blitz Leader</label>
+              <select
+                value={createForm.ownerId || effectiveRepId || ''}
+                onChange={(e) => setCreateForm((f) => ({ ...f, ownerId: e.target.value }))}
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                style={{
+                  background: 'var(--m-card, var(--surface-mobile-card))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  '--tw-ring-color': 'var(--accent-emerald)',
+                } as React.CSSProperties}
+              >
+                <option value={effectiveRepId || ''}>Me</option>
+                {reps.filter((r) => r.id !== effectiveRepId && r.active).map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
+            <textarea
+              value={createForm.notes}
+              onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
+              rows={3}
+              className="w-full rounded-xl px-3 py-2 text-base text-white focus:outline-none focus:ring-1 resize-none"
+              style={{
+                background: 'var(--m-card, var(--surface-mobile-card))',
+                border: '1px solid var(--m-border, var(--border-mobile))',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                '--tw-ring-color': 'var(--accent-emerald)',
+              } as React.CSSProperties}
+            />
+          </div>
+          {canRequest && !canCreate && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Expected Headcount</label>
+              <input
+                type="number"
+                min="1"
+                value={createForm.headcount}
+                onChange={(e) => setCreateForm((f) => ({ ...f, headcount: e.target.value }))}
+                placeholder="e.g. 8"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                style={{
+                  background: 'var(--m-card, var(--surface-mobile-card))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  '--tw-ring-color': 'var(--accent-emerald)',
+                } as React.CSSProperties}
+              />
+            </div>
+          )}
           <button
             type="submit"
-            disabled={!createForm.name.trim() || !createForm.startDate || !createForm.endDate}
+            disabled={submittingCreate || !createForm.name.trim() || !createForm.startDate || !createForm.endDate}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 disabled:opacity-40 transition-colors"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',

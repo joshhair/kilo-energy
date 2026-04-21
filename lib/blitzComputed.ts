@@ -62,7 +62,7 @@ export function computeBlitzLeaderboard(blitz: any): LeaderboardEntry[] {
     const sM1 = proj.setterM1Amount ?? 0;
     const sM2 = proj.setterM2Amount ?? 0;
     const sM3 = proj.setterM3Amount ?? 0;
-    const kW = proj.kWSize;
+    const kW = proj.kWSize ?? 0;
 
     if (closerId && setterId && closerId === setterId) {
       if (participantIds.has(closerId)) bump(closerId, kW, m1 + m2 + m3 + sM1 + sM2 + sM3);
@@ -123,7 +123,9 @@ export function getBlitzProjectBaselines(
     try { return JSON.parse(p.baselineOverrideJson); } catch { /* fall through */ }
   }
   if (p.installer?.name === 'SolarTech' && p.productId) {
-    return getSolarTechBaseline(p.productId, p.kWSize, deps.solarTechProducts);
+    try {
+      return getSolarTechBaseline(p.productId, p.kWSize, deps.solarTechProducts);
+    } catch { /* deactivated or missing product — fall through to installer rates */ }
   }
   if (p.productId) {
     return getProductCatalogBaseline(deps.productCatalogProducts, p.productId, p.kWSize);
@@ -151,10 +153,12 @@ export function computeBlitzKiloMargin(
     const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
     const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
     const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+    if (isSelfGen && !approvedParticipantIds.has(p.closer.id)) return s;
     if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
     const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p, deps);
-    const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
-    return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
+    const kW = p.kWSize ?? 0;
+    const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * kW * 1000 : 0;
+    return s + (closerPerW - kiloPerW) * kW * 1000 - setterCost;
   }, 0);
 }
 

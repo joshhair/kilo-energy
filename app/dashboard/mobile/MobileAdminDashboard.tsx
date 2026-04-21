@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, formatCompactKW } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
 import { sumPaid } from '../../../lib/aggregators';
 import {
   ACTIVE_PHASES,
@@ -12,7 +12,7 @@ import {
   getInstallerRatesForDeal,
 } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
-import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle } from 'lucide-react';
+import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle, BarChart2, AlertCircle } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
@@ -34,11 +34,6 @@ function getGreeting(name: string): string {
   return firstName ? `${prefix}, ${firstName}` : prefix;
 }
 
-function fmtCompact(n: number): string {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
-  return fmt$(n);
-}
 
 function useCountUp(target: number, duration = 350): number {
   const [displayed, setDisplayed] = useState(0);
@@ -86,6 +81,9 @@ export default function MobileAdminDashboard() {
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const [pillReady, setPillReady] = useState(false);
+  const [recentSearch, setRecentSearch] = useState('');
+  const [recentPage, setRecentPage] = useState(1);
+  const RECENT_PER_PAGE = 10;
 
   useEffect(() => {
     const idx = PERIODS.findIndex(p => p.value === period);
@@ -97,6 +95,8 @@ export default function MobileAdminDashboard() {
     setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
     setPillReady(true);
   }, [period]);
+
+  useEffect(() => { setRecentPage(1); setRecentSearch(''); }, [period]);
 
   // ── Period-filtered data ────────────────────────────────────────────────
   const periodProjects = useMemo(() => projects.filter((p) => isInPeriod(p.soldDate, period)), [projects, period]);
@@ -184,7 +184,7 @@ export default function MobileAdminDashboard() {
   }, [active]);
 
   // Recent deals
-  const recentDeals = useMemo(() => [...periodProjects].filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 5), [periodProjects]);
+  const recentDeals = useMemo(() => [...periodProjects].filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')), [periodProjects]);
 
   // Top reps by deal count. Uses standard competition rank so ties share
   // the same position (two reps tied at 5 deals both show "1", next rep
@@ -216,6 +216,34 @@ export default function MobileAdminDashboard() {
       return { id, name: rep?.name ?? 'Unknown', count, rank };
     });
   }, [periodProjects, reps]);
+
+  // Installer ranking — uses period-filtered projects, matching desktop AdminDashboard
+  const { installerRanking, maxInstallerDeals } = useMemo(() => {
+    const map = new Map<string, { deals: number; kW: number; cancelled: number }>();
+    for (const p of periodProjects) {
+      const prev = map.get(p.installer) ?? { deals: 0, kW: 0, cancelled: 0 };
+      prev.deals++;
+      if (p.phase !== 'Cancelled' && p.phase !== 'On Hold') prev.kW += p.kWSize;
+      if (p.phase === 'Cancelled') prev.cancelled++;
+      map.set(p.installer, prev);
+    }
+    const ranking = [...map.entries()].map(([name, data]) => ({ name, ...data })).sort((a, b) => b.deals - a.deals);
+    return { installerRanking: ranking, maxInstallerDeals: Math.max(1, ...ranking.map((i) => i.deals)) };
+  }, [periodProjects]);
+
+  // Cancellation reasons — all projects, all time (matching desktop)
+  const { cancelledProjects, cancellationReasons } = useMemo(() => {
+    const cancelled = projects.filter((p) => p.phase === 'Cancelled');
+    const reasonCounts = new Map<string, number>();
+    for (const p of cancelled) {
+      const reason = (p as typeof p & { cancellationReason?: string }).cancellationReason || 'Not specified';
+      reasonCounts.set(reason, (reasonCounts.get(reason) ?? 0) + 1);
+    }
+    return {
+      cancelledProjects: cancelled,
+      cancellationReasons: [...reasonCounts.entries()].sort((a, b) => b[1] - a[1]),
+    };
+  }, [projects]);
 
   // ── Animated counters ────────────────────────────────────────────────────
   const animatedRevenue = useCountUp(Math.round(totalRevenue), 350);
@@ -315,15 +343,15 @@ export default function MobileAdminDashboard() {
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Revenue</p>
           <TrendingUp className="w-5 h-5" style={{ color: ACCENT }} />
         </div>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact(animatedRevenue)}</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
         <div key={period} className="flex items-center gap-4 mt-4" style={{ animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(animatedProfit)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact$(animatedProfit)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Profit</p>
           </div>
           <div className="h-8" style={{ width: '1px', background: 'var(--m-border, var(--border-mobile))' }} />
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact(animatedPaid)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid to Reps</p>
           </div>
         </div>
@@ -367,7 +395,7 @@ export default function MobileAdminDashboard() {
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: WARNING }} />
-                <span style={{ color: WARNING, fontFamily: FONT_BODY, fontSize: '1rem' }}>{pendingCount} pending &middot; {fmtCompact(pendingTotal)}</span>
+                <span style={{ color: WARNING, fontFamily: FONT_BODY, fontSize: '1rem' }}>{pendingCount} pending &middot; {fmtCompact$(pendingTotal)}</span>
               </div>
               <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
@@ -464,35 +492,149 @@ export default function MobileAdminDashboard() {
         </MobileCard>
       )}
 
+      {/* ── Installer Insights ── */}
+      {installerRanking.length > 0 && (
+        <MobileCard>
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart2 className="w-4 h-4" style={{ color: WARNING }} />
+            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Installer Insights</p>
+          </div>
+          <div className="space-y-2">
+            {installerRanking.map((inst) => (
+              <div key={inst.name} className="flex items-center gap-2 py-2" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+                <span className="flex-1 text-white" style={{ fontFamily: FONT_BODY, fontSize: '0.9375rem' }}>{inst.name}</span>
+                <span className="tabular-nums text-sm" style={{ color: MUTED }}>{inst.kW.toFixed(1)} kW</span>
+                <div className="w-16 h-2 rounded-full mx-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${(inst.deals / maxInstallerDeals) * 100}%`, background: WARNING }} />
+                </div>
+                <span className="tabular-nums font-semibold" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{inst.deals}</span>
+                {inst.cancelled > 0 && (
+                  <span className="tabular-nums text-xs font-medium" style={{ color: DANGER }}>({inst.cancelled} ✕)</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </MobileCard>
+      )}
+
+      {/* ── Cancellation Reasons ── */}
+      {cancelledProjects.length > 0 && (
+        <MobileCard>
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="w-4 h-4" style={{ color: DANGER }} />
+            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Cancellation Reasons</p>
+            <span className="ml-auto text-xs" style={{ color: MUTED }}>{cancelledProjects.length} cancelled</span>
+          </div>
+          <div className="space-y-2">
+            {cancellationReasons.map(([reason, count]) => (
+              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{reason}</span>
+                <span className="font-semibold tabular-nums text-sm" style={{ color: DANGER }}>{count}</span>
+              </div>
+            ))}
+          </div>
+        </MobileCard>
+      )}
+
       {/* ── Recent Deals ── */}
       <MobileCard>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Recent Deals</p>
           <button onClick={() => router.push('/dashboard/projects')} className="active:opacity-70 transition-opacity" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>View all</button>
         </div>
-        {recentDeals.length === 0 ? (
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>No deals yet.</p>
-        ) : (
-          <div>
-            {recentDeals.map((p, i) => {
-              const rep = reps.find((r) => r.id === p.repId);
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                  className={`w-full flex items-center justify-between min-h-[48px] py-2.5 text-left active:opacity-70 transition-opacity ${i < recentDeals.length - 1 ? 'border-b' : ''}`}
-                  style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
-                >
-                  <div className="min-w-0 flex-1 mr-3">
-                    <p className="text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{rep?.name ?? 'Unknown'} &middot; {p.kWSize} kW</p>
-                  </div>
-                  <MobileBadge value={p.phase} />
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <input
+          type="text"
+          placeholder="Search customer or rep..."
+          value={recentSearch}
+          onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
+          className="w-full mb-3 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--m-border, var(--border-mobile))' }}
+        />
+        {(() => {
+          const searched = recentSearch.trim()
+            ? recentDeals.filter((p) => {
+                const q = recentSearch.trim().toLowerCase();
+                return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q) || (p.subDealerName ?? '').toLowerCase().includes(q);
+              })
+            : recentDeals;
+          const totalPages = Math.max(1, Math.ceil(searched.length / RECENT_PER_PAGE));
+          const safePage = Math.min(recentPage, totalPages);
+          const paginated = searched.slice((safePage - 1) * RECENT_PER_PAGE, safePage * RECENT_PER_PAGE);
+          const showM3 = recentDeals.some((p) => (p.m3Amount ?? 0) > 0);
+          return (
+            <>
+              {searched.length === 0 ? (
+                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>No deals found.</p>
+              ) : (
+                <div>
+                  {paginated.map((p, i) => {
+                    const coCloserPay = (p.additionalClosers ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
+                    const coSetterPay = (p.additionalSetters ?? []).reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0);
+                    const closerPay = (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + coCloserPay;
+                    const setterPay = (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coSetterPay;
+                    const milestones = [
+                      { label: 'M1', amount: p.m1Amount ?? 0, paid: p.m1Paid },
+                      { label: 'M2', amount: p.m2Amount ?? 0, paid: p.m2Paid },
+                      ...(showM3 ? [{ label: 'M3', amount: p.m3Amount ?? 0, paid: p.m3Paid ?? false }] : []),
+                    ];
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+                        className={`w-full text-left active:opacity-70 transition-opacity py-3 ${i < paginated.length - 1 ? 'border-b' : ''}`}
+                        style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-white truncate flex-1" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
+                          <span className="font-semibold tabular-nums shrink-0" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
+                            {fmt$(closerPay)}
+                            {setterPay > 0 && <span style={{ color: MUTED, fontSize: '0.75rem' }}> +{fmt$(setterPay)}</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8125rem' }}>{p.repName ?? 'Unknown'} &middot; {p.kWSize} kW &middot; ${(p.netPPW ?? 0).toFixed(2)}/W</p>
+                          <MobileBadge value={p.phase} />
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {milestones.map(({ label, amount, paid }) =>
+                            amount > 0 ? (
+                              <span key={label} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium" style={{ background: paid ? 'rgba(0,229,160,0.12)' : 'rgba(245,158,11,0.12)', color: paid ? ACCENT : WARNING }}>
+                                <span style={{ color: DIM }}>{label}</span>{paid ? ` ${fmt$(amount)}` : ' Unpaid'}
+                              </span>
+                            ) : null
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+                  <button
+                    onClick={() => setRecentPage((pg) => Math.max(1, pg - 1))}
+                    disabled={safePage <= 1}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium active:opacity-70 disabled:opacity-30 transition-opacity"
+                    style={{ color: ACCENT, background: 'rgba(0,229,160,0.08)' }}
+                  >
+                    ‹ Prev
+                  </button>
+                  <span className="text-xs" style={{ color: MUTED }}>
+                    {(safePage - 1) * RECENT_PER_PAGE + 1}–{Math.min(safePage * RECENT_PER_PAGE, searched.length)} of {searched.length}
+                  </span>
+                  <button
+                    onClick={() => setRecentPage((pg) => Math.min(totalPages, pg + 1))}
+                    disabled={safePage >= totalPages}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium active:opacity-70 disabled:opacity-30 transition-opacity"
+                    style={{ color: ACCENT, background: 'rgba(0,229,160,0.08)' }}
+                  >
+                    Next ›
+                  </button>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </MobileCard>
     </div>
   );

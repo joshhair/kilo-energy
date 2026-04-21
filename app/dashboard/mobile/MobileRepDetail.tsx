@@ -12,6 +12,7 @@ import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const STATUS_AMOUNT_COLORS: Record<string, string> = {
   Paid: 'var(--accent-emerald)',
@@ -74,6 +75,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const [editPhone, setEditPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmConvert, setConfirmConvert] = useState<{ targetRole: 'rep' | 'sub-dealer'; targetLabel: string; msg: string } | null>(null);
 
   let rep = reps.find((r) => r.id === repId);
   const subDealer = !rep ? subDealers.find((s) => s.id === repId) : null;
@@ -114,7 +116,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   // Resolve to whichever source succeeded.
   const resolvedUser = rep
-    ? { ...rep, role: 'rep' as string }
+    ? { ...rep, role: rep.role as string }
     : subDealer
     ? { ...subDealer, role: 'sub-dealer' as string, repType: 'both' as string }
     : fetchedUser;
@@ -310,13 +312,18 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   // useCallback a conditional hook and break rules-of-hooks. Identity
   // stability isn't needed here — the only callsite is an onTap prop
   // deep in the admin sheet, not a React.memo boundary.
-  const convertRole = async () => {
+  const convertRole = () => {
     if (busy) return;
     const targetRole: 'rep' | 'sub-dealer' = isSubDealer ? 'rep' : 'sub-dealer';
     const targetLabel = targetRole === 'sub-dealer' ? 'Sub-Dealer' : 'Rep';
     const msg = `Convert ${resolvedUser.firstName} ${resolvedUser.lastName} to ${targetLabel}?\n\nDeals, payroll history, commission records, and their Clerk login remain unchanged. The user moves to the ${targetLabel}s list with that role's login + permission defaults.`;
-    if (!window.confirm(msg)) return;
+    setConfirmConvert({ targetRole, targetLabel, msg });
+  };
 
+  const doConvert = async () => {
+    if (!confirmConvert) return;
+    const { targetRole, targetLabel } = confirmConvert;
+    setConfirmConvert(null);
     setBusy(true);
     try {
       await convertUserRole(repId, targetRole);
@@ -630,6 +637,15 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           </div>
         </MobileBottomSheet>
       )}
+
+      <ConfirmDialog
+        open={!!confirmConvert}
+        title="Convert Role"
+        message={confirmConvert?.msg ?? ''}
+        confirmLabel="Convert"
+        onConfirm={doConvert}
+        onClose={() => setConfirmConvert(null)}
+      />
     </div>
   );
 }

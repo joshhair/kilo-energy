@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../../lib/context';
-import { fmt$ } from '../../../lib/utils';
+import { fmt$, todayLocalDateStr } from '../../../lib/utils';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
 import { Check, Trash2, Plus } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBottomSheet from './shared/MobileBottomSheet';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
 
@@ -17,6 +18,8 @@ export default function MobilePayroll() {
     setPayrollEntries,
     markForPayroll,
     reps,
+    projects,
+    installerPayConfigs,
     effectiveRole,
     effectiveRepId,
   } = useApp();
@@ -24,15 +27,18 @@ export default function MobilePayroll() {
 
   const [statusTab, setStatusTab] = useState<StatusTab>('Pending');
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
+  const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<PayrollEntry | null>(null);
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ repId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'Bonus' as string });
+  const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'Bonus' as string });
 
   // ── Summaries ─────────────────────────────────────────────────────────────
 
-  const pendingTotal = useMemo(
-    () => payrollEntries.filter((e) => e.status === 'Pending' && (effectiveRole === 'admin' || e.repId === effectiveRepId)).reduce((s, e) => s + e.amount, 0),
-    [payrollEntries, effectiveRole, effectiveRepId],
-  );
+  const pendingTotal = useMemo(() => {
+    const today = todayLocalDateStr();
+    return payrollEntries
+      .filter((e) => e.status === 'Pending' && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
+      .reduce((s, e) => s + e.amount, 0);
+  }, [payrollEntries, effectiveRole, effectiveRepId]);
 
   // ── Filtered entries ──────────────────────────────────────────────────────
 
@@ -62,7 +68,10 @@ export default function MobilePayroll() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const handlePublishOrApproveAll = useCallback(async () => {
-    const target = filtered;
+    const today = todayLocalDateStr();
+    const target = statusTab === 'Pending'
+      ? filtered.filter((e) => e.date <= today)
+      : filtered;
     const ids = target.map((e) => e.id);
     const amount = target.reduce((s, e) => s + e.amount, 0);
     const snapshot = [...payrollEntries];
@@ -120,16 +129,10 @@ export default function MobilePayroll() {
 
   const handleDelete = useCallback(
     async (entry: PayrollEntry) => {
-      // Destructive — always confirm before dropping a payroll row.
-      // Matches the desktop behavior at app/dashboard/payroll/page.tsx.
-      const label = entry.type === 'Bonus'
-        ? `${entry.repName} — Bonus $${entry.amount.toFixed(2)}`
-        : `${entry.repName} — ${entry.paymentStage} $${entry.amount.toFixed(2)}`;
-      if (!window.confirm(`Delete this entry?\n\n${label}\n\nThis cannot be undone.`)) return;
-
       const snapshot = [...payrollEntries];
       setPayrollEntries((prev) => prev.filter((p) => p.id !== entry.id));
       setSelectedEntry(null);
+      setConfirmDeleteEntry(null);
       toast('Entry deleted', 'success');
 
       try {
@@ -156,10 +159,20 @@ export default function MobilePayroll() {
         return;
       }
       const rep = reps.find((r) => r.id === paymentForm.repId);
+      const isBonus = paymentForm.type === 'Bonus';
+      const isChargeback = paymentForm.type === 'Chargeback';
+      const project = !isBonus ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
+
+      if (!isBonus && paymentForm.stage === 'M3') {
+        if (!paymentForm.projectId || !project) { toast('M3 payments require a linked project', 'error'); return; }
+        const installerName = project.installer ?? '';
+        const payPct = installerPayConfigs[installerName]?.installPayPct ?? 100;
+        if (payPct >= 100) { toast('M3 payments are only allowed for installers with a partial install payment percentage (installPayPct < 100)', 'error'); return; }
+      }
+
       // Chargebacks are stored as negative "Deal" entries (matches the
       // auto-generated shape from handleChargebacks). User enters positive;
       // we negate here.
-      const isChargeback = paymentForm.type === 'Chargeback';
       const raw = parseFloat(paymentForm.amount);
       const signed = isChargeback ? -raw : raw;
       const dbType = paymentForm.type === 'Bonus' ? 'Bonus' : 'Deal';
@@ -169,8 +182,8 @@ export default function MobilePayroll() {
         id: `pay_${Date.now()}`,
         repId: paymentForm.repId,
         repName: rep?.name ?? '',
-        projectId: null,
-        customerName: '',
+        projectId: isBonus ? null : (paymentForm.projectId || null),
+        customerName: project?.customerName ?? '',
         amount: signed,
         type: dbType,
         paymentStage: dbStage as 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer',
@@ -180,7 +193,7 @@ export default function MobilePayroll() {
       };
       setPayrollEntries((prev) => [...prev, newEntry]);
       setShowAddPayment(false);
-      setPaymentForm({ repId: '', amount: '', notes: '', date: '', type: 'Bonus', stage: 'Bonus' });
+      setPaymentForm({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus', stage: 'Bonus' });
       const label = isChargeback ? 'Chargeback' : 'Payment';
       toast(`${label} added for ${rep?.name ?? 'rep'} — ${fmt$(Math.abs(signed))}`, 'success');
 
@@ -189,6 +202,8 @@ export default function MobilePayroll() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           repId: newEntry.repId,
+          projectId: newEntry.projectId,
+          customerName: newEntry.customerName,
           amount: newEntry.amount,
           type: newEntry.type,
           paymentStage: newEntry.paymentStage,
@@ -207,10 +222,18 @@ export default function MobilePayroll() {
           toast('Failed to save payment — entry removed', 'error');
         });
     },
-    [paymentForm, reps, setPayrollEntries, toast],
+    [paymentForm, reps, projects, installerPayConfigs, setPayrollEntries, toast],
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (effectiveRole === 'project_manager') {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <p className="text-[var(--text-muted)] text-sm">You don&apos;t have permission to view this page.</p>
+      </div>
+    );
+  }
 
   const STATUS_TABS: StatusTab[] = ['Draft', 'Pending', 'Paid'];
 
@@ -326,12 +349,16 @@ export default function MobilePayroll() {
           <button
             onClick={async () => {
               const ids = filtered.map((e) => e.id);
-              await markForPayroll(ids);
-              setPayrollEntries((prev) =>
-                prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p)),
-              );
-              toast('All draft entries moved to Pending', 'success');
-              setStatusTab('Pending');
+              try {
+                await markForPayroll(ids);
+                setPayrollEntries((prev) =>
+                  prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p)),
+                );
+                toast('All draft entries moved to Pending', 'success');
+                setStatusTab('Pending');
+              } catch {
+                toast('Failed to approve entries', 'error');
+              }
             }}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
@@ -381,7 +408,7 @@ export default function MobilePayroll() {
                 <MobileBottomSheet.Item
                   label="Delete"
                   icon={Trash2}
-                  onTap={() => handleDelete(selectedEntry)}
+                  onTap={() => setConfirmDeleteEntry(selectedEntry)}
                   danger
                 />
               </>
@@ -406,7 +433,7 @@ export default function MobilePayroll() {
               style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             >
               <option value="">Select rep...</option>
-              {reps.map((r) => (
+              {reps.filter((r) => r.active !== false).map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
@@ -444,7 +471,7 @@ export default function MobilePayroll() {
             <div>
               <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Stage</label>
               <div className="flex gap-2">
-                {['M1', 'M2', 'M3', 'Trainer'].map((s) => (
+                {['M1', 'M2', 'M3'].map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -461,6 +488,24 @@ export default function MobilePayroll() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          {(paymentForm.type === 'Deal' || paymentForm.type === 'Chargeback') && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project</label>
+              <select
+                value={paymentForm.projectId}
+                onChange={(e) => setPaymentForm((f) => ({ ...f, projectId: e.target.value }))}
+                className={`${inputCls} min-h-[48px]`}
+                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                <option value="">Select project...</option>
+                {projects
+                  .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>{p.customerName}</option>
+                  ))}
+              </select>
             </div>
           )}
           <div>
@@ -510,6 +555,17 @@ export default function MobilePayroll() {
           </button>
         </form>
       </MobileBottomSheet>
+
+      <ConfirmDialog
+        open={!!confirmDeleteEntry}
+        title="Delete Entry"
+        message={confirmDeleteEntry
+          ? `Delete this entry?\n\n${confirmDeleteEntry.type === 'Bonus' ? `${confirmDeleteEntry.repName} — Bonus $${confirmDeleteEntry.amount.toFixed(2)}` : `${confirmDeleteEntry.repName} — ${confirmDeleteEntry.paymentStage} $${confirmDeleteEntry.amount.toFixed(2)}`}\n\nThis cannot be undone.`
+          : ''}
+        confirmLabel="Delete"
+        onConfirm={() => confirmDeleteEntry && handleDelete(confirmDeleteEntry)}
+        onClose={() => setConfirmDeleteEntry(null)}
+      />
     </div>
   );
 }

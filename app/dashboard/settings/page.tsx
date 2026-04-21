@@ -9,7 +9,7 @@ import { useToast } from '../../../lib/toast';
 import { TrainerAssignment, TrainerOverrideTier } from '../../../lib/data';
 import {
   Building2, Landmark, BookOpen, Download, Settings,
-  ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog,
+  ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog, Shield,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -24,6 +24,7 @@ import { FinancersSection } from './sections/FinancersSection';
 import { CustomizationSection } from './sections/CustomizationSection';
 import { ExportSection } from './sections/ExportSection';
 import { BaselinesSection } from './sections/BaselinesSection';
+import { AdminUsersSection } from './sections/AdminUsersSection';
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ type SettingsSection =
   | 'blitz-permissions'
   | 'sub-dealers'
   | 'project-managers'
+  | 'admin-users'
   | 'export'
   | 'customization';
 
@@ -47,6 +49,7 @@ const NAV: NavGroup[] = [
       { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
       { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
       { id: 'project-managers', label: 'Project Managers', icon: UserCog },
+      { id: 'admin-users', label: 'Admin Users', icon: Shield },
     ],
   },
   {
@@ -92,7 +95,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['blitz-permissions', 'sub-dealers', 'project-managers', 'installers', 'financers', 'baselines', 'customization', 'export'];
+  const validSections: SettingsSection[] = ['blitz-permissions', 'sub-dealers', 'project-managers', 'admin-users', 'installers', 'financers', 'baselines', 'customization', 'export'];
   const paramSection = searchParams.get('section') as string | null;
 
   // Legacy redirect: Settings > Trainer Overrides was consolidated into
@@ -501,6 +504,8 @@ function SettingsPageInner() {
         {section === 'sub-dealers' && <SubDealersSection />}
 
         {section === 'project-managers' && <PMSection />}
+
+        {section === 'admin-users' && <AdminUsersSection />}
 
         {section === 'installers' && (
           <InstallersSection

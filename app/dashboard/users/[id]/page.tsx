@@ -184,8 +184,6 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   if (!hydrated || currentRole === null) return <RepDetailSkeleton />;
 
-  if (isMobile) return <MobileRepDetail repId={id} />;
-
   if (effectiveRole !== 'admin' && effectiveRole !== 'project_manager' && id !== effectiveRepId) {
     return (
       <div className="p-8 text-center text-[var(--text-muted)] text-sm">
@@ -193,6 +191,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       </div>
     );
   }
+
+  if (isMobile) return <MobileRepDetail repId={id} />;
 
   // Still fetching and nothing found in context yet — show skeleton.
   if (!resolvedUser && !lookupFailed) return <RepDetailSkeleton />;

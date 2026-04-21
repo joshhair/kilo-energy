@@ -9,6 +9,14 @@ import { CheckCircle2, XCircle, Archive } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { MonthlyEarningsBarChart, computeMonthlyBarData, MONTH_LABELS } from '../earnings/components/MonthlyEarningsBarChart';
+
+// ── Sort types ─────────────────────────────────────────────────────────────
+
+type SortDir = 'asc' | 'desc';
+type DealSortKey = 'customerName' | 'paymentStage' | 'notes' | 'amount' | 'status' | 'date';
+type BonusSortKey = 'notes' | 'amount' | 'status' | 'date';
 
 // ── Period helpers ──────────────────────────────────────────────────────────
 
@@ -73,11 +81,20 @@ export default function MobileEarnings() {
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   const isAdmin = effectiveRole === 'admin';
+  const [deleteReimbId, setDeleteReimbId] = useState<string | null>(null);
 
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
 
   const [period, setPeriod] = useState<Period>('all');
+  const [dealRoleFilter, setDealRoleFilter] = useState<string | null>(null);
   const [adminShowArchived, setAdminShowArchived] = useState(false);
+  const [monthFilter, setMonthFilter] = useState<string | null>(null);
+  const [dealSortKey, setDealSortKey] = useState<DealSortKey>('date');
+
+  useEffect(() => { setMonthFilter(null); }, [period]);
+  const [dealSortDir, setDealSortDir] = useState<SortDir>('desc');
+  const [bonusSortKey, setBonusSortKey] = useState<BonusSortKey>('date');
+  const [bonusSortDir, setBonusSortDir] = useState<SortDir>('desc');
 
   // Admin mobile reimbursement review — parity with desktop earnings tab.
   // Previously admin on mobile couldn't approve/deny/archive/delete
@@ -94,6 +111,11 @@ export default function MobileEarnings() {
         return b.date.localeCompare(a.date);
       });
   }, [isAdmin, reimbursements, adminShowArchived]);
+
+  const monthlyBarData = useMemo(
+    () => computeMonthlyBarData(payrollEntries, reimbursements, effectiveRepId),
+    [payrollEntries, reimbursements, effectiveRepId],
+  );
 
   const setReimbStatus = (id: string, status: 'Approved' | 'Denied') => {
     const prev = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
@@ -115,7 +137,14 @@ export default function MobileEarnings() {
   const deleteReimbAdmin = (id: string) => {
     const row = reimbursements.find((r) => r.id === id);
     if (!row) return;
-    if (!window.confirm(`Permanently delete this reimbursement?\n\n${row.repName} — $${row.amount.toFixed(2)} — ${row.description}\n\nAlso deletes any attached receipt. Cannot be undone.`)) return;
+    setDeleteReimbId(id);
+  };
+  const confirmDeleteReimb = () => {
+    const id = deleteReimbId;
+    if (!id) return;
+    const row = reimbursements.find((r) => r.id === id);
+    if (!row) { setDeleteReimbId(null); return; }
+    setDeleteReimbId(null);
     setReimbursements((rs) => rs.filter((r) => r.id !== id));
     fetch(`/api/reimbursements/${id}`, { method: 'DELETE' })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement deleted', 'success'); })
@@ -136,17 +165,49 @@ export default function MobileEarnings() {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const myPayroll = payrollEntries.filter((p) => p.repId === effectiveRepId);
-  const dealPayments = myPayroll.filter((p) => p.type === 'Deal' && matchesPeriod(p.date, period));
-  const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus' && matchesPeriod(p.date, period));
-  const myReimbs = reimbursements.filter((r) => r.repId === effectiveRepId && matchesPeriod(r.date, period));
+  const dealPayments = myPayroll.filter((p) => p.type === 'Deal' && matchesPeriod(p.date, period) && (!monthFilter || p.date.startsWith(monthFilter)));
+  const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus' && matchesPeriod(p.date, period) && (!monthFilter || p.date.startsWith(monthFilter)));
+  const myReimbs = reimbursements.filter((r) => r.repId === effectiveRepId && matchesPeriod(r.date, period) && (!monthFilter || r.date.startsWith(monthFilter)));
 
   const todayStr = localDateString(new Date());
   const totalEarned = myPayroll
-    .filter((p) => p.status === 'Paid' && p.date <= todayStr && matchesPeriod(p.date, period))
+    .filter((p) => p.status === 'Paid' && p.date <= todayStr && matchesPeriod(p.date, period) && (!monthFilter || p.date.startsWith(monthFilter)))
     .reduce((s, p) => s + p.amount, 0);
 
-  const sortedDeals = [...dealPayments].sort((a, b) => b.date.localeCompare(a.date));
-  const sortedBonuses = [...bonusPayments].sort((a, b) => b.date.localeCompare(a.date));
+  const isSetterNote = (notes: string | null | undefined) => notes === 'Setter' || (notes ?? '').startsWith('Co-setter');
+  const closerCount  = dealPayments.filter((p) => !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Trainer override')).length;
+  const setterCount  = dealPayments.filter((p) => isSetterNote(p.notes)).length;
+  const trainerCount = dealPayments.filter((p) => (p.notes ?? '').startsWith('Trainer override')).length;
+
+  const filteredDeals = dealRoleFilter
+    ? dealPayments.filter((p) => {
+        if (dealRoleFilter === 'Setter') return isSetterNote(p.notes);
+        if (dealRoleFilter === 'Trainer') return (p.notes ?? '').startsWith('Trainer override');
+        return !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Trainer override'); // Closer
+      })
+    : dealPayments;
+  const sortedDeals = [...filteredDeals].sort((a, b) => {
+    let cmp = 0;
+    switch (dealSortKey) {
+      case 'customerName': cmp = (a.customerName ?? '').localeCompare(b.customerName ?? ''); break;
+      case 'paymentStage': cmp = (a.paymentStage ?? '').localeCompare(b.paymentStage ?? ''); break;
+      case 'notes': cmp = (a.notes ?? '').localeCompare(b.notes ?? ''); break;
+      case 'amount': cmp = a.amount - b.amount; break;
+      case 'status': cmp = a.status.localeCompare(b.status); break;
+      case 'date': cmp = a.date.localeCompare(b.date); break;
+    }
+    return dealSortDir === 'asc' ? cmp : -cmp;
+  });
+  const sortedBonuses = [...bonusPayments].sort((a, b) => {
+    let cmp = 0;
+    switch (bonusSortKey) {
+      case 'notes': cmp = (a.notes ?? '').localeCompare(b.notes ?? ''); break;
+      case 'amount': cmp = a.amount - b.amount; break;
+      case 'status': cmp = a.status.localeCompare(b.status); break;
+      case 'date': cmp = a.date.localeCompare(b.date); break;
+    }
+    return bonusSortDir === 'asc' ? cmp : -cmp;
+  });
   const sortedReimbs = [...myReimbs].sort((a, b) => b.date.localeCompare(a.date));
 
   if (!isHydrated) {
@@ -289,8 +350,75 @@ export default function MobileEarnings() {
         ))}
       </div>
 
+      {/* ── Monthly Earnings Bar Chart ──────────────────────────────────── */}
+      {monthlyBarData.length > 0 && (
+        <MonthlyEarningsBarChart
+          data={monthlyBarData}
+          selectedMonth={monthFilter}
+          onMonthClick={(key) => setMonthFilter((prev) => prev === key ? null : key)}
+        />
+      )}
+      {monthFilter && (
+        <div className="flex items-center gap-2 -mt-2">
+          <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+            {MONTH_LABELS[parseInt(monthFilter.slice(5, 7), 10) - 1]} {monthFilter.slice(0, 4)}
+          </span>
+          <button
+            onClick={() => setMonthFilter(null)}
+            className="text-xs underline"
+            style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
       <MobileSection title="Deal Payments" count={sortedDeals.length} collapsible defaultOpen>
+        <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
+          {([['date', 'Date'], ['customerName', 'Name'], ['paymentStage', 'Stage'], ['amount', '$'], ['status', 'Status']] as [DealSortKey, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => {
+                if (dealSortKey === key) setDealSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+                else { setDealSortKey(key); setDealSortDir('desc'); }
+              }}
+              className="min-h-[32px] px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+              style={{
+                background: dealSortKey === key ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                color: dealSortKey === key ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: '1px solid var(--m-border, var(--border-mobile))',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {label}{dealSortKey === key ? (dealSortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+            </button>
+          ))}
+        </div>
+        {dealPayments.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+            {[
+              { key: null,       label: 'All' },
+              { key: 'Closer',   label: `Closer (${closerCount})`,   show: closerCount > 0 },
+              { key: 'Setter',   label: `Setter (${setterCount})`,   show: setterCount > 0 },
+              { key: 'Trainer',  label: `Trainer (${trainerCount})`, show: trainerCount > 0 },
+            ].filter((p) => p.key === null || p.show).map(({ key, label }) => (
+              <button
+                key={key ?? 'all'}
+                onClick={() => setDealRoleFilter(key)}
+                className="min-h-[36px] px-3 rounded-xl text-sm font-medium whitespace-nowrap transition-colors"
+                style={{
+                  background: dealRoleFilter === key ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                  color: dealRoleFilter === key ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         {sortedDeals.length === 0 ? (
           <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No deal payments for this period</p>
         ) : (
@@ -322,6 +450,26 @@ export default function MobileEarnings() {
 
       {/* ── Bonuses ─────────────────────────────────────────────────────── */}
       <MobileSection title="Bonuses" count={sortedBonuses.length} collapsible defaultOpen>
+        <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
+          {([['date', 'Date'], ['notes', 'Type'], ['amount', '$'], ['status', 'Status']] as [BonusSortKey, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => {
+                if (bonusSortKey === key) setBonusSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+                else { setBonusSortKey(key); setBonusSortDir('desc'); }
+              }}
+              className="min-h-[32px] px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+              style={{
+                background: bonusSortKey === key ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                color: bonusSortKey === key ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: '1px solid var(--m-border, var(--border-mobile))',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {label}{bonusSortKey === key ? (bonusSortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+            </button>
+          ))}
+        </div>
         {sortedBonuses.length === 0 ? (
           <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No bonuses for this period</p>
         ) : (
@@ -375,6 +523,16 @@ export default function MobileEarnings() {
           </div>
         )}
       </MobileSection>
+
+      <ConfirmDialog
+        open={!!deleteReimbId}
+        title="Delete Reimbursement"
+        message={(() => { const r = reimbursements.find((x) => x.id === deleteReimbId); return r ? `Permanently delete this reimbursement?\n\n${r.repName} — $${r.amount.toFixed(2)} — ${r.description}\n\nAlso deletes any attached receipt. Cannot be undone.` : 'Permanently delete this reimbursement? Cannot be undone.'; })()}
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteReimb}
+        onClose={() => setDeleteReimbId(null)}
+        danger
+      />
     </div>
   );
 }

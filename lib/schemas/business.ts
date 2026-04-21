@@ -213,6 +213,6 @@ export const createUserInviteSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(200),
   phone: z.string().trim().max(50).optional().default(''),
   role: z.enum(['rep', 'sub-dealer', 'admin', 'project_manager']).optional().default('rep'),
-  repType: z.enum(['closer', 'setter', 'both']).optional().default('both'),
+  repType: z.enum(['closer', 'setter', 'both']).optional(),
 });
 export type CreateUserInviteInput = z.infer<typeof createUserInviteSchema>;

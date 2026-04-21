@@ -393,12 +393,11 @@ function UsersPageInner() {
     const map = new Map<string, number>();
     for (const p of projects) {
       if (PIPELINE_EXCLUDED.has(p.phase)) continue;
-      // Count for closer (repId)
-      map.set(p.repId, (map.get(p.repId) ?? 0) + 1);
-      // Count for setter if present and different from closer
-      if (p.setterId && p.setterId !== p.repId) {
-        map.set(p.setterId, (map.get(p.setterId) ?? 0) + 1);
-      }
+      const ids = new Set<string>([p.repId]);
+      if (p.setterId) ids.add(p.setterId);
+      p.additionalClosers?.forEach((c) => ids.add(c.userId));
+      p.additionalSetters?.forEach((c) => ids.add(c.userId));
+      for (const id of ids) map.set(id, (map.get(id) ?? 0) + 1);
     }
     return map;
   }, [projects]);
@@ -664,8 +663,8 @@ function UsersPageInner() {
       case 'kw': {
         const kwByRep = new Map<string, number>();
         for (const p of projects.filter(p => !PIPELINE_EXCLUDED.has(p.phase))) {
-          if (p.repId)                       kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + p.kWSize);
-          if (p.setterId && p.setterId !== p.repId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + p.kWSize);
+          if (p.repId)                       kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + (p.kWSize ?? 0));
+          if (p.setterId && p.setterId !== p.repId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + (p.kWSize ?? 0));
         }
         arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
         break;

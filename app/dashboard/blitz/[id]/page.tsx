@@ -223,8 +223,13 @@ export default function BlitzDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- approvedParticipantIds is derived from approvedVisibleProjects; adding both causes duplicate re-runs
   }, [approvedVisibleProjects, dealsSort]);
   const totalKW = useMemo(
-    () => approvedVisibleProjects.reduce((s: number, p: any) => s + p.kWSize, 0),
-    [approvedVisibleProjects],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => {
+      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+      const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+      if (!closerApproved && !anyAdditionalCloserApproved) return s;
+      return s + (p.kWSize ?? 0);
+    }, 0),
+    [approvedVisibleProjects, approvedParticipantIds],
   );
   const totalCosts = useMemo(
     () => blitz?.costs?.reduce((s: number, c: any) => s + c.amount, 0) ?? 0,
@@ -261,6 +266,7 @@ export default function BlitzDetailPage() {
       const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
       const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
       const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+      if (isSelfGen && !approvedParticipantIds.has(p.closer.id)) return s;
       if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
       const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
@@ -345,7 +351,7 @@ export default function BlitzDetailPage() {
       const sM1 = proj.setterM1Amount ?? 0;
       const sM2 = proj.setterM2Amount ?? 0;
       const sM3 = proj.setterM3Amount ?? 0;
-      const kW = proj.kWSize;
+      const kW = proj.kWSize ?? 0;
 
       if (closerId && setterId && closerId === setterId) {
         // Same person closed and set (self-gen) — gets everything
@@ -1068,7 +1074,7 @@ export default function BlitzDetailPage() {
                       <td className="px-4 py-3">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-[var(--surface-card)]/40 text-[var(--text-secondary)] border-[var(--border)]/30'}`}>{p.phase}</span>
                       </td>
-                      <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{p.kWSize.toFixed(1)}</td>
+                      <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'kw' ? ' bg-[var(--surface-card)]/20' : '')}>{p.kWSize?.toFixed(1) ?? '—'}</td>
                       <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'ppw' ? ' bg-[var(--surface-card)]/20' : '')}>${p.netPPW.toFixed(2)}</td>
                       {isAdmin && <td className={'px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums' + (dealsSort.col === 'payout' ? ' bg-[var(--surface-card)]/20' : '')}>{(() => { const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id; const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id); const setterApproved = p.setter?.id && approvedParticipantIds.has(p.setter.id); const ccTotal = (p.additionalClosers ?? []).filter((cc: any) => approvedParticipantIds.has(cc.userId)).reduce((s: number, cc: any) => s + (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0), 0); const csTotal = (p.additionalSetters ?? []).filter((cs: any) => approvedParticipantIds.has(cs.userId)).reduce((s: number, cs: any) => s + (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0), 0); return formatCurrency((closerApproved ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) : 0) + ((isSelfGen ? closerApproved : setterApproved) ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0) + ccTotal + csTotal); })()}</td>}
                     </tr>

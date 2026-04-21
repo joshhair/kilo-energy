@@ -13,6 +13,9 @@ interface Props {
   projects: any[];
   approvedParticipantIds: Set<string>;
   showPayout: boolean;
+  isAdmin: boolean;
+  isOwner: boolean;
+  effectiveRepId: string | null;
 }
 
 type SortKey = 'customer' | 'kw' | 'ppw' | 'payout';
@@ -32,7 +35,7 @@ function calcPayout(p: any, approvedIds: Set<string>): number {
     + ccTotal + csTotal;
 }
 
-export default function BlitzDeals({ projects, approvedParticipantIds, showPayout }: Props) {
+export default function BlitzDeals({ projects, approvedParticipantIds, showPayout, isAdmin, isOwner, effectiveRepId }: Props) {
   const router = useRouter();
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'kw', dir: 'desc' });
 
@@ -96,6 +99,11 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
       <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', borderColor: 'var(--m-border, var(--border-mobile))' }}>
         {sorted.map((p) => {
           const closerName = p.closer ? `${p.closer.firstName} ${p.closer.lastName}` : '—';
+          const role = (!isAdmin && !isOwner && effectiveRepId)
+            ? (p.closer?.id === effectiveRepId && p.setter?.id === effectiveRepId ? 'Self-gen'
+              : (p.closer?.id === effectiveRepId || p.additionalClosers?.some((c: any) => c.userId === effectiveRepId)) ? 'Closer'
+              : 'Setter')
+            : null;
           const payout = showPayout ? calcPayout(p, approvedParticipantIds) : 0;
           return (
             <button
@@ -108,7 +116,7 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
                 </div>
                 <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                  {closerName} · {p.kWSize?.toFixed(1)} kW · ${p.netPPW?.toFixed(2)}/W
+                  {closerName} · {p.kWSize?.toFixed(1)} kW · ${p.netPPW?.toFixed(2)}/W{role ? ` · ${role}` : ''}
                 </p>
                 <div className="mt-1">
                   <MobileBadge value={p.phase} variant="phase" />

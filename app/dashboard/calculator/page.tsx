@@ -422,8 +422,10 @@ function CalculatorPage() {
       } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
     const pricingDate = quickFillSoldDate || todayLocalDateStr();
-    const r = getInstallerRatesForDeal(installer, pricingDate, kW, installerPricingVersions);
-    return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
+    try {
+      const r = getInstallerRatesForDeal(installer, pricingDate, kW, installerPricingVersions);
+      return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
+    } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
   })();
 
   const kiloTotal = soldPPW > 0 ? calculateCommission(soldPPW, kiloPerW, kW) : 0;

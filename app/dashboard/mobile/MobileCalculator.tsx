@@ -53,7 +53,7 @@ export default function MobileCalculator() {
   const [netPPW, setNetPPW] = useState('');
   // Paired deal = closer + setter. Off = self-gen (all commission routes
   // to the closer side). Matches desktop calculator's role toggle.
-  const [isPaired, setIsPaired] = useState(true);
+  const [isPaired, setIsPaired] = useState(false);
   // Optional trainer override ($/W). Desktop supports this too — shifts
   // the 50/50 split point up, reducing closer and setter halves equally
   // while the trainer gets trainerRate × kW × 1000 on top.
@@ -100,8 +100,10 @@ export default function MobileCalculator() {
       } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
     const today = todayLocalDateStr();
-    const r = getInstallerRatesForDeal(installer, today, kW, installerPricingVersions);
-    return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
+    try {
+      const r = getInstallerRatesForDeal(installer, today, kW, installerPricingVersions);
+      return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
+    } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
   })();
 
   const kiloTotal = soldPPW > 0 ? calculateCommission(soldPPW, kiloPerW, kW) : 0;
