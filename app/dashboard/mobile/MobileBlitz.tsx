@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
-import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search } from 'lucide-react';
+import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -114,6 +114,7 @@ export default function MobileBlitz() {
     canCreateBlitz: false,
   });
   const [joiningBlitzId, setJoiningBlitzId] = useState<string | null>(null);
+  const [processingRequest, setProcessingRequest] = useState<Set<string>>(new Set());
   const [submittingCreate, setSubmittingCreate] = useState(false);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('newest');
@@ -145,6 +146,22 @@ export default function MobileBlitz() {
       .catch(() => {});
   }, [isAdmin, effectiveRepId]);
 
+  const myBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
+    return blitzes.filter((b) =>
+      b.owner.id === effectiveRepId ||
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'approved')
+    );
+  }, [blitzes, isAdmin, effectiveRepId]);
+
+  const pendingBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
+    return blitzes.filter((b) =>
+      b.owner.id !== effectiveRepId &&
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'pending')
+    );
+  }, [blitzes, isAdmin, effectiveRepId]);
+
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
     if (statusFilter !== 'all') list = list.filter((b) => b.status === statusFilter);
@@ -165,7 +182,18 @@ export default function MobileBlitz() {
       if (sortKey === 'newest') return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
       if (sortKey === 'oldest') return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
       if (sortKey === 'deals') return blitzDeals(b).length - blitzDeals(a).length;
-      if (sortKey === 'kw') return blitzDeals(b).reduce((s, p) => s + p.kWSize, 0) - blitzDeals(a).reduce((s, p) => s + p.kWSize, 0);
+      if (sortKey === 'kw') {
+        const kwSum = (blitz: BlitzData) => {
+          const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
+          return blitzDeals(blitz).reduce((s, p) => {
+            const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+            const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+            const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
+            return s + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+          }, 0);
+        };
+        return kwSum(b) - kwSum(a);
+      }
       if (sortKey === 'name') return a.name.localeCompare(b.name);
       return 0;
     });
@@ -204,6 +232,36 @@ export default function MobileBlitz() {
       setBlitzes(normalized);
       setRequests(r);
     });
+  };
+
+  const handleApproveRequest = async (reqId: string) => {
+    setProcessingRequest((prev) => new Set(prev).add(reqId));
+    try {
+      const r = await fetch(`/api/blitz-requests/${reqId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'approved' }),
+      });
+      if (!r.ok) { toast('Failed to approve request', 'error'); return; }
+      toast('Request approved');
+      loadData();
+    } catch { toast('Failed to approve request', 'error'); }
+    finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
+  };
+
+  const handleDenyRequest = async (reqId: string) => {
+    setProcessingRequest((prev) => new Set(prev).add(reqId));
+    try {
+      const r = await fetch(`/api/blitz-requests/${reqId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'denied' }),
+      });
+      if (!r.ok) { toast('Failed to deny request', 'error'); return; }
+      toast('Request denied');
+      loadData();
+    } catch { toast('Failed to deny request', 'error'); }
+    finally { setProcessingRequest((prev) => { const s = new Set(prev); s.delete(reqId); return s; }); }
   };
 
   const handleJoinBlitz = async (blitzId: string) => {
@@ -294,6 +352,101 @@ export default function MobileBlitz() {
       <Plus className="w-4 h-4 mr-1" /> Request
     </button>
   ) : null;
+
+  const renderBlitzCard = (blitz: BlitzData, index: number) => {
+    const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
+    const dateLabel = blitzDateLabel(blitz.status, blitz.startDate, blitz.endDate);
+    const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
+      .filter(Boolean)
+      .join(' \u00B7 ');
+    const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
+    const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
+    const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+    const isBlitzOwner = blitz.owner?.id === effectiveRepId;
+    const blitzProjects = (isAdmin || isBlitzOwner)
+      ? activeProjects.filter((p) =>
+          approvedIds.has(p.closer?.id ?? '')
+          || approvedIds.has(p.setter?.id ?? '')
+          || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+          || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
+        )
+      : activeProjects.filter((p) =>
+          p.closer?.id === effectiveRepId
+          || p.setter?.id === effectiveRepId
+          || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+          || p.additionalSetters?.some((as) => as.userId === effectiveRepId)
+        );
+    const totalDeals = blitzProjects.length;
+    const totalKW = blitzProjects.reduce((s, p) => {
+      const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+      const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
+      return s + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+    }, 0);
+    const myParticipation = blitz.participants.find((p) => p.user.id === effectiveRepId);
+    const canJoin = !isAdmin && !isBlitzOwner
+      && (!myParticipation || myParticipation.joinStatus === 'declined')
+      && (blitz.status === 'upcoming' || blitz.status === 'active');
+    const participationLabel = myParticipation
+      ? myParticipation.joinStatus === 'approved' ? 'Joined'
+        : myParticipation.joinStatus === 'declined' ? 'Declined'
+        : 'Pending'
+      : null;
+    const joining = joiningBlitzId === blitz.id;
+
+    return (
+      <div
+        key={blitz.id}
+        style={{
+          animation: 'blitzCardIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both',
+          animationDelay: `${index * 40}ms`,
+        }}
+      >
+        <MobileCard onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
+              <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
+              {isAdmin && totalCosts > 0 && (
+                <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
+                  {' \u00B7 '}
+                  Cost/kW: ${totalKW > 0 ? (totalCosts / totalKW).toFixed(2) : '--'}
+                </p>
+              )}
+            </div>
+            <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
+          </div>
+          {(canJoin || participationLabel || isBlitzOwner) && (
+            <div className="mt-3 flex items-center gap-2">
+              {isBlitzOwner && (
+                <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald)', background: 'rgba(0,229,160,0.12)' }}>Leader</span>
+              )}
+              {canJoin && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleJoinBlitz(blitz.id); }}
+                  disabled={joining}
+                  className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-40"
+                  style={{ color: 'var(--accent-emerald)', border: '1px solid var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                >
+                  {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
+                  {joining ? 'Joining...' : 'Join'}
+                </button>
+              )}
+              {participationLabel && !canJoin && !isBlitzOwner && (
+                <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded" style={{
+                  color: participationLabel === 'Joined' ? 'var(--accent-emerald)' : participationLabel === 'Declined' ? 'var(--m-danger, var(--accent-danger))' : '#f59e0b',
+                  background: participationLabel === 'Joined' ? 'rgba(0,229,160,0.12)' : participationLabel === 'Declined' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}>
+                  <UserCheck className="w-3 h-3" /> {participationLabel}
+                </span>
+              )}
+            </div>
+          )}
+        </MobileCard>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -405,91 +558,49 @@ export default function MobileBlitz() {
         <>
           {filteredBlitzes.length === 0 ? (
             <MobileEmptyState icon={Tent} title="No blitzes found" subtitle="Try a different filter or search" />
+          ) : !isAdmin && effectiveRepId ? (
+            // Rep segmented view
+            (() => {
+              const myIds = new Set([...myBlitzes, ...pendingBlitzes].map((b) => b.id));
+              const myFiltered = filteredBlitzes.filter((b) => myBlitzes.some((m) => m.id === b.id));
+              const pendingFiltered = filteredBlitzes.filter((b) => pendingBlitzes.some((p) => p.id === b.id));
+              const browseFiltered = filteredBlitzes.filter((b) => !myIds.has(b.id));
+              const sectionLabelStyle = {
+                color: 'var(--m-text-muted, var(--text-mobile-muted))',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              };
+              return (
+                <div className="space-y-5">
+                  {myFiltered.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1" style={sectionLabelStyle}>My Blitzes</p>
+                      <div className="space-y-3">
+                        {myFiltered.map((blitz, index) => renderBlitzCard(blitz, index))}
+                      </div>
+                    </div>
+                  )}
+                  {pendingFiltered.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1" style={sectionLabelStyle}>Pending Approval</p>
+                      <div className="space-y-3">
+                        {pendingFiltered.map((blitz, index) => renderBlitzCard(blitz, index))}
+                      </div>
+                    </div>
+                  )}
+                  {browseFiltered.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1" style={sectionLabelStyle}>Browse Available</p>
+                      <div className="space-y-3">
+                        {browseFiltered.map((blitz, index) => renderBlitzCard(blitz, index))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             <div key={statusFilter} className="space-y-3">
-              {filteredBlitzes.map((blitz, index) => {
-                const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
-                const dateLabel = blitzDateLabel(blitz.status, blitz.startDate, blitz.endDate);
-                const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
-                  .filter(Boolean)
-                  .join(' \u00B7 ');
-                const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
-                const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
-                const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
-                const blitzProjects = activeProjects.filter((p) =>
-                  approvedIds.has(p.closer?.id ?? '')
-                  || approvedIds.has(p.setter?.id ?? '')
-                  || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
-                  || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
-                );
-                const totalDeals = blitzProjects.length;
-                const totalKW = blitzProjects.reduce((s, p) => s + p.kWSize, 0);
-                const isOwner = blitz.owner?.id === effectiveRepId;
-                const myParticipation = blitz.participants.find((p) => p.user.id === effectiveRepId);
-                const canJoin = !isAdmin && !isOwner
-                  && (!myParticipation || myParticipation.joinStatus === 'declined')
-                  && (blitz.status === 'upcoming' || blitz.status === 'active');
-                const participationLabel = myParticipation
-                  ? myParticipation.joinStatus === 'approved' ? 'Joined'
-                    : myParticipation.joinStatus === 'declined' ? 'Declined'
-                    : 'Pending'
-                  : null;
-                const joining = joiningBlitzId === blitz.id;
-
-                return (
-                  <div
-                    key={blitz.id}
-                    style={{
-                      animation: 'blitzCardIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both',
-                      animationDelay: `${index * 40}ms`,
-                    }}
-                  >
-                    <MobileCard onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
-                          <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
-                          {isAdmin && totalCosts > 0 && (
-                            <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                              Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
-                              {' \u00B7 '}
-                              Cost/kW: ${totalKW > 0 ? (totalCosts / totalKW).toFixed(2) : '--'}
-                            </p>
-                          )}
-                        </div>
-                        <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
-                      </div>
-                      {(canJoin || participationLabel || isOwner) && (
-                        <div className="mt-3 flex items-center gap-2">
-                          {isOwner && (
-                            <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald)', background: 'rgba(0,229,160,0.12)' }}>Leader</span>
-                          )}
-                          {canJoin && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleJoinBlitz(blitz.id); }}
-                              disabled={joining}
-                              className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-40"
-                              style={{ color: 'var(--accent-emerald)', border: '1px solid var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                            >
-                              {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
-                              {joining ? 'Joining...' : 'Join'}
-                            </button>
-                          )}
-                          {participationLabel && !canJoin && !isOwner && (
-                            <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded" style={{
-                              color: participationLabel === 'Joined' ? 'var(--accent-emerald)' : participationLabel === 'Declined' ? 'var(--m-danger, var(--accent-danger))' : '#f59e0b',
-                              background: participationLabel === 'Joined' ? 'rgba(0,229,160,0.12)' : participationLabel === 'Declined' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
-                              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                            }}>
-                              <UserCheck className="w-3 h-3" /> {participationLabel}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </MobileCard>
-                  </div>
-                );
-              })}
+              {filteredBlitzes.map((blitz, index) => renderBlitzCard(blitz, index))}
             </div>
           )}
         </>
@@ -503,12 +614,29 @@ export default function MobileBlitz() {
           ) : (
             <div className="space-y-3">
               {pendingRequests.map((req) => (
-                <MobileCard key={req.id} onTap={() => router.push('/dashboard/blitz?tab=requests')}>
+                <MobileCard key={req.id}>
                   <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
                   <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
-                  <MobileBadge value="Pending" variant="status" />
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      onClick={() => handleApproveRequest(req.id)}
+                      disabled={processingRequest.has(req.id)}
+                      className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                      style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
+                    </button>
+                    <button
+                      onClick={() => handleDenyRequest(req.id)}
+                      disabled={processingRequest.has(req.id)}
+                      className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                      style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <XCircle className="w-3 h-3" /> Deny
+                    </button>
+                  </div>
                 </MobileCard>
               ))}
             </div>

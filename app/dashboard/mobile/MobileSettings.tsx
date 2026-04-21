@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { DEFAULT_INSTALL_PAY_PCT, InstallerBaseline, InstallerRates, SOLARTECH_FAMILIES } from '../../../lib/data';
 import {
   ArrowLeft, Tent, Users, Handshake,
   Building2, Landmark, BookOpen, Shield, Download,
-  Trash2, CheckSquare, Square, SlidersHorizontal,
+  Trash2, CheckSquare, Square, SlidersHorizontal, Pencil, Plus,
 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -164,7 +164,7 @@ function SectionContent({ section }: { section: SettingsSection }) {
     case 'blitz-permissions': return <BlitzPermissionsSection />;
     case 'export': return <ExportSection />;
     case 'trainers': return <ReadOnlyListSection title="Trainer Overrides" description="Manage trainer overrides in the Training page." />;
-    case 'baselines': return <ReadOnlyListSection title="Baselines" description="View and edit baseline pricing on desktop for the full experience." />;
+    case 'baselines': return <MobileBaselinesSection />;
     case 'sub-dealers': return <SubDealersSection />;
     case 'customization': return <CustomizationSection />;
     default: return null;
@@ -498,14 +498,22 @@ function ProjectManagersSection() {
     if (res.ok) {
       setPms((prev) => prev.map((pm) => pm.id === pmId ? { ...pm, [field]: !current } : pm));
       toast('Permission updated');
+    } else {
+      toast('Failed to update permission', 'error');
     }
   };
 
   const handleDelete = async () => {
     if (!confirmDeleteId) return;
     const res = await fetch(`/api/users/${confirmDeleteId}`, { method: 'DELETE' });
-    if (res.ok) { toast('PM removed'); loadPMs(); }
-    setConfirmDeleteId(null);
+    if (res.ok) {
+      toast('PM removed');
+      loadPMs();
+      setConfirmDeleteId(null);
+    } else {
+      toast('Failed to remove PM', 'error');
+      setConfirmDeleteId(null);
+    }
   };
 
   if (loading) return <SettingsSkeleton rows={4} />;
@@ -839,6 +847,398 @@ function CustomizationSection() {
           Reset
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─── Baselines Section ──────────────────────────────────────────────────────
+
+function MobileBaselinesSection() {
+  const { productCatalogInstallerConfigs } = useApp();
+  const [activeTab, setActiveTab] = useState<'standard' | 'solartech' | 'productcatalog'>('standard');
+  const hasPCInstallers = Object.keys(productCatalogInstallerConfigs).length > 0;
+
+  const tabs: Array<['standard' | 'solartech' | 'productcatalog', string]> = [
+    ['standard', 'Standard'],
+    ['solartech', 'SolarTech'],
+    ...(hasPCInstallers ? [['productcatalog', 'Product Catalog'] as ['productcatalog', string]] : []),
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {tabs.map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
+            style={{
+              background: activeTab === id ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+              color: activeTab === id ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              border: `1px solid ${activeTab === id ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {activeTab === 'standard' && <StandardBaselines />}
+      {activeTab === 'solartech' && <SolarTechBaselines />}
+      {activeTab === 'productcatalog' && <ProductCatalogBaselines />}
+    </div>
+  );
+}
+
+function StandardBaselines() {
+  const { installerBaselines, updateInstallerBaseline, createNewInstallerVersion } = useApp();
+  const { toast } = useToast();
+  const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
+  const [editVals, setEditVals] = useState({ closerPerW: '', kiloPerW: '', setterPerW: '', subDealerPerW: '' });
+  const [newVersionFor, setNewVersionFor] = useState<string | null>(null);
+  const [nvLabel, setNvLabel] = useState('');
+  const [nvDate, setNvDate] = useState('');
+  const [nvCloser, setNvCloser] = useState('');
+  const [nvKilo, setNvKilo] = useState('');
+
+  const entries = Object.entries(installerBaselines);
+
+  function startEdit(installer: string) {
+    const b = installerBaselines[installer];
+    setEditVals({
+      closerPerW: String(b.closerPerW),
+      kiloPerW: String(b.kiloPerW),
+      setterPerW: b.setterPerW != null ? String(b.setterPerW) : '',
+      subDealerPerW: b.subDealerPerW != null ? String(b.subDealerPerW) : '',
+    });
+    setEditingInstaller(installer);
+  }
+
+  function saveEdit() {
+    if (!editingInstaller) return;
+    const closer = parseFloat(editVals.closerPerW);
+    const kilo = parseFloat(editVals.kiloPerW);
+    if (isNaN(closer) || isNaN(kilo)) { toast('Invalid rates', 'error'); return; }
+    const baseline: InstallerBaseline = { closerPerW: closer, kiloPerW: kilo };
+    const setter = parseFloat(editVals.setterPerW);
+    if (!isNaN(setter)) baseline.setterPerW = setter;
+    const sub = parseFloat(editVals.subDealerPerW);
+    if (!isNaN(sub)) baseline.subDealerPerW = sub;
+    updateInstallerBaseline(editingInstaller, baseline);
+    toast('Baseline updated');
+    setEditingInstaller(null);
+  }
+
+  function openNewVersion(installer: string) {
+    const b = installerBaselines[installer];
+    setNewVersionFor(installer);
+    setNvLabel('');
+    setNvDate(new Date().toISOString().slice(0, 10));
+    setNvCloser(b ? String(b.closerPerW) : '');
+    setNvKilo(b ? String(b.kiloPerW) : '');
+  }
+
+  function saveNewVersion() {
+    if (!newVersionFor) return;
+    const closer = parseFloat(nvCloser);
+    const kilo = parseFloat(nvKilo);
+    if (isNaN(closer) || isNaN(kilo) || !nvLabel.trim() || !nvDate) {
+      toast('Fill all fields', 'error'); return;
+    }
+    const rates: InstallerRates = { type: 'flat', closerPerW: closer, kiloPerW: kilo };
+    createNewInstallerVersion(newVersionFor, nvLabel.trim(), nvDate, rates);
+    toast('Version created');
+    setNewVersionFor(null);
+  }
+
+  const inputStyle = {
+    background: 'var(--m-card, var(--surface-mobile-card))',
+    border: '1px solid var(--m-border, var(--border-mobile))',
+    '--tw-ring-color': 'var(--accent-emerald)',
+  } as React.CSSProperties;
+  const inputClass = 'flex-1 rounded-xl px-3 py-2 text-base text-white focus:outline-none focus:ring-1';
+
+  if (entries.length === 0) return <MobileEmptyState icon={BookOpen} title="No baselines configured" />;
+
+  return (
+    <div className="space-y-3">
+      {entries.map(([installer, baseline]) => {
+        const isEditing = editingInstaller === installer;
+        const setterAuto = Math.round((baseline.closerPerW + 0.10) * 100) / 100;
+        return (
+          <MobileCard key={installer}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                {installer}
+              </p>
+              {!isEditing && (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => openNewVersion(installer)}
+                    className="p-2 active:opacity-70 transition-colors"
+                    style={{ color: 'var(--accent-emerald)' }}
+                    title="New version"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => startEdit(installer)}
+                    className="p-2 active:opacity-70 transition-colors"
+                    style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                    title="Edit baseline"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isEditing ? (
+              <div className="space-y-2">
+                {([
+                  { key: 'closerPerW', label: 'Closer $/W' },
+                  { key: 'kiloPerW', label: 'Kilo $/W' },
+                  { key: 'setterPerW', label: 'Setter $/W (blank = auto)' },
+                  { key: 'subDealerPerW', label: 'Sub-Dealer $/W (opt.)' },
+                ] as const).map(({ key, label }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="text-sm w-36 shrink-0" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {label}
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      value={editVals[key]}
+                      onChange={(e) => setEditVals((p) => ({ ...p, [key]: e.target.value }))}
+                      className={inputClass}
+                      style={inputStyle}
+                    />
+                  </div>
+                ))}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={saveEdit}
+                    className="flex-1 min-h-[44px] rounded-2xl text-black text-base font-semibold active:opacity-80"
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingInstaller(null)}
+                    className="flex-1 min-h-[44px] rounded-2xl text-base active:opacity-80"
+                    style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                {([
+                  ['Closer', `$${baseline.closerPerW.toFixed(2)}/W`],
+                  ['Kilo', `$${baseline.kiloPerW.toFixed(2)}/W`],
+                  ['Setter', `$${(baseline.setterPerW ?? setterAuto).toFixed(2)}/W${baseline.setterPerW == null ? ' (auto)' : ''}`],
+                  ...(baseline.subDealerPerW != null ? [['Sub-Dealer', `$${baseline.subDealerPerW.toFixed(2)}/W`]] : []),
+                ] as [string, string][]).map(([label, value]) => (
+                  <div key={label} className="flex items-baseline gap-1">
+                    <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}:</span>
+                    <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </MobileCard>
+        );
+      })}
+
+      {newVersionFor && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="w-full max-w-lg rounded-t-3xl p-6 space-y-4" style={{ background: 'var(--navy-card, var(--navy-base))' }}>
+            <h2 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              New Version — {newVersionFor}
+            </h2>
+            {([
+              { label: 'Label', value: nvLabel, set: setNvLabel, type: 'text' },
+              { label: 'Effective From', value: nvDate, set: setNvDate, type: 'date' },
+              { label: 'Closer $/W', value: nvCloser, set: setNvCloser, type: 'number' },
+              { label: 'Kilo $/W', value: nvKilo, set: setNvKilo, type: 'number' },
+            ] as Array<{ label: string; value: string; set: (v: string) => void; type: string }>).map(({ label, value, set, type }) => (
+              <div key={label}>
+                <p className="text-sm mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
+                <input
+                  type={type}
+                  step={type === 'number' ? '0.01' : undefined}
+                  inputMode={type === 'number' ? 'decimal' : undefined}
+                  value={value}
+                  onChange={(e) => set(e.target.value)}
+                  className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
+                  style={inputStyle}
+                />
+              </div>
+            ))}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={saveNewVersion}
+                className="flex-1 min-h-[48px] rounded-2xl text-black font-semibold active:opacity-80"
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                Create Version
+              </button>
+              <button
+                onClick={() => setNewVersionFor(null)}
+                className="flex-1 min-h-[48px] rounded-2xl active:opacity-80"
+                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SolarTechBaselines() {
+  const { solarTechProducts } = useApp();
+  const [activeFamily, setActiveFamily] = useState<string>(SOLARTECH_FAMILIES[0]);
+
+  const familyProducts = solarTechProducts.filter((p) => p.family === activeFamily);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        Current rates by family. Full editing available on desktop.
+      </p>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {SOLARTECH_FAMILIES.map((f) => (
+          <button
+            key={f}
+            onClick={() => setActiveFamily(f)}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
+            style={{
+              background: activeFamily === f ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+              color: activeFamily === f ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              border: `1px solid ${activeFamily === f ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+      {familyProducts.length === 0 ? (
+        <MobileEmptyState icon={BookOpen} title="No products in this family" />
+      ) : (
+        familyProducts.map((product) => (
+          <MobileCard key={product.id}>
+            <p className="text-base font-semibold text-white mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              {product.name}
+            </p>
+            <div className="space-y-1">
+              {product.tiers.map((tier) => (
+                <div key={tier.minKW} className="flex items-center justify-between">
+                  <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    {tier.minKW}–{tier.maxKW ?? '∞'} kW
+                  </span>
+                  <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    C: ${tier.closerPerW.toFixed(2)} · K: ${tier.kiloPerW.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </MobileCard>
+        ))
+      )}
+    </div>
+  );
+}
+
+function ProductCatalogBaselines() {
+  const { productCatalogInstallerConfigs, productCatalogProducts } = useApp();
+  const installerNames = Object.keys(productCatalogInstallerConfigs);
+  const [activeInstaller, setActiveInstaller] = useState<string>(installerNames[0] ?? '');
+  const [activeFamily, setActiveFamily] = useState<string>(
+    productCatalogInstallerConfigs[installerNames[0] ?? '']?.families[0] ?? ''
+  );
+
+  if (installerNames.length === 0) return <MobileEmptyState icon={BookOpen} title="No product catalog installers" />;
+
+  const config = productCatalogInstallerConfigs[activeInstaller];
+  const familyProducts = productCatalogProducts.filter(
+    (p) => p.installer === activeInstaller && p.family === activeFamily
+  );
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        Current rates by installer and family. Full editing available on desktop.
+      </p>
+      {installerNames.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {installerNames.map((inst) => (
+            <button
+              key={inst}
+              onClick={() => {
+                setActiveInstaller(inst);
+                setActiveFamily(productCatalogInstallerConfigs[inst]?.families[0] ?? '');
+              }}
+              className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
+              style={{
+                background: activeInstaller === inst ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                color: activeInstaller === inst ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: `1px solid ${activeInstaller === inst ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {inst}
+            </button>
+          ))}
+        </div>
+      )}
+      {config?.families && config.families.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {config.families.map((f) => (
+            <button
+              key={f}
+              onClick={() => setActiveFamily(f)}
+              className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
+              style={{
+                background: activeFamily === f ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                color: activeFamily === f ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: `1px solid ${activeFamily === f ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      )}
+      {familyProducts.length === 0 ? (
+        <MobileEmptyState icon={BookOpen} title="No products" />
+      ) : (
+        familyProducts.map((product) => (
+          <MobileCard key={product.id}>
+            <p className="text-base font-semibold text-white mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              {product.name}
+            </p>
+            <div className="space-y-1">
+              {product.tiers.map((tier) => (
+                <div key={tier.minKW} className="flex items-center justify-between">
+                  <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    {tier.minKW}–{tier.maxKW ?? '∞'} kW
+                  </span>
+                  <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    C: ${tier.closerPerW.toFixed(2)} · K: ${tier.kiloPerW.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </MobileCard>
+        ))
+      )}
     </div>
   );
 }

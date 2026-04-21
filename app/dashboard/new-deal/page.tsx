@@ -372,9 +372,13 @@ function NewDealPage() {
         return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
       }
     } else if (form.installer && form.installer !== 'SolarTech' && !isPcInstaller && kW > 0) {
-      const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
-      const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
-      return { closerPerW: r.closerPerW, setterBaselinePerW: r.setterPerW, kiloPerW: r.kiloPerW, activeVersionId: r.versionId };
+      try {
+        const soldDate = form.soldDate || new Date().toISOString().split('T')[0];
+        const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
+        return { closerPerW: r.closerPerW, setterBaselinePerW: r.setterPerW, kiloPerW: r.kiloPerW, activeVersionId: r.versionId };
+      } catch {
+        return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
+      }
     }
     return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
   })();
@@ -420,8 +424,12 @@ function NewDealPage() {
     // installerBaselines collapses tiered installers to their first band — skip it for tiered.
     if (baseline && activeVersion?.rates.type !== 'tiered') return baseline.subDealerPerW ?? 0;
     if (kW <= 0) return 0;
-    const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
-    return r.subDealerPerW ?? 0;
+    try {
+      const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
+      return r.subDealerPerW ?? 0;
+    } catch {
+      return 0;
+    }
   })();
   const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0 && subDealerRate > kiloPerW
     ? Math.round((subDealerRate - kiloPerW) * kW * 1000 * 100) / 100

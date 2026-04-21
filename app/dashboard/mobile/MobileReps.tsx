@@ -10,7 +10,6 @@ import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConfirmDialog from '../components/ConfirmDialog';
 import { TopPerformersPodium } from '../users/components/TopPerformersPodium';
 
@@ -104,7 +103,7 @@ export default function MobileReps() {
   type PendingInvitation = { id: string; emailAddress: string; createdAt: number };
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
-  const [, setConfirmAction] = useState<{ title: string; message: string; confirmLabel: string; onConfirm: () => Promise<void> } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; confirmLabel: string; onConfirm: () => Promise<void> } | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -407,9 +406,14 @@ export default function MobileReps() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          convertUserRole(u.id, 'rep')
-                            .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
-                            .catch(() => {});
+                          setConfirmAction({
+                            title: 'Convert to Rep',
+                            message: `Convert ${u.firstName} ${u.lastName} from Sub-Dealer to Rep? This will change their role and cannot be undone easily.`,
+                            confirmLabel: 'Convert',
+                            onConfirm: () => convertUserRole(u.id, 'rep')
+                              .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
+                              .catch(() => {}),
+                          });
                         }}
                         title="Convert to Rep"
                         className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
@@ -457,15 +461,13 @@ export default function MobileReps() {
                   <MobileBadge value={REP_TYPE_LABELS[rep.repType] ?? rep.repType} />
                 </div>
 
-                {isAdmin && (
-                  <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{deals}</span> deals</span>
-                    <span>&middot;</span>
-                    <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{kw.toFixed(1)}</span> kW</span>
-                    <span>&middot;</span>
-                    <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${paid.toLocaleString()}</span> paid</span>
-                  </div>
-                )}
+                <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{deals}</span> deals</span>
+                  <span>&middot;</span>
+                  <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{kw.toFixed(1)}</span> kW</span>
+                  <span>&middot;</span>
+                  <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${paid.toLocaleString()}</span> paid</span>
+                </div>
               </MobileCard>
             );
           })}
@@ -682,6 +684,18 @@ export default function MobileReps() {
             </div>
           )}
         </div>
+      )}
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => confirmAction.onConfirm()}
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel={confirmAction.confirmLabel}
+          danger
+        />
       )}
 
       {/* Add User Bottom Sheet */}

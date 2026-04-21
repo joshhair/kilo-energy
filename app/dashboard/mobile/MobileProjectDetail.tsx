@@ -20,6 +20,7 @@ import ProjectChatter from '../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { AdminNotesEditor } from '../projects/components/detail/AdminNotesEditor';
+import { InlineNotesEditor } from '../projects/components/detail/InlineNotesEditor';
 
 // ── Pipeline steps ──
 
@@ -735,11 +736,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         // Track-fill percentage across the visible stages.
         const paidCount = visibleStages.filter((s) => s.paid).length;
         const fillPct =
-          visibleStages.length <= 1
-            ? paidCount > 0
-              ? 100
-              : 0
-            : (paidCount / (visibleStages.length - 1)) * 100;
+          visibleStages.length === 0
+            ? 0
+            : (paidCount / visibleStages.length) * 100;
 
         // Totals for the summary row(s).
         const myTotalExpected = isMeView
@@ -827,8 +826,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 {/* Trainer row — matches desktop's dedicated trainer card.
                     trainerId/trainerName/trainerRate are scrubbed server-
                     side for non-admin/PM viewers, so this block only
-                    renders for admin. */}
-                {(() => {
+                    renders for admin. Explicit isAdmin guard mirrors the
+                    desktop gate (effectiveRole === 'admin' && !isPM). */}
+                {isAdmin && (() => {
                   const { rate: effTrainerRate, trainerId: effTrainerId } = resolveTrainerRate(
                     { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
                     project.repId,
@@ -943,7 +943,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* Notes — collapsible */}
       <MobileSection title="Notes" collapsible defaultOpen={false}>
-        {project.notes ? (
+        {!isAdmin ? (
+          <InlineNotesEditor
+            notes={project.notes ?? ''}
+            onSave={(text) => updateProject({ notes: text })}
+          />
+        ) : project.notes ? (
           <p className="text-base text-slate-400 leading-relaxed">{project.notes}</p>
         ) : (
           <p className="text-base text-slate-400 italic">No notes</p>

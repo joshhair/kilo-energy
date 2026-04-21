@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
-import { Banknote, Receipt, ChevronRight } from 'lucide-react';
+import { Banknote, Receipt, ChevronRight, Search, X } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -97,15 +97,31 @@ export default function MobileMyPay() {
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
   const [reimbFile, setReimbFile] = useState<File | undefined>(undefined);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>('all');
+  const [payFilterFrom, setPayFilterFrom] = useState('');
+  const [payFilterTo, setPayFilterTo] = useState('');
+
   const todayStr = localDateString(new Date());
   const nextFriday = useMemo(() => getNextFriday(), []);
   const nextFridayStr = useMemo(() => localDateString(nextFriday), [nextFriday]);
 
-  // ── Filter entries to this rep ──
-  const myEntries = useMemo(
-    () => payrollEntries.filter((p) => p.repId === effectiveRepId),
-    [payrollEntries, effectiveRepId],
-  );
+  // ── Filter entries to this rep + active filters ──
+  const myEntries = useMemo(() => {
+    let entries = payrollEntries.filter((p) => p.repId === effectiveRepId);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      entries = entries.filter((e) => (e.customerName ?? '').toLowerCase().includes(q));
+    }
+    if (filterType !== 'all') {
+      entries = entries.filter((e) => e.paymentStage === filterType);
+    }
+    if (filterStatus !== 'all') {
+      entries = entries.filter((e) => e.status === filterStatus);
+    }
+    return entries;
+  }, [payrollEntries, effectiveRepId, searchQuery, filterType, filterStatus]);
 
   // ── Overview stats ──
   // Net cumulative paid-out (incl. chargebacks already applied).
@@ -152,7 +168,11 @@ export default function MobileMyPay() {
     () =>
       projects.filter(
         (p) =>
-          (p.repId === effectiveRepId || p.setterId === effectiveRepId) &&
+          (p.repId === effectiveRepId ||
+            p.setterId === effectiveRepId ||
+            p.trainerId === effectiveRepId ||
+            (p.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) ||
+            (p.additionalSetters ?? []).some((s) => s.userId === effectiveRepId)) &&
           p.phase !== 'Cancelled' &&
           p.phase !== 'On Hold',
       ),
@@ -173,7 +193,14 @@ export default function MobileMyPay() {
       .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
   }, [myProjects, effectiveRepId]);
 
-  const pipelineTotal = projectedM1 + projectedM2;
+  const projectedM3 = useMemo(() => {
+    const prePTO = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'];
+    return myProjects
+      .filter((p) => prePTO.includes(p.phase))
+      .reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM3Amount ?? 0) : (p.m3Amount ?? 0)), 0);
+  }, [myProjects, effectiveRepId]);
+
+  const pipelineTotal = projectedM1 + projectedM2 + projectedM3;
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -193,13 +220,18 @@ export default function MobileMyPay() {
       groups.get(friday)!.push(entry);
     }
     return [...groups.entries()]
+      .filter(([friday]) => {
+        if (payFilterFrom && friday < payFilterFrom) return false;
+        if (payFilterTo && friday > payFilterTo) return false;
+        return true;
+      })
       .map(([friday, entries]) => ({
         friday,
         entries: entries.sort((a, b) => a.date.localeCompare(b.date)),
         total: entries.reduce((s, e) => s + e.amount, 0),
       }))
       .sort((a, b) => b.friday.localeCompare(a.friday));
-  }, [myEntries]);
+  }, [myEntries, payFilterFrom, payFilterTo]);
 
   // ── Reimbursements — only show active ones ──
   // Show all non-archived reimbursements (including Denied) so reps see
@@ -395,6 +427,74 @@ export default function MobileMyPay() {
         </div>
         <ChevronRight size={16} color={DIM} />
       </button>
+
+      {/* ── Pay History Filters ── */}
+      <div className="space-y-2">
+        <div className="relative">
+          <Search size={15} color={DIM} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            placeholder="Search payments…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full outline-none"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 36px 12px 40px', color: '#fff', fontFamily: FONT_BODY, fontSize: '0.95rem', minHeight: '44px' }}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+              <X size={14} color={MUTED} />
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+            className="flex-1 outline-none"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+          >
+            <option value="all">All Types</option>
+            <option value="M1">M1</option>
+            <option value="M2">M2</option>
+            <option value="M3">M3</option>
+            <option value="Bonus">Bonus</option>
+            <option value="Trainer">Trainer</option>
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+            className="flex-1 outline-none"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+          >
+            <option value="all">All Statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="Pending">Pending</option>
+            <option value="Paid">Paid</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={payFilterFrom}
+            onChange={(e) => setPayFilterFrom(e.target.value)}
+            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+          />
+          <input
+            type="date"
+            value={payFilterTo}
+            onChange={(e) => setPayFilterTo(e.target.value)}
+            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+          />
+        </div>
+        {(searchQuery || filterType !== 'all' || filterStatus !== 'all' || payFilterFrom || payFilterTo) && (
+          <button
+            onClick={() => { setSearchQuery(''); setFilterType('all'); setFilterStatus('all'); setPayFilterFrom(''); setPayFilterTo(''); }}
+            style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.85rem', fontWeight: 500 }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
 
       {/* ── Pay History ── */}
       <MobileSection title="Pay History" count={myEntries.length} collapsible defaultOpen>

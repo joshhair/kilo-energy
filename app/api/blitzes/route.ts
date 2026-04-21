@@ -179,13 +179,10 @@ export async function POST(req: NextRequest) {
         { additionalSetters: { some: { userId: ownerId } } },
       ],
     },
-    select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+    select: { id: true },
   });
   for (const project of coRoleProjects) {
-    const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
-    if (primaryIds.some((id) => approvedIds.includes(id))) {
-      await prisma.project.update({ where: { id: project.id }, data: { blitzId: blitz.id } });
-    }
+    await prisma.project.update({ where: { id: project.id }, data: { blitzId: blitz.id } });
   }
 
   const serialized = {

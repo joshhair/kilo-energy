@@ -60,6 +60,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     deactivateSubDealer,
     reactivateSubDealer,
     convertUserRole,
+    deleteRepPermanently,
+    deleteSubDealerPermanently,
   } = useApp();
   const hydrated = useIsHydrated();
   const { toast } = useToast();
@@ -79,6 +81,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmConvert, setConfirmConvert] = useState<{ targetRole: 'rep' | 'sub-dealer'; targetLabel: string; msg: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
 
   let rep = reps.find((r) => r.id === repId);
@@ -372,6 +375,21 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       toast(err instanceof Error ? err.message : 'Failed to send invite', 'error');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleDeletePermanently = async () => {
+    let result: { success: boolean; error?: string };
+    if (isSubDealer) {
+      result = await deleteSubDealerPermanently(repId);
+    } else {
+      result = await deleteRepPermanently(repId);
+    }
+    if (result.success) {
+      toast(`${resolvedUser.firstName} ${resolvedUser.lastName} permanently deleted`, 'success');
+      router.push('/dashboard/users');
+    } else {
+      toast(result.error ?? 'Failed to delete', 'error');
     }
   };
 
@@ -686,6 +704,16 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               onTap={toggleActive}
               danger={resolvedUser.active !== false}
             />
+
+            {/* Hard delete — only shown when user has zero related records */}
+            {userMeta && userMeta.relationCount === 0 && (
+              <MobileBottomSheet.Item
+                label="Permanently delete"
+                icon={Trash2}
+                onTap={() => { setActionSheetOpen(false); setConfirmDelete(true); }}
+                danger
+              />
+            )}
           </div>
         </MobileBottomSheet>
       )}
@@ -784,6 +812,16 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         confirmLabel="Convert"
         onConfirm={doConvert}
         onClose={() => setConfirmConvert(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Permanently delete user"
+        message={`PERMANENTLY delete ${resolvedUser.firstName} ${resolvedUser.lastName}? This cannot be undone. Their Clerk account will also be removed.`}
+        confirmLabel="Delete permanently"
+        danger
+        onConfirm={() => { setConfirmDelete(false); handleDeletePermanently(); }}
+        onClose={() => setConfirmDelete(false)}
       />
     </div>
   );

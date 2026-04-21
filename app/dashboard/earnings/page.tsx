@@ -102,7 +102,7 @@ function RepEarningsView() {
   const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs, [myReimbs, monthFilter]);
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(monthFilter ?? currentYYYYMM) && (!monthFilter || p.date <= todayStr)).reduce((s, p) => s + p.amount, 0);
+  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(monthFilter ?? currentYYYYMM) && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const approvedReimbs  = filteredReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);
@@ -492,7 +492,7 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
+            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDealsBase.filter((r) => r.kind === 'payroll').length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
           </button>
         ))}
       </div>

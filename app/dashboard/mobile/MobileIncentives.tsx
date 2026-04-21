@@ -304,7 +304,6 @@ export default function MobileIncentives() {
   const handleEditSave = async (updated: Incentive) => {
     const prev = incentives.find((i) => i.id === updated.id);
     setIncentives((list) => list.map((i) => i.id === updated.id ? updated : i));
-    setEditingIncentive(null);
     try {
       const res = await fetch(`/api/incentives/${updated.id}`, {
         method: 'PATCH',
@@ -325,6 +324,7 @@ export default function MobileIncentives() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const saved: Incentive = await res.json();
       setIncentives((list) => list.map((i) => i.id === updated.id ? { ...i, milestones: saved.milestones } : i));
+      setEditingIncentive(null);
       toast('Incentive updated', 'success');
     } catch (err) {
       if (prev) setIncentives((list) => list.map((i) => i.id === updated.id ? prev : i));
@@ -987,7 +987,7 @@ function IncentiveCard({
   );
 
   const maxThreshold = incentive.milestones.length > 0
-    ? incentive.milestones[incentive.milestones.length - 1].threshold
+    ? Math.max(...incentive.milestones.map((m) => m.threshold))
     : 1;
   const pct = Math.min((progress / maxThreshold) * 100, 100);
 

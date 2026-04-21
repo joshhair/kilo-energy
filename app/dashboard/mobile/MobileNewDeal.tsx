@@ -276,6 +276,14 @@ export default function MobileNewDeal() {
     return () => clearTimeout(t);
   }, [currentStep]);
 
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, additionalClosers: [], setterId: '', blitzId: '' }));
+  }, [form.repId]);
+
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, additionalSetters: [] }));
+  }, [form.setterId]);
+
   // Blitz list
   type BlitzListItem = {
     id: string;
@@ -310,6 +318,7 @@ export default function MobileNewDeal() {
   const netPPWRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (lastInstallerApplied.current) return;
+    if (!dbReady) return;
     lastInstallerApplied.current = true;
     try {
       const lastInstaller = localStorage.getItem('lastInstaller');
@@ -317,7 +326,7 @@ export default function MobileNewDeal() {
         setForm((prev) => prev.installer ? prev : { ...prev, installer: lastInstaller });
       }
     } catch {}
-  }, [activeInstallers]);
+  }, [activeInstallers, dbReady]);
 
   // ── Field helpers ─────────────────────────────────────────────────────────
 
@@ -426,9 +435,13 @@ export default function MobileNewDeal() {
         return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
       }
     } else if (form.installer && form.installer !== 'SolarTech' && !isPcInstaller && kW > 0) {
-      const soldDate = form.soldDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
-      const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
-      return { closerPerW: r.closerPerW, setterBaselinePerW: r.setterPerW, kiloPerW: r.kiloPerW, activeVersionId: r.versionId };
+      try {
+        const soldDate = form.soldDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+        const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
+        return { closerPerW: r.closerPerW, setterBaselinePerW: r.setterPerW, kiloPerW: r.kiloPerW, activeVersionId: r.versionId };
+      } catch {
+        return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
+      }
     }
     return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0, activeVersionId: null };
   })();
@@ -522,8 +535,12 @@ export default function MobileNewDeal() {
     // installerBaselines collapses tiered installers to their first band — skip it for tiered.
     if (baseline && activeVersion?.rates.type !== 'tiered') return baseline.subDealerPerW ?? 0;
     if (kW <= 0) return 0;
-    const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
-    return r.subDealerPerW ?? 0;
+    try {
+      const r = getInstallerRatesForDeal(form.installer, soldDate, kW, installerPricingVersions);
+      return r.subDealerPerW ?? 0;
+    } catch {
+      return 0;
+    }
   })();
   const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0
     ? Math.max(0, (subDealerRate - kiloPerW) * kW * 1000)
@@ -554,9 +571,12 @@ export default function MobileNewDeal() {
     'kWSize',
     'netPPW',
   ];
+  const s3Fields: string[] = [
+    ...(form.leadSource === 'blitz' ? ['blitzId'] : []),
+  ];
 
   const handleNext = () => {
-    const stepFields = currentStep === 0 ? s1Fields : currentStep === 1 ? s2Fields : [];
+    const stepFields = currentStep === 0 ? s1Fields : currentStep === 1 ? s2Fields : s3Fields;
     const stepErrors: Record<string, string> = {};
     let hasStepErrors = false;
     for (const field of stepFields) {
@@ -644,6 +664,14 @@ export default function MobileNewDeal() {
     setErrors(newErrors);
     if (hasErrors) {
       submittingRef.current = false;
+      const firstErrorField = fieldsToValidate.find((f) => newErrors[f]);
+      if (firstErrorField) {
+        const targetStep = s1Fields.includes(firstErrorField) ? 0
+          : s2Fields.includes(firstErrorField) ? 1
+          : 2;
+        stepDirectionRef.current = targetStep < currentStep ? 'back' : 'fwd';
+        setCurrentStep(targetStep);
+      }
       return;
     }
 
@@ -663,23 +691,31 @@ export default function MobileNewDeal() {
           .map((p) => p.userId),
       );
       if (form.repId && !approvedIds.has(form.repId)) {
+        stepDirectionRef.current = 'back';
+        setCurrentStep(0);
         toast('Selected closer is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
       }
       if (form.setterId && !approvedIds.has(form.setterId)) {
+        stepDirectionRef.current = 'back';
+        setCurrentStep(0);
         toast('Selected setter is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
       }
       const unapprovedCoCloser = form.additionalClosers.find((c) => !approvedIds.has(c.userId));
       if (unapprovedCoCloser) {
+        stepDirectionRef.current = 'back';
+        setCurrentStep(0);
         toast('A co-closer is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
       }
       const unapprovedCoSetter = form.additionalSetters.find((s) => !approvedIds.has(s.userId));
       if (unapprovedCoSetter) {
+        stepDirectionRef.current = 'back';
+        setCurrentStep(0);
         toast('A co-setter is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
@@ -778,11 +814,18 @@ export default function MobileNewDeal() {
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
     };
 
+    let dealAccepted: boolean;
     if (isSubDealer) {
-      addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
+      dealAccepted = addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
     } else {
-      addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
+      dealAccepted = addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
         trainerTotal > 0 ? setterAssignment?.trainerId : undefined);
+    }
+
+    if (!dealAccepted) {
+      setSubmitting(false);
+      submittingRef.current = false;
+      return;
     }
 
     if (form.installer) {
@@ -956,7 +999,7 @@ export default function MobileNewDeal() {
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
-                  reps={reps}
+                  reps={setterPickerReps}
                   trainerAssignments={trainerAssignments}
                   excludeRepId={closerId || undefined}
                 />

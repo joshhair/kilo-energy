@@ -103,10 +103,9 @@ export function BlitzProfitability({
           <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">Projects in this blitz</h3>
           <div className="space-y-2">
             {approvedVisibleProjects.map((p: any) => {
-              const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
               const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
               const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
-              if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return null;
+              if (!closerApproved && !anyAdditionalCloserApproved) return null;
               const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
               const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
               const margin = (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;

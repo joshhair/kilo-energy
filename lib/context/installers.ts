@@ -217,10 +217,8 @@ export function createInstallerActions(deps: InstallerDeps) {
       let updatedRates: InstallerRates;
       let patchTiers: { minKW: number; maxKW?: number | null; closerPerW: number; setterPerW: number | null; kiloPerW: number; subDealerPerW: number | null }[];
       if (existing.rates.type === 'tiered') {
-        const updatedBands = existing.rates.bands.map((band, idx) =>
-          idx === 0
-            ? { ...band, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) }
-            : band,
+        const updatedBands = existing.rates.bands.map((band) =>
+          ({ ...band, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) }),
         );
         updatedRates = { type: 'tiered', bands: updatedBands };
         patchTiers = updatedBands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW ?? null, closerPerW: b.closerPerW, setterPerW: b.setterPerW ?? null, kiloPerW: b.kiloPerW, subDealerPerW: b.subDealerPerW ?? null }));
@@ -366,11 +364,11 @@ export function createInstallerActions(deps: InstallerDeps) {
     }).then((res) => res.json()).then((created) => {
       if (created.id) {
         resolveInstallerId(created.id as string);
-        pendingInstallerIdRef.current.delete(name);
         setIdMaps((prev) => ({
           ...prev,
           installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
         }));
+        pendingInstallerIdRef.current.delete(name);
       } else {
         const err = new Error('Installer POST returned no id');
         console.error(err);

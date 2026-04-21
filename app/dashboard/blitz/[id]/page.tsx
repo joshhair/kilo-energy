@@ -350,7 +350,7 @@ export default function BlitzDetailPage() {
           if (!pr.ok) { toast('Failed to approve new owner as participant', 'error'); setEditing(false); loadBlitz(true); return; }
         }
       }
-      const patchBody = isAdmin ? editForm : (({ ownerId: _o, ...rest }) => rest)(editForm);
+      const patchBody = isAdmin ? editForm : (({ ownerId: _o, status: _s, ...rest }) => rest)(editForm);
       const r = await fetch(`/api/blitzes/${blitzId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -544,14 +544,16 @@ export default function BlitzDetailPage() {
           <div className="card-surface rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Edit Blitz</h2>
-              <div className="flex items-center gap-2">
-                <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))} className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs font-medium text-white">
-                  <option value="upcoming">Upcoming</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))} className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs font-medium text-white">
+                    <option value="upcoming">Upcoming</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">Blitz Name</label>

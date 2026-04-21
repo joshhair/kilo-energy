@@ -340,7 +340,7 @@ function PayrollPageInner() {
   const handlePublish = async () => {
     if (publishingPayroll) return;
     setPublishingPayroll(true);
-    // Publish only Pending entries matching the active filters (same set the button's disabled state reflects)
+    // Publish only Pending entries matching the active type tab
     const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending' && e.date <= today);
     const ids = pendingVisible.map((e) => e.id);
     const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
@@ -349,6 +349,7 @@ function PayrollPageInner() {
     );
     setShowPublishConfirm(false);
     setAdminPage(1);
+    changeStatusTab('Paid');
     toast(`Payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
     // Persist to DB via bulk endpoint for atomicity
     try {

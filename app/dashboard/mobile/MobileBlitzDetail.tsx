@@ -212,47 +212,13 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.push('/dashboard/blitz')}
-          className="flex items-center gap-1.5 text-base min-h-[48px]"
-          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-        >
-          <ArrowLeft className="w-4 h-4" /> Blitz
-        </button>
-        <div className="flex items-center gap-3">
-          {canManage && (
-            <button
-              onClick={() => setShowEdit(true)}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Edit blitz"
-              style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-          )}
-          {canCancelRequest && (
-            <button
-              onClick={() => setShowCancelRequest(true)}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Request cancellation"
-              style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
-            >
-              <XCircle className="w-4 h-4" />
-            </button>
-          )}
-          {isAdmin && (
-            <button
-              onClick={() => setShowDelete(true)}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Delete blitz"
-              style={{ color: 'var(--m-danger, var(--accent-danger))' }}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
+      <button
+        onClick={() => router.push('/dashboard/blitz')}
+        className="flex items-center gap-1.5 text-base min-h-[48px]"
+        style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+      >
+        <ArrowLeft className="w-4 h-4" /> Blitz
+      </button>
 
       <div>
         <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{blitz.name}</h1>
@@ -263,6 +229,53 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {blitz.location && <>{blitz.location} &middot; </>}
           {formatDate(blitz.startDate)} &ndash; {formatDate(blitz.endDate)}
         </p>
+
+        {/* Action pills — match the tab pill style so the edit/delete/
+            cancel affordances are obvious. Icon-only buttons in the top
+            row were ambiguous ("no way to edit from that icon"). */}
+        {(canManage || canCancelRequest || isAdmin) && (
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {canManage && (
+              <button
+                onClick={() => setShowEdit(true)}
+                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
+                style={{
+                  color: 'var(--accent-emerald)',
+                  border: '1px solid var(--accent-emerald)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </button>
+            )}
+            {canCancelRequest && (
+              <button
+                onClick={() => setShowCancelRequest(true)}
+                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
+                style={{
+                  color: 'var(--m-text-muted, var(--text-mobile-muted))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                <XCircle className="w-3.5 h-3.5" /> Request Cancel
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={() => setShowDelete(true)}
+                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
+                style={{
+                  color: 'var(--m-danger, var(--accent-danger))',
+                  border: '1px solid var(--m-danger, var(--accent-danger))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <BlitzTabs tabs={tabs} active={tab} onChange={handleTabChange} />
@@ -314,6 +327,90 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               );
             })()}
             <BlitzLeaderboard entries={leaderboard} showPayout={true} />
+
+            {/* Progress bar */}
+            {(blitz.status === 'active' || blitz.status === 'completed') && (() => {
+              const startMs = new Date(blitz.startDate + 'T00:00:00').getTime();
+              const endMs = new Date(blitz.endDate + 'T00:00:00').getTime();
+              const nowMs = new Date().setHours(0, 0, 0, 0);
+              const totalDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+              const elapsed = Math.max(0, Math.min(totalDays, Math.round((nowMs - startMs) / 86400000) + 1));
+              const progressPct = blitz.status === 'completed' ? 100 : Math.round((elapsed / totalDays) * 100);
+              return (
+                <div className="rounded-xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Progress</p>
+                    <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {blitz.status === 'completed' ? 'Completed' : `Day ${elapsed} of ${totalDays}`}
+                    </p>
+                  </div>
+                  <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%`, background: 'var(--accent-emerald)' }} />
+                  </div>
+                  <div className="flex justify-between mt-1.5 text-[11px]" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <span>{formatDate(blitz.startDate)}</span>
+                    <span>{formatDate(blitz.endDate)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Details card */}
+            {(() => {
+              const startMs = new Date(blitz.startDate + 'T00:00:00').getTime();
+              const endMs = new Date(blitz.endDate + 'T00:00:00').getTime();
+              const totalDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+              return (
+                <div className="rounded-xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Details</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Leader</span>
+                      <span className="font-medium text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Duration</span>
+                      <span className="text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{totalDays} days</span>
+                    </div>
+                    {blitz.location && (
+                      <div className="flex justify-between">
+                        <span style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Location</span>
+                        <span className="text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.location}</span>
+                      </div>
+                    )}
+                    {blitz.housing && (
+                      <div className="flex justify-between">
+                        <span style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing</span>
+                        <span className="text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.housing}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Team avatar preview */}
+            {approvedParticipants.length > 0 && (
+              <div className="rounded-xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Team</p>
+                  <button onClick={() => handleTabChange('participants')} className="text-xs font-medium" style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>View all</button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {approvedParticipants.slice(0, 8).map((p: any) => (
+                    <div key={p.user.id} className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.2)', color: 'var(--accent-emerald)', border: '1px solid rgba(16,185,129,0.3)' }}>
+                        {(p.user.firstName?.[0] ?? '').toUpperCase()}{(p.user.lastName?.[0] ?? '').toUpperCase()}
+                      </div>
+                      <span className="text-xs text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.user.firstName}</span>
+                    </div>
+                  ))}
+                  {approvedParticipants.length > 8 && (
+                    <div className="flex items-center px-2.5 py-1 text-xs" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>+{approvedParticipants.length - 8} more</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -348,6 +445,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <BlitzProfitability
             approvedVisibleProjects={approvedVisibleProjects}
             approvedParticipantIds={approvedParticipantIds}
+            approvedParticipants={approvedParticipants}
+            leaderboard={leaderboard}
             totalCosts={totalCosts}
             kiloMargin={kiloMargin}
             costsByCategory={costsByCategory}

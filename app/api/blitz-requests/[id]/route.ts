@@ -74,5 +74,48 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: msg }, { status: 409 });
   }
 
+  // Backfill existing deals for newly-approved create requests (mirrors POST /api/blitzes lines 150–189)
+  if (body.status === 'approved' && request.type === 'create' && request.blitz) {
+    const newBlitz = request.blitz;
+    const ownerId = request.requestedById;
+    const approvedParticipants = await prisma.blitzParticipant.findMany({
+      where: { blitzId: newBlitz.id, joinStatus: 'approved' },
+      select: { userId: true },
+    });
+    const approvedIds = approvedParticipants.map((p) => p.userId);
+    await prisma.project.updateMany({
+      where: {
+        blitzId: null,
+        soldDate: { gte: newBlitz.startDate, lte: newBlitz.endDate },
+        closerId: ownerId,
+        OR: [{ setterId: null }, { setterId: { in: approvedIds } }],
+      },
+      data: { blitzId: newBlitz.id },
+    });
+    await prisma.project.updateMany({
+      where: {
+        blitzId: null,
+        soldDate: { gte: newBlitz.startDate, lte: newBlitz.endDate },
+        setterId: ownerId,
+        closerId: { in: approvedIds },
+      },
+      data: { blitzId: newBlitz.id },
+    });
+    const coRoleProjects = await prisma.project.findMany({
+      where: {
+        blitzId: null,
+        soldDate: { gte: newBlitz.startDate, lte: newBlitz.endDate },
+        OR: [
+          { additionalClosers: { some: { userId: ownerId } } },
+          { additionalSetters: { some: { userId: ownerId } } },
+        ],
+      },
+      select: { id: true },
+    });
+    for (const project of coRoleProjects) {
+      await prisma.project.update({ where: { id: project.id }, data: { blitzId: newBlitz.id } });
+    }
+  }
+
   return NextResponse.json(request);
 }

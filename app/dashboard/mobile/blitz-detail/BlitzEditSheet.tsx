@@ -10,7 +10,7 @@ import { sortForSelection } from '../../../../lib/sorting';
 
 const STATUS_OPTIONS = ['upcoming', 'active', 'completed', 'cancelled'] as const;
 
-const SELECT_STYLE: React.CSSProperties = {
+const SELECT_STYLE = {
   background: 'var(--m-card, var(--surface-mobile-card))',
   border: '1px solid var(--m-border, var(--border-mobile))',
   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",

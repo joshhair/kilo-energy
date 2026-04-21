@@ -25,13 +25,15 @@ export default function MobileTraining() {
 
   useEffect(() => { document.title = 'Training | Kilo Energy'; }, []);
 
-  const [expandedTrainee, setExpandedTrainee] = useState<string | null>(null);
+  const [expandedAssignment, setExpandedAssignment] = useState<string | null>(null);
 
   // ── Derived data ─────────────────────────────────────────────────────────
   // NOTE: every hook below must run unconditionally on every render — the
   // PM guard return below this block would otherwise cause a rules-of-hooks
   // violation (hooks called in different order depending on role).
-  const myAssignments = trainerAssignments.filter((a) => a.trainerId === effectiveRepId);
+  const myAssignments = effectiveRole === 'admin'
+    ? trainerAssignments
+    : trainerAssignments.filter((a) => a.trainerId === effectiveRepId);
 
   // Direct-trainer projects: the admin set project.trainerId to this rep
   // manually, but there's no TrainerAssignment record for the closer/setter.
@@ -39,16 +41,23 @@ export default function MobileTraining() {
   // — the viewer can open them but can't see them listed (Luckie Judson,
   // 2026-04-20). We synthesize a one-tier pseudo-assignment per closer so
   // the existing UI can render them with no structural changes.
-  const assignmentTraineeIds = new Set(myAssignments.map((a) => a.traineeId));
-  const directTrainerProjects = projects.filter((p) =>
-    p.trainerId === effectiveRepId &&
-    p.phase !== 'Cancelled' &&
-    p.phase !== 'On Hold' &&
-    !assignmentTraineeIds.has(p.repId ?? '') &&
-    !assignmentTraineeIds.has(p.setterId ?? ''),
+  // Not needed for admin — all real assignments are already in myAssignments.
+  const assignmentTraineeIds = useMemo(
+    () => new Set(myAssignments.map((a) => a.traineeId)),
+    [myAssignments],
   );
+  const directTrainerProjects = useMemo(() => {
+    if (effectiveRole === 'admin') return [];
+    return projects.filter((p) =>
+      p.trainerId === effectiveRepId &&
+      p.phase !== 'Cancelled' &&
+      p.phase !== 'On Hold' &&
+      !assignmentTraineeIds.has(p.repId ?? '') &&
+      !assignmentTraineeIds.has(p.setterId ?? ''),
+    );
+  }, [effectiveRole, projects, effectiveRepId, assignmentTraineeIds]);
 
-  const isTrainer = myAssignments.length > 0 || directTrainerProjects.length > 0;
+  const isTrainer = effectiveRole === 'admin' || myAssignments.length > 0 || directTrainerProjects.length > 0;
 
   const trainerEntries = payrollEntries.filter(
     (e) => e.repId === effectiveRepId && e.paymentStage === 'Trainer',
@@ -222,11 +231,11 @@ export default function MobileTraining() {
       <MobileSection title="My Trainees" count={traineeData.length}>
         <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           {traineeData.map((td, idx) => {
-            const isOpen = expandedTrainee === td.traineeId;
+            const isOpen = expandedAssignment === td.assignment.id;
             return (
-              <div key={td.traineeId} style={{ borderBottom: idx < traineeData.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}>
+              <div key={td.assignment.id} style={{ borderBottom: idx < traineeData.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}>
                 <button
-                  onClick={() => setExpandedTrainee(isOpen ? null : td.traineeId)}
+                  onClick={() => setExpandedAssignment(isOpen ? null : td.assignment.id)}
                   className="w-full px-4 py-3 flex items-center justify-between gap-3 min-h-[48px]
                              touch-manipulation
                              motion-safe:transition-[transform,background-color]

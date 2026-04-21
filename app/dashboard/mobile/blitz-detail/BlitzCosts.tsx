@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, Trash2, DollarSign, Loader2 } from 'lucide-react';
 import MobileEmptyState from '../shared/MobileEmptyState';
 import MobileBottomSheet from '../shared/MobileBottomSheet';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { formatDate, formatCurrency } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 
@@ -32,6 +33,8 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
   const [desc, setDesc] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [adding, setAdding] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const total = costs.reduce((s, c) => s + c.amount, 0);
 
@@ -39,23 +42,31 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
     if (!amount || parseFloat(amount) <= 0) return;
     setAdding(true);
     try {
-      await fetch(`/api/blitzes/${blitzId}/costs`, {
+      const r = await fetch(`/api/blitzes/${blitzId}/costs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, amount: parseFloat(amount), description: desc.trim(), date }),
       });
+      if (!r.ok) { toast('Failed to add cost', 'error'); return; }
       toast('Cost added');
       setAmount('');
       setDesc('');
       setShowAdd(false);
       onRefresh();
-    } finally { setAdding(false); }
+    } catch { toast('Failed to add cost', 'error'); }
+    finally { setAdding(false); }
   };
 
-  const handleDelete = async (costId: string) => {
-    await fetch(`/api/blitzes/${blitzId}/costs?costId=${costId}`, { method: 'DELETE' });
-    toast('Cost removed');
-    onRefresh();
+  const handleDelete = async () => {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
+    try {
+      const r = await fetch(`/api/blitzes/${blitzId}/costs?costId=${confirmDeleteId}`, { method: 'DELETE' });
+      if (!r.ok) { toast('Failed to remove cost', 'error'); return; }
+      toast('Cost removed');
+      onRefresh();
+    } catch { toast('Failed to remove cost', 'error'); }
+    finally { setDeleting(false); setConfirmDeleteId(null); }
   };
 
   return (
@@ -90,7 +101,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
               <div className="flex items-center gap-3 shrink-0 ml-3">
                 <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(c.amount)}</span>
                 <button
-                  onClick={() => handleDelete(c.id)}
+                  onClick={() => setConfirmDeleteId(c.id)}
                   className="p-2 active:opacity-70 min-w-[44px] min-h-[44px] flex items-center justify-center"
                   style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
                 >
@@ -105,6 +116,16 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Remove Cost"
+        message="Are you sure you want to remove this cost?"
+        confirmLabel={deleting ? 'Removing...' : 'Remove'}
+        danger
+      />
 
       <MobileBottomSheet open={showAdd} onClose={() => setShowAdd(false)} title="Add Cost">
         <div className="px-5 space-y-4">

@@ -5,18 +5,20 @@ import { useApp } from '../../../lib/context';
 import { fmt$, todayLocalDateStr } from '../../../lib/utils';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry } from '../../../lib/data';
-import { Check, Trash2, Plus } from 'lucide-react';
+import { Check, Trash2, Plus, Pencil } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
+type TypeTab = 'Deal' | 'Bonus';
 
 export default function MobilePayroll() {
   const {
     payrollEntries,
     setPayrollEntries,
     markForPayroll,
+    persistPayrollEntry,
     reps,
     projects,
     installerPayConfigs,
@@ -26,11 +28,14 @@ export default function MobilePayroll() {
   const { toast } = useToast();
 
   const [statusTab, setStatusTab] = useState<StatusTab>('Pending');
+  const [typeTab, setTypeTab] = useState<TypeTab>('Deal');
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
   const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<PayrollEntry | null>(null);
   const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'Bonus' as string });
+  const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
+  const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
 
   // ── Summaries ─────────────────────────────────────────────────────────────
 
@@ -47,10 +52,11 @@ export default function MobilePayroll() {
     const today = todayLocalDateStr();
     return payrollEntries.filter((e) =>
       e.status === statusTab &&
+      e.type === typeTab &&
       (statusTab !== 'Pending' || e.date <= today) &&
       (effectiveRole === 'admin' || e.repId === effectiveRepId)
     );
-  }, [payrollEntries, statusTab, effectiveRole, effectiveRepId]);
+  }, [payrollEntries, statusTab, typeTab, effectiveRole, effectiveRepId]);
 
   // ── Group by rep ──────────────────────────────────────────────────────────
 
@@ -72,7 +78,12 @@ export default function MobilePayroll() {
   const handlePublishOrApproveAll = useCallback(async () => {
     const today = todayLocalDateStr();
     const target = statusTab === 'Pending'
-      ? filtered.filter((e) => e.date <= today)
+      ? payrollEntries.filter((e) =>
+          e.status === 'Pending' &&
+          e.type === typeTab &&
+          e.date <= today &&
+          (effectiveRole === 'admin' || e.repId === effectiveRepId),
+        )
       : filtered;
     const ids = target.map((e) => e.id);
     const amount = target.reduce((s, e) => s + e.amount, 0);
@@ -83,6 +94,7 @@ export default function MobilePayroll() {
       setPayrollEntries((prev) =>
         prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Paid' } : p)),
       );
+      setStatusTab('Paid');
       toast(`Payroll published — ${fmt$(amount)} marked as Paid`, 'success');
 
       const results = await Promise.allSettled(
@@ -103,7 +115,7 @@ export default function MobilePayroll() {
         toast(`${failures.length} entries failed to save — rolled back`, 'error');
       }
     }
-  }, [filtered, payrollEntries, setPayrollEntries, toast, statusTab]);
+  }, [filtered, payrollEntries, setPayrollEntries, toast, statusTab, effectiveRole, effectiveRepId]);
 
   const handleStatusChange = useCallback(
     async (entry: PayrollEntry, newStatus: 'Draft' | 'Pending' | 'Paid') => {
@@ -199,33 +211,45 @@ export default function MobilePayroll() {
       const label = isChargeback ? 'Chargeback' : 'Payment';
       toast(`${label} added for ${rep?.name ?? 'rep'} — ${fmt$(Math.abs(signed))}`, 'success');
 
-      fetch('/api/payroll', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          repId: newEntry.repId,
-          projectId: newEntry.projectId,
-          customerName: newEntry.customerName,
-          amount: newEntry.amount,
-          type: newEntry.type,
-          paymentStage: newEntry.paymentStage,
-          status: newEntry.status,
-          date: newEntry.date,
-          notes: newEntry.notes,
-          // Idempotency key: use the optimistic clientId so retries dedupe.
-          idempotencyKey: newEntry.id,
-        }),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        })
-        .catch(() => {
-          setPayrollEntries((prev) => prev.filter((p) => p.id !== newEntry.id));
-          toast('Failed to save payment — entry removed', 'error');
-        });
+      persistPayrollEntry(newEntry);
     },
-    [paymentForm, reps, projects, installerPayConfigs, setPayrollEntries, toast],
+    [paymentForm, reps, projects, installerPayConfigs, setPayrollEntries, persistPayrollEntry, toast],
   );
+
+  const openEditEntry = useCallback((entry: PayrollEntry) => {
+    if (entry.status === 'Paid') { toast('Paid entries cannot be edited — add a negative adjustment entry instead', 'error'); return; }
+    setEditEntryForm({ amount: String(entry.amount), date: entry.date, notes: entry.notes ?? '' });
+    setSelectedEntry(null);
+    setEditingEntry(entry);
+  }, [toast]);
+
+  const handleSaveEditEntry = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEntry) return;
+    const amt = parseFloat(editEntryForm.amount);
+    const isChargebackEntry = editingEntry.amount < 0;
+    if (!Number.isFinite(amt) || amt === 0 || (!isChargebackEntry && amt < 0)) {
+      toast(isChargebackEntry ? 'Amount must be non-zero' : 'Amount must be greater than $0', 'error');
+      return;
+    }
+    if (!editEntryForm.date) { toast('Date is required', 'error'); return; }
+    const snapshot = editingEntry;
+    const patch = { amount: amt, date: editEntryForm.date, notes: editEntryForm.notes };
+    setPayrollEntries((prev) => prev.map((p) => p.id === editingEntry.id ? { ...p, ...patch } : p));
+    setEditingEntry(null);
+    toast('Entry updated', 'success');
+    try {
+      const res = await fetch(`/api/payroll/${snapshot.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch {
+      setPayrollEntries((prev) => prev.map((p) => p.id === snapshot.id ? snapshot : p));
+      toast('Failed to save — reverting', 'error');
+    }
+  }, [editingEntry, editEntryForm, setPayrollEntries, toast]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -266,6 +290,25 @@ export default function MobilePayroll() {
       <div>
         <p className="text-4xl font-black tabular-nums" style={{ color: '#f5a623', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(pendingTotal)}</p>
         <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>pending approval</p>
+      </div>
+
+      {/* ── Type tabs ── */}
+      <div className="flex gap-2">
+        {(['Deal', 'Bonus'] as TypeTab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTypeTab(t)}
+            className="flex-1 min-h-[44px] rounded-xl text-sm font-semibold transition-colors"
+            style={{
+              background: typeTab === t ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+              color: typeTab === t ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              border: typeTab === t ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       {/* ── Status tabs ── */}
@@ -341,7 +384,7 @@ export default function MobilePayroll() {
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
-            Publish Payroll
+            Publish {typeTab} Payroll
           </button>
         </div>
       )}
@@ -417,6 +460,11 @@ export default function MobilePayroll() {
             )}
             {selectedEntry.status !== 'Paid' && (
               <>
+                <MobileBottomSheet.Item
+                  label="Edit Entry"
+                  icon={Pencil}
+                  onTap={() => openEditEntry(selectedEntry)}
+                />
                 <MobileBottomSheet.Item
                   label="Delete"
                   icon={Trash2}
@@ -513,6 +561,7 @@ export default function MobilePayroll() {
               >
                 <option value="">Select project...</option>
                 {projects
+                  .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
                   .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.customerName}</option>
@@ -566,6 +615,64 @@ export default function MobilePayroll() {
             Add Payment
           </button>
         </form>
+      </MobileBottomSheet>
+
+      {/* ── Edit Entry sheet ── */}
+      <MobileBottomSheet
+        open={!!editingEntry}
+        onClose={() => setEditingEntry(null)}
+        title="Edit Entry"
+      >
+        {editingEntry && (
+          <form onSubmit={handleSaveEditEntry} className="px-5 space-y-4 pb-2">
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={editEntryForm.amount}
+                onChange={(e) => setEditEntryForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder="0.00"
+                className={`${inputCls} min-h-[48px]`}
+                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
+              <input
+                type="date"
+                required
+                value={editEntryForm.date}
+                onChange={(e) => setEditEntryForm((f) => ({ ...f, date: e.target.value }))}
+                className={`${inputCls} min-h-[48px]`}
+                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
+              <input
+                type="text"
+                value={editEntryForm.notes}
+                onChange={(e) => setEditEntryForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="Optional note"
+                className={`${inputCls} min-h-[48px]`}
+                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
+              style={{
+                background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+                boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              Save Changes
+            </button>
+          </form>
+        )}
       </MobileBottomSheet>
 
       <ConfirmDialog
