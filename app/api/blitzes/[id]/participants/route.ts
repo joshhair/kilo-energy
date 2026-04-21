@@ -23,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
-  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, status: true } });
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, status: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
   if (blitz.status === 'cancelled' || blitz.status === 'completed') {
     return NextResponse.json({ error: 'Cannot join a cancelled or completed blitz' }, { status: 409 });
@@ -48,6 +48,49 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: { joinStatus },
         include: { user: true },
       });
+      // Re-link their deals within the blitz window if they are now approved
+      if (joinStatus === 'approved') {
+        const thisBlitzParticipants = await prisma.blitzParticipant.findMany({
+          where: { blitzId, joinStatus: 'approved' },
+          select: { userId: true },
+        });
+        const thisBlitzParticipantIds = thisBlitzParticipants.map(p => p.userId);
+        await prisma.project.updateMany({
+          where: {
+            blitzId: null,
+            soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+            closerId: body.userId,
+            OR: [{ setterId: null }, { setterId: { in: thisBlitzParticipantIds } }],
+          },
+          data: { blitzId },
+        });
+        await prisma.project.updateMany({
+          where: {
+            blitzId: null,
+            soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+            setterId: body.userId,
+            closerId: { in: thisBlitzParticipantIds },
+          },
+          data: { blitzId },
+        });
+        const coRoleProjects = await prisma.project.findMany({
+          where: {
+            blitzId: null,
+            soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+            OR: [
+              { additionalClosers: { some: { userId: body.userId } } },
+              { additionalSetters: { some: { userId: body.userId } } },
+            ],
+          },
+          select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+        });
+        for (const project of coRoleProjects) {
+          const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
+          if (primaryIds.some(id => thisBlitzParticipantIds.includes(id))) {
+            await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
+          }
+        }
+      }
     } else {
       participant = await prisma.blitzParticipant.create({
         data: { blitzId, userId: body.userId, joinStatus },

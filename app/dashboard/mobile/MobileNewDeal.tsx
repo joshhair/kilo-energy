@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
@@ -286,18 +286,24 @@ export default function MobileNewDeal() {
     participants?: Array<{ userId: string; joinStatus: string }>;
   };
   const [rawBlitzes, setRawBlitzes] = useState<BlitzListItem[]>([]);
-  const [availableBlitzes, setAvailableBlitzes] = useState<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>([]);
   useEffect(() => {
     fetch('/api/blitzes').then((r) => r.json()).then((data: BlitzListItem[]) => {
       setRawBlitzes(data ?? []);
-      setAvailableBlitzes((data ?? []).filter((b) => {
-        const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
-        if (!statusOk) return false;
-        if (effectiveRole === 'admin') return true;
-        return b.participants?.some((p) => p.userId === effectiveRepId && p.joinStatus === 'approved');
-      }));
     }).catch(() => {});
-  }, [effectiveRole, effectiveRepId]);
+  }, []);
+  const availableBlitzes = useMemo<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>(() => {
+    return rawBlitzes.filter((b) => {
+      const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
+      if (!statusOk) return false;
+      if (effectiveRole === 'admin') {
+        if (form.repId) {
+          return b.participants?.some((p) => p.userId === form.repId && p.joinStatus === 'approved');
+        }
+        return true;
+      }
+      return b.participants?.some((p) => p.userId === effectiveRepId && p.joinStatus === 'approved');
+    });
+  }, [rawBlitzes, effectiveRole, effectiveRepId, form.repId]);
 
   // Pre-fill last-used installer
   const lastInstallerApplied = useRef(false);
@@ -1063,6 +1069,7 @@ export default function MobileNewDeal() {
                           productType: pt,
                           financer: isCash ? 'Cash' : (prev.productType === 'Cash' ? '' : prev.financer),
                           solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '',
+                          additionalClosers: [], additionalSetters: [],
                         }));
                         setErrors((prev) => ({ ...prev, productType: '', financer: isCash ? '' : prev.financer }));
                         setTouched((prev) => { const next = new Set(prev); next.add('productType'); return next; });
