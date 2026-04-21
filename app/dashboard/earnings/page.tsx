@@ -103,7 +103,7 @@ function RepEarningsView() {
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM) && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
-  const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+  const approvedReimbs  = filteredReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);
 
@@ -981,7 +981,7 @@ function AdminFinancialsView() {
       const paid    = entries.filter((e) => e.status === 'Paid' && e.date <= todayStr).reduce((s, e) => s + e.amount, 0);
       const pending = entries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0);
       const draft   = entries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0);
-      const reimbs  = reimbursements.filter((r) => r.repId === rep.id && isInPeriod(r.date, byRepPeriod));
+      const reimbs  = reimbursements.filter((r) => r.repId === rep.id && isInPeriod(r.date, byRepPeriod) && !r.archivedAt);
       const reimbPending = reimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
       return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft };
     }).sort((a, b) => b.total - a.total);

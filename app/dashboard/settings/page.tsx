@@ -207,6 +207,7 @@ function SettingsPageInner() {
     setSelectedFinancers(new Set());
     setInstallerSelectMode(false);
     setFinancerSelectMode(false);
+    setPayScheduleExpanded(null);
     setSection(s);
     router.replace(`/dashboard/settings?section=${s}`, { scroll: false });
   };

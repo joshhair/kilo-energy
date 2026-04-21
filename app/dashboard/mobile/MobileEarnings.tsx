@@ -59,6 +59,7 @@ function StatusDot({ status }: { status: string }) {
     status === 'Pending' ? '#f5a623' :
     status === 'Approved' ? 'var(--accent-emerald)' :
     status === 'Denied' ? 'var(--accent-danger)' :
+    status === 'Draft' ? '#64748b' :
     'var(--text-mobile-muted)';
   return (
     <span className="inline-flex items-center gap-1.5 text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
