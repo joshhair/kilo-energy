@@ -143,6 +143,51 @@ export async function POST(req: NextRequest) {
       projects: true,
     },
   });
+
+  // Link owner's existing deals within the blitz window. At creation the only
+  // approved participant is the owner, so thisBlitzParticipantIds = [ownerId].
+  // This covers self-gen deals (no setter) and closer-only deals the owner already had.
+  const approvedAtCreation = await prisma.blitzParticipant.findMany({
+    where: { blitzId: blitz.id, joinStatus: 'approved' },
+    select: { userId: true },
+  });
+  const approvedIds = approvedAtCreation.map((p) => p.userId);
+  await prisma.project.updateMany({
+    where: {
+      blitzId: null,
+      soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+      closerId: ownerId,
+      OR: [{ setterId: null }, { setterId: { in: approvedIds } }],
+    },
+    data: { blitzId: blitz.id },
+  });
+  await prisma.project.updateMany({
+    where: {
+      blitzId: null,
+      soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+      setterId: ownerId,
+      closerId: { in: approvedIds },
+    },
+    data: { blitzId: blitz.id },
+  });
+  const coRoleProjects = await prisma.project.findMany({
+    where: {
+      blitzId: null,
+      soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+      OR: [
+        { additionalClosers: { some: { userId: ownerId } } },
+        { additionalSetters: { some: { userId: ownerId } } },
+      ],
+    },
+    select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+  });
+  for (const project of coRoleProjects) {
+    const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
+    if (primaryIds.some((id) => approvedIds.includes(id))) {
+      await prisma.project.update({ where: { id: project.id }, data: { blitzId: blitz.id } });
+    }
+  }
+
   const serialized = {
     ...blitz,
     projects: blitz.projects.map(serializeProject),

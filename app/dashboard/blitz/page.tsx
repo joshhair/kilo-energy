@@ -120,10 +120,9 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         || p.additionalClosers?.some((ac) => ac.userId === currentUserId)
         || p.additionalSetters?.some((as) => as.userId === currentUserId));
   const totalKW = visibleProjects.reduce((s, p) => {
-    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
     const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
     const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
-    return s + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+    return s + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
   }, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);

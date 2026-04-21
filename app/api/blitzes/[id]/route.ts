@@ -151,6 +151,51 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: { blitzId: null },
     });
     unlinkedCount = unlinkResult.count;
+
+    // Re-link deals that now fall within the expanded date window
+    const approvedParticipants = await prisma.blitzParticipant.findMany({
+      where: { blitzId: id, joinStatus: 'approved' },
+      select: { userId: true },
+    });
+    const approvedParticipantIds = approvedParticipants.map(p => p.userId);
+    for (const { userId } of approvedParticipants) {
+      await prisma.project.updateMany({
+        where: {
+          blitzId: null,
+          soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+          closerId: userId,
+          OR: [{ setterId: null }, { setterId: { in: approvedParticipantIds } }],
+        },
+        data: { blitzId: id },
+      });
+      await prisma.project.updateMany({
+        where: {
+          blitzId: null,
+          soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+          setterId: userId,
+          closerId: { in: approvedParticipantIds },
+        },
+        data: { blitzId: id },
+      });
+      const coRoleProjects = await prisma.project.findMany({
+        where: {
+          blitzId: null,
+          soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+          OR: [
+            { additionalClosers: { some: { userId } } },
+            { additionalSetters: { some: { userId } } },
+          ],
+        },
+        select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+      });
+      for (const project of coRoleProjects) {
+        const primaryIds = [project.closerId, project.setterId].filter((pid): pid is string => pid !== null);
+        if (primaryIds.some(pid => approvedParticipantIds.includes(pid))) {
+          await prisma.project.update({ where: { id: project.id }, data: { blitzId: id } });
+        }
+      }
+    }
+
     blitz.projects = await prisma.project.findMany({
       where: { blitzId: id },
       include: {

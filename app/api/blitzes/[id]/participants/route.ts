@@ -96,6 +96,48 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: { blitzId, userId: body.userId, joinStatus },
         include: { user: true },
       });
+      if (joinStatus === 'approved') {
+        const thisBlitzParticipants = await prisma.blitzParticipant.findMany({
+          where: { blitzId, joinStatus: 'approved' },
+          select: { userId: true },
+        });
+        const thisBlitzParticipantIds = thisBlitzParticipants.map(p => p.userId);
+        await prisma.project.updateMany({
+          where: {
+            blitzId: null,
+            soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+            closerId: body.userId,
+            OR: [{ setterId: null }, { setterId: { in: thisBlitzParticipantIds } }],
+          },
+          data: { blitzId },
+        });
+        await prisma.project.updateMany({
+          where: {
+            blitzId: null,
+            soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+            setterId: body.userId,
+            closerId: { in: thisBlitzParticipantIds },
+          },
+          data: { blitzId },
+        });
+        const coRoleProjects = await prisma.project.findMany({
+          where: {
+            blitzId: null,
+            soldDate: { gte: blitz.startDate, lte: blitz.endDate },
+            OR: [
+              { additionalClosers: { some: { userId: body.userId } } },
+              { additionalSetters: { some: { userId: body.userId } } },
+            ],
+          },
+          select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+        });
+        for (const project of coRoleProjects) {
+          const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
+          if (primaryIds.some(id => thisBlitzParticipantIds.includes(id))) {
+            await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
+          }
+        }
+      }
     }
   } catch (e: unknown) {
     if ((e as { code?: string })?.code === 'P2002') {
