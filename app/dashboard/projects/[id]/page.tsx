@@ -586,12 +586,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const setterTotalExpected = project.setterId
     ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
     : 0;
-  const effectiveTrainerRate = resolveTrainerRate(
+  const { rate: effectiveTrainerRate, trainerId: effTrainerId } = resolveTrainerRate(
     { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
     project.repId,
     trainerAssignments,
     payrollEntries,
-  ).rate;
+  );
   const trainerTotalExpected = effectiveTrainerRate * (project.kWSize ?? 0) * 1000;
 
   const inputCls =
@@ -1121,7 +1121,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-white text-sm font-semibold">{project.trainerName ?? '(trainer)'}</p>
+                    <p className="text-white text-sm font-semibold">{project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? '(trainer)'}</p>
                     <p className="text-[var(--text-muted)] text-xs">Trainer{effectiveTrainerRate > 0 ? ` · $${effectiveTrainerRate.toFixed(2)}/W` : ''}</p>
                     {trainerTotalExpected > 0 && (
                       <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
@@ -1280,8 +1280,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <p className="text-teal-400 font-semibold">${(project.m3Amount ?? 0).toLocaleString()}</p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--border)]/50 text-[var(--text-secondary)]">
-                    Auto at PTO
+                  <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                    project.m3Paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
+                  }`}>
+                    {project.m3Paid ? 'Paid' : 'Pending'}
                   </span>
                 </div>
               )}

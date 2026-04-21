@@ -164,9 +164,9 @@ export default function MobileProjects() {
 
   const phaseCounts = useMemo(() => {
     const acc: Record<string, number> = {};
-    for (const p of visibleProjects) acc[p.phase] = (acc[p.phase] ?? 0) + 1;
+    for (const p of applyStatusFilter(visibleProjects, statusFilter)) acc[p.phase] = (acc[p.phase] ?? 0) + 1;
     return acc;
-  }, [visibleProjects]);
+  }, [visibleProjects, statusFilter]);
 
   // Unique installer names present on visible projects — keeps the
   // dropdown scoped to what's actually shown rather than listing every

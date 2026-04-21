@@ -991,7 +991,7 @@ function NewDealPage() {
                     rows={form.additionalSetters}
                     primaryUserId={form.setterId}
                     excludeUserIds={[form.repId, form.setterId, ...form.additionalSetters.map((s) => s.userId), ...form.additionalClosers.map((c) => c.userId)].filter(Boolean)}
-                    repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
+                    repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both' || r.repType == null}
                     reps={reps}
                     onChange={(rows) => setForm((f) => ({ ...f, additionalSetters: rows }))}
                     disabled={!form.setterId}
