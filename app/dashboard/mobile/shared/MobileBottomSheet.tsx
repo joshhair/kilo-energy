@@ -124,14 +124,21 @@ export default function MobileBottomSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-2xl animate-modal-panel"
-        style={{ background: 'var(--m-card, var(--surface-mobile-card))', borderTop: '1px solid var(--m-border, var(--border-mobile))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-2xl animate-modal-panel flex flex-col"
+        style={{
+          background: 'var(--m-card, var(--surface-mobile-card))',
+          borderTop: '1px solid var(--m-border, var(--border-mobile))',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          // Cap height so tall sheets (edit forms with many fields) don't push
+          // their own chrome up under the status bar. Header + scroll body.
+          maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 12px)',
+        }}
       >
-        <div className="flex justify-center pt-3 pb-1">
+        <div className="flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} aria-hidden="true" />
         </div>
         {title && (
-          <div className="flex items-center justify-between px-5 py-2">
+          <div className="flex items-center justify-between px-5 py-2 shrink-0">
             <p id={titleId} className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
             <button
               onClick={onClose}
@@ -141,7 +148,7 @@ export default function MobileBottomSheet({
             ><X className="w-5 h-5" aria-hidden="true" /></button>
           </div>
         )}
-        <div className="pb-4">
+        <div className="pb-4 overflow-y-auto overscroll-contain">
           {children}
         </div>
       </div>
