@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
@@ -12,6 +12,7 @@ import {
   getInstallerRatesForDeal,
 } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
+import { MyTasksSection, type MentionItem } from '../page';
 import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle, BarChart2, AlertCircle } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
@@ -84,6 +85,48 @@ export default function MobileAdminDashboard() {
   const [recentSearch, setRecentSearch] = useState('');
   const [recentPage, setRecentPage] = useState(1);
   const RECENT_PER_PAGE = 10;
+
+  const [mentions, setMentions] = useState<MentionItem[]>([]);
+  const fetchMentions = useCallback(() => {
+    if (!currentRepId) return;
+    fetch(`/api/mentions?userId=${encodeURIComponent(currentRepId)}`)
+      .then((res) => { if (!res.ok) throw new Error('Failed to fetch'); return res.json(); })
+      .then((rawMentions: unknown[]) => {
+        const items: MentionItem[] = (rawMentions ?? []).map((raw) => {
+          const m = raw as {
+            id: string;
+            messageId?: string;
+            message?: {
+              id?: string;
+              projectId?: string;
+              project?: { customerName?: string };
+              text?: string;
+              authorName?: string;
+              checkItems?: Array<{ id: string; text: string; completed: boolean }>;
+            };
+          };
+          return {
+            id: m.id,
+            projectId: m.message?.projectId ?? '',
+            projectCustomerName: m.message?.project?.customerName ?? 'Unknown',
+            messageId: m.messageId ?? m.message?.id ?? '',
+            messageSnippet: (m.message?.text ?? '').slice(0, 120),
+            authorName: m.message?.authorName ?? 'Unknown',
+            checkItems: (m.message?.checkItems ?? []).map((ci) => ({
+              id: ci.id,
+              text: ci.text,
+              completed: ci.completed,
+              dueDate: (ci as { dueDate?: string | null }).dueDate ?? null,
+            })),
+            createdAt: (m.message as { createdAt?: string } | undefined)?.createdAt ?? new Date().toISOString(),
+            read: (raw as { readAt?: string | null }).readAt != null,
+          };
+        });
+        setMentions(items);
+      })
+      .catch(() => setMentions([]));
+  }, [currentRepId]);
+  useEffect(() => { fetchMentions(); }, [fetchMentions]);
 
   useEffect(() => {
     const idx = PERIODS.findIndex(p => p.value === period);
@@ -535,6 +578,27 @@ export default function MobileAdminDashboard() {
           </div>
         </MobileCard>
       )}
+
+      {/* ── My Tasks (admin @mention check items) ── */}
+      <MyTasksSection
+        mentions={mentions}
+        onToggleTask={(projectId, messageId, checkItemId, completed) =>
+          fetch(`/api/projects/${projectId}/messages/${messageId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ checkItemId, completed, completedBy: currentRepId }),
+          }).then((res) => {
+            if (!res.ok) throw new Error('Failed to update task');
+            setMentions((prev) =>
+              prev.map((m) =>
+                m.messageId === messageId
+                  ? { ...m, checkItems: m.checkItems.map((ci) => ci.id === checkItemId ? { ...ci, completed } : ci) }
+                  : m
+              )
+            );
+          })
+        }
+      />
 
       {/* ── Recent Deals ── */}
       <MobileCard>
