@@ -68,6 +68,7 @@ function applyCommonFilters<T extends PayrollAggregable>(
   entries: ReadonlyArray<T>,
   opts: PaidOutOptions | undefined,
   statusFilter: (s: string) => boolean,
+  skipDateFilter = false,
 ): T[] {
   const asOf = opts?.asOf ?? todayLocal();
   const typeSet = opts?.types ? new Set(opts.types) : null;
@@ -75,7 +76,7 @@ function applyCommonFilters<T extends PayrollAggregable>(
   const out: T[] = [];
   for (const e of entries) {
     if (!statusFilter(e.status)) continue;
-    if (e.date > asOf) continue;
+    if (!skipDateFilter && e.date > asOf) continue;
     if (typeSet && e.type != null && !typeSet.has(e.type)) continue;
     if (repId && e.repId !== repId) continue;
     out.push(e);
@@ -113,21 +114,23 @@ export function sumGrossPaid<T extends PayrollAggregable>(
     .reduce((s, e) => s + e.amount, 0);
 }
 
-/** Pending = status 'Pending', date <= asOf, respects type + rep filters. */
+/** Pending = status 'Pending', respects type + rep filters. Date filter skipped:
+ *  milestone entries get future pay dates and must still appear in the total. */
 export function sumPending<T extends PayrollAggregable>(
   entries: ReadonlyArray<T>,
   opts?: PaidOutOptions,
 ): number {
-  return applyCommonFilters(entries, opts, (s) => s === 'Pending')
+  return applyCommonFilters(entries, opts, (s) => s === 'Pending', true)
     .reduce((s, e) => s + e.amount, 0);
 }
 
-/** Draft = status 'Draft', date <= asOf, respects type + rep filters. */
+/** Draft = status 'Draft', respects type + rep filters. Date filter skipped:
+ *  milestone entries get future pay dates and must still appear in the total. */
 export function sumDraft<T extends PayrollAggregable>(
   entries: ReadonlyArray<T>,
   opts?: PaidOutOptions,
 ): number {
-  return applyCommonFilters(entries, opts, (s) => s === 'Draft')
+  return applyCommonFilters(entries, opts, (s) => s === 'Draft', true)
     .reduce((s, e) => s + e.amount, 0);
 }
 

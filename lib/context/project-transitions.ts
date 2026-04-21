@@ -642,7 +642,7 @@ export function createM3Payroll(
     }
   }
 
-  const setterM3 = old.setterId
+  const setterM3 = proj?.setterId
     ? proj?.setterM3Amount != null && installPayPct < 100
       ? proj.setterM3Amount
       : installPayPct > 0 && installPayPct < 100
@@ -651,13 +651,13 @@ export function createM3Payroll(
     : 0;
 
   // Setter M3 entry
-  if (old.setterId) {
+  if (proj?.setterId) {
     if (setterM3 > 0) {
-      const setterRep = deps.repsRef.current.find((r) => r.id === old.setterId);
+      const setterRep = deps.repsRef.current.find((r) => r.id === proj.setterId);
       newEntries.push({
         id: `pay_${ts}_m3_s`,
-        repId: old.setterId,
-        repName: setterRep?.name ?? old.setterName ?? '',
+        repId: proj.setterId,
+        repName: setterRep?.name ?? proj.setterName ?? '',
         projectId,
         customerName: old.customerName,
         amount: Math.max(0, setterM3 - setterM3TrainerDeduction),

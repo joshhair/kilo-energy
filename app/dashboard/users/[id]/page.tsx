@@ -1113,7 +1113,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 {coCloserPay > 0 && (
                   <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                     <td className="py-2.5 text-white">Co-closer</td>
-                    <td className="py-2.5 text-[var(--text-secondary)]">{coCloserEntries.length}</td>
+                    <td className="py-2.5 text-[var(--text-secondary)]">{new Set(coCloserEntries.filter(e => e.projectId).map(e => e.projectId)).size}</td>
                     <td className={amountCls} onClick={() => openDrill('Co-closer', coCloserEntries, coCloserPay)}>${coCloserPay.toLocaleString()}</td>
                   </tr>
                 )}

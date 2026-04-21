@@ -115,9 +115,10 @@ export default function MobileReps() {
 
   // Total paid per rep
   const paidByRep = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
     const map = new Map<string, number>();
     for (const pe of payrollEntries) {
-      if (pe.status === 'Paid') {
+      if (pe.status === 'Paid' && pe.date <= today) {
         map.set(pe.repId, (map.get(pe.repId) ?? 0) + pe.amount);
       }
     }
