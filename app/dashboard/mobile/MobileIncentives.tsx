@@ -242,7 +242,7 @@ export default function MobileIncentives() {
     });
   };
 
-  const activeIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => !isExpired(i.endDate))) : [];
+  const activeIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => !isExpired(i.endDate) && i.active)) : [];
   const expiredIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => isExpired(i.endDate))) : [];
   const filteredList = filter !== 'all' ? filterAndSort(visible) : [];
 
@@ -513,7 +513,7 @@ export default function MobileIncentives() {
           ) : (
             <div className="space-y-3">
               {activeIncentives.map((inc) => (
-                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
               ))}
             </div>
           )}
@@ -525,7 +525,7 @@ export default function MobileIncentives() {
         <MobileSection title="Past Incentives" count={expiredIncentives.length} collapsible defaultOpen={false}>
           <div className="space-y-3">
             {expiredIncentives.map((inc) => (
-              <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+              <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
             ))}
           </div>
         </MobileSection>
@@ -812,7 +812,7 @@ function EditIncentiveSheet({
   incentive: Incentive;
   onClose: () => void;
   reps: { id: string; name: string; active?: boolean }[];
-  onSaved: (updated: Incentive) => void;
+  onSaved: (updated: Incentive) => Promise<void> | void;
   onError: (msg: string) => void;
 }) {
   const [title, setTitle] = useState(incentive.title);
@@ -853,9 +853,10 @@ function EditIncentiveSheet({
           achieved: m.achieved,
         })),
       };
-      onSaved(updated);
+      await onSaved(updated);
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Failed to save incentive');
+    } finally {
       setSubmitting(false);
     }
   };
