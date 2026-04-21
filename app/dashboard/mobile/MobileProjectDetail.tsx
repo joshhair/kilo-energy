@@ -16,6 +16,7 @@ import MobileSection from './shared/MobileSection';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ProjectChatter from '../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // ── Pipeline steps ──
 
@@ -162,7 +163,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }, [projectId]);
 
   const {
-    effectiveRole, effectiveRepId, projects, payrollEntries, reps,
+    effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps,
     updateProject: ctxUpdateProject,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
@@ -174,7 +175,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const [phaseConfirm, setPhaseConfirm] = useState<Phase | null>(null);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
   const [_notesExpanded, _setNotesExpanded] = useState(false);
@@ -317,6 +320,10 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const handlePhaseChange = (phase: Phase) => {
     setPhaseSheetOpen(false);
+    if (phase === 'On Hold') {
+      setPhaseConfirm(phase);
+      return;
+    }
     if (phase === 'Cancelled') {
       setCancelReason('');
       setCancelNotes('');
@@ -355,10 +362,15 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     setShowCancelReasonModal(true);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     setMoreSheetOpen(false);
+    setShowDeleteConfirm(true);
+  };
+
+  const doDelete = async () => {
     const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' });
     if (res.ok) {
+      setProjects(prev => prev.filter(p => p.id !== project.id));
       toast('Project deleted permanently');
       router.push('/dashboard/projects');
     } else {
@@ -838,7 +850,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           icon={project.flagged ? FlagOff : Flag}
           onTap={handleFlag}
         />
-        {project.phase !== 'Cancelled' && (
+        {project.phase !== 'Cancelled' && (isAdmin || effectiveRepId === project.repId) && (
           <MobileBottomSheet.Item
             label="Cancel Project"
             icon={XIcon}
@@ -1043,6 +1055,29 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!phaseConfirm}
+        title={`Move to ${phaseConfirm ?? ''}?`}
+        message={`Are you sure you want to move "${project.customerName}" to ${phaseConfirm ?? ''}? This will remove it from the active pipeline.`}
+        confirmLabel="Confirm"
+        onConfirm={() => {
+          if (phaseConfirm) {
+            doPhaseChange(phaseConfirm);
+            setPhaseConfirm(null);
+          }
+        }}
+        onClose={() => setPhaseConfirm(null)}
+      />
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete Project"
+        message={`Permanently delete ${project.customerName}? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={doDelete}
+        onClose={() => setShowDeleteConfirm(false)}
+        danger
+      />
     </div>
   );
 }
