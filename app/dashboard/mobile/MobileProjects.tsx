@@ -178,10 +178,10 @@ export default function MobileProjects() {
   const filtered = useMemo(() => {
     let result = visibleProjects;
 
+    result = applyStatusFilter(result, statusFilter);
+
     if (phaseFilter !== 'All') {
       result = result.filter((p) => p.phase === phaseFilter);
-    } else {
-      result = applyStatusFilter(result, statusFilter);
     }
 
     if (installerFilter) {

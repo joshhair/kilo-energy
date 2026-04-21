@@ -289,26 +289,26 @@ function NewDealPage() {
 
   // When a blitz is selected, only approved participants of that blitz may be setters.
   const setterPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both'));
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both' || r.repType == null));
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
         .filter((p) => p.joinStatus === 'approved')
         .map((p) => p.userId),
     );
-    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both' || r.repType == null));
   }, [form.blitzId, rawBlitzes, reps]);
 
   // When a blitz is selected, restrict the admin closer dropdown to approved blitz participants.
   const closerPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'closer' || r.repType === 'both'));
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
         .filter((p) => p.joinStatus === 'approved')
         .map((p) => p.userId),
     );
-    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both'));
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Trainer override tier progression counts deals where the FINAL milestone

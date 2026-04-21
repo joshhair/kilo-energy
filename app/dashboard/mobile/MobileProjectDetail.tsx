@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import {
   PHASES, Phase, InstallerBaseline, DEFAULT_INSTALL_PAY_PCT,
   getSolarTechBaseline, getProductCatalogBaselineVersioned,
-  getInstallerRatesForDeal, calculateCommission,
+  getInstallerRatesForDeal, calculateCommission, resolveTrainerRate,
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
@@ -167,6 +167,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const {
     effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps,
+    trainerAssignments,
     updateProject: ctxUpdateProject, installerPayConfigs,
     installerPricingVersions,
     productCatalogProducts, productCatalogPricingVersions, solarTechProducts,
@@ -483,13 +484,17 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   };
 
   const doDelete = async () => {
-    const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setProjects(prev => prev.filter(p => p.id !== project.id));
-      toast('Project deleted permanently');
-      router.push('/dashboard/projects');
-    } else {
-      toast('Failed to delete project');
+    try {
+      const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setProjects(prev => prev.filter(p => p.id !== project.id));
+        toast('Project deleted permanently');
+        router.push('/dashboard/projects');
+      } else {
+        toast('Failed to delete project', 'error');
+      }
+    } catch {
+      toast('Failed to delete project', 'error');
     }
   };
 
@@ -823,19 +828,29 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     trainerId/trainerName/trainerRate are scrubbed server-
                     side for non-admin/PM viewers, so this block only
                     renders for admin. */}
-                {project.trainerId && (project.trainerRate ?? 0) > 0 && (
-                  <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.trainerName ?? 'Trainer'} (trainer)</p>
-                      <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
-                        ${project.trainerRate!.toFixed(2)}/W × {project.kWSize} kW
-                      </p>
+                {(() => {
+                  const { rate: effTrainerRate, trainerId: effTrainerId } = resolveTrainerRate(
+                    { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
+                    project.repId,
+                    trainerAssignments,
+                    payrollEntries,
+                  );
+                  const trainerName = project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? 'Trainer';
+                  if (!effTrainerId || effTrainerRate <= 0) return null;
+                  return (
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                      <div>
+                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{trainerName} (trainer)</p>
+                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
+                          ${effTrainerRate.toFixed(2)}/W × {project.kWSize} kW
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                        {fmt$(effTrainerRate * (project.kWSize ?? 0) * 1000)}
+                      </span>
                     </div>
-                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                      {fmt$((project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000)}
-                    </span>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 
