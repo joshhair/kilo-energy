@@ -373,6 +373,7 @@ function AdminUsersSection() {
     } else {
       toast('Failed to remove admin', 'error');
     }
+    setConfirmDeleteId(null);
   };
 
   if (loading) return <SettingsSkeleton rows={3} />;
