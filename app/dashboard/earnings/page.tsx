@@ -92,7 +92,7 @@ function RepEarningsView() {
   const nextFridayDate = `${nextFriday.getFullYear()}-${String(nextFriday.getMonth() + 1).padStart(2, '0')}-${String(nextFriday.getDate()).padStart(2, '0')}`;
 
   const pendingItems      = myPayroll.filter((p) => p.status === 'Pending' && (!monthFilter || p.date.startsWith(monthFilter)));
-  const totalPaid         = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && (!monthFilter || p.date.startsWith(monthFilter))).reduce((s, p) => s + p.amount, 0);
+  const totalPaid         = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalPending      = pendingItems.reduce((s, p) => s + p.amount, 0);
   const pendingCount      = pendingItems.length;
   const nextPayoutItems   = myPayroll.filter((p) => p.status === 'Pending' && p.date === nextFridayDate);

@@ -173,7 +173,7 @@ export default function MobileEarnings() {
 
   const todayStr = localDateString(new Date());
   const totalEarned = myPayroll
-    .filter((p) => p.status === 'Paid' && p.date <= todayStr && matchesFilter(p.date))
+    .filter((p) => p.status === 'Paid' && p.date <= todayStr)
     .reduce((s, p) => s + p.amount, 0);
 
   const isSetterNote = (notes: string | null | undefined) => notes === 'Setter' || (notes ?? '').startsWith('Co-setter');
