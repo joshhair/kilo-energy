@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
-import { Banknote, Receipt, ChevronRight, Search, X } from 'lucide-react';
+import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp, Calendar } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -137,7 +137,7 @@ export default function MobileMyPay() {
   const pendingTotal = useMemo(
     () =>
       payrollEntries
-        .filter((p) => p.repId === effectiveRepId && p.status === 'Pending')
+        .filter((p) => p.repId === effectiveRepId && p.status === 'Pending' && p.date <= todayStr)
         .reduce((s, p) => s + p.amount, 0),
     [payrollEntries, effectiveRepId, todayStr],
   );
@@ -201,6 +201,50 @@ export default function MobileMyPay() {
   }, [myProjects, effectiveRepId]);
 
   const pipelineTotal = projectedM1 + projectedM2 + projectedM3;
+
+  // ── Annual Projection ──
+  const annualProjection = useMemo(() => {
+    const now = new Date();
+    const allMyProjects = projects.filter((p) =>
+      (p.repId === effectiveRepId || p.setterId === effectiveRepId) && p.phase !== 'Cancelled'
+    );
+    const sortedByDate = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
+    const totalDeals = sortedByDate.length;
+    if (totalDeals === 0) return { annual: 0, monthlyAvg: 0, basis: 'none' as const, details: '' };
+    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
+      const isSetterRole = p.setterId === effectiveRepId;
+      const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
+      const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
+      return s + m1 + m2;
+    }, 0) / totalDeals;
+    const firstDealDate = new Date(sortedByDate[0].soldDate + 'T12:00:00');
+    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / (1000 * 60 * 60 * 24), 1);
+    const effectiveDays = Math.max(daysSinceFirst, 30);
+    const dealsPerMonth = (totalDeals / effectiveDays) * 30.44;
+    const totalPaidPositive = payrollEntries
+      .filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.amount > 0 && p.date <= todayStr)
+      .reduce((s, p) => s + p.amount, 0);
+    const paceBasedAnnual = dealsPerMonth * avgCommissionPerDeal * 12;
+    let annual: number;
+    let monthlyAvg: number;
+    let basis: 'pace' | 'blended' | 'none';
+    let details: string;
+    if (daysSinceFirst >= 60 && totalPaidPositive > 0) {
+      const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
+      monthlyAvg = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
+      annual = Math.round(monthlyAvg * 12);
+      basis = 'blended';
+      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
+    } else {
+      monthlyAvg = Math.round(paceBasedAnnual / 12);
+      annual = Math.round(paceBasedAnnual);
+      basis = 'pace';
+      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
+    }
+    const pipelineBoost = Math.round((projectedM1 + projectedM2) * 0.15);
+    annual += pipelineBoost;
+    return { annual, monthlyAvg, basis, details };
+  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -350,6 +394,79 @@ export default function MobileMyPay() {
         </div>
       </MobileCard>
 
+      {/* ── Annual Projection ── */}
+      {annualProjection.annual > 0 && (
+        <MobileCard>
+          <div className="flex items-center justify-between mb-1">
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>On Pace For {new Date().getFullYear()}</p>
+            <TrendingUp size={14} color={WARNING} />
+          </div>
+          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING, lineHeight: 1.1 }}>{fmt$(annualProjection.annual)}</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginTop: '0.25rem' }}>
+            {annualProjection.basis === 'blended'
+              ? `${new Date().getFullYear()} · ${fmt$(annualProjection.monthlyAvg)}/mo avg`
+              : annualProjection.basis === 'pace'
+              ? `${new Date().getFullYear()} · ${annualProjection.details}`
+              : 'Close deals to see projection'}
+          </p>
+        </MobileCard>
+      )}
+
+      {/* ── Projected Pipeline ── */}
+      {(projectedM1 > 0 || projectedM2 > 0 || projectedM3 > 0) && (
+        <MobileCard>
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar size={14} color={ACCENT} />
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Projected Pipeline</p>
+          </div>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
+          <div className="space-y-2">
+            {projectedM1 > 0 && (
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(29,233,182,0.12)' }}>
+                    <span style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M1</span>
+                  </div>
+                  <div>
+                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M1</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Acceptance</p>
+                  </div>
+                </div>
+                <p className="tabular-nums font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM1)}</p>
+              </div>
+            )}
+            {projectedM2 > 0 && (
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                    <span style={{ color: '#a78bfa', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M2</span>
+                  </div>
+                  <div>
+                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M2</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Installation</p>
+                  </div>
+                </div>
+                <p className="tabular-nums font-bold" style={{ color: '#a78bfa', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
+              </div>
+            )}
+            {projectedM3 > 0 && (
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(20,184,166,0.12)' }}>
+                    <span style={{ color: '#2dd4bf', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M3</span>
+                  </div>
+                  <div>
+                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M3</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting PTO</p>
+                  </div>
+                </div>
+                <p className="tabular-nums font-bold" style={{ color: '#2dd4bf', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
+              </div>
+            )}
+          </div>
+        </MobileCard>
+      )}
+
       {/* ── Active reimbursements (only if any) ── */}
       {activeReimbs.length > 0 && (
         <MobileSection title="Reimbursements" count={activeReimbs.length}>
@@ -454,11 +571,11 @@ export default function MobileMyPay() {
             style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Types</option>
-            <option value="M1">M1</option>
+            {effectiveRole !== 'sub-dealer' && <option value="M1">M1</option>}
             <option value="M2">M2</option>
             <option value="M3">M3</option>
-            <option value="Bonus">Bonus</option>
-            <option value="Trainer">Trainer</option>
+            {effectiveRole !== 'sub-dealer' && <option value="Bonus">Bonus</option>}
+            {effectiveRole !== 'sub-dealer' && <option value="Trainer">Trainer</option>}
           </select>
           <select
             value={filterStatus}

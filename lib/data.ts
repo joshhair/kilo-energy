@@ -268,6 +268,12 @@ export interface PayrollEntry {
   status: 'Draft' | 'Pending' | 'Paid';
   date: string;
   notes: string;
+  /** Explicit chargeback tracking. When true, amount is negative and
+   *  chargebackOfId references the original Paid entry being clawed back.
+   *  Replaces the prior "any negative-amount Paid entry is a chargeback"
+   *  convention so reports can filter cleanly and audit remains unambiguous. */
+  isChargeback?: boolean;
+  chargebackOfId?: string | null;
 }
 
 export interface Reimbursement {

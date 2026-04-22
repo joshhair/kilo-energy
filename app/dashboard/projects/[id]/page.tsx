@@ -353,6 +353,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     );
   };
 
+  const handleToggleM3 = () => {
+    const previousM3Paid = project.m3Paid;
+    const next = !previousM3Paid;
+    updateProject({ m3Paid: next });
+    toast(
+      `M3 marked as ${next ? 'Paid' : 'Unpaid'}`,
+      'success',
+      { label: 'Undo', onClick: () => { updateProject({ m3Paid: previousM3Paid }); } },
+    );
+  };
+
   const saveM1 = () => {
     const val = parseFloat(m1Val);
     if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
@@ -1271,7 +1282,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
-              {/* M3 (read-only, auto-calculated) */}
+              {/* M3 */}
               {(project.m3Amount ?? 0) > 0 && (
                 <div className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl p-4">
                   <div>
@@ -1280,11 +1291,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <p className="text-teal-400 font-semibold">${(project.m3Amount ?? 0).toLocaleString()}</p>
                     </div>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                    project.m3Paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
-                  }`}>
-                    {project.m3Paid ? 'Paid' : 'Pending'}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleToggleM3}
+                      className="text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--border)] hover:bg-[var(--text-dim)] px-2 py-1 rounded-lg transition-colors"
+                    >
+                      {project.m3Paid ? 'Mark Unpaid' : 'Mark Paid'}
+                    </button>
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                      project.m3Paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
+                    }`}>
+                      {project.m3Paid ? 'Paid' : 'Pending'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

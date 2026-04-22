@@ -232,13 +232,15 @@ function ProjectsPageInner() {
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Projects</h1>
           <p className="text-[var(--text-secondary)] text-sm font-medium mt-1 tracking-wide">{hasActiveFilters ? `${filtered.length} of ${statusFiltered.length} projects` : `${visibleProjects.length} total projects`}</p>
         </div>
-        <Link
-          href="/dashboard/new-deal"
-          className="font-bold px-4 py-2 rounded-xl text-sm active:scale-[0.97]"
-          style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 0 20px rgba(0,224,122,0.25)' }}
-        >
-          + New Deal
-        </Link>
+        {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && (
+          <Link
+            href="/dashboard/new-deal"
+            className="font-bold px-4 py-2 rounded-xl text-sm active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 0 20px rgba(0,224,122,0.25)' }}
+          >
+            + New Deal
+          </Link>
+        )}
       </div>
 
       {/* View + Status tabs */}

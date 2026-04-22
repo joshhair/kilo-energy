@@ -320,14 +320,14 @@ function NewDealPage() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = setterAssignment
-    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.setterId === form.setterId)).map((e) => e.projectId)).size
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
   const closerCompletedDeals = closerAssignment
-    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.repId === closerId)).map((e) => e.projectId)).size
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
@@ -599,6 +599,8 @@ function NewDealPage() {
         return;
       }
       if (form.setterId && !approvedIds.has(form.setterId)) {
+        setSlideDirection('backward');
+        setCurrentStep(0);
         toast('Selected setter is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
@@ -613,6 +615,8 @@ function NewDealPage() {
       }
       const unapprovedCoSetter = form.additionalSetters.find((s) => !approvedIds.has(s.userId));
       if (unapprovedCoSetter) {
+        setSlideDirection('backward');
+        setCurrentStep(0);
         toast('A co-setter is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
@@ -1082,7 +1086,7 @@ function NewDealPage() {
                           ...prev,
                           productType: pt,
                           // Auto-set financer for Cash (no financing needed)
-                          financer: isCash ? 'Cash' : '',
+                          financer: isCash ? 'Cash' : (prev.productType === 'Cash' ? '' : prev.financer),
                           // Reset family/product selections when product type changes
                           solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '',
                           additionalClosers: [], additionalSetters: [],

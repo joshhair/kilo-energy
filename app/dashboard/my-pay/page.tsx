@@ -380,8 +380,6 @@ function MyPayPageInner() {
   // real data (matches Dashboard + Projects pattern).
   if (!isHydrated || !dbReady) return <MyPaySkeleton />;
 
-  if (isMobile) return <MobileMyPay />;
-
   // Admins with a repType set are selling admins — they see their own
   // earnings here (filtered by repId like any rep). Admins without a
   // repType are pure-admin and get the same "rep view only" gate as
@@ -394,6 +392,8 @@ function MyPayPageInner() {
       </div>
     );
   }
+
+  if (isMobile) return <MobileMyPay />;
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-4xl animate-fade-in-up">

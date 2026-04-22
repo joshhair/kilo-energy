@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useCountUp } from '../../../lib/hooks';
 import {
   getSolarTechBaseline,
   calculateCommission,
@@ -16,8 +16,45 @@ import {
 } from '../../../lib/data';
 import { splitCloserSetterPay } from '../../../lib/commission';
 import { todayLocalDateStr } from '../../../lib/utils';
+import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
+import { Clock, ChevronDown, ChevronUp, Trash2, RotateCcw, Zap } from 'lucide-react';
+
+// ── Calc History ──────────────────────────────────────────────────────────────
+const CALC_HISTORY_KEY = 'kilo-calc-history';
+const MAX_HISTORY = 5;
+
+interface CalcHistoryEntry {
+  installer: string;
+  solarTechFamily?: string;
+  solarTechProductId?: string;
+  pcFamily?: string;
+  pcProductId?: string;
+  kW: number;
+  ppw: number;
+  hasSetter: boolean;
+  selectedSetterId?: string;
+  closerTotal: number;
+  setterTotal: number;
+  trainerTotal: number;
+  timestamp: number;
+}
+
+function loadCalcHistory(): CalcHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(CALC_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, MAX_HISTORY) : [];
+  } catch { return []; }
+}
+
+function saveCalcHistory(entries: CalcHistoryEntry[]) {
+  try {
+    localStorage.setItem(CALC_HISTORY_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
+  } catch { /* quota exceeded — silently ignore */ }
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -43,8 +80,10 @@ export default function MobileCalculator() {
     reps,
     trainerAssignments,
     payrollEntries,
+    projects,
   } = useApp();
   const isHydrated = useIsHydrated();
+  const { toast } = useToast();
 
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
 
@@ -64,6 +103,29 @@ export default function MobileCalculator() {
   const [selectedSetterId, setSelectedSetterId] = useState('');
   // Optional sold date for historical pricing lookups (admin use case)
   const [pricingDate, setPricingDate] = useState('');
+
+  // ── Quick Fill + History state ───────────────────────────────────────────
+  const [quickFillValue, setQuickFillValue] = useState('');
+  const [quickFillSoldDate, setQuickFillSoldDate] = useState('');
+  const [quickFillRepId, setQuickFillRepId] = useState<string | null>(null);
+  const [calcHistory, setCalcHistory] = useState<CalcHistoryEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const lastSavedHash = useRef('');
+  const resultRef = useRef<HTMLDivElement>(null);
+  const resultShownRef = useRef(false);
+
+  // Load history once on mount (localStorage only available client-side)
+  useEffect(() => { setCalcHistory(loadCalcHistory()); }, []);
+
+  // ── Recent deals for Quick Fill ──────────────────────────────────────────
+  const recentDeals = useMemo(() => {
+    const filtered = effectiveRole === 'admin'
+      ? projects
+      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+    return [...filtered]
+      .sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? ''))
+      .slice(0, 10);
+  }, [projects, currentRepId, effectiveRole]);
 
   // ── Derived installer flags ──────────────────────────────────────────────
   const isSolarTech = installer === 'SolarTech';
@@ -90,7 +152,7 @@ export default function MobileCalculator() {
     true
   );
 
-  const effectivePricingDate = pricingDate || todayLocalDateStr();
+  const effectivePricingDate = quickFillSoldDate || pricingDate || todayLocalDateStr();
 
   // ── Commission calculation ───────────────────────────────────────────────
   const { closerPerW, setterBaselinePerW, kiloPerW } = (() => {
@@ -128,8 +190,9 @@ export default function MobileCalculator() {
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) ?? null : null;
 
   // Closer trainer — mirrors desktop calculator logic
-  const closerAssignment = currentRepId
-    ? trainerAssignments.find((a) => a.traineeId === currentRepId)
+  const effectiveCloserId = quickFillRepId ?? currentRepId;
+  const closerAssignment = effectiveCloserId
+    ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;
   const closerDealCount = closerAssignment
     ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
@@ -160,31 +223,126 @@ export default function MobileCalculator() {
     : { closerTotal: 0, setterTotal: 0, closerM1: 0, closerM2: 0, closerM3: 0, setterM1: 0, setterM2: 0, setterM3: 0 };
   const closerTotal = split.closerTotal;
   const setterTotal = split.setterTotal;
-  const trainerTotal = hasInput && soldPPW > 0 && trainerRate > 0 ? trainerRate * kW * 1000 : 0;
+  const trainerTotal = hasInput && soldPPW > 0 && trainerRate > 0 ? Math.round(trainerRate * kW * 1000 * 100) / 100 : 0;
 
-  // ── Animated commission counter ──────────────────────────────────────────
-  const prevTotalRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
-  const [displayTotal, setDisplayTotal] = useState(0);
+  // ── Save to history when a full result is displayed ──────────────────────
+  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${isPaired ? '1' : '0'}|${selectedSetterId}`;
 
   useEffect(() => {
-    const start = prevTotalRef.current;
-    const end = closerTotal;
-    prevTotalRef.current = end;
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced || start === end) { setDisplayTotal(end); return; }
-    const DURATION = 600;
-    const startTime = performance.now();
-    const ease = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-    const tick = (now: number) => {
-      const t = Math.min((now - startTime) / DURATION, 1);
-      setDisplayTotal(Math.round(start + (end - start) * ease(t)));
-      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+    if (!hasInput || soldPPW <= 0 || closerTotal <= 0) return;
+    const hash = resultHash;
+    if (hash === lastSavedHash.current) return;
+    lastSavedHash.current = hash;
+
+    const entry: CalcHistoryEntry = {
+      installer,
+      ...(isSolarTech && solarTechFamily ? { solarTechFamily, solarTechProductId } : {}),
+      ...(isPcInstaller && pcSelectedFamily ? { pcFamily: pcSelectedFamily, pcProductId } : {}),
+      kW,
+      ppw: soldPPW,
+      hasSetter: isPaired,
+      selectedSetterId: selectedSetterId || undefined,
+      closerTotal,
+      setterTotal,
+      trainerTotal,
+      timestamp: Date.now(),
     };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [closerTotal]);
+
+    setCalcHistory((prev) => {
+      const next = [entry, ...prev.filter((e) =>
+        !(e.installer === entry.installer && e.kW === entry.kW && e.ppw === entry.ppw &&
+          e.solarTechProductId === entry.solarTechProductId && e.pcProductId === entry.pcProductId)
+      )].slice(0, MAX_HISTORY);
+      saveCalcHistory(next);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resultHash collapses the full input set
+  }, [resultHash, hasInput, soldPPW, closerTotal]);
+
+  // ── Quick Fill handlers ──────────────────────────────────────────────────
+  const handleQuickFill = (projectId: string) => {
+    setQuickFillValue(projectId);
+    if (!projectId) { setQuickFillSoldDate(''); setQuickFillRepId(null); return; }
+    const proj = recentDeals.find((p) => p.id === projectId);
+    if (!proj) return;
+    setQuickFillSoldDate(proj.soldDate);
+    setQuickFillRepId(proj.repId ?? null);
+    setInstaller(activeInstallers.includes(proj.installer) ? proj.installer : '');
+    setKWSize(String(proj.kWSize));
+    setNetPPW(String(proj.netPPW));
+
+    const isST = proj.installer === 'SolarTech' && !!proj.solarTechProductId;
+    const isPC = !isST && !!proj.installerProductId;
+
+    if (isST) {
+      const product = solarTechProducts.find((p) => p.id === proj.solarTechProductId);
+      if (product) { setSolarTechFamily(product.family); setSolarTechProductId(proj.solarTechProductId!); }
+      setPcProductId(''); setPcSelectedFamily('');
+    } else if (isPC) {
+      const product = productCatalogProducts.find((p) => p.id === proj.installerProductId);
+      if (product) { setPcSelectedFamily(product.family); setPcProductId(proj.installerProductId!); }
+      setSolarTechFamily(''); setSolarTechProductId('');
+    } else {
+      setSolarTechFamily(''); setSolarTechProductId(''); setPcProductId(''); setPcSelectedFamily('');
+    }
+    setIsPaired(false);
+    setSelectedSetterId('');
+  };
+
+  const handleReset = () => {
+    setQuickFillValue('');
+    setQuickFillSoldDate('');
+    setQuickFillRepId(null);
+    setPricingDate('');
+    setInstaller('');
+    setSolarTechFamily('');
+    setSolarTechProductId('');
+    setPcProductId('');
+    setPcSelectedFamily('');
+    setKWSize('');
+    setNetPPW('');
+    setIsPaired(false);
+    setSelectedSetterId('');
+  };
+
+  // ── History handlers ─────────────────────────────────────────────────────
+  const handleLoadHistory = (entry: CalcHistoryEntry) => {
+    setInstaller(entry.installer);
+    setKWSize(String(entry.kW));
+    setNetPPW(String(entry.ppw));
+    setIsPaired(entry.hasSetter);
+    setSelectedSetterId(entry.selectedSetterId ?? '');
+    if (entry.solarTechFamily) {
+      setSolarTechFamily(entry.solarTechFamily);
+      setSolarTechProductId(entry.solarTechProductId ?? '');
+      setPcSelectedFamily('');
+      setPcProductId('');
+    } else if (entry.pcFamily) {
+      setPcSelectedFamily(entry.pcFamily);
+      setPcProductId(entry.pcProductId ?? '');
+      setSolarTechFamily('');
+      setSolarTechProductId('');
+    } else {
+      setSolarTechFamily('');
+      setSolarTechProductId('');
+      setPcSelectedFamily('');
+      setPcProductId('');
+    }
+    setHistoryOpen(false);
+    toast('Loaded from history', 'info');
+  };
+
+  const handleClearHistory = () => {
+    setCalcHistory([]);
+    saveCalcHistory([]);
+    toast('History cleared', 'info');
+  };
+
+  // ── Animated commission counters ─────────────────────────────────────────
+  const displayTotal = useCountUp(closerTotal);
+  const displaySetter = useCountUp(setterTotal);
+  const displayTrainer = useCountUp(trainerTotal);
+  const displayCloserTrainer = useCountUp(closerTrainerTotal);
 
   // ── Result card mount/unmount with exit animation ────────────────────────
   const [resultMounted, setResultMounted] = useState(false);
@@ -192,9 +350,17 @@ export default function MobileCalculator() {
 
   useEffect(() => {
     if (hasInput && soldPPW > 0) {
+      const isFirstMount = !resultShownRef.current;
+      resultShownRef.current = true;
       setResultMounted(true);
       setResultExiting(false);
+      if (isFirstMount) {
+        setTimeout(() => {
+          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
+      }
     } else {
+      resultShownRef.current = false;
       setResultExiting(true);
       const t = setTimeout(() => setResultMounted(false), 220);
       return () => clearTimeout(t);
@@ -243,6 +409,40 @@ export default function MobileCalculator() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Calculator" />
+
+      {/* ── Quick Fill ────────────────────────────────────────────────────── */}
+      {recentDeals.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <div className="flex items-center gap-1.5 mb-3">
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan)' }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-cyan)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Quick Fill</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={quickFillValue}
+              onChange={(e) => handleQuickFill(e.target.value)}
+              className={selectCls + ' flex-1'}
+              style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-cyan)' } as React.CSSProperties}
+            >
+              <option value="">-- Fill from recent deal --</option>
+              {recentDeals.map((proj) => (
+                <option key={proj.id} value={proj.id}>
+                  {proj.customerName} · {proj.kWSize.toFixed(1)} kW · ${proj.netPPW.toFixed(2)}/W
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleReset}
+              title="Clear all fields"
+              className="flex-shrink-0 p-3 rounded-xl transition-colors"
+              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Form inputs ───────────────────────────────────────────────────── */}
       <div className="space-y-4" style={{ touchAction: 'manipulation' }}>
@@ -382,7 +582,7 @@ export default function MobileCalculator() {
             >
               <option value="">-- Select setter --</option>
               {reps
-                .filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both'))
+                .filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both') && r.id !== effectiveCloserId)
                 .map((r) => {
                   const ta = trainerAssignments.find((a) => a.traineeId === r.id);
                   const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
@@ -449,6 +649,7 @@ export default function MobileCalculator() {
 
       {/* ── Result card ─────────────────────────────────────────────────── */}
       {resultMounted && (
+        <div ref={resultRef}>
         <MobileCard key="result" hero className={resultExiting ? 'result-exit' : 'result-enter'}>
           <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
           <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
@@ -483,7 +684,7 @@ export default function MobileCalculator() {
               <>
                 <div className="calc-row-2 flex items-center justify-between">
                   <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
-                  <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotal)}</span>
+                  <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displaySetter)}</span>
                 </div>
                 <div className="flex gap-2 ml-2">
                   <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
@@ -510,7 +711,7 @@ export default function MobileCalculator() {
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{trainerRep ? `: ${trainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(trainerTotal)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayTrainer)}</span>
               </div>
             )}
 
@@ -520,7 +721,7 @@ export default function MobileCalculator() {
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{closerTrainerRep ? `: ${closerTrainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTrainerTotal)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayCloserTrainer)}</span>
               </div>
             )}
 
@@ -544,6 +745,7 @@ export default function MobileCalculator() {
             </p>
           </div>
         </MobileCard>
+        </div>
       )}
 
       {/* Empty state */}
@@ -553,6 +755,65 @@ export default function MobileCalculator() {
             <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
           </div>
         </MobileCard>
+      )}
+
+      {/* ── Recent Calcs ──────────────────────────────────────────────────── */}
+      {calcHistory.length > 0 && (
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3"
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" style={{ color: 'var(--m-text-dim, #445577)' }} />
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Recent Calcs</span>
+              <span className="text-xs" style={{ color: 'var(--m-text-dim, #445577)' }}>({calcHistory.length})</span>
+            </div>
+            {historyOpen
+              ? <ChevronUp className="w-4 h-4" style={{ color: 'var(--m-text-dim, #445577)' }} />
+              : <ChevronDown className="w-4 h-4" style={{ color: 'var(--m-text-dim, #445577)' }} />}
+          </button>
+          {historyOpen && (
+            <div className="px-4 pb-4 space-y-2 history-reveal">
+              {calcHistory.map((entry, i) => (
+                <div
+                  key={`${entry.timestamp}-${i}`}
+                  className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+                  style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--m-border, var(--border-mobile))' }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {entry.installer} · {entry.kW.toFixed(1)} kW @ ${entry.ppw.toFixed(2)}/W
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      Closer: ${entry.closerTotal.toLocaleString()}
+                      {entry.hasSetter && entry.setterTotal > 0 ? ` · Setter: $${entry.setterTotal.toLocaleString()}` : ''}
+                      {entry.trainerTotal > 0 ? ` · Trainer: $${entry.trainerTotal.toLocaleString()}` : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadHistory(entry)}
+                    className="flex-shrink-0 text-xs font-semibold rounded-lg px-3 min-h-[44px] flex items-center"
+                    style={{ color: 'var(--accent-blue)', background: 'rgba(77,159,255,0.1)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    Load
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                className="flex items-center gap-1.5 text-xs mt-1 min-h-[44px]"
+                style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                <Trash2 className="w-3 h-3" />
+                Clear History
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

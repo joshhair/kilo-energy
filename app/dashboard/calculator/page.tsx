@@ -196,6 +196,28 @@ function CommissionBar({
   );
 }
 
+function StackedBar({ segments, total }: { segments: { key: string; value: number; color: string }[]; total: number }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return (
+    <div style={{ display: 'flex', height: 8, borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}>
+      {segments.map((seg) => (
+        <div
+          key={seg.key}
+          style={{
+            width: ready ? `${(seg.value / total) * 100}%` : '0%',
+            background: seg.color,
+            transition: 'width 600ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function CalculatorPageWrapper() {
   return <Suspense><CalculatorPage /></Suspense>;
 }
@@ -951,7 +973,7 @@ function CalculatorPage() {
             <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 20 }}>Live Breakdown</p>
 
             {hasData ? (
-              <div key={resultHash}>
+              <div key={resultHash} className="result-enter">
                 {/* Closer earnings — this is the answer reps actually come
                     to the calculator for. System value drops below as
                     secondary context. */}
@@ -981,11 +1003,7 @@ function CalculatorPage() {
 
                 {/* Stacked bar */}
                 {breakdownTotal > 0 && (
-                  <div style={{ display: 'flex', height: 8, borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}>
-                    {breakdownSegments.map((seg) => (
-                      <div key={seg.key} style={{ width: `${(seg.value / breakdownTotal) * 100}%`, background: seg.color, transition: 'width 0.5s ease-out' }} />
-                    ))}
-                  </div>
+                  <StackedBar segments={breakdownSegments} total={breakdownTotal} />
                 )}
 
                 {/* Baseline rates row */}

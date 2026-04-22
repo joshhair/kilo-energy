@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { formatDate } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
@@ -186,10 +186,9 @@ export default function MobileBlitz() {
         const kwSum = (blitz: BlitzData) => {
           const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
           return blitzDeals(blitz).reduce((s, p) => {
-            const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
             const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
             const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
-            return s + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+            return s + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
           }, 0);
         };
         return kwSum(b) - kwSum(a);
@@ -198,6 +197,41 @@ export default function MobileBlitz() {
       return 0;
     });
   }, [blitzes, statusFilter, search, sortKey]);
+
+  const activeBlitzes = useMemo(() => blitzes.filter((b) => b.status === 'active').length, [blitzes]);
+  const upcomingBlitzes = useMemo(() => blitzes.filter((b) => b.status === 'upcoming').length, [blitzes]);
+  const summaryTotalDeals = useMemo(() => blitzes.filter((b) => b.status === 'active' || b.status === 'upcoming').reduce((s, b) => {
+    const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
+    return s + b.projects.filter((p) =>
+      p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
+      (isAdmin || b.owner.id === effectiveRepId
+        ? approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+            || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+            || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
+        : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
+          || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+          || p.additionalSetters?.some((as) => as.userId === effectiveRepId))
+    ).length;
+  }, 0), [blitzes, isAdmin, effectiveRepId]);
+  const summaryTotalKW = useMemo(() => blitzes.filter((b) => b.status === 'active' || b.status === 'upcoming').reduce((s, b) => {
+    const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
+    const visibleProjects = b.projects.filter((p) =>
+      p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
+      (isAdmin || b.owner.id === effectiveRepId
+        ? approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+            || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+            || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
+        : p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
+          || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+          || p.additionalSetters?.some((as) => as.userId === effectiveRepId))
+    );
+    return s + visibleProjects.reduce((ps, p) => {
+      const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
+      const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
+      return ps + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+    }, 0);
+  }, 0), [blitzes, isAdmin, effectiveRepId]);
+  const summaryTotalCosts = useMemo(() => isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0, [blitzes, isAdmin]);
 
   // PM access guard -- placed after all hooks
   if (isPM && pmPermissions && !pmPermissions.canAccessBlitz) {
@@ -222,7 +256,7 @@ export default function MobileBlitz() {
 
   // Header right action
   const loadData = () => {
-    Promise.all([
+    return Promise.all([
       fetch('/api/blitzes').then((r) => r.json()),
       fetch('/api/blitz-requests').then((r) => r.json()),
     ]).then(([b, r]) => {
@@ -282,6 +316,7 @@ export default function MobileBlitz() {
   const handleCreateBlitz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim() || !createForm.startDate || !createForm.endDate) return;
+    if (new Date(createForm.endDate) < new Date(createForm.startDate)) { toast('End date must be on or after start date', 'error'); return; }
     if (submittingCreate) return;
     setSubmittingCreate(true);
     const isRequest = canRequest && !canCreate;
@@ -378,10 +413,9 @@ export default function MobileBlitz() {
         );
     const totalDeals = blitzProjects.length;
     const totalKW = blitzProjects.reduce((s, p) => {
-      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
       const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
       const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
-      return s + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+      return s + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
     }, 0);
     const myParticipation = blitz.participants.find((p) => p.user.id === effectiveRepId);
     const canJoin = !isAdmin && !isBlitzOwner
@@ -465,6 +499,32 @@ export default function MobileBlitz() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Blitz" right={headerRight} />
+
+      {/* Summary stat cards */}
+      <div className={`grid gap-3 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Active</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
+        </div>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Upcoming</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
+        </div>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Deals</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{summaryTotalDeals}</p>
+        </div>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Total kW</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{formatCompactKW(summaryTotalKW)}</p>
+        </div>
+        {isAdmin && (
+          <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Costs</p>
+            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
+          </div>
+        )}
+      </div>
 
       {/* Status pills */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -607,36 +667,45 @@ export default function MobileBlitz() {
         </>
       )}
 
-      {/* Requests tab — admin: see all pending */}
+      {/* Requests tab — admin: see all requests */}
       {tab === 'requests' && isAdmin && (
         <>
-          {pendingRequests.length === 0 ? (
-            <MobileEmptyState icon={Inbox} title="No pending requests" />
+          {requests.length === 0 ? (
+            <MobileEmptyState icon={Inbox} title="No blitz requests" />
           ) : (
             <div className="space-y-3">
-              {pendingRequests.map((req) => (
+              {requests.map((req) => (
                 <MobileCard key={req.id}>
                   <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
                   <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
                   <div className="flex items-center gap-2 mt-3">
-                    <button
-                      onClick={() => handleApproveRequest(req.id)}
-                      disabled={processingRequest.has(req.id)}
-                      className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                      style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                    >
-                      {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
-                    </button>
-                    <button
-                      onClick={() => handleDenyRequest(req.id)}
-                      disabled={processingRequest.has(req.id)}
-                      className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                      style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                    >
-                      <XCircle className="w-3 h-3" /> Deny
-                    </button>
+                    {req.status === 'pending' ? (
+                      <>
+                        <button
+                          onClick={() => handleApproveRequest(req.id)}
+                          disabled={processingRequest.has(req.id)}
+                          className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                          style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                        >
+                          {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
+                        </button>
+                        <button
+                          onClick={() => handleDenyRequest(req.id)}
+                          disabled={processingRequest.has(req.id)}
+                          className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                          style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                        >
+                          <XCircle className="w-3 h-3" /> Deny
+                        </button>
+                      </>
+                    ) : (
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`} style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                        {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                      </span>
+                    )}
                   </div>
                 </MobileCard>
               ))}

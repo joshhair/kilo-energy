@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { useIsHydrated } from '../../../lib/hooks';
-import { formatDate, formatCompactKW } from '../../../lib/utils';
-import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2 } from 'lucide-react';
+import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../lib/utils';
+import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2, CheckSquare, Square } from 'lucide-react';
 import { getTrainerOverrideRate } from '../../../lib/data';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
@@ -217,26 +217,43 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         {resolvedUser.role === 'project_manager' && fu && effectiveRole === 'admin' && (
           <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
             <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)' }}>Permissions</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Can create deals</span>
-                <span className={fu.canCreateDeals ? 'text-[var(--accent-emerald)] font-bold' : 'text-[var(--text-dim)]'}>{fu.canCreateDeals ? 'Yes' : 'No'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Can access blitz</span>
-                <span className={fu.canAccessBlitz ? 'text-[var(--accent-emerald)] font-bold' : 'text-[var(--text-dim)]'}>{fu.canAccessBlitz ? 'Yes' : 'No'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Can export</span>
-                <span className={fu.canExport ? 'text-[var(--accent-emerald)] font-bold' : 'text-[var(--text-dim)]'}>{fu.canExport ? 'Yes' : 'No'}</span>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { field: 'canCreateDeals' as const, label: 'Create Deals' },
+                { field: 'canAccessBlitz' as const, label: 'Blitz Access' },
+                { field: 'canExport' as const, label: 'Export Data' },
+              ]).map(({ field, label }) => (
+                <button
+                  key={field}
+                  onClick={async () => {
+                    const current = !!fu[field];
+                    const res = await fetch(`/api/users/${repId}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ [field]: !current }),
+                    });
+                    if (res.ok) {
+                      setFetchedUser((prev) => prev ? { ...prev, [field]: !current } : prev);
+                      toast('Permission updated');
+                    } else {
+                      toast('Failed to update permission', 'error');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-colors min-h-[44px] active:scale-[0.95] transition-transform duration-100"
+                  style={{
+                    background: fu[field] ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
+                    color: fu[field] ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                    borderColor: fu[field] ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
+                >
+                  {fu[field] ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         )}
-
-        <p className="text-xs text-center mt-2" style={{ color: 'var(--m-text-dim, #445577)' }}>
-          Use desktop Settings for permission management.
-        </p>
       </div>
     );
   }
@@ -257,7 +274,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const currentOverrideRate = trainerAssignment ? getTrainerOverrideRate(trainerAssignment, completedDeals) : 0;
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
   const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayLocalDateStr();
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
@@ -442,7 +459,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
       {/* Inline stats */}
       <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.length}</span> deal{repProjects.length !== 1 ? 's' : ''}
+        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length}</span> deal{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length !== 1 ? 's' : ''}
         {' \u00B7 '}
         <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
         {!isPM && (

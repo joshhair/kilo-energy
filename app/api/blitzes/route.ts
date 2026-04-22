@@ -131,7 +131,6 @@ export async function POST(req: NextRequest) {
       owner: true,
       participants: { include: { user: true } },
       costs: true,
-      projects: true,
     },
   });
 
@@ -166,8 +165,8 @@ export async function POST(req: NextRequest) {
       blitzId: null,
       soldDate: { gte: blitz.startDate, lte: blitz.endDate },
       OR: [
-        { additionalClosers: { some: { userId: ownerId } }, closerId: { in: approvedIds } },
-        { additionalSetters: { some: { userId: ownerId } }, setterId: { in: approvedIds } },
+        { additionalClosers: { some: { userId: ownerId } }, setterId: { in: approvedIds } },
+        { additionalSetters: { some: { userId: ownerId } }, closerId: { in: approvedIds } },
       ],
     },
     select: { id: true },
@@ -176,10 +175,24 @@ export async function POST(req: NextRequest) {
     await prisma.project.update({ where: { id: project.id }, data: { blitzId: blitz.id } });
   }
 
+  // Re-fetch blitz after backfill so projects reflects the newly linked deals.
+  const blitzWithProjects = await prisma.blitz.findUniqueOrThrow({
+    where: { id: blitz.id },
+    include: {
+      createdBy: true,
+      owner: true,
+      participants: { include: { user: true } },
+      costs: true,
+      projects: {
+        include: { closer: true, setter: true, installer: true, financer: true, additionalClosers: { include: { user: true } }, additionalSetters: { include: { user: true } } },
+      },
+    },
+  });
+
   const serialized = {
-    ...blitz,
-    projects: blitz.projects.map(serializeProject),
-    costs: blitz.costs.map(serializeBlitzCost),
+    ...blitzWithProjects,
+    projects: blitzWithProjects.projects.map(serializeProject),
+    costs: blitzWithProjects.costs.map(serializeBlitzCost),
   };
   logger.info('blitz_created', {
     blitzId: blitz.id,

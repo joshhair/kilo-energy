@@ -19,7 +19,16 @@ interface Props {
 
 export default function BlitzLeaderboard({ entries, showPayout }: Props) {
   const router = useRouter();
-  if (entries.length === 0) return null;
+  if (entries.length === 0) return (
+    <div className="rounded-2xl p-5 text-center" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+      <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: '#fbbf24', opacity: 0.2 }} />
+      <p className="text-sm font-semibold text-white">No deals yet</p>
+      <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Rankings appear once reps start closing.</p>
+    </div>
+  );
+
+  const maxKW = Math.max(...entries.map(e => e.kW), 1);
+  const RANK_BG = ['rgba(251,191,36,0.10)', 'rgba(203,213,225,0.07)', 'rgba(251,146,60,0.09)'];
 
   return (
     <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
@@ -35,13 +44,14 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
             <button
               key={rep.userId}
               onClick={() => router.push(`/dashboard/users/${rep.userId}`)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg active:opacity-70"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg active:opacity-70 relative overflow-hidden"
               style={{
                 background: isTop3 ? 'rgba(0,0,0,0.15)' : 'transparent',
                 animation: 'fadeUpIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both',
                 animationDelay: `${idx * 50}ms`,
               }}
             >
+              <span aria-hidden className="bar-grow-anim absolute inset-y-0 left-0 rounded-lg" style={{ '--bar-w': `${Math.max(8, Math.round((rep.kW / maxKW) * 100))}%`, '--bar-delay': `${idx * 70}ms`, background: isTop3 ? RANK_BG[rank - 1] : 'rgba(255,255,255,0.04)' } as React.CSSProperties} />
               <span
                 className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
                 style={{

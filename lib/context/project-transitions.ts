@@ -421,7 +421,7 @@ export function createMilestonePayroll(
   for (const co of freshProject.additionalClosers ?? []) {
     const amount = isAcceptance ? (co.m1Amount ?? 0) : (co.m2Amount ?? 0);
     if (amount <= 0) continue;
-    if (isAcceptance && freshProject.setterId) continue;
+    if (isAcceptance && freshProject.setterId && (freshProject.setterM1Amount ?? 0) > 0) continue;
     if (repAlreadyExists(co.userId)) continue;
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_cc${co.position}`,
@@ -626,10 +626,10 @@ export function createM3Payroll(
   // setter's share rather than being paid on top (mirrors closerM3TrainerDeduction).
   // Project-level override doesn't apply to the setter's trainer slot.
   let setterM3TrainerDeduction = 0;
-  if (old.setterId) {
+  if (proj?.setterId) {
     const setterResM3 = resolveTrainerRate(
       { id: projectId, trainerId: null, trainerRate: null },
-      old.setterId,
+      proj.setterId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
@@ -755,14 +755,14 @@ export function createM3Payroll(
 
   // Setter's trainer — guarded by !old.subDealerId to match closer's trainer.
   // Project-level override doesn't apply to the setter's trainer slot.
-  if (old.setterId && !old.subDealerId) {
+  if (proj?.setterId && !old.subDealerId) {
     const setterResM3Entry = resolveTrainerRate(
       { id: projectId, trainerId: null, trainerRate: null },
-      old.setterId,
+      proj.setterId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
-    const setterTraineeName = deps.repsRef.current.find(r => r.id === old.setterId)?.name ?? old.setterName ?? '';
+    const setterTraineeName = deps.repsRef.current.find(r => r.id === proj.setterId)?.name ?? proj.setterName ?? '';
     const setterTraineeNotesPrefix = `Trainer override M3 — ${setterTraineeName}`;
     const setterTrainerM3AlreadyExists = setterResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(
       (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterResM3Entry.trainerId
@@ -776,7 +776,7 @@ export function createM3Payroll(
       const setterOverrideRate = !isNaN(m2SetterParsed) ? m2SetterParsed : setterResM3Entry.rate;
       const m3SetterTrainerAmount = Math.round(setterOverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
       if (m3SetterTrainerAmount > 0) {
-        const setterRep = deps.repsRef.current.find(r => r.id === old.setterId);
+        const setterRep = deps.repsRef.current.find(r => r.id === proj.setterId);
         newEntries.push({
           id: `pay_${ts}_m3_trainer_s`,
           repId: setterResM3Entry.trainerId,
@@ -788,7 +788,7 @@ export function createM3Payroll(
           paymentStage: 'Trainer',
           status: 'Draft',
           date: payDate,
-          notes: `Trainer override M3 — ${setterRep?.name ?? old.setterName ?? ''} ($${setterOverrideRate.toFixed(2)}/W)`,
+          notes: `Trainer override M3 — ${setterRep?.name ?? proj.setterName ?? ''} ($${setterOverrideRate.toFixed(2)}/W)`,
         });
       }
     }
@@ -828,7 +828,8 @@ export function syncPayrollAmounts(
   if (updates.setterM3Amount !== undefined) stageAmountUpdates.push({ stage: 'M3', setter: true, newAmount: updates.setterM3Amount });
 
   const hasCoPartyUpdates = updates.additionalClosers !== undefined || updates.additionalSetters !== undefined;
-  if (stageAmountUpdates.length === 0 && !hasCoPartyUpdates) return { updatedEntries: prevEntries, patches: [] };
+  const hasKWSizeUpdate = updates.kWSize !== undefined;
+  if (stageAmountUpdates.length === 0 && !hasCoPartyUpdates && !hasKWSizeUpdate) return { updatedEntries: prevEntries, patches: [] };
 
   const patches: Array<{ id: string; newAmount: number }> = [];
   const updatedEntries = prevEntries.map((e) => {
@@ -868,8 +869,8 @@ export function syncPayrollAmounts(
     // M1/M2/M3 stageAmountUpdates. Recompute from the rate embedded in their notes.
     if (e.paymentStage === 'Trainer' && kWSize > 0) {
       const notes = e.notes ?? '';
-      const isM2 = notes.startsWith('Trainer override M2') && (updates.m2Amount !== undefined || updates.setterM2Amount !== undefined);
-      const isM3 = notes.startsWith('Trainer override M3') && (updates.m3Amount !== undefined || updates.setterM3Amount !== undefined);
+      const isM2 = notes.startsWith('Trainer override M2') && (updates.m2Amount !== undefined || updates.setterM2Amount !== undefined || hasKWSizeUpdate);
+      const isM3 = notes.startsWith('Trainer override M3') && (updates.m3Amount !== undefined || updates.setterM3Amount !== undefined || hasKWSizeUpdate);
       if (!isM2 && !isM3) return e;
       const rateMatch = notes.match(/\(\$([0-9.]+)\/W\)/);
       if (!rateMatch) return e;

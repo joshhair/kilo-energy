@@ -22,6 +22,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { EarningsSkeleton } from './components/EarningsSkeleton';
 import { SubDealerEarningsView } from './components/SubDealerEarningsView';
 import { MonthlyEarningsBarChart, computeMonthlyBarData, MONTH_LABELS } from './components/MonthlyEarningsBarChart';
+import { sumPaid } from '../../../lib/aggregators';
 import {
   SortIcon,
   PayrollStatusBadge,
@@ -91,8 +92,8 @@ function RepEarningsView() {
   const nextFriday     = getNextFriday(today);
   const nextFridayDate = `${nextFriday.getFullYear()}-${String(nextFriday.getMonth() + 1).padStart(2, '0')}-${String(nextFriday.getDate()).padStart(2, '0')}`;
 
-  const pendingItems      = myPayroll.filter((p) => p.status === 'Pending' && (!monthFilter || p.date.startsWith(monthFilter)));
-  const totalPaid         = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
+  const pendingItems      = myPayroll.filter((p) => p.status === 'Pending');
+  const totalPaid         = sumPaid(myPayroll);
   const totalPending      = pendingItems.reduce((s, p) => s + p.amount, 0);
   const pendingCount      = pendingItems.length;
   const nextPayoutItems   = myPayroll.filter((p) => p.status === 'Pending' && p.date === nextFridayDate);
@@ -102,7 +103,7 @@ function RepEarningsView() {
   const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs, [myReimbs, monthFilter]);
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(monthFilter ?? currentYYYYMM) && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
+  const thisMonthEarned = sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter ?? currentYYYYMM)));
   const approvedReimbs  = filteredReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);
@@ -111,7 +112,7 @@ function RepEarningsView() {
   const earnedMonthlyData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date <= todayStr)),    [payrollEntries, effectiveRepId, todayStr]);
   const pendingMonthlyData = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Pending')), [payrollEntries, effectiveRepId]);
   const reimbMonthlyData   = useMemo(() => computeMonthlySparklineData(reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved')), [reimbursements, effectiveRepId]);
-  const thisMonthPaidData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date.startsWith(currentYYYYMM))), [payrollEntries, effectiveRepId, currentYYYYMM]);
+  const thisMonthPaidData  = useMemo(() => computeMonthlySparklineData(payrollEntries.filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.date.slice(0, 7) <= (monthFilter ?? currentYYYYMM))), [payrollEntries, effectiveRepId, monthFilter, currentYYYYMM]);
 
   // Monthly bar-chart data (last 6 months, paid vs pending vs reimbursements)
   const monthlyBarData = useMemo(
@@ -492,7 +493,7 @@ function RepEarningsView() {
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDealsBase.filter((r) => r.kind === 'payroll').length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
+            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
           </button>
         ))}
       </div>
@@ -1396,7 +1397,10 @@ function EarningsPageInner() {
 
   if (!isHydrated || !dbReady) return <EarningsSkeleton />;
 
-  if (isMobile) return <MobileEarnings />;
+  if (isMobile) {
+    if (effectiveRole === 'sub-dealer') return <SubDealerEarningsView />;
+    return <MobileEarnings />;
+  }
 
   if (effectiveRole === 'project_manager') {
     return (

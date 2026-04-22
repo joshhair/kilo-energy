@@ -14,6 +14,7 @@ import MobileCard from './shared/MobileCard';
 import MobileListItem from './shared/MobileListItem';
 import MobileSection from './shared/MobileSection';
 import MobileEmptyState from './shared/MobileEmptyState';
+import MobilePillTabs from './shared/MobilePillTabs';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -101,6 +102,13 @@ export default function MobileSettings() {
           @keyframes ms-slide-in   { from { transform: translateX(28px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
           @keyframes ms-slide-out  { from { transform: translateX(0); opacity: 1; } to { transform: translateX(28px); opacity: 0; } }
           @keyframes ms-slide-back { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+          @keyframes bs-up   { from { transform: translateY(100%); } to { transform: translateY(0); } }
+          @keyframes bs-down { from { transform: translateY(0);    } to { transform: translateY(100%); } }
+          @keyframes bs-backdrop-in  { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes bs-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+          @media (prefers-reduced-motion: reduce) {
+            .bs-panel, .bs-backdrop { animation: none !important; }
+          }
           @media (prefers-reduced-motion: reduce) {
             .ms-slide-in, .ms-slide-out, .ms-slide-back { animation: none !important; }
           }
@@ -288,7 +296,7 @@ function FinancersSection() {
   return (
     <div className="space-y-3">
       <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
-      {financers.length === 0 ? (
+      {financers.filter(fin => fin.name !== 'Cash').length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
         financers.filter(fin => fin.name !== 'Cash').map((fin) => (
@@ -866,23 +874,11 @@ function MobileBaselinesSection() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
-            style={{
-              background: activeTab === id ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-              color: activeTab === id ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              border: `1px solid ${activeTab === id ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <MobilePillTabs
+        items={tabs.map(([id, label]) => ({ id, label }))}
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as 'standard' | 'solartech' | 'productcatalog')}
+      />
       {activeTab === 'standard' && <StandardBaselines />}
       {activeTab === 'solartech' && <SolarTechBaselines />}
       {activeTab === 'productcatalog' && <ProductCatalogBaselines />}
@@ -896,6 +892,7 @@ function StandardBaselines() {
   const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
   const [editVals, setEditVals] = useState({ closerPerW: '', kiloPerW: '', setterPerW: '', subDealerPerW: '' });
   const [newVersionFor, setNewVersionFor] = useState<string | null>(null);
+  const [sheetLeaving, setSheetLeaving] = useState(false);
   const [nvLabel, setNvLabel] = useState('');
   const [nvDate, setNvDate] = useState('');
   const [nvCloser, setNvCloser] = useState('');
@@ -938,6 +935,11 @@ function StandardBaselines() {
     setNvKilo(b ? String(b.kiloPerW) : '');
   }
 
+  function closeSheet() {
+    setSheetLeaving(true);
+    setTimeout(() => { setNewVersionFor(null); setSheetLeaving(false); }, 280);
+  }
+
   function saveNewVersion() {
     if (!newVersionFor) return;
     const closer = parseFloat(nvCloser);
@@ -948,7 +950,7 @@ function StandardBaselines() {
     const rates: InstallerRates = { type: 'flat', closerPerW: closer, kiloPerW: kilo };
     createNewInstallerVersion(newVersionFor, nvLabel.trim(), nvDate, rates);
     toast('Version created');
-    setNewVersionFor(null);
+    closeSheet();
   }
 
   const inputStyle = {
@@ -1053,8 +1055,25 @@ function StandardBaselines() {
       })}
 
       {newVersionFor && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
-          <div className="w-full max-w-lg rounded-t-3xl p-6 space-y-4" style={{ background: 'var(--navy-card, var(--navy-base))' }}>
+        <div
+          className="bs-backdrop fixed inset-0 z-50 flex items-end justify-center"
+          style={{
+            background: 'rgba(0,0,0,0.6)',
+            animation: sheetLeaving
+              ? 'bs-backdrop-out 280ms ease both'
+              : 'bs-backdrop-in 200ms ease both',
+          }}
+        >
+          <div
+            className="bs-panel w-full max-w-lg rounded-t-3xl px-6 pt-6 space-y-4"
+            style={{
+              background: 'var(--navy-card, var(--navy-base))',
+              paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+              animation: sheetLeaving
+                ? 'bs-down 280ms cubic-bezier(0.55,0,1,0.45) both'
+                : 'bs-up 360ms cubic-bezier(0.16,1,0.3,1) both',
+            }}
+          >
             <h2 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
               New Version — {newVersionFor}
             </h2>
@@ -1086,7 +1105,7 @@ function StandardBaselines() {
                 Create Version
               </button>
               <button
-                onClick={() => setNewVersionFor(null)}
+                onClick={closeSheet}
                 className="flex-1 min-h-[48px] rounded-2xl active:opacity-80"
                 style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
@@ -1111,23 +1130,11 @@ function SolarTechBaselines() {
       <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         Current rates by family. Full editing available on desktop.
       </p>
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {SOLARTECH_FAMILIES.map((f) => (
-          <button
-            key={f}
-            onClick={() => setActiveFamily(f)}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
-            style={{
-              background: activeFamily === f ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-              color: activeFamily === f ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              border: `1px solid ${activeFamily === f ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <MobilePillTabs
+        items={SOLARTECH_FAMILIES.map(f => ({ id: f, label: f }))}
+        activeId={activeFamily}
+        onChange={setActiveFamily}
+      />
       {familyProducts.length === 0 ? (
         <MobileEmptyState icon={BookOpen} title="No products in this family" />
       ) : (
@@ -1176,45 +1183,18 @@ function ProductCatalogBaselines() {
         Current rates by installer and family. Full editing available on desktop.
       </p>
       {installerNames.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {installerNames.map((inst) => (
-            <button
-              key={inst}
-              onClick={() => {
-                setActiveInstaller(inst);
-                setActiveFamily(productCatalogInstallerConfigs[inst]?.families[0] ?? '');
-              }}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
-              style={{
-                background: activeInstaller === inst ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                color: activeInstaller === inst ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: `1px solid ${activeInstaller === inst ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              }}
-            >
-              {inst}
-            </button>
-          ))}
-        </div>
+        <MobilePillTabs
+          items={installerNames.map(n => ({ id: n, label: n }))}
+          activeId={activeInstaller}
+          onChange={(id) => { setActiveInstaller(id); setActiveFamily(productCatalogInstallerConfigs[id]?.families[0] ?? ''); }}
+        />
       )}
       {config?.families && config.families.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {config.families.map((f) => (
-            <button
-              key={f}
-              onClick={() => setActiveFamily(f)}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap"
-              style={{
-                background: activeFamily === f ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                color: activeFamily === f ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: `1px solid ${activeFamily === f ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))'}`,
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              }}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+        <MobilePillTabs
+          items={config.families.map(f => ({ id: f, label: f }))}
+          activeId={activeFamily}
+          onChange={setActiveFamily}
+        />
       )}
       {familyProducts.length === 0 ? (
         <MobileEmptyState icon={BookOpen} title="No products" />

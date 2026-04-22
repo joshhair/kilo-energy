@@ -7,7 +7,8 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileBlitz from '../mobile/MobileBlitz';
 import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
-import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck, ChevronDown, X } from 'lucide-react';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck } from 'lucide-react';
+import { BlitzFilterBar } from './BlitzFilterBar';
 import { useToast } from '../../../lib/toast';
 import { PaginationBar } from '../components/PaginationBar';
 import { EmptyState } from '../components/EmptyState';
@@ -61,14 +62,6 @@ const STATUS_INLINE: Record<BlitzStatus, { bg: string; color: string; dotBg: str
   cancelled: { bg: 'rgba(255,82,82,0.12)',  color: 'var(--accent-red)', dotBg: 'var(--accent-red)', border: '1px solid rgba(255,82,82,0.3)' },
 };
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'newest', label: 'Newest First' },
-  { key: 'oldest', label: 'Oldest First' },
-  { key: 'deals', label: 'Most Deals' },
-  { key: 'kw', label: 'Most kW' },
-  { key: 'name', label: 'Name A\u2013Z' },
-];
-
 function getBlitzTimingLabel(blitz: BlitzData): string | null {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -120,10 +113,9 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         || p.additionalClosers?.some((ac) => ac.userId === currentUserId)
         || p.additionalSetters?.some((as) => as.userId === currentUserId));
   const totalKW = visibleProjects.reduce((s, p) => {
-    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
     const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
     const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
-    return s + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+    return s + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
   }, 0);
   const totalDeals = visibleProjects.length;
   const timingLabel = getBlitzTimingLabel(blitz);
@@ -526,7 +518,7 @@ function BlitzPageInner() {
 
   // Admin tab sliding indicator
   const adminTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [_adminTabIndicator, setAdminTabIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [adminTabIndicator, setAdminTabIndicator] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
     const idx = tab === 'blitzes' ? 0 : 1;
@@ -534,17 +526,6 @@ function BlitzPageInner() {
     if (el) setAdminTabIndicator({ left: el.offsetLeft, width: el.offsetWidth });
   }, [tab, hydrated]);
 
-  // Status filter sliding indicator
-  const STATUS_FILTER_OPTIONS = ['all', 'active', 'upcoming', 'completed', 'cancelled'] as const;
-  const statusTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [_statusIndicator, setStatusIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const idx = STATUS_FILTER_OPTIONS.indexOf(statusFilter);
-    const el = statusTabRefs.current[idx];
-    if (el) setStatusIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- STATUS_FILTER_OPTIONS is a module-level const; adding it is pointless and noise
-  }, [statusFilter, hydrated]);
 
   const loadData = () => {
     return Promise.all([
@@ -635,10 +616,9 @@ function BlitzPageInner() {
                 || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
                 || p.additionalSetters?.some((as) => as.userId === effectiveRepId));
           return visible.reduce((s, p) => {
-            const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
             const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
             const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
-            return s + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+            return s + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
           }, 0);
         };
         sorted.sort((a, b) => scopedKW(b) - scopedKW(a));
@@ -764,7 +744,7 @@ function BlitzPageInner() {
   // Summary stats
   const activeBlitzes = blitzes.filter((b) => b.status === 'active').length;
   const upcomingBlitzes = blitzes.filter((b) => b.status === 'upcoming').length;
-  const totalDeals = blitzes.reduce((s, b) => {
+  const totalDeals = blitzes.filter((b) => b.status === 'active' || b.status === 'upcoming').reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
     const visibleProjects = b.projects.filter((p) =>
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
@@ -778,7 +758,7 @@ function BlitzPageInner() {
     );
     return s + visibleProjects.length;
   }, 0);
-  const totalKW = blitzes.reduce((s, b) => {
+  const totalKW = blitzes.filter((b) => b.status === 'active' || b.status === 'upcoming').reduce((s, b) => {
     const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
     const visibleProjects = b.projects.filter((p) =>
       p.phase !== 'Cancelled' && p.phase !== 'On Hold' &&
@@ -791,10 +771,9 @@ function BlitzPageInner() {
           || p.additionalSetters?.some((as) => as.userId === effectiveRepId))
     );
     return s + visibleProjects.reduce((ps, p) => {
-      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
       const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
       const anyAdditionalCloserApproved = p.additionalClosers?.some((ac: { userId: string }) => approvedIds.has(ac.userId));
-      return ps + (isSelfGen || closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
+      return ps + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
     }, 0);
   }, 0);
   const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
@@ -871,22 +850,27 @@ function BlitzPageInner() {
 
       {/* Tabs — Blitzes / Requests with sliding pill */}
       {(isAdmin || userPerms.canRequestBlitz) && (
-        <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="relative flex gap-1 rounded-xl p-1 w-fit" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          {adminTabIndicator && (
+            <div
+              className="absolute inset-y-1 rounded-lg z-0 pointer-events-none"
+              style={{
+                left: adminTabIndicator.left,
+                width: adminTabIndicator.width,
+                transition: 'left 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+                background: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,196,240,0.18))',
+                border: '1px solid rgba(0,224,122,0.45)',
+                boxShadow: '0 0 12px rgba(0,224,122,0.12)',
+              }}
+            />
+          )}
           {(['blitzes', 'requests'] as TabKey[]).map((t, i) => (
             <button
               key={t}
               ref={(el) => { adminTabRefs.current[i] = el; }}
               onClick={() => setTab(t)}
               className="relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-              style={tab === t
-                ? {
-                    background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                    border: '1px solid rgba(0, 224, 122, 0.45)',
-                    boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                    color: '#fff',
-                    fontWeight: 600,
-                  }
-                : { color: 'var(--text-secondary)' }}
+              style={tab === t ? { color: '#fff', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
             >
               {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: 'var(--accent-red)', color: '#fff' }}>{pendingRequests.length}</span>}</>}
             </button>
@@ -897,78 +881,16 @@ function BlitzPageInner() {
       {tab === 'blitzes' && (
         <>
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search with keyboard shortcut */}
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-              <input
-                ref={searchRef}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setSearch('');
-                    searchRef.current?.blur();
-                  }
-                }}
-                placeholder="Search blitzes...  /"
-                className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none input-focus-glow"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-              />
-              {search && (
-                <button onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-            {search && (
-              <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full">{sortedBlitzes.length} result{sortedBlitzes.length !== 1 ? 's' : ''}</span>
-            )}
-
-            {/* Sort dropdown */}
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortKey)}
-                className="appearance-none rounded-xl pl-3 pr-8 py-2 text-sm focus:outline-none input-focus-glow cursor-pointer transition-colors"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.key} value={opt.key}>{opt.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)] pointer-events-none" />
-            </div>
-
-            {/* Status filter tabs with sliding pill */}
-            <div className="flex gap-1 rounded-xl p-1 w-fit" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              {STATUS_FILTER_OPTIONS.map((s, i) => {
-                const count = s === 'all' ? searchOnlyBlitzes.length : searchOnlyBlitzes.filter((b) => b.status === s).length;
-                const isActive = statusFilter === s;
-                return (
-                  <button
-                    key={s}
-                    ref={(el) => { statusTabRefs.current[i] = el; }}
-                    onClick={() => setStatusFilter(s)}
-                    className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-                    style={isActive
-                      ? {
-                          background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                          border: '1px solid rgba(0, 224, 122, 0.45)',
-                          boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                          color: '#fff',
-                          fontWeight: 600,
-                        }
-                      : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }
-                    }
-                  >
-                    {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-                    {count > 0 && <span className="ml-1" style={{ color: isActive ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)' }}>{count}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <BlitzFilterBar
+            search={search}
+            onSearch={setSearch}
+            searchRef={searchRef}
+            sortBy={sortBy}
+            onSort={setSortBy}
+            statusFilter={statusFilter}
+            onStatusFilter={setStatusFilter}
+            searchOnlyBlitzes={searchOnlyBlitzes}
+          />
 
           {/* Blitz grid */}
           {loading ? (

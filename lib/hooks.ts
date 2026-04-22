@@ -195,3 +195,28 @@ export function useMediaQuery(query: string): boolean {
   }, [query]);
   return matches;
 }
+
+export function useCountUp(target: number, duration = 600): number {
+  const [display, setDisplay] = useState(target);
+  const prevRef = useRef<number>(target);
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    const start = prevRef.current;
+    prevRef.current = target;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || start === target) {
+      setDisplay(target);
+      return;
+    }
+    const ease = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - t0) / duration, 1);
+      setDisplay(Math.round(start + (target - start) * ease(t)));
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+  return display;
+}

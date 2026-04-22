@@ -831,7 +831,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // below reads the correct snapshot — payrollEntriesRef.current won't update
       // until after the pending setPayrollEntries re-render.
       const rollbackToDelete = handlePhaseRollback(id, old.phase, newPhase, payrollEntriesRef.current);
-      const safeRollbackToDelete = effectiveRole === 'admin'
+      const safeRollbackToDelete = currentRole === 'admin'
         ? rollbackToDelete
         : rollbackToDelete.filter((delId) => payrollEntriesRef.current.find((e) => e.id === delId)?.status === 'Draft');
       const postRollbackEntries = safeRollbackToDelete.length > 0

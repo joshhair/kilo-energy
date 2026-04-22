@@ -482,6 +482,16 @@ model PayrollEntry {
   /// accidental double-pay from double-clicks or network retries.
   idempotencyKey String? @unique
 
+  /// Chargeback tracking — explicit flag + link to the original Paid entry
+  /// being clawed back. Amount on a chargeback entry is always negative
+  /// (sum-aggregators rely on that). Keeping these fields explicit avoids
+  /// conflating chargebacks with refunds, adjustments, or other negative
+  /// entries that will accumulate over time. See lib/chargebacks.md.
+  isChargeback   Boolean @default(false)
+  chargebackOfId String?
+  chargebackOf   PayrollEntry?  @relation("ChargebackLink", fields: [chargebackOfId], references: [id])
+  chargebacks    PayrollEntry[] @relation("ChargebackLink")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -489,6 +499,8 @@ model PayrollEntry {
   @@index([projectId])
   @@index([status])
   @@index([date])
+  @@index([isChargeback])
+  @@index([chargebackOfId])
 }
 
 // ============================================================================

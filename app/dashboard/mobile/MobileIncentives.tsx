@@ -246,31 +246,22 @@ export default function MobileIncentives() {
   const expiredIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => isExpired(i.endDate))) : [];
   const filteredList = filter !== 'all' ? filterAndSort(visible) : [];
 
-  const markMilestoneFulfilled = (incId: string, milestoneId: string) => {
-    // Optimistic — matches the desktop page handler pattern. Sets achieved
+  const markMilestoneFulfilled = (incId: string, milestoneId: string, achieved = true) => {
+    // Optimistic — matches the desktop page handler pattern. Toggles achieved
     // locally, then PATCHes the incentive with the updated milestones list.
     const target = incentives.find((i) => i.id === incId);
     if (!target) return;
     const prev = target.milestones;
-    const next = target.milestones.map((m) => m.id === milestoneId ? { ...m, achieved: true } : m);
+    const next = target.milestones.map((m) => m.id === milestoneId ? { ...m, achieved } : m);
     setIncentives((list) => list.map((i) => i.id === incId ? { ...i, milestones: next } : i));
     fetch(`/api/incentives/${incId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        title: target.title,
-        description: target.description,
-        active: target.active,
-        endDate: target.endDate,
-        metric: target.metric,
-        period: target.period,
-        startDate: target.startDate,
-        type: target.type,
-        targetRepId: target.targetRepId,
         milestones: next.map((m) => ({ ...(m.id ? { id: m.id } : {}), threshold: m.threshold, reward: m.reward, achieved: m.achieved })),
       }),
     })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reward marked fulfilled', 'success'); })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(achieved ? 'Reward marked fulfilled' : 'Reward unmarked', 'success'); })
       .catch(() => { setIncentives((list) => list.map((i) => i.id === incId ? { ...i, milestones: prev } : i)); toast('Failed to update', 'error'); });
   };
 

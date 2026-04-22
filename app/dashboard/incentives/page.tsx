@@ -252,7 +252,7 @@ export default function IncentivesPage() {
       incentiveFilter === 'ending_soon' ? visible.filter((i) => isEndingSoon(i.endDate)) :
       incentiveFilter === 'expired'     ? visible.filter((i) => isExpired(i.endDate)) :
       incentiveFilter === 'active'      ? activeVisible.filter((i) => i.active) :
-                                          activeVisible.filter((i) => i.active);
+                                          activeVisible;
     for (const inc of deadlineBase) {
       if (!inc.endDate) continue;
       const [y, m, d] = inc.endDate.split('-').map(Number);
@@ -541,7 +541,7 @@ export default function IncentivesPage() {
     incentiveFilter === 'ending_soon' ? visible.filter((i) => isEndingSoon(i.endDate)) :
     incentiveFilter === 'expired'     ? visible.filter((i) => isExpired(i.endDate)) :
     incentiveFilter === 'active'      ? activeVisible.filter((i) => i.active) :
-                                        activeVisible.filter((i) => i.active);
+                                        activeVisible;
   const activeIncentives = statsFiltered;
   const totalMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.length, 0);
   const achievedMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.filter((m) => m.achieved).length, 0);
@@ -923,7 +923,6 @@ export default function IncentivesPage() {
         <CreateIncentiveModal
           onClose={() => setShowCreate(false)}
           onCreate={async (inc) => {
-            setShowCreate(false);
             try {
               const res = await fetch('/api/incentives', {
                 method: 'POST',
@@ -933,6 +932,7 @@ export default function IncentivesPage() {
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const created = await res.json();
               setIncentives((prev) => [...prev, { ...inc, id: created.id, milestones: created.milestones }]);
+              setShowCreate(false);
               toast('Incentive created successfully', 'success');
             } catch (err) {
               console.error(err);

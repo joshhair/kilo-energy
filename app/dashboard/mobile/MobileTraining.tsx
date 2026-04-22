@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated } from '../../../lib/hooks';
+import { useIsHydrated, useCountUp } from '../../../lib/hooks';
 import { getTrainerOverrideRate } from '../../../lib/data';
 import { fmt$ } from '../../../lib/utils';
 import { ChevronDown, GraduationCap, Banknote } from 'lucide-react';
@@ -63,6 +63,9 @@ export default function MobileTraining() {
   const trainerEntries = payrollEntries.filter(
     (e) => e.repId === effectiveRepId && e.paymentStage === 'Trainer',
   );
+
+  const totalOverrides = trainerEntries.reduce((s, e) => s + (e.amount ?? 0), 0);
+  const displayTotal = useCountUp(totalOverrides, 900);
 
   // Pseudo-assignments for direct-trainer projects, grouped by closer.
   // One synthesized entry per unique closer; tier = that project's
@@ -142,6 +145,7 @@ export default function MobileTraining() {
         traineeName,
         traineeRole,
         dealCount,
+        consumedDeals,
         currentRate,
         activeTierIndex,
       };
@@ -230,6 +234,21 @@ export default function MobileTraining() {
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader title="Training" />
 
+      {/* ── Hero stat strip ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:[animation-delay:60ms]">
+        {[
+          { label: 'Active Trainees', value: String(traineeData.length), accent: false },
+          { label: 'Override Earnings', value: fmt$(displayTotal), accent: true },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-2xl px-4 py-3" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)' }}>{stat.label}</p>
+            <p className="text-2xl font-bold tabular-nums leading-none" style={{ color: stat.accent ? 'var(--m-accent, var(--accent-emerald))' : 'white', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              {stat.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
       {/* ── My Trainees ─────────────────────────────────────────────────── */}
       <MobileSection title="My Trainees" count={traineeData.length}>
         <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
@@ -268,6 +287,27 @@ export default function MobileTraining() {
                 >
                   <div className="overflow-hidden">
                     <div className="px-4 pb-3">
+                      {(() => {
+                        const prevThreshold = td.activeTierIndex > 0
+                          ? (td.assignment.tiers[td.activeTierIndex - 1].upToDeal ?? 0) : 0;
+                        const nextThreshold = td.assignment.tiers[td.activeTierIndex]?.upToDeal ?? null;
+                        const range = nextThreshold === null ? 1 : Math.max(1, nextThreshold - prevThreshold);
+                        const pct = nextThreshold === null ? 100 : Math.min(100, ((td.consumedDeals - prevThreshold) / range) * 100);
+                        return (
+                          <div className="mb-3 pt-1">
+                            <div className="flex justify-between text-[11px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>
+                              <span>{td.consumedDeals} deals</span>
+                              <span>{nextThreshold === null ? 'Max tier reached' : `${nextThreshold} to advance`}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
+                              <div
+                                className="h-full rounded-full motion-safe:transition-[width] motion-safe:duration-[600ms] motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
+                                style={{ width: isOpen ? `${pct}%` : '0%', transitionDelay: isOpen ? '180ms' : '0ms', background: 'var(--m-accent, var(--accent-emerald))' }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
                       <table className="w-full text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <thead>
                           <tr style={{ color: 'var(--m-text-dim, #445577)' }}>
@@ -283,7 +323,15 @@ export default function MobileTraining() {
                               style={{ animationDelay: `${i * 40}ms`, color: i === td.activeTierIndex ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))' }}
                             >
                               <td className="py-1">{tier.upToDeal === null ? 'Unlimited' : tier.upToDeal}</td>
-                              <td className="py-1 text-right tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${tier.ratePerW.toFixed(2)}</td>
+                              <td className="py-1 text-right tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                                ${tier.ratePerW.toFixed(2)}
+                                {i === td.activeTierIndex && (
+                                  <span
+                                    className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide leading-none"
+                                    style={{ background: 'color-mix(in srgb, var(--m-accent, var(--accent-emerald)) 18%, transparent)', color: 'var(--m-accent, var(--accent-emerald))' }}
+                                  >ACTIVE</span>
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>

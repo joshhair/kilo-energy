@@ -358,8 +358,9 @@ export default function MobileNewDeal() {
     // Loan deals must not inherit a 'Cash' financer from the family mapping
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
-    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: validateField('financer', effectiveFinancer) }));
-    setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); return next; });
+    const financerClearedST = !effectiveFinancer && !!form.financer;
+    setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: (_touched.has('financer') || financerClearedST) ? validateField('financer', effectiveFinancer) : '' }));
+    setTouched((prev) => { const next = new Set(prev); next.add('solarTechFamily'); if (financerClearedST) next.add('financer'); return next; });
   };
 
   const handlePcFamilyChange = (value: string) => {
@@ -367,8 +368,9 @@ export default function MobileNewDeal() {
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
     const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
-    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: validateField('financer', effectiveFinancer) }));
-    setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); return next; });
+    const financerClearedPC = !effectiveFinancer && !!form.financer;
+    setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: (_touched.has('financer') || financerClearedPC) ? validateField('financer', effectiveFinancer) : '' }));
+    setTouched((prev) => { const next = new Set(prev); next.add('pcFamily'); if (financerClearedPC) next.add('financer'); return next; });
   };
 
   // ── Derived values (mirrors desktop exactly) ─────────────────────────────
@@ -385,6 +387,17 @@ export default function MobileNewDeal() {
         .map((p) => p.userId),
     );
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both' || r.repType == null));
+  }, [form.blitzId, rawBlitzes, reps]);
+
+  const closerPickerReps = useMemo(() => {
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
+    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+    const approvedIds = new Set(
+      (selectedBlitz?.participants ?? [])
+        .filter((p) => p.joinStatus === 'approved')
+        .map((p) => p.userId),
+    );
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Clear setterId when blitzId changes and the selected setter is no longer an approved participant.
@@ -406,7 +419,7 @@ export default function MobileNewDeal() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = setterAssignment
-    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null && _projects.some((p) => p.id === e.projectId && p.setterId === form.setterId)).map((e) => e.projectId)).size
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -982,7 +995,7 @@ export default function MobileNewDeal() {
                   className={selectCls('repId')} style={v0InputStyle('repId')}
                 >
                   <option value="">-- Select closer --</option>
-                  {reps.filter((r) => r.repType !== 'setter' && r.id !== form.setterId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {closerPickerReps.filter((r) => r.id !== form.setterId).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
                 <FieldError errors={errors} field="repId" />
               </div>
@@ -1038,7 +1051,7 @@ export default function MobileNewDeal() {
                   rows={form.additionalSetters}
                   primaryUserId={form.setterId}
                   excludeUserIds={[form.repId, form.setterId, ...form.additionalSetters.map((s) => s.userId), ...form.additionalClosers.map((c) => c.userId)].filter(Boolean)}
-                  repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
+                  repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both' || r.repType == null}
                   reps={reps}
                   onChange={(rows) => setForm((f) => ({ ...f, additionalSetters: rows }))}
                   disabled={!form.setterId}
@@ -1795,7 +1808,7 @@ export default function MobileNewDeal() {
 
             {/* Blitz selector */}
             {form.leadSource === 'blitz' && (
-              <div key={'blitz-sel'} className="field-slide-in">
+              <div key={'blitz-sel'} ref={(el) => { fieldWrapperRefs.current['blitzId'] = el; }} className="field-slide-in">
                 <label className={labelCls} style={labelStyle}>Blitz</label>
                 <select
                   value={form.blitzId}
@@ -1816,13 +1829,15 @@ export default function MobileNewDeal() {
                       }
                     }
                   }}
-                  className={selectCls('')} style={v0InputStyle('')}
+                  onBlur={() => handleBlur('blitzId')}
+                  className={selectCls('blitzId')} style={v0InputStyle('blitzId')}
                 >
                   <option value="">-- Select Blitz --</option>
                   {availableBlitzes.map((b) => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
                 </select>
+                <FieldError errors={errors} field="blitzId" />
               </div>
             )}
 

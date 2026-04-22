@@ -11,7 +11,7 @@ import {
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
-import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Clock, RefreshCw, Pencil } from 'lucide-react';
+import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Clock, RefreshCw, Pencil, Copy } from 'lucide-react';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
@@ -167,7 +167,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }, [projectId]);
 
   const {
-    effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps,
+    effectiveRole, effectiveRepId, currentRepId, projects, setProjects, payrollEntries, reps,
     trainerAssignments,
     updateProject: ctxUpdateProject, installerPayConfigs,
     installerPricingVersions,
@@ -275,6 +275,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const next = !previousM2Paid;
     updateProject({ m2Paid: next });
     toast(`M2 marked as ${next ? 'Paid' : 'Unpaid'}`, 'success', { label: 'Undo', onClick: () => { updateProject({ m2Paid: previousM2Paid }); } });
+  };
+
+  const handleToggleM3 = () => {
+    const previousM3Paid = project.m3Paid;
+    const next = !previousM3Paid;
+    updateProject({ m3Paid: next });
+    toast(`M3 marked as ${next ? 'Paid' : 'Unpaid'}`, 'success', { label: 'Undo', onClick: () => { updateProject({ m3Paid: previousM3Paid }); } });
   };
 
   const saveM1 = () => {
@@ -870,6 +877,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               )}
               {visibleStages.map((stage, i) => {
                 const isEditableStage = !isMeView && isAdmin && (stage.key === 'M1' || stage.key === 'M2');
+                const isToggleableM3 = !isMeView && isAdmin && stage.key === 'M3' && stage.amount > 0;
                 const isEditing = stage.key === 'M1' ? editM1 : editM2;
                 return (
                   <div key={stage.key} className="flex flex-col items-center gap-1.5 relative z-10">
@@ -922,9 +930,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           >{fmt$(stage.amount)}</span>
                         )}
                         <MobileBadge value={stage.paid ? 'Paid' : 'Pending'} variant="status" />
-                        {isEditableStage && (
+                        {(isEditableStage || isToggleableM3) && (
                           <button
-                            onClick={stage.key === 'M1' ? handleToggleM1 : handleToggleM2}
+                            onClick={stage.key === 'M1' ? handleToggleM1 : stage.key === 'M2' ? handleToggleM2 : handleToggleM3}
                             className="text-[10px] px-1.5 py-0.5 rounded-md font-medium min-h-[28px]"
                             style={{ background: stage.paid ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: stage.paid ? 'var(--accent-emerald)' : '#f59e0b' }}
                           >
@@ -1023,12 +1031,22 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             onTap={openEditSheet}
           />
         )}
+        {isAdmin && !isPM && (
+          <MobileBottomSheet.Item
+            label="Duplicate Deal"
+            icon={Copy}
+            onTap={() => {
+              setMoreSheetOpen(false);
+              router.push(`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`);
+            }}
+          />
+        )}
         <MobileBottomSheet.Item
           label={project.flagged ? 'Remove Flag' : 'Flag Project'}
           icon={project.flagged ? FlagOff : Flag}
           onTap={handleFlag}
         />
-        {project.phase !== 'Cancelled' && (isAdmin || isPM) && (
+        {project.phase !== 'Cancelled' && (isAdmin || isPM || currentRepId === project.repId) && (
           <MobileBottomSheet.Item
             label="Cancel Project"
             icon={XIcon}

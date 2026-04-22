@@ -260,7 +260,7 @@ function PayrollPageInner() {
   // on the inputs that actually matter.
   const today = todayLocalDateStr();
 
-  const { filtered, filteredByDateRep, totalDraft, totalPending, combinedTotalPaid, combinedPaidCount } = useMemo(() => {
+  const { filtered, filteredByDateRep, totalDraft, totalPending, pendingCount, combinedTotalPaid, combinedPaidCount } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
     const filteredByDateRep: typeof payrollEntries = [];
     const allTypesInScope: typeof payrollEntries = [];
@@ -285,13 +285,14 @@ function PayrollPageInner() {
     // Per-type totals for Draft / Pending tiles (the per-tab view).
     const totalDraft = sumDraft(filteredByDateRep, { asOf: today });
     const totalPending = sumPending(filteredByDateRep, { asOf: today });
+    const pendingCount = filteredByDateRep.filter((p) => p.status === 'Pending').length;
     // Combined across all types (Deal + Bonus + Trainer). This is the
     // "Total Paid" card reps + admins see by default — matches the
     // dashboard tile when filters align.
     const combinedTotalPaid = sumPaid(allTypesInScope, { asOf: today });
     const combinedPaidCount = allTypesInScope.filter((p) => p.status === 'Paid' && p.date <= today).length;
 
-    return { filtered, filteredByDateRep, totalDraft, totalPending, combinedTotalPaid, combinedPaidCount };
+    return { filtered, filteredByDateRep, totalDraft, totalPending, pendingCount, combinedTotalPaid, combinedPaidCount };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId, today]);
 
   // Derived selection state — used by the floating action bar.
@@ -548,7 +549,7 @@ function PayrollPageInner() {
     if (!editingEntry) return;
     const amt = parseFloat(editEntryForm.amount);
     const isChargebackEntry = editingEntry.amount < 0;
-    if (!Number.isFinite(amt) || amt === 0 || (!isChargebackEntry && amt < 0)) { toast(isChargebackEntry ? 'Amount must be non-zero' : 'Amount must be greater than $0', 'error'); return; }
+    if (!Number.isFinite(amt) || amt === 0 || (isChargebackEntry ? amt > 0 : amt < 0)) { toast(isChargebackEntry ? 'Chargeback amount must be negative' : 'Amount must be greater than $0', 'error'); return; }
     if (!editEntryForm.date) { toast('Date is required', 'error'); return; }
     if (processingEntryIds.has(editingEntry.id)) return;
     setProcessingEntryIds((prev) => new Set(prev).add(editingEntry.id));
@@ -832,7 +833,7 @@ function PayrollPageInner() {
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
-              disabled={totalPending === 0}
+              disabled={pendingCount === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
             >
@@ -1318,7 +1319,7 @@ function PayrollPageInner() {
                       <span style={{ color: 'var(--text-muted)' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span>
                     )}
                   </td>
-                  <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: 'var(--accent-green)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-green)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}><RelativeDate date={entry.date} /></span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
                     <span style={
@@ -1454,7 +1455,7 @@ function PayrollPageInner() {
                           <p className="text-white text-sm font-medium">{rep.name}</p>
                           <p className="text-[var(--text-muted)] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
                         </div>
-                        <span className="text-[var(--accent-green)] font-bold tabular-nums">${rep.total.toLocaleString()}</span>
+                        <span className={`${rep.total < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -1550,7 +1551,7 @@ function PayrollPageInner() {
                     onChange={(val) => setPaymentForm((p) => ({ ...p, projectId: val }))}
                     options={projects
                       .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-                      .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
+                      .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId || p.additionalClosers?.some((c) => c.userId === paymentForm.repId) || p.additionalSetters?.some((s) => s.userId === paymentForm.repId))
                       .map((p) => ({ value: p.id, label: `${p.customerName} — ${p.installer} (${p.kWSize} kW) [${p.phase}]` }))}
                     placeholder="— Select project (optional) —"
                   />
@@ -1627,7 +1628,7 @@ function PayrollPageInner() {
             <form onSubmit={handleSaveEditEntry} className="space-y-4">
               <div>
                 <label className={labelCls}>Amount ($)</label>
-                <input required type="number" min={editingEntry.amount < 0 ? undefined : "0.01"} step="0.01"
+                <input required type="number" min={editingEntry.amount < 0 ? undefined : "0.01"} max={editingEntry.amount < 0 ? "-0.01" : undefined} step="0.01"
                   value={editEntryForm.amount}
                   onChange={(e) => setEditEntryForm((f) => ({ ...f, amount: e.target.value }))}
                   className={inputCls} />

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { Search, Plus, Users, ChevronRight, Mail, Clock, UserCog } from 'lucide-react';
+import { Search, Plus, Users, ChevronRight, Mail, Clock, UserCog, Trash2 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
@@ -44,6 +44,13 @@ type SimpleUser = {
   active?: boolean;
 };
 
+const ROLE_LABELS_BY_ROLE: Record<'rep' | 'admin' | 'sub-dealer' | 'project_manager', string> = {
+  rep: 'Rep',
+  admin: 'Admin',
+  'sub-dealer': 'Sub-Dealer',
+  project_manager: 'Project Manager',
+};
+
 const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   rep:              { label: 'Rep',      color: 'var(--accent-emerald)', bg: 'rgba(0,229,160,0.12)' },
   'sub-dealer':     { label: 'SD',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
@@ -53,7 +60,7 @@ const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> =
 
 export default function MobileReps() {
   const router = useRouter();
-  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, reactivateRep, reactivateSubDealer, convertUserRole } = useApp();
+  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, convertUserRole } = useApp();
   const { toast } = useToast();
 
   const isAdmin = effectiveRole === 'admin';
@@ -91,6 +98,7 @@ export default function MobileReps() {
     repType: 'both' as 'closer' | 'setter' | 'both',
     userRole: 'rep' as 'rep' | 'admin' | 'sub-dealer' | 'project_manager',
     trainerId: '',
+    sendInvite: false,
   });
   const [isAddingUser, setIsAddingUser] = useState(false);
 
@@ -404,24 +412,48 @@ export default function MobileReps() {
                     </div>
                     <MobileBadge value={badge.label} />
                     {isAdmin && u.role === 'sub-dealer' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConfirmAction({
-                            title: 'Convert to Rep',
-                            message: `Convert ${u.firstName} ${u.lastName} from Sub-Dealer to Rep? This will change their role and cannot be undone easily.`,
-                            confirmLabel: 'Convert',
-                            onConfirm: () => convertUserRole(u.id, 'rep')
-                              .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
-                              .catch(() => {}),
-                          });
-                        }}
-                        title="Convert to Rep"
-                        className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                        style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
-                      >
-                        <UserCog className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmAction({
+                              title: `Deactivate ${u.firstName} ${u.lastName}?`,
+                              message: 'They will lose app access immediately. You can reactivate them later.',
+                              confirmLabel: 'Deactivate',
+                              onConfirm: async () => {
+                                setConfirmAction(null);
+                                try {
+                                  await deactivateSubDealer(u.id);
+                                  toast(`${u.firstName} ${u.lastName} deactivated`, 'success');
+                                } catch { /* error toast shown by persistFetch */ }
+                              },
+                            });
+                          }}
+                          title="Deactivate sub-dealer"
+                          className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmAction({
+                              title: 'Convert to Rep',
+                              message: `Convert ${u.firstName} ${u.lastName} from Sub-Dealer to Rep? This will change their role and cannot be undone easily.`,
+                              confirmLabel: 'Convert',
+                              onConfirm: () => convertUserRole(u.id, 'rep')
+                                .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
+                                .catch(() => {}),
+                            });
+                          }}
+                          title="Convert to Rep"
+                          className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                        >
+                          <UserCog className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </MobileCard>
@@ -460,6 +492,30 @@ export default function MobileReps() {
                     )}
                   </div>
                   <MobileBadge value={REP_TYPE_LABELS[rep.repType] ?? rep.repType} />
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmAction({
+                          title: `Deactivate ${rep.name}?`,
+                          message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.',
+                          confirmLabel: 'Deactivate',
+                          onConfirm: async () => {
+                            setConfirmAction(null);
+                            try {
+                              await deactivateRep(rep.id);
+                              toast(`${rep.name} deactivated`, 'success');
+                            } catch { /* error toast shown by persistFetch */ }
+                          },
+                        });
+                      }}
+                      title="Deactivate rep"
+                      className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                      style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -704,7 +760,7 @@ export default function MobileReps() {
         open={showAddRep}
         onClose={() => {
           setShowAddRep(false);
-          setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep', trainerId: '' });
+          setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'both', userRole: 'rep', trainerId: '', sendInvite: false });
         }}
         title="Add User"
       >
@@ -715,9 +771,9 @@ export default function MobileReps() {
               toast('First and last name are required', 'error');
               return;
             }
-            const needsInvite = addForm.userRole === 'admin' || addForm.userRole === 'project_manager';
+            const needsInvite = addForm.userRole === 'admin' || addForm.userRole === 'project_manager' || addForm.sendInvite;
             if (needsInvite && !addForm.email.trim()) {
-              toast('Email is required for this role', 'error');
+              toast('Email is required to send an invitation', 'error');
               return;
             }
             setIsAddingUser(true);
@@ -741,8 +797,12 @@ export default function MobileReps() {
                 const data = await res.json();
                 if (addForm.userRole === 'admin') {
                   setAdminUsers((prev) => [...prev, { id: data.user.id, firstName: fn, lastName: ln, email: em, phone: ph, role: 'admin' }]);
-                } else {
+                } else if (addForm.userRole === 'project_manager') {
                   setPmUsers((prev) => [...prev, { id: data.user.id, firstName: fn, lastName: ln, email: em, phone: ph, role: 'project_manager' }]);
+                } else if (addForm.userRole === 'sub-dealer') {
+                  addSubDealer(fn, ln, em, ph, data.user.id);
+                } else {
+                  addRep(fn, ln, em, ph, addForm.repType, data.user.id);
                 }
                 toast(`Invitation sent to ${em}`, 'success');
               } else if (addForm.userRole === 'sub-dealer') {
@@ -771,7 +831,7 @@ export default function MobileReps() {
                   .catch(() => toast('Failed to assign trainer', 'error'));
               }
               setShowAddRep(false);
-              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'closer', userRole: 'rep', trainerId: '' });
+              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'both', userRole: 'rep', trainerId: '', sendInvite: false });
             } catch (err) {
               toast((err as Error).message || 'Failed to add user', 'error');
             } finally {
@@ -897,6 +957,19 @@ export default function MobileReps() {
               </select>
             </div>
           )}
+          {(addForm.userRole === 'rep' || addForm.userRole === 'sub-dealer') && (
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={addForm.sendInvite}
+                onChange={(e) => setAddForm((f) => ({ ...f, sendInvite: e.target.checked }))}
+                className="w-5 h-5 rounded accent-emerald-400"
+              />
+              <span className="text-sm font-medium" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                Send invite email
+              </span>
+            </label>
+          )}
           <button
             type="submit"
             disabled={isAddingUser}
@@ -907,7 +980,7 @@ export default function MobileReps() {
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
-            Add Rep
+            {isAddingUser ? 'Adding…' : (addForm.sendInvite || addForm.userRole === 'admin' || addForm.userRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[addForm.userRole as 'rep' | 'admin' | 'sub-dealer' | 'project_manager']} Invite` : `Add ${ROLE_LABELS_BY_ROLE[addForm.userRole as 'rep' | 'admin' | 'sub-dealer' | 'project_manager']}`}
           </button>
         </form>
       </MobileBottomSheet>

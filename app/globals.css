@@ -360,6 +360,119 @@ body {
 .stagger-5 { animation-delay: 375ms; }
 .stagger-6 { animation-delay: 450ms; }
 
+@keyframes slideInScale {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-slide-in-scale {
+  animation: slideInScale 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-scale { animation: none; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up { animation: none; }
+}
+
+@keyframes settings-section-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-settings-section-enter {
+  animation: settings-section-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-settings-section-enter { animation: none; }
+}
+
+@keyframes settings-section-fwd {
+  from { opacity: 0; transform: translateX(16px) translateY(4px); }
+  to   { opacity: 1; transform: translateX(0) translateY(0); }
+}
+.animate-settings-section-fwd {
+  animation: settings-section-fwd 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+@keyframes settings-section-back {
+  from { opacity: 0; transform: translateX(-16px) translateY(4px); }
+  to   { opacity: 1; transform: translateX(0) translateY(0); }
+}
+.animate-settings-section-back {
+  animation: settings-section-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-settings-section-fwd,
+  .animate-settings-section-back { animation: none; }
+}
+
+@keyframes progressGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.animate-progress-grow {
+  transform-origin: left;
+  animation: progressGrow 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-progress-grow { animation: none; }
+}
+
+@keyframes progressShimmer {
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
+}
+.animate-progress-shimmer {
+  background-size: 200% 100%;
+  animation: progressShimmer 2.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-progress-shimmer { animation: none; }
+}
+
+@keyframes milestoneAchieve {
+  0%   { box-shadow: 0 0 0 0 rgba(0,224,122,0.5); }
+  50%  { box-shadow: 0 0 0 10px rgba(0,224,122,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,224,122,0); }
+}
+.animate-milestone-achieve {
+  animation: milestoneAchieve 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-milestone-achieve { animation: none; }
+}
+
+@keyframes milestoneCheckPop {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.25) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.animate-milestone-check-pop {
+  animation: milestoneCheckPop 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-milestone-check-pop { animation: none; }
+}
+
+@keyframes floatToolbarIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+.animate-float-toolbar-in {
+  animation: floatToolbarIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-toolbar-in { animation: none; }
+}
+
 /* CSS @property counter roll-up — animates the displayed stat number with a
    premium blur-lift effect that evokes counting up from zero on mount.        */
 @property --num {
@@ -1059,6 +1172,17 @@ select {
 .field-appear-delayed { animation: fieldAppear 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both; }
 @media (prefers-reduced-motion: reduce) {
   .field-appear, .field-appear-delayed { animation: none; }
+}
+
+@keyframes historyReveal {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+.history-reveal {
+  animation: historyReveal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .history-reveal { animation: none; }
 }
 
 /* calc-row stagger — rows cascade in after the card settles */

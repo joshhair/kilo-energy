@@ -125,11 +125,15 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     [visibleProjects, isAdmin, isOwner, approvedParticipantIds],
   );
 
-  const totalKW = useMemo(
+  const closerApprovedProjects = useMemo(
     () => approvedVisibleProjects
-      .filter((p: any) => approvedParticipantIds.has(p.closer?.id) || (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId)))
-      .reduce((s: number, p: any) => s + (p.kWSize ?? 0), 0),
+      .filter((p: any) => approvedParticipantIds.has(p.closer?.id) || (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId))),
     [approvedVisibleProjects, approvedParticipantIds],
+  );
+
+  const totalKW = useMemo(
+    () => closerApprovedProjects.reduce((s: number, p: any) => s + (p.kWSize ?? 0), 0),
+    [closerApprovedProjects],
   );
 
   const leaderboard = useMemo(() => computeBlitzLeaderboard(blitz), [blitz]);
@@ -170,6 +174,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       toast('Cancellation requested');
       setShowCancelRequest(false);
       setCancelReason('');
+      loadBlitz();
     } finally { setSubmittingAction(false); }
   };
 
@@ -286,7 +291,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <div className="space-y-4">
             <BlitzOverview
               participantCount={approvedParticipants.length}
-              totalDeals={approvedVisibleProjects.length}
+              totalDeals={closerApprovedProjects.length}
               totalKW={totalKW}
               notes={blitz.notes}
             />

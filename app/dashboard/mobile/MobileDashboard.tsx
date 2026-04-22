@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKW, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
-import { getPhaseStuckThresholds } from '../components/dashboard-utils';
+import { getPhaseStuckThresholds, PERIODS, isInPeriod, type Period } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
 import { CheckCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -14,8 +14,6 @@ import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
 import MobileBadge, { PHASE_COLORS } from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
-
-type Period = 'all' | 'this-month' | 'last-month' | 'this-quarter' | 'this-year' | 'last-year';
 
 type MentionItem = {
   id: string;
@@ -26,35 +24,6 @@ type MentionItem = {
   checkItems: Array<{ id: string; text: string; completed: boolean; dueDate?: string | null }>;
   createdAt: string;
 };
-const PERIODS: { value: Period; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'this-month', label: 'This Month' },
-  { value: 'last-month', label: 'Last Month' },
-  { value: 'this-quarter', label: 'This Quarter' },
-  { value: 'this-year', label: 'This Year' },
-  { value: 'last-year', label: 'Last Year' },
-];
-
-function isInPeriod(dateStr: string, period: Period): boolean {
-  if (period === 'all') return true;
-  const now = new Date();
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  if (period === 'this-month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-  if (period === 'last-month') {
-    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return date.getMonth() === lm.getMonth() && date.getFullYear() === lm.getFullYear();
-  }
-  if (period === 'this-quarter') {
-    const q = Math.floor(now.getMonth() / 3);
-    const dq = Math.floor((m - 1) / 3);
-    return dq === q && y === now.getFullYear();
-  }
-  if (period === 'this-year') return date.getFullYear() === now.getFullYear();
-  if (period === 'last-year') return date.getFullYear() === now.getFullYear() - 1;
-  return true;
-}
-
 function getGreeting(name: string): string {
   const h = new Date().getHours();
   const prefix = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -181,18 +150,23 @@ export default function MobileDashboard() {
     [myProjects],
   );
 
-  const _attentionItems = useMemo(() => {
+  const attentionProjects = useMemo(
+    () => myProjects.filter((p) => (ACTIVE_PHASES.includes(p.phase) && p.phase !== 'Completed') || p.phase === 'On Hold'),
+    [myProjects],
+  );
+
+  const attentionItems = useMemo(() => {
     const PHASE_STUCK_THRESHOLDS = getPhaseStuckThresholds();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     type AttentionItem = { id: string; customerName: string; phase: string; soldDate: string; suffix: string };
     const items: AttentionItem[] = [];
-    for (const proj of activeProjects) {
+    for (const proj of attentionProjects) {
       if (proj.flagged) {
         items.push({ id: proj.id, customerName: proj.customerName, phase: proj.phase, soldDate: proj.soldDate, suffix: stalledDays(proj.phaseChangedAt ?? proj.soldDate) !== null ? `Stalled ${stalledDays(proj.phaseChangedAt ?? proj.soldDate)}d` : 'Flagged' });
       }
     }
-    for (const proj of activeProjects) {
+    for (const proj of attentionProjects) {
       if (proj.flagged) continue;
       const threshold = PHASE_STUCK_THRESHOLDS[proj.phase];
       if (threshold == null) continue;
@@ -207,7 +181,7 @@ export default function MobileDashboard() {
         items.push({ id: proj.id, customerName: proj.customerName, phase: proj.phase, soldDate: proj.soldDate, suffix: `${diffDays}d in ${proj.phase}` });
       }
     }
-    for (const proj of activeProjects) {
+    for (const proj of attentionProjects) {
       if (proj.flagged) continue;
       if (proj.phase === 'On Hold') {
         const holdSince = proj.phaseChangedAt ? new Date(proj.phaseChangedAt) : (() => {
@@ -220,7 +194,7 @@ export default function MobileDashboard() {
       }
     }
     return items;
-  }, [activeProjects]);
+  }, [attentionProjects]);
 
   // PM dispatch is rendered at the end, after all hooks — see rules-of-hooks.
 
@@ -234,10 +208,7 @@ export default function MobileDashboard() {
   );
 
   const totalPaid = useMemo(
-    () =>
-      myPayroll
-        .filter((p) => p.status === 'Paid' && p.date <= todayStr && p.amount > 0)
-        .reduce((s, p) => s + p.amount, 0),
+    () => sumPaid(myPayroll, { asOf: todayStr }),
     [myPayroll, todayStr],
   );
 
@@ -348,29 +319,36 @@ export default function MobileDashboard() {
   // Pipeline: sum of unpaid M1 + M2 + M3 on active projects, role-aware
   const pipelineValue = useMemo(
     () => {
+      const payrollNetByProjectStage = myPayroll.reduce((map, e) => {
+        if (e.projectId && (e.paymentStage === 'M1' || e.paymentStage === 'M2' || e.paymentStage === 'M3')) {
+          const key = `${e.projectId}:${e.paymentStage}`;
+          map.set(key, (map.get(key) ?? 0) + e.amount);
+        }
+        return map;
+      }, new Map<string, number>());
+      const paidPayrollByProject = myPayroll.filter((e) => e.status === 'Paid' && e.date <= todayStr && e.paymentStage !== 'Trainer').reduce((map, e) => {
+        if (e.projectId) map.set(e.projectId, (map.get(e.projectId) ?? 0) + e.amount);
+        return map;
+      }, new Map<string, number>());
       const base = activeProjects.reduce((s, p) => {
-        let v = 0;
         const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
         const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        if (p.repId === effectiveRepId) {
-          if (!p.m1Paid) v += p.m1Amount || 0;
-          if (!p.m2Paid) v += p.m2Amount || 0;
-          if (!p.m3Paid) v += p.m3Amount || 0;
-        } else if (p.setterId === effectiveRepId) {
-          if (!p.m1Paid) v += p.setterM1Amount || 0;
-          if (!p.m2Paid) v += p.setterM2Amount || 0;
-          if (!p.m3Paid) v += p.setterM3Amount || 0;
-        } else if (coCloserParty) {
-          if (!p.m1Paid) v += coCloserParty.m1Amount || 0;
-          if (!p.m2Paid) v += coCloserParty.m2Amount || 0;
-          if (!p.m3Paid) v += coCloserParty.m3Amount || 0;
-        } else if (coSetterParty) {
-          if (!p.m1Paid) v += coSetterParty.m1Amount || 0;
-          if (!p.m2Paid) v += coSetterParty.m2Amount || 0;
-          if (!p.m3Paid) v += coSetterParty.m3Amount || 0;
-        }
-        return s + v;
+        const totalExpected = p.repId === effectiveRepId
+          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
+          : p.setterId === effectiveRepId
+            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
+            : coCloserParty
+              ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserParty.m3Amount ?? 0))
+              : coSetterParty
+                ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterParty.m3Amount ?? 0))
+                : 0;
+        const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
+        return s + Math.max(0, totalExpected - alreadyPaid);
       }, 0);
+      const paidTrainerPayrollByProject = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage === 'Trainer').reduce((map, p) => {
+        if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
+        return map;
+      }, new Map<string, number>());
       const trainerOverride = trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
         const isTraineeParty = (p: typeof projects[number]) =>
           p.repId === assignment.traineeId ||
@@ -384,11 +362,15 @@ export default function MobileDashboard() {
         const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
         return sum + projects
           .filter(p => ACTIVE_PHASES.includes(p.phase) && isTraineeParty(p))
-          .reduce((pSum, p) => pSum + Math.round(overrideRate * p.kWSize * 1000 * 100) / 100, 0);
+          .reduce((pSum, p) => {
+            const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
+            const alreadyPaid = paidTrainerPayrollByProject.get(p.id) ?? 0;
+            return pSum + Math.max(0, expected - alreadyPaid);
+          }, 0);
       }, 0);
       return base + trainerOverride;
     },
-    [activeProjects, effectiveRepId, trainerAssignments, projects, installerPayConfigs],
+    [activeProjects, effectiveRepId, trainerAssignments, projects, installerPayConfigs, myPayroll, todayStr],
   );
 
   // On Pace: annual projection — matches desktop My Pay calculation exactly
@@ -504,7 +486,7 @@ export default function MobileDashboard() {
       await fetch(`/api/projects/${projectId}/messages/${messageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkItemId, completed: !wasChecked }),
+        body: JSON.stringify({ checkItemId, completed: !wasChecked, completedBy: effectiveRepId }),
       });
     } catch {
       setCheckedTaskIds((prev) => { const next = new Set(prev); if (wasChecked) { next.add(checkItemId); } else { next.delete(checkItemId); } return next; });
@@ -793,25 +775,25 @@ export default function MobileDashboard() {
       </MobileCard>
 
       {/* Needs Attention — hidden if 0 */}
-      {flaggedProjects.length > 0 && (
+      {attentionItems.length > 0 && (
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="w-5 h-5" style={{ color: ACCENT }} />
             <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Needs Attention</p>
-            <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{flaggedProjects.length}</span>
+            <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{attentionItems.length}</span>
           </div>
-          {flaggedProjects.map((p, i) => (
+          {attentionItems.map((item, i) => (
             <button
-              key={p.id}
-              onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-              className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
+              key={item.id}
+              onClick={() => router.push(`/dashboard/projects/${item.id}`)}
+              className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < attentionItems.length - 1 ? 'border-b' : ''}`}
               style={{ borderColor: 'var(--m-border, var(--border-mobile))', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
-                <MobileBadge value={p.phase} />
+                <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
+                <MobileBadge value={item.phase} />
               </div>
-              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{stalledDays(p.phaseChangedAt ?? p.soldDate) !== null ? `Stalled ${stalledDays(p.phaseChangedAt ?? p.soldDate)}d` : '—'}</span>
+              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{item.suffix}</span>
             </button>
           ))}
         </MobileCard>

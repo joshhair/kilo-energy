@@ -37,6 +37,7 @@ export default function MobilePayroll() {
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
   const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<PayrollEntry | null>(null);
   const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'Bonus' as string });
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
@@ -111,9 +112,9 @@ export default function MobilePayroll() {
   const pendingTotal = useMemo(() => {
     const today = todayLocalDateStr();
     return payrollEntries
-      .filter((e) => e.status === 'Pending' && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
+      .filter((e) => e.status === 'Pending' && e.type === typeTab && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
       .reduce((s, e) => s + e.amount, 0);
-  }, [payrollEntries, effectiveRole, effectiveRepId]);
+  }, [payrollEntries, typeTab, effectiveRole, effectiveRepId]);
 
   // ── Filtered entries ──────────────────────────────────────────────────────
 
@@ -289,8 +290,8 @@ export default function MobilePayroll() {
     if (!editingEntry) return;
     const amt = parseFloat(editEntryForm.amount);
     const isChargebackEntry = editingEntry.amount < 0;
-    if (!Number.isFinite(amt) || amt === 0 || (!isChargebackEntry && amt < 0)) {
-      toast(isChargebackEntry ? 'Amount must be non-zero' : 'Amount must be greater than $0', 'error');
+    if (!Number.isFinite(amt) || amt === 0 || (isChargebackEntry ? amt > 0 : amt < 0)) {
+      toast(isChargebackEntry ? 'Chargeback amount must be negative' : 'Amount must be greater than $0', 'error');
       return;
     }
     if (!editEntryForm.date) { toast('Date is required', 'error'); return; }
@@ -652,7 +653,7 @@ export default function MobilePayroll() {
       {statusTab === 'Pending' && filtered.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
           <button
-            onClick={handlePublishOrApproveAll}
+            onClick={() => setShowPublishConfirm(true)}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
@@ -680,6 +681,15 @@ export default function MobilePayroll() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showPublishConfirm}
+        title="Publish Payroll?"
+        message={`This will mark ${filtered.filter((e) => e.date <= todayLocalDateStr()).length} pending ${typeTab.toLowerCase()} ${filtered.filter((e) => e.date <= todayLocalDateStr()).length === 1 ? 'entry' : 'entries'} as Paid. This action cannot be undone.`}
+        confirmLabel="Publish Payroll"
+        onConfirm={() => { setShowPublishConfirm(false); handlePublishOrApproveAll(); }}
+        onClose={() => setShowPublishConfirm(false)}
+      />
 
       <ConfirmDialog
         open={showApproveAllConfirm}
@@ -838,7 +848,7 @@ export default function MobilePayroll() {
                 <option value="">Select project...</option>
                 {projects
                   .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-                  .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId)
+                  .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId || p.additionalClosers?.some((c) => c.userId === paymentForm.repId) || p.additionalSetters?.some((s) => s.userId === paymentForm.repId))
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.customerName}</option>
                   ))}
@@ -906,6 +916,8 @@ export default function MobilePayroll() {
               <input
                 type="number"
                 step="0.01"
+                min={editingEntry && editingEntry.amount < 0 ? undefined : "0.01"}
+                max={editingEntry && editingEntry.amount < 0 ? "-0.01" : undefined}
                 required
                 value={editEntryForm.amount}
                 onChange={(e) => setEditEntryForm((f) => ({ ...f, amount: e.target.value }))}

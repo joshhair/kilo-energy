@@ -646,7 +646,7 @@ export function AdminDashboard({
         const startIdx = (safePage - 1) * recentRowsPerPage;
         const endIdx = Math.min(startIdx + recentRowsPerPage, sorted.length);
         const paginated = sorted.slice(startIdx, endIdx);
-        const showM3 = projects.some((p) => (p.m3Amount ?? 0) > 0);
+        const showM3 = searchFiltered.some((p) => (p.m3Amount ?? 0) > 0);
         const thCls = (col: SortKey) =>
           `text-left px-6 py-3 text-xs font-medium select-none cursor-pointer transition-colors ${
             sortKey === col

@@ -73,6 +73,7 @@ export default function MobileAdminDashboard() {
     solarTechProducts,
     currentRepName,
     currentRepId,
+    effectiveRepId,
     currentUserRepType,
     dbReady,
     setViewAsUser,
@@ -88,8 +89,8 @@ export default function MobileAdminDashboard() {
 
   const [mentions, setMentions] = useState<MentionItem[]>([]);
   const fetchMentions = useCallback(() => {
-    if (!currentRepId) return;
-    fetch(`/api/mentions?userId=${encodeURIComponent(currentRepId)}`)
+    if (!effectiveRepId) return;
+    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`)
       .then((res) => { if (!res.ok) throw new Error('Failed to fetch'); return res.json(); })
       .then((rawMentions: unknown[]) => {
         const items: MentionItem[] = (rawMentions ?? []).map((raw) => {
@@ -125,7 +126,7 @@ export default function MobileAdminDashboard() {
         setMentions(items);
       })
       .catch(() => setMentions([]));
-  }, [currentRepId]);
+  }, [effectiveRepId]);
   useEffect(() => { fetchMentions(); }, [fetchMentions]);
 
   useEffect(() => {

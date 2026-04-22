@@ -25,6 +25,7 @@ import { CustomizationSection } from './sections/CustomizationSection';
 import { ExportSection } from './sections/ExportSection';
 import { BaselinesSection } from './sections/BaselinesSection';
 import { AdminUsersSection } from './sections/AdminUsersSection';
+import { SettingsStatGrid } from './components/SettingsStatGrid';
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
 
@@ -112,6 +113,7 @@ function SettingsPageInner() {
     : 'blitz-permissions';
 
   const [section, setSection] = useState<SettingsSection>(initialSection);
+  const [sectionDir, setSectionDir] = useState<'fwd' | 'back'>('fwd');
 
   useEffect(() => {
     const p = searchParams.get('section') as string | null;
@@ -208,6 +210,9 @@ function SettingsPageInner() {
     setInstallerSelectMode(false);
     setFinancerSelectMode(false);
     setPayScheduleExpanded(null);
+    const prevIdx = ALL_NAV_ITEMS.findIndex(i => i.id === section);
+    const nextIdx = ALL_NAV_ITEMS.findIndex(i => i.id === s);
+    setSectionDir(nextIdx >= prevIdx ? 'fwd' : 'back');
     setSection(s);
     router.replace(`/dashboard/settings?section=${s}`, { scroll: false });
   };
@@ -431,31 +436,9 @@ function SettingsPageInner() {
         </nav>
       </aside>
 
-      {/* Mobile horizontal tab bar */}
-      <div className="md:hidden border-b border-[var(--border-subtle)] w-full">
-        <div className="flex items-center gap-1 px-3 pt-4 pb-2 overflow-x-auto scrollbar-hide">
-          {ALL_NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-            const isActive = section === id;
-            return (
-              <button
-                key={id}
-                onClick={() => handleSetSection(id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${
-                  isActive
-                    ? 'bg-[var(--accent-green)]/20 text-[var(--accent-green)] border border-[var(--accent-green)]/30 shadow-sm shadow-blue-500/10'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]/60 border border-transparent'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`} />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Content panel */}
       <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+        <div key={section} className={sectionDir === 'fwd' ? 'animate-settings-section-fwd' : 'animate-settings-section-back'}>
 
         {/* Breadcrumb */}
         {(() => {
@@ -474,27 +457,14 @@ function SettingsPageInner() {
         })()}
 
         {/* Settings Summary Dashboard */}
-        {editingInstaller === null && editingAssignmentId === null && editingPrepaid === null && editingProductName === null && (() => {
-          const activeInstallerCount = installers.filter((i) => i.active).length;
-          const activeFinancerCount = financers.filter((f) => f.active && !hiddenFinancers.has(f.name) && f.name !== 'Cash').length;
-          const trainerCount = trainerAssignments.length;
-          const adminCount = adminUsers.length;
-          return (
-            <div className="flex items-center gap-3 mb-6 flex-wrap">
-              {[
-                { label: 'Active Installers', value: activeInstallerCount, color: 'text-[var(--accent-green)]', bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20' },
-                { label: 'Active Financers', value: activeFinancerCount, color: 'text-[var(--accent-green)]', bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20' },
-                { label: 'Trainer Assignments', value: trainerCount, color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20' },
-                { label: 'Admin Users', value: adminCount, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-              ].map(({ label, value, color, bg }) => (
-                <div key={label} className={`${bg} border rounded-xl px-3 py-1.5 flex items-center gap-2`}>
-                  <span className={`text-sm font-bold tabular-nums ${color}`}>{value}</span>
-                  <span className="text-xs text-[var(--text-secondary)]">{label}</span>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
+        {editingInstaller === null && editingAssignmentId === null && editingPrepaid === null && editingProductName === null && (
+          <SettingsStatGrid items={[
+            { label: 'Active Installers',   value: installers.filter(i => i.active).length,                                                      color: 'text-[var(--accent-green)]', bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20' },
+            { label: 'Active Financers',    value: financers.filter(f => f.active && !hiddenFinancers.has(f.name) && f.name !== 'Cash').length,  color: 'text-[var(--accent-green)]', bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20' },
+            { label: 'Trainer Assignments', value: trainerAssignments.length,                                                                     color: 'text-violet-400',             bg: 'bg-violet-500/10 border-violet-500/20' },
+            { label: 'Admin Users',         value: adminUsers.length,                                                                             color: 'text-amber-400',              bg: 'bg-amber-500/10 border-amber-500/20' },
+          ]} />
+        )}
 
         {/* ── Section rendering ──────────────────────────────────────────────── */}
 
@@ -560,6 +530,7 @@ function SettingsPageInner() {
         {/* Spacer so content is never hidden behind the fixed action bar */}
         {(selectedInstallers.size > 0 || selectedFinancers.size > 0) && <div className="h-20" />}
 
+        </div>
       </main>
 
       {/* Floating bulk-action toolbar (installers + financers) */}

@@ -935,7 +935,11 @@ export default function DashboardPage() {
 
   // ── Financial stats (project-based to account for milestone-triggered payroll) ──
   const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
-  const paidPayrollByProject = allMyPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((map, p) => {
+  const paidPayrollByProject = allMyPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage !== 'Trainer').reduce((map, p) => {
+    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
+    return map;
+  }, new Map<string, number>());
+  const paidTrainerPayrollByProject = allMyPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage === 'Trainer').reduce((map, p) => {
     if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
@@ -975,7 +979,7 @@ export default function DashboardPage() {
       .filter(p => ACTIVE_PHASES.includes(p.phase) && isTraineeParty(p))
       .reduce((pSum, p) => {
         const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
-        const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
+        const alreadyPaid = paidTrainerPayrollByProject.get(p.id) ?? 0;
         return pSum + Math.max(0, expected - alreadyPaid);
       }, 0);
   }, 0);
@@ -1445,6 +1449,7 @@ export default function DashboardPage() {
               (p) =>
                 (p.repId === effectiveRepId ||
                   p.setterId === effectiveRepId ||
+                  p.trainerId === effectiveRepId ||
                   (p.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) ||
                   (p.additionalSetters ?? []).some((s) => s.userId === effectiveRepId)) &&
                 ((ACTIVE_PHASES.includes(p.phase) && p.phase !== 'Completed') || p.phase === 'On Hold')

@@ -19,7 +19,18 @@ export const createPayrollSchema = z.object({
   date: z.string().min(1),                // ISO date string
   notes: optionalString.default(''),
   idempotencyKey: z.string().min(1).max(200).optional().nullable(),
-});
+  /** Chargeback tracking — both optional, both must be set together.
+   *  The service layer enforces that chargebackOfId references a Paid
+   *  entry on the same project+rep+stage and that |amount| ≤ original. */
+  isChargeback: z.boolean().optional().default(false),
+  chargebackOfId: optionalId,
+}).refine(
+  (d) => !d.isChargeback || d.chargebackOfId != null,
+  { message: 'chargebackOfId is required when isChargeback is true', path: ['chargebackOfId'] },
+).refine(
+  (d) => !d.isChargeback || d.amount < 0,
+  { message: 'chargeback amount must be negative', path: ['amount'] },
+);
 export type CreatePayrollInput = z.infer<typeof createPayrollSchema>;
 
 /** Request body for PATCH /api/payroll — bulk status transition */
