@@ -41,23 +41,57 @@ export async function POST(req: NextRequest) {
   }
 
   // Imported-from-Glide deals are inviolable historical records — their
-  // commission state was locked at import time and may pre-date any Kilo
-  // chargeback convention. The automatic phase-transition generator in
-  // lib/context/project-transitions.ts already skips them; enforce the
-  // same rule on the admin manual-create path so a negative-amount entry
-  // (the canonical chargeback shape) cannot be attached to an imported
-  // project. Positive amounts on imports still go through (legitimate
-  // post-import bonuses etc.).
-  if (body.projectId && body.amount < 0) {
+  // commission state was locked at import time and pre-dated Kilo's
+  // auto-generated chargeback convention. The phase-transition generator
+  // in lib/context/project-transitions.ts skips them. The admin
+  // manual-create path also blocks negative entries EXCEPT when the new
+  // explicit isChargeback flag is set — the whole point of the Batch 2
+  // work is letting admins record historical clawbacks on imported
+  // cancelled deals. Positive amounts on imports still flow through
+  // (legitimate post-import bonuses etc.).
+  if (body.projectId && body.amount < 0 && !body.isChargeback) {
     const proj = await prisma.project.findUnique({
       where: { id: body.projectId },
       select: { importedFromGlide: true, customerName: true },
     });
     if (proj?.importedFromGlide) {
       return NextResponse.json(
-        { error: `Cannot create a chargeback on imported deal "${proj.customerName}". Imported deals from Glide carry their historical commission intact and are excluded from chargeback generation.` },
+        { error: `Cannot create an implicit chargeback on imported deal "${proj.customerName}". Use the explicit chargeback flow (isChargeback=true + chargebackOfId) to record a historical clawback.` },
         { status: 400 },
       );
+    }
+  }
+
+  // Chargeback validation: when isChargeback=true, chargebackOfId must
+  // reference an existing Paid entry on the same project+rep+stage, and
+  // |amount| must not exceed the original. The Zod schema already enforces
+  // (isChargeback → chargebackOfId set) and (isChargeback → amount<0).
+  if (body.isChargeback && body.chargebackOfId) {
+    const original = await prisma.payrollEntry.findUnique({
+      where: { id: body.chargebackOfId },
+      select: { id: true, projectId: true, repId: true, paymentStage: true, status: true, amountCents: true, isChargeback: true },
+    });
+    if (!original) {
+      return NextResponse.json({ error: 'chargebackOfId does not reference an existing entry' }, { status: 400 });
+    }
+    if (original.isChargeback) {
+      return NextResponse.json({ error: 'Cannot charge back a chargeback' }, { status: 400 });
+    }
+    if (original.status !== 'Paid') {
+      return NextResponse.json({ error: 'Can only charge back entries in Paid status' }, { status: 400 });
+    }
+    if (original.projectId !== (body.projectId ?? null)) {
+      return NextResponse.json({ error: 'Chargeback projectId must match original entry' }, { status: 400 });
+    }
+    if (original.repId !== body.repId) {
+      return NextResponse.json({ error: 'Chargeback repId must match original entry' }, { status: 400 });
+    }
+    if (original.paymentStage !== body.paymentStage) {
+      return NextResponse.json({ error: 'Chargeback paymentStage must match original entry' }, { status: 400 });
+    }
+    const requestedCents = Math.abs(fromDollars(body.amount).cents);
+    if (requestedCents > original.amountCents) {
+      return NextResponse.json({ error: 'Chargeback amount cannot exceed original entry amount' }, { status: 400 });
     }
   }
 
@@ -72,13 +106,15 @@ export async function POST(req: NextRequest) {
       date: body.date,
       notes: body.notes ?? '',
       idempotencyKey: body.idempotencyKey ?? null,
+      isChargeback: body.isChargeback ?? false,
+      chargebackOfId: body.chargebackOfId ?? null,
     },
     include: { rep: true, project: true },
   });
 
   await logChange({
     actor: { id: actor.id, email: actor.email ?? null },
-    action: 'payroll_create',
+    action: entry.isChargeback ? 'chargeback_create' : 'payroll_create',
     entityType: 'PayrollEntry',
     entityId: entry.id,
     detail: {
@@ -87,6 +123,8 @@ export async function POST(req: NextRequest) {
       amountCents: entry.amountCents,
       paymentStage: entry.paymentStage,
       status: entry.status,
+      isChargeback: entry.isChargeback,
+      chargebackOfId: entry.chargebackOfId,
     },
   });
   logger.info('payroll_created', {

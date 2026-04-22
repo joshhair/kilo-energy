@@ -26,6 +26,8 @@ import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleto
 import { InlineNotesEditor } from '../components/detail/InlineNotesEditor';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
 import { AdminNotesEditor } from '../components/detail/AdminNotesEditor';
+import RecordChargebackModal from '../components/RecordChargebackModal';
+import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -106,6 +108,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [m2Val, setM2Val] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRecordChargeback, setShowRecordChargeback] = useState(false);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
@@ -1192,6 +1195,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
+            {/* ── Cancelled banner + chargeback affordance ── */}
+            {project.phase === 'Cancelled' && (() => {
+              const eligiblePaidEntries = projectEntries
+                .filter((e) => e.status === 'Paid' && !e.isChargeback && !findChargebackForEntry(e.id, projectEntries));
+              if (eligiblePaidEntries.length === 0) return null;
+              return (
+                <div className="border-t border-[var(--border-subtle)] pt-4">
+                  <div className="flex items-center justify-between gap-3 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+                    <div>
+                      <p className="text-amber-300 text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
+                      <p className="text-[var(--text-muted)] text-xs mt-0.5">
+                        {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback. Record a clawback so payroll totals stay net-correct.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowRecordChargeback(true)}
+                      className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors"
+                    >
+                      Record Chargeback
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ── Milestone toggles ── */}
             <div className="border-t border-[var(--border-subtle)] pt-4 space-y-3">
               <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Milestone Status</p>
@@ -1770,6 +1798,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>,
         document.body,
       )}
+
+      {/* Record Chargeback modal (admin-only on cancelled deals) */}
+      <RecordChargebackModal
+        open={showRecordChargeback}
+        onClose={() => setShowRecordChargeback(false)}
+        onSaved={() => { /* next data fetch picks up the new entry */ }}
+        projectId={project.id}
+        paidEntries={projectEntries
+          .filter((e) => e.status === 'Paid' && !e.isChargeback && !findChargebackForEntry(e.id, projectEntries))
+          .map((e) => ({
+            id: e.id,
+            repId: e.repId,
+            repName: e.repName,
+            paymentStage: e.paymentStage,
+            amount: e.amount,
+            date: e.date,
+          }))}
+      />
 
       {/* Cancel Confirm Modal */}
       <ConfirmDialog

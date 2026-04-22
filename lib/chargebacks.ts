@@ -61,7 +61,7 @@ export function resolveMilestoneStatus(input: ResolveInput): MilestoneChargeback
  * Find the chargeback entry linked to a given Paid entry (if any).
  * Used to display the chargeback date/amount inline.
  */
-export function findChargebackForEntry<T extends { id: string; chargebackOfId?: string | null; isChargeback?: boolean; amount: number; status: string }>(
+export function findChargebackForEntry<T extends PayrollAggregable & { id: string; chargebackOfId?: string | null }>(
   entryId: string,
   allEntries: ReadonlyArray<T>,
 ): T | null {
