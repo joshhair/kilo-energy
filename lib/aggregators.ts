@@ -48,6 +48,11 @@ export interface PayrollAggregable {
   amount: number;
   type?: string;
   repId?: string;
+  /** Optional — explicit chargeback flag (schema Batch 0, 2026-04-21).
+   *  When present, isChargeback is the source of truth. When absent
+   *  (legacy rows predating the schema change), callers fall back to
+   *  the "amount < 0" heuristic for backward compatibility. */
+  isChargeback?: boolean;
 }
 
 export interface PaidOutOptions {
@@ -177,10 +182,39 @@ function filterPendingChargebacks<T extends PayrollAggregable>(
   const out: T[] = [];
   for (const e of entries) {
     if (e.status !== 'Draft' && e.status !== 'Pending') continue;
-    if (e.amount >= 0) continue;
+    // Chargeback detection: prefer explicit flag (Batch 0+); fall back
+    // to "amount < 0" for legacy rows where isChargeback is undefined.
+    if (!isChargebackEntry(e)) continue;
     if (typeSet && e.type != null && !typeSet.has(e.type)) continue;
     if (repId && e.repId !== repId) continue;
     out.push(e);
   }
   return out;
+}
+
+/**
+ * Unified chargeback detection. Explicit flag wins; legacy rows without
+ * the flag fall back to the "negative Paid amount" heuristic so reports
+ * keep working during/after the schema migration.
+ */
+export function isChargebackEntry<T extends PayrollAggregable>(e: T): boolean {
+  if (e.isChargeback === true) return true;
+  if (e.isChargeback === false) return false; // explicitly not a chargeback
+  return e.amount < 0; // legacy fallback
+}
+
+/**
+ * Sum of chargebacks — explicit isChargeback flag preferred, legacy
+ * negative-amount heuristic as fallback. Used for reporting when
+ * callers want "chargebacks only" as a distinct bucket.
+ *
+ * Returns a negative number (sum of chargeback amounts).
+ */
+export function sumChargebacks<T extends PayrollAggregable>(
+  entries: ReadonlyArray<T>,
+  opts?: PaidOutOptions,
+): number {
+  return applyCommonFilters(entries, opts, (s) => s === 'Paid')
+    .filter(isChargebackEntry)
+    .reduce((s, e) => s + e.amount, 0);
 }
