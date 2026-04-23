@@ -19,7 +19,7 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 import ProjectChatter from '../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { AdminNotesEditor } from '../projects/components/detail/AdminNotesEditor';
+// AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import { ProjectNotes } from '../components/ProjectNotes';
 
 // ── Pipeline steps ──
@@ -954,15 +954,15 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         <ProjectNotes projectId={project.id} />
       </MobileSection>
 
-      {/* Admin Notes — admin + PM only. Scrubbed server-side for every
-          other relationship; the gate here is belt+suspenders (the
-          field arrives as undefined for reps anyway). */}
+      {/* Admin Notes — per-note list, admin + internal PM only. Vendor
+          PMs are blocked at the endpoint. */}
       {(isAdmin || isPM) && (
-        <AdminNotesEditor
-          projectId={projectId}
-          initial={project.adminNotes ?? ''}
-          onPatch={(text) => ctxUpdateProject(projectId, { adminNotes: text })}
-        />
+        <MobileSection title="Admin Notes" collapsible defaultOpen={false}>
+          <p className="text-xs text-[var(--m-text-dim, #445577)] mb-2">
+            Private reference notes. Never visible to reps, trainers, sub-dealers, or vendor PMs.
+          </p>
+          <ProjectNotes projectId={projectId} kind="admin" />
+        </MobileSection>
       )}
 
       {/* Messages / Chatter */}

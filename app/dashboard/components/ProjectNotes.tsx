@@ -43,7 +43,13 @@ function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 }
 
-export function ProjectNotes({ projectId }: { projectId: string }) {
+/**
+ * `kind` selects which endpoint + which polarity of note.
+ *   - 'public' (default): /api/projects/[id]/notes  — visible to everyone with project access.
+ *   - 'admin':            /api/projects/[id]/admin-notes — admin + internal PM only.
+ * Same UI shell either way — just different backend routes.
+ */
+export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string; kind?: 'public' | 'admin' }) {
   const { currentRepId, currentRole } = useApp();
   const { toast } = useToast();
   const [notes, setNotes] = useState<ProjectNote[]>([]);
@@ -52,9 +58,13 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
   const [adding, setAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const basePath = kind === 'admin'
+    ? `/api/projects/${projectId}/admin-notes`
+    : `/api/projects/${projectId}/notes`;
+
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/projects/${projectId}/notes`);
+      const res = await fetch(basePath);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) setNotes(data);
@@ -62,7 +72,7 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [basePath]);
   useEffect(() => { load(); }, [load]);
 
   const handleAdd = async () => {
@@ -70,7 +80,7 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
     if (!text || adding) return;
     setAdding(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/notes`, {
+      const res = await fetch(basePath, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
@@ -95,7 +105,7 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
     const snapshot = notes;
     setNotes((prev) => prev.filter((n) => n.id !== id));
     try {
-      const res = await fetch(`/api/projects/${projectId}/notes/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${basePath}/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         setNotes(snapshot);
         toast('Failed to delete note', 'error');

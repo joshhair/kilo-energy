@@ -355,6 +355,7 @@ model Project {
   activities     ProjectActivity[]
   messages       ProjectMessage[]
   projectNotes   ProjectNote[]
+  adminNotesList ProjectAdminNote[]
 
   /// Tag-team support: extra closers / setters on a deal beyond the primary.
   /// Empty for a standard single-closer, single-setter deal — no query cost.
@@ -764,6 +765,24 @@ model ProjectMention {
 /// Project.notes content is migrated into these rows on first run
 /// of scripts/migrate-add-project-notes-table.mjs.
 model ProjectNote {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId   String
+  authorName String
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@index([projectId])
+  @@index([authorId])
+}
+
+/// Admin-only counterpart of ProjectNote. Never visible to reps,
+/// trainers, sub-dealers, or vendor PMs — enforced at the endpoint
+/// boundary (admin + internal PM only) AND via the field-visibility
+/// scrubber on the legacy Project.adminNotes string. Mirrors the
+/// same schema shape so the UI can share a component.
+model ProjectAdminNote {
   id         String   @id @default(cuid())
   projectId  String
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

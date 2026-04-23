@@ -25,7 +25,7 @@ import { RepCommissionCard } from '../components/detail/RepCommissionCard';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
 import { ProjectNotes } from '../../components/ProjectNotes';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
-import { AdminNotesEditor } from '../components/detail/AdminNotesEditor';
+// AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import RecordChargebackModal from '../components/RecordChargebackModal';
 import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
@@ -1290,16 +1290,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         <ProjectNotes projectId={id} />
       </div>
 
-      {/* Admin Notes — visible only to admin + PM. Reps, trainers, and
-          sub-dealers never receive this field (scrubbed server-side by
-          fieldVisibility.ts). Distinct from the regular Notes above;
-          this is for private admin reference. */}
+      {/* Admin Notes — per-note list, admin + internal PM only.
+          Vendor PMs are blocked at the endpoint level (GET returns 403)
+          so if one reaches this branch they see an empty list rather
+          than leaked data. Replaced the single-textarea
+          AdminNotesEditor on 2026-04-23. */}
       {(effectiveRole === 'admin' || isPM) && (
-        <AdminNotesEditor
-          projectId={id}
-          initial={project.adminNotes ?? ''}
-          onPatch={(text) => ctxUpdateProject(id, { adminNotes: text })}
-        />
+        <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.04), transparent)', border: '1px solid rgba(245,158,11,0.2)' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-white font-semibold">Admin Notes</h2>
+            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold uppercase tracking-wider">
+              Admin · PM Only
+            </span>
+          </div>
+          <p className="text-xs text-[var(--text-muted)] mb-3">
+            Private reference notes. Never visible to reps, trainers, sub-dealers, or vendor PMs.
+          </p>
+          <ProjectNotes projectId={id} kind="admin" />
+        </div>
       )}
 
       {/* Chatter — above Activity so in-project discussion is the
