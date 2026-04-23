@@ -35,7 +35,7 @@ export default function MobileBadge({ value, variant = 'phase' }: { value: strin
   const c = colors[value] ?? { bg: 'rgba(136,153,170,0.12)', text: 'var(--text-mobile-muted)' };
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full${value === 'Active' ? ' badge-active-pulse' : ''}`}
+      className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full whitespace-nowrap${value === 'Active' ? ' badge-active-pulse' : ''}`}
       style={{ background: c.bg, color: c.text, fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
     >
       {value}

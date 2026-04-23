@@ -561,12 +561,12 @@ export default function MobileDashboard() {
                     style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid #2a3858', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
                     <div className="shrink-0" style={{ width: 4, background: accent }} />
-                    <div className="flex-1 min-w-0 flex items-center justify-between gap-3 px-4 py-3">
-                      <div className="min-w-0 flex items-center gap-2">
-                        <span className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</span>
+                    <div className="flex-1 min-w-0 px-4 py-3">
+                      <p className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
                         <MobileBadge value={p.phase} />
+                        <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
                       </div>
-                      <span className="shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
                     </div>
                   </button>
                 );
@@ -629,15 +629,17 @@ export default function MobileDashboard() {
                 <button
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                  className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
+                  className={`w-full min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
                   style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
-                    <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
-                    <MobileBadge value={p.phase} />
+                    <p className="font-semibold text-white truncate flex-1 min-w-0" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                   </div>
-                  <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{stalledDays(p.phaseChangedAt ?? p.soldDate) !== null ? `Stalled ${stalledDays(p.phaseChangedAt ?? p.soldDate)}d` : '—'}</span>
+                  <div className="flex items-center gap-2 mt-1 pl-6">
+                    <MobileBadge value={p.phase} />
+                    <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{stalledDays(p.phaseChangedAt ?? p.soldDate) !== null ? `Stalled ${stalledDays(p.phaseChangedAt ?? p.soldDate)}d` : '—'}</span>
+                  </div>
                 </button>
               ))}
             </MobileCard>
@@ -657,14 +659,14 @@ export default function MobileDashboard() {
                   <button
                     key={p.id}
                     onClick={() => router.push(`/dashboard/projects/${p.id}`)}
-                    className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < arr.length - 1 ? 'border-b' : ''}`}
+                    className={`w-full min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < arr.length - 1 ? 'border-b' : ''}`}
                     style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
-                    <div className="min-w-0 flex items-center gap-2">
-                      <span className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</span>
+                    <p className="text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
+                    <div className="flex items-center gap-2 mt-1">
                       <MobileBadge value={p.phase} />
+                      <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{relativeTime(p.soldDate)}</span>
                     </div>
-                    <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{relativeTime(p.soldDate)}</span>
                   </button>
                 ))}
             </MobileCard>
@@ -786,14 +788,18 @@ export default function MobileDashboard() {
             <button
               key={item.id}
               onClick={() => router.push(`/dashboard/projects/${item.id}`)}
-              className={`w-full flex items-center justify-between min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < attentionItems.length - 1 ? 'border-b' : ''}`}
+              className={`w-full min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < attentionItems.length - 1 ? 'border-b' : ''}`}
               style={{ borderColor: 'var(--m-border, var(--border-mobile))', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
+              {/* Stacked layout — badge + duration-in-phase stayed in the
+                  same horizontal band as the customer name before, which
+                  caused visual collisions on narrow screens (badge pill
+                  sitting under the grey "Xd in Phase" text). 2026-04-23. */}
+              <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
+              <div className="flex items-center gap-2 mt-1">
                 <MobileBadge value={item.phase} />
+                <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{item.suffix}</span>
               </div>
-              <span className="shrink-0 ml-2" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{item.suffix}</span>
             </button>
           ))}
         </MobileCard>
@@ -837,12 +843,17 @@ export default function MobileDashboard() {
                 >
                   {/* Phase-colored accent strip — scan by color. */}
                   <div className="shrink-0" style={{ width: 4, background: accent }} />
-                  <div className="flex-1 min-w-0 flex items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0 flex items-center gap-2">
-                      <span className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</span>
+                  {/* Stacked layout — name on line 1 (full width, truncates
+                      gracefully), badge + time on line 2. Previously the
+                      single-row layout forced customer names like "Trevor
+                      Schauwecker" to clip to 4 chars whenever the badge
+                      was wide ("Pending Install"). 2026-04-23. */}
+                  <div className="flex-1 min-w-0 px-4 py-3">
+                    <p className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
                       <MobileBadge value={p.phase} />
+                      <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
                     </div>
-                    <span className="shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
                   </div>
                 </button>
               );
