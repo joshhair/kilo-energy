@@ -998,9 +998,9 @@ function TrainingPageInner() {
                   <th className="text-left px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Trainer</th>
                   <th className="text-left px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Rep</th>
                   <th className="text-left px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Status</th>
-                  <th className="text-left px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Tier Chain</th>
+                  <th className="hidden md:table-cell text-left px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Tier Chain</th>
                   <th className="text-right px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Rate</th>
-                  <th className="text-right px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Progress</th>
+                  <th className="hidden md:table-cell text-right px-4 py-3 text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Progress</th>
                   <th className="px-4 py-3 w-10"></th>
                 </tr>
               </thead>
@@ -1072,11 +1072,11 @@ function TrainingPageInner() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[var(--text-muted)] text-xs">—</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-[var(--text-muted)] text-xs">—</td>
                       <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">
                         ${avgRate.toFixed(2)}/W <span className="text-[10px] text-[var(--text-muted)] font-normal">avg</span>
                       </td>
-                      <td className="px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums text-xs">
+                      <td className="hidden md:table-cell px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums text-xs">
                         {totalConsumed} deal{totalConsumed === 1 ? '' : 's'}
                       </td>
                       <td className="px-4 py-3"></td>
@@ -1114,7 +1114,7 @@ function TrainingPageInner() {
                       <td className="px-4 py-3">
                         <StatusPillBadge status={row.status} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="hidden md:table-cell px-4 py-3">
                         <div className="flex flex-wrap gap-1.5">
                           {a.tiers.map((tier, i) => {
                             const isActive = i === row.activeTierIndex;
@@ -1138,7 +1138,7 @@ function TrainingPageInner() {
                       <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">
                         ${row.rate.toFixed(2)}/W
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="hidden md:table-cell px-4 py-3 text-right">
                         {progressPct !== null ? (
                           <div className="flex items-center gap-2 justify-end">
                             <div className="w-24 h-1.5 bg-[var(--surface-card)] rounded-full overflow-hidden">
