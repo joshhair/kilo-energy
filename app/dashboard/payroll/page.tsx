@@ -7,7 +7,7 @@ import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$, localDateString, todayLocalDateStr } from '../../../lib/utils';
-import { sumPaid, sumPending, sumDraft } from '../../../lib/aggregators';
+import { sumPaid, sumPending, sumDraft, breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer, Trash2 } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
@@ -47,6 +47,32 @@ const PRINT_STYLES = `
   * { animation: none !important; transition: none !important; }
   @page { margin: 1cm; size: landscape; }
 }`;
+
+/**
+ * Renders the per-type breakdown sub-line for a payroll summary card.
+ * Skips zero-dollar types to avoid noise ("Bonus $0" when there are no
+ * bonuses this period). Shows an inline chargeback note when the
+ * chargebacks component of the total is non-zero so the "Deals" figure
+ * doesn't look anomalous vs payroll history.
+ *
+ * pending=true swaps "(−$X chargebacks)" note wording to "pending
+ * chargebacks" since Draft/Pending chargebacks aren't actually clawed
+ * back yet.
+ */
+function renderBreakdownSubline(b: StatusBreakdown, pending: boolean): string {
+  const parts: string[] = [];
+  if (b.deal !== 0) {
+    let dealStr = `Deals $${Math.abs(b.deal).toLocaleString()}`;
+    if (b.deal < 0) dealStr = `Deals −$${Math.abs(b.deal).toLocaleString()}`;
+    if (b.chargebacks !== 0) {
+      dealStr += ` (−$${Math.abs(b.chargebacks).toLocaleString()} ${pending ? 'pending chargebacks' : 'chargebacks'})`;
+    }
+    parts.push(dealStr);
+  }
+  if (b.bonus !== 0) parts.push(`Bonus $${b.bonus.toLocaleString()}`);
+  if (b.trainer !== 0) parts.push(`Trainer $${b.trainer.toLocaleString()}`);
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
 
 export default function PayrollPage() {
   return (
@@ -260,7 +286,7 @@ function PayrollPageInner() {
   // on the inputs that actually matter.
   const today = todayLocalDateStr();
 
-  const { filtered, filteredByDateRep, totalDraft, totalPending, pendingCount, combinedTotalPaid, combinedPaidCount } = useMemo(() => {
+  const { filtered, filteredByDateRep, pendingCount, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
     const filteredByDateRep: typeof payrollEntries = [];
     const allTypesInScope: typeof payrollEntries = [];
@@ -282,17 +308,22 @@ function PayrollPageInner() {
       }
     }
 
-    // Per-type totals for Draft / Pending tiles (the per-tab view).
-    const totalDraft = sumDraft(filteredByDateRep, { asOf: today });
-    const totalPending = sumPending(filteredByDateRep, { asOf: today });
+    // Per-type Pending count still used by the Publish button guard;
+    // the cards themselves now show combined breakdowns (below).
     const pendingCount = filteredByDateRep.filter((p) => p.status === 'Pending').length;
-    // Combined across all types (Deal + Bonus + Trainer). This is the
-    // "Total Paid" card reps + admins see by default — matches the
-    // dashboard tile when filters align.
+    // Combined across all types (Deal + Bonus + Trainer) — the summary-
+    // card view admins scan at a glance. Cards always show combined so
+    // the top-line number doesn't lie about what's owed across all types.
+    // The per-type tab below still filters the row list for drill-down.
     const combinedTotalPaid = sumPaid(allTypesInScope, { asOf: today });
     const combinedPaidCount = allTypesInScope.filter((p) => p.status === 'Paid' && p.date <= today).length;
+    const draftBreakdown = breakdownByType(allTypesInScope, 'Draft', { asOf: today });
+    const pendingBreakdown = breakdownByType(allTypesInScope, 'Pending', { asOf: today });
+    const paidBreakdown = breakdownByType(allTypesInScope, 'Paid', { asOf: today });
+    const draftCount = allTypesInScope.filter((p) => p.status === 'Draft').length;
+    const combinedPendingCount = allTypesInScope.filter((p) => p.status === 'Pending').length;
 
-    return { filtered, filteredByDateRep, totalDraft, totalPending, pendingCount, combinedTotalPaid, combinedPaidCount };
+    return { filtered, filteredByDateRep, pendingCount, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId, today]);
 
   // Derived selection state — used by the floating action bar.
@@ -1123,29 +1154,32 @@ function PayrollPageInner() {
 
       {pageView === 'payroll' && <div key={pageView} className="animate-tab-enter">
 
-      {/* GradCards */}
+      {/* GradCards — all three now show COMBINED totals across Deal +
+          Bonus + Trainer with a per-type sub-line so admins can see what
+          they owe without swapping type tabs. Matches the Paid-card
+          pattern. The per-type tab below still filters the row list for
+          drill-down. 2026-04-23. */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         {/* Draft */}
         <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft · {typeTab}</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${totalDraft.toLocaleString()}</p>
-          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Draft').length} entries</p>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${draftBreakdown.total.toLocaleString()}</p>
+          <p style={{ color: 'rgba(77,159,255,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
+          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending · {typeTab}</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${totalPending.toLocaleString()}</p>
-          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today).length} entries</p>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${pendingBreakdown.total.toLocaleString()}</p>
+          <p style={{ color: 'rgba(255,176,32,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
+          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
         </div>
-        {/* Total Paid — combined across all types (Deal + Bonus + Trainer)
-            by default. Matches the dashboard "Paid Out" tile when
-            date/rep filters align. The per-tab breakdown is available
-            in the Draft / Pending tiles beside it and in the table
-            below (switchable via the Deal / Bonus tabs). */}
+        {/* Total Paid */}
         <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${combinedTotalPaid.toLocaleString()}</p>
-          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{combinedPaidCount} entries · all types</p>
+          <p style={{ color: 'rgba(0,224,122,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
+          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPaidCount} entries · all types</p>
         </div>
       </div>
 

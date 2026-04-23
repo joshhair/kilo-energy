@@ -218,3 +218,39 @@ export function sumChargebacks<T extends PayrollAggregable>(
     .filter(isChargebackEntry)
     .reduce((s, e) => s + e.amount, 0);
 }
+
+/**
+ * Breakdown of a status bucket (Paid / Pending / Draft) by PayrollEntry
+ * type. Single pass, one call site — used by the payroll summary cards
+ * that show combined total + per-type sub-line. `chargebacks` is the net
+ * of isChargeback entries in the same bucket (negative number) so the UI
+ * can surface "Deals $X (−$Y chargebacks)" inline when non-zero.
+ */
+export interface StatusBreakdown {
+  total: number;
+  deal: number;
+  bonus: number;
+  trainer: number;
+  chargebacks: number;
+}
+
+export function breakdownByType<T extends PayrollAggregable>(
+  entries: ReadonlyArray<T>,
+  status: 'Draft' | 'Pending' | 'Paid',
+  opts?: PaidOutOptions,
+): StatusBreakdown {
+  // Date-filter applies only to Paid (matches sumPaid); Draft/Pending
+  // are intentionally date-unbounded so future-dated milestones still
+  // show in the total.
+  const skipDate = status !== 'Paid';
+  const filtered = applyCommonFilters(entries, opts, (s) => s === status, skipDate);
+  let total = 0, deal = 0, bonus = 0, trainer = 0, chargebacks = 0;
+  for (const e of filtered) {
+    total += e.amount;
+    if (isChargebackEntry(e)) chargebacks += e.amount;
+    if (e.type === 'Bonus') bonus += e.amount;
+    else if (e.type === 'Trainer') trainer += e.amount;
+    else deal += e.amount; // 'Deal' or null/undefined
+  }
+  return { total, deal, bonus, trainer, chargebacks };
+}

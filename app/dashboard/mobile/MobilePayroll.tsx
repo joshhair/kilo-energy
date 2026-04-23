@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../../lib/context';
 import { fmt$, todayLocalDateStr } from '../../../lib/utils';
+import { breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { Check, Trash2, Plus, Pencil, X, Receipt, Archive, ArchiveRestore } from 'lucide-react';
@@ -115,6 +116,25 @@ export default function MobilePayroll() {
       .filter((e) => e.status === 'Pending' && e.type === typeTab && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
       .reduce((s, e) => s + e.amount, 0);
   }, [payrollEntries, typeTab, effectiveRole, effectiveRepId]);
+
+  // Combined breakdowns across ALL types (Deal + Bonus + Trainer) for
+  // the summary cards row. Cards stay honest about the total owed;
+  // the type tab below still filters the row list for drill-down.
+  // Mirrors the desktop payroll tab pattern (2026-04-23).
+  const { draftBreakdown, pendingBreakdown, paidBreakdown } = useMemo(() => {
+    const today = todayLocalDateStr();
+    const scope = payrollEntries.filter(
+      (e) => (effectiveRole === 'admin' || e.repId === effectiveRepId) &&
+             (!filterRepId || e.repId === filterRepId) &&
+             (!filterFrom || e.date >= filterFrom) &&
+             (!filterTo || e.date <= filterTo),
+    );
+    return {
+      draftBreakdown: breakdownByType(scope, 'Draft', { asOf: today }),
+      pendingBreakdown: breakdownByType(scope, 'Pending', { asOf: today }),
+      paidBreakdown: breakdownByType(scope, 'Paid', { asOf: today }),
+    };
+  }, [payrollEntries, effectiveRole, effectiveRepId, filterRepId, filterFrom, filterTo]);
 
   // ── Filtered entries ──────────────────────────────────────────────────────
 
@@ -521,11 +541,19 @@ export default function MobilePayroll() {
       {pageView === 'payroll' && (
       <div className="space-y-4">
 
-      {/* ── Hero ── */}
-      <div>
-        <p className="text-4xl font-black tabular-nums" style={{ color: '#f5a623', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(pendingTotal)}</p>
-        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>pending approval</p>
+      {/* ── Summary cards ── combined across Deal + Bonus + Trainer
+          so admins see everything owed at a glance. Sub-lines break
+          down by type. Mirrors the desktop payroll tab (2026-04-23). */}
+      <div className="grid grid-cols-3 gap-2">
+        <SummaryCard label="Draft" total={draftBreakdown.total} tone="#4d9fff" breakdown={draftBreakdown} pending />
+        <SummaryCard label="Pending" total={pendingBreakdown.total} tone="#f5a623" breakdown={pendingBreakdown} pending />
+        <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald)" breakdown={paidBreakdown} />
       </div>
+      {pendingTotal > 0 && (
+        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          {fmt$(pendingTotal)} pending · {typeTab}
+        </p>
+      )}
 
       {/* ── Type tabs ── */}
       <div className="flex gap-2">
@@ -975,6 +1003,46 @@ export default function MobilePayroll() {
       />
       </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Compact mobile summary card. Top: label. Middle: combined total.
+ * Bottom: per-type breakdown (Deals / Bonus / Trainer), each
+ * suppressed when $0 to reduce noise. Inline chargeback note on the
+ * Deals line when non-zero.
+ */
+function SummaryCard({ label, total, tone, breakdown, pending = false }: {
+  label: string;
+  total: number;
+  tone: string;
+  breakdown: StatusBreakdown;
+  pending?: boolean;
+}) {
+  const lines: string[] = [];
+  if (breakdown.deal !== 0) {
+    const dealAmt = breakdown.deal < 0 ? `−$${Math.abs(breakdown.deal).toLocaleString()}` : `$${breakdown.deal.toLocaleString()}`;
+    let line = `Deals ${dealAmt}`;
+    if (breakdown.chargebacks !== 0) {
+      line += ` (−$${Math.abs(breakdown.chargebacks).toLocaleString()} ${pending ? 'pending cb' : 'cb'})`;
+    }
+    lines.push(line);
+  }
+  if (breakdown.bonus !== 0) lines.push(`Bonus $${breakdown.bonus.toLocaleString()}`);
+  if (breakdown.trainer !== 0) lines.push(`Trainer $${breakdown.trainer.toLocaleString()}`);
+
+  return (
+    <div className="rounded-2xl p-3" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+      <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
+      <p className="text-xl font-bold tabular-nums mt-1 leading-none" style={{ color: tone, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${total.toLocaleString()}</p>
+      <div className="mt-2 space-y-0.5">
+        {lines.length === 0
+          ? <p className="text-[10px]" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>—</p>
+          : lines.map((l) => (
+              <p key={l} className="text-[10px] truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{l}</p>
+            ))}
+      </div>
     </div>
   );
 }

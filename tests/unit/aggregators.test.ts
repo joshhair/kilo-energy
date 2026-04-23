@@ -6,6 +6,7 @@ import {
   sumDraft,
   sumPendingChargebacks,
   countPendingChargebacks,
+  breakdownByType,
   type PayrollAggregable,
 } from '@/lib/aggregators';
 
@@ -151,5 +152,65 @@ describe('consistency — dashboard aggregator = payroll-tab "All types" total',
       sumPaid(entries, { asOf, repId: 'r2' }) +
       sumPaid(entries, { asOf, repId: 'r3' });
     expect(combined).toBe(byRep);
+  });
+});
+
+describe('breakdownByType — payroll summary cards', () => {
+  it('Paid bucket: split by type, total = sum of parts, chargebacks surfaced', () => {
+    const b = breakdownByType(entries, 'Paid', { asOf: today });
+    // 1000 + 2000 + (-200) = 2800 (Deal incl. chargeback)
+    expect(b.deal).toBe(2800);
+    // 500 (Bonus)
+    expect(b.bonus).toBe(500);
+    // 300 (Trainer)
+    expect(b.trainer).toBe(300);
+    // Chargebacks: -200 only (future-dated excluded via asOf)
+    expect(b.chargebacks).toBe(-200);
+    // Total matches sumPaid
+    expect(b.total).toBe(sumPaid(entries, { asOf: today }));
+    expect(b.total).toBe(3600);
+  });
+
+  it('Draft bucket: no date filter, catches draft chargebacks', () => {
+    const b = breakdownByType(entries, 'Draft', { asOf: today });
+    // 400 + (-50) = 350
+    expect(b.deal).toBe(350);
+    expect(b.bonus).toBe(0);
+    expect(b.trainer).toBe(0);
+    // -50 draft chargeback surfaced even though amount<0
+    expect(b.chargebacks).toBe(-50);
+    expect(b.total).toBe(350);
+  });
+
+  it('Pending bucket: no date filter, catches pending chargebacks', () => {
+    const b = breakdownByType(entries, 'Pending', { asOf: today });
+    // 800 + (-150) = 650
+    expect(b.deal).toBe(650);
+    expect(b.chargebacks).toBe(-150);
+    expect(b.total).toBe(650);
+  });
+
+  it('respects rep filter', () => {
+    const b = breakdownByType(entries, 'Paid', { asOf: today, repId: 'r1' });
+    // r1 Paid: 1000 (Deal) + 500 (Bonus) + (-200) (Deal chargeback)
+    expect(b.deal).toBe(800);
+    expect(b.bonus).toBe(500);
+    expect(b.trainer).toBe(0);
+    expect(b.chargebacks).toBe(-200);
+    expect(b.total).toBe(1300);
+  });
+
+  it('returns all zeros when no entries match', () => {
+    const b = breakdownByType([], 'Paid', { asOf: today });
+    expect(b).toEqual({ total: 0, deal: 0, bonus: 0, trainer: 0, chargebacks: 0 });
+  });
+
+  it('explicit isChargeback=true overrides amount>=0 heuristic', () => {
+    const odd: PayrollAggregable[] = [
+      // Shouldn't happen per Zod (chargebacks are negative), but test defensively
+      { status: 'Paid', date: '2026-04-01', amount: 100, type: 'Deal', repId: 'r1', isChargeback: true },
+    ];
+    const b = breakdownByType(odd, 'Paid', { asOf: today });
+    expect(b.chargebacks).toBe(100);
   });
 });
