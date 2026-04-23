@@ -432,26 +432,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
-  // After a commission recompute, any Draft PayrollEntries on this
-  // project that reference M1/M2/M3 stages need to have their stored
-  // amounts realigned to the new Project amounts — otherwise the
+  // After a commission recompute, any Draft OR Pending PayrollEntries
+  // on this project that reference M1/M2/M3 stages need to have their
+  // stored amounts realigned to the new Project amounts — otherwise the
   // payroll tab (and admin Commission Breakdown) keeps showing the
-  // pre-recompute figures, which is exactly what Josh hit when
-  // Trevor Schauwecker's Chris Abbott setter drafts stayed at $3,638
-  // after the project was edited (2026-04-23). Pending/Paid rows are
-  // NEVER touched — those are committed. Chargebacks (isChargeback)
-  // are also preserved as-is.
+  // pre-recompute figures. Rule: auto-sync until Paid. Paid rows are
+  // NEVER touched (money has moved). Chargebacks (isChargeback) are
+  // also preserved as-is.
+  //
+  // Pending originally stayed frozen under the theory that "Pending
+  // means committed to the next payroll run" — but Josh edited the
+  // trainer override on Trevor Schauwecker AFTER marking entries
+  // Pending, and the display never caught up. Admin should see the
+  // right number to publish; Pending is no longer treated as
+  // immutable. (2026-04-23)
   if (bodyTouchesCommissionInputs && !project.subDealerId) {
     const draftsToSync = await prisma.payrollEntry.findMany({
       where: {
         projectId: id,
-        status: 'Draft',
+        status: { in: ['Draft', 'Pending'] },
         isChargeback: false,
-        paymentStage: { in: ['M1', 'M2', 'M3'] },
+        paymentStage: { in: ['M1', 'M2', 'M3', 'Trainer'] },
       },
       select: { id: true, repId: true, paymentStage: true },
     });
+    // M1/M2/M3 stages: overwrite with the rep's current per-milestone
+    // amount. Trainer stage is handled below (needs proportional split
+    // logic to preserve an 80/20 M2/M3 split when multiple trainer
+    // entries exist on the same project).
     for (const entry of draftsToSync) {
+      if (entry.paymentStage === 'Trainer') continue;
       let newCents: number | null = null;
       const isCloser = entry.repId === project.closerId;
       const isSetter = entry.repId === project.setterId;
@@ -478,6 +488,33 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         });
       }
     }
+
+    // Trainer stage: realign to the new trainerRate × kW pool. When a
+    // project has multiple Draft/Pending Trainer entries (e.g. 80% at
+    // M2 + 20% at M3 under installPayPct=80), preserve the existing
+    // proportional split so the M2/M3 breakdown stays intact. Single-
+    // entry case collapses to "entry gets the full pool" which is the
+    // common path for projects before Installed phase.
+    const trainerEntryIds = draftsToSync.filter((e) => e.paymentStage === 'Trainer').map((e) => e.id);
+    if (trainerEntryIds.length > 0) {
+      const trainerRate = project.trainerRate ?? 0;
+      const kW = project.kWSize ?? 0;
+      const poolCents = Math.round(trainerRate * kW * 100_000); // rate × kW × 1000 dollars, × 100 = cents
+      const trainerRows = await prisma.payrollEntry.findMany({
+        where: { id: { in: trainerEntryIds } },
+        select: { id: true, amountCents: true },
+      });
+      const currentSum = trainerRows.reduce((s, e) => s + e.amountCents, 0);
+      for (const row of trainerRows) {
+        const proportion = currentSum > 0 ? row.amountCents / currentSum : 1 / trainerRows.length;
+        const newCents = Math.round(poolCents * proportion);
+        await prisma.payrollEntry.update({
+          where: { id: row.id },
+          data: { amountCents: newCents },
+        });
+      }
+    }
+
     logger.info('drafts_realigned_after_recompute', {
       projectId: id,
       draftCount: draftsToSync.length,
