@@ -46,6 +46,25 @@ export function projectMoneyFromCents(row: {
 
 /** Takes a Prisma Project row and returns a shallow clone with money fields
  *  replaced by their dollar equivalents. Drops the `*Cents` fields. */
+/**
+ * Flattens relational objects that Prisma `include`s might have
+ * attached (installer, financer) down to their `.name` string. Client
+ * types in lib/data.ts declare these as strings, so sending the raw
+ * Prisma object causes React error #31 ("Objects are not valid as a
+ * React child") when any view renders {project.installer} directly.
+ * Applied inside serializeProject so every endpoint that returns a
+ * project DTO gets consistent shape regardless of what it `include`d.
+ */
+function flattenNamed(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  if (typeof v === 'object' && 'name' in (v as object)) {
+    const name = (v as { name: unknown }).name;
+    return typeof name === 'string' ? name : '';
+  }
+  return '';
+}
+
 export function serializeProject<T extends {
   m1AmountCents: number;
   m2AmountCents: number;
@@ -59,8 +78,20 @@ export function serializeProject<T extends {
     setterM1AmountCents, setterM2AmountCents, setterM3AmountCents,
     ...rest
   } = row;
+  const maybeInstaller = (rest as { installer?: unknown }).installer;
+  const maybeFinancer = (rest as { financer?: unknown }).financer;
+  // Only rewrite when the field is actually present AND an object shape.
+  // A pre-normalized string or undefined passes through unchanged.
+  const installerOverride = (maybeInstaller != null && typeof maybeInstaller !== 'string')
+    ? { installer: flattenNamed(maybeInstaller) }
+    : {};
+  const financerOverride = (maybeFinancer != null && typeof maybeFinancer !== 'string')
+    ? { financer: flattenNamed(maybeFinancer) }
+    : {};
   return {
     ...rest,
+    ...installerOverride,
+    ...financerOverride,
     ...projectMoneyFromCents({
       m1AmountCents, m2AmountCents, m3AmountCents,
       setterM1AmountCents, setterM2AmountCents, setterM3AmountCents,

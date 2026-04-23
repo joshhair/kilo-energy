@@ -1584,10 +1584,20 @@ function PayrollPageInner() {
                     value={paymentForm.projectId}
                     onChange={(val) => setPaymentForm((p) => ({ ...p, projectId: val }))}
                     options={projects
-                      .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
+                      // Deal/Bonus rows attach to live projects; Chargebacks
+                      // attach specifically to CANCELLED projects (that's the
+                      // whole use case). Invert the phase filter when the
+                      // active type is Chargeback so admin can actually pick
+                      // the deal they're clawing back. 2026-04-23.
+                      .filter((p) => isChargeback
+                        ? p.phase === 'Cancelled'
+                        : p.phase !== 'Cancelled' && p.phase !== 'On Hold')
                       .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId || p.additionalClosers?.some((c) => c.userId === paymentForm.repId) || p.additionalSetters?.some((s) => s.userId === paymentForm.repId))
-                      .map((p) => ({ value: p.id, label: `${p.customerName} — ${p.installer} (${p.kWSize} kW) [${p.phase}]` }))}
-                    placeholder="— Select project (optional) —"
+                      .map((p) => {
+                        const installerName = typeof p.installer === 'string' ? p.installer : (p.installer as { name?: string })?.name ?? '—';
+                        return { value: p.id, label: `${p.customerName} — ${installerName} (${p.kWSize} kW) [${p.phase}]` };
+                      })}
+                    placeholder={isChargeback ? '— Select cancelled project —' : '— Select project (optional) —'}
                   />
                 </div>
               )}
