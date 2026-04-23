@@ -5,9 +5,12 @@ import { Plus, Trash2, CheckSquare, Square } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 
+interface Installer { id: string; name: string; active: boolean }
+
 export function PMSection() {
   const { toast } = useToast();
-  const [pms, setPms] = useState<Array<{ id: string; firstName: string; lastName: string; email: string; canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }>>([]);
+  const [pms, setPms] = useState<Array<{ id: string; firstName: string; lastName: string; email: string; canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean; scopedInstallerId: string | null }>>([]);
+  const [installers, setInstallers] = useState<Installer[]>([]);
   const [loading, setLoading] = useState(true);
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
@@ -20,7 +23,14 @@ export function PMSection() {
       setLoading(false);
     }).catch(() => setLoading(false));
   };
-  useEffect(() => { loadPMs(); }, []);
+  useEffect(() => {
+    loadPMs();
+    // Load the installer list once for the scope dropdown. Falls back
+    // to empty array on failure — the select just shows "Full access".
+    fetch('/api/installers').then((r) => r.ok ? r.json() : []).then((data) => {
+      if (Array.isArray(data)) setInstallers(data.filter((i: Installer) => i.active));
+    }).catch(() => { /* non-fatal */ });
+  }, []);
 
   const handleAdd = async () => {
     if (!newFirstName.trim() || !newEmail.trim()) return;
@@ -48,6 +58,22 @@ export function PMSection() {
       setPms((prev) => prev.map((pm) => pm.id === pmId ? { ...pm, [field]: !current } : pm));
     } else {
       toast('Failed to update permission', 'error');
+    }
+  };
+
+  const setScope = async (pmId: string, scopedInstallerId: string | null) => {
+    const prev = pms.find((p) => p.id === pmId)?.scopedInstallerId ?? null;
+    setPms((ps) => ps.map((pm) => pm.id === pmId ? { ...pm, scopedInstallerId } : pm));
+    const res = await fetch(`/api/users/${pmId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scopedInstallerId: scopedInstallerId ?? '' }),
+    });
+    if (!res.ok) {
+      setPms((ps) => ps.map((pm) => pm.id === pmId ? { ...pm, scopedInstallerId: prev } : pm));
+      toast('Failed to update installer scope', 'error');
+    } else {
+      toast(scopedInstallerId ? 'Scoped to installer' : 'Full access restored', 'success');
     }
   };
 
@@ -108,16 +134,40 @@ export function PMSection() {
                   <button
                     key={field}
                     onClick={() => togglePerm(pm.id, field, pm[field])}
-                    className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
+                    disabled={!!pm.scopedInstallerId}
+                    className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       pm[field]
                         ? 'bg-emerald-900/30 text-emerald-300 border-[var(--accent-green)]/30'
                         : 'bg-[var(--surface-card)]/50 text-[var(--text-muted)] border-[var(--border)]/50'
                     }`}
+                    title={pm.scopedInstallerId ? 'Disabled while scoped to an installer' : undefined}
                   >
                     {pm[field] ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                     {label}
                   </button>
                 ))}
+              </div>
+              {/* Vendor-PM installer scope. Selecting an installer flips
+                  this PM into vendor mode — they lose access to payroll,
+                  reimbursements, trainer assignments, the rep directory,
+                  and only see projects matching this installer. */}
+              <div className="mt-3 pt-3 border-t border-[var(--border)]/60 flex flex-wrap items-center gap-2">
+                <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Installer scope</label>
+                <select
+                  value={pm.scopedInstallerId ?? ''}
+                  onChange={(e) => setScope(pm.id, e.target.value || null)}
+                  className="bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40"
+                >
+                  <option value="">— Full access (internal PM) —</option>
+                  {installers.map((i) => (
+                    <option key={i.id} value={i.id}>{i.name}</option>
+                  ))}
+                </select>
+                {pm.scopedInstallerId && (
+                  <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                    Vendor PM — ops-only
+                  </span>
+                )}
               </div>
             </div>
           ))}

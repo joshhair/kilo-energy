@@ -48,6 +48,14 @@ model User {
   /// PM-only: whether this project manager can access the Blitz module
   canAccessBlitz  Boolean @default(false)
 
+  /// Vendor-PM scope: when set (and role = "project_manager"), this user
+  /// is scoped to a single installer — they only see projects whose
+  /// installerId matches this value, with commission/margin scrubbed.
+  /// Intended for installer-side staff (e.g. BVI PM) who need to update
+  /// project status/phase but shouldn't see sales compensation data.
+  /// Null = full internal PM (all projects, full visibility).
+  scopedInstallerId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

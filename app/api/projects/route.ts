@@ -22,6 +22,11 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   if (user.role === 'project_manager') {
+    // Vendor PMs (scopedInstallerId set) NEVER create deals — they're
+    // installer-side ops, not sales.
+    if (user.scopedInstallerId) {
+      return NextResponse.json({ error: 'Forbidden — vendor PMs cannot create deals' }, { status: 403 });
+    }
     const pm = await prisma.user.findUnique({
       where: { id: user.id },
       select: { canCreateDeals: true },

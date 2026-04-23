@@ -28,7 +28,7 @@ describe('relationshipToProject — trainer pathways', () => {
   it('per-project trainer override: viewer matches project.trainerId', () => {
     const project = { ...baseProject, trainerId: 'trainer-1' };
     const rel = relationshipToProject(
-      { id: 'trainer-1', role: 'rep' },
+      { id: 'trainer-1', role: 'rep', scopedInstallerId: null },
       project,
     );
     expect(rel).toBe('trainer');
@@ -38,7 +38,7 @@ describe('relationshipToProject — trainer pathways', () => {
     const project = { ...baseProject };
     const chainTrainees = new Set(['closer-1']);
     const rel = relationshipToProject(
-      { id: 'trainer-7', role: 'rep' },
+      { id: 'trainer-7', role: 'rep', scopedInstallerId: null },
       project,
       chainTrainees,
     );
@@ -52,7 +52,7 @@ describe('relationshipToProject — trainer pathways', () => {
     const project = { ...baseProject, setterId: 'trainer-7' };
     const chainTrainees = new Set(['closer-1']);
     const rel = relationshipToProject(
-      { id: 'trainer-7', role: 'rep' },
+      { id: 'trainer-7', role: 'rep', scopedInstallerId: null },
       project,
       chainTrainees,
     );
@@ -65,7 +65,7 @@ describe('relationshipToProject — trainer pathways', () => {
     // forgets to pass chainTrainees will over-restrict (safe side).
     const project = { ...baseProject };
     const rel = relationshipToProject(
-      { id: 'trainer-7', role: 'rep' },
+      { id: 'trainer-7', role: 'rep', scopedInstallerId: null },
       project,
     );
     expect(rel).toBe('none');
@@ -74,7 +74,7 @@ describe('relationshipToProject — trainer pathways', () => {
   it('empty chainTrainees set does not grant trainer relationship', () => {
     const project = { ...baseProject };
     const rel = relationshipToProject(
-      { id: 'trainer-7', role: 'rep' },
+      { id: 'trainer-7', role: 'rep', scopedInstallerId: null },
       project,
       new Set<string>(),
     );
@@ -84,7 +84,7 @@ describe('relationshipToProject — trainer pathways', () => {
   it('admin retains full visibility even if also listed as trainer', () => {
     const project = { ...baseProject, trainerId: 'admin-1' };
     const rel = relationshipToProject(
-      { id: 'admin-1', role: 'admin' },
+      { id: 'admin-1', role: 'admin', scopedInstallerId: null },
       project,
     );
     expect(rel).toBe('admin');

@@ -50,33 +50,34 @@ export type FieldPolicy = Partial<Record<ProjectRelationship, VisibilityAction>>
  */
 export const ProjectFieldVisibility: Record<string, FieldPolicy> = {
   // Sold PPW — a rep not on the deal shouldn't see the price point.
-  netPPW: { none: 'zero' },
+  // vendor_pm: never sees sold price (that's sales-side, not ops-side).
+  netPPW: { vendor_pm: 'zero', none: 'zero' },
 
   // Closer milestone amounts — own-closer passthrough; setter/trainer/
-  // stranger get zeros.
-  m1Amount: { setter: 'zero', trainer: 'zero', none: 'zero' },
-  m2Amount: { setter: 'zero', trainer: 'zero', none: 'zero' },
-  m3Amount: { setter: 'null', trainer: 'null', none: 'null' },
+  // vendor_pm/stranger get zeros.
+  m1Amount: { vendor_pm: 'zero', setter: 'zero', trainer: 'zero', none: 'zero' },
+  m2Amount: { vendor_pm: 'zero', setter: 'zero', trainer: 'zero', none: 'zero' },
+  m3Amount: { vendor_pm: 'null', setter: 'null', trainer: 'null', none: 'null' },
 
   // Setter milestone amounts — closer sees TOTAL (m1+m2+m3 summed in UI)
-  // so these stay visible for closer; trainer/stranger see zero.
-  setterM1Amount: { trainer: 'zero', none: 'zero' },
-  setterM2Amount: { trainer: 'zero', none: 'zero' },
-  setterM3Amount: { trainer: 'null', none: 'null' },
+  // so these stay visible for closer; trainer/vendor_pm/stranger see zero.
+  setterM1Amount: { vendor_pm: 'zero', trainer: 'zero', none: 'zero' },
+  setterM2Amount: { vendor_pm: 'zero', trainer: 'zero', none: 'zero' },
+  setterM3Amount: { vendor_pm: 'null', trainer: 'null', none: 'null' },
 
   // Trainer identity fields — admin/pm only. Scrubbed for everyone else
   // including the trainer themselves (trainer-on-deal gets their payout
   // derived from rate+kW in the UI rather than reading trainerId directly).
-  trainerId:   { closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
-  trainerName: { closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
-  trainerRate: { closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
+  trainerId:   { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
+  trainerName: { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
+  trainerRate: { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
 
   // Admin-only notes — strip the key entirely for everyone except
-  // admin + pm. Reps / trainers / sub-dealers never see these in any
-  // payload. Intended for private admin reference notes that replace
-  // Glide's admin-notes concept; separate from the rep-visible `notes`
-  // field which everyone with edit access can still write to.
+  // admin + pm. Reps / trainers / sub-dealers / vendor_pm never see these.
+  // Vendor PM is explicitly excluded: admin notes may reference rep comp,
+  // cancellation reasons, or other internal-only context.
   adminNotes: {
+    vendor_pm: 'undefined',
     closer: 'undefined',
     setter: 'undefined',
     trainer: 'undefined',
@@ -85,7 +86,9 @@ export const ProjectFieldVisibility: Record<string, FieldPolicy> = {
   },
 
   // Co-party arrays — nuanced per relationship.
-  //   admin/pm/sub-dealer: passthrough (full structure + amounts).
+  //   admin/pm: passthrough (full structure + amounts).
+  //   vendor_pm: empty-array for both — vendor PMs don't need to know
+  //              which reps were on the deal, only the operational fields.
   //   closer: own co-closers passthrough; co-setters zero-party (keep
   //           identity, zero amounts — closer shouldn't see what each
   //           setter makes but can see who's on the deal).
@@ -93,11 +96,13 @@ export const ProjectFieldVisibility: Record<string, FieldPolicy> = {
   //           zero-party (other setters visible by name, amounts hidden).
   //   trainer / none: everyone hidden.
   additionalClosers: {
+    vendor_pm: 'empty-array',
     setter: 'empty-array',
     trainer: 'empty-array',
     none: 'empty-array',
   },
   additionalSetters: {
+    vendor_pm: 'empty-array',
     closer: 'zero-party',
     setter: 'zero-party',
     trainer: 'empty-array',

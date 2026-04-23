@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { getInternalUser, relationshipToProject, loadChainTrainees } from '../../../lib/api-auth';
+import { getInternalUser, relationshipToProject, loadChainTrainees, isVendorPM } from '../../../lib/api-auth';
 import { logger } from '../../../lib/logger';
 import { toDollars, fromCents } from '../../../lib/money';
 import { scrubProjectForViewer } from '../../../lib/serialize';
@@ -17,6 +17,12 @@ export async function GET() {
   const isPM = user.role === 'project_manager';
   const isRep = user.role === 'rep';
   const isSubDealer = user.role === 'sub-dealer';
+  // Vendor PM (role=project_manager AND scopedInstallerId set): sees only
+  // projects whose installerId matches their scope. No payroll, no
+  // reimbursements, no trainer assignments, no incentives, no rep
+  // directory. The field-visibility matrix additionally scrubs commission
+  // + margin fields from every project they do see.
+  const isVendor = isVendorPM(user);
 
   // ─── Trainer-chain lookup ──────────────────────────────────────────────
   // A rep who's assigned as trainer to other reps needs to see those reps'
@@ -28,10 +34,13 @@ export async function GET() {
   const chainTraineeIds = Array.from(chainTrainees);
 
   // ─── Project filter: who sees which projects? ───
-  // Admin: all. PM: all. Rep: closer/setter/co-party + projects they train.
+  // Admin: all. PM (internal): all. Vendor PM: installerId scoped.
+  // Rep: closer/setter/co-party + projects they train.
   // Sub-dealer: subDealerId match.
   const projectWhere: Record<string, unknown> = {};
-  if (isRep) {
+  if (isVendor) {
+    projectWhere.installerId = user.scopedInstallerId!;
+  } else if (isRep) {
     projectWhere.OR = [
       { closerId: user.id },
       { setterId: user.id },
@@ -45,29 +54,42 @@ export async function GET() {
   } else if (isSubDealer) {
     projectWhere.OR = [{ subDealerId: user.id }, { closerId: user.id }];
   }
-  // Admin + PM: no filter (empty where)
+  // Admin + internal PM: no filter (empty where)
 
-  // ─── Payroll filter: rep/sub-dealer only see own. PM sees own (if any). ───
+  // ─── Payroll filter: rep/sub-dealer only see own. PM sees own (if any).
+  // Vendor PM sees NOTHING — payroll is all commission data. ───
   const payrollWhere: Record<string, unknown> = {};
-  if (!isAdmin) {
+  if (isVendor) {
+    // Impossible repId so the query returns nothing. Cheaper than a
+    // branch around the Promise.all below.
+    payrollWhere.repId = '__vendor_pm_no_payroll__';
+  } else if (!isAdmin) {
     payrollWhere.repId = user.id;
   }
 
-  // ─── Reimbursements: rep/sub-dealer/PM only see own ───
+  // ─── Reimbursements: rep/sub-dealer/PM only see own. Vendor PM: none. ───
   const reimbWhere: Record<string, unknown> = {};
-  if (!isAdmin) {
+  if (isVendor) {
+    reimbWhere.repId = '__vendor_pm_no_reimb__';
+  } else if (!isAdmin) {
     reimbWhere.repId = user.id;
   }
 
-  // ─── Trainer assignments: rep sees where they're trainer or trainee. Admin sees all. ───
+  // ─── Trainer assignments: rep sees where they're trainer or trainee.
+  // Admin sees all. Vendor PM: none. ───
   const trainerWhere: Record<string, unknown> = {};
-  if (!isAdmin) {
+  if (isVendor) {
+    trainerWhere.id = '__vendor_pm_no_training__';
+  } else if (!isAdmin) {
     trainerWhere.OR = [{ trainerId: user.id }, { traineeId: user.id }];
   }
 
-  // ─── Incentives: rep/sub-dealer see incentives targeting them or company-wide ───
+  // ─── Incentives: rep/sub-dealer see incentives targeting them or
+  // company-wide. Vendor PM: none. ───
   const incentiveWhere: Record<string, unknown> = {};
-  if (!isAdmin) {
+  if (isVendor) {
+    incentiveWhere.id = '__vendor_pm_no_incentives__';
+  } else if (!isAdmin) {
     incentiveWhere.OR = [{ targetRepId: user.id }, { targetRepId: null }];
   }
 
@@ -96,8 +118,13 @@ export async function GET() {
   ] = await Promise.all([
     // Admins see all users (including deactivated) so historical contexts
     // can render greyed-out names. Non-admins only see active users.
+    // Vendor PMs see NO user directory — the projects they get (below)
+    // already embed the closer/setter names inline via `include: closer`,
+    // so they can still render "Closer: Joe Smith" without the full
+    // contact directory. We scrub the returned list to empty to block
+    // any accidental exposure elsewhere in the client.
     prisma.user.findMany({
-      where: isAdmin ? {} : { active: true },
+      where: isVendor ? { id: '__vendor_pm_no_users__' } : (isAdmin ? {} : { active: true }),
       orderBy: { lastName: 'asc' },
     }),
     prisma.installer.findMany({ orderBy: { name: 'asc' } }),

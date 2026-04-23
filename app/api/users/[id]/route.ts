@@ -151,6 +151,38 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.canCreateDeals !== undefined) data.canCreateDeals = body.canCreateDeals;
   if (body.canAccessBlitz !== undefined) data.canAccessBlitz = body.canAccessBlitz;
 
+  // Vendor-PM installer scope. Only valid for role=project_manager —
+  // setting it on any other role is a schema error rather than a silent
+  // no-op (easier to spot misuse). Empty string is normalized to null.
+  if (body.scopedInstallerId !== undefined) {
+    if (existing.role !== 'project_manager') {
+      return NextResponse.json(
+        { error: 'scopedInstallerId can only be set on project_manager users' },
+        { status: 400 },
+      );
+    }
+    const next = body.scopedInstallerId === '' ? null : body.scopedInstallerId;
+    if (next !== null) {
+      const installer = await prisma.installer.findUnique({
+        where: { id: next },
+        select: { id: true, active: true },
+      });
+      if (!installer) {
+        return NextResponse.json({ error: 'Installer not found' }, { status: 400 });
+      }
+      if (!installer.active) {
+        return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
+      }
+    }
+    data.scopedInstallerId = next;
+    logger.info('user_scoped_installer_changed', {
+      userId: id,
+      from: existing.scopedInstallerId ?? null,
+      to: next,
+      actorId: viewer.id,
+    });
+  }
+
   // Active flag — handles the deactivation / reactivation workflow with
   // full Clerk lifecycle ops. Done after guardrails so we don't touch
   // Clerk if the rules reject the operation.

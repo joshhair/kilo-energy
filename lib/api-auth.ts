@@ -10,6 +10,15 @@ export interface InternalUser {
   role: string; // 'admin' | 'rep' | 'sub-dealer' | 'project_manager'
   repType: string | null;
   clerkUserId: string | null;
+  /** When role = 'project_manager' AND this is non-null, the user is a
+   *  "vendor PM": access is scoped to a single installer. See the
+   *  isVendorPM() helper and the vendor_pm column in fieldVisibility.ts. */
+  scopedInstallerId: string | null;
+}
+
+/** True iff this user is a PM scoped to a specific installer (vendor PM). */
+export function isVendorPM(user: Pick<InternalUser, 'role' | 'scopedInstallerId'>): boolean {
+  return user.role === 'project_manager' && !!user.scopedInstallerId;
 }
 
 /**
@@ -53,6 +62,7 @@ export async function getInternalUser(): Promise<InternalUser | null> {
     role: user.role,
     repType: user.repType,
     clerkUserId: user.clerkUserId,
+    scopedInstallerId: user.scopedInstallerId ?? null,
   };
 }
 
@@ -80,7 +90,16 @@ export async function userCanAccessProject(
   user: InternalUser,
   projectId: string,
 ): Promise<boolean> {
-  if (user.role === 'admin' || user.role === 'project_manager') return true;
+  if (user.role === 'admin') return true;
+  // Vendor PM: access iff project's installerId matches their scope.
+  if (user.role === 'project_manager' && user.scopedInstallerId) {
+    const p = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { installerId: true },
+    });
+    return !!p && p.installerId === user.scopedInstallerId;
+  }
+  if (user.role === 'project_manager') return true;
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     select: { closerId: true, setterId: true, subDealerId: true, trainerId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
@@ -127,6 +146,7 @@ export async function userCanAccessProject(
 export type ProjectRelationship =
   | 'admin'
   | 'pm'
+  | 'vendor_pm'
   | 'closer'
   | 'setter'
   | 'trainer'
@@ -138,12 +158,16 @@ export interface ProjectRelationshipInputs {
   setterId: string | null;
   subDealerId: string | null;
   trainerId: string | null;
+  /** Required for the vendor_pm branch — we match viewer.scopedInstallerId
+   *  against project.installerId. Optional for back-compat with existing
+   *  callers that don't yet select this field. */
+  installerId?: string | null;
   additionalClosers?: ReadonlyArray<{ userId: string }>;
   additionalSetters?: ReadonlyArray<{ userId: string }>;
 }
 
 export function relationshipToProject(
-  viewer: Pick<InternalUser, 'id' | 'role'>,
+  viewer: Pick<InternalUser, 'id' | 'role' | 'scopedInstallerId'>,
   project: ProjectRelationshipInputs,
   /** Optional: set of closer user IDs this viewer trains via an active
    *  rep-chain TrainerAssignment. Callers that serve project data to
@@ -153,6 +177,16 @@ export function relationshipToProject(
   chainTrainees?: ReadonlySet<string>,
 ): ProjectRelationship {
   if (viewer.role === 'admin') return 'admin';
+  // Vendor PM (scoped to a specific installer) sits BETWEEN admin/pm and
+  // the non-internal roles. Only if the project matches their installer
+  // scope do they get any access at all; otherwise 'none' (and the
+  // caller should filter/403 based on that).
+  if (viewer.role === 'project_manager' && viewer.scopedInstallerId) {
+    if (project.installerId && project.installerId === viewer.scopedInstallerId) {
+      return 'vendor_pm';
+    }
+    return 'none';
+  }
   if (viewer.role === 'project_manager') return 'pm';
   if (project.trainerId === viewer.id) return 'trainer';
   if (chainTrainees?.has(project.closerId)) return 'trainer';
@@ -248,6 +282,12 @@ export async function requireAdminOrPM() {
   const user = await prisma.user.findFirst({ where: { email, role: { in: ['admin', 'project_manager'] }, active: true } });
   if (!user) {
     throw NextResponse.json({ error: 'Forbidden — admin or project manager access required' }, { status: 403 });
+  }
+  // Vendor PMs (role=project_manager + scopedInstallerId) are installer-
+  // side ops, NOT internal PMs. Deny them from payroll/bonus/admin
+  // surfaces that gate on requireAdminOrPM.
+  if (user.role === 'project_manager' && user.scopedInstallerId) {
+    throw NextResponse.json({ error: 'Forbidden — vendor PMs cannot access this endpoint' }, { status: 403 });
   }
   return user;
 }

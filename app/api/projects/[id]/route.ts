@@ -29,6 +29,14 @@ const REP_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
   'phase', 'closerId', 'setterId',
 ];
 
+// Vendor PMs (installer-side staff) can touch only operational fields:
+// phase, notes, flagged, cancellationReason, cancellationNotes. Everything
+// else is blocked — they can't reassign reps, retarget an installer, or
+// rewrite the price point.
+const VENDOR_PM_ALLOWED_FIELDS: Array<keyof PatchProjectInput> = [
+  'phase', 'notes', 'flagged', 'cancellationReason', 'cancellationNotes',
+];
+
 // PATCH /api/projects/[id] — Update a project (phase change, notes, flag, etc.)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let user;
@@ -53,7 +61,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // ─── Field-level authorization ───
-  if (user.role === 'project_manager') {
+  if (user.role === 'project_manager' && user.scopedInstallerId) {
+    // Vendor PM: keep only the small allow-list; drop everything else.
+    for (const field of Object.keys(body) as Array<keyof PatchProjectInput>) {
+      if (!VENDOR_PM_ALLOWED_FIELDS.includes(field)) delete body[field];
+    }
+  } else if (user.role === 'project_manager') {
     for (const field of PM_BLOCKED_FIELDS) delete body[field];
   } else if (user.role === 'rep' || user.role === 'sub-dealer') {
     for (const field of REP_BLOCKED_FIELDS) delete body[field];

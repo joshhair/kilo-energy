@@ -18,5 +18,9 @@ export const patchUserSchema = z.object({
   canExport: z.boolean().optional(),
   canCreateDeals: z.boolean().optional(),
   canAccessBlitz: z.boolean().optional(),
+  // Vendor-PM scope. Non-null cuid = scope this PM to that installer
+  // (vendor PM). Null = full internal PM access. Empty string = same as
+  // null (easier for the form to zero out).
+  scopedInstallerId: z.union([z.string().cuid(), z.literal(''), z.null()]).optional(),
 }).strict();
 export type PatchUserInput = z.infer<typeof patchUserSchema>;
