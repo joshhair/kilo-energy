@@ -194,6 +194,7 @@ function TrainingPageInner() {
     trainerAssignments,
     setTrainerAssignments,
     payrollEntries,
+    setPayrollEntries,
     projects,
     reps,
   } = useApp();
@@ -1039,11 +1040,19 @@ function TrainingPageInner() {
               projects={projects}
               payrollEntries={payrollEntries}
               onClose={() => setBackfillAssignmentId(null)}
-              onComplete={(created, skippedCount) => {
+              onComplete={async (created, skippedCount) => {
                 toast(`Created ${created} trainer entries${skippedCount > 0 ? `, skipped ${skippedCount}` : ''}`, 'success');
                 setBackfillAssignmentId(null);
-                // Reload context data to pick up new payroll entries
-                window.location.reload();
+                // Live-refresh payroll entries from /api/data instead of
+                // a hard reload — preserves scroll position, tab state,
+                // and any open modals on this page.
+                try {
+                  const res = await fetch('/api/data');
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data?.payrollEntries) setPayrollEntries(data.payrollEntries);
+                  }
+                } catch { /* non-fatal — next page nav will pick up fresh data */ }
               }}
             />
           );
