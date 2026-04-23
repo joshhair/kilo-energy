@@ -48,6 +48,7 @@ import {
   Loader2,
   AlertTriangle,
   CheckCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -857,6 +858,67 @@ function TrainingPageInner() {
             </button>
           )}
         </div>
+
+        {/* Trainer profile card — renders when a specific trainer is
+            filtered. Answers "what does Paul's training footprint look
+            like right now?" without forcing admin to click into each row. */}
+        {adminTrainerFilter && (() => {
+          const trainerRep = reps.find((r) => r.id === adminTrainerFilter);
+          if (!trainerRep) return null;
+          const theirAssignments = trainerAssignments.filter((a) => a.trainerId === adminTrainerFilter);
+          const lifetimeEarned = payrollEntries
+            .filter((e) => e.repId === adminTrainerFilter && e.paymentStage === 'Trainer' && e.status === 'Paid')
+            .reduce((s, e) => s + e.amount, 0);
+          const pendingEarnings = payrollEntries
+            .filter((e) => e.repId === adminTrainerFilter && e.paymentStage === 'Trainer' && (e.status === 'Draft' || e.status === 'Pending'))
+            .reduce((s, e) => s + e.amount, 0);
+          const trainerRowsForTrainer = adminRows.filter((r) => r.assignment.trainerId === adminTrainerFilter);
+          const active = trainerRowsForTrainer.filter((r) => r.status === 'training').length;
+          const residuals = trainerRowsForTrainer.filter((r) => r.status === 'residuals').length;
+          const paused = trainerRowsForTrainer.filter((r) => r.status === 'paused').length;
+          const maxed = trainerRowsForTrainer.filter((r) => r.status === 'maxed').length;
+          return (
+            <div className="card-surface rounded-2xl p-5 mb-5 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent border-amber-500/20">
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-base font-bold flex-shrink-0">
+                  {getInitials(trainerRep.name)}
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-white font-bold text-lg hover:text-[var(--accent-cyan)] transition-colors">
+                      {trainerRep.name}
+                    </Link>
+                    <span className="text-xs text-[var(--text-muted)] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">Trainer</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--text-muted)]">
+                    <span><span className="text-white font-semibold">{theirAssignments.length}</span> assignment{theirAssignments.length === 1 ? '' : 's'}</span>
+                    {active > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-amber-400 font-semibold">{active}</span> training</span></>}
+                    {residuals > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-cyan-400 font-semibold">{residuals}</span> residuals</span></>}
+                    {paused > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-slate-400 font-semibold">{paused}</span> paused</span></>}
+                    {maxed > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-emerald-400 font-semibold">{maxed}</span> maxed</span></>}
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Lifetime earned</p>
+                    <p className="text-xl font-bold text-amber-400 tabular-nums">${lifetimeEarned.toLocaleString()}</p>
+                    {pendingEarnings > 0 && (
+                      <p className="text-[11px] text-[var(--text-muted)] tabular-nums">+${pendingEarnings.toLocaleString()} pending</p>
+                    )}
+                  </div>
+                  <Link
+                    href={`/dashboard/payroll?rep=${encodeURIComponent(trainerRep.id)}&type=Trainer`}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
+                    style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}
+                  >
+                    View payments
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Results count */}
         <p className="text-xs text-[var(--text-muted)] mb-3">
