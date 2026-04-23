@@ -40,6 +40,7 @@ type MobileFetchedUser = {
   canCreateDeals?: boolean;
   canAccessBlitz?: boolean;
   canExport?: boolean;
+  scopedInstallerId?: string | null;
 };
 
 export default function MobileRepDetail({ repId }: { repId: string }) {
@@ -93,6 +94,10 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   // Invite button (don't offer if account already exists), show pending
   // invitation age, and safely delete-permanently (zero relations only).
   const [userMeta, setUserMeta] = useState<{ hasClerkAccount: boolean; pendingInvitation: { id: string; createdAt: number } | null; relationCount: number } | null>(null);
+  // Vendor-PM installer scope (admin viewing a PM).
+  const [installerList, setInstallerList] = useState<Array<{ id: string; name: string; active: boolean }>>([]);
+  const [scopedInstallerId, setScopedInstallerIdState] = useState<string | null>(null);
+  const [scopeSaving, setScopeSaving] = useState(false);
 
   useEffect(() => {
     if (effectiveRole !== 'admin') return;
@@ -115,11 +120,53 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     fetch(`/api/reps/${repId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data: MobileFetchedUser | null) => {
-        if (data) setFetchedUser(data);
-        else setLookupFailed(true);
+        if (data) {
+          setFetchedUser(data);
+          if (data.role === 'project_manager') {
+            setScopedInstallerIdState(data.scopedInstallerId ?? null);
+          }
+        } else setLookupFailed(true);
       })
       .catch(() => setLookupFailed(true));
   }, [repId, rep, subDealer]);
+
+  // Admin viewing a PM: load installer list for the scope dropdown.
+  useEffect(() => {
+    if (effectiveRole !== 'admin') return;
+    const role = fetchedUser?.role ?? rep?.role ?? subDealer?.role ?? '';
+    if (role !== 'project_manager') return;
+    if (installerList.length > 0) return;
+    fetch('/api/installers')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => {
+        if (Array.isArray(data)) setInstallerList(data.filter((i) => i.active));
+      })
+      .catch(() => { /* non-fatal */ });
+  }, [effectiveRole, fetchedUser, rep, subDealer, installerList.length]);
+
+  const saveScope = async (next: string) => {
+    if (scopeSaving) return;
+    setScopeSaving(true);
+    const prev = scopedInstallerId;
+    const nextValue = next || null;
+    setScopedInstallerIdState(nextValue);
+    try {
+      const res = await fetch(`/api/users/${repId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scopedInstallerId: next || '' }),
+      });
+      if (!res.ok) {
+        setScopedInstallerIdState(prev);
+        toast('Failed to update scope', 'error');
+      } else {
+        setFetchedUser((p) => p ? { ...p, scopedInstallerId: nextValue } : p);
+        toast(nextValue ? 'Scoped to installer' : 'Full access', 'success');
+      }
+    } finally {
+      setScopeSaving(false);
+    }
+  };
 
   // Resolve to whichever source succeeded.
   const resolvedUser = rep
@@ -251,6 +298,35 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   {label}
                 </button>
               ))}
+            </div>
+
+            {/* Installer scope — mirrors desktop user detail page */}
+            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--m-text-dim, #445577)' }}>
+                Installer scope
+              </p>
+              <select
+                value={scopedInstallerId ?? ''}
+                onChange={(e) => saveScope(e.target.value)}
+                disabled={scopeSaving}
+                className="w-full rounded-xl px-3 py-3 text-base focus:outline-none disabled:opacity-50"
+                style={{
+                  background: 'var(--m-card, var(--surface-mobile-card))',
+                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  color: 'var(--m-text, var(--text-mobile))',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                <option value="">— Full access (internal PM) —</option>
+                {installerList.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </select>
+              {scopedInstallerId && (
+                <p className="text-[11px] mt-2 text-amber-400">
+                  Vendor PM — installer-scoped, ops-only.
+                </p>
+              )}
             </div>
           </div>
         )}

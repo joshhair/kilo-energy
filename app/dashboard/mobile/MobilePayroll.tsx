@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, todayLocalDateStr } from '../../../lib/utils';
 import { breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
@@ -12,9 +13,19 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
-type TypeTab = 'Deal' | 'Bonus';
+type TypeTab = 'Deal' | 'Bonus' | 'Trainer';
 type PageView = 'payroll' | 'reimbursements';
 type ReimFilterStatus = 'All' | 'Pending' | 'Approved' | 'Denied';
+
+// Classifies a PayrollEntry into one of the three type tabs. Trainer
+// overrides are stored as type='Deal' + paymentStage='Trainer' in the
+// DB — we surface them under their own tab. Mirrors the desktop helper
+// in app/dashboard/payroll/page.tsx (2026-04-23).
+function entryTypeTab(entry: { type?: string; paymentStage?: string }): TypeTab {
+  if (entry.paymentStage === 'Trainer') return 'Trainer';
+  if (entry.type === 'Bonus') return 'Bonus';
+  return 'Deal';
+}
 
 export default function MobilePayroll() {
   const {
@@ -31,10 +42,19 @@ export default function MobilePayroll() {
     effectiveRepId,
   } = useApp();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const [pageView, setPageView] = useState<PageView>('payroll');
-  const [statusTab, setStatusTab] = useState<StatusTab>('Draft');
-  const [typeTab, setTypeTab] = useState<TypeTab>('Deal');
+  // Hydrate initial tab state from the URL so a refresh on
+  // /dashboard/payroll?view=reimbursements&status=Paid&type=Bonus
+  // lands on the same view. Matches desktop pattern shipped 2026-04-23.
+  const initialStatus = (searchParams.get('status') ?? 'Draft') as StatusTab;
+  const initialType = (searchParams.get('type') ?? 'Deal') as TypeTab;
+  const initialView = (searchParams.get('view') === 'reimbursements' ? 'reimbursements' : 'payroll') as PageView;
+
+  const [pageView, setPageView] = useState<PageView>(initialView);
+  const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
+  const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'Deal');
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
   const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<PayrollEntry | null>(null);
   const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
@@ -45,9 +65,27 @@ export default function MobilePayroll() {
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
 
   // ── Admin filters ─────────────────────────────────────────────────────────
-  const [filterRepId, setFilterRepId] = useState('');
-  const [filterFrom, setFilterFrom] = useState('');
-  const [filterTo, setFilterTo] = useState('');
+  const [filterRepId, setFilterRepId] = useState(searchParams.get('rep') ?? '');
+  const [filterFrom, setFilterFrom] = useState(searchParams.get('from') ?? '');
+  const [filterTo, setFilterTo] = useState(searchParams.get('to') ?? '');
+
+  // Sync state → URL. Only non-default values are written so the
+  // querystring stays clean.
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (statusTab !== 'Draft') params.set('status', statusTab); else params.delete('status');
+    if (typeTab !== 'Deal') params.set('type', typeTab); else params.delete('type');
+    if (pageView === 'reimbursements') params.set('view', 'reimbursements'); else params.delete('view');
+    if (filterRepId) params.set('rep', filterRepId); else params.delete('rep');
+    if (filterFrom) params.set('from', filterFrom); else params.delete('from');
+    if (filterTo) params.set('to', filterTo); else params.delete('to');
+    const next = params.toString();
+    const current = searchParams.toString();
+    if (next !== current) {
+      router.replace(next ? `?${next}` : '?', { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusTab, typeTab, pageView, filterRepId, filterFrom, filterTo]);
 
   // ── Reimbursements state ──────────────────────────────────────────────────
   const [reimFilterStatus, setReimFilterStatus] = useState<ReimFilterStatus>('Pending');
@@ -113,7 +151,7 @@ export default function MobilePayroll() {
   const pendingTotal = useMemo(() => {
     const today = todayLocalDateStr();
     return payrollEntries
-      .filter((e) => e.status === 'Pending' && e.type === typeTab && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
+      .filter((e) => e.status === 'Pending' && entryTypeTab(e) === typeTab && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
       .reduce((s, e) => s + e.amount, 0);
   }, [payrollEntries, typeTab, effectiveRole, effectiveRepId]);
 
@@ -142,7 +180,7 @@ export default function MobilePayroll() {
     const today = todayLocalDateStr();
     return payrollEntries.filter((e) =>
       e.status === statusTab &&
-      e.type === typeTab &&
+      entryTypeTab(e) === typeTab &&
       (statusTab === 'Draft' || e.date <= today) &&
       (effectiveRole === 'admin' || e.repId === effectiveRepId) &&
       (!filterRepId || e.repId === filterRepId) &&
@@ -557,7 +595,7 @@ export default function MobilePayroll() {
 
       {/* ── Type tabs ── */}
       <div className="flex gap-2">
-        {(['Deal', 'Bonus'] as TypeTab[]).map((t) => (
+        {(['Deal', 'Bonus', 'Trainer'] as TypeTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTypeTab(t)}
