@@ -331,8 +331,27 @@ function TrainingPageInner() {
   // Slide-over: read-only project drill from an Active Trainee card
   const [slideProjectId, setSlideProjectId] = useState<string | null>(null);
 
-  // New Assignment modal
+  // New Assignment modal. prefillTraineeId supports the Batch D
+  // deep-link: `/dashboard/training?newAssignment=1&traineeId=<id>`
+  // opens the modal with the trainee dropdown already seeded.
   const [showNewAssignment, setShowNewAssignment] = useState(false);
+  const [prefillTraineeId, setPrefillTraineeId] = useState<string | null>(null);
+  useEffect(() => {
+    if (effectiveRole !== 'admin') return;
+    if (searchParams.get('newAssignment') === '1') {
+      const tid = searchParams.get('traineeId');
+      setPrefillTraineeId(tid);
+      setShowNewAssignment(true);
+      // Strip the one-shot params from the URL so refreshing the page
+      // after closing the modal doesn't re-open it.
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('newAssignment');
+      params.delete('traineeId');
+      const qs = params.toString();
+      router.replace(qs ? `?${qs}` : '?', { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, effectiveRole]);
 
   // Backfill wizard — stores the assignment ID whose backfill is active
   const [backfillAssignmentId, setBackfillAssignmentId] = useState<string | null>(null);
@@ -1223,10 +1242,12 @@ function TrainingPageInner() {
         {showNewAssignment && (
           <NewAssignmentModal
             reps={reps}
-            onClose={() => setShowNewAssignment(false)}
+            prefillTraineeId={prefillTraineeId ?? undefined}
+            onClose={() => { setShowNewAssignment(false); setPrefillTraineeId(null); }}
             onCreated={(assignment) => {
               setTrainerAssignments((prev) => [...prev, assignment]);
               setShowNewAssignment(false);
+              setPrefillTraineeId(null);
               toast('Assignment created', 'success');
             }}
           />
@@ -2042,14 +2063,18 @@ function NewAssignmentModal({
   reps,
   onClose,
   onCreated,
+  prefillTraineeId,
 }: {
   reps: Rep[];
   onClose: () => void;
   onCreated: (assignment: TrainerAssignment) => void;
+  /** When set, the Trainee dropdown is seeded to this rep — used by the
+   *  user-detail "Assign as Trainee" deep-link flow (Batch D). */
+  prefillTraineeId?: string;
 }) {
   const { toast: _toast } = useToast();
   const [trainerId, setTrainerId] = useState('');
-  const [traineeId, setTraineeId] = useState('');
+  const [traineeId, setTraineeId] = useState(prefillTraineeId ?? '');
   const [isActiveTraining, setIsActiveTraining] = useState(true);
   const [tiers, setTiers] = useState<TierRow[]>([{ ratePerW: '0.20', upToDeal: '10', perpetuity: false }]);
   const [saving, setSaving] = useState(false);

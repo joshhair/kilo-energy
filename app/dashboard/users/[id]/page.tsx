@@ -921,12 +921,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <h2 className="text-white font-semibold text-sm">Trainer Assignment</h2>
             </div>
             {!assignment && !showTrainerPicker && (
-              <button
-                onClick={() => setShowTrainerPicker(true)}
-                className="flex items-center gap-1.5 text-sm font-medium text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" /> Assign Trainer
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowTrainerPicker(true)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors"
+                  title="Quick: picks a trainer, assigns at a single $0.05/W perpetual tier"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Assign Trainer
+                </button>
+                <Link
+                  href={`/dashboard/training?newAssignment=1&traineeId=${encodeURIComponent(id)}`}
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors"
+                  title="Full picker with multi-tier configuration"
+                >
+                  Advanced →
+                </Link>
+              </div>
             )}
           </div>
 
