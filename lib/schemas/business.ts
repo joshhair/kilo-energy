@@ -137,6 +137,9 @@ export const createRepSchema = z.object({
   phone: z.string().trim().max(50).optional().default(''),
   role: z.enum(['rep', 'admin', 'sub-dealer', 'project_manager']).optional().default('rep'),
   repType: z.enum(['closer', 'setter', 'both']).optional().default('both'),
+  // Vendor-PM scope. Only honored when role=project_manager. Empty
+  // string normalized to null on the server side.
+  scopedInstallerId: z.union([z.string().cuid(), z.literal(''), z.null()]).optional(),
 });
 export type CreateRepInput = z.infer<typeof createRepSchema>;
 

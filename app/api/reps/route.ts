@@ -45,6 +45,29 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
+  // Vendor-PM scope validation: only allowed when role=project_manager.
+  // Empty string treated as unset. Verify the installer exists + active.
+  let scopedInstallerId: string | null = null;
+  if (body.scopedInstallerId) {
+    if (body.role !== 'project_manager') {
+      return NextResponse.json(
+        { error: 'scopedInstallerId only valid when role=project_manager' },
+        { status: 400 },
+      );
+    }
+    const installer = await prisma.installer.findUnique({
+      where: { id: body.scopedInstallerId },
+      select: { id: true, active: true },
+    });
+    if (!installer) {
+      return NextResponse.json({ error: 'Installer not found' }, { status: 400 });
+    }
+    if (!installer.active) {
+      return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
+    }
+    scopedInstallerId = installer.id;
+  }
+
   const user = await prisma.user.create({
     data: {
       firstName: body.firstName,
@@ -53,6 +76,7 @@ export async function POST(req: NextRequest) {
       phone: body.phone,
       role: body.role,
       repType: body.repType,
+      scopedInstallerId,
     },
   });
   return NextResponse.json({

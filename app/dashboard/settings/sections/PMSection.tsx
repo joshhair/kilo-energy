@@ -15,6 +15,9 @@ export function PMSection() {
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  // Optional scope at create time. Blank = full internal PM access;
+  // picking an installer provisions them as a vendor PM immediately.
+  const [newScopedInstallerId, setNewScopedInstallerId] = useState('');
   const [confirmDeletePmId, setConfirmDeletePmId] = useState<string | null>(null);
 
   const loadPMs = () => {
@@ -37,11 +40,17 @@ export function PMSection() {
     const res = await fetch('/api/reps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName: newFirstName.trim(), lastName: newLastName.trim(), email: newEmail.trim(), role: 'project_manager' }),
+      body: JSON.stringify({
+        firstName: newFirstName.trim(),
+        lastName: newLastName.trim(),
+        email: newEmail.trim(),
+        role: 'project_manager',
+        scopedInstallerId: newScopedInstallerId || undefined,
+      }),
     });
     if (res.ok) {
-      toast('Project manager added');
-      setNewFirstName(''); setNewLastName(''); setNewEmail('');
+      toast(newScopedInstallerId ? 'Vendor PM added (installer-scoped)' : 'Project manager added');
+      setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewScopedInstallerId('');
       loadPMs();
     } else {
       toast('Failed to add project manager', 'error');
@@ -89,22 +98,39 @@ export function PMSection() {
       <p className="text-xs text-[var(--text-muted)]">Project managers can view all projects and reps but cannot access payroll, pricing, or settings.</p>
 
       {/* Add form */}
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">First Name</label>
-          <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
+      <div className="space-y-2">
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">First Name</label>
+            <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
+          </div>
+          <div className="flex-1">
+            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Last Name</label>
+            <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
+          </div>
+          <div className="flex-[2]">
+            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Email</label>
+            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
+          </div>
+          <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
-        <div className="flex-1">
-          <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Last Name</label>
-          <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Installer scope (optional)</label>
+            <select
+              value={newScopedInstallerId}
+              onChange={(e) => setNewScopedInstallerId(e.target.value)}
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40"
+            >
+              <option value="">— Full access (internal PM) —</option>
+              {installers.map((i) => (
+                <option key={i.id} value={i.id}>{i.name} (vendor PM — ops-only)</option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="flex-[2]">
-          <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Email</label>
-          <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
-        </div>
-        <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
-          <Plus className="w-4 h-4" />
-        </button>
       </div>
 
       {/* PM list with permission toggles */}

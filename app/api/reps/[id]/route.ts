@@ -38,6 +38,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     canCreateDeals: isAdmin ? (user.canCreateDeals ?? false) : undefined,
     canAccessBlitz: isAdmin ? (user.canAccessBlitz ?? false) : undefined,
     canExport: isAdmin ? (user.canExport ?? false) : undefined,
+    scopedInstallerId: isAdmin ? (user.scopedInstallerId ?? null) : undefined,
   });
 }
 

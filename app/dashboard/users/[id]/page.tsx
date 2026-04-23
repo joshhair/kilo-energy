@@ -32,6 +32,7 @@ type FetchedUser = {
   canCreateDeals?: boolean;
   canAccessBlitz?: boolean;
   canExport?: boolean;
+  scopedInstallerId?: string | null;
 };
 
 // Admin-only metadata about a user — fetched separately from /api/users/[id]
@@ -86,6 +87,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [userMeta, setUserMeta] = useState<UserMeta | null>(null);
   const [userMetaError, setUserMetaError] = useState(false);
   const [metaRefreshKey, setMetaRefreshKey] = useState(0);
+  // Vendor-PM installer scope. Fetched once per mount for admin viewers;
+  // lets the Permissions card show an inline scope dropdown for any
+  // role=project_manager user.
+  const [installerList, setInstallerList] = useState<Array<{ id: string; name: string; active: boolean }>>([]);
+  const [scopedInstallerId, setScopedInstallerIdState] = useState<string | null>(null);
+  const [scopeSaving, setScopeSaving] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
@@ -142,11 +149,55 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     fetch(`/api/reps/${id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data: FetchedUser | null) => {
-        if (data) setFetchedUser(data);
-        else setLookupFailed(true);
+        if (data) {
+          setFetchedUser(data);
+          // Seed the scoped-installer control when the target user is a PM.
+          if (data.role === 'project_manager') {
+            setScopedInstallerIdState(data.scopedInstallerId ?? null);
+          }
+        } else setLookupFailed(true);
       })
       .catch(() => setLookupFailed(true));
   }, [id, rep, subDealer]);
+
+  // Admins viewing a PM need the installer list for the scope dropdown.
+  // Fetched lazily so rep/SD profile views don't pay for it.
+  useEffect(() => {
+    if (effectiveRole !== 'admin') return;
+    const role = fetchedUser?.role ?? rep?.role ?? subDealer?.role ?? '';
+    if (role !== 'project_manager') return;
+    if (installerList.length > 0) return;
+    fetch('/api/installers')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => {
+        if (Array.isArray(data)) setInstallerList(data.filter((i) => i.active));
+      })
+      .catch(() => { /* non-fatal */ });
+  }, [effectiveRole, fetchedUser, rep, subDealer, installerList.length]);
+
+  const saveScope = async (next: string) => {
+    if (scopeSaving) return;
+    setScopeSaving(true);
+    const prev = scopedInstallerId;
+    const nextValue = next || null;
+    setScopedInstallerIdState(nextValue);
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scopedInstallerId: next || '' }),
+      });
+      if (!res.ok) {
+        setScopedInstallerIdState(prev);
+        toast('Failed to update installer scope', 'error');
+      } else {
+        if (fetchedUser) setFetchedUser({ ...fetchedUser, scopedInstallerId: nextValue });
+        toast(nextValue ? 'Scoped to installer' : 'Full access restored', 'success');
+      }
+    } finally {
+      setScopeSaving(false);
+    }
+  };
 
   // Resolve the display user from whichever source succeeded.
   // NOTE: preserve `rep.role` — it may be 'rep' OR 'admin' (selling
@@ -634,8 +685,33 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </span>
               </div>
             </div>
+            {/* Installer scope — vendor PM selector. Editable inline
+                so admins can toggle scope without jumping to Settings.
+                When set, the user becomes a vendor PM and the flags
+                above no longer apply. */}
+            <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-2">
+              <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+                Installer scope
+              </label>
+              <select
+                value={scopedInstallerId ?? ''}
+                onChange={(e) => saveScope(e.target.value)}
+                disabled={scopeSaving}
+                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 disabled:opacity-50"
+              >
+                <option value="">— Full access (internal PM) —</option>
+                {installerList.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </select>
+              {scopedInstallerId && (
+                <p className="text-[11px] text-amber-400">
+                  Vendor PM — can only see + edit this installer&apos;s projects. No payroll, training, reimbursements, or rep directory.
+                </p>
+              )}
+            </div>
             <p className="text-[11px] mt-4 pt-4 border-t border-[var(--border)]" style={{ color: 'var(--text-dim)' }}>
-              Toggle these flags from Settings → Project Managers. Inline editing will move here in a follow-up.
+              Permission flags above are managed from Settings → Project Managers.
             </p>
           </div>
         )}
