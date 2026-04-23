@@ -106,8 +106,15 @@ function PayrollPageInner() {
   const initialStatus = (searchParams.get('status') ?? 'Draft') as StatusTab;
   const initialType = (searchParams.get('type') ?? 'Deal') as TypeTab;
   const initialRep = searchParams.get('rep') ?? '';
+  const initialView = (searchParams.get('view') === 'reimbursements' ? 'reimbursements' : 'payroll') as PageView;
+  const initialPage = (() => {
+    const p = searchParams.get('page');
+    return p ? Math.max(1, parseInt(p, 10) || 1) : 1;
+  })();
+  const initialFrom = searchParams.get('from') ?? '';
+  const initialTo = searchParams.get('to') ?? '';
 
-  const [pageView, setPageView] = useState<PageView>('payroll');
+  const [pageView, setPageView] = useState<PageView>(initialView);
   const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
   const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'Deal');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -168,26 +175,58 @@ function PayrollPageInner() {
   const [repStatusFilter, setRepStatusFilter] = useState<'All' | 'Draft' | 'Pending' | 'Paid'>('All');
 
   // Payroll entries date filter
-  const [payFilterFrom, setPayFilterFrom] = useState('');
-  const [payFilterTo, setPayFilterTo] = useState('');
+  const [payFilterFrom, setPayFilterFrom] = useState(initialFrom);
+  const [payFilterTo, setPayFilterTo] = useState(initialTo);
 
   // Pagination for admin payroll table
-  const [adminPage, setAdminPage] = useState(1);
+  const [adminPage, setAdminPage] = useState(initialPage);
   const [adminRowsPerPage, setAdminRowsPerPage] = useState(25);
 
   // Rep filter (admin)
   const [filterRepId, setFilterRepId] = useState(initialRep);
 
-  // Re-sync state when browser back/forward changes searchParams
+  // Re-sync state when browser back/forward changes searchParams.
+  // Covers: status tab, type tab, rep filter, page-view (payroll vs
+  // reimbursements), admin page number, date range. Everything Josh
+  // might want to preserve across a refresh lives in the URL.
   useEffect(() => {
     const s = (searchParams.get('status') ?? 'Draft') as StatusTab;
     const t = (searchParams.get('type') ?? 'Deal') as TypeTab;
     const r = searchParams.get('rep') ?? '';
+    const v = (searchParams.get('view') ?? 'payroll') as PageView;
+    const pageStr = searchParams.get('page');
+    const from = searchParams.get('from') ?? '';
+    const to = searchParams.get('to') ?? '';
     setStatusTab(['Draft', 'Pending', 'Paid'].includes(s) ? s : 'Draft');
     setTypeTab(['Deal', 'Bonus', 'Trainer'].includes(t) ? t : 'Deal');
     setFilterRepId(r);
+    setPageView(v === 'reimbursements' ? 'reimbursements' : 'payroll');
+    const parsedPage = pageStr ? Math.max(1, parseInt(pageStr, 10) || 1) : 1;
+    setAdminPage(parsedPage);
+    setPayFilterFrom(from);
+    setPayFilterTo(to);
     setSelectedIds(new Set());
   }, [searchParams]);
+
+  // Sync state → URL. Only the params that changed get written so the
+  // URL stays clean (no page=1, no from=, etc on default-value state).
+  // router.replace keeps the existing entry in history rather than
+  // adding one per keystroke in the date picker.
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (pageView === 'reimbursements') params.set('view', 'reimbursements'); else params.delete('view');
+    if (adminPage > 1) params.set('page', String(adminPage)); else params.delete('page');
+    if (payFilterFrom) params.set('from', payFilterFrom); else params.delete('from');
+    if (payFilterTo) params.set('to', payFilterTo); else params.delete('to');
+    const nextQs = params.toString();
+    const currentQs = searchParams.toString();
+    if (nextQs !== currentQs) {
+      router.replace(nextQs ? `?${nextQs}` : '?', { scroll: false });
+    }
+    // Intentional: effect runs whenever persisted state changes — searchParams
+    // comes from the router itself and we only read it for diffing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageView, adminPage, payFilterFrom, payFilterTo]);
 
   // Wrappers that sync tab/filter state to URL params
   const changeStatusTab = (v: StatusTab) => {
