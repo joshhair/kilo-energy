@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -285,6 +285,10 @@ function TrainingPageInner() {
   // escapes the table wrapper's overflow-x clipping (which implicitly clips
   // overflow-y as well, making a non-portaled menu invisible below the row).
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  // Which trainer groups are expanded in the admin table. A trainer
+  // with 15 trainees should render as 1 summary row by default;
+  // clicking expands to show their per-trainee assignment rows.
+  const [expandedTrainerIds, setExpandedTrainerIds] = useState<Set<string>>(new Set());
   const kebabButtonRefs = useRef<Map<string, HTMLButtonElement | null>>(new Map());
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
@@ -661,6 +665,31 @@ function TrainingPageInner() {
     });
   }, [adminRows, adminStatusFilter, adminTrainerFilter, adminRepFilter, adminSearch]);
 
+  // Group filtered rows by trainer so Paul-with-15-trainees renders
+  // as a single collapsible row. Sort groups by trainee count desc so
+  // the busiest trainers bubble to the top.
+  const groupedByTrainer = useMemo(() => {
+    const map = new Map<string, { trainerId: string; trainerName: string; rows: typeof filteredAdminRows }>();
+    for (const row of filteredAdminRows) {
+      const tid = row.assignment.trainerId;
+      const entry = map.get(tid);
+      if (entry) {
+        entry.rows.push(row);
+      } else {
+        map.set(tid, { trainerId: tid, trainerName: row.trainer?.name ?? 'Unknown', rows: [row] });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.rows.length - a.rows.length || a.trainerName.localeCompare(b.trainerName));
+  }, [filteredAdminRows]);
+
+  const toggleTrainerExpanded = useCallback((trainerId: string) => {
+    setExpandedTrainerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(trainerId)) next.delete(trainerId); else next.add(trainerId);
+      return next;
+    });
+  }, []);
+
   // Unique trainer + rep lists for filter dropdowns
   const trainerOptions = useMemo(() => {
     const ids = new Set(trainerAssignments.map((a) => a.trainerId));
@@ -857,10 +886,80 @@ function TrainingPageInner() {
                     </td>
                   </tr>
                 )}
-                {filteredAdminRows.map((row, idx) => {
-                  const a = row.assignment;
-                  const trainerName = row.trainer?.name ?? 'Unknown';
-                  const traineeName = row.trainee?.name ?? 'Unknown';
+                {groupedByTrainer.flatMap((group, groupIdx) => {
+                  const expanded = expandedTrainerIds.has(group.trainerId);
+                  const trainerName = group.trainerName;
+                  const traineeCount = group.rows.length;
+                  const avgRate = traineeCount > 0
+                    ? group.rows.reduce((s, r) => s + r.rate, 0) / traineeCount
+                    : 0;
+                  const totalConsumed = group.rows.reduce((s, r) => s + r.consumed, 0);
+                  const activeCount = group.rows.filter((r) => r.status === 'training').length;
+                  const residualsCount = group.rows.filter((r) => r.status === 'residuals').length;
+                  const pausedCount = group.rows.filter((r) => r.status === 'paused').length;
+                  const maxedCount = group.rows.filter((r) => r.status === 'maxed').length;
+                  const summaryRow = (
+                    <tr
+                      key={`group-${group.trainerId}`}
+                      className={`table-row-enter row-stagger-${Math.min(groupIdx, 24)} hover:bg-[var(--surface-card)]/40 transition-colors cursor-pointer`}
+                      onClick={() => toggleTrainerExpanded(group.trainerId)}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0 transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
+                          <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                            {getInitials(trainerName)}
+                          </div>
+                          <Link
+                            href={`/dashboard/users/${group.trainerId}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-white truncate hover:text-[var(--accent-cyan)] transition-colors font-semibold"
+                          >
+                            {trainerName}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">
+                        {traineeCount} trainee{traineeCount === 1 ? '' : 's'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {activeCount > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                              {activeCount} training
+                            </span>
+                          )}
+                          {residualsCount > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                              {residualsCount} residuals
+                            </span>
+                          )}
+                          {pausedCount > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-500/15 text-slate-300 border border-slate-500/30">
+                              {pausedCount} paused
+                            </span>
+                          )}
+                          {maxedCount > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                              {maxedCount} maxed
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-[var(--text-muted)] text-xs">—</td>
+                      <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">
+                        ${avgRate.toFixed(2)}/W <span className="text-[10px] text-[var(--text-muted)] font-normal">avg</span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums text-xs">
+                        {totalConsumed} deal{totalConsumed === 1 ? '' : 's'}
+                      </td>
+                      <td className="px-4 py-3"></td>
+                    </tr>
+                  );
+                  if (!expanded) return [summaryRow];
+                  const detailRows = group.rows.map((row, idx) => {
+                    const a = row.assignment;
+                    const traineeName = row.trainee?.name ?? 'Unknown';
                   // Capped-tier progress bar: show consumed against the last capped tier.
                   const hasPerpetual = a.tiers.some((t) => t.upToDeal === null);
                   const lastCappedTier = [...a.tiers].reverse().find((t) => t.upToDeal !== null);
@@ -869,16 +968,11 @@ function TrainingPageInner() {
                   return (
                     <tr
                       key={a.id}
-                      className={`table-row-enter row-stagger-${Math.min(idx, 24)} hover:bg-[var(--surface-card)]/30 transition-colors`}
+                      className={`table-row-enter row-stagger-${Math.min(idx, 24)} hover:bg-[var(--surface-card)]/30 transition-colors bg-[var(--surface-card)]/10`}
                     >
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                            {getInitials(trainerName)}
-                          </div>
-                          <Link href={`/dashboard/users/${a.trainerId}`} className="text-white truncate hover:text-[var(--accent-cyan)] transition-colors">
-                            {trainerName}
-                          </Link>
+                        <div className="flex items-center gap-2 pl-8 text-[var(--text-dim)] text-xs">
+                          <span className="text-[var(--text-muted)]">↳</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -1010,6 +1104,8 @@ function TrainingPageInner() {
                       </td>
                     </tr>
                   );
+                  });
+                  return [summaryRow, ...detailRows];
                 })}
               </tbody>
             </table>
