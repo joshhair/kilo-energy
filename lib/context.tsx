@@ -781,12 +781,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (old) deriveM3FromM2Edit(updates, old, installerPayConfigs, dbUpdates);
 
     // ── 4. Persist DB changes ──
+    // Read the server's response and reconcile client state with the
+    // recomputed commission amounts. The client can't replicate the full
+    // server-side computeProjectCommission (which resolves installer
+    // pricing versions, trainer overrides, etc.), so optimistic client
+    // values diverge from truth when math-inputs change (e.g. setting
+    // trainerRate on Trevor Schauwecker's deal showed ~$7–8k each on
+    // mobile until app restart, 2026-04-22). Reconciling from the
+    // response avoids the "fixes itself on reopen" ghost.
     if (Object.keys(dbUpdates).length > 0) {
       persistFetch(`/api/projects/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dbUpdates),
-      }, 'Failed to save project changes').catch(() => {});
+      }, 'Failed to save project changes')
+        .then(async (res) => {
+          if (!res.ok) return;
+          try {
+            const serverProject = await res.json();
+            if (!serverProject || !serverProject.id) return;
+            setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
+          } catch { /* non-JSON response — leave optimistic state alone */ }
+        })
+        .catch(() => {});
     }
 
     // ── 5. Update local project state + phase-transition payroll ──
