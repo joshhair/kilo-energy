@@ -1589,10 +1589,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       value={editVals.trainerRate}
                       onChange={(e) => setEditVals((v) => ({ ...v, trainerRate: e.target.value }))}
                       disabled={!editVals.trainerId}
-                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] disabled:opacity-50"
+                      className={`w-full bg-[var(--surface-card)] border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] disabled:opacity-50 ${
+                        editVals.trainerId && editVals.trainerRate.trim() === ''
+                          ? 'border-amber-500/60'
+                          : 'border-[var(--border)]'
+                      }`}
                     />
                   </div>
                 </div>
+                {editVals.trainerId && editVals.trainerRate.trim() === '' && (
+                  <p className="text-amber-300 text-xs mt-2">
+                    Rate is required — without a rate the trainer override calculates as $0.
+                    Typical: $0.10–$0.20 per watt.
+                  </p>
+                )}
               </div>
 
 

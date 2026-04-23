@@ -311,12 +311,20 @@ function NewDealPage() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
   }, [form.blitzId, rawBlitzes, reps]);
 
-  // Clear setterId when blitzId changes and the selected setter is no longer an approved participant.
+  // Clear setterId only when a BLITZ change makes the selected setter
+  // no longer an approved participant. Previously this fired any time
+  // setterPickerReps shifted — including the moment reps[] was empty
+  // during initial hydration — silently dropping the user's picked
+  // setter. Tyson dropped on Trevor Schauwecker's deal (2026-04-22)
+  // was traced to this race. Guard so clearing only happens when
+  // (a) reps are loaded and (b) a blitz is actually selected.
   useEffect(() => {
     if (!form.setterId) return;
+    if (!form.blitzId) return;         // no blitz → don't filter membership
+    if (reps.length === 0) return;     // reps still loading → don't clear
     if (setterPickerReps.some((r) => r.id === form.setterId)) return;
     setForm((prev) => ({ ...prev, setterId: '' }));
-  }, [form.setterId, setterPickerReps]);
+  }, [form.setterId, form.blitzId, setterPickerReps, reps.length]);
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = setterAssignment
@@ -684,8 +692,13 @@ function NewDealPage() {
       customerName: form.customerName,
       repId: isSubDealer ? (currentRepId ?? '') : closerId,
       repName: isSubDealer ? (currentRepName ?? '') : (rep?.name ?? currentRepName ?? ''),
-      setterId: isSubDealer ? undefined : setter?.id,
-      setterName: isSubDealer ? undefined : setter?.name,
+      // Use form.setterId as source of truth, not setter?.id — the reps
+      // lookup can momentarily miss the rep during hydration, which would
+      // silently drop the setter from the POST payload (Trevor Schauwecker
+      // regression, 2026-04-22). Server validates against the User table
+      // anyway. Only strip when sub-dealer / no user picked.
+      setterId: isSubDealer ? undefined : (form.setterId || undefined),
+      setterName: isSubDealer ? undefined : (setter?.name ?? ''),
       soldDate: form.soldDate,
       installer: form.installer,
       financer: form.financer,

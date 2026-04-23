@@ -400,12 +400,17 @@ export default function MobileNewDeal() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
   }, [form.blitzId, rawBlitzes, reps]);
 
-  // Clear setterId when blitzId changes and the selected setter is no longer an approved participant.
+  // Clear setterId only when a BLITZ change makes the selected setter
+  // no longer an approved participant. Guard matches desktop
+  // new-deal/page.tsx — prevents silent setter drops during hydration.
+  // See Trevor Schauwecker regression (2026-04-22).
   useEffect(() => {
     if (!form.setterId) return;
+    if (!form.blitzId) return;
+    if (reps.length === 0) return;
     if (setterPickerReps.some((r) => r.id === form.setterId)) return;
     setForm((prev) => ({ ...prev, setterId: '' }));
-  }, [form.setterId, setterPickerReps]);
+  }, [form.setterId, form.blitzId, setterPickerReps, reps.length]);
 
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
   const solarTechFamilyProducts = solarTechProducts.filter((p) => p.family === solarTechFamily);
@@ -790,8 +795,10 @@ export default function MobileNewDeal() {
       customerName: form.customerName,
       repId: isSubDealer ? (currentRepId ?? '') : closerId,
       repName: isSubDealer ? (currentRepName ?? '') : (rep?.name ?? currentRepName ?? ''),
-      setterId: isSubDealer ? undefined : setter?.id,
-      setterName: isSubDealer ? undefined : setter?.name,
+      // form.setterId is the source of truth — see desktop page.tsx
+      // comment. Prevents reps-lookup miss from dropping the setter.
+      setterId: isSubDealer ? undefined : (form.setterId || undefined),
+      setterName: isSubDealer ? undefined : (setter?.name ?? ''),
       soldDate: form.soldDate,
       installer: form.installer,
       financer: form.financer,
