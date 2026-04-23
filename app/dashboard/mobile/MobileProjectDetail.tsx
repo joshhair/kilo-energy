@@ -20,7 +20,7 @@ import ProjectChatter from '../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { AdminNotesEditor } from '../projects/components/detail/AdminNotesEditor';
-import { InlineNotesEditor } from '../projects/components/detail/InlineNotesEditor';
+import { ProjectNotes } from '../components/ProjectNotes';
 
 // ── Pipeline steps ──
 
@@ -949,18 +949,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         );
       })()}
 
-      {/* Notes — collapsible */}
+      {/* Notes — per-note rows (added + individually deletable). */}
       <MobileSection title="Notes" collapsible defaultOpen={false}>
-        {!isAdmin ? (
-          <InlineNotesEditor
-            notes={project.notes ?? ''}
-            onSave={(text) => updateProject({ notes: text })}
-          />
-        ) : project.notes ? (
-          <p className="text-base text-slate-400 leading-relaxed">{project.notes}</p>
-        ) : (
-          <p className="text-base text-slate-400 italic">No notes</p>
-        )}
+        <ProjectNotes projectId={project.id} />
       </MobileSection>
 
       {/* Admin Notes — admin + PM only. Scrubbed server-side for every

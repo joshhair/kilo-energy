@@ -354,6 +354,7 @@ model Project {
   payrollEntries PayrollEntry[]
   activities     ProjectActivity[]
   messages       ProjectMessage[]
+  projectNotes   ProjectNote[]
 
   /// Tag-team support: extra closers / setters on a deal beyond the primary.
   /// Empty for a standard single-closer, single-setter deal — no query cost.
@@ -755,6 +756,24 @@ model ProjectMention {
 
   @@index([messageId])
   @@index([userId])
+}
+
+/// Standalone per-project note. Replaces the earlier single-textarea
+/// pattern on Project.notes — each row is an individually-deletable
+/// entry authored by a specific user at a specific time. Legacy
+/// Project.notes content is migrated into these rows on first run
+/// of scripts/migrate-add-project-notes-table.mjs.
+model ProjectNote {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId   String
+  authorName String
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@index([projectId])
+  @@index([authorId])
 }
 
 // ============================================================================

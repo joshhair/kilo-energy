@@ -142,6 +142,18 @@ function MentionDropdown({ query, anchorRect, reps, onSelect, onClose: _onClose,
 
 export default function ProjectChatter({ projectId }: { projectId: string }) {
   const { currentRepId, currentRepName, currentRole, reps, subDealers } = useApp();
+  // Per-project mentionable user list, fetched from a dedicated
+  // endpoint so vendor PMs (who have an empty reps[] in context)
+  // can still tag people. Names only — not a contact directory.
+  const [serverMentionable, setServerMentionable] = useState<Array<{ id: string; name: string }> | null>(null);
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/mentionable`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => {
+        if (Array.isArray(data)) setServerMentionable(data);
+      })
+      .catch(() => { /* fall back to context-built list below */ });
+  }, [projectId]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -164,13 +176,17 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   // Due date editing state
   const [editingDueDate, setEditingDueDate] = useState<{ messageId: string; checkItemId: string } | null>(null);
 
-  // Build rep list for mentions
+  // Build rep list for mentions. Prefer the server-scoped list when
+  // loaded (vendor PM gets a narrowed list, internal users get the full
+  // active set); fall back to the client context (reps + subDealers)
+  // while the fetch is in flight so rendering doesn't flash empty.
   const mentionableUsers = useMemo(() => {
+    if (serverMentionable) return serverMentionable;
     const users: Array<{ id: string; name: string }> = [];
     reps.filter((r) => r.active !== false).forEach((r) => users.push({ id: r.id, name: r.name }));
     subDealers.filter((sd) => sd.active !== false).forEach((sd) => users.push({ id: sd.id, name: `${sd.firstName} ${sd.lastName}` }));
     return users;
-  }, [reps, subDealers]);
+  }, [serverMentionable, reps, subDealers]);
 
   // Unread count for this project
   const unreadCount = useMemo(() => {

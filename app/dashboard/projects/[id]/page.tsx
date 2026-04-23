@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useRef, useCallback } from 'react';
+import { use, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -23,7 +23,7 @@ import { CoPartySection, type CoPartyDraft } from '../components/CoPartySection'
 import { PipelineStepper, PhaseBadge, PIPELINE_STEPS } from '../components/detail/PipelineStepper';
 import { RepCommissionCard } from '../components/detail/RepCommissionCard';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
-import { InlineNotesEditor } from '../components/detail/InlineNotesEditor';
+import { ProjectNotes } from '../../components/ProjectNotes';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
 import { AdminNotesEditor } from '../components/detail/AdminNotesEditor';
 import RecordChargebackModal from '../components/RecordChargebackModal';
@@ -42,66 +42,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const project = projects.find((p) => p.id === id);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- depend only on customerName to avoid re-fires on any project field change
   useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
-  const [notesDraft, setNotesDraft] = useState(project?.notes ?? '');
-  const [notesDraftSaved, setNotesDraftSaved] = useState(false);
-  const notesDraftDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track the last project.notes value we synced from so we can detect external
-  // changes (e.g. the Edit modal saving new notes) without clobbering unsaved
-  // local edits the admin is actively typing.
-  const lastSyncedNotes = useRef(project?.notes ?? '');
-  useEffect(() => {
-    const incoming = project?.notes ?? '';
-    if (incoming !== lastSyncedNotes.current) {
-      // project.notes changed externally — only overwrite local textarea if the
-      // admin hasn't started typing something new (i.e. textarea still matches
-      // the previous synced value).
-      if (notesDraft === lastSyncedNotes.current) {
-        setNotesDraft(incoming);
-      }
-      // Cancel any pending debounce so it cannot overwrite the externally-saved value.
-      if (notesDraftDebounce.current) { clearTimeout(notesDraftDebounce.current); notesDraftDebounce.current = null; }
-      lastSyncedNotes.current = incoming;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project?.notes]);
-
-  // Auto-save admin notes with 1s debounce
-  const doSaveNotesDraft = useCallback((value: string) => {
-    if (project && value !== (project.notes ?? '')) {
-      ctxUpdateProject(id, { notes: value });
-      lastSyncedNotes.current = value;
-      setNotesDraftSaved(true);
-      setTimeout(() => setNotesDraftSaved(false), 2000);
-    }
-  }, [project, id, ctxUpdateProject]);
-
-  const handleNotesDraftChange = (value: string) => {
-    setNotesDraft(value);
-    if (notesDraftDebounce.current) clearTimeout(notesDraftDebounce.current);
-    notesDraftDebounce.current = setTimeout(() => doSaveNotesDraft(value), 1000);
-  };
-
-  // Save on blur immediately (cancel pending debounce)
-  const handleNotesDraftBlur = () => {
-    if (notesDraftDebounce.current) { clearTimeout(notesDraftDebounce.current); notesDraftDebounce.current = null; }
-    doSaveNotesDraft(notesDraft);
-  };
-
-  // Cancel debounce timer on unmount
-  useEffect(() => {
-    return () => { if (notesDraftDebounce.current) clearTimeout(notesDraftDebounce.current); };
-  }, []);
-
-  // Warn on navigation if notes are dirty
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (project && notesDraft !== (project.notes ?? '')) {
-        e.preventDefault();
-      }
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [notesDraft, project]);
+  // Notes moved to the ProjectNotes list component (per-note rows).
+  // The legacy notesDraft / auto-save textarea was removed 2026-04-23.
   const [editM1, setEditM1] = useState(false);
   const [editM2, setEditM2] = useState(false);
   const [m1Val, setM1Val] = useState('');
@@ -406,7 +348,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       netPPW: String(project.netPPW),
       setterId: project.setterId ?? '',
       soldDate: project.soldDate,
-      notes: notesDraft ?? '',
+      notes: project.notes ?? '',
       useBaselineOverride: !!project.baselineOverride,
       overrideCloserPerW: project.baselineOverride ? String(project.baselineOverride.closerPerW) : '',
       overrideSetterPerW: project.baselineOverride?.setterPerW != null ? String(project.baselineOverride.setterPerW) : '',
@@ -1339,41 +1281,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
       )}
 
-      {/* Notes */}
+      {/* Notes — per-note rows, each individually deletable. Replaced
+          the single-textarea InlineNotesEditor on 2026-04-23. Legacy
+          Project.notes content was migrated into ProjectNote rows by
+          scripts/migrate-add-project-notes-table.mjs. */}
       <div className="card-surface rounded-2xl p-6">
         <h2 className="text-white font-semibold mb-3">Notes</h2>
-
-        {(effectiveRole === 'admin' || isPM) ? (
-          <div>
-            <textarea
-              rows={4}
-              value={notesDraft}
-              onChange={(e) => handleNotesDraftChange(e.target.value)}
-              onBlur={handleNotesDraftBlur}
-              placeholder="Add notes about this project..."
-              maxLength={1000}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-slate-500 resize-none"
-            />
-            <div className="flex items-center justify-between mt-1">
-              <p className={`text-xs transition-colors duration-200 ${
-                notesDraft.length >= 960 ? 'text-red-400' :
-                notesDraft.length >= 800 ? 'text-amber-400' :
-                'text-[var(--text-muted)]'
-              }`}>
-                {notesDraft.length} / 1000
-              </p>
-              {notesDraftSaved && <span className="text-xs text-[var(--accent-green)] animate-fade-in-up">Saved</span>}
-              {!notesDraftSaved && notesDraft !== (project.notes ?? '') && (
-                <span className="text-xs text-[var(--text-muted)]">Auto-saving...</span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <InlineNotesEditor
-            notes={project.notes ?? ''}
-            onSave={(text) => { updateProject({ notes: text }); }}
-          />
-        )}
+        <ProjectNotes projectId={id} />
       </div>
 
       {/* Admin Notes — visible only to admin + PM. Reps, trainers, and
@@ -1388,11 +1302,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         />
       )}
 
+      {/* Chatter — above Activity so in-project discussion is the
+          primary surface, with the activity log reachable just below. */}
+      <ProjectChatter projectId={id} />
+
       {/* Activity Timeline */}
       <ActivityTimeline projectId={id} />
-
-      {/* Chatter */}
-      <ProjectChatter projectId={id} />
 
       {/* Edit Project Modal
           Portaled to document.body so fixed positioning is relative to the
