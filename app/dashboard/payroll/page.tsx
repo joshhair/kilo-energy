@@ -21,7 +21,18 @@ import { PayrollSkeleton } from './components/PayrollSkeleton';
 import { StatCard, ReimBadge } from './components/StatCard';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
-type TypeTab = 'Deal' | 'Bonus';
+type TypeTab = 'Deal' | 'Bonus' | 'Trainer';
+
+// Classifies a PayrollEntry into one of the three type tabs. Trainer
+// overrides are stored as type='Deal' + paymentStage='Trainer' in the
+// DB — we surface them under their own tab rather than bundling with
+// Deal so admins have a direct home for trainer overrides (matches
+// the combined-cards breakdown in commit 3bbf548). 2026-04-23.
+function entryTypeTab(entry: { type?: string; paymentStage?: string }): TypeTab {
+  if (entry.paymentStage === 'Trainer') return 'Trainer';
+  if (entry.type === 'Bonus') return 'Bonus';
+  return 'Deal';
+}
 type PageView = 'payroll' | 'reimbursements';
 
 /** Returns the Tailwind gradient string that matches the active status tab */
@@ -98,7 +109,7 @@ function PayrollPageInner() {
 
   const [pageView, setPageView] = useState<PageView>('payroll');
   const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
-  const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus'].includes(initialType) ? initialType : 'Deal');
+  const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'Deal');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [actionBarMounted, setActionBarMounted] = useState(false);
   const [actionBarVisible, setActionBarVisible] = useState(false);
@@ -168,7 +179,7 @@ function PayrollPageInner() {
     const t = (searchParams.get('type') ?? 'Deal') as TypeTab;
     const r = searchParams.get('rep') ?? '';
     setStatusTab(['Draft', 'Pending', 'Paid'].includes(s) ? s : 'Draft');
-    setTypeTab(['Deal', 'Bonus'].includes(t) ? t : 'Deal');
+    setTypeTab(['Deal', 'Bonus', 'Trainer'].includes(t) ? t : 'Deal');
     setFilterRepId(r);
     setSelectedIds(new Set());
   }, [searchParams]);
@@ -223,7 +234,7 @@ function PayrollPageInner() {
   }, [statusTab, isHydrated]);
 
   useEffect(() => {
-    const TYPE_TABS: TypeTab[] = ['Deal', 'Bonus'];
+    const TYPE_TABS: TypeTab[] = ['Deal', 'Bonus', 'Trainer'];
     const idx = TYPE_TABS.indexOf(typeTab);
     const el = typeTabRefs.current[idx];
     if (el) setTypeIndicator({ left: el.offsetLeft, width: el.offsetWidth });
@@ -300,7 +311,7 @@ function PayrollPageInner() {
       if (filterRepId && p.repId !== filterRepId) continue;
 
       allTypesInScope.push(p);
-      if (p.type !== typeTab) continue;
+      if (entryTypeTab(p) !== typeTab) continue;
       filteredByDateRep.push(p);
 
       if (p.status === statusTab && (statusTab === 'Draft' || p.date <= today)) {
@@ -1205,7 +1216,7 @@ function PayrollPageInner() {
           >
             {s}
             <span className="ml-1.5 text-xs opacity-70">
-              ({filteredByDateRep.filter((p) => p.status === s && p.type === typeTab && (s === 'Draft' || p.date <= today)).length})
+              ({filteredByDateRep.filter((p) => p.status === s && entryTypeTab(p) === typeTab && (s === 'Draft' || p.date <= today)).length})
             </span>
           </button>
         ))}
@@ -1214,7 +1225,7 @@ function PayrollPageInner() {
       {/* Type tabs */}
       <div className="flex gap-1 mb-6 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
         {typeIndicator && <div className="tab-indicator" style={typeIndicator} />}
-        {(['Deal', 'Bonus'] as TypeTab[]).map((t, i) => (
+        {(['Deal', 'Bonus', 'Trainer'] as TypeTab[]).map((t, i) => (
           <button
             key={t}
             ref={(el) => { typeTabRefs.current[i] = el; }}
