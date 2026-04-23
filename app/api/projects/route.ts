@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
       ...(additionalSettersCreate.length ? { additionalSetters: { create: additionalSettersCreate } } : {}),
     },
     include: {
-      closer: true, setter: true, subDealer: true, installer: true, financer: true,
+      closer: true, setter: true, subDealer: true, installer: true, financer: true, trainer: true,
       additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
       additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
     },

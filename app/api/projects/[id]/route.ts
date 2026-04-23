@@ -426,10 +426,64 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data,
     include: {
       closer: true, setter: true, installer: true, financer: true,
+      trainer: true, subDealer: true,
       additionalClosers: { include: { user: true }, orderBy: { position: 'asc' } },
       additionalSetters: { include: { user: true }, orderBy: { position: 'asc' } },
     },
   });
+
+  // After a commission recompute, any Draft PayrollEntries on this
+  // project that reference M1/M2/M3 stages need to have their stored
+  // amounts realigned to the new Project amounts — otherwise the
+  // payroll tab (and admin Commission Breakdown) keeps showing the
+  // pre-recompute figures, which is exactly what Josh hit when
+  // Trevor Schauwecker's Chris Abbott setter drafts stayed at $3,638
+  // after the project was edited (2026-04-23). Pending/Paid rows are
+  // NEVER touched — those are committed. Chargebacks (isChargeback)
+  // are also preserved as-is.
+  if (bodyTouchesCommissionInputs && !project.subDealerId) {
+    const draftsToSync = await prisma.payrollEntry.findMany({
+      where: {
+        projectId: id,
+        status: 'Draft',
+        isChargeback: false,
+        paymentStage: { in: ['M1', 'M2', 'M3'] },
+      },
+      select: { id: true, repId: true, paymentStage: true },
+    });
+    for (const entry of draftsToSync) {
+      let newCents: number | null = null;
+      const isCloser = entry.repId === project.closerId;
+      const isSetter = entry.repId === project.setterId;
+      if (entry.paymentStage === 'M1') {
+        newCents = isCloser ? project.m1AmountCents
+          : isSetter ? project.setterM1AmountCents
+          : null;
+      } else if (entry.paymentStage === 'M2') {
+        newCents = isCloser ? project.m2AmountCents
+          : isSetter ? project.setterM2AmountCents
+          : null;
+      } else if (entry.paymentStage === 'M3') {
+        newCents = isCloser ? project.m3AmountCents
+          : isSetter ? project.setterM3AmountCents
+          : null;
+      }
+      // null = stage not applicable for this rep on this project (e.g.
+      // M3 when installer has installPayPct=100). Leave the draft
+      // alone — phase rollback logic handles removal separately.
+      if (newCents != null) {
+        await prisma.payrollEntry.update({
+          where: { id: entry.id },
+          data: { amountCents: newCents },
+        });
+      }
+    }
+    logger.info('drafts_realigned_after_recompute', {
+      projectId: id,
+      draftCount: draftsToSync.length,
+      actorId: user.id,
+    });
+  }
 
   // Audit: record diff of audited fields (no-op if nothing changed in them).
   const phaseChanged = before && (before as Record<string, unknown>).phase !== project.phase;

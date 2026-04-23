@@ -65,6 +65,20 @@ function flattenNamed(v: unknown): string {
   return '';
 }
 
+/**
+ * Builds a "First Last" display name from a Prisma user relation, or
+ * null when the relation is absent. Used to derive repName/setterName/
+ * trainerName/subDealerName from the include'd join.
+ */
+function personFullName(v: unknown): string | null {
+  if (v == null || typeof v !== 'object') return null;
+  const obj = v as { firstName?: unknown; lastName?: unknown };
+  const first = typeof obj.firstName === 'string' ? obj.firstName : '';
+  const last = typeof obj.lastName === 'string' ? obj.lastName : '';
+  const joined = `${first} ${last}`.trim();
+  return joined || null;
+}
+
 export function serializeProject<T extends {
   m1AmountCents: number;
   m2AmountCents: number;
@@ -80,18 +94,38 @@ export function serializeProject<T extends {
   } = row;
   const maybeInstaller = (rest as { installer?: unknown }).installer;
   const maybeFinancer = (rest as { financer?: unknown }).financer;
+  const maybeCloser = (rest as { closer?: unknown }).closer;
+  const maybeSetter = (rest as { setter?: unknown }).setter;
+  const maybeTrainer = (rest as { trainer?: unknown }).trainer;
+  const maybeSubDealer = (rest as { subDealer?: unknown }).subDealer;
+
   // Only rewrite when the field is actually present AND an object shape.
-  // A pre-normalized string or undefined passes through unchanged.
+  // Pre-normalized strings or undefineds pass through unchanged.
   const installerOverride = (maybeInstaller != null && typeof maybeInstaller !== 'string')
     ? { installer: flattenNamed(maybeInstaller) }
     : {};
   const financerOverride = (maybeFinancer != null && typeof maybeFinancer !== 'string')
     ? { financer: flattenNamed(maybeFinancer) }
     : {};
+
+  // Person relations (closer/setter/trainer/subDealer) get flattened to
+  // *Name string fields matching the client's Project type. Only derive
+  // when the relation is present; caller can still set *Name directly.
+  const nameOverrides: Record<string, string | undefined> = {};
+  const closerName = personFullName(maybeCloser);
+  const setterName = personFullName(maybeSetter);
+  const trainerName = personFullName(maybeTrainer);
+  const subDealerName = personFullName(maybeSubDealer);
+  if (closerName) nameOverrides.repName = closerName;
+  if (setterName) nameOverrides.setterName = setterName;
+  if (trainerName) nameOverrides.trainerName = trainerName;
+  if (subDealerName) nameOverrides.subDealerName = subDealerName;
+
   return {
     ...rest,
     ...installerOverride,
     ...financerOverride,
+    ...nameOverrides,
     ...projectMoneyFromCents({
       m1AmountCents, m2AmountCents, m3AmountCents,
       setterM1AmountCents, setterM2AmountCents, setterM3AmountCents,
