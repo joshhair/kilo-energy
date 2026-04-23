@@ -4,14 +4,19 @@ import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createInstallerSchema } from '../../../lib/schemas/pricing';
 
-// GET /api/installers?name=X — Look up a single installer by name (admin only)
+// GET /api/installers — admin only.
+//   - ?name=X: look up a single installer by name
+//   - no query param: return the full installer list, sorted by name
 export async function GET(req: NextRequest) {
   try { await requireAdmin(); } catch (r) { return r as NextResponse; }
   const name = req.nextUrl.searchParams.get('name');
-  if (!name) return NextResponse.json({ error: 'name query param required' }, { status: 400 });
-  const installer = await prisma.installer.findFirst({ where: { name } });
-  if (!installer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(installer);
+  if (name) {
+    const installer = await prisma.installer.findFirst({ where: { name } });
+    if (!installer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(installer);
+  }
+  const installers = await prisma.installer.findMany({ orderBy: { name: 'asc' } });
+  return NextResponse.json(installers);
 }
 
 // POST /api/installers — Create a new installer (admin only)
