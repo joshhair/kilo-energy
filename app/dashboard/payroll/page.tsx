@@ -9,7 +9,7 @@ import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$, localDateString, todayLocalDateStr } from '../../../lib/utils';
 import { sumPaid, sumPending, sumDraft, breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
-import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer, Trash2 } from 'lucide-react';
+import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer, Trash2, ChevronDown } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -111,6 +111,11 @@ function PayrollPageInner() {
   const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
   const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'Deal');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Which reps are expanded in the grouped payroll table. Default:
+  // all collapsed (one summary row per rep). Josh flagged the flat
+  // table as overwhelming when a rep has many entries; clicking a
+  // summary row expands into the per-entry breakdown.
+  const [expandedRepIds, setExpandedRepIds] = useState<Set<string>>(new Set());
   const [actionBarMounted, setActionBarMounted] = useState(false);
   const [actionBarVisible, setActionBarVisible] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -380,7 +385,45 @@ function PayrollPageInner() {
   // Header checkbox state: considers only the visible page entries.
   const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
 
-  // repGroups removed — flat table rendering uses paginatedFiltered directly
+  // Group the current page's entries by rep so the table renders as one
+  // summary row per rep with an expand chevron; detail rows (the prior
+  // flat entries) render beneath when expanded. Not memoized because
+  // the early returns above a useMemo here would break Rules of Hooks
+  // — the computation is O(paginatedFiltered.length), cheap enough to
+  // run every render.
+  const groupedByRep = (() => {
+    const map = new Map<string, { repId: string; repName: string; entries: typeof paginatedFiltered; total: number }>();
+    for (const entry of paginatedFiltered) {
+      const key = entry.repId;
+      const existing = map.get(key);
+      if (existing) {
+        existing.entries.push(entry);
+        existing.total += entry.amount;
+      } else {
+        map.set(key, { repId: key, repName: entry.repName, entries: [entry], total: entry.amount });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.entries.length - a.entries.length || a.repName.localeCompare(b.repName));
+  })();
+
+  const toggleRepExpanded = (repId: string) => {
+    setExpandedRepIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(repId)) next.delete(repId); else next.add(repId);
+      return next;
+    });
+  };
+  const allGroupEntrySelected = (entries: typeof paginatedFiltered): boolean =>
+    entries.length > 0 && entries.every((e) => selectedIds.has(e.id));
+  const toggleGroupSelection = (entries: typeof paginatedFiltered) => {
+    const ids = entries.map((e) => e.id);
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) { for (const id of ids) next.delete(id); } else { for (const id of ids) next.add(id); }
+      return next;
+    });
+  };
 
   const handlePublish = async () => {
     if (publishingPayrollRef.current) return;
@@ -1337,9 +1380,62 @@ function PayrollPageInner() {
               </tr>
             </thead>
             <tbody>
-              {paginatedFiltered.map((entry, i) => (
+              {groupedByRep.flatMap((group, groupIdx) => {
+                const expanded = expandedRepIds.has(group.repId);
+                const groupAllSelected = allGroupEntrySelected(group.entries);
+                const summaryRow = (
+                  <tr
+                    key={`rep-${group.repId}`}
+                    style={{
+                      background: groupIdx % 2 === 0 ? 'var(--surface)' : '#191c24',
+                      borderBottom: '1px solid var(--border)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => toggleRepExpanded(group.repId)}
+                  >
+                    {statusTab === 'Draft' && (
+                      <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }} onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={groupAllSelected}
+                          onChange={() => toggleGroupSelection(group.entries)}
+                          style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }}
+                          title={groupAllSelected ? 'Deselect all of this rep\'s entries' : 'Select all of this rep\'s entries'}
+                        />
+                      </td>
+                    )}
+                    <td style={{ padding: '12px 14px', fontSize: 15, fontFamily: "'DM Sans',sans-serif" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <ChevronDown
+                          className="w-3.5 h-3.5"
+                          style={{
+                            color: 'var(--text-muted)',
+                            transition: 'transform 200ms',
+                            transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{group.repName}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif", color: 'var(--text-muted)' }}>
+                      {group.entries.length} {group.entries.length === 1 ? 'entry' : 'entries'}
+                    </td>
+                    <td style={{ padding: '12px 14px' }}></td>
+                    <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}>
+                      <span style={{ color: group.total < 0 ? '#ef4444' : 'var(--accent-green)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>
+                        {fmt$(group.total)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 14px' }}></td>
+                    <td style={{ padding: '12px 14px' }}></td>
+                    <td style={{ padding: '12px 14px' }}></td>
+                  </tr>
+                );
+                if (!expanded) return [summaryRow];
+                const detailRows = group.entries.map((entry, i) => (
                 <tr key={entry.id} style={{
-                  background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? 'var(--surface)' : '#191c24',
+                  background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? 'var(--surface-card)' : '#141820',
                   borderBottom: '1px solid var(--border)',
                   cursor: 'pointer',
                 }} onClick={() => statusTab === 'Draft' && toggleEntry(entry.id)}>
@@ -1348,7 +1444,7 @@ function PayrollPageInner() {
                       <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleEntry(entry.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }} />
                     </td>
                   )}
-                  <td style={{ padding: '12px 14px', fontSize: 15, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{entry.repName}</span></td>
+                  <td style={{ padding: '12px 14px 12px 40px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}>↳</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }} onClick={(e) => e.stopPropagation()}>
                     {typeTab === 'Deal' && entry.customerName && entry.projectId ? (
@@ -1413,7 +1509,9 @@ function PayrollPageInner() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              ));
+                return [summaryRow, ...detailRows];
+              })}
             </tbody>
           </table>
         </div>
