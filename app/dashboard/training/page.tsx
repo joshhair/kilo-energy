@@ -779,13 +779,58 @@ function TrainingPageInner() {
             const avgRate = adminRows.length > 0
               ? adminRows.reduce((s, r) => s + r.rate, 0) / adminRows.length
               : 0;
+            const lifetimeTrainerPaid = payrollEntries
+              .filter((e) => e.paymentStage === 'Trainer' && e.status === 'Paid')
+              .reduce((s, e) => s + e.amount, 0);
+            const activeTrainingCount = adminRows.filter((r) => r.status === 'training').length;
+            // Top trainer by lifetime paid — surface "who's driving the
+            // most override payout right now?" at a glance.
+            const paidByTrainer = new Map<string, number>();
+            for (const e of payrollEntries) {
+              if (e.paymentStage !== 'Trainer' || e.status !== 'Paid') continue;
+              paidByTrainer.set(e.repId, (paidByTrainer.get(e.repId) ?? 0) + e.amount);
+            }
+            let topTrainerId: string | null = null;
+            let topTrainerAmount = 0;
+            for (const [id, amt] of paidByTrainer) {
+              if (amt > topTrainerAmount) { topTrainerId = id; topTrainerAmount = amt; }
+            }
+            const topTrainer = topTrainerId ? reps.find((r) => r.id === topTrainerId) : null;
             return (
-              <div className="mt-3 ml-[52px] flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
-                <span><span className="text-white font-semibold">{totalAssignments}</span> assignment{totalAssignments === 1 ? '' : 's'}</span>
-                <span className="text-[var(--border)]">·</span>
-                <span><span className="text-white font-semibold">{uniqueTrainerCount}</span> unique trainer{uniqueTrainerCount === 1 ? '' : 's'}</span>
-                <span className="text-[var(--border)]">·</span>
-                <span>avg override <span className="text-white font-semibold">${avgRate.toFixed(2)}/W</span></span>
+              <div className="mt-4 ml-[52px] grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl">
+                <div className="card-surface rounded-xl p-3 bg-gradient-to-br from-amber-500/5 to-transparent border-amber-500/20">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Lifetime Paid</p>
+                  <p className="text-xl font-bold text-amber-400 tabular-nums mt-1">${lifetimeTrainerPaid.toLocaleString()}</p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-0.5">org-wide trainer override</p>
+                </div>
+                <div className="card-surface rounded-xl p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Active</p>
+                  <p className="text-xl font-bold text-white tabular-nums mt-1">{activeTrainingCount}</p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-0.5">of {totalAssignments} assignment{totalAssignments === 1 ? '' : 's'}</p>
+                </div>
+                <div className="card-surface rounded-xl p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Trainers</p>
+                  <p className="text-xl font-bold text-white tabular-nums mt-1">{uniqueTrainerCount}</p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-0.5">avg ${avgRate.toFixed(2)}/W</p>
+                </div>
+                <div className="card-surface rounded-xl p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Top Trainer</p>
+                  {topTrainer ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setAdminTrainerFilter(topTrainer.id)}
+                        className="text-sm font-bold text-white mt-1 hover:text-[var(--accent-cyan)] transition-colors text-left truncate max-w-full"
+                        title="Filter to this trainer"
+                      >
+                        {topTrainer.name}
+                      </button>
+                      <p className="text-[10px] text-amber-400 tabular-nums mt-0.5">${topTrainerAmount.toLocaleString()} paid</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-[var(--text-muted)] mt-1">—</p>
+                  )}
+                </div>
               </div>
             );
           })()}
