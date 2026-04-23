@@ -128,10 +128,25 @@ export function getBlitzProjectBaselines(
     } catch { /* deactivated or missing product — fall through to installer rates */ }
   }
   if (p.productId) {
-    return getProductCatalogBaseline(deps.productCatalogProducts, p.productId, p.kWSize);
+    try {
+      return getProductCatalogBaseline(deps.productCatalogProducts, p.productId, p.kWSize);
+    } catch {
+      /* Unknown product id (orphaned after product archive/delete). Per
+       * blitz-profitability policy: fall through to installer rates
+       * rather than crashing the whole blitz detail page. Josh hit
+       * "getProductCatalogBaseline: unknown product id ca-hyundai-dc-pw3"
+       * on 2026-04-23 — one offending deal took down the entire page. */
+    }
   }
   const installerName = typeof p.installer === 'string' ? p.installer : p.installer?.name ?? '';
-  return getInstallerRatesForDeal(installerName, p.soldDate ?? '', p.kWSize, deps.installerPricingVersions);
+  try {
+    return getInstallerRatesForDeal(installerName, p.soldDate ?? '', p.kWSize, deps.installerPricingVersions);
+  } catch {
+    /* Final fallback: no resolvable baseline at all (e.g. installer
+     * was deleted, no pricing version covers the sold date). Return
+     * zeros so the row contributes $0 margin instead of crashing. */
+    return { closerPerW: 0, kiloPerW: 0 };
+  }
 }
 
 /**
