@@ -580,12 +580,35 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         Projects
       </button>
 
-      {/* Customer name + phase badge + flagged */}
+      {/* Customer name + phase badge + flagged.
+          For admin / internal PM viewers, the phase badge is wrapped in
+          a button that opens the same phase bottom sheet the sticky
+          footer uses — lets a busy admin bump a phase without scrolling
+          to the footer. Min-height 44px for touch target; chevron
+          signals tappability. Rep/SD/vendor-PM still see a plain pill. */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-white">{project.customerName}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <MobileBadge value={project.phase} />
+            {(isAdmin || isPM) ? (
+              <button
+                type="button"
+                onClick={() => setPhaseSheetOpen(true)}
+                aria-label={`Change phase — currently ${project.phase}`}
+                className="inline-flex items-center gap-1.5 min-h-[36px] rounded-full active:scale-[0.97] transition-transform duration-75 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan2)]/50"
+              >
+                <MobileBadge value={project.phase} />
+                <span
+                  aria-hidden="true"
+                  className="text-xs leading-none"
+                  style={{ color: 'var(--m-text-dim, #445577)' }}
+                >
+                  &#x25BE;
+                </span>
+              </button>
+            ) : (
+              <MobileBadge value={project.phase} />
+            )}
             {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500" />}
           </div>
         </div>
