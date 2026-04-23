@@ -913,11 +913,26 @@ function AdminFinancialsView() {
     if (successCount > 0) toast(`Marked ${successCount} entr${successCount === 1 ? 'y' : 'ies'} as paid`, 'success');
   };
 
+  // Undo helper — PATCHes a reimbursement back to a captured prior state
+  // when the user hits the Undo action on the confirmation toast. Reuses
+  // the optimistic-state-rollback-on-failure pattern the primary actions
+  // already use, so a failed undo reverts the undo rather than leaving
+  // the UI stuck between two states.
+  const undoReimbStatus = (id: string, revertTo: 'Pending' | 'Approved' | 'Denied') => {
+    const currentRow = reimbursements.find((r) => r.id === id);
+    if (!currentRow) return;
+    const currentStatus = currentRow.status;
+    setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: revertTo } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: revertTo }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reverted', 'info'); })
+      .catch(() => { setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: currentStatus } : r)); toast('Undo failed — reload to see current state', 'error'); });
+  };
+
   const approveReim = (id: string) => {
     const originalStatus = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Approved' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement approved', 'success'); })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement approved', 'success', { label: 'Undo', onClick: () => undoReimbStatus(id, originalStatus as 'Pending' | 'Approved' | 'Denied') }); })
       .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to approve reimbursement', 'error'); });
   };
 
@@ -925,8 +940,8 @@ function AdminFinancialsView() {
     const originalStatus = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Denied' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement rejected', 'info'); })
-      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to reject reimbursement', 'error'); });
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement denied', 'info', { label: 'Undo', onClick: () => undoReimbStatus(id, originalStatus as 'Pending' | 'Approved' | 'Denied') }); })
+      .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to deny reimbursement', 'error'); });
   };
 
   // Soft-archive. Default list hides archived rows; the "Show archived"
@@ -937,7 +952,7 @@ function AdminFinancialsView() {
     const nowIso = new Date().toISOString();
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, archivedAt: nowIso } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archived: true }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement archived', 'success'); })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement archived', 'success', { label: 'Undo', onClick: () => unarchiveReim(id) }); })
       .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? row : r)); toast('Failed to archive', 'error'); });
   };
 

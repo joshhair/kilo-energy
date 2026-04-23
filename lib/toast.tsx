@@ -69,13 +69,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 const VISIBLE_DURATION = 3500;
 /** Duration of the slide-out exit animation (ms) — must match `toastOut` keyframe. */
 const EXIT_DURATION = 250;
+/** Toasts with an action button (typically "Undo") get a longer window
+ *  so users have time to read + react. Standard toasts still dismiss at
+ *  VISIBLE_DURATION. Hover pauses both. */
+const ACTION_DURATION = 6000;
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
   const [leaving, setLeaving] = useState(false);
 
+  // Toasts with an Undo action stay on screen 6s instead of 3.5s so the
+  // user has a usable window to react. Plain toasts are unchanged.
+  const visibleDuration = toast.action ? ACTION_DURATION : VISIBLE_DURATION;
+
   // Refs used to pause/resume the countdown on hover without losing elapsed time.
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const remainingRef = useRef(VISIBLE_DURATION);
+  const remainingRef = useRef(visibleDuration);
   const startTimeRef = useRef<number>(0);
 
   /** Kick off the exit sequence: animate out, then remove from state. */
@@ -87,11 +95,11 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
   // Start the auto-dismiss timer on mount.
   useEffect(() => {
     startTimeRef.current = Date.now();
-    timerRef.current = setTimeout(startExit, VISIBLE_DURATION);
+    timerRef.current = setTimeout(startExit, visibleDuration);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [startExit]);
+  }, [startExit, visibleDuration]);
 
   /** On hover: pause the timer and record how much time has elapsed. */
   const handleMouseEnter = useCallback(() => {
@@ -162,9 +170,12 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         <X className="w-3.5 h-3.5" />
       </button>
 
-      {/* Auto-dismiss progress bar — shrinks from 100 → 0% over VISIBLE_DURATION */}
+      {/* Auto-dismiss progress bar — shrinks from 100 → 0% over visibleDuration.
+          animationDuration overrides the CSS default (3.5s) when this is an
+          action toast so the bar and the timer stay in sync. */}
       <div
         className={`toast-progress absolute bottom-0 left-0 h-[2px] w-full ${config.progress}`}
+        style={{ animationDuration: `${visibleDuration}ms` }}
       />
     </div>
   );

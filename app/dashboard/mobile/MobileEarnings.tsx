@@ -118,11 +118,23 @@ export default function MobileEarnings() {
     [payrollEntries, reimbursements, effectiveRepId],
   );
 
+  // Undo helper for reimbursement status flips. Captures current state,
+  // PATCHes back, rolls back UI if the undo PATCH itself fails.
+  const undoReimbStatus = (id: string, revertTo: 'Pending' | 'Approved' | 'Denied') => {
+    const currentRow = reimbursements.find((r) => r.id === id);
+    if (!currentRow) return;
+    const currentStatus = currentRow.status;
+    setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, status: revertTo } : r));
+    fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: revertTo }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reverted', 'info'); })
+      .catch(() => { setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, status: currentStatus } : r)); toast('Undo failed — reload to see current state', 'error'); });
+  };
+
   const setReimbStatus = (id: string, status: 'Approved' | 'Denied') => {
     const prev = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
     setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, status } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement ${status.toLowerCase()}`, 'success'); })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(`Reimbursement ${status.toLowerCase()}`, 'success', { label: 'Undo', onClick: () => undoReimbStatus(id, prev as 'Pending' | 'Approved' | 'Denied') }); })
       .catch(() => { setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, status: prev } : r)); toast(`Failed to ${status.toLowerCase()}`, 'error'); });
   };
   const archiveReimbAdmin = (id: string) => {
@@ -132,7 +144,19 @@ export default function MobileEarnings() {
     const nowIso = new Date().toISOString();
     setReimbursements((rs) => rs.map((r) => r.id === id ? { ...r, archivedAt: already ? undefined : nowIso } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archived: !already }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(already ? 'Reimbursement restored' : 'Reimbursement archived', 'success'); })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // Only offer Undo on the archive direction — restoring doesn't
+        // need an undo (it's already a reversal of archive).
+        if (already) {
+          toast('Reimbursement restored', 'success');
+        } else {
+          toast('Reimbursement archived', 'success', {
+            label: 'Undo',
+            onClick: () => archiveReimbAdmin(id), // flip back — same handler toggles
+          });
+        }
+      })
       .catch(() => { setReimbursements((rs) => rs.map((r) => r.id === id ? row : r)); toast('Failed to update', 'error'); });
   };
   const deleteReimbAdmin = (id: string) => {
