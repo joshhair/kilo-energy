@@ -84,7 +84,17 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           />
         ))}
       </div>
-      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <span
+        key={currentStep}
+        className="deal-step-counter"
+        style={{
+          display: 'inline-block',
+          animation: 'deal-title-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both',
+          fontSize: '12px',
+          color: 'rgba(255,255,255,0.4)',
+          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+        }}
+      >
         Step {currentStep + 1} of {DEAL_STEPS.length}
       </span>
     </div>
@@ -1114,7 +1124,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 2: Deal Details ── */}
         {currentStep === 1 && (
-          <div key={1} className={`space-y-7 flex-1 flex flex-col pb-[176px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={1} className={`space-y-7 flex-1 flex flex-col ${pillMount ? 'pb-[240px]' : 'pb-[176px]'} ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Installer */}
             <div>
               <label className={labelCls} style={labelStyle}>Installer</label>
@@ -1587,9 +1597,11 @@ export default function MobileNewDeal() {
             {/* Fixed CTA bar — Back + Next */}
             <div
               key={`cta-1`}
-              className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
+              className="cta-bar-enter cta-bar-lift-transition fixed left-0 right-0 z-40 px-6"
               style={{
-                bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                bottom: pillMount
+                  ? 'calc(72px + 60px + env(safe-area-inset-bottom, 0px))'
+                  : 'calc(72px + env(safe-area-inset-bottom, 0px))',
                 paddingBottom: '12px',
                 paddingTop: '12px',
                 background: 'linear-gradient(to bottom, transparent 0%, rgba(6,14,26,0.92) 28%, rgba(6,14,26,1) 100%)',
