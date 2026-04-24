@@ -9,6 +9,8 @@ import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { Check, Trash2, Plus, Pencil, X, Receipt, Archive, ArchiveRestore, Download, Printer } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
+import PayrollTypeTabs from './shared/PayrollTypeTabs';
+import PayrollStatusTabs from './shared/PayrollStatusTabs';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -413,8 +415,6 @@ export default function MobilePayroll() {
     );
   }
 
-  const STATUS_TABS: StatusTab[] = ['Draft', 'Pending', 'Paid'];
-
   const inputCls =
     'w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none transition-colors';
 
@@ -637,40 +637,9 @@ export default function MobilePayroll() {
           paddingBottom: '8px',
         }}
       >
-        <div className="flex gap-2">
-          {(['Deal', 'Bonus', 'Trainer'] as TypeTab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTypeTab(t)}
-              className="flex-1 min-h-[44px] rounded-xl text-sm font-semibold transition-colors"
-              style={{
-                background: typeTab === t ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                color: typeTab === t ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: typeTab === t ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              }}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <PayrollTypeTabs value={typeTab} onChange={setTypeTab} />
 
-        <div className="flex" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setStatusTab(tab)}
-              className="flex-1 min-h-[48px] text-base font-semibold transition-colors"
-              style={{
-                color: statusTab === tab ? '#fff' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                borderBottom: statusTab === tab ? '2px solid var(--m-accent, var(--accent-emerald))' : '2px solid transparent',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <PayrollStatusTabs value={statusTab} onChange={setStatusTab} />
       </div>
 
       {/* ── Admin filters ── */}

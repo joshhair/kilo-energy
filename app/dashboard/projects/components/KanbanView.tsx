@@ -481,6 +481,7 @@ export default function KanbanView({
                           if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
                           const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
                           if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                          if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
                           return sum + mine;
                         }
                         const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
@@ -687,9 +688,12 @@ export default function KanbanView({
                         if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
                         const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
                         if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                        if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
                         return sum + mine;
                       }
-                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+                      const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+                      const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal;
                     }, 0).toLocaleString()}
                   </p>
                 )}
