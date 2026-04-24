@@ -44,10 +44,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
   // Notes moved to the ProjectNotes list component (per-note rows).
   // The legacy notesDraft / auto-save textarea was removed 2026-04-23.
-  // Inline M1/M2 edit state removed 2026-04-24 when the duplicate
-  // Milestone Status section was deleted. Manual amount overrides now
-  // happen via Edit Deal modal (which goes through the server recompute
-  // + realign path).
+  const [editM1, setEditM1] = useState(false);
+  const [editM2, setEditM2] = useState(false);
+  const [m1Val, setM1Val] = useState('');
+  const [m2Val, setM2Val] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
@@ -309,9 +309,34 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     );
   };
 
-  // saveM1 / saveM2 inline editors removed 2026-04-24 alongside the
-  // duplicate Milestone Status section. Manual amount override goes
-  // through the Edit Deal modal now.
+  const saveM1 = () => {
+    const val = parseFloat(m1Val);
+    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
+    else { toast('Invalid amount', 'error'); }
+  };
+
+  const saveM2 = () => {
+    const val = parseFloat(m2Val);
+    if (!isNaN(val)) {
+      const installPayPct = installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+      const newM3 = installPayPct < 100 && !project.subDealerId
+        ? Math.round(val * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0;
+      const originalM2 = project.m2Amount ?? 0;
+      const scale = originalM2 > 0 ? val / originalM2 : 1;
+      const newSetterM2 = Math.round((project.setterM2Amount ?? 0) * scale * 100) / 100;
+      const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
+        ? Math.round(newSetterM2 * ((100 - installPayPct) / installPayPct) * 100) / 100
+        : 0;
+      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
+      if (originalM2 === 0 && project.setterId) {
+        toast('M2 updated — closer M2 was $0 so setter M2 could not be auto-scaled.', 'error');
+      } else {
+        toast('M2 amount updated', 'success');
+      }
+      setEditM2(false);
+    } else { toast('Invalid amount', 'error'); }
+  };
 
   const openEditModal = () => {
     setEditVals({
@@ -1142,26 +1167,55 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 Dup Milestone Status block removed 2026-04-24 per Josh's ask. */}
             <div className="border-t border-[var(--border-subtle)] pt-4 flex flex-wrap gap-2">
               {([
-                { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1 },
-                { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2 },
-                ...((project.m3Amount ?? 0) > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3 }] : []),
-              ]).map(({ stage, paid, toggle }) => (
-                <button
-                  key={stage}
-                  onClick={toggle}
-                  className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
-                    paid
-                      ? 'bg-emerald-900/30 text-[var(--accent-green)] border-[var(--accent-green)]/30 hover:bg-emerald-900/40'
-                      : 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-card)]'
-                  }`}
-                  title={paid ? `Mark ${stage} unpaid` : `Mark ${stage} paid`}
-                >
-                  <span>{stage}</span>
-                  <span className={paid ? 'text-[var(--accent-green)]' : 'text-yellow-400'}>
-                    {paid ? 'Paid' : 'Pending'}
-                  </span>
-                </button>
-              ))}
+                { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1, amount: project.m1Amount ?? 0 },
+                { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2, amount: project.m2Amount ?? 0 },
+                ...((project.m3Amount ?? 0) > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3, amount: project.m3Amount ?? 0 }] : []),
+              ]).map(({ stage, paid, toggle, amount }) => {
+                const isEditable = effectiveRole === 'admin' && !isPM && (stage === 'M1' || stage === 'M2');
+                const isEditing = stage === 'M1' ? editM1 : stage === 'M2' ? editM2 : false;
+                return (
+                  <div key={stage} className="flex flex-col gap-1">
+                    <button
+                      onClick={toggle}
+                      className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
+                        paid
+                          ? 'bg-emerald-900/30 text-[var(--accent-green)] border-[var(--accent-green)]/30 hover:bg-emerald-900/40'
+                          : 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-card)]'
+                      }`}
+                      title={paid ? `Mark ${stage} unpaid` : `Mark ${stage} paid`}
+                    >
+                      <span>{stage}</span>
+                      <span className={paid ? 'text-[var(--accent-green)]' : 'text-yellow-400'}>
+                        {paid ? 'Paid' : 'Pending'}
+                      </span>
+                    </button>
+                    {isEditable && (
+                      isEditing ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={stage === 'M1' ? m1Val : m2Val}
+                            onChange={(e) => stage === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
+                            className="w-24 text-xs rounded px-2 py-1 text-white bg-[var(--surface-card)] border border-[var(--border)]"
+                          />
+                          <button onClick={stage === 'M1' ? saveM1 : saveM2} className="text-xs text-[var(--accent-green)] font-medium">Save</button>
+                          <button onClick={() => stage === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-xs text-[var(--text-muted)]">Cancel</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (stage === 'M1') { setM1Val(String(amount)); setEditM1(true); }
+                            else { setM2Val(String(amount)); setEditM2(true); }
+                          }}
+                          className="text-xs text-[var(--text-muted)] hover:text-white underline underline-offset-2 tabular-nums text-left"
+                        >
+                          ${amount.toLocaleString()}
+                        </button>
+                      )
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

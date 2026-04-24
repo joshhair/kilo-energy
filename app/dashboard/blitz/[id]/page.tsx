@@ -224,8 +224,7 @@ export default function BlitzDetailPage() {
     () => approvedVisibleProjects.reduce((s: number, p: any) => {
       const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
       const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
-      if (!closerApproved && !anyAdditionalCloserApproved) return s;
-      return s + (p.kWSize ?? 0);
+      return s + (closerApproved || anyAdditionalCloserApproved ? (p.kWSize ?? 0) : 0);
     }, 0),
     [approvedVisibleProjects, approvedParticipantIds],
   );

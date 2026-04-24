@@ -380,19 +380,25 @@ export function createMilestonePayroll(
 
   // Pre-compute setter trainer deduction for M2 so the trainer's cut comes out of
   // the setter's share rather than being paid on top (mirrors closerM2TrainerDeduction).
-  // Note: Project-level trainer override only applies to the CLOSER's trainer slot,
-  // so setter-trainer resolution always passes {trainerId:null,trainerRate:null}
-  // to route through the tier chain.
+  // Mirrors the override-aware logic used for the setter trainer ENTRY below (lines ~504-517):
+  // resolve via tier chain first, then apply the project override if it targets the same trainer.
   let setterM2TrainerDeduction = 0;
   if (isInstalled && freshProject.setterId) {
-    const res = resolveTrainerRate(
+    const setterDeductRaw = resolveTrainerRate(
       { id: projectId, trainerId: null, trainerRate: null },
       freshProject.setterId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
-    if (res.rate > 0) {
-      setterM2TrainerDeduction = Math.round(res.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+    const overrideMatchesSetter =
+      freshProject.trainerId &&
+      freshProject.trainerRate != null &&
+      setterDeductRaw.trainerId === freshProject.trainerId;
+    const effectiveSetterDeductRate = overrideMatchesSetter
+      ? freshProject.trainerRate!
+      : setterDeductRaw.rate;
+    if (effectiveSetterDeductRate > 0) {
+      setterM2TrainerDeduction = Math.round(effectiveSetterDeductRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
     }
   }
 
@@ -634,20 +640,26 @@ export function createM3Payroll(
 
   // Pre-compute setter M3 trainer deduction so the trainer's cut comes from the
   // setter's share rather than being paid on top (mirrors closerM3TrainerDeduction).
-  // Project-level override doesn't apply to the setter's trainer slot.
+  // Lock to the M2 entry's rate when one exists; fall back to the override-aware rate
+  // (mirrors the setter M2 deduction logic above).
   let setterM3TrainerDeduction = 0;
   if (proj?.setterId) {
-    const setterResM3 = resolveTrainerRate(
+    const setterResM3Raw = resolveTrainerRate(
       { id: projectId, trainerId: null, trainerRate: null },
       proj.setterId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
-    if (setterResM3.rate > 0 && setterResM3.trainerId) {
-      const m2SetterTrainerEntryForM3 = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterResM3.trainerId);
+    if (setterResM3Raw.rate > 0 && setterResM3Raw.trainerId) {
+      const m2SetterTrainerEntryForM3 = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterResM3Raw.trainerId);
       const m2SetterRateMatchForM3 = m2SetterTrainerEntryForM3?.notes?.match(/\(\$([0-9.]+)\/W\)/);
       const m2SetterParsedForM3 = m2SetterRateMatchForM3 ? parseFloat(m2SetterRateMatchForM3[1]) : NaN;
-      const setterM3OverrideRate = !isNaN(m2SetterParsedForM3) ? m2SetterParsedForM3 : setterResM3.rate;
+      const overrideMatchesSetterM3 =
+        old.trainerId &&
+        old.trainerRate != null &&
+        setterResM3Raw.trainerId === old.trainerId;
+      const fallbackRate = overrideMatchesSetterM3 ? old.trainerRate! : setterResM3Raw.rate;
+      const setterM3OverrideRate = !isNaN(m2SetterParsedForM3) ? m2SetterParsedForM3 : fallbackRate;
       setterM3TrainerDeduction = Math.round(setterM3OverrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
     }
   }

@@ -121,16 +121,22 @@ export function createInstallerActions(deps: InstallerDeps) {
         rates: { type: 'flat' as const, closerPerW, kiloPerW },
       }];
     });
+    let resolveInstallerId!: (id: string) => void;
+    let rejectInstallerId!: (reason?: unknown) => void;
+    const installerIdPromise = new Promise<string>((resolve, reject) => { resolveInstallerId = resolve; rejectInstallerId = reject; });
+    pendingInstallerIdRef.current.set(name, installerIdPromise);
     fetch('/api/installers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, ...(initialRates ? { closerPerW: initialRates.closerPerW, kiloPerW: initialRates.kiloPerW } : {}) }),
     }).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); }).then((created) => {
       if (created.id) {
+        resolveInstallerId(created.id as string);
         setIdMaps((prev) => ({
           ...prev,
           installerNameToId: { ...prev.installerNameToId, [name]: created.id as string },
         }));
+        pendingInstallerIdRef.current.delete(name);
       }
       if (created.pricingVersionId) {
         setInstallerPricingVersions((prev) =>
@@ -142,6 +148,8 @@ export function createInstallerActions(deps: InstallerDeps) {
       }
     }).catch((err) => {
       console.error('[addInstaller] Failed to create installer:', err);
+      rejectInstallerId(err);
+      pendingInstallerIdRef.current.delete(name);
       setInstallers((prev) => prev.filter((i) => i.name !== name));
       setInstallerPricingVersions((prev) => prev.filter((v) => !(v.installer === name && v.id.startsWith('ipv_'))));
       emitPersistError('Failed to add installer — please try again');
@@ -552,13 +560,19 @@ export function createInstallerActions(deps: InstallerDeps) {
       if (current.includes(option.trim())) return prev;
       return { ...prev, [installer]: [...current, option.trim()] };
     });
+    const doPost = (instId: string) => fetch('/api/prepaid-options', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installerId: instId, name: option.trim() }),
+    }).catch(console.error);
     const instId = getIdMaps().installerNameToId[installer];
     if (instId) {
-      fetch('/api/prepaid-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ installerId: instId, name: option.trim() }),
-      }).catch(console.error);
+      doPost(instId);
+    } else {
+      const pending = pendingInstallerIdRef.current.get(installer);
+      if (pending) {
+        pending.then(doPost).catch(console.error);
+      }
     }
   };
 
@@ -587,17 +601,24 @@ export function createInstallerActions(deps: InstallerDeps) {
   };
 
   const updateInstallerPayConfig = (installer: string, pct: number) => {
+    const clampedPct = Math.max(0, Math.min(100, pct));
     setInstallerPayConfigs((prev) => ({
       ...prev,
-      [installer]: { installPayPct: Math.max(0, Math.min(100, pct)) },
+      [installer]: { installPayPct: clampedPct },
     }));
+    const doPatch = (instId: string) => fetch(`/api/installers/${instId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installPayPct: clampedPct }),
+    }).catch(console.error);
     const instId = getIdMaps().installerNameToId[installer];
     if (instId) {
-      fetch(`/api/installers/${instId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ installPayPct: Math.max(0, Math.min(100, pct)) }),
-      }).catch(console.error);
+      doPatch(instId);
+    } else {
+      const pending = pendingInstallerIdRef.current.get(installer);
+      if (pending) {
+        pending.then(doPatch).catch(console.error);
+      }
     }
   };
 

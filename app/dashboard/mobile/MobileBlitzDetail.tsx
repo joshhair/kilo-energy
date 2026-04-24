@@ -125,15 +125,13 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     [visibleProjects, isAdmin, isOwner, approvedParticipantIds],
   );
 
-  const closerApprovedProjects = useMemo(
-    () => approvedVisibleProjects
-      .filter((p: any) => approvedParticipantIds.has(p.closer?.id) || (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId))),
-    [approvedVisibleProjects, approvedParticipantIds],
-  );
-
   const totalKW = useMemo(
-    () => closerApprovedProjects.reduce((s: number, p: any) => s + (p.kWSize ?? 0), 0),
-    [closerApprovedProjects],
+    () => approvedVisibleProjects.reduce((s: number, p: any) => {
+      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+      const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+      return s + (closerApproved || anyAdditionalCloserApproved ? (p.kWSize ?? 0) : 0);
+    }, 0),
+    [approvedVisibleProjects, approvedParticipantIds],
   );
 
   const leaderboard = useMemo(() => computeBlitzLeaderboard(blitz), [blitz]);

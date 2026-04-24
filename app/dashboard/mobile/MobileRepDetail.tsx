@@ -261,6 +261,49 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           </div>
         </div>
 
+        {resolvedUser.role === 'admin' && effectiveRole === 'admin' && (
+          <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--m-text-dim, #445577)' }}>Sales</p>
+            <p className="text-xs mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Set if this admin also sells deals — they&apos;ll appear in closer/setter pickers and get a My Pay tab.
+            </p>
+            <select
+              value={resolvedUser.repType ?? ''}
+              onChange={async (e) => {
+                const newRepType = e.target.value === '' ? null : e.target.value;
+                try {
+                  const res = await fetch(`/api/users/${repId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repType: newRepType }),
+                  });
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error ?? 'Failed to save');
+                  }
+                  setFetchedUser((prev) => prev ? { ...prev, repType: newRepType ?? '' } : prev);
+                  if (rep && newRepType) updateRepType(repId, newRepType as 'closer' | 'setter' | 'both');
+                  toast(newRepType ? `Saved — now appears as a ${newRepType}` : 'Saved — pure-admin mode', 'success');
+                } catch (err) {
+                  toast(err instanceof Error ? err.message : 'Failed to save', 'error');
+                }
+              }}
+              className="w-full rounded-xl px-3 py-3 text-base focus:outline-none"
+              style={{
+                background: 'var(--navy-base, #0a1628)',
+                border: '1px solid var(--m-border, var(--border-mobile))',
+                color: '#fff',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              <option value="">Not a seller (admin-only)</option>
+              <option value="closer">Closer</option>
+              <option value="setter">Setter</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+        )}
+
         {resolvedUser.role === 'project_manager' && fu && effectiveRole === 'admin' && (
           <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
             <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)' }}>Permissions</p>

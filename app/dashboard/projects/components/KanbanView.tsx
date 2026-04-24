@@ -8,6 +8,28 @@ import { Search, Flag, X, ChevronDown, FolderKanban, ChevronRight, ChevronLeft }
 import { useToast } from '../../../../lib/toast';
 import { PHASE_COLORS, PHASE_PILL, StaleBadge, type ProjectList } from './shared';
 
+function calcProjectCommission(
+  p: ProjectList[number],
+  dealScope: 'mine' | 'all',
+  currentRepId: string | null,
+): number {
+  if (dealScope === 'mine') {
+    let mine = 0;
+    if (p.repId === currentRepId) mine += (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+    if (p.setterId === currentRepId) mine += (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+    const coCloser = p.additionalClosers?.find(c => c.userId === currentRepId);
+    if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
+    const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
+    if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+    if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
+    return mine;
+  }
+  const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+  const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
+  const trainerTotal = (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
+  return (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal + trainerTotal;
+}
+
 export default function KanbanView({
   projects,
   isAdmin,
@@ -211,22 +233,7 @@ export default function KanbanView({
                     </div>
                     {!hideFinancials && (
                       <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                        ${phaseProjects.reduce((sum, p) => {
-                          if (dealScope === 'mine') {
-                            let mine = 0;
-                            if (p.repId === currentRepId) mine += (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                            if (p.setterId === currentRepId) mine += (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                            const coCloser = p.additionalClosers?.find(c => c.userId === currentRepId);
-                            if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
-                            const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
-                            if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
-                            if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
-                            return sum + mine;
-                          }
-                          const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-                          const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-                          return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal;
-                        }, 0).toLocaleString()}
+                        ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId), 0).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -261,10 +268,12 @@ export default function KanbanView({
                       if (coCloser) commissionTotal += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
                       const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
                       if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                      if (proj.trainerId === currentRepId) commissionTotal += (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
                     } else {
                       commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                         + (proj.additionalClosers?.reduce((sum, c) => sum + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0)
-                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0);
+                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0)
+                        + (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
                     }
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -472,22 +481,7 @@ export default function KanbanView({
                   </div>
                   {!hideFinancials && (
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                      ${phaseProjects.reduce((sum, p) => {
-                        if (dealScope === 'mine') {
-                          let mine = 0;
-                          if (p.repId === currentRepId) mine += (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                          if (p.setterId === currentRepId) mine += (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                          const coCloser = p.additionalClosers?.find(c => c.userId === currentRepId);
-                          if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
-                          const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
-                          if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
-                          if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
-                          return sum + mine;
-                        }
-                        const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-                        const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-                        return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal;
-                      }, 0).toLocaleString()}
+                      ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId), 0).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -539,10 +533,12 @@ export default function KanbanView({
                       if (coCloser) commissionTotal += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
                       const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
                       if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
+                      if (proj.trainerId === currentRepId) commissionTotal += (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
                     } else {
                       commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
                         + (proj.additionalClosers?.reduce((sum, c) => sum + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0)
-                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0);
+                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0)
+                        + (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
                     }
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
@@ -679,22 +675,7 @@ export default function KanbanView({
                 </div>
                 {!hideFinancials && (
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    ${phaseProjects.reduce((sum, p) => {
-                      if (dealScope === 'mine') {
-                        let mine = 0;
-                        if (p.repId === currentRepId) mine += (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-                        if (p.setterId === currentRepId) mine += (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-                        const coCloser = p.additionalClosers?.find(c => c.userId === currentRepId);
-                        if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
-                        const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
-                        if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
-                        if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
-                        return sum + mine;
-                      }
-                      const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-                      const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-                      return sum + (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal;
-                    }, 0).toLocaleString()}
+                    ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId), 0).toLocaleString()}
                   </p>
                 )}
               </div>

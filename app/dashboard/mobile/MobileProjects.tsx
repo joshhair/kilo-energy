@@ -63,7 +63,7 @@ function relativeTime(dateStr: string): string {
 }
 
 export default function MobileProjects() {
-  const { effectiveRole, effectiveRepId, projects, payrollEntries } = useApp();
+  const { effectiveRole, effectiveRepId, projects, payrollEntries, activeInstallers } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -124,6 +124,7 @@ export default function MobileProjects() {
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
   const [listKey, setListKey] = useState(0);
+  const [listFading, setListFading] = useState(false);
 
   useEffect(() => {
     const delay = search === '' ? 0 : 300;
@@ -147,8 +148,20 @@ export default function MobileProjects() {
   }, [phaseFilter]);
 
   useEffect(() => {
-    setListKey((k) => k + 1);
-  }, [phaseFilter, debouncedSearch]);
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setListKey((k) => k + 1);
+      return;
+    }
+    setListFading(true);
+    const t = setTimeout(() => {
+      setListKey((k) => k + 1);
+      setListFading(false);
+    }, 130);
+    return () => clearTimeout(t);
+  }, [phaseFilter, debouncedSearch, statusFilter, installerFilter, sortMode, dealScope, qaOnly]);
 
   const visibleProjects = useMemo(() => {
     const isOnDeal = (p: typeof projects[0]) =>
@@ -174,15 +187,6 @@ export default function MobileProjects() {
     for (const p of applyStatusFilter(visibleProjects, statusFilter)) acc[p.phase] = (acc[p.phase] ?? 0) + 1;
     return acc;
   }, [visibleProjects, statusFilter]);
-
-  // Unique installer names present on visible projects — keeps the
-  // dropdown scoped to what's actually shown rather than listing every
-  // installer in the catalog.
-  const installerOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const p of visibleProjects) if (p.installer) set.add(p.installer);
-    return Array.from(set).sort();
-  }, [visibleProjects]);
 
   const filtered = useMemo(() => {
     let result = visibleProjects;
@@ -294,7 +298,7 @@ export default function MobileProjects() {
           on phone. Installer select only renders when there's more than one
           to choose from. */}
       <div className="flex gap-2">
-        {installerOptions.length > 1 && (
+        {activeInstallers.length > 1 && (
           <select
             value={installerFilter}
             onChange={(e) => setInstallerFilter(e.target.value)}
@@ -306,7 +310,7 @@ export default function MobileProjects() {
             }}
           >
             <option value="">All installers</option>
-            {installerOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+            {activeInstallers.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         )}
         <select
@@ -435,7 +439,18 @@ export default function MobileProjects() {
       </div>
 
       {/* Project cards */}
-      <div key={listKey} className="space-y-3">
+      <div
+        key={listKey}
+        className="space-y-3"
+        style={{
+          opacity: listFading ? 0 : 1,
+          transform: listFading ? 'translateY(8px)' : 'translateY(0)',
+          transition: listFading
+            ? 'opacity 130ms cubic-bezier(0.4, 0, 0.6, 1), transform 130ms cubic-bezier(0.4, 0, 0.6, 1)'
+            : 'none',
+          willChange: 'opacity, transform',
+        }}
+      >
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-12 px-6 text-center">
             {/* Simple folder illustration — matches the visual
@@ -517,6 +532,7 @@ export default function MobileProjects() {
                         fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                         fontSize: '0.875rem',
                         lineHeight: 1,
+                        animation: `scalePop 220ms cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--card-index, 0) * 50ms + 90ms) both`,
                       }}
                       title={`${pill.label} · ${commission!.total.toLocaleString()}`}
                     >

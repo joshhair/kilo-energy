@@ -1476,7 +1476,12 @@ function UsersPageInner() {
 
       <div className="space-y-3">
         {sorted.map((rep, i) => {
-          const repProjects = projects.filter((p) => p.repId === rep.id || p.setterId === rep.id);
+          const repProjects = projects.filter((p) =>
+            p.repId === rep.id ||
+            p.setterId === rep.id ||
+            p.additionalClosers?.some((c) => c.userId === rep.id) ||
+            p.additionalSetters?.some((c) => c.userId === rep.id)
+          );
           const repPaid = repPaidAmounts.get(rep.id) ?? 0;
 
           const totalKW = repProjects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0);

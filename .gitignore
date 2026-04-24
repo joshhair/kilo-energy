@@ -87,3 +87,20 @@ scripts/*.mts.local
 # as a .bak when any ci-sensitive script runs. Not worth keeping
 # in the tree under its real name.
 scripts/find-timothy.mts
+
+# Glide migration debug scripts + review reports (contain customer PII).
+# Kept on disk untracked so Josh can re-run them; never shipped.
+state/glide-*.txt
+state/glide-*.html
+state/glide-*.json
+scripts/analyze-glide-*.mts
+scripts/glide-review-report.mts
+scripts/debug-glide-*.mts
+scripts/debug-installer-columns.mts
+scripts/debug-max-deal.mts
+scripts/debug-unresponsive.mts
+scripts/check-gary-leger.mts
+scripts/check-hunter.mts
+scripts/check-prod-counts.mts
+scripts/check-role-counts.mts
+scripts/check-site-survey.mts

@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { Search, Plus, Users, ChevronRight, Mail, Clock, UserCog, Trash2 } from 'lucide-react';
+import { Search, Plus, Users, ChevronRight, Mail, Clock, UserCog, Trash2, Check } from 'lucide-react';
+import { formatCompactKW } from '../../../lib/utils';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
@@ -166,7 +167,7 @@ export default function MobileReps() {
 
   // Total paid per rep
   const paidByRep = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const d = new Date(); const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const map = new Map<string, number>();
     for (const pe of payrollEntries) {
       if (pe.status === 'Paid' && pe.date <= today) {
@@ -233,6 +234,86 @@ export default function MobileReps() {
     return (parts[0]?.[0] ?? '?').toUpperCase();
   };
 
+  // ── Compare mode ──────────────────────────────────────────────────────
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+  type ComparePeriod = 'this-week' | 'this-month' | 'last-month' | 'this-quarter' | 'last-quarter' | 'this-year' | 'custom';
+  const PERIOD_OPTIONS: { value: ComparePeriod; label: string }[] = [
+    { value: 'this-week', label: 'This Week' },
+    { value: 'this-month', label: 'This Month' },
+    { value: 'last-month', label: 'Last Month' },
+    { value: 'this-quarter', label: 'This Quarter' },
+    { value: 'last-quarter', label: 'Last Quarter' },
+    { value: 'this-year', label: 'This Year' },
+    { value: 'custom', label: 'Custom' },
+  ];
+  const [comparePeriod, setComparePeriod] = useState<ComparePeriod>('this-month');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+
+  useEffect(() => {
+    if (roleFilter !== 'rep') {
+      setCompareMode(false);
+      setCompareIds(new Set());
+    }
+  }, [roleFilter]);
+
+  const toggleCompareId = (id: string) => {
+    setCompareIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else if (next.size < 3) next.add(id);
+      return next;
+    });
+  };
+
+  const getCompareDateRanges = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const d = now.getDay();
+    const fmt = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const startOfWeek = new Date(y, m, now.getDate() - (d === 0 ? 6 : d - 1));
+    const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const q = Math.floor(m / 3);
+    switch (comparePeriod) {
+      case 'this-week': {
+        const prevStart = new Date(startOfWeek); prevStart.setDate(prevStart.getDate() - 7);
+        const prevEnd = new Date(prevStart); prevEnd.setDate(prevStart.getDate() + 6);
+        return { current: { from: fmt(startOfWeek), to: fmt(endOfWeek), label: 'This Week' }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: 'Last Week' } };
+      }
+      case 'this-month': {
+        const curStart = new Date(y, m, 1); const curEnd = new Date(y, m + 1, 0);
+        const prevStart = new Date(y, m - 1, 1); const prevEnd = new Date(y, m, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: 'This Month' }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: 'Last Month' } };
+      }
+      case 'last-month': {
+        const curStart = new Date(y, m - 1, 1); const curEnd = new Date(y, m, 0);
+        const prevStart = new Date(y, m - 2, 1); const prevEnd = new Date(y, m - 1, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: 'Last Month' }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: 'Month Before' } };
+      }
+      case 'this-quarter': {
+        const curStart = new Date(y, q * 3, 1); const curEnd = new Date(y, q * 3 + 3, 0);
+        const prevStart = new Date(y, (q - 1) * 3, 1); const prevEnd = new Date(y, q * 3, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: `Q${q + 1} ${y}` }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: `Q${q === 0 ? 4 : q} ${q === 0 ? y - 1 : y}` } };
+      }
+      case 'last-quarter': {
+        const pq = q === 0 ? 3 : q - 1; const py = q === 0 ? y - 1 : y;
+        const curStart = new Date(py, pq * 3, 1); const curEnd = new Date(py, pq * 3 + 3, 0);
+        const ppq = pq === 0 ? 3 : pq - 1; const ppy = pq === 0 ? py - 1 : py;
+        const prevStart = new Date(ppy, ppq * 3, 1); const prevEnd = new Date(ppy, ppq * 3 + 3, 0);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: `Q${pq + 1} ${py}` }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: `Q${ppq + 1} ${ppy}` } };
+      }
+      case 'this-year': {
+        const curStart = new Date(y, 0, 1); const curEnd = new Date(y, 11, 31);
+        const prevStart = new Date(y - 1, 0, 1); const prevEnd = new Date(y - 1, 11, 31);
+        return { current: { from: fmt(curStart), to: fmt(curEnd), label: `${y}` }, prev: { from: fmt(prevStart), to: fmt(prevEnd), label: `${y - 1}` } };
+      }
+      case 'custom':
+        return { current: { from: customFrom, to: customTo, label: 'Custom' }, prev: null };
+    }
+  };
+
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
       <MobilePageHeader
@@ -259,12 +340,14 @@ export default function MobileReps() {
             <button
               key={rf.value}
               onClick={() => { setRoleFilter(rf.value); setRepTypeFilter('all'); }}
-              className={`shrink-0 min-h-[40px] px-4 rounded-xl text-sm font-semibold transition-colors`}
+              className="shrink-0 min-h-[40px] px-4 rounded-xl text-sm font-semibold active:scale-[0.94]"
               style={{
                 background: active ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
                 color: active ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
                 border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                boxShadow: active ? '0 0 14px rgba(0,229,160,0.25)' : 'none',
+                transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
               {rf.label}
@@ -282,12 +365,14 @@ export default function MobileReps() {
               <button
                 key={rt.value}
                 onClick={() => setRepTypeFilter(rt.value)}
-                className="shrink-0 min-h-[36px] px-3 rounded-xl text-xs font-semibold transition-colors"
+                className="shrink-0 min-h-[36px] px-3 rounded-xl text-xs font-semibold active:scale-[0.94]"
                 style={{
                   background: active ? 'rgba(0,196,240,0.2)' : 'var(--m-card, var(--surface-mobile-card))',
                   color: active ? 'var(--accent-cyan)' : 'var(--m-text-muted, var(--text-mobile-muted))',
                   border: active ? '1px solid rgba(0,196,240,0.4)' : '1px solid var(--m-border, var(--border-mobile))',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  boxShadow: active ? '0 0 14px rgba(0,196,240,0.25)' : 'none',
+                  transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               >
                 {rt.label}
@@ -313,6 +398,31 @@ export default function MobileReps() {
           }}
         />
       </div>
+
+      {/* Compare Reps button — admin only, rep filter only */}
+      {isAdmin && roleFilter === 'rep' && (
+        <div>
+          <button
+            onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
+            className="min-h-[40px] px-4 rounded-xl text-sm font-semibold active:scale-[0.95]"
+            style={{
+              background: compareMode ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+              color: compareMode ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              border: compareMode ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              boxShadow: compareMode ? '0 0 14px rgba(0,229,160,0.25)' : 'none',
+              transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          >
+            {compareMode ? `Comparing (${compareIds.size}/3) — Tap to exit` : 'Compare Reps'}
+          </button>
+          {compareMode && compareIds.size === 0 && (
+            <p className="text-xs mt-1.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Select 2–3 reps below to compare.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Pending invitations panel — admin only */}
       {isAdmin && pendingInvitations.length > 0 && (
@@ -467,6 +577,116 @@ export default function MobileReps() {
       {/* Top Performers Podium — reps view, non-PM only */}
       {roleFilter === 'rep' && !isPM && <TopPerformersPodium entries={podiumDisplay} />}
 
+      {/* Comparison Cards — shown when compare mode is active with 2+ reps selected */}
+      {roleFilter === 'rep' && compareMode && compareIds.size >= 2 && (() => {
+        const ranges = getCompareDateRanges();
+        const isInRange = (dateStr: string | null, from: string, to: string) => {
+          if (!from || !to || !dateStr) return false;
+          return dateStr >= from && dateStr <= to;
+        };
+        const compareReps = filtered.filter((r) => compareIds.has(r.id));
+        const todayStr = new Date().toISOString().slice(0, 10);
+        if (compareReps.length < 2) return (
+          <div className="rounded-2xl p-4 text-sm" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+            Some selected reps are hidden by the current filter. Change the filter or re-select reps to compare.
+          </div>
+        );
+        return (
+          <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Rep Comparison</span>
+              {ranges.prev && <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>vs {ranges.prev.label}</span>}
+            </div>
+            <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-2 mb-3" style={{ scrollbarWidth: 'none' }}>
+              {PERIOD_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setComparePeriod(opt.value)}
+                  className="shrink-0 min-h-[32px] px-3 rounded-xl text-xs font-semibold transition-colors"
+                  style={{
+                    background: comparePeriod === opt.value ? 'rgba(0,196,240,0.2)' : 'rgba(0,0,0,0.2)',
+                    color: comparePeriod === opt.value ? 'var(--accent-cyan)' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                    border: comparePeriod === opt.value ? '1px solid rgba(0,196,240,0.4)' : '1px solid var(--m-border, var(--border-mobile))',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {comparePeriod === 'custom' && (
+              <div className="flex items-center gap-2 mb-3">
+                <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
+                  className="flex-1 min-h-[36px] rounded-xl px-2 text-white text-xs focus:outline-none"
+                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--m-border, var(--border-mobile))' }} />
+                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>to</span>
+                <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
+                  className="flex-1 min-h-[36px] rounded-xl px-2 text-white text-xs focus:outline-none"
+                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--m-border, var(--border-mobile))' }} />
+              </div>
+            )}
+            <div className="flex gap-3 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
+              {compareReps.map((rep) => {
+                const rp = ranges.current.from && ranges.current.to
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  : [];
+                const dealsClosed = rp.length;
+                const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
+                const avgDealSize = dealsClosed > 0 ? kwSold / dealsClosed : 0;
+                const commissionEarned = ranges.current.from && ranges.current.to
+                  ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to) && e.date <= todayStr).reduce((s, e) => s + e.amount, 0)
+                  : 0;
+                const rpCancelled = ranges.current.from && ranges.current.to
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase === 'Cancelled' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  : [];
+                const cancelRate = (rp.length + rpCancelled.length) > 0 ? (rpCancelled.length / (rp.length + rpCancelled.length) * 100) : 0;
+                const prevDeals = ranges.prev
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
+                  : null;
+                const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
+                return (
+                  <div key={rep.id} className="shrink-0 rounded-2xl p-3 text-center" style={{ minWidth: 140, background: 'rgba(0,0,0,0.25)', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-black text-xs font-bold mx-auto mb-1.5"
+                      style={{ background: 'linear-gradient(135deg, var(--accent-cyan2), var(--accent-emerald))' }}>
+                      {getInitials(rep.name)}
+                    </div>
+                    <p className="text-sm font-semibold text-white truncate mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                    <p className="text-[10px] mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{ranges.current.label}</p>
+                    <div className="space-y-1.5 text-xs text-left">
+                      <div className="flex justify-between gap-2">
+                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Deals</span>
+                        <span className="font-semibold text-white flex items-center gap-1">
+                          {dealsClosed}
+                          {deltaDeals !== null && deltaDeals !== 0 && (
+                            <span style={{ color: deltaDeals > 0 ? 'var(--accent-emerald)' : '#f87171', fontSize: 9 }}>{deltaDeals > 0 ? '+' : ''}{deltaDeals}</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>kW</span>
+                        <span className="font-semibold text-white">{formatCompactKW(kwSold)}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Avg</span>
+                        <span className="font-semibold text-white">{avgDealSize.toFixed(1)} kW</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Paid</span>
+                        <span className="font-semibold" style={{ color: 'var(--accent-emerald)' }}>${commissionEarned.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Cancel</span>
+                        <span className="font-semibold" style={{ color: cancelRate > 20 ? '#f87171' : 'var(--m-text-muted, var(--text-mobile-muted))' }}>{cancelRate.toFixed(0)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Rep list — shown only when the role filter is 'rep' */}
       {roleFilter === 'rep' && (filtered.length === 0 ? (
         <MobileEmptyState icon={Users} title="No reps found" subtitle="Try adjusting your search" />
@@ -478,8 +698,19 @@ export default function MobileReps() {
             const paid = paidByRep.get(rep.id) ?? 0;
 
             return (
-              <MobileCard key={rep.id} onTap={() => router.push(`/dashboard/users/${rep.id}`)}>
+              <MobileCard key={rep.id} onTap={() => compareMode ? toggleCompareId(rep.id) : router.push(`/dashboard/users/${rep.id}`)}>
                 <div className="flex items-center gap-3">
+                  {compareMode && (
+                    <div
+                      className="w-5 h-5 rounded flex items-center justify-center shrink-0"
+                      style={{
+                        background: compareIds.has(rep.id) ? 'var(--accent-emerald)' : 'transparent',
+                        border: compareIds.has(rep.id) ? 'none' : '1.5px solid var(--m-border, var(--border-mobile))',
+                      }}
+                    >
+                      {compareIds.has(rep.id) && <Check className="w-3 h-3 text-black" />}
+                    </div>
+                  )}
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-black text-base font-bold shrink-0"
                     style={{ background: 'linear-gradient(135deg, var(--accent-cyan2), var(--accent-emerald))' }}
@@ -851,7 +1082,7 @@ export default function MobileReps() {
                   <button
                     key={role}
                     type="button"
-                    onClick={() => setAddForm((f) => ({ ...f, userRole: role }))}
+                    onClick={() => setAddForm((f) => ({ ...f, userRole: role, sendInvite: false }))}
                     className="flex-1 min-h-[40px] rounded-2xl text-sm font-semibold transition-colors"
                     style={{
                       background: addForm.userRole === role ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',

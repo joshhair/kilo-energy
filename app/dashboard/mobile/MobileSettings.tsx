@@ -20,7 +20,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type SettingsSection =
-  | 'trainers' | 'blitz-permissions' | 'project-managers' | 'sub-dealers'
+  | 'blitz-permissions' | 'project-managers' | 'sub-dealers'
   | 'installers' | 'financers' | 'baselines'
   | 'admin-users' | 'export' | 'customization';
 
@@ -214,7 +214,6 @@ function SectionContent({ section }: { section: SettingsSection }) {
     case 'project-managers': return <ProjectManagersSection />;
     case 'blitz-permissions': return <BlitzPermissionsSection />;
     case 'export': return <ExportSection />;
-    case 'trainers': return <ReadOnlyListSection title="Trainer Overrides" description="Manage trainer overrides in the Training page." />;
     case 'baselines': return <MobileBaselinesSection />;
     case 'sub-dealers': return <SubDealersSection />;
     case 'customization': return <CustomizationSection />;
@@ -1243,13 +1242,3 @@ function ProductCatalogBaselines() {
   );
 }
 
-// ─── Read-Only Section (for complex desktop-only settings) ──────────────────
-
-function ReadOnlyListSection({ title, description }: { title: string; description: string }) {
-  return (
-    <MobileCard>
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{description}</p>
-      <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Open the desktop version for full access to {title.toLowerCase()}.</p>
-    </MobileCard>
-  );
-}

@@ -79,7 +79,7 @@ function blitzDateLabel(status: BlitzStatus, startDate: string, endDate: string)
   const today = new Date(); today.setHours(0, 0, 0, 0);
   if (status === 'upcoming') {
     const start = new Date(startDate); start.setHours(0, 0, 0, 0);
-    const days = Math.ceil((start.getTime() - today.getTime()) / 86400000);
+    const days = Math.round((start.getTime() - today.getTime()) / 86400000);
     if (days <= 0) return 'Starts today';
     if (days === 1) return 'Starts tomorrow';
     if (days <= 7) return `Starts in ${days} days`;
@@ -229,7 +229,7 @@ export default function MobileBlitz() {
     );
     return s + visibleProjects.reduce((ps, p) => {
       const closerApproved = p.closer?.id && approvedIds.has(p.closer.id);
-      const anyAdditionalCloserApproved = p.additionalClosers?.some((ac) => approvedIds.has(ac.userId));
+      const anyAdditionalCloserApproved = p.additionalClosers?.some((ac: { userId: string }) => approvedIds.has(ac.userId));
       return ps + (closerApproved || anyAdditionalCloserApproved ? p.kWSize : 0);
     }, 0);
   }, 0), [blitzes, isAdmin, effectiveRepId]);

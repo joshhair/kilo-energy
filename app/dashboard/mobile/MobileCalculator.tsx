@@ -6,6 +6,7 @@ import { useIsHydrated, useCountUp } from '../../../lib/hooks';
 import {
   getSolarTechBaseline,
   calculateCommission,
+  splitCloserSetterPay,
   getInstallerRatesForDeal,
   getProductCatalogBaselineVersioned,
   getTrainerOverrideRate,
@@ -14,7 +15,6 @@ import {
   DEFAULT_INSTALL_PAY_PCT,
   INSTALLER_PAY_CONFIGS,
 } from '../../../lib/data';
-import { splitCloserSetterPay } from '../../../lib/commission';
 import { todayLocalDateStr } from '../../../lib/utils';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -242,7 +242,7 @@ export default function MobileCalculator() {
     : { closerTotal: 0, setterTotal: 0, closerM1: 0, closerM2: 0, closerM3: 0, setterM1: 0, setterM2: 0, setterM3: 0 };
   const closerTotal = split.closerTotal;
   const setterTotal = split.setterTotal;
-  const trainerTotal = hasInput && soldPPW > 0 && trainerRate > 0 ? Math.round(trainerRate * kW * 1000 * 100) / 100 : 0;
+  const trainerTotal = isPaired && trainerRate > 0 && kW > 0 ? Math.round(trainerRate * kW * 1000 * 100) / 100 : 0;
 
   // ── Save to history when a full result is displayed ──────────────────────
   const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${isPaired ? '1' : '0'}|${selectedSetterId}`;
@@ -810,7 +810,7 @@ export default function MobileCalculator() {
             {effectiveRole === 'admin' && (
               <div className="calc-row-5 flex items-center justify-between">
                 <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
-                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloTotal)}</span>
+                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal))}</span>
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState } from 'react';
 
 export type BlitzTabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 
@@ -23,6 +23,14 @@ interface Props {
 // scrollbar chrome so it stays clean.
 export default function BlitzTabs({ tabs, active, onChange }: Props) {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const idx = tabs.findIndex(t => t.key === active);
+    const el = tabRefs.current[idx];
+    if (!el) return;
+    setIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [active, tabs]);
 
   useEffect(() => {
     const activeIndex = tabs.findIndex(t => t.key === active);
@@ -45,7 +53,19 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
         paddingBottom: '8px',
       }}
     >
-    <div className="flex gap-2 overflow-x-auto no-scrollbar">
+    <div className="relative flex gap-2 overflow-x-auto no-scrollbar">
+      {indicator && (
+        <span
+          aria-hidden
+          className="blitz-detail-tab-indicator absolute inset-y-0 rounded-full pointer-events-none"
+          style={{
+            left: indicator.left,
+            width: indicator.width,
+            background: 'var(--accent-emerald)',
+            boxShadow: '0 0 12px rgba(0,229,160,0.35)',
+          }}
+        />
+      )}
       {tabs.map((t, index) => {
         const isActive = active === t.key;
         return (
@@ -53,13 +73,13 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
             key={t.key}
             ref={(el) => { tabRefs.current[index] = el; }}
             onClick={() => onChange(t.key)}
-            className="min-h-[40px] px-4 py-1.5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors shrink-0"
+            className="relative min-h-[40px] px-4 py-1.5 text-sm font-semibold rounded-full whitespace-nowrap shrink-0 z-10"
             style={{
-              background: isActive ? 'var(--accent-emerald)' : 'transparent',
+              background: 'transparent',
+              border: 'none',
               color: isActive ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              border: `1px solid ${isActive ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
+              transition: 'color 200ms ease',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              boxShadow: isActive ? '0 0 12px rgba(0,229,160,0.35)' : 'none',
             }}
           >
             {t.label}

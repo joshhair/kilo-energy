@@ -62,7 +62,7 @@ export default function MobilePayroll() {
   const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'Bonus' as string });
+  const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'M1' as string });
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
 
@@ -358,7 +358,7 @@ export default function MobilePayroll() {
       };
       setPayrollEntries((prev) => [...prev, newEntry]);
       setShowAddPayment(false);
-      setPaymentForm({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus', stage: 'Bonus' });
+      setPaymentForm({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal', stage: 'M1' });
       setStatusTab('Draft');
       setTypeTab(isBonus ? 'Bonus' : 'Deal');
       setFilterRepId('');
@@ -1153,10 +1153,10 @@ function SummaryCard({ label, total, tone, breakdown, pending = false }: {
   if (breakdown.trainer !== 0) lines.push(`Trainer $${breakdown.trainer.toLocaleString()}`);
 
   return (
-    <div className="rounded-2xl p-3 min-w-0" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-      <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
+    <div className="rounded-2xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+      <p className="text-[10px] uppercase tracking-widest font-semibold truncate" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
       <p
-        className="text-xl font-bold tabular-nums mt-1 leading-none whitespace-nowrap"
+        className="text-base font-bold tabular-nums mt-1 leading-none truncate"
         title={`$${total.toLocaleString()}`}
         style={{ color: tone, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
       >

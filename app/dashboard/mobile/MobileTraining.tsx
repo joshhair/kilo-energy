@@ -292,7 +292,7 @@ export default function MobileTraining() {
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-4 pb-3">
+                    {isOpen && <div className="px-4 pb-3">
                       {(() => {
                         const prevThreshold = td.activeTierIndex > 0
                           ? (td.assignment.tiers[td.activeTierIndex - 1].upToDeal ?? 0) : 0;
@@ -300,25 +300,25 @@ export default function MobileTraining() {
                         const range = nextThreshold === null ? 1 : Math.max(1, nextThreshold - prevThreshold);
                         const pct = nextThreshold === null ? 100 : Math.min(100, ((td.consumedDeals - prevThreshold) / range) * 100);
                         return (
-                          <div className="mb-3 pt-1">
+                          <div className="mb-3 pt-1 motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '0ms' }}>
                             <div className="flex justify-between text-[11px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>
                               <span>{td.consumedDeals} deals</span>
                               <span>{nextThreshold === null ? 'Max tier reached' : `${nextThreshold} to advance`}</span>
                             </div>
                             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
                               <div
-                                className="h-full rounded-full motion-safe:transition-[width] motion-safe:duration-[600ms] motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
-                                style={{ width: isOpen ? `${pct}%` : '0%', transitionDelay: isOpen ? '180ms' : '0ms', background: 'var(--m-accent, var(--accent-emerald))' }}
+                                className="h-full rounded-full animate-progress-grow"
+                                style={{ width: `${pct}%`, transformOrigin: 'left', animationDelay: '60ms', background: 'var(--m-accent, var(--accent-emerald))' }}
                               />
                             </div>
                           </div>
                         );
                       })()}
-                      <div className="flex justify-between items-center mb-2 text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      <div className="flex justify-between items-center mb-2 text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '80ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <span className="font-semibold uppercase tracking-widest text-[11px]" style={{ color: 'var(--m-text-dim, #445577)' }}>Earned from Trainee</span>
                         <span className="font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(td.earningsFromTrainee)}</span>
                       </div>
-                      <table className="w-full text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      <table className="w-full text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '140ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <thead>
                           <tr style={{ color: 'var(--m-text-dim, #445577)' }}>
                             <th className="text-left py-1 font-semibold uppercase tracking-widest">Deals Up To</th>
@@ -330,7 +330,7 @@ export default function MobileTraining() {
                             <tr
                               key={i}
                               className="motion-safe:animate-[fadeSlideIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]"
-                              style={{ animationDelay: `${i * 40}ms`, color: i === td.activeTierIndex ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                              style={{ animationDelay: `${200 + i * 55}ms`, color: i === td.activeTierIndex ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))' }}
                             >
                               <td className="py-1">{tier.upToDeal === null ? 'Unlimited' : tier.upToDeal}</td>
                               <td className="py-1 text-right tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
@@ -346,7 +346,7 @@ export default function MobileTraining() {
                           ))}
                         </tbody>
                       </table>
-                    </div>
+                    </div>}
                   </div>
                 </div>
               </div>

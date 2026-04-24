@@ -365,7 +365,7 @@ function PayrollPageInner() {
 
     // Per-type Pending count still used by the Publish button guard;
     // the cards themselves now show combined breakdowns (below).
-    const pendingCount = filteredByDateRep.filter((p) => p.status === 'Pending').length;
+    const pendingCount = filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today).length;
     // Combined across all types (Deal + Bonus + Trainer) — the summary-
     // card view admins scan at a glance. Cards always show combined so
     // the top-line number doesn't lie about what's owed across all types.

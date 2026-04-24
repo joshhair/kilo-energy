@@ -1004,18 +1004,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
         if ((updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined) && old.setterId) {
-          const setterRes = resolveTrainerRate(
+          const setterResRaw = resolveTrainerRate(
             { id, trainerId: null, trainerRate: null },
             old.setterId,
             trainerAssignmentsRef.current,
             payrollEntriesRef.current,
           );
-          if (setterRes.rate > 0) {
+          const overrideMatchesSetter =
+            effectiveTrainerId &&
+            effectiveTrainerRate != null &&
+            setterResRaw.trainerId === effectiveTrainerId;
+          const effectiveSetterRate = overrideMatchesSetter ? effectiveTrainerRate! : setterResRaw.rate;
+          if (effectiveSetterRate > 0) {
             if (updates.setterM2Amount !== undefined) {
-              setterM2TrainerDeduction = Math.round(setterRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+              setterM2TrainerDeduction = Math.round(effectiveSetterRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
             }
             if (updates.setterM3Amount !== undefined && installPayPct < 100) {
-              setterM3TrainerDeduction = Math.round(setterRes.rate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+              setterM3TrainerDeduction = Math.round(effectiveSetterRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
             }
           }
         }

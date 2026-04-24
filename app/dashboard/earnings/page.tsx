@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery, useSearchParamTab } from '../../../lib/hooks';
-import MobileEarnings from '../mobile/MobileEarnings';
+import MobileEarnings, { MobileAdminEarnings } from '../mobile/MobileEarnings';
 import { useToast } from '../../../lib/toast';
 import { Reimbursement } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod } from '../components/dashboard-utils';
@@ -469,7 +469,7 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Reimbursements</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ? `${monthFilterLabel} Reimbs` : 'Reimbursements'}</span>
             <Receipt className="w-4 h-4 text-violet-400 shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-violet-400 animate-count-up">
@@ -1414,6 +1414,7 @@ function EarningsPageInner() {
 
   if (isMobile) {
     if (effectiveRole === 'sub-dealer') return <SubDealerEarningsView />;
+    if (effectiveRole === 'admin') return <MobileAdminEarnings />;
     return <MobileEarnings />;
   }
 

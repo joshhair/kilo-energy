@@ -91,7 +91,7 @@ interface PayPeriod {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function MobileMyPay() {
-  const { effectiveRole, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();
   const [showReimbSheet, setShowReimbSheet] = useState(false);
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
@@ -379,6 +379,19 @@ export default function MobileMyPay() {
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>You don&apos;t have permission to view this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Selling-admin guard (mirrors desktop page.tsx) ──
+  const adminMaySellCheck = effectiveRole === 'admin' && !!currentUserRepType;
+  if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer' && !adminMaySellCheck) {
+    return (
+      <div className="px-5 pt-4 pb-24" style={{ fontFamily: FONT_BODY }}>
+        <MobilePageHeader title="My Pay" />
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>My Pay is only available in the rep view.</p>
         </div>
       </div>
     );

@@ -467,6 +467,15 @@ body {
   .calc-skeleton { animation: none; opacity: 0.4; }
 }
 
+@keyframes shimmerSweep {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activity-skeleton-row { animation: none !important;
+    background: rgba(255,255,255,0.06) !important; }
+}
+
 @keyframes milestoneAchieve {
   0%   { box-shadow: 0 0 0 0 rgba(0,224,122,0.5); }
   50%  { box-shadow: 0 0 0 10px rgba(0,224,122,0); }
@@ -1168,6 +1177,34 @@ select {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  @keyframes commission-val-flash {
+    0%   { opacity: 1; transform: scale(1); }
+    30%  { opacity: 0.5; transform: scale(0.93); }
+    65%  { opacity: 1; transform: scale(1.10); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .commission-val-flash {
+    animation: commission-val-flash 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes field-error-pulse {
+    0%, 100% { transform: translateX(0); }
+    18%      { transform: translateX(-7px); }
+    36%      { transform: translateX(6px); }
+    54%      { transform: translateX(-4px); }
+    72%      { transform: translateX(3px); }
+    88%      { transform: translateX(-2px); }
+  }
+  .field-error-pulse {
+    animation: field-error-pulse 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .commission-val-flash,
+  .field-error-pulse { animation: none !important; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
   @keyframes success-icon-spring {
     0%   { opacity: 0; transform: scale(0.25); }
     55%  { opacity: 1; transform: scale(1.2); }
@@ -1397,6 +1434,20 @@ select {
   .blitz-tab-indicator {
     transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
+}
+.blitz-detail-tab-indicator {
+  transition: left 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              width 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .blitz-detail-tab-indicator { transition: none; }
+}
+.mobile-pill-tab-indicator {
+  transition: left 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              width 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-pill-tab-indicator { transition: none; }
 }
 @keyframes viewAsExpand {
   from { opacity: 0; transform: scaleY(0.82); }

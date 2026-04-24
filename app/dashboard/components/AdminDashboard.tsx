@@ -634,8 +634,8 @@ export function AdminDashboard({
 
       {/* Recent projects */}
       {(() => {
-        const searchFiltered = projects.filter((p) => {
-          if (p.phase === 'Cancelled' || p.phase === 'On Hold') return false;
+        const periodFiltered = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+        const searchFiltered = periodFiltered.filter((p) => {
           if (!recentSearch.trim()) return true;
           const q = recentSearch.trim().toLowerCase();
           return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q) || (p.subDealerName ?? '').toLowerCase().includes(q);
@@ -657,7 +657,7 @@ export function AdminDashboard({
         const startIdx = (safePage - 1) * recentRowsPerPage;
         const endIdx = Math.min(startIdx + recentRowsPerPage, sorted.length);
         const paginated = sorted.slice(startIdx, endIdx);
-        const showM3 = searchFiltered.some((p) => (p.m3Amount ?? 0) > 0);
+        const showM3 = periodFiltered.some((p) => (p.m3Amount ?? 0) > 0);
         const thCls = (col: SortKey) =>
           `text-left px-6 py-3 text-xs font-medium select-none cursor-pointer transition-colors ${
             sortKey === col

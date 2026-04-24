@@ -13,7 +13,7 @@ import {
 } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
 import { MyTasksSection, type MentionItem } from '../page';
-import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle, BarChart2, AlertCircle } from 'lucide-react';
+import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle, BarChart2, AlertCircle, CheckCircle } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
@@ -411,7 +411,7 @@ export default function MobileAdminDashboard() {
       </div>
 
       {/* ── Needs Attention (action-oriented) ── */}
-      {needsAttention > 0 && (
+      {needsAttention > 0 ? (
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5" style={{ color: WARNING }} />
@@ -487,6 +487,18 @@ export default function MobileAdminDashboard() {
               <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
           )}
+        </MobileCard>
+      ) : (
+        <MobileCard>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(0,224,122,0.13)', border: '1px solid rgba(0,224,122,0.25)' }}>
+              <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
+            </div>
+            <div>
+              <p className="font-bold" style={{ color: 'var(--accent-green)', fontFamily: FONT_BODY, fontSize: '0.9rem', margin: 0 }}>All Clear</p>
+              <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', margin: 0 }}>No items need attention right now.</p>
+            </div>
+          </div>
         </MobileCard>
       )}
 

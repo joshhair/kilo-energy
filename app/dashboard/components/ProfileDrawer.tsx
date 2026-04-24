@@ -55,6 +55,7 @@ export default function ProfileDrawer({
   const [shouldRenderViewAs, setShouldRenderViewAs] = useState(false);
   const [isExitingViewAs, setIsExitingViewAs] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [isDragDismissing, setIsDragDismissing] = useState(false);
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(0);
   const dragStartTime = useRef(0);
@@ -69,6 +70,7 @@ export default function ProfileDrawer({
     if (open) {
       setShouldRender(true);
       setIsExiting(false);
+      setIsDragDismissing(false);
       setDragY(0);
     } else {
       setIsExiting(true);
@@ -131,11 +133,15 @@ export default function ProfileDrawer({
           borderTop: '1px solid var(--border-mobile)',
           borderRadius: '20px 20px 0 0',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
-          animation: dragY > 0 ? 'none' : (isExiting ? 'slideDown 0.28s cubic-bezier(0.4, 0, 1, 1) forwards' : 'slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both'),
+          animation: (dragY > 0 || isDragDismissing) ? 'none' : (isExiting ? 'slideDown 0.28s cubic-bezier(0.4, 0, 1, 1) forwards' : 'slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both'),
           maxHeight: '80vh',
           overflowY: 'auto',
           transform: `translateY(${dragY}px)`,
-          transition: dragging ? 'none' : 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transition: dragging
+            ? 'none'
+            : isDragDismissing
+            ? 'transform 260ms cubic-bezier(0.4, 0, 1, 1)'
+            : 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
         onPointerDown={(e) => {
           setDragging(true);
@@ -155,6 +161,8 @@ export default function ProfileDrawer({
           const elapsed = Math.max(1, performance.now() - dragStartTime.current);
           const velocity = lastDragY.current / elapsed * 1000;
           if (lastDragY.current > 110 || velocity > 450) {
+            setIsDragDismissing(true);
+            setDragY(window.innerHeight);
             onClose();
           } else {
             setDragY(0);
