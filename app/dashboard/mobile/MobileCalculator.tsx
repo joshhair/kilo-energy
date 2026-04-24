@@ -19,13 +19,15 @@ import { todayLocalDateStr } from '../../../lib/utils';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
-import { Clock, ChevronDown, ChevronUp, Trash2, RotateCcw, Zap } from 'lucide-react';
+import { RotateCcw, Zap } from 'lucide-react';
+import CalcHistoryPanel from './shared/CalcHistoryPanel';
+import MobileCalculatorSkeleton from './shared/MobileCalculatorSkeleton';
 
 // ── Calc History ──────────────────────────────────────────────────────────────
 const CALC_HISTORY_KEY = 'kilo-calc-history';
 const MAX_HISTORY = 5;
 
-interface CalcHistoryEntry {
+export interface CalcHistoryEntry {
   installer: string;
   solarTechFamily?: string;
   solarTechProductId?: string;
@@ -111,7 +113,6 @@ export default function MobileCalculator() {
   const [quickFillSoldDate, setQuickFillSoldDate] = useState('');
   const [quickFillRepId, setQuickFillRepId] = useState<string | null>(null);
   const [calcHistory, setCalcHistory] = useState<CalcHistoryEntry[]>([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const lastSavedHash = useRef('');
   const resultRef = useRef<HTMLDivElement>(null);
   const resultShownRef = useRef(false);
@@ -384,7 +385,6 @@ export default function MobileCalculator() {
       setPcSelectedFamily('');
       setPcProductId('');
     }
-    setHistoryOpen(false);
     toast('Loaded from history', 'info');
   };
 
@@ -455,14 +455,7 @@ export default function MobileCalculator() {
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
 
-  if (!isHydrated) {
-    return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
-        <MobilePageHeader title="Calculator" />
-        <div className="rounded-2xl p-5 h-64 animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }} />
-      </div>
-    );
-  }
+  if (!isHydrated) return <MobileCalculatorSkeleton />;
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
@@ -613,12 +606,13 @@ export default function MobileCalculator() {
                   key={String(opt.value)}
                   type="button"
                   onClick={() => { setIsPaired(opt.value); if (!opt.value) setSelectedSetterId(''); }}
-                  className="min-h-[44px] rounded-xl text-sm font-semibold transition-colors active:scale-[0.97]"
+                  className="min-h-[44px] rounded-xl text-sm font-semibold transition-[transform,color] duration-75 ease-out active:scale-[0.97]"
                   style={{
                     background: active ? 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))' : 'var(--m-card, var(--surface-mobile-card))',
                     color: active ? '#050d18' : 'var(--m-text-muted, var(--text-mobile-muted))',
                     border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    transition: 'background 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
                 >
                   {opt.label}
@@ -630,7 +624,7 @@ export default function MobileCalculator() {
 
         {/* Setter rep selector — auto-derives trainer rate from assignment. */}
         {isPaired && (
-          <div>
+          <div className="field-appear">
             <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Setter</label>
             <select
               value={selectedSetterId}
@@ -846,63 +840,11 @@ export default function MobileCalculator() {
       )}
 
       {/* ── Recent Calcs ──────────────────────────────────────────────────── */}
-      {calcHistory.length > 0 && (
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <button
-            type="button"
-            onClick={() => setHistoryOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3"
-          >
-            <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5" style={{ color: 'var(--m-text-dim, #445577)' }} />
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Recent Calcs</span>
-              <span className="text-xs" style={{ color: 'var(--m-text-dim, #445577)' }}>({calcHistory.length})</span>
-            </div>
-            {historyOpen
-              ? <ChevronUp className="w-4 h-4" style={{ color: 'var(--m-text-dim, #445577)' }} />
-              : <ChevronDown className="w-4 h-4" style={{ color: 'var(--m-text-dim, #445577)' }} />}
-          </button>
-          {historyOpen && (
-            <div className="px-4 pb-4 space-y-2 history-reveal">
-              {calcHistory.map((entry, i) => (
-                <div
-                  key={`${entry.timestamp}-${i}`}
-                  className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-                  style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--m-border, var(--border-mobile))' }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      {entry.installer} · {entry.kW.toFixed(1)} kW @ ${entry.ppw.toFixed(2)}/W
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      Closer: ${entry.closerTotal.toLocaleString()}
-                      {entry.hasSetter && entry.setterTotal > 0 ? ` · Setter: $${entry.setterTotal.toLocaleString()}` : ''}
-                      {entry.trainerTotal > 0 ? ` · Trainer: $${entry.trainerTotal.toLocaleString()}` : ''}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleLoadHistory(entry)}
-                    className="flex-shrink-0 text-xs font-semibold rounded-lg px-3 min-h-[44px] flex items-center"
-                    style={{ color: 'var(--accent-blue)', background: 'rgba(77,159,255,0.1)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                  >
-                    Load
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleClearHistory}
-                className="flex items-center gap-1.5 text-xs mt-1 min-h-[44px]"
-                style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-              >
-                <Trash2 className="w-3 h-3" />
-                Clear History
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <CalcHistoryPanel
+        calcHistory={calcHistory}
+        handleLoadHistory={handleLoadHistory}
+        handleClearHistory={handleClearHistory}
+      />
     </div>
   );
 }

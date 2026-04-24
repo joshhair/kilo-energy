@@ -449,6 +449,24 @@ body {
   .animate-progress-shimmer { animation: none; }
 }
 
+@keyframes calcSkeletonSweep {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+.calc-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--m-card, var(--surface-mobile-card)) 25%,
+    rgba(255,255,255,0.045) 50%,
+    var(--m-card, var(--surface-mobile-card)) 75%
+  );
+  background-size: 200% 100%;
+  animation: calcSkeletonSweep 1.4s ease infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .calc-skeleton { animation: none; opacity: 0.4; }
+}
+
 @keyframes milestoneAchieve {
   0%   { box-shadow: 0 0 0 0 rgba(0,224,122,0.5); }
   50%  { box-shadow: 0 0 0 10px rgba(0,224,122,0); }
@@ -1197,6 +1215,14 @@ select {
 }
 @media (prefers-reduced-motion: reduce) {
   .history-reveal { animation: none; }
+}
+
+@keyframes historyExit {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+.history-exit { animation: historyExit 200ms ease-in forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .history-exit { animation: none; }
 }
 
 /* calc-row stagger — rows cascade in after the card settles */
