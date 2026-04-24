@@ -1354,3 +1354,11 @@ select {
     transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
+@keyframes viewAsExpand {
+  from { opacity: 0; transform: scaleY(0.82); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+@keyframes viewAsCollapse {
+  from { opacity: 1; transform: scaleY(1); }
+  to { opacity: 0; transform: scaleY(0.82); }
+}

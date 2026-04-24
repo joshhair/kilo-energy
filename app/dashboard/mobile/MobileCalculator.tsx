@@ -188,7 +188,7 @@ export default function MobileCalculator() {
     ? trainerAssignments.find((a) => a.traineeId === effectiveSetterId) ?? null
     : null;
   const setterDealCount = setterAssignment
-    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.setterId === effectiveSetterId)).map((e) => e.projectId)).size
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
 
@@ -214,7 +214,7 @@ export default function MobileCalculator() {
     ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;
   const closerDealCount = closerAssignment
-    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.repId === effectiveCloserId)).map((e) => e.projectId)).size
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) ?? null : null;

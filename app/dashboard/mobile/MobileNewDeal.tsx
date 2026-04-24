@@ -308,9 +308,12 @@ export default function MobileNewDeal() {
   };
   const [rawBlitzes, setRawBlitzes] = useState<BlitzListItem[]>([]);
   useEffect(() => {
-    fetch('/api/blitzes').then((r) => r.json()).then((data: BlitzListItem[]) => {
+    fetch('/api/blitzes').then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((data: BlitzListItem[]) => {
       setRawBlitzes(data ?? []);
-    }).catch(() => {});
+    }).catch(() => {
+      toast('Failed to load blitz list. Please refresh the page.', 'error');
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toast is a stable singleton from context; one-shot load on mount is intentional
   }, []);
   const availableBlitzes = useMemo<Array<{ id: string; name: string; status: string; startDate?: string; endDate?: string }>>(() => {
     return rawBlitzes.filter((b) => {
@@ -357,7 +360,7 @@ export default function MobileNewDeal() {
 
   const handleInstallerChange = (value: string) => {
     setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
-    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
+    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
   };
 
   const handleFinancerChange = (value: string) => {
