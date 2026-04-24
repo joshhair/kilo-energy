@@ -83,11 +83,11 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
         <MobileEmptyState icon={DollarSign} title="No costs recorded" subtitle="Track blitz expenses here" />
       ) : (
         <div>
-          {costs.map((c) => (
+          {costs.map((c, index) => (
             <div
               key={c.id}
-              className="flex items-center justify-between min-h-[48px] py-3 last:border-b-0"
-              style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}
+              className="flex items-center justify-between min-h-[48px] py-3 last:border-b-0 animate-info-row-enter"
+              style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))', animationDelay: `${index * 35}ms` }}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

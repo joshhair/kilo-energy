@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
+
 export type BlitzTabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
 
 export interface BlitzTab {
@@ -20,6 +22,17 @@ interface Props {
 // screens without text truncation; the `no-scrollbar` utility hides the
 // scrollbar chrome so it stays clean.
 export default function BlitzTabs({ tabs, active, onChange }: Props) {
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    const activeIndex = tabs.findIndex(t => t.key === active);
+    const el = tabRefs.current[activeIndex];
+    if (el) {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: prefersReduced ? 'instant' : 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [active, tabs]);
+
   return (
     <div
       className="sticky z-20 -mx-5 px-5 pt-2"
@@ -33,11 +46,12 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
       }}
     >
     <div className="flex gap-2 overflow-x-auto no-scrollbar">
-      {tabs.map((t) => {
+      {tabs.map((t, index) => {
         const isActive = active === t.key;
         return (
           <button
             key={t.key}
+            ref={(el) => { tabRefs.current[index] = el; }}
             onClick={() => onChange(t.key)}
             className="min-h-[40px] px-4 py-1.5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors shrink-0"
             style={{

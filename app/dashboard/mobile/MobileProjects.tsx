@@ -136,6 +136,13 @@ export default function MobileProjects() {
     const el = pillRefs.current[activeIndex];
     if (el) {
       setSpotlight({ left: el.offsetLeft, width: el.offsetWidth });
+      // Auto-center active pill — respects reduced-motion preference
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({
+        behavior: prefersReduced ? 'instant' : 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
     }
   }, [phaseFilter]);
 

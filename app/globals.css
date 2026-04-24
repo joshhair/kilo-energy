@@ -1362,3 +1362,41 @@ select {
   from { opacity: 1; transform: scaleY(1); }
   to { opacity: 0; transform: scaleY(0.82); }
 }
+
+/* Project list card stagger entrance — wires the existing --card-index variable set in MobileProjects.tsx */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-card-enter {
+  animation: cardEnter 260ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--card-index, 0) * 55ms) both;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-enter { animation: none; }
+}
+
+/* Project detail page forward-slide entrance — used in MobileProjectDetail.tsx */
+@keyframes mobileSlideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-mobile-slide-in {
+  animation: mobileSlideIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-mobile-slide-in { animation: none; }
+}
+
+@keyframes infoRowEnter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-info-row-enter {
+  animation: infoRowEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-info-row-enter { animation: none; }
+}

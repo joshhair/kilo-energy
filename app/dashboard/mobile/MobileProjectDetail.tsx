@@ -637,7 +637,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 title={step}
               />
               {index < PIPELINE_STEPS.length - 1 && (
-                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))' }} />
+                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))', transition: 'background 350ms cubic-bezier(0.16, 1, 0.3, 1)' }} />
               )}
             </div>
           );
@@ -721,8 +721,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* Info rows — no card wrapper, thin separators */}
       <div className="space-y-0">
-        {infoRows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
+        {infoRows.map(([label, value], index) => (
+          <div key={label} className="flex items-center justify-between py-3 animate-info-row-enter" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))', animationDelay: `${index * 35}ms` }}>
             <span className="text-base" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
             <span className="text-base font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
           </div>
