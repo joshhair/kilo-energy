@@ -534,11 +534,13 @@ export default function MobileBlitz() {
           <button
             key={s.value}
             onClick={() => setStatusFilter(s.value)}
-            className="min-h-[48px] px-4 py-2 text-base font-semibold rounded-full whitespace-nowrap transition-colors"
+            className="min-h-[48px] px-4 py-2 text-base font-semibold rounded-full whitespace-nowrap active:scale-[0.91]"
             style={{
               background: statusFilter === s.value ? 'var(--accent-emerald)' : 'transparent',
               color: statusFilter === s.value ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              transform: statusFilter === s.value ? 'scale(1.05)' : 'scale(1)',
+              transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms ease, color 150ms ease',
             }}
           >
             {s.label}
@@ -582,33 +584,31 @@ export default function MobileBlitz() {
 
       {/* Admin tabs: Blitzes / Requests */}
       {(isAdmin || userPerms.canRequestBlitz) && (
-        <div className="flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="relative flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <div
+            className="blitz-tab-indicator absolute top-1 bottom-1 rounded-xl pointer-events-none"
+            style={{
+              left: 4,
+              width: 'calc(50% - 6px)',
+              background: 'var(--accent-emerald)',
+              transform: tab === 'requests' ? 'translateX(calc(100% + 4px))' : 'translateX(0)',
+            }}
+          />
           <button
             onClick={() => setTab('blitzes')}
-            className="flex-1 min-h-[48px] text-base font-semibold rounded-xl transition-colors"
-            style={{
-              background: tab === 'blitzes' ? 'var(--accent-emerald)' : 'transparent',
-              color: tab === 'blitzes' ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
+            className="relative flex-1 min-h-[48px] text-base font-semibold rounded-xl z-10"
+            style={{ background: 'transparent', color: tab === 'blitzes' ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             Blitzes
           </button>
           <button
             onClick={() => setTab('requests')}
-            className="flex-1 min-h-[48px] text-base font-semibold rounded-xl transition-colors relative"
-            style={{
-              background: tab === 'requests' ? 'var(--accent-emerald)' : 'transparent',
-              color: tab === 'requests' ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
+            className="relative flex-1 min-h-[48px] text-base font-semibold rounded-xl z-10"
+            style={{ background: 'transparent', color: tab === 'requests' ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             Requests
             {pendingRequests.length > 0 && (
-              <span
-                className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-full"
-                style={{ background: 'var(--m-danger, var(--accent-danger))' }}
-              >
+              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-full" style={{ background: 'var(--m-danger, var(--accent-danger))' }}>
                 {pendingRequests.length}
               </span>
             )}
@@ -618,7 +618,7 @@ export default function MobileBlitz() {
 
       {/* Blitz cards */}
       {tab === 'blitzes' && (
-        <>
+        <div key="blitzes" style={{ animation: 'fadeIn 160ms ease both' }}>
           {filteredBlitzes.length === 0 ? (
             <MobileEmptyState icon={Tent} title="No blitzes found" subtitle="Try a different filter or search" />
           ) : !isAdmin && effectiveRepId ? (
@@ -633,7 +633,11 @@ export default function MobileBlitz() {
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               };
               return (
-                <div className="space-y-5">
+                <div
+                  key={statusFilter}
+                  className="space-y-5"
+                  style={{ animation: 'fadeIn 160ms ease both' }}
+                >
                   {myFiltered.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1" style={sectionLabelStyle}>My Blitzes</p>
@@ -666,12 +670,12 @@ export default function MobileBlitz() {
               {filteredBlitzes.map((blitz, index) => renderBlitzCard(blitz, index))}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Requests tab — admin: see all requests */}
       {tab === 'requests' && isAdmin && (
-        <>
+        <div key="requests-admin" style={{ animation: 'fadeIn 160ms ease both' }}>
           {requests.length === 0 ? (
             <MobileEmptyState icon={Inbox} title="No blitz requests" />
           ) : (
@@ -713,12 +717,12 @@ export default function MobileBlitz() {
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Requests tab — rep: see own submissions */}
       {tab === 'requests' && !isAdmin && userPerms.canRequestBlitz && (
-        <>
+        <div key="requests-rep" style={{ animation: 'fadeIn 160ms ease both' }}>
           {requests.filter((r) => r.requestedBy.id === effectiveRepId).length === 0 ? (
             <MobileEmptyState icon={Inbox} title="No requests submitted" />
           ) : (
@@ -737,7 +741,7 @@ export default function MobileBlitz() {
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
       {/* ── Create Blitz sheet ── */}
       <MobileBottomSheet open={showCreate} onClose={() => setShowCreate(false)} title={canRequest && !canCreate ? 'Request Blitz' : 'Create Blitz'}>
