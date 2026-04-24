@@ -165,7 +165,7 @@ export default function MobileDashboard() {
     const items: AttentionItem[] = [];
     for (const proj of attentionProjects) {
       if (proj.flagged) {
-        items.push({ id: proj.id, customerName: proj.customerName, phase: proj.phase, soldDate: proj.soldDate, suffix: stalledDays(proj.phaseChangedAt ?? proj.soldDate) !== null ? `Stalled ${stalledDays(proj.phaseChangedAt ?? proj.soldDate)}d` : 'Flagged' });
+        items.push({ id: proj.id, customerName: proj.customerName, phase: proj.phase, soldDate: proj.soldDate, suffix: 'Flagged for review' });
       }
     }
     for (const proj of attentionProjects) {
@@ -423,8 +423,26 @@ export default function MobileDashboard() {
     // Pipeline boost: 15% of projected M1 + M2 (same as desktop My Pay)
     const preAcceptance = ['New'];
     const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0)), 0);
-    const projM2 = allMyProjects.filter((p) => preInstalled.includes(p.phase)).reduce((s, p) => s + (p.setterId === effectiveRepId ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0)), 0);
+    const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => {
+      const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
+      let m1 = 0;
+      if (p.repId === effectiveRepId) m1 = p.m1Amount ?? 0;
+      else if (p.setterId === effectiveRepId) m1 = p.setterM1Amount ?? 0;
+      else if (coCloserParty) m1 = coCloserParty.m1Amount;
+      else if (coSetterParty) m1 = coSetterParty.m1Amount;
+      return s + m1;
+    }, 0);
+    const projM2 = allMyProjects.filter((p) => preInstalled.includes(p.phase)).reduce((s, p) => {
+      const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
+      let m2 = 0;
+      if (p.repId === effectiveRepId) m2 = p.m2Amount ?? 0;
+      else if (p.setterId === effectiveRepId) m2 = p.setterM2Amount ?? 0;
+      else if (coCloserParty) m2 = coCloserParty.m2Amount;
+      else if (coSetterParty) m2 = coSetterParty.m2Amount;
+      return s + m2;
+    }, 0);
     annual += Math.round((projM1 + projM2) * 0.15);
 
     return { onPaceAnnual: annual, dealsPerMonth };
@@ -471,11 +489,13 @@ export default function MobileDashboard() {
   }, [effectiveRepId]);
   useEffect(() => { fetchMentions(); }, [fetchMentions]);
 
+  const [checkedTaskIds, setCheckedTaskIds] = useState<Set<string>>(new Set());
+
   const mobileTasks = useMemo(() => {
     const tasks: Array<{ checkItemId: string; text: string; projectId: string; projectName: string; messageId: string; authorName: string; createdAt: string; dueDate?: string | null }> = [];
     for (const mention of dashMentions) {
       for (const ci of mention.checkItems) {
-        if (!ci.completed) {
+        if (!ci.completed && !checkedTaskIds.has(ci.id)) {
           tasks.push({ checkItemId: ci.id, text: ci.text, projectId: mention.projectId, projectName: mention.projectCustomerName, messageId: mention.messageId, authorName: mention.authorName, createdAt: mention.createdAt, dueDate: ci.dueDate });
         }
       }
@@ -495,9 +515,7 @@ export default function MobileDashboard() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     return tasks;
-  }, [dashMentions]);
-
-  const [checkedTaskIds, setCheckedTaskIds] = useState<Set<string>>(new Set());
+  }, [dashMentions, checkedTaskIds]);
   const handleToggleTask = useCallback(async (projectId: string, messageId: string, checkItemId: string, wasChecked: boolean) => {
     setCheckedTaskIds((prev) => { const next = new Set(prev); if (wasChecked) { next.delete(checkItemId); } else { next.add(checkItemId); } return next; });
     try {
@@ -509,7 +527,7 @@ export default function MobileDashboard() {
     } catch {
       setCheckedTaskIds((prev) => { const next = new Set(prev); if (wasChecked) { next.add(checkItemId); } else { next.delete(checkItemId); } return next; });
     }
-  }, []);
+  }, [effectiveRepId]);
 
   // ── Admin dispatch (after all hooks — rules-of-hooks) ─────────────────────
   if (effectiveRole === 'admin') return <MobileAdminDashboard />;
