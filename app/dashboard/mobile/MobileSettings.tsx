@@ -601,13 +601,20 @@ function BlitzPermissionsSection() {
   }, [reps]);
 
   const togglePermission = async (repId: string, field: 'canRequestBlitz' | 'canCreateBlitz', value: boolean) => {
+    const prevValue = permissions[repId]?.[field];
     setPermissions((prev) => ({ ...prev, [repId]: { ...prev[repId], [field]: value } }));
-    await fetch(`/api/users/${repId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [field]: value }),
-    });
-    toast('Permission updated');
+    try {
+      const res = await fetch(`/api/users/${repId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!res.ok) throw new Error();
+      toast('Permission updated');
+    } catch {
+      setPermissions((prev) => ({ ...prev, [repId]: { ...prev[repId], [field]: prevValue } }));
+      toast('Failed to update permission', 'error');
+    }
   };
 
   return (

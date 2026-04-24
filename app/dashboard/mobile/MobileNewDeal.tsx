@@ -422,6 +422,14 @@ export default function MobileNewDeal() {
     setForm((prev) => ({ ...prev, setterId: '' }));
   }, [form.setterId, form.blitzId, setterPickerReps, reps.length]);
 
+  // Clear installerProductId when the selected PC product has been deleted from context.
+  useEffect(() => {
+    if (!form.installerProductId) return;
+    if (productCatalogProducts.some((p) => p.id === form.installerProductId)) return;
+    setForm((prev) => ({ ...prev, installerProductId: '' }));
+    toast('The selected equipment package was removed. Please choose another product.', 'error');
+  }, [form.installerProductId, productCatalogProducts, toast]);
+
   const solarTechFamily = form.installer === 'SolarTech' ? form.solarTechFamily : '';
   const solarTechFamilyProducts = solarTechProducts.filter((p) => p.family === solarTechFamily);
   const hasSolarTechProducts = solarTechFamilyProducts.length > 0;

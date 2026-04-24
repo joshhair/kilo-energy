@@ -326,6 +326,14 @@ function NewDealPage() {
     setForm((prev) => ({ ...prev, setterId: '' }));
   }, [form.setterId, form.blitzId, setterPickerReps, reps.length]);
 
+  // Clear installerProductId when the selected PC product has been deleted from context.
+  useEffect(() => {
+    if (!form.installerProductId) return;
+    if (productCatalogProducts.some((p) => p.id === form.installerProductId)) return;
+    setForm((prev) => ({ ...prev, installerProductId: '' }));
+    toast('The selected equipment package was removed. Please choose another product.', 'error');
+  }, [form.installerProductId, productCatalogProducts, toast]);
+
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = setterAssignment
     ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.setterId === form.setterId)).map((e) => e.projectId)).size
