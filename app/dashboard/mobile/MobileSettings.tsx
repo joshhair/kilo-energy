@@ -22,7 +22,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 type SettingsSection =
   | 'trainers' | 'blitz-permissions' | 'project-managers' | 'sub-dealers'
   | 'installers' | 'financers' | 'baselines'
-  | 'users' | 'export' | 'customization';
+  | 'admin-users' | 'export' | 'customization';
 
 interface NavItem {
   id: SettingsSection;
@@ -40,8 +40,9 @@ const NAV: NavGroup[] = [
     group: 'Team',
     items: [
       { id: 'blitz-permissions', label: 'Blitz Permissions', icon: Tent },
-      { id: 'project-managers', label: 'Project Managers', icon: Users },
       { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
+      { id: 'project-managers', label: 'Project Managers', icon: Users },
+      { id: 'admin-users', label: 'Admin Users', icon: Shield },
     ],
   },
   {
@@ -55,12 +56,62 @@ const NAV: NavGroup[] = [
   {
     group: 'System',
     items: [
-      { id: 'users', label: 'Admin Users', icon: Shield },
-      { id: 'export', label: 'Export', icon: Download },
       { id: 'customization', label: 'Customization', icon: SlidersHorizontal },
+      { id: 'export', label: 'Export', icon: Download },
     ],
   },
 ];
+
+// ─── Animation Keyframes ─────────────────────────────────────────────────────
+// Defined at module scope so keyframes survive every JSX branch transition.
+// ms-slide-back is applied to the nav container (activeSection=null branch) but
+// was previously defined only inside the activeSection branch — causing it to
+// unmount the instant handleBack() fired.
+
+const SETTINGS_KEYFRAMES = `
+  @keyframes ms-slide-in   { from { transform: translateX(28px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes ms-slide-out  { from { transform: translateX(0); opacity: 1; } to { transform: translateX(28px); opacity: 0; } }
+  @keyframes ms-slide-back { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes ms-nav-group-in { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes bs-up   { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes bs-down { from { transform: translateY(0);    } to { transform: translateY(100%); } }
+  @keyframes bs-backdrop-in  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes bs-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .bs-panel, .bs-backdrop { animation: none !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ms-slide-in, .ms-slide-out, .ms-slide-back { animation: none !important; }
+  }
+  .ms-slide-in   { animation: ms-slide-in   320ms cubic-bezier(0.16,1,0.3,1) both; }
+  .ms-slide-out  { animation: ms-slide-out  240ms cubic-bezier(0.55,0,1,0.45) both; }
+  .ms-slide-back { animation: ms-slide-back 280ms cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes sk-shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+  .sk {
+    background: linear-gradient(90deg,
+      var(--m-border,var(--border-mobile)) 25%,
+      rgba(255,255,255,0.04) 50%,
+      var(--m-border,var(--border-mobile)) 75%);
+    background-size: 200% 100%;
+    animation: sk-shimmer 1.4s linear infinite;
+    border-radius: 6px;
+  }
+  @media(prefers-reduced-motion:reduce){.sk{animation:none;}}
+  @keyframes exportSpin { to { transform: rotate(360deg); } }
+  @keyframes exportPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(0,229,160,0.5); }
+    60%  { box-shadow: 0 0 0 8px rgba(0,229,160,0); }
+    100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
+  }
+  @keyframes exportShimmer {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+  @media(prefers-reduced-motion:reduce){ .export-shimmer{ display:none; } .export-pulse{ animation:none; } }
+`;
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
@@ -69,15 +120,15 @@ export default function MobileSettings() {
 
   const [activeSection, setActiveSection] = useState<SettingsSection | null>(null);
   const [leaving, setLeaving] = useState(false);
-  const [navReturning, setNavReturning] = useState(false);
+  const [navKey, setNavKey] = useState(0);
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function handleBack() {
     setLeaving(true);
     setTimeout(() => {
       setActiveSection(null);
       setLeaving(false);
-      setNavReturning(true);
-      setTimeout(() => setNavReturning(false), 300);
+      setNavKey(k => k + 1);
     }, 255);
   }
 
@@ -85,6 +136,7 @@ export default function MobileSettings() {
   if (effectiveRole !== 'admin') {
     return (
       <div className="px-5 pt-4 pb-24 space-y-4">
+        <style>{SETTINGS_KEYFRAMES}</style>
         <MobilePageHeader title="Settings" />
         <MobileEmptyState
           icon={Shield}
@@ -98,24 +150,7 @@ export default function MobileSettings() {
   if (activeSection) {
     return (
       <div className={`px-5 pt-4 pb-24 space-y-6 ${leaving ? 'ms-slide-out' : 'ms-slide-in'}`}>
-        <style>{`
-          @keyframes ms-slide-in   { from { transform: translateX(28px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-          @keyframes ms-slide-out  { from { transform: translateX(0); opacity: 1; } to { transform: translateX(28px); opacity: 0; } }
-          @keyframes ms-slide-back { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-          @keyframes bs-up   { from { transform: translateY(100%); } to { transform: translateY(0); } }
-          @keyframes bs-down { from { transform: translateY(0);    } to { transform: translateY(100%); } }
-          @keyframes bs-backdrop-in  { from { opacity: 0; } to { opacity: 1; } }
-          @keyframes bs-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
-          @media (prefers-reduced-motion: reduce) {
-            .bs-panel, .bs-backdrop { animation: none !important; }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .ms-slide-in, .ms-slide-out, .ms-slide-back { animation: none !important; }
-          }
-          .ms-slide-in   { animation: ms-slide-in   320ms cubic-bezier(0.16,1,0.3,1) both; }
-          .ms-slide-out  { animation: ms-slide-out  240ms cubic-bezier(0.55,0,1,0.45) both; }
-          .ms-slide-back { animation: ms-slide-back 280ms cubic-bezier(0.16,1,0.3,1) both; }
-        `}</style>
+        <style>{SETTINGS_KEYFRAMES}</style>
         {/* Back button */}
         <button
           onClick={handleBack}
@@ -139,23 +174,31 @@ export default function MobileSettings() {
 
   // Navigation list
   return (
-    <div className={`px-5 pt-4 pb-24 space-y-4 ${navReturning ? 'ms-slide-back' : ''}`}>
+    <div key={navKey} className="px-5 pt-4 pb-24 space-y-4">
+      <style>{SETTINGS_KEYFRAMES}</style>
       <MobilePageHeader title="Settings" />
 
-      {NAV.map(({ group, items }) => (
-        <MobileSection key={group} title={group}>
-          <MobileCard>
-            {items.map((item, idx) => (
-              <div key={item.id}>
-                {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
-                <MobileListItem
-                  title={item.label}
-                  onTap={() => setActiveSection(item.id)}
-                />
-              </div>
-            ))}
-          </MobileCard>
-        </MobileSection>
+      {NAV.map(({ group, items }, groupIdx) => (
+        <div
+          key={group}
+          style={{
+            animation: prefersReducedMotion ? 'none' : 'ms-nav-group-in 300ms cubic-bezier(0.16,1,0.3,1) both',
+            animationDelay: prefersReducedMotion ? undefined : `${groupIdx * 70}ms`,
+          }}
+        >
+          <MobileSection title={group}>
+            <MobileCard>
+              {items.map((item, idx) => (
+                <div key={item.id}>
+                  {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
+                  <div className="active:scale-[0.97] transition-transform duration-100 ease-out">
+                    <MobileListItem title={item.label} onTap={() => setActiveSection(item.id)} />
+                  </div>
+                </div>
+              ))}
+            </MobileCard>
+          </MobileSection>
+        </div>
       ))}
     </div>
   );
@@ -167,7 +210,7 @@ function SectionContent({ section }: { section: SettingsSection }) {
   switch (section) {
     case 'installers': return <InstallersSection />;
     case 'financers': return <FinancersSection />;
-    case 'users': return <AdminUsersSection />;
+    case 'admin-users': return <AdminUsersSection />;
     case 'project-managers': return <ProjectManagersSection />;
     case 'blitz-permissions': return <BlitzPermissionsSection />;
     case 'export': return <ExportSection />;
@@ -183,23 +226,7 @@ function SectionContent({ section }: { section: SettingsSection }) {
 
 function SettingsSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <>
-      <style>{`
-        @keyframes sk-shimmer {
-          0%   { background-position: -200% 0; }
-          100% { background-position:  200% 0; }
-        }
-        .sk { background: linear-gradient(90deg,
-          var(--m-border,var(--border-mobile)) 25%,
-          rgba(255,255,255,0.04) 50%,
-          var(--m-border,var(--border-mobile)) 75%);
-          background-size: 200% 100%;
-          animation: sk-shimmer 1.4s linear infinite;
-          border-radius: 6px;
-        }
-        @media(prefers-reduced-motion:reduce){.sk{animation:none;}}
-      `}</style>
-      <MobileCard>
+    <MobileCard>
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i}>
             {i > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border,var(--border-mobile))' }} />}
@@ -212,8 +239,7 @@ function SettingsSkeleton({ rows = 3 }: { rows?: number }) {
             </div>
           </div>
         ))}
-      </MobileCard>
-    </>
+    </MobileCard>
   );
 }
 
@@ -717,19 +743,6 @@ function ExportSection() {
 
   return (
     <div className="space-y-3">
-      <style>{`
-        @keyframes exportSpin { to { transform: rotate(360deg); } }
-        @keyframes exportPulse {
-          0%   { box-shadow: 0 0 0 0 rgba(0,229,160,0.5); }
-          60%  { box-shadow: 0 0 0 8px rgba(0,229,160,0); }
-          100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
-        }
-        @keyframes exportShimmer {
-          from { transform: translateX(-100%); }
-          to   { transform: translateX(100%); }
-        }
-        @media(prefers-reduced-motion:reduce){ .export-shimmer{ display:none; } .export-pulse{ animation:none; } }
-      `}</style>
       <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button

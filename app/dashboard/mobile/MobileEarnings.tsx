@@ -401,7 +401,7 @@ export default function MobileEarnings() {
       )}
 
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
-      <MobileSection title="Deal Payments" count={dealPayments.length} collapsible defaultOpen>
+      <MobileSection title="Deal Payments" count={dealPayments.length + myReimbs.length} collapsible defaultOpen>
         <div className="flex justify-end mb-2">
           <button
             onClick={() => {
