@@ -72,15 +72,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         additionalClosers: (p as { additionalClosers?: Parameters<typeof serializeProjectParty>[0][] }).additionalClosers?.map(serializeProjectParty) ?? [],
         additionalSetters: (p as { additionalSetters?: Parameters<typeof serializeProjectParty>[0][] }).additionalSetters?.map(serializeProjectParty) ?? [],
       };
-      const rel = relationshipToProject(user, {
-        closerId: p.closerId,
-        setterId: p.setterId,
-        subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,
-        trainerId: (p as { trainerId?: string | null }).trainerId ?? null,
-        additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
-        additionalSetters: withParties.additionalSetters.map((s) => ({ userId: s.userId })),
-      });
-      return scrubProjectForViewer(withParties, rel);
+      if (user.role !== 'admin') {
+        const rel = relationshipToProject(user, {
+          closerId: p.closerId,
+          setterId: p.setterId,
+          subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,
+          trainerId: (p as { trainerId?: string | null }).trainerId ?? null,
+          additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
+          additionalSetters: withParties.additionalSetters.map((sv) => ({ userId: sv.userId })),
+        });
+        return scrubProjectForViewer(withParties, rel);
+      }
+      return withParties;
     }),
   });
 }

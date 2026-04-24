@@ -171,12 +171,14 @@ export default function MobileBlitz() {
     }
     const blitzDeals = (b: BlitzData) => {
       const approvedIds = new Set(b.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
-      return b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && (
-        approvedIds.has(p.closer?.id ?? '')
-        || approvedIds.has(p.setter?.id ?? '')
-        || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
-        || p.additionalSetters?.some((as) => approvedIds.has(as.userId))
-      ));
+      const active = b.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+      return (isAdmin || effectiveRepId === b.owner.id)
+        ? active.filter((p) => approvedIds.has(p.closer?.id ?? '') || approvedIds.has(p.setter?.id ?? '')
+            || p.additionalClosers?.some((ac) => approvedIds.has(ac.userId))
+            || p.additionalSetters?.some((as) => approvedIds.has(as.userId)))
+        : active.filter((p) => p.closer?.id === effectiveRepId || p.setter?.id === effectiveRepId
+            || p.additionalClosers?.some((ac) => ac.userId === effectiveRepId)
+            || p.additionalSetters?.some((as) => as.userId === effectiveRepId));
     };
     return [...list].sort((a, b) => {
       if (sortKey === 'newest') return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
@@ -196,7 +198,7 @@ export default function MobileBlitz() {
       if (sortKey === 'name') return a.name.localeCompare(b.name);
       return 0;
     });
-  }, [blitzes, statusFilter, search, sortKey]);
+  }, [blitzes, statusFilter, search, sortKey, isAdmin, effectiveRepId]);
 
   const activeBlitzes = useMemo(() => blitzes.filter((b) => b.status === 'active').length, [blitzes]);
   const upcomingBlitzes = useMemo(() => blitzes.filter((b) => b.status === 'upcoming').length, [blitzes]);

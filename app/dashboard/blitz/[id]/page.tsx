@@ -253,10 +253,19 @@ export default function BlitzDetailPage() {
       }
     }
     if (p.productId) {
-      return getProductCatalogBaseline(productCatalogProducts, p.productId, p.kWSize);
+      try {
+        return getProductCatalogBaseline(productCatalogProducts, p.productId, p.kWSize);
+      } catch {
+        // Orphaned product id (deleted after deal submitted) — fall through to installer rates
+      }
     }
     const installerName = typeof p.installer === 'string' ? p.installer : p.installer?.name ?? '';
-    return getInstallerRatesForDeal(installerName, p.soldDate ?? '', p.kWSize, installerPricingVersions);
+    try {
+      return getInstallerRatesForDeal(installerName, p.soldDate ?? '', p.kWSize, installerPricingVersions);
+    } catch {
+      // No resolvable baseline — return zeros so the row contributes $0 margin instead of crashing
+      return { closerPerW: 0, kiloPerW: 0 };
+    }
   };
 
   const kiloMargin = useMemo(() => {

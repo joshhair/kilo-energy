@@ -291,7 +291,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <div className="space-y-4">
             <BlitzOverview
               participantCount={approvedParticipants.length}
-              totalDeals={closerApprovedProjects.length}
+              totalDeals={approvedVisibleProjects.length}
               totalKW={totalKW}
               notes={blitz.notes}
             />
