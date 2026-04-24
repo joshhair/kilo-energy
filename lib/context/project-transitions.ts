@@ -495,16 +495,26 @@ export function createMilestonePayroll(
       }
     }
 
-    // Setter's trainer — project-level override does NOT apply to setter's trainer
-    // slot (the override field was designed for closer attribution). Setter always
-    // goes through the tier chain.
+    // Setter's trainer — first resolve via tier chain, then apply the
+    // per-project override if it targets the same trainer. Previously
+    // this slot ignored the project override entirely, so a manual
+    // $0.10/W override on Hunter was shadowed by Hunter's $0.20/W
+    // tier rate when Hunter was resolved for the setter slot.
+    // Fixed 2026-04-24 (Josh's Chris Abbott / Hunter Helton case).
     if (freshProject.setterId) {
-      const setterRes = resolveTrainerRate(
+      const setterResRaw = resolveTrainerRate(
         { id: projectId, trainerId: null, trainerRate: null },
         freshProject.setterId,
         deps.trainerAssignmentsRef.current,
         prevEntries,
       );
+      const overrideAppliesToSetter =
+        freshProject.trainerId &&
+        freshProject.trainerRate != null &&
+        setterResRaw.trainerId === freshProject.trainerId;
+      const setterRes = overrideAppliesToSetter
+        ? { rate: freshProject.trainerRate!, trainerId: freshProject.trainerId!, reason: 'project-override' as const }
+        : setterResRaw;
       if (setterRes.rate > 0 && setterRes.trainerId) {
         const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterRes.trainerId);
         const m2SetterTrainerAmount = Math.round(setterRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
@@ -754,14 +764,23 @@ export function createM3Payroll(
   }
 
   // Setter's trainer — guarded by !old.subDealerId to match closer's trainer.
-  // Project-level override doesn't apply to the setter's trainer slot.
+  // Project-level override applies when it targets the same trainer the
+  // tier chain resolves to. Fixed 2026-04-24 in parallel with the M2
+  // path (see earlier block) so setter-side override behavior matches.
   if (proj?.setterId && !old.subDealerId) {
-    const setterResM3Entry = resolveTrainerRate(
+    const setterResM3EntryRaw = resolveTrainerRate(
       { id: projectId, trainerId: null, trainerRate: null },
       proj.setterId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
+    const m3OverrideAppliesToSetter =
+      proj.trainerId &&
+      proj.trainerRate != null &&
+      setterResM3EntryRaw.trainerId === proj.trainerId;
+    const setterResM3Entry = m3OverrideAppliesToSetter
+      ? { rate: proj.trainerRate!, trainerId: proj.trainerId!, reason: 'project-override' as const }
+      : setterResM3EntryRaw;
     const setterTraineeName = deps.repsRef.current.find(r => r.id === proj.setterId)?.name ?? proj.setterName ?? '';
     const setterTraineeNotesPrefix = `Trainer override M3 — ${setterTraineeName}`;
     const setterTrainerM3AlreadyExists = setterResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(

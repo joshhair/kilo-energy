@@ -44,10 +44,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => { document.title = project ? `${project.customerName} | Kilo Energy` : 'Project Detail | Kilo Energy'; }, [project?.customerName]);
   // Notes moved to the ProjectNotes list component (per-note rows).
   // The legacy notesDraft / auto-save textarea was removed 2026-04-23.
-  const [editM1, setEditM1] = useState(false);
-  const [editM2, setEditM2] = useState(false);
-  const [m1Val, setM1Val] = useState('');
-  const [m2Val, setM2Val] = useState('');
+  // Inline M1/M2 edit state removed 2026-04-24 when the duplicate
+  // Milestone Status section was deleted. Manual amount overrides now
+  // happen via Edit Deal modal (which goes through the server recompute
+  // + realign path).
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
@@ -96,7 +96,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // ArrowLeft / ArrowRight keyboard shortcuts (only when no input is focused)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (showEditModal || showCancelConfirm || showDeleteConfirm || showCancelReasonModal || phaseConfirm || editM1 || editM2) return;
+      if (showEditModal || showCancelConfirm || showDeleteConfirm || showCancelReasonModal || phaseConfirm) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement)?.isContentEditable) return;
       if (e.key === 'ArrowLeft' && prevProjectId) {
@@ -110,7 +110,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- router is a stable singleton from Next; omitting is intentional
-  }, [prevProjectId, nextProjectId, showEditModal, showCancelConfirm, showDeleteConfirm, showCancelReasonModal, phaseConfirm, editM1, editM2]);
+  }, [prevProjectId, nextProjectId, showEditModal, showCancelConfirm, showDeleteConfirm, showCancelReasonModal, phaseConfirm]);
 
   // Escape to close Edit Project modal
   useEffect(() => {
@@ -309,35 +309,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     );
   };
 
-  const saveM1 = () => {
-    const val = parseFloat(m1Val);
-    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
-    else { toast('Invalid amount', 'error'); }
-  };
-
-  const saveM2 = () => {
-    const val = parseFloat(m2Val);
-    if (!isNaN(val)) {
-      const installPayPct = installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-      const newM3 = installPayPct < 100 && !project.subDealerId
-        ? Math.round(val * ((100 - installPayPct) / installPayPct) * 100) / 100
-        : 0;
-      const originalM2 = project.m2Amount ?? 0;
-      // scale is based on the closer's old M2; if it was $0 we can't compute a ratio, so setter M2 is left unchanged
-      const scale = originalM2 > 0 ? val / originalM2 : 1;
-      const newSetterM2 = Math.round((project.setterM2Amount ?? 0) * scale * 100) / 100;
-      const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
-        ? Math.round(newSetterM2 * ((100 - installPayPct) / installPayPct) * 100) / 100
-        : 0;
-      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
-      if (originalM2 === 0 && project.setterId) {
-        toast('M2 updated — closer M2 was $0 so setter M2 could not be auto-scaled. Use Edit Deal to recalculate setter amounts.', 'error');
-      } else {
-        toast('M2 amount updated', 'success');
-      }
-      setEditM2(false);
-    } else { toast('Invalid amount', 'error'); }
-  };
+  // saveM1 / saveM2 inline editors removed 2026-04-24 alongside the
+  // duplicate Milestone Status section. Manual amount override goes
+  // through the Edit Deal modal now.
 
   const openEditModal = () => {
     setEditVals({
@@ -549,9 +523,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     payrollEntries,
   );
   const trainerTotalExpected = effectiveTrainerRate * (project.kWSize ?? 0) * 1000;
-
-  const inputCls =
-    'bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]';
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-3xl">
@@ -1162,120 +1133,35 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               );
             })()}
 
-            {/* ── Milestone toggles ── */}
-            <div className="border-t border-[var(--border-subtle)] pt-4 space-y-3">
-              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Milestone Status</p>
-
-              {/* M1 */}
-              <div className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl p-4">
-                <div>
-                  <p className="text-[var(--text-secondary)] text-sm font-medium">Milestone 1 (M1)</p>
-                  {editM1 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="number"
-                        value={m1Val}
-                        onChange={(e) => setM1Val(e.target.value)}
-                        placeholder={String(project.m1Amount)}
-                        className={inputCls + ' w-28'}
-                      />
-                      <button onClick={saveM1} className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs">Save</button>
-                      <button onClick={() => setEditM1(false)} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-xs">Cancel</button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[var(--accent-green)] font-semibold">${project.m1Amount != null ? project.m1Amount.toLocaleString() : '—'}</p>
-                      <button
-                        onClick={() => { setM1Val(String(project.m1Amount ?? 0)); setEditM1(true); }}
-                        className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-xs"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleToggleM1}
-                    className="text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--border)] hover:bg-[var(--text-dim)] px-2 py-1 rounded-lg transition-colors"
-                  >
-                    {project.m1Paid ? 'Mark Unpaid' : 'Mark Paid'}
-                  </button>
-                  <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                    project.m1Paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
-                  }`}>
-                    {project.m1Paid ? 'Paid' : 'Pending'}
+            {/* Compact milestone Mark Paid/Unpaid strip. The full per-rep
+                breakdown above already shows each milestone's status + amount
+                inside each RepCommissionCard; this footer exists only so admin
+                can flip the project-level m1Paid/m2Paid/m3Paid flags in one
+                tap. Edit amounts through the Edit Deal modal (recomputes via
+                server) or by tweaking netPPW / kW inputs on the project.
+                Dup Milestone Status block removed 2026-04-24 per Josh's ask. */}
+            <div className="border-t border-[var(--border-subtle)] pt-4 flex flex-wrap gap-2">
+              {([
+                { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1 },
+                { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2 },
+                ...((project.m3Amount ?? 0) > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3 }] : []),
+              ]).map(({ stage, paid, toggle }) => (
+                <button
+                  key={stage}
+                  onClick={toggle}
+                  className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
+                    paid
+                      ? 'bg-emerald-900/30 text-[var(--accent-green)] border-[var(--accent-green)]/30 hover:bg-emerald-900/40'
+                      : 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-card)]'
+                  }`}
+                  title={paid ? `Mark ${stage} unpaid` : `Mark ${stage} paid`}
+                >
+                  <span>{stage}</span>
+                  <span className={paid ? 'text-[var(--accent-green)]' : 'text-yellow-400'}>
+                    {paid ? 'Paid' : 'Pending'}
                   </span>
-                </div>
-              </div>
-
-              {/* M2 */}
-              <div className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl p-4">
-                <div>
-                  <p className="text-[var(--text-secondary)] text-sm font-medium">Milestone 2 (M2)</p>
-                  {editM2 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="number"
-                        value={m2Val}
-                        onChange={(e) => setM2Val(e.target.value)}
-                        placeholder={String(project.m2Amount)}
-                        className={inputCls + ' w-28'}
-                      />
-                      <button onClick={saveM2} className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs">Save</button>
-                      <button onClick={() => setEditM2(false)} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-xs">Cancel</button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[var(--accent-green)] font-semibold">${(project.m2Amount ?? 0).toLocaleString()}</p>
-                      <button
-                        onClick={() => { setM2Val(String(project.m2Amount ?? 0)); setEditM2(true); }}
-                        className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-xs"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleToggleM2}
-                    className="text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--border)] hover:bg-[var(--text-dim)] px-2 py-1 rounded-lg transition-colors"
-                  >
-                    {project.m2Paid ? 'Mark Unpaid' : 'Mark Paid'}
-                  </button>
-                  <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                    project.m2Paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
-                  }`}>
-                    {project.m2Paid ? 'Paid' : 'Pending'}
-                  </span>
-                </div>
-              </div>
-
-              {/* M3 */}
-              {(project.m3Amount ?? 0) > 0 && (
-                <div className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl p-4">
-                  <div>
-                    <p className="text-[var(--text-secondary)] text-sm font-medium">Milestone 3 (M3) — PTO</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-teal-400 font-semibold">${(project.m3Amount ?? 0).toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleToggleM3}
-                      className="text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--border)] hover:bg-[var(--text-dim)] px-2 py-1 rounded-lg transition-colors"
-                    >
-                      {project.m3Paid ? 'Mark Unpaid' : 'Mark Paid'}
-                    </button>
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      project.m3Paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
-                    }`}>
-                      {project.m3Paid ? 'Paid' : 'Pending'}
-                    </span>
-                  </div>
-                </div>
-              )}
+                </button>
+              ))}
             </div>
           </div>
         </div>

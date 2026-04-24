@@ -185,6 +185,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // stale stored amounts. Same resolvers as the client — see
   // lib/commission-server.ts for how it mirrors the new-deal compute.
   const bodyTouchesCommissionInputs = COMMISSION_INPUT_KEYS.some((k) => (body as Record<string, unknown>)[k] !== undefined);
+
+  // Direct-amount edits (inline saveM1/saveM2 editors) send ONLY these
+  // output keys. They skip recompute (admin's explicit override sticks)
+  // but MUST still trigger the Pending-entry realign — otherwise the
+  // Commission Breakdown keeps showing stale PayrollEntry amounts after
+  // the admin manually tweaked M2. Fixed 2026-04-24.
+  const DIRECT_AMOUNT_KEYS = [
+    'm1Amount', 'm2Amount', 'm3Amount',
+    'setterM1Amount', 'setterM2Amount', 'setterM3Amount',
+  ] as const;
+  const bodyTouchesDirectAmounts = DIRECT_AMOUNT_KEYS.some((k) => (body as Record<string, unknown>)[k] !== undefined);
   if (bodyTouchesCommissionInputs) {
     const current = await prisma.project.findUnique({
       where: { id },
@@ -459,7 +470,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Pending, and the display never caught up. Admin should see the
   // right number to publish; Pending is no longer treated as
   // immutable. (2026-04-23)
-  if (bodyTouchesCommissionInputs && !project.subDealerId) {
+  if ((bodyTouchesCommissionInputs || bodyTouchesDirectAmounts) && !project.subDealerId) {
     const draftsToSync = await prisma.payrollEntry.findMany({
       where: {
         projectId: id,
