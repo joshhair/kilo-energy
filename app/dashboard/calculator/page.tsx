@@ -236,6 +236,7 @@ function CalculatorPage() {
   const [netPPW, setNetPPW] = useState('');
   const [hasSetter, setHasSetter] = useState(false);
   const [selectedSetterId, setSelectedSetterId] = useState('');
+  const [pricingDate, setPricingDate] = useState('');
   const [targetEarning, setTargetEarning] = useState('');
   const [quickFillValue, setQuickFillValue] = useState('');
   const [quickFillSoldDate, setQuickFillSoldDate] = useState('');
@@ -358,6 +359,7 @@ function CalculatorPage() {
       quickFillValue,
       quickFillSoldDate,
       quickFillRepId,
+      pricingDate,
       installer,
       solarTechFamily,
       solarTechProductId,
@@ -373,6 +375,7 @@ function CalculatorPage() {
     setQuickFillValue('');
     setQuickFillSoldDate('');
     setQuickFillRepId(null);
+    setPricingDate('');
     setInstaller('');
     setSolarTechFamily('');
     setSolarTechProductId('');
@@ -390,6 +393,7 @@ function CalculatorPage() {
         setQuickFillValue(snapshot.quickFillValue);
         setQuickFillSoldDate(snapshot.quickFillSoldDate);
         setQuickFillRepId(snapshot.quickFillRepId);
+        setPricingDate(snapshot.pricingDate);
         setInstaller(snapshot.installer);
         setSolarTechFamily(snapshot.solarTechFamily);
         setSolarTechProductId(snapshot.solarTechProductId);
@@ -437,15 +441,15 @@ function CalculatorPage() {
       } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
     if (isPcInstaller) {
-      const pricingDate = quickFillSoldDate || todayLocalDateStr();
+      const effectivePricingDate = quickFillSoldDate || pricingDate || todayLocalDateStr();
       try {
-        const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, pricingDate, productCatalogPricingVersions);
+        const b = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kW, effectivePricingDate, productCatalogPricingVersions);
         return { closerPerW: b.closerPerW, setterBaselinePerW: b.setterPerW, kiloPerW: b.kiloPerW };
       } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
     }
-    const pricingDate = quickFillSoldDate || todayLocalDateStr();
+    const effectivePricingDate = quickFillSoldDate || pricingDate || todayLocalDateStr();
     try {
-      const r = getInstallerRatesForDeal(installer, pricingDate, kW, installerPricingVersions);
+      const r = getInstallerRatesForDeal(installer, effectivePricingDate, kW, installerPricingVersions);
       return { closerPerW: r.closerPerW, kiloPerW: r.kiloPerW, setterBaselinePerW: r.setterPerW };
     } catch { return { closerPerW: 0, setterBaselinePerW: 0, kiloPerW: 0 }; }
   })();
@@ -592,7 +596,7 @@ function CalculatorPage() {
 
   // Hash of all inputs — forces React to remount the results container on each
   // new calculation, replaying the slide-in-scale stagger entrance animation.
-  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${hasSetter ? '1' : '0'}|${selectedSetterId}|${quickFillSoldDate}`;
+  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${hasSetter ? '1' : '0'}|${selectedSetterId}|${quickFillSoldDate}|${pricingDate}`;
 
   // Save to history when a full calculation is displayed
   useEffect(() => {

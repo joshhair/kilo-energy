@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKW, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
-import { getPhaseStuckThresholds, PERIODS, isInPeriod, type Period } from '../components/dashboard-utils';
+import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
 import { CheckCircle } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -20,9 +20,11 @@ type MentionItem = {
   projectId: string;
   projectCustomerName: string;
   messageId: string;
+  messageSnippet: string;
   authorName: string;
   checkItems: Array<{ id: string; text: string; completed: boolean; dueDate?: string | null }>;
   createdAt: string;
+  read: boolean;
 };
 function getGreeting(name: string): string {
   const h = new Date().getHours();
@@ -453,12 +455,14 @@ export default function MobileDashboard() {
             projectId: m.message?.projectId ?? '',
             projectCustomerName: m.message?.project?.customerName ?? 'Unknown',
             messageId: m.messageId ?? m.message?.id ?? '',
+            messageSnippet: (m.message?.text ?? '').slice(0, 120),
             authorName: m.message?.authorName ?? 'Unknown',
             checkItems: (m.message?.checkItems ?? []).map((ci) => ({
               id: ci.id, text: ci.text, completed: ci.completed,
               dueDate: (ci as { dueDate?: string | null }).dueDate ?? null,
             })),
             createdAt: (m.message as { createdAt?: string } | undefined)?.createdAt ?? new Date().toISOString(),
+            read: (raw as { readAt?: string | null }).readAt != null,
           };
         });
         setDashMentions(items);
@@ -476,6 +480,20 @@ export default function MobileDashboard() {
         }
       }
     }
+    tasks.sort((a, b) => {
+      const aHasDue = !!a.dueDate;
+      const bHasDue = !!b.dueDate;
+      if (aHasDue && !bHasDue) return -1;
+      if (!aHasDue && bHasDue) return 1;
+      if (aHasDue && bHasDue) {
+        const aOverdue = isOverdue(a.dueDate!);
+        const bOverdue = isOverdue(b.dueDate!);
+        if (aOverdue && !bOverdue) return -1;
+        if (!aOverdue && bOverdue) return 1;
+        return new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime();
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
     return tasks;
   }, [dashMentions]);
 

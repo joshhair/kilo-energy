@@ -4,8 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
-import { fmt$, localDateString } from '../../../lib/utils';
-import { CheckCircle2, XCircle, Archive } from 'lucide-react';
+import { fmt$, localDateString, downloadCSV } from '../../../lib/utils';
+import { CheckCircle2, XCircle, Archive, Download } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -402,6 +402,22 @@ export default function MobileEarnings() {
 
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
       <MobileSection title="Deal Payments" count={dealPayments.length} collapsible defaultOpen>
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => {
+              const dateStr = localDateString(new Date());
+              const headers = ['Type', 'Customer / Note', 'Stage', 'Amount', 'Status', 'Date'];
+              const dealRows = sortedDeals.map((e) => [e.type, e.customerName || e.notes || '', e.paymentStage || '', `$${e.amount.toFixed(2)}`, e.status, e.date]);
+              const reimbRows = sortedReimbs.map((r) => ['Reimbursement', r.description, 'Reimb', `$${r.amount.toFixed(2)}`, r.status, r.date]);
+              downloadCSV(`my-earnings-${dateStr}.csv`, headers, [...dealRows, ...reimbRows]);
+            }}
+            disabled={sortedDeals.length === 0 && sortedReimbs.length === 0}
+            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-40"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          >
+            <Download className="w-3 h-3" /> CSV
+          </button>
+        </div>
         <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
           {([['date', 'Date'], ['customerName', 'Name'], ['paymentStage', 'Stage'], ['amount', '$'], ['status', 'Status']] as [DealSortKey, string][]).map(([key, label]) => (
             <button
@@ -504,6 +520,21 @@ export default function MobileEarnings() {
 
       {/* ── Bonuses ─────────────────────────────────────────────────────── */}
       <MobileSection title="Bonuses" count={sortedBonuses.length} collapsible defaultOpen>
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => {
+              const dateStr = localDateString(new Date());
+              const headers = ['Type', 'Note', 'Amount', 'Status', 'Date'];
+              const rows = sortedBonuses.map((e) => ['Bonus', e.notes || '', `$${e.amount.toFixed(2)}`, e.status, e.date]);
+              downloadCSV(`my-bonuses-${dateStr}.csv`, headers, rows);
+            }}
+            disabled={sortedBonuses.length === 0}
+            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-40"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          >
+            <Download className="w-3 h-3" /> CSV
+          </button>
+        </div>
         <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
           {([['date', 'Date'], ['notes', 'Type'], ['amount', '$'], ['status', 'Status']] as [BonusSortKey, string][]).map(([key, label]) => (
             <button
@@ -552,6 +583,21 @@ export default function MobileEarnings() {
 
       {/* ── Reimbursements ──────────────────────────────────────────────── */}
       <MobileSection title="Reimbursements" count={sortedReimbs.length} collapsible defaultOpen>
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => {
+              const dateStr = localDateString(new Date());
+              const headers = ['Description', 'Amount', 'Status', 'Date'];
+              const rows = sortedReimbs.map((r) => [r.description, `$${r.amount.toFixed(2)}`, r.status, r.date]);
+              downloadCSV(`my-reimbursements-${dateStr}.csv`, headers, rows);
+            }}
+            disabled={sortedReimbs.length === 0}
+            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-40"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          >
+            <Download className="w-3 h-3" /> CSV
+          </button>
+        </div>
         {sortedReimbs.length === 0 ? (
           <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reimbursements for this period</p>
         ) : (

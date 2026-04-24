@@ -529,6 +529,55 @@ export default function MobileIncentives() {
   );
 }
 
+// ─── Incentive Templates ────────────────────────────────────────────────────
+
+const INCENTIVE_TEMPLATES: { label: string; title: string; metric: IncentiveMetric; period: IncentivePeriod; milestones: { threshold: string; reward: string }[] }[] = [
+  {
+    label: 'Monthly Deal Sprint',
+    title: 'Monthly Deal Sprint',
+    metric: 'deals',
+    period: 'month',
+    milestones: [
+      { threshold: '5', reward: '$150 Bonus' },
+      { threshold: '10', reward: '$400 Bonus' },
+      { threshold: '15', reward: '$750 Bonus + Team Dinner' },
+    ],
+  },
+  {
+    label: 'Quarterly kW Target',
+    title: 'Quarterly kW Target',
+    metric: 'kw',
+    period: 'quarter',
+    milestones: [
+      { threshold: '50', reward: '$300 Bonus' },
+      { threshold: '100', reward: '$750 Bonus' },
+      { threshold: '150', reward: '$1,500 Bonus + PTO Day' },
+    ],
+  },
+  {
+    label: 'Annual Revenue Goal',
+    title: 'Annual Revenue Goal',
+    metric: 'revenue',
+    period: 'year',
+    milestones: [
+      { threshold: '250000', reward: '$1,000 Bonus' },
+      { threshold: '500000', reward: '$3,000 Bonus' },
+      { threshold: '1000000', reward: '$7,500 Bonus + Trip' },
+    ],
+  },
+  {
+    label: 'Commission Milestone',
+    title: 'Commission Milestone',
+    metric: 'commission',
+    period: 'quarter',
+    milestones: [
+      { threshold: '5000', reward: '$200 Spiff' },
+      { threshold: '15000', reward: '$600 Spiff' },
+      { threshold: '30000', reward: '$1,500 Spiff + Award' },
+    ],
+  },
+];
+
 // ─── Create-Incentive Bottom Sheet ──────────────────────────────────────────
 
 function CreateIncentiveSheet({
@@ -625,6 +674,29 @@ function CreateIncentiveSheet({
       title="New Incentive"
     >
       <div className="px-5 space-y-3 max-h-[70vh] overflow-y-auto pb-3">
+        {/* Templates */}
+        <div>
+          <label className={labelCls}>Quick Start</label>
+          <div className="flex flex-wrap gap-1.5">
+            {INCENTIVE_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.label}
+                type="button"
+                onClick={() => {
+                  setTitle(tpl.title);
+                  setMetric(tpl.metric);
+                  setPeriod(tpl.period);
+                  setMilestones(tpl.milestones);
+                }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-medium"
+                style={{ background: 'rgba(0,229,160,0.1)', color: 'var(--accent-emerald)', border: '1px solid rgba(0,229,160,0.25)' }}
+              >
+                {tpl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Title */}
         <div>
           <label className={labelCls}>Title</label>

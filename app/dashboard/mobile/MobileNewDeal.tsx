@@ -60,7 +60,7 @@ function FieldError({ field, errors }: { field: string; errors: Record<string, s
 
 // ── Step indicator ───────────────────────────────────────────────────────────
 
-const DEAL_STEPS = ['People', 'Deal Details', 'Review'] as const;
+const DEAL_STEPS = ['People', 'Deal Details', 'Review & Notes'] as const;
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
@@ -116,6 +116,9 @@ interface SubmittedDeal {
   closerM2: number;
   closerM3: number;
   setterTotal: number;
+  setterM1: number;
+  setterM2: number;
+  setterM3: number;
   setterName: string;
   repName: string;
 }
@@ -354,7 +357,7 @@ export default function MobileNewDeal() {
 
   const handleInstallerChange = (value: string) => {
     setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
-    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '' }));
+    setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
   };
 
   const handleFinancerChange = (value: string) => {
@@ -496,7 +499,7 @@ export default function MobileNewDeal() {
   // installPayPct combined in edge cases.
   const installPayPct = installerPayConfigs[form.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
-  const isSelfGen = !form.setterId || setterBaselinePerW === 0;
+  const isSelfGen = !form.setterId;
 
   const split = splitCloserSetterPay(
     soldPPW,
@@ -889,6 +892,9 @@ export default function MobileNewDeal() {
       closerM2: isSubDealer ? subDealerCommission : closerM2,
       closerM3: isSubDealer ? 0 : closerM3,
       setterTotal,
+      setterM1: isSubDealer ? 0 : setterM1,
+      setterM2: isSubDealer ? 0 : setterM2,
+      setterM3: isSubDealer ? 0 : setterM3,
       setterName: setter?.name ?? '',
       repName: rep?.name ?? currentRepName ?? 'You',
     });

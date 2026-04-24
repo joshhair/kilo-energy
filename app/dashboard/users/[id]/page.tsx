@@ -666,24 +666,34 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <h2 className="text-white font-bold text-base mb-4">Permissions</h2>
             <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between py-2">
-                <span style={{ color: 'var(--text-secondary)' }}>Can create deals</span>
-                <span className={resolvedUser.canCreateDeals ? 'text-[var(--accent-green)] font-semibold' : 'text-[var(--text-dim)]'}>
-                  {resolvedUser.canCreateDeals ? 'Yes' : 'No'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-t border-[var(--border)]">
-                <span style={{ color: 'var(--text-secondary)' }}>Can access blitz</span>
-                <span className={resolvedUser.canAccessBlitz ? 'text-[var(--accent-green)] font-semibold' : 'text-[var(--text-dim)]'}>
-                  {resolvedUser.canAccessBlitz ? 'Yes' : 'No'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-t border-[var(--border)]">
-                <span style={{ color: 'var(--text-secondary)' }}>Can export</span>
-                <span className={resolvedUser.canExport ? 'text-[var(--accent-green)] font-semibold' : 'text-[var(--text-dim)]'}>
-                  {resolvedUser.canExport ? 'Yes' : 'No'}
-                </span>
-              </div>
+              {([
+                { field: 'canCreateDeals' as const, label: 'Can create deals' },
+                { field: 'canAccessBlitz' as const, label: 'Can access blitz' },
+                { field: 'canExport' as const, label: 'Can export' },
+              ]).map(({ field, label }, idx) => (
+                <div key={field} className={`flex items-center justify-between py-2${idx > 0 ? ' border-t border-[var(--border)]' : ''}`}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                  <button
+                    onClick={async () => {
+                      const current = !!resolvedUser[field];
+                      const res = await fetch(`/api/users/${resolvedUser.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ [field]: !current }),
+                      });
+                      if (res.ok) {
+                        if (fetchedUser) setFetchedUser({ ...fetchedUser, [field]: !current });
+                        toast('Permission updated');
+                      } else {
+                        toast('Failed to update permission', 'error');
+                      }
+                    }}
+                    className={`font-semibold px-3 py-1 rounded-lg border transition-colors ${resolvedUser[field] ? 'text-[var(--accent-green)] border-[var(--accent-green)]/30 bg-[var(--accent-green)]/10' : 'text-[var(--text-dim)] border-[var(--border)] bg-transparent'}`}
+                  >
+                    {resolvedUser[field] ? 'Yes' : 'No'}
+                  </button>
+                </div>
+              ))}
             </div>
             {/* Installer scope — vendor PM selector. Editable inline
                 so admins can toggle scope without jumping to Settings.

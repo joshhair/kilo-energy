@@ -263,6 +263,25 @@ export default function MobileProjects() {
         />
       </div>
 
+      {/* Status filter — matches the 6-option control on the desktop Projects page */}
+      <select
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+        className="w-full min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+        style={{
+          background: 'var(--m-card, var(--surface-mobile-card))',
+          border: '1px solid var(--m-border, var(--border-mobile))',
+          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+        }}
+      >
+        <option value="active">Active</option>
+        <option value="all">All</option>
+        <option value="completed">✓ Completed</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="on-hold">On Hold</option>
+        <option value="inactive">Inactive</option>
+      </select>
+
       {/* Installer + Sort dropdowns — parity with desktop Projects page.
           Shown as compact selects side-by-side to keep vertical space tight
           on phone. Installer select only renders when there's more than one

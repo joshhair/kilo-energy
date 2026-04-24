@@ -47,7 +47,7 @@ export function AdminDashboard({
   mentions: MentionItem[];
   onToggleTask: (projectId: string, messageId: string, checkItemId: string, completed: boolean) => Promise<void>;
 }) {
-  const { updateProject, reps } = useApp();
+  const { updateProject, reps, currentUserRepType, currentRepId, setViewAsUser } = useApp();
 
   // Search filter for Recent Projects table
   const [recentSearch, setRecentSearch] = useState('');
@@ -314,7 +314,18 @@ export function AdminDashboard({
         <div>
           <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, var(--accent-green), var(--accent-cyan))' }} />
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{getGreeting(currentRepName)}</h1>
-          <p className="text-sm font-medium mt-1 tracking-wide" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard · Overview of all reps and deals</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-sm font-medium tracking-wide" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard · Overview of all reps and deals</p>
+            {currentUserRepType && currentRepId && currentRepName && (
+              <button
+                onClick={() => setViewAsUser({ id: currentRepId, name: currentRepName, role: 'rep' })}
+                className="text-xs font-semibold px-3 py-1 rounded-full border transition-colors whitespace-nowrap"
+                style={{ background: 'rgba(0,229,160,0.10)', borderColor: 'rgba(0,229,160,0.3)', color: 'var(--accent-green)' }}
+              >
+                My Rep View
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
           {adminPeriodIndicator && <div className="tab-indicator" style={adminPeriodIndicator} />}

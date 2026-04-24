@@ -103,6 +103,8 @@ export default function MobileCalculator() {
   const [selectedSetterId, setSelectedSetterId] = useState('');
   // Optional sold date for historical pricing lookups (admin use case)
   const [pricingDate, setPricingDate] = useState('');
+  // Target earning reverse-solve
+  const [targetEarning, setTargetEarning] = useState('');
 
   // ── Quick Fill + History state ───────────────────────────────────────────
   const [quickFillValue, setQuickFillValue] = useState('');
@@ -177,6 +179,8 @@ export default function MobileCalculator() {
 
   const kiloTotal = soldPPW > 0 ? calculateCommission(soldPPW, kiloPerW, kW) : 0;
 
+  const isSelfGen = !isPaired || !selectedSetterId || setterBaselinePerW === 0;
+
   // Auto-derive trainer rate from the selected setter's trainer assignment,
   // matching desktop calculator logic exactly.
   const effectiveSetterId = isPaired && selectedSetterId ? selectedSetterId : null;
@@ -187,6 +191,21 @@ export default function MobileCalculator() {
     ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null).map((e) => e.projectId)).size
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
+
+  // Reverse-solve: PPW needed to hit a target dollar amount (mirrors desktop logic)
+  const targetAmount = parseFloat(targetEarning) || 0;
+  const requiredPPW = (() => {
+    if (!hasInput || kW <= 0) return 0;
+    if (!isSelfGen) {
+      const closerDiff = (setterBaselinePerW - closerPerW) * kW * 1000;
+      if (targetAmount <= closerDiff) {
+        return targetAmount / (kW * 1000) + closerPerW;
+      }
+      const splitPoint = setterBaselinePerW + trainerRate;
+      return ((targetAmount - closerDiff) * 2) / (kW * 1000) + splitPoint;
+    }
+    return targetAmount / (kW * 1000) + closerPerW;
+  })();
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) ?? null : null;
 
   // Closer trainer — mirrors desktop calculator logic
@@ -208,7 +227,6 @@ export default function MobileCalculator() {
   // these exact conditions would actually pay. Self-gen = paired=false,
   // which routes setterBaselinePerW=0 and sends all commission to the
   // closer side with M1 flat $1000 (if kW ≥ 5) or $500.
-  const isSelfGen = !isPaired || !selectedSetterId || setterBaselinePerW === 0;
   const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
   const split = hasInput && soldPPW > 0
@@ -290,6 +308,23 @@ export default function MobileCalculator() {
   };
 
   const handleReset = () => {
+    const snapshot = {
+      quickFillValue,
+      quickFillSoldDate,
+      quickFillRepId,
+      pricingDate,
+      installer,
+      solarTechFamily,
+      solarTechProductId,
+      pcProductId,
+      pcSelectedFamily,
+      kWSize,
+      netPPW,
+      isPaired,
+      selectedSetterId,
+      targetEarning,
+    };
+
     setQuickFillValue('');
     setQuickFillSoldDate('');
     setQuickFillRepId(null);
@@ -303,6 +338,27 @@ export default function MobileCalculator() {
     setNetPPW('');
     setIsPaired(false);
     setSelectedSetterId('');
+    setTargetEarning('');
+
+    toast('Form cleared', 'info', {
+      label: 'Undo',
+      onClick: () => {
+        setQuickFillValue(snapshot.quickFillValue);
+        setQuickFillSoldDate(snapshot.quickFillSoldDate);
+        setQuickFillRepId(snapshot.quickFillRepId);
+        setPricingDate(snapshot.pricingDate);
+        setInstaller(snapshot.installer);
+        setSolarTechFamily(snapshot.solarTechFamily);
+        setSolarTechProductId(snapshot.solarTechProductId);
+        setPcProductId(snapshot.pcProductId);
+        setPcSelectedFamily(snapshot.pcSelectedFamily);
+        setKWSize(snapshot.kWSize);
+        setNetPPW(snapshot.netPPW);
+        setIsPaired(snapshot.isPaired);
+        setSelectedSetterId(snapshot.selectedSetterId);
+        setTargetEarning(snapshot.targetEarning);
+      },
+    });
   };
 
   // ── History handlers ─────────────────────────────────────────────────────
@@ -339,7 +395,9 @@ export default function MobileCalculator() {
   };
 
   // ── Animated commission counters ─────────────────────────────────────────
-  const displayTotal = useCountUp(closerTotal);
+  const closerRepType = reps.find((r) => r.id === effectiveCloserId)?.repType;
+  const isSetterAsCloser = (closerRepType === 'setter' || closerRepType === 'both') && selectedSetterId === effectiveCloserId && !isSelfGen;
+  const displayTotal = useCountUp(isSetterAsCloser ? setterTotal : closerTotal);
   const displaySetter = useCountUp(setterTotal);
   const displayTrainer = useCountUp(trainerTotal);
   const displayCloserTrainer = useCountUp(closerTrainerTotal);
@@ -582,7 +640,7 @@ export default function MobileCalculator() {
             >
               <option value="">-- Select setter --</option>
               {reps
-                .filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both') && r.id !== effectiveCloserId)
+                .filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both') && (r.id !== effectiveCloserId || reps.find((rep) => rep.id === effectiveCloserId)?.repType === 'setter'))
                 .map((r) => {
                   const ta = trainerAssignments.find((a) => a.traineeId === r.id);
                   const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
@@ -646,6 +704,36 @@ export default function MobileCalculator() {
           </div>
         </div>
       </div>
+
+      {/* ── PPW Needed for Target Earning ────────────────────────────────── */}
+      {hasInput && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>PPW Needed for Target Earning</p>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="Target $ (e.g. 2000)"
+              value={targetEarning}
+              onChange={(e) => setTargetEarning(e.target.value)}
+              className={inputCls + ' flex-1'}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-blue)' } as React.CSSProperties}
+            />
+            <div className="text-right min-w-[90px]">
+              {targetEarning.trim() !== '' && closerPerW === 0 ? (
+                <p style={{ color: 'var(--accent-amber)', fontSize: 12 }}>Baseline unknown</p>
+              ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
+                <>
+                  <p style={{ color: 'var(--accent-blue)', fontWeight: 700, fontSize: 18, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--m-text-dim, #445577)', fontSize: 11, fontWeight: 400 }}>/W</span></p>
+                  <p style={{ color: 'var(--m-text-dim, #445577)', fontSize: 11 }}>required PPW</p>
+                </>
+              ) : (
+                <p style={{ color: 'var(--m-text-dim, #445577)', fontSize: 14 }}>--</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Result card ─────────────────────────────────────────────────── */}
       {resultMounted && (

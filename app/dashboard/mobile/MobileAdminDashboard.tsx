@@ -190,6 +190,7 @@ export default function MobileAdminDashboard() {
   }, [periodProjects, periodPayroll, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts, todayStr]);
 
   const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
+  const totalKWInstalled = useMemo(() => periodProjects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
   const flaggedCount = useMemo(() => projects.filter((p) => p.flagged && p.phase !== 'Cancelled' && p.phase !== 'Completed').length, [projects]);
 
   // Stalled projects — uses phaseChangedAt with soldDate fallback, matching desktop AdminDashboard logic.
@@ -314,8 +315,8 @@ export default function MobileAdminDashboard() {
             <div className="h-6 w-24 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: '200ms' }} />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="rounded-2xl p-4 bg-[var(--surface-mobile-card)] border border-[var(--border-mobile)]">
               <div className="h-3 w-12 rounded bg-[#1a2235] animate-skeleton mb-2" style={{ animationDelay: `${i * 60}ms` }} />
               <div className="h-7 w-10 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: `${i * 60 + 30}ms` }} />
@@ -402,10 +403,11 @@ export default function MobileAdminDashboard() {
       </MobileCard>
 
       {/* ── Quick stats row ── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <MobileStatCard label="Active" value={active.length} color={ACCENT} />
         <MobileStatCard label="Reps" value={reps.filter(r => r.active !== false).length} color={ACCENT2} />
         <MobileStatCard label="Sold" value={formatCompactKW(totalKW)} color={WARNING} />
+        <MobileStatCard label="Installed" value={formatCompactKW(totalKWInstalled)} color={DANGER} />
       </div>
 
       {/* ── Needs Attention (action-oriented) ── */}

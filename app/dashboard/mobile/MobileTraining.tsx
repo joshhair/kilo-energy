@@ -139,6 +139,11 @@ export default function MobileTraining() {
         }
       }
 
+      const traineeProjectIds = new Set(traineeDeals.map((p) => p.id));
+      const earningsFromTrainee = trainerEntries
+        .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId && isPaidAndEffective(e))
+        .reduce((s, e) => s + e.amount, 0);
+
       return {
         assignment,
         traineeId: assignment.traineeId,
@@ -148,9 +153,10 @@ export default function MobileTraining() {
         consumedDeals,
         currentRate,
         activeTierIndex,
+        earningsFromTrainee,
       };
     });
-  }, [myAssignments, directPseudoAssignments, reps, projects, payrollEntries, effectiveRepId]);
+  }, [myAssignments, directPseudoAssignments, reps, projects, payrollEntries, trainerEntries, effectiveRepId]);
 
   const sortedOverrides = [...trainerEntries].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 
@@ -308,6 +314,10 @@ export default function MobileTraining() {
                           </div>
                         );
                       })()}
+                      <div className="flex justify-between items-center mb-2 text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                        <span className="font-semibold uppercase tracking-widest text-[11px]" style={{ color: 'var(--m-text-dim, #445577)' }}>Earned from Trainee</span>
+                        <span className="font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(td.earningsFromTrainee)}</span>
+                      </div>
                       <table className="w-full text-base" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <thead>
                           <tr style={{ color: 'var(--m-text-dim, #445577)' }}>

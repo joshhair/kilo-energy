@@ -12,6 +12,8 @@ import {
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
 import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Clock, RefreshCw, Pencil, Copy } from 'lucide-react';
+import RecordChargebackModal from '../projects/components/RecordChargebackModal';
+import { findChargebackForEntry } from '../../../lib/chargebacks';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
@@ -193,6 +195,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [m1Val, setM1Val] = useState('');
   const [m2Val, setM2Val] = useState('');
   const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [showRecordChargeback, setShowRecordChargeback] = useState(false);
   const [, setEditErrors] = useState<Record<string, string>>({});
   const [editDraft, setEditDraft] = useState<{
     installer: string;
@@ -972,6 +975,29 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         );
       })()}
 
+      {/* Cancelled banner + chargeback affordance (admin only) */}
+      {isAdmin && project.phase === 'Cancelled' && (() => {
+        const eligiblePaidEntries = projectEntries
+          .filter((e) => e.status === 'Paid' && !e.isChargeback && !findChargebackForEntry(e.id, projectEntries));
+        if (eligiblePaidEntries.length === 0) return null;
+        return (
+          <div className="flex items-center justify-between gap-3 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+            <div>
+              <p className="text-amber-300 text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--m-text-dim, #445577)' }}>
+                {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowRecordChargeback(true)}
+              className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 active:bg-amber-500/30 text-amber-300 border border-amber-500/40"
+            >
+              Record Chargeback
+            </button>
+          </div>
+        );
+      })()}
+
       {/* Notes — per-note rows (added + individually deletable). */}
       <MobileSection title="Notes" collapsible defaultOpen={false}>
         <ProjectNotes projectId={project.id} />
@@ -1288,6 +1314,26 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         onClose={() => setShowDeleteConfirm(false)}
         danger
       />
+
+      {/* Record Chargeback modal (admin-only, cancelled deals) */}
+      {isAdmin && (
+        <RecordChargebackModal
+          open={showRecordChargeback}
+          onClose={() => setShowRecordChargeback(false)}
+          onSaved={() => { /* next data fetch picks up the new entry */ }}
+          projectId={project.id}
+          paidEntries={projectEntries
+            .filter((e) => e.status === 'Paid' && !e.isChargeback && !findChargebackForEntry(e.id, projectEntries))
+            .map((e) => ({
+              id: e.id,
+              repId: e.repId,
+              repName: e.repName,
+              paymentStage: e.paymentStage,
+              amount: e.amount,
+              date: e.date,
+            }))}
+        />
+      )}
     </div>
   );
 }

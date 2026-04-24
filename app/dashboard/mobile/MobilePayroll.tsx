@@ -3,11 +3,11 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, todayLocalDateStr } from '../../../lib/utils';
+import { fmt$, todayLocalDateStr, formatDate, downloadCSV } from '../../../lib/utils';
 import { breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
-import { Check, Trash2, Plus, Pencil, X, Receipt, Archive, ArchiveRestore } from 'lucide-react';
+import { Check, Trash2, Plus, Pencil, X, Receipt, Archive, ArchiveRestore, Download, Printer } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -246,7 +246,21 @@ export default function MobilePayroll() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } catch {
-        setPayrollEntries(snapshot);
+        // Re-fetch to get accurate DB state — a partial bulk PATCH may have already
+        // committed some entries as Paid before the error, so a blind rollback to
+        // the pre-publish snapshot would mark those entries Pending in client state
+        // while the DB has them Paid, creating a desync until page reload.
+        const refreshRes = await fetch('/api/data').catch(() => null);
+        if (refreshRes?.ok) {
+          const refreshData = await refreshRes.json().catch(() => null);
+          if (refreshData?.payrollEntries) {
+            setPayrollEntries(refreshData.payrollEntries);
+          } else {
+            setPayrollEntries(snapshot);
+          }
+        } else {
+          setPayrollEntries(snapshot);
+        }
         toast('Payroll failed to save — rolled back', 'error');
       }
     }
@@ -343,6 +357,9 @@ export default function MobilePayroll() {
       setPayrollEntries((prev) => [...prev, newEntry]);
       setShowAddPayment(false);
       setPaymentForm({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Bonus', stage: 'Bonus' });
+      setStatusTab('Draft');
+      setTypeTab(isBonus ? 'Bonus' : 'Deal');
+      setFilterRepId('');
       const label = isChargeback ? 'Chargeback' : 'Payment';
       toast(`${label} added for ${rep?.name ?? 'rep'} — ${fmt$(Math.abs(signed))}`, 'success');
 
@@ -406,7 +423,7 @@ export default function MobilePayroll() {
       <MobilePageHeader
         title="Payroll"
         right={
-          pageView === 'payroll' ? (
+          effectiveRole === 'admin' && pageView === 'payroll' ? (
             <button
               onClick={() => setShowAddPayment(true)}
               className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
@@ -698,6 +715,76 @@ export default function MobilePayroll() {
         </div>
       )}
 
+      {/* ── Export buttons (admin only) ── */}
+      {effectiveRole === 'admin' && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const headers = ['Rep', 'Customer', 'Type', 'Stage', 'Amount', 'Status', 'Date', 'Notes'];
+              const rows = filtered.map((e) => [
+                e.repName,
+                e.customerName || '',
+                e.type,
+                e.paymentStage,
+                `$${e.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+                e.status,
+                formatDate(e.date),
+                e.notes ?? '',
+              ]);
+              downloadCSV(`payroll-${statusTab.toLowerCase()}-${todayLocalDateStr()}.csv`, headers, rows);
+            }}
+            disabled={filtered.length === 0}
+            className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button
+            onClick={() => {
+              const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+              const periodFrom = sorted[0]?.date ?? '';
+              const periodTo = sorted[sorted.length - 1]?.date ?? '';
+              const byRep = new Map<string, { repName: string; gross: number; chargebacks: number; count: number }>();
+              for (const e of filtered) {
+                const key = e.repId;
+                const row = byRep.get(key) ?? { repName: e.repName, gross: 0, chargebacks: 0, count: 0 };
+                if (e.amount < 0) row.chargebacks += Math.abs(e.amount);
+                else row.gross += e.amount;
+                row.count += 1;
+                byRep.set(key, row);
+              }
+              const adpHeaders = ['Employee Name', 'Gross Pay', 'Deductions', 'Net Pay', 'Pay Period From', 'Pay Period To', 'Entry Count'];
+              const adpRows = Array.from(byRep.values())
+                .sort((a, b) => a.repName.localeCompare(b.repName))
+                .map(({ repName, gross, chargebacks, count }) => [
+                  repName,
+                  gross.toFixed(2),
+                  chargebacks.toFixed(2),
+                  (gross - chargebacks).toFixed(2),
+                  periodFrom,
+                  periodTo,
+                  String(count),
+                ]);
+              const filename = `adp-payroll-${periodFrom || todayLocalDateStr()}-to-${periodTo || todayLocalDateStr()}.csv`;
+              downloadCSV(filename, adpHeaders, adpRows);
+            }}
+            disabled={filtered.length === 0}
+            className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            <Download className="w-4 h-4" /> ADP
+          </button>
+          <button
+            onClick={() => window.print()}
+            disabled={filtered.length === 0}
+            className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            <Printer className="w-4 h-4" /> Print
+          </button>
+        </div>
+      )}
+
       {/* ── Grouped entry list ── */}
       {groupedByRep.length === 0 ? (
         <p className="text-base text-center py-8" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No {statusTab.toLowerCase()} entries.</p>
@@ -716,7 +803,7 @@ export default function MobilePayroll() {
                 {group.entries.map((entry) => (
                   <button
                     key={entry.id}
-                    onClick={() => setSelectedEntry(entry)}
+                    onClick={effectiveRole === 'admin' ? () => setSelectedEntry(entry) : undefined}
                     className="w-full flex items-center justify-between py-3 text-left active:opacity-80 transition-colors"
                     style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}
                   >
@@ -741,8 +828,8 @@ export default function MobilePayroll() {
         </div>
       )}
 
-      {/* ── Sticky bottom action ── */}
-      {ctaMounted && (
+      {/* ── Sticky bottom action (admin only) ── */}
+      {effectiveRole === 'admin' && ctaMounted && (
         <div
           className={`fixed bottom-0 left-0 right-0 p-4 z-40 ${ctaExiting ? 'cta-bar-exit' : 'cta-bar-enter'}`}
           style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
