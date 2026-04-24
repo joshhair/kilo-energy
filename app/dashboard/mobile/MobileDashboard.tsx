@@ -720,7 +720,7 @@ export default function MobileDashboard() {
               key={p.value}
               ref={(el) => { pillRefs.current[idx] = el; }}
               onClick={() => { setPeriod(p.value); requestAnimationFrame(() => { pillRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }); }}
-              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all transition-colors duration-200 min-h-[44px] touch-manipulation"
+              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all transition-colors duration-200 min-h-[44px] touch-manipulation active:scale-[0.95]"
               style={{
                 fontFamily: FONT_BODY,
                 color: period === p.value ? '#000' : MUTED,
@@ -774,7 +774,7 @@ export default function MobileDashboard() {
         )}
 
         {/* Stats inside hero card */}
-        <div key={period} className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both' }}>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>

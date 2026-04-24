@@ -1234,6 +1234,12 @@ select {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* mobile-list-item stagger — animationDelay inline style provides per-item offset */
+.mobile-list-item { animation: fadeUpIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .mobile-list-item { animation: none; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @keyframes statCellFade {
     from { opacity: 0; transform: translateY(5px); }
