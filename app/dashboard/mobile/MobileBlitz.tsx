@@ -266,7 +266,7 @@ export default function MobileBlitz() {
         ? b.map((blitz: BlitzData) => ({ ...blitz, status: deriveBlitzStatus(blitz) }))
         : [];
       setBlitzes(normalized);
-      setRequests(r);
+      setRequests(Array.isArray(r) ? r : []);
     });
   };
 
@@ -312,7 +312,8 @@ export default function MobileBlitz() {
       if (!res.ok) { toast('Failed to join blitz', 'error'); return; }
       toast('Join request sent');
       await loadData();
-    } finally { setJoiningBlitzId(null); }
+    } catch { toast('Failed to join blitz — please try again', 'error'); }
+    finally { setJoiningBlitzId(null); }
   };
 
   const handleCreateBlitz = async (e: React.FormEvent) => {

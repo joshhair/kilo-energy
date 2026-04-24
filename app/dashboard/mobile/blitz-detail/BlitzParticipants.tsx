@@ -87,7 +87,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
       });
       if (r.ok) { toast(joinStatus === 'approved' ? 'Approved' : 'Declined'); onRefresh(); }
       else toast(`Failed to ${joinStatus === 'approved' ? 'approve' : 'decline'}`, 'error');
-    } finally {
+    } catch { toast('Network error', 'error'); } finally {
       setProcessing((s) => { const n = new Set(s); n.delete(userId); return n; });
     }
   };

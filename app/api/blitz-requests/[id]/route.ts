@@ -106,8 +106,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         blitzId: null,
         soldDate: { gte: newBlitz.startDate, lte: newBlitz.endDate },
         OR: [
-          { additionalClosers: { some: { userId: ownerId } } },
-          { additionalSetters: { some: { userId: ownerId } } },
+          { additionalClosers: { some: { userId: ownerId } }, setterId: { in: approvedIds } },
+          { additionalSetters: { some: { userId: ownerId } }, closerId: { in: approvedIds } },
         ],
       },
       select: { id: true },
