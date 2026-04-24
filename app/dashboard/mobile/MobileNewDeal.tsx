@@ -389,25 +389,25 @@ export default function MobileNewDeal() {
   const closerId = effectiveRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (effectiveRepId ?? ''));
 
   const setterPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both' || r.repType == null));
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both'));
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
         .filter((p) => p.joinStatus === 'approved')
         .map((p) => p.userId),
     );
-    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both' || r.repType == null));
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
   const closerPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
+    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'closer' || r.repType === 'both'));
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
     const approvedIds = new Set(
       (selectedBlitz?.participants ?? [])
         .filter((p) => p.joinStatus === 'approved')
         .map((p) => p.userId),
     );
-    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both' || r.repType == null));
+    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Clear setterId only when a BLITZ change makes the selected setter

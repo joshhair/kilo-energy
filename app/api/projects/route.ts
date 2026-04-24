@@ -120,7 +120,10 @@ export async function POST(req: NextRequest) {
 
   if (body.setterId) {
     const setterRep = await prisma.user.findUnique({ where: { id: body.setterId }, select: { repType: true } });
-    if (setterRep && setterRep.repType !== 'setter' && setterRep.repType !== 'both') {
+    if (!setterRep) {
+      return NextResponse.json({ error: 'Setter not found' }, { status: 400 });
+    }
+    if (setterRep.repType !== 'setter' && setterRep.repType !== 'both') {
       return NextResponse.json({ error: 'Closer-type rep cannot be assigned as setter' }, { status: 400 });
     }
   }
