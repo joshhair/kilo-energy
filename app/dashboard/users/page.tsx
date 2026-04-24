@@ -654,8 +654,11 @@ function UsersPageInner() {
       case 'deals': {
         const dealsByRep = new Map<string, number>();
         for (const p of projects.filter(p => !PIPELINE_EXCLUDED.has(p.phase))) {
-          if (p.repId)                       dealsByRep.set(p.repId,    (dealsByRep.get(p.repId)    ?? 0) + 1);
-          if (p.setterId && p.setterId !== p.repId) dealsByRep.set(p.setterId, (dealsByRep.get(p.setterId) ?? 0) + 1);
+          const ids = new Set<string>([p.repId]);
+          if (p.setterId) ids.add(p.setterId);
+          p.additionalClosers?.forEach((c) => ids.add(c.userId));
+          p.additionalSetters?.forEach((c) => ids.add(c.userId));
+          for (const id of ids) dealsByRep.set(id, (dealsByRep.get(id) ?? 0) + 1);
         }
         arr.sort((a, b) => (dealsByRep.get(b.id) ?? 0) - (dealsByRep.get(a.id) ?? 0));
         break;
@@ -663,8 +666,12 @@ function UsersPageInner() {
       case 'kw': {
         const kwByRep = new Map<string, number>();
         for (const p of projects.filter(p => !PIPELINE_EXCLUDED.has(p.phase))) {
-          if (p.repId)                       kwByRep.set(p.repId,    (kwByRep.get(p.repId)    ?? 0) + (p.kWSize ?? 0));
-          if (p.setterId && p.setterId !== p.repId) kwByRep.set(p.setterId, (kwByRep.get(p.setterId) ?? 0) + (p.kWSize ?? 0));
+          const kw = p.kWSize ?? 0;
+          const ids = new Set<string>([p.repId]);
+          if (p.setterId) ids.add(p.setterId);
+          p.additionalClosers?.forEach((c) => ids.add(c.userId));
+          p.additionalSetters?.forEach((c) => ids.add(c.userId));
+          for (const id of ids) kwByRep.set(id, (kwByRep.get(id) ?? 0) + kw);
         }
         arr.sort((a, b) => (kwByRep.get(b.id) ?? 0) - (kwByRep.get(a.id) ?? 0));
         break;
@@ -1471,9 +1478,7 @@ function UsersPageInner() {
         {sorted.map((rep, i) => {
           const repProjects = projects.filter((p) => p.repId === rep.id || p.setterId === rep.id);
           const repPaid = repPaidAmounts.get(rep.id) ?? 0;
-          const activeCount = repProjects.filter(
-            (p) => !PIPELINE_EXCLUDED.has(p.phase)
-          ).length;
+
           const totalKW = repProjects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0);
           const initials = rep.name.split(' ').map((n) => n[0]).join('');
           const rank = rankMap.get(rep.id) ?? 999;
@@ -1630,7 +1635,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeCount}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Active</p>
                   </div>

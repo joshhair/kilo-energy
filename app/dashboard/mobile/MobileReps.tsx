@@ -155,10 +155,11 @@ export default function MobileReps() {
     for (const p of projects) {
       if (PIPELINE_EXCLUDED.has(p.phase)) continue;
       const kw = p.kWSize ?? 0;
-      map.set(p.repId, (map.get(p.repId) ?? 0) + kw);
-      if (p.setterId && p.setterId !== p.repId) {
-        map.set(p.setterId, (map.get(p.setterId) ?? 0) + kw);
-      }
+      const ids = new Set<string>([p.repId]);
+      if (p.setterId) ids.add(p.setterId);
+      p.additionalClosers?.forEach((c) => ids.add(c.userId));
+      p.additionalSetters?.forEach((c) => ids.add(c.userId));
+      for (const id of ids) map.set(id, (map.get(id) ?? 0) + kw);
     }
     return map;
   }, [projects]);

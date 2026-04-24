@@ -478,27 +478,41 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       let newCents: number | null = null;
       const isCloser = entry.repId === project.closerId;
       const isSetter = entry.repId === project.setterId;
+      const coCloser = (!isCloser && !isSetter)
+        ? (project.additionalClosers.find((c) => c.userId === entry.repId) ?? null)
+        : null;
+      const coSetter = (!isCloser && !isSetter && !coCloser)
+        ? (project.additionalSetters.find((s) => s.userId === entry.repId) ?? null)
+        : null;
       if (entry.paymentStage === 'M1') {
         newCents = isCloser ? project.m1AmountCents
           : isSetter ? project.setterM1AmountCents
+          : coCloser ? coCloser.m1AmountCents
+          : coSetter ? coSetter.m1AmountCents
           : null;
       } else if (entry.paymentStage === 'M2') {
         newCents = isCloser ? project.m2AmountCents
           : isSetter ? project.setterM2AmountCents
+          : coCloser ? coCloser.m2AmountCents
+          : coSetter ? coSetter.m2AmountCents
           : null;
       } else if (entry.paymentStage === 'M3') {
         newCents = isCloser ? project.m3AmountCents
           : isSetter ? project.setterM3AmountCents
+          : coCloser ? coCloser.m3AmountCents
+          : coSetter ? coSetter.m3AmountCents
           : null;
       }
-      // null = stage not applicable for this rep on this project (e.g.
-      // M3 when installer has installPayPct=100). Leave the draft
-      // alone — phase rollback logic handles removal separately.
       if (newCents != null) {
         await prisma.payrollEntry.update({
           where: { id: entry.id },
           data: { amountCents: newCents },
         });
+      } else {
+        // Stage no longer applicable (e.g. M3 when installer changes to
+        // installPayPct=100). Delete the stale draft entry; phase rollback
+        // only fires on phase changes, not installer changes.
+        await prisma.payrollEntry.delete({ where: { id: entry.id } });
       }
     }
 
