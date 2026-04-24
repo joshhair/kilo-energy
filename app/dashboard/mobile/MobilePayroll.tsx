@@ -614,7 +614,7 @@ export default function MobilePayroll() {
       {/* ── Summary cards ── combined across Deal + Bonus + Trainer
           so admins see everything owed at a glance. Sub-lines break
           down by type. Mirrors the desktop payroll tab (2026-04-23). */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 [&>*]:min-w-0">
         <SummaryCard label="Draft" total={draftBreakdown.total} tone="#4d9fff" breakdown={draftBreakdown} pending />
         <SummaryCard label="Pending" total={pendingBreakdown.total} tone="#f5a623" breakdown={pendingBreakdown} pending />
         <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald)" breakdown={paidBreakdown} />
@@ -1120,6 +1120,19 @@ export default function MobilePayroll() {
  * suppressed when $0 to reduce noise. Inline chargeback note on the
  * Deals line when non-zero.
  */
+/** Compact currency for narrow mobile cards. Values ≥ $1M render as
+ *  $1.83M (2 sig figs) so they don't truncate in a 3-up card grid on
+ *  a phone. Values < $1M render at full precision where the locale
+ *  comma formatting reads cleanly. Full tooltip stays available via
+ *  the `title` attribute on the paragraph. */
+function compactCurrency(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(abs >= 10_000_000 ? 1 : 2)}M`;
+  if (abs >= 100_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+  return `${sign}$${abs.toLocaleString()}`;
+}
+
 function SummaryCard({ label, total, tone, breakdown, pending = false }: {
   label: string;
   total: number;
@@ -1140,9 +1153,15 @@ function SummaryCard({ label, total, tone, breakdown, pending = false }: {
   if (breakdown.trainer !== 0) lines.push(`Trainer $${breakdown.trainer.toLocaleString()}`);
 
   return (
-    <div className="rounded-2xl p-3" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+    <div className="rounded-2xl p-3 min-w-0" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
       <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
-      <p className="text-xl font-bold tabular-nums mt-1 leading-none" style={{ color: tone, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${total.toLocaleString()}</p>
+      <p
+        className="text-xl font-bold tabular-nums mt-1 leading-none whitespace-nowrap"
+        title={`$${total.toLocaleString()}`}
+        style={{ color: tone, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+      >
+        {compactCurrency(total)}
+      </p>
       <div className="mt-2 space-y-0.5">
         {lines.length === 0
           ? <p className="text-[10px]" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>—</p>

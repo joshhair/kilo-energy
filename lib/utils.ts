@@ -71,6 +71,20 @@ export function formatCompactKW(kw: number): string {
   return `${n.toFixed(1)} kW`;
 }
 
+/**
+ * Same as formatCompactKW but omits the "kW" suffix — intended for
+ * stat-card values where the label already says "Total kW" and the
+ * suffix would be redundant (and forces awkward text-wrap on narrow
+ * phone viewports). Still shows "MW" for values ≥ 1,000 because the
+ * scale shift is meaningful — the label says "kW" but 1.2 MW in a
+ * "Total kW" card reads correctly as "total 1,200 kW".
+ */
+export function formatCompactKWValue(kw: number): string {
+  const n = kw || 0;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)} MW`;
+  return `${n.toFixed(1)}`;
+}
+
 export function isInDateRange(dateStr: string, startDate: string, endDate: string | null): boolean {
   const [dy, dm, dd] = dateStr.split('-').map(Number);
   const [sy, sm, sd] = startDate.split('-').map(Number);

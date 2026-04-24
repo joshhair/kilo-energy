@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWValue } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
@@ -504,7 +504,7 @@ export default function MobileBlitz() {
       <MobilePageHeader title="Blitz" right={headerRight} />
 
       {/* Summary stat cards */}
-      <div className={`grid gap-3 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+      <div className={`grid gap-3 [&>*]:min-w-0 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
         <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Active</p>
           <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
@@ -519,7 +519,7 @@ export default function MobileBlitz() {
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Total kW</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{formatCompactKW(summaryTotalKW)}</p>
+          <p className="text-2xl font-black tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{formatCompactKWValue(summaryTotalKW)}</p>
         </div>
         {isAdmin && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>

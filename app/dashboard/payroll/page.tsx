@@ -1473,11 +1473,16 @@ function PayrollPageInner() {
                 );
                 if (!expanded) return [summaryRow];
                 const detailRows = group.entries.map((entry, i) => (
-                <tr key={entry.id} style={{
-                  background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? 'var(--surface-card)' : '#141820',
-                  borderBottom: '1px solid var(--border)',
-                  cursor: 'pointer',
-                }} onClick={() => statusTab === 'Draft' && toggleEntry(entry.id)}>
+                <tr
+                  key={entry.id}
+                  className={`table-row-enter row-stagger-${Math.min(i, 24)}`}
+                  style={{
+                    background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? 'var(--surface-card)' : '#141820',
+                    borderBottom: '1px solid var(--border)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => statusTab === 'Draft' && toggleEntry(entry.id)}
+                >
                   {statusTab === 'Draft' && (
                     <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
                       <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleEntry(entry.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }} />

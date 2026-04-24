@@ -772,6 +772,24 @@ select {
   z-index: 0;
 }
 
+/* Per-row enter animation. Each row fades up + slides in from a few
+   pixels below; the --row-index custom property (set by .row-stagger-N)
+   offsets the start time so rows cascade rather than pop simultaneously.
+   Capped at index 24 to avoid a painful cascade on long tables. */
+@keyframes groupRowEnter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.table-row-enter {
+  --row-index: 0;
+  animation: groupRowEnter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--row-index) * 22ms);
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .table-row-enter { animation: none; }
+}
+
 /* Stagger delay helpers — each class sets --row-index so .table-row-enter can
    compute the right delay without repeating the formula 25 times.             */
 .row-stagger-0  { --row-index: 0;  }

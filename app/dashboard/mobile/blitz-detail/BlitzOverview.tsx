@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCompactKW } from '../../../../lib/utils';
+import { formatCompactKWValue } from '../../../../lib/utils';
 
 interface Props {
   participantCount: number;
@@ -12,11 +12,11 @@ interface Props {
 export default function BlitzOverview({ participantCount, totalDeals, totalKW, notes }: Props) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 [&>*]:min-w-0">
         {([
           { value: participantCount, label: participantCount !== 1 ? 'Participants' : 'Participant' },
           { value: totalDeals, label: totalDeals !== 1 ? 'Deals' : 'Deal' },
-          { value: formatCompactKW(totalKW), label: 'Total kW' },
+          { value: formatCompactKWValue(totalKW), label: 'Total kW' },
         ] as const).map((stat, i) => (
           <div
             key={stat.label}
@@ -29,7 +29,7 @@ export default function BlitzOverview({ participantCount, totalDeals, totalKW, n
             }}
           >
             <p
-              className="text-xl font-bold text-white leading-none"
+              className="text-xl font-bold text-white leading-none whitespace-nowrap"
               style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
             >
               {stat.value}

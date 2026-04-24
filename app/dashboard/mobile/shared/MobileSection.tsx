@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { Collapse } from '../../components/Collapse';
 
 export default function MobileSection({
   title,
@@ -17,6 +18,10 @@ export default function MobileSection({
   count?: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  // A single toggle source of truth. Non-collapsible sections pin
+  // `open` to true via the render path, so the Collapse wrapper below
+  // is a no-op for them (transition-on-mount only).
+  const expanded = !collapsible || open;
 
   const headerContent = (
     <div className="flex items-center gap-2">
@@ -30,16 +35,29 @@ export default function MobileSection({
   return (
     <div>
       {collapsible ? (
-        <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between mb-3 min-h-[48px]">
+        <button
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="w-full flex items-center justify-between mb-3 min-h-[48px]"
+        >
           {headerContent}
-          {open ? <ChevronUp className="w-5 h-5" style={{ color: 'var(--m-text-dim, #445577)' }} /> : <ChevronDown className="w-5 h-5" style={{ color: 'var(--m-text-dim, #445577)' }} />}
+          {/* Single rotating chevron — smoother than swapping glyphs. */}
+          <ChevronDown
+            className="w-5 h-5 motion-safe:transition-transform"
+            style={{
+              color: 'var(--m-text-dim, #445577)',
+              transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
+              transitionDuration: '220ms',
+              transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          />
         </button>
       ) : (
         <div className="flex items-center gap-2 mb-3">
           {headerContent}
         </div>
       )}
-      {(!collapsible || open) && children}
+      <Collapse open={expanded}>{children}</Collapse>
     </div>
   );
 }
