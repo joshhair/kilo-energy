@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useCountUp } from '../../../lib/hooks';
 import { getTrainerOverrideRate } from '../../../lib/data';
-import { fmt$ } from '../../../lib/utils';
+import { fmt$, isPaidAndEffective } from '../../../lib/utils';
 import { ChevronDown, GraduationCap, Banknote } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -64,7 +64,7 @@ export default function MobileTraining() {
     (e) => e.repId === effectiveRepId && e.paymentStage === 'Trainer',
   );
 
-  const totalOverrides = trainerEntries.reduce((s, e) => s + (e.amount ?? 0), 0);
+  const totalOverrides = trainerEntries.filter(isPaidAndEffective).reduce((s, e) => s + (e.amount ?? 0), 0);
   const displayTotal = useCountUp(totalOverrides, 900);
 
   // Pseudo-assignments for direct-trainer projects, grouped by closer.
@@ -237,7 +237,7 @@ export default function MobileTraining() {
       {/* ── Hero stat strip ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:[animation-delay:60ms]">
         {[
-          { label: 'Active Trainees', value: String(traineeData.length), accent: false },
+          { label: 'Active Trainees', value: String(new Set(traineeData.filter((t) => t.assignment.isActiveTraining !== false).map((t) => t.traineeId)).size), accent: false },
           { label: 'Override Earnings', value: fmt$(displayTotal), accent: true },
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl px-4 py-3" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
