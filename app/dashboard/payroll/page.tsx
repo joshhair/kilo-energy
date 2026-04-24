@@ -358,7 +358,7 @@ function PayrollPageInner() {
       if (entryTypeTab(p) !== typeTab) continue;
       filteredByDateRep.push(p);
 
-      if (p.status === statusTab && (statusTab === 'Draft' || p.date <= today)) {
+      if (p.status === statusTab && (statusTab !== 'Paid' || p.date <= today)) {
         filtered.push(p);
       }
     }
@@ -1298,7 +1298,7 @@ function PayrollPageInner() {
           >
             {s}
             <span className="ml-1.5 text-xs opacity-70">
-              ({filteredByDateRep.filter((p) => p.status === s && entryTypeTab(p) === typeTab && (s === 'Draft' || p.date <= today)).length})
+              ({filteredByDateRep.filter((p) => p.status === s && entryTypeTab(p) === typeTab && (s !== 'Paid' || p.date <= today)).length})
             </span>
           </button>
         ))}

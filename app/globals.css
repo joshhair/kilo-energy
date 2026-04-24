@@ -98,6 +98,17 @@
   .cta-bar-enter { animation: none; }
 }
 
+@keyframes cta-bar-exit {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(100%); opacity: 0; }
+}
+.cta-bar-exit {
+  animation: cta-bar-exit 200ms ease-in forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-bar-exit { animation: none; }
+}
+
 /* ── Scrollbar-gutter: prevents layout shift ────────────────────────────────
    Reserving space for the scrollbar before it appears stops the content
    area from reflowing when the page grows tall enough to need one.          */

@@ -181,13 +181,28 @@ export default function MobilePayroll() {
     return payrollEntries.filter((e) =>
       e.status === statusTab &&
       entryTypeTab(e) === typeTab &&
-      (statusTab === 'Draft' || e.date <= today) &&
+      (statusTab !== 'Paid' || e.date <= today) &&
       (effectiveRole === 'admin' || e.repId === effectiveRepId) &&
       (!filterRepId || e.repId === filterRepId) &&
       (!filterFrom || e.date >= filterFrom) &&
       (!filterTo || e.date <= filterTo)
     );
   }, [payrollEntries, statusTab, typeTab, effectiveRole, effectiveRepId, filterRepId, filterFrom, filterTo]);
+
+  // ── CTA bar animation ─────────────────────────────────────────────────────
+  const shouldShowCta = (statusTab === 'Pending' || statusTab === 'Draft') && filtered.length > 0;
+  const [ctaMounted, setCtaMounted] = useState(shouldShowCta);
+  const [ctaExiting, setCtaExiting] = useState(false);
+  useEffect(() => {
+    if (shouldShowCta) {
+      setCtaExiting(false);
+      setCtaMounted(true);
+    } else {
+      setCtaExiting(true);
+      const t = setTimeout(() => setCtaMounted(false), 210);
+      return () => clearTimeout(t);
+    }
+  }, [shouldShowCta]);
 
   // ── Group by rep ──────────────────────────────────────────────────────────
 
@@ -593,41 +608,52 @@ export default function MobilePayroll() {
         </p>
       )}
 
-      {/* ── Type tabs ── */}
-      <div className="flex gap-2">
-        {(['Deal', 'Bonus', 'Trainer'] as TypeTab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTypeTab(t)}
-            className="flex-1 min-h-[44px] rounded-xl text-sm font-semibold transition-colors"
-            style={{
-              background: typeTab === t ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-              color: typeTab === t ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              border: typeTab === t ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      {/* ── Type + Status tabs (sticky) ── */}
+      <div
+        className="sticky z-20 -mx-5 px-5 pt-2 space-y-2"
+        style={{
+          top: 0,
+          background: 'rgba(8, 12, 24, 0.88)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          borderBottom: '1px solid var(--m-border, var(--border-mobile))',
+          paddingBottom: '8px',
+        }}
+      >
+        <div className="flex gap-2">
+          {(['Deal', 'Bonus', 'Trainer'] as TypeTab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTypeTab(t)}
+              className="flex-1 min-h-[44px] rounded-xl text-sm font-semibold transition-colors"
+              style={{
+                background: typeTab === t ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
+                color: typeTab === t ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                border: typeTab === t ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
-      {/* ── Status tabs ── */}
-      <div className="flex" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setStatusTab(tab)}
-            className="flex-1 min-h-[48px] text-base font-semibold transition-colors"
-            style={{
-              color: statusTab === tab ? '#fff' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              borderBottom: statusTab === tab ? '2px solid var(--m-accent, var(--accent-emerald))' : '2px solid transparent',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        <div className="flex" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}>
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setStatusTab(tab)}
+              className="flex-1 min-h-[48px] text-base font-semibold transition-colors"
+              style={{
+                color: statusTab === tab ? '#fff' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                borderBottom: statusTab === tab ? '2px solid var(--m-accent, var(--accent-emerald))' : '2px solid transparent',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Admin filters ── */}
@@ -716,10 +742,13 @@ export default function MobilePayroll() {
       )}
 
       {/* ── Sticky bottom action ── */}
-      {statusTab === 'Pending' && filtered.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+      {ctaMounted && (
+        <div
+          className={`fixed bottom-0 left-0 right-0 p-4 z-40 ${ctaExiting ? 'cta-bar-exit' : 'cta-bar-enter'}`}
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
           <button
-            onClick={() => setShowPublishConfirm(true)}
+            onClick={() => statusTab === 'Pending' ? setShowPublishConfirm(true) : setShowApproveAllConfirm(true)}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
@@ -727,23 +756,7 @@ export default function MobilePayroll() {
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
-            Publish {typeTab} Payroll
-          </button>
-        </div>
-      )}
-
-      {statusTab === 'Draft' && filtered.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-40" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
-          <button
-            onClick={() => setShowApproveAllConfirm(true)}
-            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
-            style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            Approve All
+            {statusTab === 'Pending' ? `Publish ${typeTab} Payroll` : 'Approve All'}
           </button>
         </div>
       )}

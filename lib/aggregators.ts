@@ -53,6 +53,7 @@ export interface PayrollAggregable {
    *  (legacy rows predating the schema change), callers fall back to
    *  the "amount < 0" heuristic for backward compatibility. */
   isChargeback?: boolean;
+  paymentStage?: string;
 }
 
 export interface PaidOutOptions {
@@ -249,7 +250,7 @@ export function breakdownByType<T extends PayrollAggregable>(
     total += e.amount;
     if (isChargebackEntry(e)) chargebacks += e.amount;
     if (e.type === 'Bonus') bonus += e.amount;
-    else if (e.type === 'Trainer') trainer += e.amount;
+    else if (e.paymentStage === 'Trainer') trainer += e.amount;
     else deal += e.amount; // 'Deal' or null/undefined
   }
   return { total, deal, bonus, trainer, chargebacks };

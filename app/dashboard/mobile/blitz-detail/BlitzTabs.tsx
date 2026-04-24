@@ -21,6 +21,17 @@ interface Props {
 // scrollbar chrome so it stays clean.
 export default function BlitzTabs({ tabs, active, onChange }: Props) {
   return (
+    <div
+      className="sticky z-20 -mx-5 px-5 pt-2"
+      style={{
+        top: 0,
+        background: 'rgba(8, 12, 24, 0.88)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        borderBottom: '1px solid var(--m-border, var(--border-mobile))',
+        paddingBottom: '8px',
+      }}
+    >
     <div className="flex gap-2 overflow-x-auto no-scrollbar">
       {tabs.map((t) => {
         const isActive = active === t.key;
@@ -41,6 +52,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
           </button>
         );
       })}
+    </div>
     </div>
   );
 }
