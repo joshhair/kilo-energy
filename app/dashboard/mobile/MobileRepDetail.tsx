@@ -369,23 +369,37 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   const saveContact = async () => {
     if (saving) return;
+    const updates = {
+      firstName: editFirst.trim(),
+      lastName: editLast.trim(),
+      email: editEmail.trim(),
+      phone: editPhone.trim(),
+    };
+    if (!updates.firstName || !updates.lastName) {
+      toast('First and last name are required', 'error');
+      return;
+    }
     setSaving(true);
     try {
-      const updates = {
-        firstName: editFirst.trim(),
-        lastName: editLast.trim(),
-        email: editEmail.trim(),
-        phone: editPhone.trim(),
-      };
+      const endpoint = isSubDealer ? `/api/users/${repId}` : `/api/reps/${repId}`;
+      const res = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Failed to update contact info');
+      }
       if (isSubDealer) {
-        updateSubDealerContact(repId, updates);
+        updateSubDealerContact(repId, updates, true);
       } else {
-        updateRepContact(repId, updates);
+        updateRepContact(repId, updates, true);
       }
       toast('Contact info updated', 'success');
       setEditMode(false);
-    } catch {
-      toast('Failed to update contact info', 'error');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to update contact info', 'error');
     } finally {
       setSaving(false);
     }

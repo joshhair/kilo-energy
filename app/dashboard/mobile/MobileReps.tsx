@@ -788,7 +788,7 @@ export default function MobileReps() {
                 const res = await fetch('/api/users/invite', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ firstName: fn, lastName: ln, email: em, phone: ph, role: addForm.userRole }),
+                  body: JSON.stringify({ firstName: fn, lastName: ln, email: em, phone: ph, role: addForm.userRole, repType: addForm.userRole === 'rep' ? addForm.repType : undefined }),
                 });
                 if (!res.ok) {
                   const body = await res.json().catch(() => ({}));
@@ -802,6 +802,7 @@ export default function MobileReps() {
                 } else if (addForm.userRole === 'sub-dealer') {
                   addSubDealer(fn, ln, em, ph, data.user.id);
                 } else {
+                  newRepId = data.user.id;
                   addRep(fn, ln, em, ph, addForm.repType, data.user.id);
                 }
                 toast(`Invitation sent to ${em}`, 'success');

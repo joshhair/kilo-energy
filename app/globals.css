@@ -1204,6 +1204,21 @@ select {
   .calc-row-1 { animation: fadeUpIn 280ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
   .calc-row-2 { animation: fadeUpIn 280ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both; }
   .calc-row-3 { animation: fadeUpIn 280ms cubic-bezier(0.16, 1, 0.3, 1) 360ms both; }
+  .calc-row-4 { animation: fadeUpIn 280ms cubic-bezier(0.16, 1, 0.3, 1) 440ms both; }
+  .calc-row-5 { animation: fadeUpIn 280ms cubic-bezier(0.16, 1, 0.3, 1) 520ms both; }
+  .calc-row-6 { animation: fadeUpIn 280ms cubic-bezier(0.16, 1, 0.3, 1) 600ms both; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .calc-ms-1 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 340ms both; }
+  .calc-ms-2 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 400ms both; }
+  .calc-ms-3 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 460ms both; }
+  .calc-ms-4 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 520ms both; }
+  .calc-ms-5 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 580ms both; }
+  .calc-ms-6 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 640ms both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .calc-ms-1,.calc-ms-2,.calc-ms-3,.calc-ms-4,.calc-ms-5,.calc-ms-6 { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
