@@ -32,34 +32,46 @@
   --border-subtle: #1a2840;
   --border-strong: #334155;
 
-  /* ── Accent — 7 colors × 3 variants (21 tokens) ─────────────────────── */
+  /* ── Accent — 7 colors × 4 variants (28 tokens) ─────────────────────── */
+  /* solid: button bg / glow source. soft: tinted bg fill. glow: shadow.
+     text: foreground readable on a soft-tinted surface. In dark mode
+     -text equals -solid (same color reads fine on dark). In light mode
+     -text shifts to a darker, more saturated variant so contrast on
+     near-white backgrounds clears WCAG. */
   --accent-emerald-solid: #00e5a0;
   --accent-emerald-soft: rgba(0, 229, 160, 0.10);
   --accent-emerald-glow: rgba(0, 229, 160, 0.30);
+  --accent-emerald-text: #00e5a0;
 
   --accent-cyan-solid: #00b4d8;
   --accent-cyan-soft: rgba(0, 180, 216, 0.10);
   --accent-cyan-glow: rgba(0, 180, 216, 0.30);
+  --accent-cyan-text: #00b4d8;
 
   --accent-blue-solid: #4d9fff;
   --accent-blue-soft: rgba(77, 159, 255, 0.10);
   --accent-blue-glow: rgba(77, 159, 255, 0.30);
+  --accent-blue-text: #4d9fff;
 
   --accent-red-solid: #ef4444;
   --accent-red-soft: rgba(239, 68, 68, 0.10);
   --accent-red-glow: rgba(239, 68, 68, 0.30);
+  --accent-red-text: #ef4444;
 
   --accent-amber-solid: #f5a623;
   --accent-amber-soft: rgba(245, 166, 35, 0.10);
   --accent-amber-glow: rgba(245, 166, 35, 0.30);
+  --accent-amber-text: #f5a623;
 
   --accent-purple-solid: #b47dff;
   --accent-purple-soft: rgba(180, 125, 255, 0.10);
   --accent-purple-glow: rgba(180, 125, 255, 0.30);
+  --accent-purple-text: #b47dff;
 
   --accent-teal-solid: #00d4c8;
   --accent-teal-soft: rgba(0, 212, 200, 0.10);
   --accent-teal-glow: rgba(0, 212, 200, 0.30);
+  --accent-teal-text: #00d4c8;
 
   /* ── Special-purpose (kept hard-coded by design) ────────────────────── */
   --text-on-accent: #000;       /* black text on solid accent buttons */
@@ -106,6 +118,17 @@
   --accent-purple-glow: rgba(180, 125, 255, 0.20);
   --accent-teal-soft: rgba(0, 212, 200, 0.14);
   --accent-teal-glow: rgba(0, 212, 200, 0.20);
+
+  /* Light-mode text variants — darker, more saturated so they read on
+     light backgrounds. Solid/soft/glow stay identical across themes
+     (the cool brand emerald is intentional). */
+  --accent-emerald-text: #008866;
+  --accent-cyan-text: #007999;
+  --accent-blue-text: #1d6fe5;
+  --accent-red-text: #c0312f;
+  --accent-amber-text: #b87012;
+  --accent-purple-text: #7c4cd6;
+  --accent-teal-text: #018a83;
 
   --text-on-accent: #ffffff;
 }

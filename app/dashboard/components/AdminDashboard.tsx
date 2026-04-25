@@ -301,17 +301,19 @@ export function AdminDashboard({
   // GradCard color config for the 6 stat cards. Each gradient tints the
   // canonical surface-card with the card's accent color via color-mix —
   // this gives the accent-tinted dark feel in dark mode AND a soft
-  // accent-tinted light feel in light mode, automatically. Pure dark hex
-  // (the prior implementation) couldn't theme.
+  // accent-tinted light feel in light mode, automatically. The text
+  // color uses the -text variant which is the same as -solid in dark
+  // mode but a darker, more saturated shade in light mode for legible
+  // contrast on near-white surfaces.
   const tintedGrad = (accent: string) =>
     `linear-gradient(135deg, color-mix(in srgb, ${accent} 10%, var(--surface-card)) 0%, var(--surface-card) 100%)`;
   const gradCardConfig: Record<string, { color: string; grad: string }> = {
-    'Kilo Revenue':      { color: 'var(--accent-emerald-solid)', grad: tintedGrad('var(--accent-emerald-solid)') },
-    'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red-solid)', grad: tintedGrad('var(--accent-red-solid)') } : { color: 'var(--accent-cyan-solid)', grad: tintedGrad('var(--accent-cyan-solid)') },
-    'Paid Out':          { color: 'var(--accent-amber-solid)', grad: tintedGrad('var(--accent-amber-solid)') },
-    'Total Users':       { color: 'var(--accent-purple-solid)', grad: tintedGrad('var(--accent-purple-solid)') },
-    'Total Sold':        { color: 'var(--accent-teal-solid)',   grad: tintedGrad('var(--accent-teal-solid)') },
-    'Total Installed':   { color: 'var(--text-muted)',          grad: tintedGrad('var(--text-muted)') },
+    'Kilo Revenue':      { color: 'var(--accent-emerald-text)', grad: tintedGrad('var(--accent-emerald-solid)') },
+    'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red-text)', grad: tintedGrad('var(--accent-red-solid)') } : { color: 'var(--accent-cyan-text)', grad: tintedGrad('var(--accent-cyan-solid)') },
+    'Paid Out':          { color: 'var(--accent-amber-text)', grad: tintedGrad('var(--accent-amber-solid)') },
+    'Total Users':       { color: 'var(--accent-purple-text)', grad: tintedGrad('var(--accent-purple-solid)') },
+    'Total Sold':        { color: 'var(--accent-teal-text)',   grad: tintedGrad('var(--accent-teal-solid)') },
+    'Total Installed':   { color: 'var(--text-muted)',         grad: tintedGrad('var(--text-muted)') },
   };
 
   return (
@@ -342,8 +344,8 @@ export function AdminDashboard({
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-white'
+                  ? 'text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {p.label}
@@ -356,11 +358,11 @@ export function AdminDashboard({
            buttons theme correctly in both light and dark. */}
       <div className="grid grid-cols-4 gap-2.5 mb-7">
         {[
-          { label: 'Run Payroll', Icon: Banknote,   accent: 'var(--accent-emerald-solid)', href: '/dashboard/payroll'  },
-          { label: 'Add User',    Icon: UserPlus,   accent: 'var(--accent-purple-solid)',  href: '/dashboard/users'    },
-          { label: 'New Deal',    Icon: PlusCircle, accent: 'var(--accent-cyan-solid)',    href: '/dashboard/new-deal' },
-          { label: 'Settings',    Icon: Settings,   accent: 'var(--accent-amber-solid)',   href: '/dashboard/settings' },
-        ].map(({ label, Icon, accent, href }) => (
+          { label: 'Run Payroll', Icon: Banknote,   accent: 'var(--accent-emerald-solid)', text: 'var(--accent-emerald-text)', href: '/dashboard/payroll'  },
+          { label: 'Add User',    Icon: UserPlus,   accent: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)',  href: '/dashboard/users'    },
+          { label: 'New Deal',    Icon: PlusCircle, accent: 'var(--accent-cyan-solid)',    text: 'var(--accent-cyan-text)',    href: '/dashboard/new-deal' },
+          { label: 'Settings',    Icon: Settings,   accent: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)',   href: '/dashboard/settings' },
+        ].map(({ label, Icon, accent, text, href }) => (
           <Link
             key={label}
             href={href}
@@ -369,7 +371,7 @@ export function AdminDashboard({
               fontFamily: "'DM Sans', sans-serif",
               background: `color-mix(in srgb, ${accent} 10%, var(--surface-card))`,
               borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
-              color: accent,
+              color: text,
             }}
           >
             <Icon className="w-[15px] h-[15px] flex-shrink-0" />

@@ -7,9 +7,9 @@ const tinted = (accent: string) =>
   `linear-gradient(135deg, color-mix(in srgb, ${accent} 10%, var(--surface-card)) 0%, var(--surface-card) 100%)`;
 
 const STAT_CARD_STYLES: Record<string, { bg: string; border: string; accent: string; textColor: string }> = {
-  'from-blue-500 to-blue-400':       { bg: tinted('var(--accent-blue-solid)'),    border: 'var(--accent-blue-solid)',    accent: 'var(--accent-blue-solid)',    textColor: 'var(--accent-blue-solid)' },
-  'from-yellow-500 to-yellow-400':   { bg: tinted('var(--accent-amber-solid)'),   border: 'var(--accent-amber-solid)',   accent: 'var(--accent-amber-solid)',   textColor: 'var(--accent-amber-solid)' },
-  'from-emerald-500 to-emerald-400': { bg: tinted('var(--accent-emerald-solid)'), border: 'var(--accent-emerald-solid)', accent: 'var(--accent-emerald-solid)', textColor: 'var(--accent-emerald-solid)' },
+  'from-blue-500 to-blue-400':       { bg: tinted('var(--accent-blue-solid)'),    border: 'var(--accent-blue-solid)',    accent: 'var(--accent-blue-solid)',    textColor: 'var(--accent-blue-text)' },
+  'from-yellow-500 to-yellow-400':   { bg: tinted('var(--accent-amber-solid)'),   border: 'var(--accent-amber-solid)',   accent: 'var(--accent-amber-solid)',   textColor: 'var(--accent-amber-text)' },
+  'from-emerald-500 to-emerald-400': { bg: tinted('var(--accent-emerald-solid)'), border: 'var(--accent-emerald-solid)', accent: 'var(--accent-emerald-solid)', textColor: 'var(--accent-emerald-text)' },
 };
 
 export function StatCard({ label, value, color: _color, accentGradient, className, entryCount }: { label: string; value: number; color: string; border?: string; accentGradient?: string; className?: string; entryCount?: number }) {

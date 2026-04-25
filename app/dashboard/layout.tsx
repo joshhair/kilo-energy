@@ -576,7 +576,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
                 <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-emerald-solid)', boxShadow: '0 0 10px var(--accent-emerald-solid)', flexShrink: 0 }} />
                 <div className="flex items-baseline gap-0.5">
-                  <span className="text-white font-bold tracking-tighter text-xl leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
+                  <span className="font-bold tracking-tighter text-xl leading-none" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
                   <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
                 </div>
               </div>
