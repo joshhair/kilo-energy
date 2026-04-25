@@ -142,7 +142,7 @@ export default function InstallPrompt() {
             </p>
             {isIOS ? (
               <p className="text-[var(--text-secondary)] text-xs mt-1 leading-relaxed">
-                Tap <Share className="inline w-3.5 h-3.5 -mt-0.5 text-[var(--accent-green)]" /> then{' '}
+                Tap <Share className="inline w-3.5 h-3.5 -mt-0.5 text-[var(--accent-emerald-solid)]" /> then{' '}
                 <span className="text-white font-medium">&quot;Add to Home Screen&quot;</span>
               </p>
             ) : (
@@ -167,7 +167,7 @@ export default function InstallPrompt() {
           <button
             onClick={handleInstall}
             className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
           >
             <Download className="w-4 h-4" />
             Install

@@ -168,7 +168,7 @@ export default function BottomNav({
                 style={{
                   width: `${100 / navItems.length}%`,
                   left: 0,
-                  background: 'linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan2))',
+                  background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                   transform: `translateX(${activeIdx * 100}%)`,
                   transition: 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                   boxShadow: '0 0 8px rgba(0,229,160,0.6)',
@@ -192,10 +192,10 @@ export default function BottomNav({
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-cyan2) 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
                     <span className="text-2xl font-light text-black leading-none">+</span>
                   </div>
-                  <span className="text-[10px] font-medium mt-1" style={{ color: 'var(--accent-emerald)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                  <span className="text-[10px] font-medium mt-1" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
                 </Link>
               );
             }
@@ -213,7 +213,7 @@ export default function BottomNav({
                     <MoreHorizontal
                       className="w-[18px] h-[18px] absolute inset-0"
                       style={{
-                        color: active ? 'var(--accent-emerald)' : '#fff',
+                        color: active ? 'var(--accent-emerald-solid)' : '#fff',
                         opacity: active ? 0 : 1,
                         transform: active ? 'scale(0.5) rotate(-30deg)' : 'scale(1) rotate(0deg)',
                         transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -222,7 +222,7 @@ export default function BottomNav({
                     <X
                       className="w-[18px] h-[18px] absolute inset-0"
                       style={{
-                        color: 'var(--accent-emerald)',
+                        color: 'var(--accent-emerald-solid)',
                         opacity: active ? 1 : 0,
                         transform: active ? 'scale(1) rotate(0deg)' : 'scale(0.5) rotate(30deg)',
                         transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -230,7 +230,7 @@ export default function BottomNav({
                     />
                   </span>
                   <span className="text-[10px] tracking-wide" style={{
-                    color: active ? 'var(--accent-emerald)' : 'var(--text-mobile-muted)',
+                    color: active ? 'var(--accent-emerald-solid)' : 'var(--text-mobile-muted)',
                     fontFamily: "'DM Sans', sans-serif",
                     transform: active ? 'translateY(0px)' : 'translateY(2px)',
                     opacity: active ? 1 : 0.65,
@@ -253,7 +253,7 @@ export default function BottomNav({
                   key={active ? 'on' : 'off'}
                   className="nav-icon-pop inline-block"
                   style={{
-                    color: active ? 'var(--accent-emerald)' : '#fff',
+                    color: active ? 'var(--accent-emerald-solid)' : '#fff',
                     animation: active ? 'navIconPop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
                     transform: active ? undefined : 'scale(1)',
                     transition: active ? 'none' : 'color 200ms ease, transform 200ms ease',
@@ -262,7 +262,7 @@ export default function BottomNav({
                   <Icon className="w-[18px] h-[18px]" />
                 </span>
                 <span className="text-[10px] tracking-wide" style={{
-                  color: active ? 'var(--accent-emerald)' : 'var(--text-mobile-muted)',
+                  color: active ? 'var(--accent-emerald-solid)' : 'var(--text-mobile-muted)',
                   fontFamily: "'DM Sans', sans-serif",
                   transform: active ? 'translateY(0px)' : 'translateY(2px)',
                   opacity: active ? 1 : 0.65,

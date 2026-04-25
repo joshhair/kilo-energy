@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{ background: 'rgba(255,107,107,0.12)', border: '1px solid rgba(255,107,107,0.25)' }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red-solid)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -83,7 +83,7 @@ export class ErrorBoundary extends Component<Props, State> {
               className="px-5 py-2.5 rounded-xl text-sm font-medium transition-colors"
               style={{
                 background: 'rgba(0,229,160,0.12)',
-                color: 'var(--accent-emerald)',
+                color: 'var(--accent-emerald-solid)',
                 border: '1px solid rgba(0,229,160,0.25)',
               }}
             >
@@ -125,7 +125,7 @@ export class ErrorBoundary extends Component<Props, State> {
               >
                 {shortId}…
               </button>
-              {copied && <span className="text-[var(--accent-emerald)]">Copied</span>}
+              {copied && <span className="text-[var(--accent-emerald-solid)]">Copied</span>}
             </div>
           )}
 

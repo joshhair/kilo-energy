@@ -191,7 +191,7 @@ export default function ProfileDrawer({
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
               style={{
-                background: 'linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-cyan2) 100%)',
+                background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1.2rem',
                 fontWeight: 700,
@@ -206,7 +206,7 @@ export default function ProfileDrawer({
                 className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold mt-1"
                 style={{
                   background: 'rgba(0,229,160,0.15)',
-                  color: 'var(--accent-emerald)',
+                  color: 'var(--accent-emerald-solid)',
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               >
@@ -330,7 +330,7 @@ export default function ProfileDrawer({
               onClick={() => { onClose(); onLogout(); }}
               className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
               style={{
-                color: 'var(--accent-danger)',
+                color: 'var(--accent-red-solid)',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1rem',
                 WebkitTapHighlightColor: 'transparent',
