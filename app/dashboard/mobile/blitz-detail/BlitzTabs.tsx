@@ -49,7 +49,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
         background: 'rgba(8, 12, 24, 0.88)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
-        borderBottom: '1px solid var(--m-border, var(--border-mobile))',
+        borderBottom: '1px solid var(--border-subtle)',
         paddingBottom: '8px',
       }}
     >
@@ -61,7 +61,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
           style={{
             left: indicator.left,
             width: indicator.width,
-            background: 'var(--accent-emerald)',
+            background: 'var(--accent-emerald-solid)',
             boxShadow: '0 0 12px rgba(0,229,160,0.35)',
           }}
         />
@@ -77,7 +77,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
             style={{
               background: 'transparent',
               border: 'none',
-              color: isActive ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              color: isActive ? '#000' : 'var(--text-muted)',
               transition: 'color 200ms ease',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}

@@ -428,7 +428,7 @@ export default function MobilePayroll() {
               onClick={() => setShowAddPayment(true)}
               className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
               style={{
-                background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+                background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                 boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
@@ -449,9 +449,9 @@ export default function MobilePayroll() {
               onClick={() => setPageView(v)}
               className="flex-1 min-h-[44px] rounded-xl text-sm font-semibold capitalize transition-colors relative"
               style={{
-                background: pageView === v ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                color: pageView === v ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: pageView === v ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                background: pageView === v ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+                color: pageView === v ? '#000' : 'var(--text-muted)',
+                border: pageView === v ? 'none' : '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -459,7 +459,7 @@ export default function MobilePayroll() {
               {v === 'reimbursements' && pendingReimCount > 0 && (
                 <span
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center"
-                  style={{ background: 'var(--accent-amber)', color: '#000' }}
+                  style={{ background: 'var(--accent-amber-solid)', color: 'var(--text-on-accent)' }}
                 >
                   {pendingReimCount}
                 </span>
@@ -478,7 +478,7 @@ export default function MobilePayroll() {
               value={reimFilterStatus}
               onChange={(e) => setReimFilterStatus(e.target.value as ReimFilterStatus)}
               className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             >
               <option value="Pending">Pending</option>
               <option value="Approved">Approved</option>
@@ -489,7 +489,7 @@ export default function MobilePayroll() {
               value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
               onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
               className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             >
               <option value="active">Active only</option>
               <option value="all">Inc. archived</option>
@@ -500,7 +500,7 @@ export default function MobilePayroll() {
           {/* List */}
           {filteredReimbursements.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12">
-              <Receipt className="w-10 h-10" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+              <Receipt className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
               <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match filters'}
               </p>
@@ -512,26 +512,26 @@ export default function MobilePayroll() {
                   key={r.id}
                   onClick={() => setSelectedReim(r)}
                   className="w-full rounded-2xl p-4 text-left active:opacity-80 transition-colors"
-                  style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
-                      <p className="text-sm truncate mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.description}</p>
+                      <p className="text-sm truncate mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.description}</p>
                       {r.archivedAt && (
-                        <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--m-text-dim, var(--text-dim))' }}>archived</p>
+                        <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>archived</p>
                       )}
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-green)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${r.amount.toFixed(2)}</p>
+                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${r.amount.toFixed(2)}</p>
                       <span
                         className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={
                           r.status === 'Approved'
-                            ? { background: 'rgba(0,224,122,0.15)', color: 'var(--accent-green)' }
+                            ? { background: 'rgba(0,224,122,0.15)', color: 'var(--accent-emerald-solid)' }
                             : r.status === 'Denied'
-                            ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444' }
-                            : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber)' }
+                            ? { background: 'rgba(239,68,68,0.15)', color: 'var(--accent-red-solid)' }
+                            : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber-solid)' }
                         }
                       >
                         {r.status}
@@ -617,10 +617,10 @@ export default function MobilePayroll() {
       <div className="grid grid-cols-3 gap-2 [&>*]:min-w-0">
         <SummaryCard label="Draft" total={draftBreakdown.total} tone="#4d9fff" breakdown={draftBreakdown} pending />
         <SummaryCard label="Pending" total={pendingBreakdown.total} tone="#f5a623" breakdown={pendingBreakdown} pending />
-        <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald)" breakdown={paidBreakdown} />
+        <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald-solid)" breakdown={paidBreakdown} />
       </div>
       {pendingTotal > 0 && (
-        <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
           {fmt$(pendingTotal)} pending · {typeTab}
         </p>
       )}
@@ -633,7 +633,7 @@ export default function MobilePayroll() {
           background: 'rgba(8, 12, 24, 0.88)',
           backdropFilter: 'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
-          borderBottom: '1px solid var(--m-border, var(--border-mobile))',
+          borderBottom: '1px solid var(--border-subtle)',
           paddingBottom: '8px',
         }}
       >
@@ -649,7 +649,7 @@ export default function MobilePayroll() {
             value={filterRepId}
             onChange={(e) => setFilterRepId(e.target.value)}
             className="w-full min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: filterRepId ? 'var(--text-primary)' : 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: filterRepId ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             <option value="">All Reps</option>
             {reps.filter((r) => r.active !== false).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
@@ -662,20 +662,20 @@ export default function MobilePayroll() {
               value={filterFrom}
               onChange={(e) => setFilterFrom(e.target.value)}
               className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: filterFrom ? 'var(--text-primary)' : 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: filterFrom ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
             <input
               type="date"
               value={filterTo}
               onChange={(e) => setFilterTo(e.target.value)}
               className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: filterTo ? 'var(--text-primary)' : 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: filterTo ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
             {(filterFrom || filterTo) && (
               <button
                 onClick={() => { setFilterFrom(''); setFilterTo(''); }}
                 className="min-h-[44px] px-3 rounded-xl text-sm"
-                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Clear
               </button>
@@ -704,7 +704,7 @@ export default function MobilePayroll() {
             }}
             disabled={filtered.length === 0}
             className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             <Download className="w-4 h-4" /> CSV
           </button>
@@ -739,7 +739,7 @@ export default function MobilePayroll() {
             }}
             disabled={filtered.length === 0}
             className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             <Download className="w-4 h-4" /> ADP
           </button>
@@ -747,7 +747,7 @@ export default function MobilePayroll() {
             onClick={() => window.print()}
             disabled={filtered.length === 0}
             className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             <Printer className="w-4 h-4" /> Print
           </button>
@@ -756,11 +756,11 @@ export default function MobilePayroll() {
 
       {/* ── Grouped entry list ── */}
       {groupedByRep.length === 0 ? (
-        <p className="text-base text-center py-8" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No {statusTab.toLowerCase()} entries.</p>
+        <p className="text-base text-center py-8" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No {statusTab.toLowerCase()} entries.</p>
       ) : (
         <div className="space-y-6">
           {groupedByRep.map((group) => (
-            <div key={group.repName} className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <div key={group.repName} className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
               {/* Rep group header */}
               <div className="flex items-center justify-between mb-2">
                 <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{group.repName}</p>
@@ -774,7 +774,7 @@ export default function MobilePayroll() {
                     key={entry.id}
                     onClick={effectiveRole === 'admin' ? () => setSelectedEntry(entry) : undefined}
                     className="w-full flex items-center justify-between py-3 text-left active:opacity-80 transition-colors"
-                    style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}
+                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
                   >
                     <span className="text-base text-white truncate mr-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
@@ -787,7 +787,7 @@ export default function MobilePayroll() {
                           fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                         }}
                       >{fmt$(entry.amount)}</span>
-                      <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{entry.paymentStage}</span>
+                      <span className="text-base" style={{ color: 'var(--text-muted)' }}>{entry.paymentStage}</span>
                     </div>
                   </button>
                 ))}
@@ -807,8 +807,8 @@ export default function MobilePayroll() {
             onClick={() => statusTab === 'Pending' ? setShowPublishConfirm(true) : setShowApproveAllConfirm(true)}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 4px 20px rgba(0,229,160,0.3)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 4px 20px var(--accent-emerald-glow)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -906,12 +906,12 @@ export default function MobilePayroll() {
       >
         <form onSubmit={handleAddPayment} className="px-5 space-y-4 pb-2">
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep</label>
             <select
               value={paymentForm.repId}
               onChange={(e) => setPaymentForm((f) => ({ ...f, repId: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             >
               <option value="">Select rep...</option>
               {reps.filter((r) => r.active !== false).map((r) => (
@@ -920,7 +920,7 @@ export default function MobilePayroll() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Type</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Type</label>
             <div className="flex gap-2">
               {(['Deal', 'Bonus', 'Chargeback'] as const).map((t) => {
                 const selected = paymentForm.type === t;
@@ -933,9 +933,9 @@ export default function MobilePayroll() {
                     onClick={() => setPaymentForm((f) => ({ ...f, type: t, stage: nextStage }))}
                     className="flex-1 min-h-[48px] rounded-xl text-sm font-medium transition-colors"
                     style={{
-                      background: selected ? (isChargebackBtn ? 'var(--accent-red, #ef4444)' : 'var(--accent-emerald)') : 'var(--m-card, var(--surface-mobile-card))',
-                      color: selected ? (isChargebackBtn ? '#fff' : '#000') : 'var(--m-text-muted, var(--text-mobile-muted))',
-                      border: selected ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                      background: selected ? (isChargebackBtn ? 'var(--accent-red, #ef4444)' : 'var(--accent-emerald-solid)') : 'var(--surface-card)',
+                      color: selected ? (isChargebackBtn ? '#fff' : '#000') : 'var(--text-muted)',
+                      border: selected ? 'none' : '1px solid var(--border-subtle)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
@@ -945,12 +945,12 @@ export default function MobilePayroll() {
               })}
             </div>
             {paymentForm.type === 'Chargeback' && (
-              <p className="text-[11px] mt-1.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Positive dollar amount. Stored as a negative Draft entry — admin controls when it hits payroll.</p>
+              <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>Positive dollar amount. Stored as a negative Draft entry — admin controls when it hits payroll.</p>
             )}
           </div>
           {(paymentForm.type === 'Deal' || paymentForm.type === 'Chargeback') && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Stage</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Stage</label>
               <div className="flex gap-2">
                 {['M1', 'M2', 'M3'].map((s) => (
                   <button
@@ -959,9 +959,9 @@ export default function MobilePayroll() {
                     onClick={() => setPaymentForm((f) => ({ ...f, stage: s }))}
                     className="flex-1 min-h-[44px] rounded-xl text-base font-medium transition-colors"
                     style={{
-                      background: paymentForm.stage === s ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                      color: paymentForm.stage === s ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                      border: paymentForm.stage === s ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                      background: paymentForm.stage === s ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+                      color: paymentForm.stage === s ? '#000' : 'var(--text-muted)',
+                      border: paymentForm.stage === s ? 'none' : '1px solid var(--border-subtle)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
@@ -973,12 +973,12 @@ export default function MobilePayroll() {
           )}
           {(paymentForm.type === 'Deal' || paymentForm.type === 'Chargeback') && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project</label>
               <select
                 value={paymentForm.projectId}
                 onChange={(e) => setPaymentForm((f) => ({ ...f, projectId: e.target.value }))}
                 className={`${inputCls} min-h-[48px]`}
-                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 <option value="">Select project...</option>
                 {projects
@@ -991,7 +991,7 @@ export default function MobilePayroll() {
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
             <input
               type="number"
               step="0.01"
@@ -1000,35 +1000,35 @@ export default function MobilePayroll() {
               onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0.00"
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
             <input
               type="date"
               value={paymentForm.date}
               onChange={(e) => setPaymentForm((f) => ({ ...f, date: e.target.value }))}
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
             <input
               type="text"
               value={paymentForm.notes}
               onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Optional note"
               className={`${inputCls} min-h-[48px]`}
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
           </div>
           <button
             type="submit"
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
@@ -1047,7 +1047,7 @@ export default function MobilePayroll() {
         {editingEntry && (
           <form onSubmit={handleSaveEditEntry} className="px-5 space-y-4 pb-2">
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
               <input
                 type="number"
                 step="0.01"
@@ -1058,36 +1058,36 @@ export default function MobilePayroll() {
                 onChange={(e) => setEditEntryForm((f) => ({ ...f, amount: e.target.value }))}
                 placeholder="0.00"
                 className={`${inputCls} min-h-[48px]`}
-                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
               <input
                 type="date"
                 required
                 value={editEntryForm.date}
                 onChange={(e) => setEditEntryForm((f) => ({ ...f, date: e.target.value }))}
                 className={`${inputCls} min-h-[48px]`}
-                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
               <input
                 type="text"
                 value={editEntryForm.notes}
                 onChange={(e) => setEditEntryForm((f) => ({ ...f, notes: e.target.value }))}
                 placeholder="Optional note"
                 className={`${inputCls} min-h-[48px]`}
-                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               />
             </div>
             <button
               type="submit"
               className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
               style={{
-                background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+                background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                 boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
@@ -1153,8 +1153,8 @@ function SummaryCard({ label, total, tone, breakdown, pending = false }: {
   if (breakdown.trainer !== 0) lines.push(`Trainer $${breakdown.trainer.toLocaleString()}`);
 
   return (
-    <div className="rounded-2xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-      <p className="text-[10px] uppercase tracking-widest font-semibold truncate" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
+    <div className="rounded-2xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+      <p className="text-[10px] uppercase tracking-widest font-semibold truncate" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
       <p
         className="text-base font-bold tabular-nums mt-1 leading-none truncate"
         title={`$${total.toLocaleString()}`}
@@ -1164,9 +1164,9 @@ function SummaryCard({ label, total, tone, breakdown, pending = false }: {
       </p>
       <div className="mt-2 space-y-0.5">
         {lines.length === 0
-          ? <p className="text-[10px]" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>—</p>
+          ? <p className="text-[10px]" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>—</p>
           : lines.map((l) => (
-              <p key={l} className="text-[10px] truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{l}</p>
+              <p key={l} className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{l}</p>
             ))}
       </div>
     </div>

@@ -24,24 +24,24 @@ export default function BlitzProgressBar({ startDate, endDate, status }: Props) 
   }, [targetPct]);
 
   return (
-    <div className="rounded-xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+    <div className="rounded-xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Progress</p>
-        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Progress</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
           {status === 'completed' ? 'Completed' : `Day ${elapsed} of ${totalDays}`}
         </p>
       </div>
-      <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
+      <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
         <div
           className="h-full rounded-full"
           style={{
             width: `${displayPct}%`,
-            background: 'var(--accent-emerald)',
+            background: 'var(--accent-emerald-solid)',
             transition: 'width 700ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         />
       </div>
-      <div className="flex justify-between mt-1.5 text-[11px]" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <div className="flex justify-between mt-1.5 text-[11px]" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         <span>{formatDate(startDate)}</span>
         <span>{formatDate(endDate)}</span>
       </div>

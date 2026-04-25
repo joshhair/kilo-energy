@@ -25,13 +25,13 @@ function relativeTime(dateStr: string): string {
 // ── Activity type styling ──
 
 const ACTIVITY_STYLES: Record<string, string> = {
-  phase_change:    'var(--m-accent2, var(--accent-cyan2))',
+  phase_change:    'var(--accent-cyan-solid)',
   flagged:         '#ef4444',
   unflagged:       '#f87171',
   m1_paid:         '#10b981',
   m2_paid:         '#10b981',
   note_edit:       '#f59e0b',
-  field_edit:      'var(--m-text-muted, var(--text-mobile-muted))',
+  field_edit:      'var(--text-muted)',
   created:         '#a855f7',
   setter_assigned: '#22d3ee',
 };
@@ -51,7 +51,7 @@ function ActivityTimelineSkeleton() {
     <div className="relative pl-6">
       <div
         className="absolute left-2 top-0 bottom-0 w-px"
-        style={{ background: 'var(--m-border, var(--border-mobile))' }}
+        style={{ background: 'var(--border-subtle)' }}
       />
       {([0, 1, 2] as const).map((i) => (
         <div key={i} className="relative mb-3">
@@ -125,9 +125,9 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
         <p className="text-base text-slate-400">No activity yet</p>
       ) : (
         <div className="relative pl-6">
-          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
+          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--border-subtle)' }} />
           {activities.map((entry) => {
-            const dotColor = ACTIVITY_STYLES[entry.type] ?? 'var(--m-text-dim, #445577)';
+            const dotColor = ACTIVITY_STYLES[entry.type] ?? 'var(--text-dim)';
             return (
               <div key={entry.id} className="relative mb-3 last:mb-0">
                 <div className="absolute -left-4 top-1 w-2 h-2 rounded-full" style={{ background: dotColor }} />

@@ -488,13 +488,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 type="button"
                 onClick={() => setPhaseSheetOpen(true)}
                 aria-label={`Change phase — currently ${project.phase}`}
-                className="inline-flex items-center gap-1.5 min-h-[36px] rounded-full active:scale-[0.97] transition-transform duration-75 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan2)]/50"
+                className="inline-flex items-center gap-1.5 min-h-[36px] rounded-full active:scale-[0.97] transition-transform duration-75 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan-solid)]/50"
               >
                 <MobileBadge value={project.phase} />
                 <span
                   aria-hidden="true"
                   className="text-xs leading-none"
-                  style={{ color: 'var(--m-text-dim, #445577)' }}
+                  style={{ color: 'var(--text-dim)' }}
                 >
                   &#x25BE;
                 </span>
@@ -519,7 +519,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 style={{
                   width: isCurrent ? 14 : 10,
                   height: isCurrent ? 14 : 10,
-                  background: isCompleted ? 'var(--accent-emerald)' : isCurrent ? 'var(--accent-cyan2)' : 'var(--m-border, var(--border-mobile))',
+                  background: isCompleted ? 'var(--accent-emerald-solid)' : isCurrent ? 'var(--accent-cyan-solid)' : 'var(--border-subtle)',
                   willChange: 'transform',
                   animation: `dotPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 40}ms both`,
                   transition: 'width 300ms cubic-bezier(0.34, 1.56, 0.64, 1), height 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -527,7 +527,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 title={step}
               />
               {index < PIPELINE_STEPS.length - 1 && (
-                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))', transition: 'background 350ms cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)', transition: 'background 350ms cubic-bezier(0.16, 1, 0.3, 1)' }} />
               )}
             </div>
           );
@@ -539,7 +539,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         style={{
           color: isOffTrack
             ? (project.phase === 'Cancelled' ? '#ef4444' : '#f59e0b')
-            : 'var(--m-accent2, var(--accent-cyan2))',
+            : 'var(--accent-cyan-solid)',
           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           letterSpacing: '0.02em',
           fontSize: '1rem',
@@ -551,7 +551,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <p
         className="mt-0.5"
         style={{
-          color: 'var(--m-text-dim, #445577)',
+          color: 'var(--text-dim)',
           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           fontSize: '0.85rem',
           lineHeight: 1.3,
@@ -567,7 +567,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           <p
             className="tracking-widest uppercase"
             style={{
-              color: 'var(--m-text-dim, #445577)',
+              color: 'var(--text-dim)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               fontSize: '0.75rem',
               fontWeight: 500,
@@ -583,10 +583,10 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               fontSize: 'clamp(2.5rem, 13vw, 3.5rem)',
               color:
                 myCommission.status === 'paid'
-                  ? 'var(--accent-emerald)'
+                  ? 'var(--accent-emerald-solid)'
                   : myCommission.status === 'partial'
-                  ? 'var(--accent-amber)'
-                  : 'var(--m-accent, var(--accent-emerald))',
+                  ? 'var(--accent-amber-solid)'
+                  : 'var(--accent-emerald-solid)',
               lineHeight: 1.05,
             }}
           >
@@ -594,7 +594,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           </p>
           <p
             style={{
-              color: 'var(--m-text-muted, var(--text-mobile-muted))',
+              color: 'var(--text-muted)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               fontSize: '0.85rem',
               marginTop: '0.35rem',
@@ -612,8 +612,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Info rows — no card wrapper, thin separators */}
       <div className="space-y-0">
         {infoRows.map(([label, value], index) => (
-          <div key={label} className="flex items-center justify-between py-3 animate-info-row-enter" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))', animationDelay: `${index * 35}ms` }}>
-            <span className="text-base" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
+          <div key={label} className="flex items-center justify-between py-3 animate-info-row-enter" style={{ borderBottom: '1px solid var(--border-subtle)', animationDelay: `${index * 35}ms` }}>
+            <span className="text-base" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
             <span className="text-base font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
           </div>
         ))}
@@ -681,33 +681,33 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             {/* Total-expected summary row — rep/SD see own total; admin sees
                 closer (and setter, if applicable) totals. */}
             {isMeView && myTotalExpected > 0 && (
-              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Total expected</span>
-                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(myTotalExpected)}</span>
+              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Total expected</span>
+                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(myTotalExpected)}</span>
               </div>
             )}
             {showSetterTotalToCloser && (
-              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.setterName} (setter) total</span>
-                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--m-text-secondary, var(--text-mobile-secondary))' }}>{fmt$(setterTotalExpected)}</span>
+              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{project.setterName} (setter) total</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{fmt$(setterTotalExpected)}</span>
               </div>
             )}
             {!isMeView && (
               <div className="space-y-2 mb-3">
-                <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
                   <div>
-                    <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.repName} (closer)</p>
-                    <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>Total expected</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{project.repName} (closer)</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>Total expected</p>
                   </div>
-                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotalExpected)}</span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotalExpected)}</span>
                 </div>
                 {project.setterId && setterTotalExpected > 0 && (
-                  <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
                     <div>
-                      <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.setterName} (setter)</p>
-                      <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>Total expected</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{project.setterName} (setter)</p>
+                      <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>Total expected</p>
                     </div>
-                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotalExpected)}</span>
+                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotalExpected)}</span>
                   </div>
                 )}
                 {/* Co-closers — desktop renders these as full cards with
@@ -718,15 +718,15 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
                   if (coTotal <= 0) return null;
                   return (
-                    <div key={`cc-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                    <div key={`cc-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
                       <div>
-                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{co.userName} (co-closer · #{co.position})</p>
-                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{co.userName} (co-closer · #{co.position})</p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
                           M1 ${co.m1Amount.toLocaleString()} · M2 ${co.m2Amount.toLocaleString()}
                           {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
                     </div>
                   );
                 })}
@@ -734,15 +734,15 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
                   if (coTotal <= 0) return null;
                   return (
-                    <div key={`cs-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
+                    <div key={`cs-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
                       <div>
-                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{co.userName} (co-setter · #{co.position})</p>
-                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{co.userName} (co-setter · #{co.position})</p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
                           M1 ${co.m1Amount.toLocaleString()} · M2 ${co.m2Amount.toLocaleString()}
                           {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
                     </div>
                   );
                 })}
@@ -763,12 +763,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   return (
                     <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
                       <div>
-                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{trainerName} (trainer)</p>
-                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{trainerName} (trainer)</p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
                           ${effTrainerRate.toFixed(2)}/W × {project.kWSize} kW
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                         {fmt$(effTrainerRate * (project.kWSize ?? 0) * 1000)}
                       </span>
                     </div>
@@ -780,12 +780,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             <div className="relative flex items-start justify-between pt-2 pb-4">
               {visibleStages.length > 1 && (
                 <>
-                  <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
+                  <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--border-subtle)' }} />
                   <div
                     className="absolute top-[18px] left-[14px] h-0.5 milestone-track-fill"
                     style={{
                       width: `calc(${Math.min(100, Math.max(0, fillPct))}% - 28px)`,
-                      background: 'linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan2))',
+                      background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                       animation: 'trackFill 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
                     }}
                   />
@@ -800,9 +800,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     <div
                       className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
                       style={{
-                        background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' : 'var(--m-card, var(--surface-mobile-card))',
-                        border: `2px solid ${stage.paid ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
-                        color: stage.paid ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                        background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
+                        border: `2px solid ${stage.paid ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
+                        color: stage.paid ? '#000' : 'var(--text-muted)',
                         animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
                       }}
                     >{stage.key}</div>
@@ -813,11 +813,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           value={stage.key === 'M1' ? m1Val : m2Val}
                           onChange={(e) => stage.key === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
                           className="w-20 text-xs text-center rounded px-1 py-0.5 text-white"
-                          style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
                         />
                         <div className="flex gap-1.5">
-                          <button onClick={stage.key === 'M1' ? saveM1 : saveM2} className="text-[10px] font-medium" style={{ color: 'var(--accent-emerald)' }}>Save</button>
-                          <button onClick={() => stage.key === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-[10px]" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Cancel</button>
+                          <button onClick={stage.key === 'M1' ? saveM1 : saveM2} className="text-[10px] font-medium" style={{ color: 'var(--accent-emerald-solid)' }}>Save</button>
+                          <button onClick={() => stage.key === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Cancel</button>
                         </div>
                       </div>
                     ) : (
@@ -830,7 +830,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                             }}
                             className="milestone-amount text-sm font-bold tabular-nums underline-offset-2"
                             style={{
-                              color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                              color: stage.paid ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                               fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                               animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
                             }}
@@ -839,7 +839,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           <span
                             className="milestone-amount text-sm font-bold tabular-nums"
                             style={{
-                              color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                              color: stage.paid ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                               fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                               animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
                             }}
@@ -850,7 +850,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           <button
                             onClick={stage.key === 'M1' ? handleToggleM1 : stage.key === 'M2' ? handleToggleM2 : handleToggleM3}
                             className="text-[10px] px-1.5 py-0.5 rounded-md font-medium min-h-[28px]"
-                            style={{ background: stage.paid ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: stage.paid ? 'var(--accent-emerald)' : '#f59e0b' }}
+                            style={{ background: stage.paid ? 'rgba(16,185,129,0.12)' : 'var(--accent-amber-soft)', color: stage.paid ? 'var(--accent-emerald-solid)' : '#f59e0b' }}
                           >
                             {stage.paid ? 'Mark Unpaid' : 'Mark Paid'}
                           </button>
@@ -874,7 +874,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           <div className="flex items-center justify-between gap-3 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
             <div>
               <p className="text-amber-300 text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--m-text-dim, #445577)' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
                 {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback.
               </p>
             </div>
@@ -897,7 +897,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           PMs are blocked at the endpoint. */}
       {(isAdmin || isPM) && (
         <MobileSection title="Admin Notes" collapsible defaultOpen={false}>
-          <p className="text-xs text-[var(--m-text-dim, #445577)] mb-2">
+          <p className="text-xs text-[var(--text-dim)] mb-2">
             Private reference notes. Never visible to reps, trainers, sub-dealers, or vendor PMs.
           </p>
           <ProjectNotes projectId={projectId} kind="admin" />
@@ -911,13 +911,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <MobileActivityTimeline projectId={projectId} />
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--m-card, var(--surface-mobile-card))', borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--surface-card)', borderTop: '1px solid var(--border-subtle)' }}>
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
             className="flex-1 min-h-[48px] text-white text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
@@ -929,9 +929,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           onClick={() => setMoreSheetOpen(true)}
           className="min-h-[48px] px-5 text-base font-medium rounded-xl active:scale-[0.95] transition-transform duration-75 ease-out"
           style={{
-            background: 'var(--m-card, var(--surface-mobile-card))',
-            border: '1px solid var(--m-border, var(--border-mobile))',
-            color: 'var(--m-text-muted, var(--text-mobile-muted))',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-muted)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -1127,7 +1127,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center p-4 pb-8"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}
         >
-          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <span className="text-white font-bold text-base">Cancel Project</span>
               <button onClick={() => setShowCancelReasonModal(false)} className="text-slate-400 p-1"><XIcon className="w-5 h-5" /></button>

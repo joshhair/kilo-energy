@@ -20,10 +20,10 @@ interface Props {
 export default function BlitzLeaderboard({ entries, showPayout }: Props) {
   const router = useRouter();
   if (entries.length === 0) return (
-    <div className="rounded-2xl p-5 text-center" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+    <div className="rounded-2xl p-5 text-center" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
       <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: '#fbbf24', opacity: 0.2 }} />
       <p className="text-sm font-semibold text-white">No deals yet</p>
-      <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Rankings appear once reps start closing.</p>
+      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Rankings appear once reps start closing.</p>
     </div>
   );
 
@@ -31,10 +31,10 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
   const RANK_BG = ['rgba(251,191,36,0.10)', 'rgba(203,213,225,0.07)', 'rgba(251,146,60,0.09)'];
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+    <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
       <div className="flex items-center gap-2 mb-3">
         <Trophy className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Leaderboard</span>
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Leaderboard</span>
       </div>
       <div className="space-y-1.5">
         {entries.slice(0, 5).map((rep, idx) => {
@@ -55,8 +55,8 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
               <span
                 className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
                 style={{
-                  background: isTop3 ? RANK_GRAD[rank - 1] : 'var(--m-border, var(--border-mobile))',
-                  color: isTop3 ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                  background: isTop3 ? RANK_GRAD[rank - 1] : 'var(--border-subtle)',
+                  color: isTop3 ? '#000' : 'var(--text-muted)',
                   fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                 }}
               >
@@ -65,11 +65,11 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
               <span className="flex-1 text-sm font-semibold truncate text-left" style={{ color: isTop3 ? RANK_COLOR[rank - 1] : 'white', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {rep.name}
               </span>
-              <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {rep.deals}d · {rep.kW.toFixed(1)}kW
               </span>
               {showPayout && rep.payout > 0 && (
-                <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {formatCurrency(Math.round(rep.payout))}
                 </span>
               )}

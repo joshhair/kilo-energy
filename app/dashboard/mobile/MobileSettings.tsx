@@ -92,9 +92,9 @@ const SETTINGS_KEYFRAMES = `
   }
   .sk {
     background: linear-gradient(90deg,
-      var(--m-border,var(--border-mobile)) 25%,
+      var(--border-subtle) 25%,
       rgba(255,255,255,0.04) 50%,
-      var(--m-border,var(--border-mobile)) 75%);
+      var(--border-subtle) 75%);
     background-size: 200% 100%;
     animation: sk-shimmer 1.4s linear infinite;
     border-radius: 6px;
@@ -155,7 +155,7 @@ export default function MobileSettings() {
         <button
           onClick={handleBack}
           className="flex items-center gap-1.5 min-h-[48px] text-base font-medium active:opacity-70 transition-colors"
-          style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" />
           Settings
@@ -190,7 +190,7 @@ export default function MobileSettings() {
             <MobileCard>
               {items.map((item, idx) => (
                 <div key={item.id}>
-                  {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
+                  {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
                   <div className="active:scale-[0.97] transition-transform duration-100 ease-out">
                     <MobileListItem title={item.label} onTap={() => setActiveSection(item.id)} />
                   </div>
@@ -228,7 +228,7 @@ function SettingsSkeleton({ rows = 3 }: { rows?: number }) {
     <MobileCard>
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i}>
-            {i > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border,var(--border-mobile))' }} />}
+            {i > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
             <div className="flex items-center gap-3 min-h-[56px] py-3 px-1">
               <div className="flex-1 space-y-2">
                 <div className="sk h-3.5 w-32" />
@@ -250,7 +250,7 @@ function Toggle({ value, onChange, color }: { value: boolean; onChange: (v: bool
       onClick={() => onChange(!value)}
       className="w-11 h-6 rounded-full relative active:scale-[0.88] transition-transform duration-100 ease-out p-1 -m-1"
       style={{
-        background: value ? (color ?? 'var(--accent-emerald)') : 'var(--m-border, var(--border-mobile))',
+        background: value ? (color ?? 'var(--accent-emerald-solid)') : 'var(--border-subtle)',
         transition: 'background-color 200ms ease',
       }}
     >
@@ -273,7 +273,7 @@ function InstallersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage installer companies. Full editing available on desktop.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage installer companies. Full editing available on desktop.</p>
       {installers.length === 0 ? (
         <MobileEmptyState icon={Building2} title="No installers" />
       ) : (
@@ -285,14 +285,14 @@ function InstallersSection() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inst.name}</p>
-                  <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{installPct}%</span></p>
+                  <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{installPct}%</span></p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span
                     className="text-base font-medium px-2 py-0.5 rounded-lg"
                     style={{
-                      background: inst.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                      color: inst.active ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                      background: inst.active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                      color: inst.active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
@@ -301,7 +301,7 @@ function InstallersSection() {
                   <Toggle
                     value={inst.active}
                     onChange={() => setInstallerActive(inst.name, !inst.active)}
-                    color="var(--accent-emerald)"
+                    color="var(--accent-emerald-solid)"
                   />
                 </div>
               </div>
@@ -320,7 +320,7 @@ function FinancersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
       {financers.filter(fin => fin.name !== 'Cash').length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
@@ -334,8 +334,8 @@ function FinancersSection() {
                 <span
                   className="text-base font-medium px-2 py-0.5 rounded-lg"
                   style={{
-                    background: fin.active ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                    color: fin.active ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                    background: fin.active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                    color: fin.active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -344,7 +344,7 @@ function FinancersSection() {
                 <Toggle
                   value={fin.active}
                   onChange={() => setFinancerActive(fin.name, !fin.active)}
-                  color="var(--accent-emerald)"
+                  color="var(--accent-emerald-solid)"
                 />
               </div>
             </div>
@@ -415,7 +415,7 @@ function AdminUsersSection() {
     <div className="space-y-4">
       {/* Add form */}
       <MobileCard>
-        <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Add a new admin user</p>
+        <p className="text-base mb-3" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Add a new admin user</p>
         <div className="space-y-2">
           <input
             value={newName}
@@ -426,10 +426,10 @@ function AdminUsersSection() {
             inputMode="text"
             className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              '--tw-ring-color': 'var(--accent-emerald)',
+              '--tw-ring-color': 'var(--accent-emerald-solid)',
             } as React.CSSProperties}
           />
           <input
@@ -444,10 +444,10 @@ function AdminUsersSection() {
             spellCheck={false}
             className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              '--tw-ring-color': 'var(--accent-emerald)',
+              '--tw-ring-color': 'var(--accent-emerald-solid)',
             } as React.CSSProperties}
           />
           <button
@@ -455,8 +455,8 @@ function AdminUsersSection() {
             disabled={!newName.trim() || !newEmail.trim()}
             className="w-full min-h-[48px] rounded-2xl text-black text-base font-semibold disabled:opacity-40 active:opacity-80 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 0 20px var(--accent-emerald-glow)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -472,16 +472,16 @@ function AdminUsersSection() {
         <MobileCard>
           {admins.map((admin, idx) => (
             <div key={admin.id}>
-              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
+              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.name}</p>
-                  <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.email}</p>
+                  <p className="text-base mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.email}</p>
                 </div>
                 <button
                   onClick={() => setConfirmDeleteId(admin.id)}
                   className="p-2 active:opacity-70 transition-colors"
-                  style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                  style={{ color: 'var(--text-muted)' }}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -553,7 +553,7 @@ function ProjectManagersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project managers can view projects and reps but not payroll or settings.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Project managers can view projects and reps but not payroll or settings.</p>
       {pms.length === 0 ? (
         <MobileEmptyState icon={Users} title="No project managers" />
       ) : (
@@ -562,12 +562,12 @@ function ProjectManagersSection() {
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
                 <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.firstName} {pm.lastName}</p>
-                <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.email}</p>
+                <p className="text-base mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.email}</p>
               </div>
               <button
                 onClick={() => setConfirmDeleteId(pm.id)}
                 className="p-2 active:opacity-70 transition-colors shrink-0"
-                style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                style={{ color: 'var(--text-muted)' }}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -583,9 +583,9 @@ function ProjectManagersSection() {
                   onClick={() => togglePerm(pm.id, field, pm[field])}
                   className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-colors min-h-[44px] active:scale-[0.95] transition-transform duration-100"
                   style={{
-                    background: pm[field] ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                    color: pm[field] ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                    borderColor: pm[field] ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))',
+                    background: pm[field] ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                    color: pm[field] ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                    borderColor: pm[field] ? 'var(--accent-emerald-glow)' : 'var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -644,7 +644,7 @@ function BlitzPermissionsSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Control which reps can request or create blitzes.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Control which reps can request or create blitzes.</p>
       {reps.length === 0 ? (
         <MobileEmptyState icon={Tent} title="No reps" />
       ) : (
@@ -653,23 +653,23 @@ function BlitzPermissionsSection() {
           return (
             <MobileCard key={rep.id}>
               <p className="text-base font-semibold text-white mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
-              <p className="text-base mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.repType || 'Rep'}</p>
+              <p className="text-base mb-3" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.repType || 'Rep'}</p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canRequestBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canRequestBlitz', v)}
-                    color="var(--m-accent2, var(--accent-cyan2))"
+                    color="var(--accent-cyan-solid)"
                   />
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Request</span>
+                  <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Request</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Toggle
                     value={perms.canCreateBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canCreateBlitz', v)}
-                    color="var(--accent-emerald)"
+                    color="var(--accent-emerald-solid)"
                   />
-                  <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Create</span>
+                  <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Create</span>
                 </div>
               </div>
             </MobileCard>
@@ -687,20 +687,20 @@ function SubDealersSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Sub-dealer accounts. Full editing available on desktop.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Sub-dealer accounts. Full editing available on desktop.</p>
       {!subDealers || subDealers.length === 0 ? (
         <MobileEmptyState icon={Handshake} title="No sub-dealers" subtitle="Add sub-dealers from the desktop view." />
       ) : (
         <MobileCard>
           {subDealers.map((sd, idx: number) => (
             <div key={sd.id ?? idx}>
-              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }} />}
+              {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {sd.firstName ?? ''} {sd.lastName ?? ''}
                   </p>
-                  {sd.email && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
+                  {sd.email && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
                 </div>
               </div>
             </div>
@@ -742,7 +742,7 @@ function ExportSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
+      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Download data as CSV files.</p>
       {['payments', 'projects', 'baselines', 'trainers'].map((type) => (
         <button
           key={type}
@@ -750,11 +750,11 @@ function ExportSection() {
           disabled={getStatus(type) === 'loading'}
           className="w-full min-h-[56px] rounded-2xl px-5 text-left flex items-center gap-3 relative overflow-hidden"
           style={{
-            background: getStatus(type) === 'done' ? 'rgba(0,229,160,0.1)' : 'var(--m-card, var(--surface-mobile-card))',
+            background: getStatus(type) === 'done' ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
             border: `1px solid ${
               getStatus(type) === 'done' ? 'rgba(0,229,160,0.4)'
               : getStatus(type) === 'loading' ? 'rgba(255,255,255,0.08)'
-              : 'var(--m-border, var(--border-mobile))'
+              : 'var(--border-subtle)'
             }`,
             transition: 'background 300ms ease, border-color 300ms ease',
             animation: getStatus(type) === 'done' ? 'exportPulse 600ms cubic-bezier(0.16,1,0.3,1) both' : 'none',
@@ -772,7 +772,7 @@ function ExportSection() {
           <Download
             className="w-5 h-5 shrink-0"
             style={{
-              color: getStatus(type) === 'done' ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              color: getStatus(type) === 'done' ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
               transition: 'color 300ms ease',
               animation: getStatus(type) === 'loading' ? 'exportSpin 600ms linear infinite' : 'none',
             }}
@@ -780,7 +780,7 @@ function ExportSection() {
           <span
             className="text-base font-semibold capitalize"
             style={{
-              color: getStatus(type) === 'done' ? 'var(--m-accent, var(--accent-emerald))' : 'white',
+              color: getStatus(type) === 'done' ? 'var(--accent-emerald-solid)' : 'white',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               transition: 'color 300ms ease',
             }}
@@ -822,14 +822,14 @@ function CustomizationSection() {
 
   return (
     <div className="space-y-4">
-      <p className="text-base mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         Days from sold date before a project is flagged as &ldquo;stuck&rdquo; in each phase.
       </p>
       <MobileCard>
         <div className="space-y-3">
           {THRESHOLD_PHASES.map((phase) => (
             <div key={phase} className="flex items-center justify-between gap-4">
-              <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{phase}</span>
+              <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{phase}</span>
               <input
                 type="number"
                 min={1}
@@ -839,10 +839,10 @@ function CustomizationSection() {
                 inputMode="numeric"
                 className="w-20 rounded-xl px-3 py-2 text-base text-white text-center focus:outline-none focus:ring-1"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  '--tw-ring-color': 'var(--accent-emerald)',
+                  '--tw-ring-color': 'var(--accent-emerald-solid)',
                 } as React.CSSProperties}
               />
             </div>
@@ -854,8 +854,8 @@ function CustomizationSection() {
           onClick={handleSave}
           className="flex-1 min-h-[48px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors"
           style={{
-            background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-            boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+            background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+            boxShadow: '0 0 20px var(--accent-emerald-glow)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -865,9 +865,9 @@ function CustomizationSection() {
           onClick={handleReset}
           className="flex-1 min-h-[48px] rounded-2xl text-base font-medium active:opacity-80 transition-colors"
           style={{
-            background: 'var(--m-card, var(--surface-mobile-card))',
-            border: '1px solid var(--m-border, var(--border-mobile))',
-            color: 'var(--m-text-muted, var(--text-mobile-muted))',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-muted)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -973,9 +973,9 @@ function StandardBaselines() {
   }
 
   const inputStyle = {
-    background: 'var(--m-card, var(--surface-mobile-card))',
-    border: '1px solid var(--m-border, var(--border-mobile))',
-    '--tw-ring-color': 'var(--accent-emerald)',
+    background: 'var(--surface-card)',
+    border: '1px solid var(--border-subtle)',
+    '--tw-ring-color': 'var(--accent-emerald-solid)',
   } as React.CSSProperties;
   const inputClass = 'flex-1 rounded-xl px-3 py-2 text-base text-white focus:outline-none focus:ring-1';
 
@@ -997,7 +997,7 @@ function StandardBaselines() {
                   <button
                     onClick={() => openNewVersion(installer)}
                     className="p-2 active:opacity-70 transition-colors"
-                    style={{ color: 'var(--accent-emerald)' }}
+                    style={{ color: 'var(--accent-emerald-solid)' }}
                     title="New version"
                   >
                     <Plus className="w-4 h-4" />
@@ -1005,7 +1005,7 @@ function StandardBaselines() {
                   <button
                     onClick={() => startEdit(installer)}
                     className="p-2 active:opacity-70 transition-colors"
-                    style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                    style={{ color: 'var(--text-muted)' }}
                     title="Edit baseline"
                   >
                     <Pencil className="w-4 h-4" />
@@ -1023,7 +1023,7 @@ function StandardBaselines() {
                   { key: 'subDealerPerW', label: 'Sub-Dealer $/W (opt.)' },
                 ] as const).map(({ key, label }) => (
                   <div key={key} className="flex items-center gap-2">
-                    <span className="text-sm w-36 shrink-0" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <span className="text-sm w-36 shrink-0" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {label}
                     </span>
                     <input
@@ -1041,14 +1041,14 @@ function StandardBaselines() {
                   <button
                     onClick={saveEdit}
                     className="flex-1 min-h-[44px] rounded-2xl text-black text-base font-semibold active:opacity-80"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     Save
                   </button>
                   <button
                     onClick={() => setEditingInstaller(null)}
                     className="flex-1 min-h-[44px] rounded-2xl text-base active:opacity-80"
-                    style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     Cancel
                   </button>
@@ -1063,7 +1063,7 @@ function StandardBaselines() {
                   ...(baseline.subDealerPerW != null ? [['Sub-Dealer', `$${baseline.subDealerPerW.toFixed(2)}/W`]] : []),
                 ] as [string, string][]).map(([label, value]) => (
                   <div key={label} className="flex items-baseline gap-1">
-                    <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}:</span>
+                    <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}:</span>
                     <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
                   </div>
                 ))}
@@ -1103,7 +1103,7 @@ function StandardBaselines() {
               { label: 'Kilo $/W', value: nvKilo, set: setNvKilo, type: 'number' },
             ] as Array<{ label: string; value: string; set: (v: string) => void; type: string }>).map(({ label, value, set, type }) => (
               <div key={label}>
-                <p className="text-sm mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
+                <p className="text-sm mb-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
                 <input
                   type={type}
                   step={type === 'number' ? '0.01' : undefined}
@@ -1119,14 +1119,14 @@ function StandardBaselines() {
               <button
                 onClick={saveNewVersion}
                 className="flex-1 min-h-[48px] rounded-2xl text-black font-semibold active:opacity-80"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Create Version
               </button>
               <button
                 onClick={closeSheet}
                 className="flex-1 min-h-[48px] rounded-2xl active:opacity-80"
-                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Cancel
               </button>
@@ -1146,7 +1146,7 @@ function SolarTechBaselines() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         Current rates by family. Full editing available on desktop.
       </p>
       <MobilePillTabs
@@ -1165,7 +1165,7 @@ function SolarTechBaselines() {
             <div className="space-y-1">
               {product.tiers.map((tier) => (
                 <div key={tier.minKW} className="flex items-center justify-between">
-                  <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {tier.minKW}–{tier.maxKW ?? '∞'} kW
                   </span>
                   <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -1198,7 +1198,7 @@ function ProductCatalogBaselines() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+      <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         Current rates by installer and family. Full editing available on desktop.
       </p>
       {installerNames.length > 1 && (
@@ -1226,7 +1226,7 @@ function ProductCatalogBaselines() {
             <div className="space-y-1">
               {product.tiers.map((tier) => (
                 <div key={tier.minKW} className="flex items-center justify-between">
-                  <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {tier.minKW}–{tier.maxKW ?? '∞'} kW
                   </span>
                   <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>

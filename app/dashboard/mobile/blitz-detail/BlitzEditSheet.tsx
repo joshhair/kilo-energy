@@ -11,10 +11,10 @@ import { sortForSelection } from '../../../../lib/sorting';
 const STATUS_OPTIONS = ['upcoming', 'active', 'completed', 'cancelled'] as const;
 
 const SELECT_STYLE = {
-  background: 'var(--m-card, var(--surface-mobile-card))',
-  border: '1px solid var(--m-border, var(--border-mobile))',
+  background: 'var(--surface-card)',
+  border: '1px solid var(--border-subtle)',
   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-  '--tw-ring-color': 'var(--accent-emerald)',
+  '--tw-ring-color': 'var(--accent-emerald-solid)',
 } as React.CSSProperties;
 
 interface Rep { id: string; name: string }
@@ -186,8 +186,8 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
           disabled={saving || !form.name.trim()}
           className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors mt-2"
           style={{
-            background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-            boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+            background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+            boxShadow: '0 0 20px var(--accent-emerald-glow)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -202,7 +202,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</label>
+      <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</label>
       {children}
     </div>
   );

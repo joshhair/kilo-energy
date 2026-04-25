@@ -18,11 +18,11 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 // ── Design tokens ────────────────────────────────────────────────────────────
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
-const ACCENT = 'var(--m-accent, var(--accent-emerald))';
-const ACCENT2 = 'var(--m-accent2, var(--accent-cyan2))';
-const MUTED = 'var(--m-text-muted, var(--text-mobile-muted))';
-const DIM = 'var(--m-text-dim, #445577)';
-const WARNING = 'var(--m-warning, #f5a623)';
+const ACCENT = 'var(--accent-emerald-solid)';
+const ACCENT2 = 'var(--accent-cyan-solid)';
+const MUTED = 'var(--text-muted)';
+const DIM = 'var(--text-dim)';
+const WARNING = 'var(--accent-amber-solid)';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -414,7 +414,7 @@ export default function MobileMyPay() {
         </p>
 
         {/* ─ Secondary: Pending + Pipeline (money in motion) ─ */}
-        <div className="mt-5 pt-4 space-y-2.5" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="mt-5 pt-4 space-y-2.5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pending</span>
             <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING, lineHeight: 1.1 }}>{fmt$(displayPending)}</span>
@@ -426,7 +426,7 @@ export default function MobileMyPay() {
         </div>
 
         {/* ─ Footnote: Lifetime earned (cumulative context) ─ */}
-        <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem', fontWeight: 500 }}>Lifetime Earned</span>
             <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 5.5vw, 1.5rem)', color: '#e5e7eb', lineHeight: 1.1 }}>{fmt$(displayLifetime)}</span>
@@ -515,7 +515,7 @@ export default function MobileMyPay() {
               <div
                 key={r.id}
                 className={`flex items-center justify-between py-3 ${i < activeReimbs.length - 1 ? 'border-b' : ''}`}
-                style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                style={{ borderColor: 'var(--border-subtle)' }}
               >
                 <div>
                   <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.description}</p>
@@ -542,7 +542,7 @@ export default function MobileMyPay() {
               <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem', marginBottom: '0.75rem' }}>
                 Amounts to be clawed back from a future paycheck.
               </p>
-              <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+              <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
                 <span className="tracking-widest uppercase" style={{ color: WARNING, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600 }}>Total</span>
                 <span className="tabular-nums font-bold" style={{ color: 'var(--accent-red, #ef4444)', fontFamily: FONT_DISPLAY, fontSize: '1.3rem' }}>-{fmt$(pendingChargebackTotal)}</span>
               </div>
@@ -550,7 +550,7 @@ export default function MobileMyPay() {
                 <div
                   key={e.id}
                   className={`flex items-center justify-between py-3 ${i < pendingEntries.length - 1 ? 'border-b' : ''}`}
-                  style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                  style={{ borderColor: 'var(--border-subtle)' }}
                 >
                   <div>
                     <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{e.customerName || '(no project)'}</p>
@@ -666,7 +666,7 @@ export default function MobileMyPay() {
             {payPeriods.map((period) => (
               <MobileCard key={period.friday}>
                 {/* Friday group header */}
-                <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+                <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
                   <p className="font-bold text-white" style={{ fontFamily: FONT_BODY, fontSize: '0.9rem' }}>
                     {formatFridayLabel(period.friday)}
                   </p>
@@ -697,7 +697,7 @@ export default function MobileMyPay() {
                       <div
                         key={entry.id}
                         className={`flex items-center justify-between py-3 ${i < period.entries.length - 1 ? 'border-b' : ''}`}
-                        style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                        style={{ borderColor: 'var(--border-subtle)' }}
                       >
                         <div>
                           {labelEl}
